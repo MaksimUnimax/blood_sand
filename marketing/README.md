@@ -61,6 +61,11 @@
 - [`research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`](research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md) — повторяющиеся критерии выбора из отзывов похожих товаров.
 - [`research/R3_MARKETING_PAGE_JOBS_2026-08-04.md`](research/R3_MARKETING_PAGE_JOBS_2026-08-04.md) — маркетинговые роли будущих страниц, их пользовательские задачи, доказательства, CTA и KPI; это не техническая архитектура сайта.
 
+### Рабочие данные
+
+- [`data/wordstat_seed_queries.csv`](data/wordstat_seed_queries.csv) — готовый список seed-запросов и пустые поля для фактических Wordstat-значений.
+- [`data/yandex_serp_alice_capture_template.csv`](data/yandex_serp_alice_capture_template.csv) — шаблон прямого съёма Yandex SERP и источников Алисы AI по каждому запросу.
+
 ## Правила работы
 
 1. **Факт, гипотеза и решение не смешиваются.**
