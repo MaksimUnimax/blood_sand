@@ -3,7 +3,7 @@
 Статус: **[~] В РАБОТЕ**  
 Дата начала: 2026-08-04  
 Оценка: **5 ранов**  
-Фактически выполнено: **3/5 ранов**
+Фактически выполнено: **4/5 ранов**
 
 ## Цель пункта
 
@@ -61,46 +61,42 @@
 
 - `marketing/data/DATA_SCHEMA_CONTRACT.md`
 
-Зафиксированы сущности `Query`, `Measurement`, `Observation`, `Ledger record` и их роли.
-
-Зафиксированы ID:
-
-- `query_id = q_<12hex>` из canonical query string;
-- `measurement_id = m_<source>_<UTC timestamp>_<8hex>`;
-- `observation_id` — уникальная normalized-запись внутри measurement.
-
-Зафиксированы:
-
-- общая envelope-схема normalized observations;
-- canonical provenance/source types;
-- `OBSERVED / INFERRED / DERIVED`;
-- status semantics `MEASURED / NOT_MEASURED / NOT_AVAILABLE / NOT_APPLICABLE / INVALID`;
-- правило, что измеренный `0` не равен отсутствию данных;
-- отдельные схемы Wordstat, Yandex SERP, Alice, customer evidence, marketplace evidence;
-- будущие схемы Webmaster Search, Webmaster Alice, Metrika Human/Robot и Commerce;
-- связи `normalized → measurement → raw` и `ledger → measurements/observations`;
-- запрет смешивать Alice observed/inferred;
-- правило, что legacy `yandex_serp_alice_capture_template.csv` не используется как каноническая объединённая модель для будущего массового сбора.
+Зафиксированы сущности `Query`, `Measurement`, `Observation`, `Ledger record`, стабильные ID, schema envelope, provenance/source types, `OBSERVED / INFERRED / DERIVED`, status/null semantics, отдельные схемы Wordstat/SERP/Alice/customer/marketplace/post-launch и трассировка `normalized → raw → ledger`.
 
 Обновлён:
 
 - `marketing/data/query_evidence_ledger_template.csv`
 
-В Ledger добавлены технические поля трассировки:
-
-- `schema_version`;
-- `latest_wordstat_measurement_id`;
-- `latest_serp_measurement_id`;
-- `latest_alice_measurement_id`;
-- `evidence_observation_ids`.
+В Ledger добавлены технические поля трассировки measurement/observation IDs.
 
 **Артефакты шага:** `marketing/data/DATA_SCHEMA_CONTRACT.md` и обновлённый `query_evidence_ledger_template.csv`.
 
-## [ ] 02.4 — Описать поток обновления Query Evidence Ledger и проверки качества
+## [x] 02.4 — Описать поток обновления Query Evidence Ledger и проверки качества
 
-**Оценка:** 1 ран.
+**Оценка:** 1 ран.  
+**Статус:** выполнено 2026-08-04.
 
-Ожидаемый результат: понятный процесс `получили наблюдение → сохранили raw → нормализовали → обновили Ledger → пересмотрели H/A/C/O → приняли или не приняли решение`, без потери истории и без смешивания источников, плюс quality gates.
+Создан канонический документ:
+
+- `marketing/data/DATA_WORKFLOW_AND_QUALITY.md`
+
+Зафиксирован workflow:
+
+`capture/measurement → raw evidence → normalized observations → validation → Ledger update → H/A/C/O review → derived analysis / decision`
+
+Определены quality gates:
+
+- RAW — наличие primary evidence, timestamp, source, scope, отсутствие secrets и технической негодности;
+- NORMALIZED — schema/IDs/provenance/raw_ref/null semantics/observed-vs-inferred;
+- LEDGER — каждое сводное поле должно быть трассируемо до validated observation;
+- H/A/C/O — изменение оценки требует явной причины и evidence;
+- DECISION — решение не должно опираться только на frequency и обязано учитывать принятую стратегическую иерархию.
+
+Зафиксированы отдельные проверки для Wordstat, Yandex SERP, Alice, customer и marketplace evidence, правила повторных измерений, invalid/superseded records и случаи, когда Ledger запрещено обновлять как факт.
+
+Определён минимальный acceptance checklist evidence перед использованием в решениях.
+
+**Артефакт шага:** `marketing/data/DATA_WORKFLOW_AND_QUALITY.md`.
 
 ## [ ] 02.5 — Проверить архитектуру на реальном Wordstat-примере и готовность к пунктам 03–05
 
@@ -115,7 +111,7 @@
 - [x] 02.1 — аудит существующих данных;
 - [x] 02.2 — слои/каталоги/имена;
 - [x] 02.3 — схемы/ID/provenance;
-- [ ] 02.4 — workflow/quality checks;
+- [x] 02.4 — workflow/quality checks;
 - [ ] 02.5 — реальная проверка и закрытие.
 
-Следующий шаг: **02.4**.
+Следующий шаг: **02.5**.
