@@ -56,13 +56,17 @@
 
 Правило исполнения roadmap:
 
-- каждый крупный пункт перед началом разбивается на конкретные выполняемые шаги в отдельном файле `roadmap/NN_*.md`;
+- roadmap имеет только два уровня: пункт → шаг;
+- каждый крупный пункт перед началом разбивается на конечный список конкретных выполняемых шагов в отдельном файле `roadmap/NN_*.md`;
+- шаги дальше не дробятся;
 - при детализации пункта фиксируется оценка числа рабочих ранов/итераций;
 - после выполнения каждого шага его статус обязательно обновляется в roadmap;
 - после выполнения всех обязательных шагов крупный пункт помечается выполненным в `roadmap/README.md`;
 - следующий пункт не считается начатым, пока не проверен критерий завершения предыдущего.
 
 Пункт 01 уже закрыт и задокументирован в [`roadmap/01_STRATEGY_AND_DECISION_RULES.md`](roadmap/01_STRATEGY_AND_DECISION_RULES.md).
+
+Пункт 02 ведётся в [`roadmap/02_RESEARCH_DATA_ARCHITECTURE.md`](roadmap/02_RESEARCH_DATA_ARCHITECTURE.md).
 
 ## Файлы
 
@@ -86,8 +90,9 @@
 
 ### Рабочие данные
 
-- [`data/wordstat_seed_queries.csv`](data/wordstat_seed_queries.csv) — готовый список seed-запросов и пустые поля для фактических Wordstat-значений.
-- [`data/yandex_serp_alice_capture_template.csv`](data/yandex_serp_alice_capture_template.csv) — шаблон прямого съёма Yandex SERP и источников Алисы AI по каждому запросу.
+- [`data/DATA_ARCHITECTURE.md`](data/DATA_ARCHITECTURE.md) — канонические слои `registry → raw → normalized → ledger → derived`, правила каталогов, naming, истории измерений и источника истины.
+- [`data/wordstat_seed_queries.csv`](data/wordstat_seed_queries.csv) — готовый список seed-запросов и пустые поля для фактических Wordstat-значений; по смыслу является registry/input queue.
+- [`data/yandex_serp_alice_capture_template.csv`](data/yandex_serp_alice_capture_template.csv) — текущий шаблон прямого съёма Yandex SERP и источников Алисы AI; окончательная логическая схема уточняется в roadmap 02.3.
 - [`data/query_evidence_ledger_template.csv`](data/query_evidence_ledger_template.csv) — единый реестр запросов/тем с provenance: Wordstat, SERP, Alice input/fan-out/source, Webmaster, customer/marketplace evidence, Search/AI/Commerce metrics и H/A/C/O оценки.
 
 ## Правила работы
@@ -121,6 +126,8 @@
 10. **Стратегическая последовательность:** Wordstat → прямой Yandex SERP → Alice AI → customer/marketplace evidence → H/A/C/O оценка → Page Job → только затем решение о странице/блоке/FAQ/отказе от создания.
 
 11. **Исполнение проекта ведётся через `roadmap/`.** Обсуждение само по себе не закрывает шаг. После фактического выполнения шага его статус должен быть изменён в соответствующем roadmap-файле; после закрытия всех обязательных шагов обновляется статус крупного пункта в `roadmap/README.md`.
+
+12. **Исследовательские данные проходят канонический pipeline.** Registry/input не считается фактом; raw evidence хранится неизменяемо; normalized связывается с raw; Ledger хранит сводное текущее состояние; derived содержит воспроизводимые аналитические выводы.
 
 ## Текущий стоп-критерий
 
