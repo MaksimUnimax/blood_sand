@@ -3,7 +3,7 @@
 Статус: **[~] В РАБОТЕ**  
 Дата начала: 2026-08-04  
 Оценка: **примерно 37–54 рана**  
-Фактически выполнено: **1 шаг; API-съём этого пункта ещё не начат**
+Фактически выполнено: **03.1 закрыт; в 03.2 выполнен 1 новый API measurement, валидных root GetTop вместе с historical baseline — 2/14**
 
 ## Почему оценка существенно выше первоначальных 6–12 ранов
 
@@ -42,17 +42,27 @@
 
 - `marketing/research/R1_WORDSTAT_EXECUTION_PLAN_2026-08-04.md`
 
-Принято не выполнять механически одинаковый набор дорогих по времени measurements для всех 37 seed-фраз. Вместо этого используется staged design: cluster discovery → operator precision для high-value запросов → seasonality → selective device/region → evidence-driven Tier 2.
-
-Это сохраняет полноту для принятия решений и резко уменьшает бессмысленные повторные API-вызовы.
+Принято не выполнять механически одинаковый набор measurements для всех 37 seed-фраз. Используется staged design: cluster discovery → operator precision для high-value запросов → seasonality → selective device/region → evidence-driven Tier 2.
 
 ## [~] 03.2 — Снять GetTop по root-кластерам и сформировать фактическую карту формулировок
 
-**Оценка:** примерно 13–17 ранов API + 1 аналитический проход.
+**Оценка:** примерно 13–17 ранов API + 1 аналитический проход.  
+**Текущий прогресс:** валидных root GetTop **2/14**, из них **1** новый API measurement выполнен уже внутри roadmap 03.
 
-Root set включает товарное ядро, варианты медведь/волк, автомобильный use case, значение/сравнение и подарок. `печать велеса` уже имеет live measurement и повторно без причины не запрашивается.
+Уже измерено:
 
-Ожидаемый результат: raw + normalized GetTop observations, фактические phrases/associations, обнаруженные Tier 2 кандидаты, broad cluster signals.
+- historical baseline `печать велеса` — `totalCount=3350`;
+- `оберег печать велеса` — `totalCount=198`, 13 RESULT, 15 ASSOCIATION.
+
+Для нового measurement созданы raw, normalized и Ledger evidence. Текущий running log:
+
+- `marketing/research/R1_WORDSTAT_ROOT_GETTOP_LOG_2026-08-04.md`
+
+Ключевой текущий вывод: root `оберег печать велеса` подтверждает отдельный human-demand кластер; внутри него заметны meaning/slavic ветки, явный `подвеска` result мал, automotive use case не проявился. Associations в основном шумовые и не повышаются до Tier 2 автоматически.
+
+Следующий root measurement: **`подвеска печать велеса` / GetTop / Россия / все устройства**.
+
+Ожидаемый результат 03.2: raw + normalized GetTop observations, фактические phrases/associations, обнаруженные Tier 2 кандидаты, broad cluster signals.
 
 ## [ ] 03.3 — Измерить operator variants для high-value запросов
 
@@ -104,11 +114,11 @@ GetDynamics используется для лидеров товарного, �
 # Текущее состояние
 
 - [x] 03.1 — scope/execution plan;
-- [~] 03.2 — GetTop root-cluster discovery;
+- [~] 03.2 — GetTop root-cluster discovery: **2/14 roots имеют валидный GetTop**;
 - [ ] 03.3 — operator precision;
 - [ ] 03.4 — dynamics/seasonality;
 - [ ] 03.5 — device/region samples;
 - [ ] 03.6 — Tier 2/gap closure;
 - [ ] 03.7 — normalized dataset/Ledger/final R1.
 
-Текущий следующий measurement в 03.2: **`оберег печать велеса` / GetTop / Россия / все устройства**.
+Текущий следующий measurement в 03.2: **`подвеска печать велеса` / GetTop / Россия / все устройства**.
