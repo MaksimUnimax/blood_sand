@@ -44,9 +44,16 @@
 
 Маркетинг может сформулировать требование вроде «товарная страница должна содержать exact dimensions», но реализация этого требования относится к будущей директории сайта.
 
+## Основная стратегия
+
+- [`STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md`](STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md) — **принятая основная стратегия SEO/маркетинга**: объединяет Hybrid Search Commerce и Search-first Alice/AI подход. По ней дальше строятся сбор семантики, Yandex SERP/Alice исследования, структура evidence, приоритизация страниц, аналитика и KPI.
+
+Ключевой принцип стратегии: обычный поиск является фундаментом, Alice AI — обязательной второй поверхностью discovery/выбора, а конечный критерий — пользовательская ценность и дополнительный коммерческий результат напрямую или через marketplace.
+
 ## Файлы
 
 - [`MARKETING_CHARTER.md`](MARKETING_CHARTER.md) — зачем создаётся сайт, для кого, что он должен и не должен делать.
+- [`STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md`](STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md) — текущая стратегия маркетинга, SEO, AI-поиска, структуры данных и измерений.
 - [`RESEARCH_BASELINE_2026-08-01.md`](RESEARCH_BASELINE_2026-08-01.md) — исходная исследовательская база на 1 августа 2026 года.
 - [`RESEARCH_ROADMAP.md`](RESEARCH_ROADMAP.md) — какие исследования нужны до разработки и после запуска.
 - [`DECISIONS.md`](DECISIONS.md) — журнал решений, гипотез и открытых вопросов.
@@ -66,6 +73,7 @@
 
 - [`data/wordstat_seed_queries.csv`](data/wordstat_seed_queries.csv) — готовый список seed-запросов и пустые поля для фактических Wordstat-значений.
 - [`data/yandex_serp_alice_capture_template.csv`](data/yandex_serp_alice_capture_template.csv) — шаблон прямого съёма Yandex SERP и источников Алисы AI по каждому запросу.
+- [`data/query_evidence_ledger_template.csv`](data/query_evidence_ledger_template.csv) — единый реестр запросов/тем с provenance: Wordstat, SERP, Alice input/fan-out/source, Webmaster, customer/marketplace evidence, Search/AI/Commerce metrics и H/A/C/O оценки.
 
 ## Правила работы
 
@@ -92,6 +100,10 @@
 7. **Не смешивать исследования с реализацией.** Даже когда маркетинговое требование уже очевидно, код не помещается в `marketing/`.
 
 8. **Не заменять закрытый/авторизованный источник прокси-данными.** Если Wordstat или прямой Yandex/Alice snapshot недоступны без авторизации, это фиксируется как блокер; web search используется только для тех выводов, которые он реально подтверждает.
+
+9. **Не смешивать происхождение запросов и статистики.** Wordstat, обычный SERP, Alice input/fan-out/source, Webmaster Search, Webmaster Alice, customer evidence, Metrika/commerce данные хранятся раздельно и связываются через Query Evidence Ledger.
+
+10. **Стратегическая последовательность:** Wordstat → прямой Yandex SERP → Alice AI → customer/marketplace evidence → H/A/C/O оценка → Page Job → только затем решение о странице/блоке/FAQ/отказе от создания.
 
 ## Текущий стоп-критерий
 
