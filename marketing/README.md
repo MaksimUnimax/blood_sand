@@ -4,131 +4,103 @@
 
 ## Зачем существует этот раздел
 
-Чтобы решения по будущему интернет-ресурсу не зависели от памяти, отдельных чатов или разовых советов. Здесь должны храниться:
-
-- цели и границы продукта;
-- подтверждённые факты и источники;
-- маркетинговые гипотезы;
-- принятые решения;
-- план следующих исследований;
-- изменения поисковых и AI-механик;
-- результаты будущих экспериментов и реальные метрики.
+Чтобы решения по будущему интернет-ресурсу не зависели от памяти, отдельных чатов или разовых советов. Здесь хранятся цели, подтверждённые факты, гипотезы, принятые решения, исследования, KPI, измерения и требования к будущей разработке.
 
 ## Жёсткое разделение `marketing/` и будущего сайта
 
-`marketing/` и код будущего сайта — **две разные рабочие области с разным жизненным циклом**.
+`marketing/` и код будущего сайта — разные рабочие области.
 
-### В `marketing/` находятся только:
+В `marketing/` находятся исследования, семантика, конкурентная разведка, источники, экономика, KPI, решения и требования.
 
-- исследования;
-- конкурентная разведка;
-- семантика;
-- источники;
-- маркетинговые решения;
-- гипотезы;
-- экономика;
-- KPI;
-- требования, которые маркетинг передаёт будущей разработке.
+В `marketing/` не помещаются frontend/backend-код, компоненты, CSS/JS, production-конфиги и runtime-данные сайта.
 
-### В `marketing/` НЕ должны попадать:
-
-- frontend/backend-код;
-- шаблоны страниц;
-- компоненты сайта;
-- CSS/JS;
-- production-конфиги;
-- runtime-данные сайта;
-- изображения/ассеты, используемые приложением как часть сборки.
-
-Когда начнётся разработка, она должна жить в **отдельной верхнеуровневой директории**, например `site/`, и не смешиваться с историей маркетинговых исследований.
-
-Маркетинг может сформулировать требование вроде «товарная страница должна содержать exact dimensions», но реализация этого требования относится к будущей директории сайта.
+Когда начнётся разработка, она живёт в отдельной верхнеуровневой директории, предварительно `site/`.
 
 ## Основная стратегия
 
-- [`STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md`](STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md) — **принятая основная стратегия SEO/маркетинга**: объединяет Hybrid Search Commerce и Search-first Alice/AI подход. По ней дальше строятся сбор семантики, Yandex SERP/Alice исследования, структура evidence, приоритизация страниц, аналитика и KPI.
+- [`STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md`](STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md) — принятая основная стратегия SEO/маркетинга: Hybrid Search Commerce + Search-first Alice/AI.
 
-Ключевой принцип стратегии: обычный поиск является фундаментом, Alice AI — обязательной второй поверхностью discovery/выбора, а конечный критерий — пользовательская ценность и дополнительный коммерческий результат напрямую или через marketplace.
+Ключевой принцип: обычный поиск — фундамент, Alice AI — обязательная вторая поверхность discovery/выбора, конечный критерий — пользовательская ценность и дополнительный коммерческий результат напрямую или через marketplace.
 
 ## Управляющий roadmap
 
-- [`roadmap/README.md`](roadmap/README.md) — end-to-end roadmap от стратегии и исследований до разработки, QA, production launch и полноценного релиза.
+- [`roadmap/README.md`](roadmap/README.md) — end-to-end roadmap до production release.
 
-Правило исполнения roadmap:
+Правила:
 
-- roadmap имеет только два уровня: пункт → шаг;
-- каждый крупный пункт перед началом разбивается на конечный список конкретных выполняемых шагов в отдельном файле `roadmap/NN_*.md`;
+- только два уровня: **пункт → шаг**;
+- каждый новый пункт перед началом один раз разбивается на конечный список шагов;
 - шаги дальше не дробятся;
-- при детализации пункта фиксируется оценка числа рабочих ранов/итераций;
-- после выполнения каждого шага его статус обязательно обновляется в roadmap;
-- после выполнения всех обязательных шагов крупный пункт помечается выполненным в `roadmap/README.md`;
-- следующий пункт не считается начатым, пока не проверен критерий завершения предыдущего.
+- фиксируется оценка ранов;
+- после выполнения каждого шага обновляется его статус;
+- после всех шагов закрывается сам пункт;
+- обсуждение без артефакта/измерения/решения не считается выполнением.
 
-Пункт 01 уже закрыт и задокументирован в [`roadmap/01_STRATEGY_AND_DECISION_RULES.md`](roadmap/01_STRATEGY_AND_DECISION_RULES.md).
+Закрыты:
 
-Пункт 02 ведётся в [`roadmap/02_RESEARCH_DATA_ARCHITECTURE.md`](roadmap/02_RESEARCH_DATA_ARCHITECTURE.md).
+- [`roadmap/01_STRATEGY_AND_DECISION_RULES.md`](roadmap/01_STRATEGY_AND_DECISION_RULES.md);
+- [`roadmap/02_RESEARCH_DATA_ARCHITECTURE.md`](roadmap/02_RESEARCH_DATA_ARCHITECTURE.md).
 
-## Файлы
+Следующий пункт: **03 — полный Wordstat measurement**; пока не начат.
 
-- [`MARKETING_CHARTER.md`](MARKETING_CHARTER.md) — зачем создаётся сайт, для кого, что он должен и не должен делать.
-- [`STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md`](STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md) — текущая стратегия маркетинга, SEO, AI-поиска, структуры данных и измерений.
-- [`roadmap/README.md`](roadmap/README.md) — управляющий roadmap всего проекта до релиза.
-- [`RESEARCH_BASELINE_2026-08-01.md`](RESEARCH_BASELINE_2026-08-01.md) — исходная исследовательская база на 1 августа 2026 года.
-- [`RESEARCH_ROADMAP.md`](RESEARCH_ROADMAP.md) — какие исследования нужны до разработки и после запуска; используется как исследовательский supporting document, а не как полный delivery-roadmap.
-- [`DECISIONS.md`](DECISIONS.md) — журнал решений, гипотез и открытых вопросов.
-- [`SOURCES.md`](SOURCES.md) — реестр первичных и независимых источников.
+## Ключевые документы
 
-### Текущие исследования
+- [`MARKETING_CHARTER.md`](MARKETING_CHARTER.md) — зачем создаётся сайт и его границы.
+- [`STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md`](STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md) — стратегия маркетинга, SEO и AI-поиска.
+- [`roadmap/README.md`](roadmap/README.md) — управляющий delivery roadmap.
+- [`RESEARCH_BASELINE_2026-08-01.md`](RESEARCH_BASELINE_2026-08-01.md) — исследовательская база.
+- [`RESEARCH_ROADMAP.md`](RESEARCH_ROADMAP.md) — supporting roadmap исследовательских направлений.
+- [`DECISIONS.md`](DECISIONS.md) — журнал решений/гипотез/open questions.
+- [`SOURCES.md`](SOURCES.md) — реестр источников.
 
-- [`research/R1_SEMANTIC_MAP_PECHAT_VELESA_2026-08-01.md`](research/R1_SEMANTIC_MAP_PECHAT_VELESA_2026-08-01.md) — качественная карта интентов и семантических кластеров по «Печати Велеса» и автомобильным оберегам.
-- [`research/R1_WORDSTAT_MEASUREMENT_SPEC_2026-08-04.md`](research/R1_WORDSTAT_MEASUREMENT_SPEC_2026-08-04.md) — точная методика количественного съёма Wordstat, список Tier-1/Tier-2 запросов и формат данных; числа не подменяются публичным web search.
-- [`research/R2_COMPETITIVE_LANDSCAPE_PECHAT_VELESA_2026-08-01.md`](research/R2_COMPETITIVE_LANDSCAPE_PECHAT_VELESA_2026-08-01.md) — первичная конкурентная разведка marketplace/independent/content слоёв.
-- [`research/R2_PUBLIC_SEARCH_SNAPSHOT_2026-08-04.md`](research/R2_PUBLIC_SEARCH_SNAPSHOT_2026-08-04.md) — актуальный публичный search snapshot коммерческих, автомобильных и информационных конкурентов с жёстким ограничением: не выдавать его за Yandex Top-10.
-- [`research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`](research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md) — повторяющиеся критерии выбора из отзывов похожих товаров.
-- [`research/R3_MARKETING_PAGE_JOBS_2026-08-04.md`](research/R3_MARKETING_PAGE_JOBS_2026-08-04.md) — маркетинговые роли будущих страниц, их пользовательские задачи, доказательства, CTA и KPI; это не техническая архитектура сайта.
-- [`research/R5_LOGISTICS_DIRECT_CHECKOUT_2026-08-04.md`](research/R5_LOGISTICS_DIRECT_CHECKOUT_2026-08-04.md) — официально подтверждённые варианты Ozon Доставки/Ozon Pay для собственного магазина и текущий статус WB.
+## Текущие исследования
 
-### Рабочие данные
+- [`research/R1_SEMANTIC_MAP_PECHAT_VELESA_2026-08-01.md`](research/R1_SEMANTIC_MAP_PECHAT_VELESA_2026-08-01.md)
+- [`research/R1_WORDSTAT_MEASUREMENT_SPEC_2026-08-04.md`](research/R1_WORDSTAT_MEASUREMENT_SPEC_2026-08-04.md)
+- [`research/R2_COMPETITIVE_LANDSCAPE_PECHAT_VELESA_2026-08-01.md`](research/R2_COMPETITIVE_LANDSCAPE_PECHAT_VELESA_2026-08-01.md)
+- [`research/R2_PUBLIC_SEARCH_SNAPSHOT_2026-08-04.md`](research/R2_PUBLIC_SEARCH_SNAPSHOT_2026-08-04.md)
+- [`research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`](research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md)
+- [`research/R3_MARKETING_PAGE_JOBS_2026-08-04.md`](research/R3_MARKETING_PAGE_JOBS_2026-08-04.md)
+- [`research/R5_LOGISTICS_DIRECT_CHECKOUT_2026-08-04.md`](research/R5_LOGISTICS_DIRECT_CHECKOUT_2026-08-04.md)
 
-- [`data/DATA_ARCHITECTURE.md`](data/DATA_ARCHITECTURE.md) — канонические слои `registry → raw → normalized → ledger → derived`, правила каталогов, naming, истории измерений и источника истины.
-- [`data/wordstat_seed_queries.csv`](data/wordstat_seed_queries.csv) — готовый список seed-запросов и пустые поля для фактических Wordstat-значений; по смыслу является registry/input queue.
-- [`data/yandex_serp_alice_capture_template.csv`](data/yandex_serp_alice_capture_template.csv) — текущий шаблон прямого съёма Yandex SERP и источников Алисы AI; окончательная логическая схема уточняется в roadmap 02.3.
-- [`data/query_evidence_ledger_template.csv`](data/query_evidence_ledger_template.csv) — единый реестр запросов/тем с provenance: Wordstat, SERP, Alice input/fan-out/source, Webmaster, customer/marketplace evidence, Search/AI/Commerce metrics и H/A/C/O оценки.
+## Каноническая архитектура данных
+
+Основной pipeline:
+
+`registry/input → raw evidence → normalized observations → Query Evidence Ledger → derived analysis / decisions`
+
+Документы:
+
+- [`data/DATA_ARCHITECTURE.md`](data/DATA_ARCHITECTURE.md) — слои, каталоги, naming и история измерений;
+- [`data/DATA_SCHEMA_CONTRACT.md`](data/DATA_SCHEMA_CONTRACT.md) — schema 1.1, IDs, provenance, `observed_at_precision`, null/status semantics;
+- [`data/DATA_WORKFLOW_AND_QUALITY.md`](data/DATA_WORKFLOW_AND_QUALITY.md) — workflow и quality gates;
+- [`data/query_evidence_ledger_template.csv`](data/query_evidence_ledger_template.csv) — шаблон Ledger;
+- [`data/ledger/query_evidence_ledger.csv`](data/ledger/query_evidence_ledger.csv) — текущий канонический Ledger;
+- [`data/derived/reports/2026-08-04_wordstat_data_architecture_acceptance.md`](data/derived/reports/2026-08-04_wordstat_data_architecture_acceptance.md) — acceptance test на live Wordstat.
+
+Существующие рабочие/legacy данные:
+
+- `data/wordstat_seed_queries.csv` — registry/input queue по смыслу;
+- `data/yandex_serp_alice_capture_template.csv` — legacy capture template, не каноническая объединённая схема будущего массового SERP/Alice сбора;
+- `data/wordstat/*.json` — historical raw Wordstat evidence.
 
 ## Правила работы
 
-1. **Факт, гипотеза и решение не смешиваются.**
-   - Факт должен иметь источник.
-   - Гипотеза должна быть помечена как гипотеза и иметь способ проверки.
-   - Решение должно иметь дату и основание.
-
-2. **Приоритет источников:**
-   1. официальная документация поисковиков/платформ;
-   2. независимые исследования и измерения;
-   3. отраслевые отчёты;
-   4. наблюдения пользователей и кейсы;
-   5. собственная аналитика и эксперименты.
-
-3. **Динамические факты имеют дату проверки.** Правила Яндекса, Алисы AI, товарных фидов, маркетплейсов и доставки могут меняться.
-
-4. **Никаких “SEO-магических правил” без проверки.** Если нет подтверждения, это не превращается в требование к разработке.
-
-5. **Сайт строится после маркетинговой модели, а не наоборот.** Архитектура, контент и технический стек должны вытекать из задач привлечения, доверия, AI-видимости и продаж.
-
-6. **Главная коммерческая метрика — не трафик сам по себе.** Нас интересуют дополнительные продажи, маржа, стоимость привлечения покупателя, переходы на маркетплейсы, прямые заказы и рост брендового спроса.
-
-7. **Не смешивать исследования с реализацией.** Даже когда маркетинговое требование уже очевидно, код не помещается в `marketing/`.
-
-8. **Не заменять закрытый/авторизованный источник прокси-данными.** Если Wordstat или прямой Yandex/Alice snapshot недоступны без авторизации, это фиксируется как блокер; web search используется только для тех выводов, которые он реально подтверждает.
-
-9. **Не смешивать происхождение запросов и статистики.** Wordstat, обычный SERP, Alice input/fan-out/source, Webmaster Search, Webmaster Alice, customer evidence, Metrika/commerce данные хранятся раздельно и связываются через Query Evidence Ledger.
-
-10. **Стратегическая последовательность:** Wordstat → прямой Yandex SERP → Alice AI → customer/marketplace evidence → H/A/C/O оценка → Page Job → только затем решение о странице/блоке/FAQ/отказе от создания.
-
-11. **Исполнение проекта ведётся через `roadmap/`.** Обсуждение само по себе не закрывает шаг. После фактического выполнения шага его статус должен быть изменён в соответствующем roadmap-файле; после закрытия всех обязательных шагов обновляется статус крупного пункта в `roadmap/README.md`.
-
-12. **Исследовательские данные проходят канонический pipeline.** Registry/input не считается фактом; raw evidence хранится неизменяемо; normalized связывается с raw; Ledger хранит сводное текущее состояние; derived содержит воспроизводимые аналитические выводы.
+1. **Факт, гипотеза и решение не смешиваются.** Факт имеет evidence; гипотеза маркируется; решение имеет основание.
+2. **Приоритет источников:** официальная документация → независимые измерения → отраслевые отчёты → пользовательские наблюдения → собственная аналитика.
+3. **Динамические факты имеют дату проверки.**
+4. **Никаких SEO/GEO «магических правил» без evidence.**
+5. **Сайт строится после маркетинговой модели.**
+6. **Главная коммерческая метрика — не трафик сам по себе.**
+7. **Не смешивать исследования с кодом сайта.**
+8. **Не подменять закрытый/авторизованный источник proxy-данными.**
+9. **Не смешивать provenance.** Wordstat, SERP, Alice, Webmaster, customer, Metrika и commerce — разные измерения.
+10. **Стратегическая последовательность:** Wordstat → direct Yandex SERP → Alice AI → customer/marketplace evidence → H/A/C/O → Page Job → решение.
+11. **Исполнение проекта ведётся через `roadmap/`.**
+12. **Исследовательские данные проходят канонический pipeline.** Registry не факт; raw неизменяем; normalized связан с raw; Ledger — сводное состояние; derived — воспроизводимые выводы.
+13. **Не придумывать отсутствующее время измерения.** Schema 1.1 хранит `observed_at_precision`; historical date-only evidence остаётся date-only.
+14. **Empty не равен zero.** Для измеряемых полей используются explicit status values.
 
 ## Текущий стоп-критерий
 
-Пока не завершены исследования первого этапа, в репозитории не следует фиксировать окончательный дизайн или техническую архитектуру сайта как неизменяемую. Сейчас формируется маркетинговый каркас будущего продукта.
+Пока не завершены исследования первого этапа, окончательный дизайн и техническая архитектура сайта не фиксируются как неизменяемые. Следующий рабочий этап — roadmap 03, полный Wordstat measurement по принятой AI-Native Hybrid Search Commerce стратегии.
