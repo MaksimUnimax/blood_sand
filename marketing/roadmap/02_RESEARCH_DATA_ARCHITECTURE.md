@@ -3,7 +3,7 @@
 Статус: **[~] В РАБОТЕ**  
 Дата начала: 2026-08-04  
 Оценка: **5 ранов**  
-Фактически выполнено: **2/5 ранов**
+Фактически выполнено: **3/5 ранов**
 
 ## Цель пункта
 
@@ -31,18 +31,9 @@
 **Оценка:** 1 ран.  
 **Статус:** выполнено 2026-08-04.
 
-Проверены:
+Проверены существующие strategy/data/Wordstat/SERP-Alice файлы. Подтверждено, что основа пригодна, но требовались формальные правила слоёв данных, идентификаторов, повторных измерений, null/status semantics, связей с Ledger и quality checks.
 
-- `marketing/STRATEGY_AI_NATIVE_HYBRID_SEARCH_COMMERCE.md`;
-- `marketing/data/query_evidence_ledger_template.csv`;
-- `marketing/data/wordstat_seed_queries.csv`;
-- `marketing/data/yandex_serp_alice_capture_template.csv`;
-- `marketing/data/wordstat/2026-08-04_gettop_pechat_velesa_ru_all.json`;
-- `marketing/research/R1_WORDSTAT_MEASUREMENT_SPEC_2026-08-04.md`.
-
-Что подтверждено: существующая основа пригодна, но требовались формальные правила слоёв данных, идентификаторов, повторных измерений, null/status semantics, связей с Ledger и quality checks.
-
-**Артефакт шага:** аудит зафиксирован в предыдущей версии этого файла и является основанием для 02.2–02.5.
+**Артефакт шага:** аудит зафиксирован в истории этого файла и является основанием для 02.2–02.5.
 
 ## [x] 02.2 — Зафиксировать канонические слои данных, каталоги и правила имён
 
@@ -57,44 +48,59 @@
 
 `registry/input → raw evidence → normalized observations → Query Evidence Ledger → derived analysis / decisions`
 
-Зафиксированы роли слоёв:
-
-- `registry/` — seed-запросы, очереди и управляемые списки; не источник фактической частотности;
-- `raw/` — первичные неизменяемые snapshots/API responses/captures;
-- `normalized/` — структурированные наблюдения со ссылкой на raw;
-- `ledger/` — текущее сводное состояние по query/topic, H/A/C/O и решениям;
-- `derived/` — воспроизводимые аналитические отчёты/opportunity maps/scorecards.
-
-Зафиксирована целевая структура каталогов `marketing/data/registry`, `raw`, `normalized`, `ledger`, `derived` с source-specific каталогами для Wordstat, Yandex SERP, Alice, customer и marketplace evidence.
-
-Зафиксирован naming pattern для raw measurements:
-
-`YYYYMMDDTHHMMSSZ__SOURCE__OPERATION__SUBJECT__REGION__DEVICE.ext`
-
-Правила истории:
-
-- timestamps измерений — UTC;
-- повторное измерение всегда создаёт новое наблюдение;
-- raw snapshots не перезаписываются новыми значениями;
-- Ledger может обновлять текущее сводное состояние, но история сохраняется в raw/normalized + Git;
-- derived может пересобираться;
-- API keys/tokens и secrets в data layer запрещены.
-
-Существующие файлы пока не перемещались, чтобы не ломать историю и ссылки. Их текущая роль формально определена, а безопасная миграция/проверка выполняется в 02.5.
+Зафиксированы роли `registry`, `raw`, `normalized`, `ledger`, `derived`, целевая структура каталогов, UTC timestamps, append-only raw history, naming pattern и запрет secrets в data layer.
 
 **Артефакт шага:** `marketing/data/DATA_ARCHITECTURE.md`.
 
-## [ ] 02.3 — Зафиксировать канонические схемы, идентификаторы и provenance для всех источников
+## [x] 02.3 — Зафиксировать канонические схемы, идентификаторы и provenance для всех источников
 
-**Оценка:** 1 ран.
+**Оценка:** 1 ран.  
+**Статус:** выполнено 2026-08-04.
 
-Ожидаемый результат: правила для `query_id`, observation/measurement IDs, Wordstat, SERP, Alice, customer/marketplace evidence, observed vs inferred, null/status semantics и ссылок на raw evidence.
+Создан канонический контракт:
+
+- `marketing/data/DATA_SCHEMA_CONTRACT.md`
+
+Зафиксированы сущности `Query`, `Measurement`, `Observation`, `Ledger record` и их роли.
+
+Зафиксированы ID:
+
+- `query_id = q_<12hex>` из canonical query string;
+- `measurement_id = m_<source>_<UTC timestamp>_<8hex>`;
+- `observation_id` — уникальная normalized-запись внутри measurement.
+
+Зафиксированы:
+
+- общая envelope-схема normalized observations;
+- canonical provenance/source types;
+- `OBSERVED / INFERRED / DERIVED`;
+- status semantics `MEASURED / NOT_MEASURED / NOT_AVAILABLE / NOT_APPLICABLE / INVALID`;
+- правило, что измеренный `0` не равен отсутствию данных;
+- отдельные схемы Wordstat, Yandex SERP, Alice, customer evidence, marketplace evidence;
+- будущие схемы Webmaster Search, Webmaster Alice, Metrika Human/Robot и Commerce;
+- связи `normalized → measurement → raw` и `ledger → measurements/observations`;
+- запрет смешивать Alice observed/inferred;
+- правило, что legacy `yandex_serp_alice_capture_template.csv` не используется как каноническая объединённая модель для будущего массового сбора.
+
+Обновлён:
+
+- `marketing/data/query_evidence_ledger_template.csv`
+
+В Ledger добавлены технические поля трассировки:
+
+- `schema_version`;
+- `latest_wordstat_measurement_id`;
+- `latest_serp_measurement_id`;
+- `latest_alice_measurement_id`;
+- `evidence_observation_ids`.
+
+**Артефакты шага:** `marketing/data/DATA_SCHEMA_CONTRACT.md` и обновлённый `query_evidence_ledger_template.csv`.
 
 ## [ ] 02.4 — Описать поток обновления Query Evidence Ledger и проверки качества
 
 **Оценка:** 1 ран.
 
-Ожидаемый результат: понятный процесс `получили наблюдение → сохранили raw → нормализовали → обновили Ledger → пересчитали/пересмотрели H/A/C/O → приняли или не приняли решение`, без потери истории и без смешивания источников.
+Ожидаемый результат: понятный процесс `получили наблюдение → сохранили raw → нормализовали → обновили Ledger → пересмотрели H/A/C/O → приняли или не приняли решение`, без потери истории и без смешивания источников, плюс quality gates.
 
 ## [ ] 02.5 — Проверить архитектуру на реальном Wordstat-примере и готовность к пунктам 03–05
 
@@ -108,8 +114,8 @@
 
 - [x] 02.1 — аудит существующих данных;
 - [x] 02.2 — слои/каталоги/имена;
-- [ ] 02.3 — схемы/ID/provenance;
+- [x] 02.3 — схемы/ID/provenance;
 - [ ] 02.4 — workflow/quality checks;
 - [ ] 02.5 — реальная проверка и закрытие.
 
-Следующий шаг: **02.3**.
+Следующий шаг: **02.4**.
