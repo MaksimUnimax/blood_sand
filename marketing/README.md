@@ -60,6 +60,7 @@
 - [`research/R2_PUBLIC_SEARCH_SNAPSHOT_2026-08-04.md`](research/R2_PUBLIC_SEARCH_SNAPSHOT_2026-08-04.md) — актуальный публичный search snapshot коммерческих, автомобильных и информационных конкурентов с жёстким ограничением: не выдавать его за Yandex Top-10.
 - [`research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`](research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md) — повторяющиеся критерии выбора из отзывов похожих товаров.
 - [`research/R3_MARKETING_PAGE_JOBS_2026-08-04.md`](research/R3_MARKETING_PAGE_JOBS_2026-08-04.md) — маркетинговые роли будущих страниц, их пользовательские задачи, доказательства, CTA и KPI; это не техническая архитектура сайта.
+- [`research/R5_LOGISTICS_DIRECT_CHECKOUT_2026-08-04.md`](research/R5_LOGISTICS_DIRECT_CHECKOUT_2026-08-04.md) — официально подтверждённые варианты Ozon Доставки/Ozon Pay для собственного магазина и текущий статус WB.
 
 ### Рабочие данные
 
