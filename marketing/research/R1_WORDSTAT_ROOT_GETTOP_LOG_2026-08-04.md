@@ -7,8 +7,8 @@
 
 ## Прогресс root set
 
-- root measurements с валидным GetTop: **5/14**;
-- из них выполнено непосредственно в roadmap 03: **4**;
+- root measurements с валидным GetTop: **6/14**;
+- из них выполнено непосредственно в roadmap 03: **5**;
 - historical baseline: **1** (`печать велеса`).
 
 ## 1. `печать велеса`
@@ -161,8 +161,36 @@ Measurement:
 5. Все 8 associations для текущего SKU/контентного решения считаются шумовыми; даже тематически близкий `символ волка` остаётся `ASSOCIATION`, а не child demand.
 6. Сравнение медвежьей и волчьей веток пока является только Wordstat evidence; page/variant решение переносится на operator + SERP/Alice этапы.
 
+## 6. `печать велеса в машину`
+
+Measurement:
+
+- дата capture: `2026-08-05` (точность DATE; bridge не передал точное время);
+- версия bridge: `1.1.0`;
+- `query_id = q_4ab5a09494a0`;
+- `measurement_id = m_wordstat_20260805_5ea42d6a`;
+- Россия `225`;
+- `DEVICE_ALL`;
+- `numPhrases = 100`;
+- HTTP 200;
+- `totalCount = 5`;
+- поля `results` и `associations` в ответе отсутствовали.
+
+Артефакты:
+
+- raw: `marketing/data/raw/wordstat/20260805__wordstat__gettop__pechat-velesa-v-mashinu__225__all.json`;
+- normalized: `marketing/data/normalized/wordstat/20260805__wordstat__gettop__pechat-velesa-v-mashinu__225__all.csv`;
+- Ledger: `marketing/data/ledger/query_evidence_ledger.csv`.
+
+### Что это позволяет утверждать сейчас
+
+1. Прямая связка `печать велеса в машину` имеет очень малый broad human-demand signal: `totalCount = 5`.
+2. Отсутствие полей `results` и `associations` не трактуется как доказанный ноль child queries/associations; normalized dataset фиксирует только summary observation.
+3. Этот результат усиливает предыдущий сигнал, что автомобильный use case почти не проявлялся внутри общих roots, но не закрывает automotive cluster: следующие более широкие roots `оберег в машину`, `славянский оберег в машину` и `подвеска на зеркало в машину` обязательны.
+4. Решение о коммерческой странице/позиционировании не принимается по этому значению в одиночку.
+
 ## Следующий root
 
-`печать велеса в машину` — GetTop / Россия / DEVICE_ALL.
+`оберег в машину` — GetTop / Россия / DEVICE_ALL.
 
-Причина: после product/variant roots начинается автомобильный слой. Historical `печать велеса` не показал заметного automotive хвоста, поэтому отдельный root нужен для прямой проверки спроса на связку Печати Велеса с автомобильным use case.
+Причина: это более широкий automotive root из execution plan; он проверяет сам автомобильный класс товара без обязательного упоминания Печати Велеса и способен показать реальный человеческий спрос на use case.
