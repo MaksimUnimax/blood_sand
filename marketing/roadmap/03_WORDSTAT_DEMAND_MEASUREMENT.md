@@ -3,7 +3,7 @@
 Статус: **[~] В РАБОТЕ**  
 Дата начала: 2026-08-04  
 Оценка: **примерно 37–54 рана**  
-Фактически выполнено: **03.1 закрыт; в 03.2 выполнены 3 новых API measurement, валидных root GetTop вместе с historical baseline — 4/14**
+Фактически выполнено: **03.1 закрыт; в 03.2 выполнены 4 новых API measurement, валидных root GetTop вместе с historical baseline — 5/14**
 
 ## Цель пункта
 
@@ -25,20 +25,21 @@
 ## [~] 03.2 — Снять GetTop по root-кластерам и сформировать фактическую карту формулировок
 
 **Оценка:** примерно 13–17 API-ранов + 1 аналитический проход.  
-**Текущий прогресс:** **4/14 root GetTop**, из них **3** новых API measurement выполнены внутри roadmap 03.
+**Текущий прогресс:** **5/14 root GetTop**, из них **4** новых API measurement выполнены внутри roadmap 03.
 
 Измерено:
 
 - `печать велеса` — `totalCount=3350` (historical baseline);
 - `оберег печать велеса` — `198`;
 - `подвеска печать велеса` — `80`;
-- `печать велеса медвежья лапа` — `343`.
+- `печать велеса медвежья лапа` — `343`;
+- `печать велеса волчья лапа` — `129`.
 
 Для каждого нового measurement созданы raw, normalized и Ledger evidence. Running log: `marketing/research/R1_WORDSTAT_ROOT_GETTOP_LOG_2026-08-04.md`.
 
-Последний measurement показал: у variant-root `печать велеса медвежья лапа` есть сильная meaning-ветка (`значение=147`), отдельный purchase intent (`купить=23`, `серебро купить=17`) и отдельный tattoo intent (`28`). Эти counts пересекаются и не суммируются. Associations признаны нерелевантным шумом для текущего решения.
+Последний measurement показал: у `печать велеса волчья лапа` broad `129`; meaning-ветка `58`, мужская meaning-формулировка `30`, женская `12`, tattoo `4`. В returned RESULT нет явного `купить`; это не интерпретируется как отсутствие коммерческого спроса. В прямом сравнении bear-root (`343`) заметно крупнее wolf-root (`129`), но окончательное variant/page решение не принимается до operator + SERP/Alice evidence.
 
-Следующий root: **`печать велеса волчья лапа` / GetTop / Россия / все устройства**.
+Следующий root: **`печать велеса в машину` / GetTop / Россия / все устройства**.
 
 ## [ ] 03.3 — Измерить operator variants для high-value запросов
 
@@ -68,11 +69,11 @@
 # Текущее состояние
 
 - [x] 03.1 — scope/execution plan;
-- [~] 03.2 — GetTop root discovery: **4/14**;
+- [~] 03.2 — GetTop root discovery: **5/14**;
 - [ ] 03.3 — operator precision;
 - [ ] 03.4 — dynamics/seasonality;
 - [ ] 03.5 — device/region samples;
 - [ ] 03.6 — Tier 2/gap closure;
 - [ ] 03.7 — normalized dataset/Ledger/final R1.
 
-Текущий следующий measurement: **`печать велеса волчья лапа` / GetTop / Россия / DEVICE_ALL**.
+Текущий следующий measurement: **`печать велеса в машину` / GetTop / Россия / DEVICE_ALL**.
