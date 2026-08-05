@@ -1,0 +1,37 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.0",
+  "request_id": "f02d7482-be9a-4d93-a8d8-cbc37be05931",
+  "command": {
+    "method": "getTop",
+    "phrase": "славянский оберег в машину",
+    "numPhrases": 100,
+    "regions": ["225"],
+    "devices": ["DEVICE_ALL"]
+  },
+  "http_status": 200,
+  "elapsed_ms": 496,
+  "result": {
+    "results": [
+      {"phrase": "славянский оберег в машину", "count": "72"},
+      {"phrase": "славянский оберег в машину чур", "count": "7"},
+      {"phrase": "славянский оберег в машину для семьи", "count": "5"}
+    ],
+    "associations": [
+      {"phrase": "древние славяне", "count": "31652"},
+      {"phrase": "амулет анха", "count": "1464"},
+      {"phrase": "главный бог славян", "count": "495"},
+      {"phrase": "назар амулет", "count": "618"},
+      {"phrase": "чери амулет 2007", "count": "1557"},
+      {"phrase": "мифология славян", "count": "2244"},
+      {"phrase": "язычество древних славян", "count": "824"},
+      {"phrase": "символы славян", "count": "5876"},
+      {"phrase": "чертоги славян", "count": "1486"},
+      {"phrase": "талисман щит с гербом дракона", "count": "330"},
+      {"phrase": "тату викингов и славян", "count": "101"},
+      {"phrase": "старославянские ругательства", "count": "120"},
+      {"phrase": "коляда бог славян", "count": "78"}
+    ],
+    "totalCount": "72"
+  }
+}
