@@ -3,7 +3,7 @@
 Статус: **[~] В РАБОТЕ**  
 Дата начала: 2026-08-04  
 Оценка: **примерно 37–54 рана**  
-Фактически выполнено: **03.1 закрыт; в 03.2 выполнен 1 новый API measurement, валидных root GetTop вместе с historical baseline — 2/14**
+Фактически выполнено: **03.1 закрыт; в 03.2 выполнены 2 новых API measurement, валидных root GetTop вместе с historical baseline — 3/14**
 
 ## Почему оценка существенно выше первоначальных 6–12 ранов
 
@@ -47,20 +47,21 @@
 ## [~] 03.2 — Снять GetTop по root-кластерам и сформировать фактическую карту формулировок
 
 **Оценка:** примерно 13–17 ранов API + 1 аналитический проход.  
-**Текущий прогресс:** валидных root GetTop **2/14**, из них **1** новый API measurement выполнен уже внутри roadmap 03.
+**Текущий прогресс:** валидных root GetTop **3/14**, из них **2** новых API measurement выполнены уже внутри roadmap 03.
 
 Уже измерено:
 
 - historical baseline `печать велеса` — `totalCount=3350`;
-- `оберег печать велеса` — `totalCount=198`, 13 RESULT, 15 ASSOCIATION.
+- `оберег печать велеса` — `totalCount=198`, 13 RESULT, 15 ASSOCIATION;
+- `подвеска печать велеса` — `totalCount=80`, 6 RESULT, 11 ASSOCIATION.
 
-Для нового measurement созданы raw, normalized и Ledger evidence. Текущий running log:
+Для каждого нового measurement созданы raw, normalized и Ledger evidence. Текущий running log:
 
 - `marketing/research/R1_WORDSTAT_ROOT_GETTOP_LOG_2026-08-04.md`
 
-Ключевой текущий вывод: root `оберег печать велеса` подтверждает отдельный human-demand кластер; внутри него заметны meaning/slavic ветки, явный `подвеска` result мал, automotive use case не проявился. Associations в основном шумовые и не повышаются до Tier 2 автоматически.
+Текущий вывод по `подвеска печать велеса`: отдельный product-form demand подтверждён; observed child `купить подвеску печать велеса = 8` подтверждает прямую purchase-oriented формулировку; `серебряная подвеска печать велеса = 20` показывает материальную ветку спроса; automotive use case в этом root не проявился. Associations признаны шумовыми для текущей задачи и не повышаются до Tier 2 автоматически.
 
-Следующий root measurement: **`подвеска печать велеса` / GetTop / Россия / все устройства**.
+Следующий root measurement: **`печать велеса медвежья лапа` / GetTop / Россия / все устройства**.
 
 Ожидаемый результат 03.2: raw + normalized GetTop observations, фактические phrases/associations, обнаруженные Tier 2 кандидаты, broad cluster signals.
 
@@ -114,11 +115,11 @@ GetDynamics используется для лидеров товарного, �
 # Текущее состояние
 
 - [x] 03.1 — scope/execution plan;
-- [~] 03.2 — GetTop root-cluster discovery: **2/14 roots имеют валидный GetTop**;
+- [~] 03.2 — GetTop root-cluster discovery: **3/14 roots имеют валидный GetTop**;
 - [ ] 03.3 — operator precision;
 - [ ] 03.4 — dynamics/seasonality;
 - [ ] 03.5 — device/region samples;
 - [ ] 03.6 — Tier 2/gap closure;
 - [ ] 03.7 — normalized dataset/Ledger/final R1.
 
-Текущий следующий measurement в 03.2: **`подвеска печать велеса` / GetTop / Россия / все устройства**.
+Текущий следующий measurement в 03.2: **`печать велеса медвежья лапа` / GetTop / Россия / все устройства**.
