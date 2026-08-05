@@ -7,8 +7,8 @@
 
 ## Прогресс root set
 
-- root measurements с валидным GetTop: **4/14**;
-- из них выполнено непосредственно в roadmap 03: **3**;
+- root measurements с валидным GetTop: **5/14**;
+- из них выполнено непосредственно в roadmap 03: **4**;
 - historical baseline: **1** (`печать велеса`).
 
 ## 1. `печать велеса`
@@ -122,8 +122,47 @@ Measurement:
 5. Формулировка `оберег ... медвежья лапа = 16` подтверждает пересечение product-variant и obereg terminology.
 6. Все 7 associations нерелевантны текущему SKU/контентному решению и не получают Tier 2 measurement автоматически.
 
+## 5. `печать велеса волчья лапа`
+
+Measurement:
+
+- дата capture: `2026-08-05` (точность DATE; bridge не передал точное время);
+- версия bridge: `1.1.0`;
+- `query_id = q_31806ca53d61`;
+- `measurement_id = m_wordstat_20260805_8799de8a`;
+- Россия `225`;
+- `DEVICE_ALL`;
+- `numPhrases = 100`;
+- HTTP 200;
+- `totalCount = 129`;
+- 5 `RESULT`;
+- 8 `ASSOCIATION`.
+
+Артефакты:
+
+- raw: `marketing/data/raw/wordstat/20260805__wordstat__gettop__pechat-velesa-volchya-lapa__225__all.json`;
+- normalized: `marketing/data/normalized/wordstat/20260805__wordstat__gettop__pechat-velesa-volchya-lapa__225__all.csv`;
+- Ledger: `marketing/data/ledger/query_evidence_ledger.csv`.
+
+Ключевые `RESULT`:
+
+- `печать велеса волчья лапа` — 129;
+- `печать велеса волчья лапа значение` — 58;
+- `печать велеса волчья лапа значение для мужчин` — 30;
+- `печать велеса волчья лапа значение для женщин` — 12;
+- `печать велеса волчья лапа тату` — 4.
+
+### Что это позволяет утверждать сейчас
+
+1. `волчья лапа` — самостоятельный variant-root с broad `totalCount = 129`, заметно меньше медвежьей ветки (`343`) в том же типе измерения.
+2. Meaning-intent доминирует в returned results: `значение=58`, включая отдельные мужскую (`30`) и женскую (`12`) формулировки.
+3. В returned `RESULT` этого root нет явной формулировки `купить`; это не доказывает отсутствия коммерческого спроса, а только отсутствие purchase-oriented result в данном returned set.
+4. Tattoo-ветка есть, но существенно слабее медвежьей (`4` против `28` в соответствующих root GetTop).
+5. Все 8 associations для текущего SKU/контентного решения считаются шумовыми; даже тематически близкий `символ волка` остаётся `ASSOCIATION`, а не child demand.
+6. Сравнение медвежьей и волчьей веток пока является только Wordstat evidence; page/variant решение переносится на operator + SERP/Alice этапы.
+
 ## Следующий root
 
-`печать велеса волчья лапа` — GetTop / Россия / DEVICE_ALL.
+`печать велеса в машину` — GetTop / Россия / DEVICE_ALL.
 
-Причина: это второй основной variant-root, уже наблюдавшийся в historical `печать велеса` с count `129`; отдельный GetTop нужен для честного сравнения структуры human demand медвежьей и волчьей веток до operator/SERP/Alice этапов.
+Причина: после product/variant roots начинается автомобильный слой. Historical `печать велеса` не показал заметного automotive хвоста, поэтому отдельный root нужен для прямой проверки спроса на связку Печати Велеса с автомобильным use case.
