@@ -3,7 +3,7 @@
 Статус: **[~] В РАБОТЕ**  
 Дата начала: 2026-08-04  
 Оценка: **примерно 37–54 рана**  
-Фактически выполнено: **03.1 закрыт; в 03.2 выполнены 4 новых API measurement, валидных root GetTop вместе с historical baseline — 5/14**
+Фактически выполнено: **03.1 закрыт; в 03.2 выполнены 5 новых API measurement, валидных root GetTop вместе с historical baseline — 6/14**
 
 ## Цель пункта
 
@@ -25,7 +25,7 @@
 ## [~] 03.2 — Снять GetTop по root-кластерам и сформировать фактическую карту формулировок
 
 **Оценка:** примерно 13–17 API-ранов + 1 аналитический проход.  
-**Текущий прогресс:** **5/14 root GetTop**, из них **4** новых API measurement выполнены внутри roadmap 03.
+**Текущий прогресс:** **6/14 root GetTop**, из них **5** новых API measurement выполнены внутри roadmap 03.
 
 Измерено:
 
@@ -33,13 +33,14 @@
 - `оберег печать велеса` — `198`;
 - `подвеска печать велеса` — `80`;
 - `печать велеса медвежья лапа` — `343`;
-- `печать велеса волчья лапа` — `129`.
+- `печать велеса волчья лапа` — `129`;
+- `печать велеса в машину` — `5`.
 
 Для каждого нового measurement созданы raw, normalized и Ledger evidence. Running log: `marketing/research/R1_WORDSTAT_ROOT_GETTOP_LOG_2026-08-04.md`.
 
-Последний measurement показал: у `печать велеса волчья лапа` broad `129`; meaning-ветка `58`, мужская meaning-формулировка `30`, женская `12`, tattoo `4`. В returned RESULT нет явного `купить`; это не интерпретируется как отсутствие коммерческого спроса. В прямом сравнении bear-root (`343`) заметно крупнее wolf-root (`129`), но окончательное variant/page решение не принимается до operator + SERP/Alice evidence.
+Последний measurement показал: прямой root `печать велеса в машину` имеет очень малый broad signal `5`; HTTP 200 response содержал только `totalCount`, без полей `results`/`associations`, поэтому child/association observations не выдумываются. Automotive cluster не закрыт: более широкие roots всё ещё обязательны.
 
-Следующий root: **`печать велеса в машину` / GetTop / Россия / все устройства**.
+Следующий root: **`оберег в машину` / GetTop / Россия / все устройства**.
 
 ## [ ] 03.3 — Измерить operator variants для high-value запросов
 
@@ -69,11 +70,11 @@
 # Текущее состояние
 
 - [x] 03.1 — scope/execution plan;
-- [~] 03.2 — GetTop root discovery: **5/14**;
+- [~] 03.2 — GetTop root discovery: **6/14**;
 - [ ] 03.3 — operator precision;
 - [ ] 03.4 — dynamics/seasonality;
 - [ ] 03.5 — device/region samples;
 - [ ] 03.6 — Tier 2/gap closure;
 - [ ] 03.7 — normalized dataset/Ledger/final R1.
 
-Текущий следующий measurement: **`печать велеса в машину` / GetTop / Россия / DEVICE_ALL**.
+Текущий следующий measurement: **`оберег в машину` / GetTop / Россия / DEVICE_ALL**.
