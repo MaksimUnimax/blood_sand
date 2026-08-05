@@ -1,0 +1,21 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.0",
+  "request_id": "337f7bdd-6b71-4247-90fc-21e146b469d9",
+  "command": {
+    "method": "getTop",
+    "phrase": "печать велеса в машину",
+    "numPhrases": 100,
+    "regions": [
+      "225"
+    ],
+    "devices": [
+      "DEVICE_ALL"
+    ]
+  },
+  "http_status": 200,
+  "elapsed_ms": 478,
+  "result": {
+    "totalCount": "5"
+  }
+}
