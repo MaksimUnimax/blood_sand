@@ -7,8 +7,8 @@
 
 ## Прогресс root set
 
-- root measurements с валидным GetTop: **8/14**;
-- из них выполнено непосредственно в roadmap 03: **7**;
+- root measurements с валидным GetTop: **9/14**;
+- из них выполнено непосредственно в roadmap 03: **8**;
 - historical baseline: **1** (`печать велеса`).
 
 ## 1. `печать велеса`
@@ -148,12 +148,56 @@ Measurement:
 3. Associations в основном уходят в широкую славянскую/амулетную тематику и не повышаются до спроса на наш SKU автоматически.
 4. Этот root подтверждает нишу для славянского позиционирования, но page/offer решение остаётся pending operator + SERP/Alice evidence.
 
-## Autorun live acceptance — текущий факт
+## 9. `подвеска на зеркало в машину`
 
-Три последовательных API measurement прошли без ручного Copy: `печать велеса в машину` → `оберег в машину` → `славянский оберег в машину`. Во всех трёх случаях расширение автоматически захватило новый `WORDSTAT_API_V1`, выполнило один Yandex request, вернуло `WORDSTAT_RESULT_V1` с настроенным префиксом и отправило его в ChatGPT. Это эксплуатационный факт текущей сессии, а не изменение документации расширения.
+Measurement:
+
+- дата capture: `2026-08-05` (точность DATE; payload не содержит точного времени);
+- bridge package под тестом: `1.1.5`; raw envelope сообщает `version=1.1.1` из-за подтверждённого stale protocol-version metadata defect;
+- режим: controlled manual live-test с явной привязкой диалога и настроенным report prefix;
+- `query_id = q_cc67e8b8507f`;
+- `measurement_id = m_wordstat_20260805_fce8e6bb`;
+- `request_id = 867c50e6-a8a3-4940-bc66-0d4e3b00d873`;
+- Россия `225`, `DEVICE_ALL`, `numPhrases=100`;
+- HTTP 200, `elapsed_ms=520`;
+- `totalCount = 973`;
+- 22 `RESULT`;
+- 13 `ASSOCIATION`.
+
+Артефакты:
+
+- raw: `marketing/data/raw/wordstat/20260805__wordstat__gettop__podveska-na-zerkalo-v-mashinu__225__all.json`;
+- normalized: `marketing/data/normalized/wordstat/20260805__wordstat__gettop__podveska-na-zerkalo-v-mashinu__225__all.csv`;
+- Ledger: `marketing/data/ledger/query_evidence_ledger.csv`.
+
+Ключевые `RESULT`:
+
+- `подвеска на зеркало в машину` — 973;
+- `подвеска в машину на зеркало заднего` — 127;
+- `подвеска в машину на зеркало заднего вида` — 127;
+- `купить подвеску в машину на зеркало` — 65;
+- `подвеска на зеркало в машину своими руками` — 33;
+- `подвеска в машину на зеркало с гравировкой` — 15;
+- `подвеска на зеркало в машину из бусин` — 5;
+- `подвеска в машину на зеркало с кисточкой` — 5.
+
+### Что это позволяет утверждать сейчас
+
+1. Product-form/use-case root `подвеска на зеркало в машину` имеет крупный broad signal (`973`) и по масштабу близок к общему `оберег в машину` (`1388`).
+2. Внутри root есть явный purchase-intent: `купить подвеску в машину на зеркало = 65`.
+3. Есть отдельные observed формулировки про конструкцию/визуальную форму, непосредственно полезные для нашего SKU: `с гравировкой=15`, `из бусин=5`, `с кисточкой=5`.
+4. DIY-ветка (`своими руками=33`) существует и должна отделяться от коммерческого purchase-intent.
+5. Associations в этом measurement в основном являются нерелевантным автомобильным/лексическим шумом (`пневмоподвеска`, `стойка автомобиля`, `клиренс` и т. п.) и не повышаются до demand evidence для товара.
+6. Этот root усиливает основание рассматривать способ размещения на зеркале и product-form как самостоятельный human-demand слой, но решение о Page Job остаётся pending operator + SERP/Alice evidence.
+
+## Bridge live acceptance — текущие факты
+
+Три последовательных API measurement ранее прошли в controlled autorun live-test без ручного Copy: `печать велеса в машину` → `оберег в машину` → `славянский оберег в машину`. Во всех трёх случаях расширение автоматически захватило новый `WORDSTAT_API_V1`, выполнило один Yandex request, вернуло `WORDSTAT_RESULT_V1` с настроенным префиксом и отправило его в ChatGPT.
+
+Дополнительно controlled manual live-test на `подвеска на зеркало в машину` успешно доказал цепочку: явная работа в привязанном диалоге → manual trigger → один Yandex request → HTTP 200 → настроенный prefix + `WORDSTAT_RESULT_V1` в ChatGPT. При этом выявлен metadata defect: envelope сообщает `version=1.1.1`, хотя тестируется package `1.1.5`; defect находится в stale `shared/wordstat_protocol.js` VERSION constant и не меняет сохранённый Yandex payload.
 
 ## Следующий root
 
-`подвеска на зеркало в машину` — GetTop / Россия / DEVICE_ALL.
+`печать велеса значение` — GetTop / Россия / DEVICE_ALL.
 
-Причина: это последний оставшийся automotive root из исходного root-set перед переходом к meaning/comparison/choice roots; он напрямую проверяет форму товара и способ размещения, максимально близкие текущему SKU.
+Причина: automotive root-set исходного плана теперь закрыт; следующий слой 03.2 — meaning/comparison/choice. `печать велеса значение` уже наблюдался внутри broad `печать велеса` с count 617 и является первым meaning-root исходного root-set.
