@@ -7,190 +7,153 @@
 
 ## Прогресс root set
 
-- root measurements с валидным GetTop: **6/14**;
-- из них выполнено непосредственно в roadmap 03: **5**;
+- root measurements с валидным GetTop: **8/14**;
+- из них выполнено непосредственно в roadmap 03: **7**;
 - historical baseline: **1** (`печать велеса`).
 
 ## 1. `печать велеса`
-
-Источник:
 
 - historical live measurement;
 - `totalCount = 3350`;
 - raw: `marketing/data/wordstat/2026-08-04_gettop_pechat_velesa_ru_all.json`.
 
-Ключевые observed child results:
-
-- `печать велеса значение` — 617;
-- `печать велеса медвежья лапа` — 343;
-- `оберег печать велеса` — 198;
-- `печать велеса купить` — 120;
-- `подвеска печать велеса` — 80.
-
-Ограничение: child counts пересекаются и не суммируются как уникальный спрос.
+Ключевые observed child results: `значение=617`, `медвежья лапа=343`, `оберег печать велеса=198`, `купить=120`, `подвеска=80`. Child counts пересекаются и не суммируются как уникальный спрос.
 
 ## 2. `оберег печать велеса`
 
-Measurement:
-
 - `query_id = q_a7bcbc7f088c`;
 - `measurement_id = m_wordstat_20260804_0ec6b952`;
-- Россия `225`;
-- `DEVICE_ALL`;
-- HTTP 200;
+- Россия `225`, `DEVICE_ALL`;
 - `totalCount = 198`;
-- 13 `RESULT`;
-- 15 `ASSOCIATION`.
+- 13 `RESULT`, 15 `ASSOCIATION`.
 
-Артефакты:
+Артефакты: raw `marketing/data/raw/wordstat/20260804__wordstat__gettop__obereg-pechat-velesa__225__all.json`, normalized `marketing/data/normalized/wordstat/20260804__wordstat__gettop__obereg-pechat-velesa__225__all.csv`.
 
-- raw: `marketing/data/raw/wordstat/20260804__wordstat__gettop__obereg-pechat-velesa__225__all.json`;
-- normalized: `marketing/data/normalized/wordstat/20260804__wordstat__gettop__obereg-pechat-velesa__225__all.csv`;
-- Ledger: `marketing/data/ledger/query_evidence_ledger.csv`.
-
-Ключевые `RESULT`: `значение=44`, `славянский оберег=42`, медвежьи варианты по `16`, `подвеска оберег=5`.
-
-Вывод: отдельный human-demand кластер подтверждён; meaning/slavic ветки заметны, автомобильный use case не проявился, associations в основном шумовые и не повышаются до Tier 2 автоматически.
+Вывод: отдельный human-demand кластер подтверждён; meaning/slavic ветки заметны, автомобильный use case не проявился, associations в основном шумовые.
 
 ## 3. `подвеска печать велеса`
 
-Measurement:
-
-- дата capture: `2026-08-05` (точность DATE);
 - `query_id = q_45793464bf62`;
 - `measurement_id = m_wordstat_20260805_12d50a1c`;
-- Россия `225`;
-- `DEVICE_ALL`;
-- HTTP 200;
 - `totalCount = 80`;
-- 6 `RESULT`;
+- 6 `RESULT`, 11 `ASSOCIATION`.
+
+Ключевые `RESULT`: `серебряная подвеска=20`, `купить подвеску=8`, `подвеска оберег=5`.
+
+Вывод: product-form demand подтверждён; есть прямой purchase-oriented child и отдельная серебряная ветка.
+
+## 4. `печать велеса медвежья лапа`
+
+- `query_id = q_b3389c7563b6`;
+- `measurement_id = m_wordstat_20260805_946e9aeb`;
+- `totalCount = 343`;
+- 10 `RESULT`, 7 `ASSOCIATION`.
+
+Ключевые `RESULT`: `значение=147`, `значение для мужчин=34`, `тату=28`, `купить=23`, `серебро купить=17`, `оберег=16`.
+
+Вывод: самостоятельный заметный variant-root; meaning-ветка сильная, коммерческий child существует, tattoo-intent отделяется от товарного.
+
+## 5. `печать велеса волчья лапа`
+
+- `query_id = q_31806ca53d61`;
+- `measurement_id = m_wordstat_20260805_8799de8a`;
+- `totalCount = 129`;
+- 5 `RESULT`, 8 `ASSOCIATION`.
+
+Ключевые `RESULT`: `значение=58`, `для мужчин=30`, `для женщин=12`, `тату=4`.
+
+Вывод: wolf-root заметно меньше bear-root в том же типе измерения; explicit `купить` в returned RESULT отсутствует, что не доказывает отсутствие коммерческого спроса.
+
+## 6. `печать велеса в машину`
+
+- `query_id = q_4ab5a09494a0`;
+- `measurement_id = m_wordstat_20260805_5ea42d6a`;
+- `totalCount = 5`;
+- HTTP 200 response содержал только `totalCount`; `results` и `associations` отсутствовали.
+
+Артефакты: raw `marketing/data/raw/wordstat/20260805__wordstat__gettop__pechat-velesa-v-mashinu__225__all.json`, normalized `marketing/data/normalized/wordstat/20260805__wordstat__gettop__pechat-velesa-v-mashinu__225__all.csv`.
+
+Вывод: прямая связка Печати Велеса с автомобилем имеет очень малый broad signal; automotive cluster этим не закрывается.
+
+## 7. `оберег в машину`
+
+Measurement:
+
+- дата capture: `2026-08-05` (точность DATE; bridge не передал точное время);
+- версия bridge: `1.1.0`;
+- `query_id = q_16798cf404fd`;
+- `measurement_id = m_wordstat_20260805_60f98dd1`;
+- Россия `225`, `DEVICE_ALL`, `numPhrases=100`;
+- HTTP 200;
+- `totalCount = 1388`;
+- 48 `RESULT`;
 - 11 `ASSOCIATION`.
 
 Артефакты:
 
-- raw: `marketing/data/raw/wordstat/20260805__wordstat__gettop__podveska-pechat-velesa__225__all.json`;
-- normalized: `marketing/data/normalized/wordstat/20260805__wordstat__gettop__podveska-pechat-velesa__225__all.csv`;
+- raw: `marketing/data/raw/wordstat/20260805__wordstat__gettop__obereg-v-mashinu__225__all.json`;
+- normalized: `marketing/data/normalized/wordstat/20260805__wordstat__gettop__obereg-v-mashinu__225__all.csv`;
 - Ledger: `marketing/data/ledger/query_evidence_ledger.csv`.
 
 Ключевые `RESULT`:
 
-- `подвеска печать велеса` — 80;
-- `серебряная подвеска печать велеса` — 20;
-- `купить подвеску печать велеса` — 8;
-- `подвеска оберег печать велеса` — 5.
-
-Вывод: product-form demand подтверждён; есть прямой purchase-oriented child и отдельная серебряная ветка. Automotive use case не проявился; associations шумовые.
-
-## 4. `печать велеса медвежья лапа`
-
-Measurement:
-
-- дата capture: `2026-08-05` (точность DATE; bridge не передал точное время);
-- `query_id = q_b3389c7563b6`;
-- `measurement_id = m_wordstat_20260805_946e9aeb`;
-- Россия `225`;
-- `DEVICE_ALL`;
-- `numPhrases = 100`;
-- HTTP 200;
-- `totalCount = 343`;
-- 10 `RESULT`;
-- 7 `ASSOCIATION`.
-
-Артефакты:
-
-- raw: `marketing/data/raw/wordstat/20260805__wordstat__gettop__pechat-velesa-medvezhya-lapa__225__all.json`;
-- normalized: `marketing/data/normalized/wordstat/20260805__wordstat__gettop__pechat-velesa-medvezhya-lapa__225__all.csv`;
-- Ledger: `marketing/data/ledger/query_evidence_ledger.csv`.
-
-Ключевые `RESULT`:
-
-- `печать велеса медвежья лапа` — 343;
-- `печать велеса медвежья лапа значение` — 147;
-- `печать велеса медвежья лапа значение для мужчин` — 34;
-- `тату печать велеса медвежья лапа` — 28;
-- `печать велеса медвежья лапа купить` — 23;
-- `печать велеса медвежья лапа серебро купить` — 17;
-- `оберег печать велеса медвежья лапа` — 16;
-- `печать велеса медвежья лапа что означает` — 9.
+- `оберег в машину` — 1388;
+- `оберег от сглаза в машину` — 122;
+- `обереги в машину купить` — 121;
+- `оберег в дорогу на машине` — 73;
+- `славянский оберег в машину` — 72;
+- `оберег в машину от аварий` — 69;
+- `подвеска оберег в машину` — 65;
+- `обереги в машину какой лучше выбрать` — 12;
+- `оберег в машину из серебра` — 11.
 
 ### Что это позволяет утверждать сейчас
 
-1. `медвежья лапа` — самостоятельный и заметный variant-root с broad `totalCount = 343`.
-2. Meaning-ветка очень заметна внутри returned results: `значение=147` и дополнительные meaning-формулировки. Эти counts пересекаются и не суммируются.
-3. Есть прямой purchase-oriented child `... купить = 23` и более узкий `... серебро купить = 17`; коммерческий спрос существует, но он уже broad variant-root.
-4. Tattoo-ветка (`28`, плюс эскиз `8`) заметна и должна оставаться отдельным намерением, а не автоматически превращаться в коммерческую страницу товара.
-5. Формулировка `оберег ... медвежья лапа = 16` подтверждает пересечение product-variant и obereg terminology.
-6. Все 7 associations нерелевантны текущему SKU/контентному решению и не получают Tier 2 measurement автоматически.
+1. Общий automotive root `оберег в машину` существенно крупнее прямой связки `печать велеса в машину` (`1388` против `5`).
+2. Внутри root есть явный purchase-intent (`купить=121`) и product-form (`подвеска оберег=65`).
+3. Славянская ветка наблюдается как реальный RESULT (`72`), а не только association.
+4. Значительная часть хвоста относится к религиозным, DIY, защитным и иным поднамерениям; их нельзя механически объединять в одну коммерческую страницу.
+5. Associations не считаются child demand и не суммируются с RESULT.
 
-## 5. `печать велеса волчья лапа`
+## 8. `славянский оберег в машину`
 
 Measurement:
 
 - дата capture: `2026-08-05` (точность DATE; bridge не передал точное время);
 - версия bridge: `1.1.0`;
-- `query_id = q_31806ca53d61`;
-- `measurement_id = m_wordstat_20260805_8799de8a`;
-- Россия `225`;
-- `DEVICE_ALL`;
-- `numPhrases = 100`;
+- `query_id = q_dec36683e8e1`;
+- `measurement_id = m_wordstat_20260805_a164a34f`;
+- Россия `225`, `DEVICE_ALL`, `numPhrases=100`;
 - HTTP 200;
-- `totalCount = 129`;
-- 5 `RESULT`;
-- 8 `ASSOCIATION`.
+- `totalCount = 72`;
+- 3 `RESULT`;
+- 13 `ASSOCIATION`.
 
 Артефакты:
 
-- raw: `marketing/data/raw/wordstat/20260805__wordstat__gettop__pechat-velesa-volchya-lapa__225__all.json`;
-- normalized: `marketing/data/normalized/wordstat/20260805__wordstat__gettop__pechat-velesa-volchya-lapa__225__all.csv`;
+- raw: `marketing/data/raw/wordstat/20260805__wordstat__gettop__slavyanskiy-obereg-v-mashinu__225__all.json`;
+- normalized: `marketing/data/normalized/wordstat/20260805__wordstat__gettop__slavyanskiy-obereg-v-mashinu__225__all.csv`;
 - Ledger: `marketing/data/ledger/query_evidence_ledger.csv`.
 
 Ключевые `RESULT`:
 
-- `печать велеса волчья лапа` — 129;
-- `печать велеса волчья лапа значение` — 58;
-- `печать велеса волчья лапа значение для мужчин` — 30;
-- `печать велеса волчья лапа значение для женщин` — 12;
-- `печать велеса волчья лапа тату` — 4.
+- `славянский оберег в машину` — 72;
+- `славянский оберег в машину чур` — 7;
+- `славянский оберег в машину для семьи` — 5.
 
 ### Что это позволяет утверждать сейчас
 
-1. `волчья лапа` — самостоятельный variant-root с broad `totalCount = 129`, заметно меньше медвежьей ветки (`343`) в том же типе измерения.
-2. Meaning-intent доминирует в returned results: `значение=58`, включая отдельные мужскую (`30`) и женскую (`12`) формулировки.
-3. В returned `RESULT` этого root нет явной формулировки `купить`; это не доказывает отсутствия коммерческого спроса, а только отсутствие purchase-oriented result в данном returned set.
-4. Tattoo-ветка есть, но существенно слабее медвежьей (`4` против `28` в соответствующих root GetTop).
-5. Все 8 associations для текущего SKU/контентного решения считаются шумовыми; даже тематически близкий `символ волка` остаётся `ASSOCIATION`, а не child demand.
-6. Сравнение медвежьей и волчьей веток пока является только Wordstat evidence; page/variant решение переносится на operator + SERP/Alice этапы.
+1. Славянский automotive subcluster существует, но broad signal (`72`) намного уже общего `оберег в машину` (`1388`).
+2. Returned RESULT set очень короткий; explicit purchase-формулировка в нём не появилась. Это не доказывает нулевой commercial intent.
+3. Associations в основном уходят в широкую славянскую/амулетную тематику и не повышаются до спроса на наш SKU автоматически.
+4. Этот root подтверждает нишу для славянского позиционирования, но page/offer решение остаётся pending operator + SERP/Alice evidence.
 
-## 6. `печать велеса в машину`
+## Autorun live acceptance — текущий факт
 
-Measurement:
-
-- дата capture: `2026-08-05` (точность DATE; bridge не передал точное время);
-- версия bridge: `1.1.0`;
-- `query_id = q_4ab5a09494a0`;
-- `measurement_id = m_wordstat_20260805_5ea42d6a`;
-- Россия `225`;
-- `DEVICE_ALL`;
-- `numPhrases = 100`;
-- HTTP 200;
-- `totalCount = 5`;
-- поля `results` и `associations` в ответе отсутствовали.
-
-Артефакты:
-
-- raw: `marketing/data/raw/wordstat/20260805__wordstat__gettop__pechat-velesa-v-mashinu__225__all.json`;
-- normalized: `marketing/data/normalized/wordstat/20260805__wordstat__gettop__pechat-velesa-v-mashinu__225__all.csv`;
-- Ledger: `marketing/data/ledger/query_evidence_ledger.csv`.
-
-### Что это позволяет утверждать сейчас
-
-1. Прямая связка `печать велеса в машину` имеет очень малый broad human-demand signal: `totalCount = 5`.
-2. Отсутствие полей `results` и `associations` не трактуется как доказанный ноль child queries/associations; normalized dataset фиксирует только summary observation.
-3. Этот результат усиливает предыдущий сигнал, что автомобильный use case почти не проявлялся внутри общих roots, но не закрывает automotive cluster: следующие более широкие roots `оберег в машину`, `славянский оберег в машину` и `подвеска на зеркало в машину` обязательны.
-4. Решение о коммерческой странице/позиционировании не принимается по этому значению в одиночку.
+Три последовательных API measurement прошли без ручного Copy: `печать велеса в машину` → `оберег в машину` → `славянский оберег в машину`. Во всех трёх случаях расширение автоматически захватило новый `WORDSTAT_API_V1`, выполнило один Yandex request, вернуло `WORDSTAT_RESULT_V1` с настроенным префиксом и отправило его в ChatGPT. Это эксплуатационный факт текущей сессии, а не изменение документации расширения.
 
 ## Следующий root
 
-`оберег в машину` — GetTop / Россия / DEVICE_ALL.
+`подвеска на зеркало в машину` — GetTop / Россия / DEVICE_ALL.
 
-Причина: это более широкий automotive root из execution plan; он проверяет сам автомобильный класс товара без обязательного упоминания Печати Велеса и способен показать реальный человеческий спрос на use case.
+Причина: это последний оставшийся automotive root из исходного root-set перед переходом к meaning/comparison/choice roots; он напрямую проверяет форму товара и способ размещения, максимально близкие текущему SKU.
