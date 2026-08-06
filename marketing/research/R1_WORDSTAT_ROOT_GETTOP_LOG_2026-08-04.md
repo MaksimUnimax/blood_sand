@@ -7,8 +7,8 @@
 
 ## Прогресс root set
 
-- root measurements с валидным GetTop: **10/14**;
-- из них выполнено непосредственно в roadmap 03: **9**;
+- root measurements с валидным GetTop: **11/14**;
+- из них выполнено непосредственно в roadmap 03: **10**;
 - historical baseline: **1** (`печать велеса`).
 
 ## 1. `печать велеса`
@@ -229,6 +229,34 @@ Measurement:
 4. `оберег печать велеса значение = 44` связывает informational meaning с товарно-обережным контекстом, но сам по себе не доказывает purchase intent.
 5. Associations в основном лексический шум и не повышаются до demand evidence.
 
+## 11. `медвежья и волчья печать велеса отличие`
+
+Measurement:
+
+- дата capture: `2026-08-06` (точность DATE; payload не содержит точного времени);
+- режим: controlled manual live-test;
+- raw envelope: `bridge=wordstat-manual-bridge`, `version=1.1.1`;
+- `query_id = q_f87efd71ce50`;
+- `measurement_id = m_wordstat_20260806_d82b2010`;
+- `request_id = 6fc46a4a-01f2-48d4-9e08-74551242f32a`;
+- Россия `225`, `DEVICE_ALL`, `numPhrases=100`;
+- HTTP 200, `elapsed_ms=404`;
+- `totalCount = 1`;
+- поля `results` и `associations` в ответе отсутствовали.
+
+Артефакты:
+
+- raw: `marketing/data/raw/wordstat/20260806__wordstat__gettop__medvezhya-i-volchya-pechat-velesa-otlichie__225__all.json`;
+- normalized: `marketing/data/normalized/wordstat/20260806__wordstat__gettop__medvezhya-i-volchya-pechat-velesa-otlichie__225__all.csv`;
+- Ledger: `marketing/data/ledger/query_evidence_ledger.csv`.
+
+### Что это позволяет утверждать сейчас
+
+1. Exact broad comparison-root имеет очень малый observed signal: `totalCount = 1`.
+2. Так как `results` и `associations` отсутствовали, child/related observations из этого measurement не выводятся и не придумываются.
+3. Этот exact comparison wording сам по себе не даёт основания считать comparison intent крупным самостоятельным кластером; operator, SERP и Alice evidence остаются pending.
+4. Низкий count не отменяет ранее измеренный спрос на отдельные bear/wolf variant и meaning roots; это разные query entities и их counts не суммируются.
+
 ## Bridge live acceptance — текущие факты
 
 Три последовательных API measurement ранее прошли в controlled autorun live-test без ручного Copy: `печать велеса в машину` → `оберег в машину` → `славянский оберег в машину`. Во всех трёх случаях расширение автоматически захватило новый `WORDSTAT_API_V1`, выполнило один Yandex request, вернуло `WORDSTAT_RESULT_V1` с настроенным префиксом и отправило его в ChatGPT.
@@ -237,8 +265,10 @@ Controlled manual live-test на `подвеска на зеркало в маш
 
 Текущий autorun после Start-parity hotfix успешно доставил первый measurement `печать велеса значение`: команда была захвачена autorun, выполнен один Yandex request, получен HTTP 200 и возвращён настроенный prefix + `WORDSTAT_RESULT_V1`.
 
+Новый controlled manual live-test на `медвежья и волчья печать велеса отличие` также прошёл: один `WORDSTAT_API_V1` → один Yandex request → HTTP 200 → `WORDSTAT_RESULT_V1`; measured `totalCount=1` сохранён без восстановления отсутствующих `results`/`associations`.
+
 ## Следующий root
 
-`медвежья и волчья печать велеса отличие` — GetTop / Россия / DEVICE_ALL.
+`какой оберег выбрать в машину` — GetTop / Россия / DEVICE_ALL.
 
-Причина: meaning-root `печать велеса значение` закрыт; следующий незакрытый root исходной очереди 03.2 — comparison intent между двумя вариантами Печати Велеса.
+Причина: comparison-root закрыт measurement с `totalCount=1`; следующий незакрытый root исходной очереди 03.2 — automotive choice intent `какой оберег выбрать в машину`.
