@@ -1,0 +1,21 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "6fc46a4a-01f2-48d4-9e08-74551242f32a",
+  "command": {
+    "method": "getTop",
+    "phrase": "медвежья и волчья печать велеса отличие",
+    "numPhrases": 100,
+    "regions": [
+      "225"
+    ],
+    "devices": [
+      "DEVICE_ALL"
+    ]
+  },
+  "http_status": 200,
+  "elapsed_ms": 404,
+  "result": {
+    "totalCount": "1"
+  }
+}
