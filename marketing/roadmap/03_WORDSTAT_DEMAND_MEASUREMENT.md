@@ -3,7 +3,7 @@
 Статус: **[~] В РАБОТЕ**  
 Дата начала: 2026-08-04  
 Оценка: **примерно 37–54 рана**  
-Фактически выполнено: **03.1 закрыт; в 03.2 выполнены 9 новых API measurement, валидных root GetTop вместе с historical baseline — 10/14**
+Фактически выполнено: **03.1 закрыт; в 03.2 выполнены 10 новых API measurement, валидных root GetTop вместе с historical baseline — 11/14**
 
 ## Цель пункта
 
@@ -25,7 +25,7 @@
 ## [~] 03.2 — Снять GetTop по root-кластерам и сформировать фактическую карту формулировок
 
 **Оценка:** примерно 13–17 API-ранов + 1 аналитический проход.  
-**Текущий прогресс:** **10/14 root GetTop**, из них **9** новых API measurement выполнены внутри roadmap 03.
+**Текущий прогресс:** **11/14 root GetTop**, из них **10** новых API measurement выполнены внутри roadmap 03.
 
 Измерено:
 
@@ -38,17 +38,20 @@
 - `оберег в машину` — `1388`;
 - `славянский оберег в машину` — `72`;
 - `подвеска на зеркало в машину` — `973`;
-- `печать велеса значение` — `617`.
+- `печать велеса значение` — `617`;
+- `медвежья и волчья печать велеса отличие` — `1`.
 
 Для каждого measurement сохранены raw/normalized evidence и обновлён Ledger. Running log: `marketing/research/R1_WORDSTAT_ROOT_GETTOP_LOG_2026-08-04.md`.
 
 Текущий automotive вывод: прямая связка `печать велеса в машину` очень мала (`5`), но широкий use-case `оберег в машину` крупный (`1388`), а близкий к фактической форме товара root `подвеска на зеркало в машину` также крупный (`973`) и содержит explicit purchase (`65`), DIY (`33`) и конструктивно/визуально релевантные ветки `с гравировкой` (`15`), `из бусин` (`5`), `с кисточкой` (`5`). `славянский оберег в машину` подтверждён на `72`, но остаётся нишевым subcluster. Counts пересекаются и не суммируются.
 
-Meaning-layer теперь подтверждён отдельным root `печать велеса значение = 617`. Внутри него сильны `печать велеса лапа значение = 219`, медвежья ветка (`156/147`), мужская формулировка (`137`), волчья (`58`) и женская (`57`). Это самостоятельный informational human-demand слой; финальное Page Job решение остаётся pending operator + SERP/Alice evidence.
+Meaning-layer подтверждён отдельным root `печать велеса значение = 617`. Внутри него сильны `печать велеса лапа значение = 219`, медвежья ветка (`156/147`), мужская формулировка (`137`), волчья (`58`) и женская (`57`). Это самостоятельный informational human-demand слой; финальное Page Job решение остаётся pending operator + SERP/Alice evidence.
 
-Три последовательных measurement ранее прошли в controlled autorun live-test без ручного Copy. Дополнительный manual live-test на `подвеска на зеркало в машину` дал один HTTP 200 request и prefix + result. Текущий autorun после Start-parity hotfix успешно выполнил первый новый measurement `печать велеса значение`: один `WORDSTAT_API_V1` → один Yandex request → prefix + `WORDSTAT_RESULT_V1`.
+Exact comparison wording `медвежья и волчья печать велеса отличие` дал только `totalCount=1`; HTTP 200 payload содержал только `totalCount`, без `results`/`associations`, поэтому дочерние comparison formulations не выводятся. Это слабый broad signal именно для данной формулировки и не отменяет отдельный спрос на bear/wolf variant roots.
 
-Следующий root: **`медвежья и волчья печать велеса отличие` / GetTop / Россия / все устройства**.
+Три последовательных measurement ранее прошли в controlled autorun live-test без ручного Copy. Дополнительные controlled manual live-tests на `подвеска на зеркало в машину` и текущий comparison-root дали по одному HTTP 200 request и вернули результат в ChatGPT. `печать велеса значение` также был успешно выполнен autorun-цепочкой после Start-parity hotfix.
+
+Следующий root: **`какой оберег выбрать в машину` / GetTop / Россия / все устройства**.
 
 ## [ ] 03.3 — Измерить operator variants для high-value запросов
 
@@ -78,11 +81,11 @@ Meaning-layer теперь подтверждён отдельным root `пе�
 # Текущее состояние
 
 - [x] 03.1 — scope/execution plan;
-- [~] 03.2 — GetTop root discovery: **10/14**;
+- [~] 03.2 — GetTop root discovery: **11/14**;
 - [ ] 03.3 — operator precision;
 - [ ] 03.4 — dynamics/seasonality;
 - [ ] 03.5 — device/region samples;
 - [ ] 03.6 — Tier 2/gap closure;
 - [ ] 03.7 — normalized dataset/Ledger/final R1.
 
-Текущий следующий measurement: **`медвежья и волчья печать велеса отличие` / GetTop / Россия / DEVICE_ALL**.
+Текущий следующий measurement: **`какой оберег выбрать в машину` / GetTop / Россия / DEVICE_ALL**.
