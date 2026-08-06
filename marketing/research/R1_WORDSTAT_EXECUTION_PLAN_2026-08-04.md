@@ -42,17 +42,17 @@ Root set:
 - `оберег в машину` — `totalCount=1388`;
 - `славянский оберег в машину` — `totalCount=72`;
 - `подвеска на зеркало в машину` — `totalCount=973`;
-- `печать велеса значение` — `totalCount=617`.
+- `печать велеса значение` — `totalCount=617`;
+- `медвежья и волчья печать велеса отличие` — `totalCount=1`.
 
 **Meaning / comparison / choice — осталось**
-- `медвежья и волчья печать велеса отличие`;
 - `какой оберег выбрать в машину`.
 
 **Gift — осталось**
 - `подарок автомобилисту`;
 - `подарок мужчине в машину`.
 
-Текущий прогресс root set: **10/14** валидных GetTop.
+Текущий прогресс root set: **11/14** валидных GetTop.
 
 ### B. Operator precision
 
@@ -151,8 +151,15 @@ Running log root measurements:
 - women meaning branch = `57`;
 - meaning-intent подтверждён как самостоятельный human-demand слой; counts пересекаются и не суммируются.
 
+### `медвежья и волчья печать велеса отличие`
+
+- `totalCount = 1`;
+- HTTP 200 response contained only `totalCount`;
+- `results` и `associations` отсутствовали, поэтому child/related observations не выводятся;
+- exact comparison wording имеет очень слабый broad signal и не является high-value operator candidate по текущему Wordstat evidence.
+
 ## 7. Следующий measurement
 
-`GetTop("медвежья и волчья печать велеса отличие")`, Россия (`225`), `DEVICE_ALL`, `numPhrases=100`.
+`GetTop("какой оберег выбрать в машину")`, Россия (`225`), `DEVICE_ALL`, `numPhrases=100`.
 
-Причина: `печать велеса значение` уже измерен и подтвердил сильный meaning-intent. Следующий незакрытый root исходной очереди — comparison query между медвежьей и волчьей Печатью Велеса; он проверяет отдельный спрос на различия/выбор между двумя вариантами.
+Причина: comparison root уже измерен и дал `totalCount=1`. Следующий незакрытый root исходной очереди — automotive choice query, который должен показать фактический human-demand слой формулировок выбора оберега для автомобиля.
