@@ -114,3 +114,30 @@ test('WB: finance reportId is numeric int64 path, path injection rejected', () =
   assert.equal(req.url, 'https://finance-api.wildberries.ru/api/finance/v1/sales-reports/detailed/9223372036854775807');
   throwsCode(() => wb.normalizeCommand({ operation: 'realization_details_report', path: { reportId: 'abc' }, params: {} }), 'INVALID_PATH_PARAM');
 });
+
+test('WB: current Statistics orders/sales are fixed read-only operations', () => {
+  const orders = wb.buildRequest(wb.normalizeCommand({ operation: 'statistics_orders', params: { dateFrom: '2026-08-01T00:00:00', flag: 0 } }));
+  assert.equal(orders.url, 'https://statistics-api.wildberries.ru/api/v1/supplier/orders?dateFrom=2026-08-01T00%3A00%3A00&flag=0');
+  assert.equal(orders.credential, 'statistics');
+  const sales = wb.buildRequest(wb.normalizeCommand({ operation: 'statistics_sales', params: { dateFrom: '2026-08-01T00:00:00' } }));
+  assert.equal(sales.host, 'statistics-api.wildberries.ru');
+  assert.equal(sales.effect, 'READ');
+});
+
+test('WB: FBW supply reads use Supplies host and numeric supply IDs only', () => {
+  const list = wb.buildRequest(wb.normalizeCommand({ operation: 'fbw_supplies_list', params: { dates: [], statusIDs: [5,6] } }));
+  assert.equal(list.url, 'https://supplies-api.wildberries.ru/api/v1/supplies');
+  assert.equal(list.credential, 'supplies');
+  const detail = wb.buildRequest(wb.normalizeCommand({ operation: 'fbw_supply_details', path: { ID: 26596368 }, params: { isPreorderID: false } }));
+  assert.equal(detail.url, 'https://supplies-api.wildberries.ru/api/v1/supplies/26596368?isPreorderID=false');
+  throwsCode(() => wb.normalizeCommand({ operation: 'fbw_supply_products', path: { ID: '../evil' }, params: {} }), 'INVALID_PATH_PARAM');
+});
+
+test('WB: current finance report list and seller-info reads are fixed aliases', () => {
+  const reports = wb.buildRequest(wb.normalizeCommand({ operation: 'sales_reports_list', params: { limit: 10 } }));
+  assert.equal(reports.url, 'https://finance-api.wildberries.ru/api/finance/v1/sales-reports/list');
+  assert.equal(reports.credential, 'finance');
+  const seller = wb.buildRequest(wb.normalizeCommand({ operation: 'seller_info', params: {} }));
+  assert.equal(seller.url, 'https://common-api.wildberries.ru/api/v1/seller-info');
+  assert.equal(seller.credential, 'common');
+});
