@@ -1,109 +1,161 @@
 # Ozon Bridge candidate 0.1.0 — acceptance evidence
 
-Дата: 2026-08-10
-Статус: **candidate accepted in mock/packaging environment; REAL SELLER ACCOUNT NOT YET ACCEPTED**
+Дата: 2026-08-10  
+Статус: **candidate accepted in local/mock Chromium environment; REAL OZON SELLER ACCOUNT NOT YET ACCEPTED**
 
 ## Artifact
 
-`ozon-bridge-v0.1.0-candidate.zip`
+Repository artifact:
 
-SHA-256:
+`tooling/llm-api-bridges/ozon-seller/artifacts/ozon-bridge-v0.1.0-candidate.zip`
 
-`5a50cbd79d0e5710d40410d921a189af602dbe337add07c50d36270b8270d2ac`
+Current tested ZIP:
 
-ZIP size: 70,142 bytes.
+- version: `0.1.0`;
+- files in installable package: **14**;
+- size: **67,828 bytes**;
+- SHA-256: `c4bb7969de1d42782a074be0f014851ade2fd5ee146bd88baeb69c997bc4c015`.
 
-## Package verification
+The binary ZIP stored in GitHub is the same candidate bytes that were tested locally before commit.
 
-- files in extension package: 13;
-- source → fresh ZIP extraction byte comparison: **13/13 identical**;
+## Provider surface
+
+Initial bridge is deliberately read-only and includes only the currently confirmed symbolic aliases:
+
+- `product_stocks` → `POST /v4/product/info/stocks`;
+- `analytics_data` → `POST /v1/analytics/data`;
+- `product_queries` → `POST /v1/analytics/product-queries`;
+- `product_query_details` → `POST /v1/analytics/product-queries/details`;
+- `fbo_postings` → `POST /v3/posting/fbo/list`;
+- `fbs_posting` → `POST /v3/posting/fbs/get`;
+- `finance_transactions` → `POST /v3/finance/transaction/list`;
+- `fbo_supply_order` → `POST /v3/supply-order/get`;
+- `fbo_supply_details` → `POST /v1/supply-order/details`.
+
+Machine-readable reviewed list:
+
+`OZON_READ_ONLY_ALLOWLIST_V1.json`.
+
+Assistant command family:
+
+`OZON_API_V1 → OZON_RESULT_V1`.
+
+One accepted command executes at most one external provider HTTP request. There is no hidden retry or hidden pagination loop.
+
+## Credentials and security
+
+- `Client-Id` and `Api-Key` are stored only in local extension storage;
+- they are attached by the service worker to `api-seller.ozon.ru`;
+- credentials are not returned in `OZON_RESULT_V1`;
+- assistant cannot provide arbitrary URL, host, HTTP method or auth headers;
+- unsupported operations fail before network;
+- marketplace v0.1.0 is read-only.
+
+A local settings check validates header-safe credentials but intentionally does **not** perform a hidden network request. Real API smoke is a separate explicit `OZON_API_V1` operation.
+
+## Static / protocol validation
+
+Final candidate after cleanup:
+
+- all runtime JavaScript files: `node --check` PASS;
 - manifest JSON parse: PASS;
-- Manifest V3, version `0.1.0`;
-- JavaScript `node --check`: **10/10 PASS**;
-- marketplace source scan found no stale Yandex/Wordstat API transport dependency.
+- protocol matrix: **15/15 PASS**;
+- all **9** allowlisted operations map to the expected fixed `api-seller.ozon.ru` paths;
+- unsupported operation rejected;
+- arbitrary URL/headers transport injection rejected;
+- non-Ozon command prefix rejected;
+- Cyrillic JSON body survives command parse/build/report path.
 
-## Shared provider regression
+## Worker manual exactly-once smoke
 
-Latest Ozon + WB protocol/transport/durable-runtime/execution suite after current WB corrections:
+Node VM with mocked Chrome storage/tabs and Ozon HTTPS transport:
 
-**38/38 PASS**.
+- settings saved;
+- connection/settings check performed **0** network requests;
+- conversation explicitly bound;
+- Manual enabled;
+- one accepted `analytics_data` command produced **exactly 1** external request;
+- exact `Client-Id` + `Api-Key` headers observed only at transport boundary;
+- result started with `OZON_RESULT_V1`;
+- secret API key absent from result;
+- duplicate same `manual_request_id` returned duplicate state and did not create a second request.
 
-Covered guarantees include:
+Result: **PASS, external requests = 1**.
 
-- hard symbolic operation allowlist;
-- arbitrary URL/host/method/header/credential injection rejected;
-- credentials loaded only after durable request claim;
-- one accepted operation invokes external `fetch` at most once;
-- concurrent duplicate request does not execute second HTTP request;
-- 429/timeout/network failure has no hidden retry;
-- response size limit / HTTPS / host match / redirect error;
-- durable `requesting → delivering → completed/failed` state;
-- worker restart during old-session `requesting` → `REQUEST_OUTCOME_UNKNOWN`, no replay;
-- worker restart during `delivering` recovers exact stored delivery;
-- duplicate live tab cannot steal operation owner;
-- owner can rebind only after prior owner loss;
-- delivery id/operation id mismatch cannot complete another operation.
+## Real Chromium MV3 lifecycle — source tree
 
-## Real Chromium MV3 load smoke
+Environment: real Chromium MV3, real extension service worker, real content script, real popup/runtime code, ChatGPT DOM mock matching the supported current writing-block adapter, and local HTTPS mock bound to the official Ozon Seller API hostname.
 
-Unpacked candidate loaded in real Chromium with:
+Passed sequence:
 
-- MV3 service worker loaded;
-- popup loaded;
-- popup fields/version present;
-- no manifest/extension load errors observed.
+1. extension loaded and MV3 service worker appeared;
+2. exact ChatGPT conversation identity confirmed;
+3. local Ozon credentials/binding/manual state prepared;
+4. Manual mode applied and local Copy received the Ozon visual/manual decoration;
+5. Manual `product_stocks` produced exactly one external request;
+6. result delivered back to the ChatGPT composer/user-turn path;
+7. manual operation reached terminal completion;
+8. Manual turned off;
+9. Autorun Start committed through the real composer/send path;
+10. first Autorun command: `analytics_data`;
+11. second Autorun command: `finance_transactions`;
+12. exactly one external request for each accepted Autorun command;
+13. run returned to `waiting_command` with `sequence = 2`;
+14. Pause → `paused`;
+15. Resume → `waiting_command`;
+16. Finish/Stop → `stopped`;
+17. total external API requests = **3**: 1 Manual + 2 Autorun;
+18. observed paths exactly:
+   - `/v4/product/info/stocks`;
+   - `/v1/analytics/data`;
+   - `/v3/finance/transaction/list`;
+19. no duplicate provider request observed;
+20. Chromium managed policy was restored after the bounded test.
 
-Managed Chromium URL/extension blocking policy was temporarily relaxed only for the test and restored after execution.
+Result: **PASS**.
 
-## Full mocked Chromium lifecycle
+### Important correction discovered by the browser test
 
-The extension was tested with real popup + real content script + real MV3 service worker while `api-seller.ozon.ru` was routed to a local HTTPS mock. Test credentials were fake; no marketplace account was contacted.
+The first Chromium attempt showed `manual API count 0`. Investigation proved the extension had loaded correctly, but the **test mock writing block was invalid**: it matched neither the supported current writing-block adapter nor the legacy code-block adapter.
 
-Passed flow:
+The mock was corrected to the real supported structure (`data-writing-block` + `data-testid=writing-block-container` + `data-writing-block-fullscreen-editor-region`). After that correction Manual decoration and dispatch worked without changing the production capture algorithm. This failure therefore remains useful evidence that the capture layer fails closed for an unsupported DOM instead of executing an API request from an ambiguous block.
 
-1. bind ChatGPT conversation;
-2. save local `Client-Id` + `Api-Key` test credentials;
-3. Manual mode command → exactly one mock Seller API request;
-4. exact `OZON_RESULT_V1` delivery back into ChatGPT mock;
-5. Manual OFF;
-6. Autorun Start;
-7. autorun operation 1: `analytics_data`;
-8. autorun operation 2: `product_stocks`;
-9. exactly one provider request per accepted autorun command;
-10. run returns to `waiting_command`, `sequence=2`;
-11. Pause → `paused`;
-12. Resume → `waiting_command`;
-13. Finish → `stopped`.
+## Fresh ZIP acceptance
 
-Total provider requests observed: **3** = 1 Manual + 2 Autorun. No duplicate request observed.
+The installable ZIP was extracted into a clean directory and all runtime files were compared against the development source package:
 
-## Fresh ZIP extracted Chromium acceptance
+- source ↔ fresh extraction: **14/14 byte-identical**;
+- JS syntax from extracted package: PASS;
+- protocol matrix from extracted package: **15/15 PASS**;
+- worker Manual exactly-once smoke from extracted package: PASS, external requests = 1;
+- the **full real Chromium lifecycle above was repeated from the clean extracted ZIP**: PASS;
+- fresh-ZIP Chromium total external requests = **3**, with the same three exact paths and no duplicates.
 
-The same full lifecycle was then repeated by loading the extension from a **clean directory extracted from the fresh candidate ZIP**, not from the development source directory.
+This is the current packaging acceptance artifact. Earlier candidate hashes in historical notes are superseded by the SHA-256 above.
 
-Result: PASS.
+## What this still does NOT prove
 
-## What this does NOT prove
+This candidate is **not real-account accepted** because:
 
-This candidate is **not production-accepted yet** because:
+- no real Ozon Seller `Client-Id` + `Api-Key` have been used;
+- real account permissions/scopes are unknown;
+- real response schemas and account-specific fields have not yet been observed;
+- current Seller API library audit is not complete for catalog, prices/promotions, returns, settlement/reports, warehouse/geography, advertising and reviews/questions;
+- real pagination/rate-limit behavior has not yet been exercised.
 
-- no real Ozon Seller account credentials have been tested;
-- no real Ozon HTTP response/schema/account permissions have been observed;
-- Ozon API capability audit still has exact-method gaps because the official interactive Seller API library is currently inaccessible in the research environment through a redirect loop;
-- full product/catalog, current prices/promotions, returns, realization/reporting, seller warehouse/geography and advertising read allowlist still requires exact official-library completion where not already confirmed;
-- real-account pagination/rate-limit behavior has not been exercised.
+Therefore roadmap 03A.4 remains `[~]`, not `[x]`.
 
 ## Real-account acceptance gate
 
-After the owner creates/inserts read-only Seller API credentials locally in the extension, acceptance requires harmless real read operations using only already officially confirmed methods, checking:
+After the owner enters credentials **locally in the extension popup, never in chat/GitHub**:
 
-- authentication succeeds;
-- exact response schema is captured;
-- no secret appears in result/diagnostic;
-- one `OZON_API_V1` = one provider request;
-- manual delivery works;
-- autorun sequential operations remain exactly-once;
-- HTTP 4xx/429/5xx do not trigger automatic replay;
-- provider output can be stored in project evidence pipeline.
-
-Until then roadmap 03A.4 remains `[~]`, not `[x]`.
+1. bind the intended LLM conversation;
+2. perform one low-risk explicit read smoke using a confirmed alias;
+3. verify HTTP/auth/account permissions;
+4. verify the actual response schema and pagination metadata;
+5. verify secret values absent from result/diagnostics;
+6. run one Manual exactly-once operation;
+7. run controlled sequential Autorun operations;
+8. stop on any 429/network/unknown-request outcome without hidden retry;
+9. persist first raw seller evidence;
+10. begin full assortment ingestion only after this gate passes.
