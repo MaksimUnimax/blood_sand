@@ -1,94 +1,100 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1-research",
   "provider": "ozon",
   "generated_at": "2026-08-10",
-  "status": "confirmed-methods-only",
-  "base_url": "https://api-seller.ozon.ru",
-  "credential_model": {
+  "artifact_role": "research_capability_candidates",
+  "implementation_status": "not_started",
+  "extension_exists": false,
+  "verification_policy": "official_ozon_sources_only",
+  "base_url_evidence": "https://api-seller.ozon.ru",
+  "credential_model_evidence": {
     "type": "seller_api",
     "headers": ["Client-Id", "Api-Key"],
-    "storage": "local_extension_only"
+    "future_storage_requirement": "local_extension_only"
   },
-  "invariants": {
-    "read_only": true,
-    "one_command_one_external_request": true,
-    "automatic_retry": false,
+  "research_design_invariants_for_future_bridge": {
+    "read_only_initial_scope": true,
+    "one_explicit_command_one_external_request": true,
+    "hidden_automatic_retry": false,
     "arbitrary_url_allowed": false,
     "credentials_in_llm_payload": false
   },
-  "operations": {
+  "confirmed_research_methods": {
     "product_stocks": {
       "method": "POST",
       "path": "/v4/product/info/stocks",
-      "effect": "READ",
+      "verification": "official_current_family_evidence",
       "purpose": ["current_stock", "fbo_fbs_split", "warehouse_availability", "stockout_diagnostics"],
       "official_evidence": "https://dev.ozon.ru/community/1747-v4-product-info-stocks-daet-ne-korrektnye-ostatki/"
     },
     "analytics_data": {
       "method": "POST",
       "path": "/v1/analytics/data",
-      "effect": "READ",
+      "verification": "official_method_evidence_schema_recheck_required",
       "purpose": ["impressions", "sessions", "conversion", "revenue", "returns", "ordered_units", "product_funnel"],
       "official_evidence": "https://dev.ozon.ru/case/98-Keis-o-novom-instrumente-dlia-kontrolia-tovarnykh-ostatkov-na-sklade/"
     },
     "product_queries": {
       "method": "POST",
       "path": "/v1/analytics/product-queries",
-      "effect": "READ",
+      "verification": "official_method_evidence",
       "purpose": ["search_query_analytics", "semantic_research", "search_visibility_diagnostics"],
       "official_evidence": "https://dev.ozon.ru/news/512-Novye-metody-dlia-raboty-s-analitikoi-po-zaprosam-tovarov-v-Seller-API/"
     },
     "product_query_details": {
       "method": "POST",
       "path": "/v1/analytics/product-queries/details",
-      "effect": "READ",
+      "verification": "official_method_evidence",
       "purpose": ["query_detail_analytics", "semantic_research", "search_visibility_diagnostics"],
       "official_evidence": "https://dev.ozon.ru/news/512-Novye-metody-dlia-raboty-s-analitikoi-po-zaprosam-tovarov-v-Seller-API/"
     },
     "fbo_postings": {
       "method": "POST",
       "path": "/v3/posting/fbo/list",
-      "effect": "READ",
+      "verification": "official_current_family_evidence_schema_recheck_required",
       "purpose": ["fbo_orders", "posting_status", "order_timeline"],
       "official_evidence": "https://dev.ozon.ru/community?category_id=2&page=4"
     },
     "fbs_posting": {
       "method": "POST",
       "path": "/v3/posting/fbs/get",
-      "effect": "READ",
+      "verification": "official_method_evidence_schema_recheck_required",
       "purpose": ["fbs_order_details", "per_product_order_price", "order_finance_reconciliation"],
       "official_evidence": "https://dev.ozon.ru/community/712-Zapros-v3-finance-transaction-list-kak-uznat-tsenu-za-tovar"
     },
     "finance_transactions": {
       "method": "POST",
       "path": "/v3/finance/transaction/list",
-      "effect": "READ",
+      "verification": "official_method_evidence_schema_recheck_required",
       "purpose": ["finance_transactions", "fees", "services", "order_finance_reconciliation"],
       "official_evidence": "https://dev.ozon.ru/community/712-Zapros-v3-finance-transaction-list-kak-uznat-tsenu-za-tovar"
     },
     "fbo_supply_order": {
       "method": "POST",
       "path": "/v3/supply-order/get",
-      "effect": "READ",
+      "verification": "official_2026_change_notice",
       "purpose": ["fbo_supply", "replenishment", "cluster_supply_diagnostics"],
       "official_evidence": "https://dev.ozon.ru/news/647-Izmeneniia-v-metodakh-Seller-API-pri-rabote-s-postavkami-FBO/"
     },
     "fbo_supply_details": {
       "method": "POST",
       "path": "/v1/supply-order/details",
-      "effect": "READ",
+      "verification": "official_2026_change_notice",
       "purpose": ["fbo_supply_details", "replenishment", "cluster_supply_diagnostics"],
       "official_evidence": "https://dev.ozon.ru/news/647-Izmeneniia-v-metodakh-Seller-API-pri-rabote-s-postavkami-FBO/"
     }
   },
-  "pending_exact_official_library_verification": [
-    "full_product_catalog",
-    "product_attributes_media_status",
-    "prices_discounts_promotions",
+  "not_yet_confirmed_for_future_implementation": [
+    "full_product_catalog_and_listing_master",
+    "product_attributes_media_status_current_schema",
+    "prices_discounts_promotions_current_read_surface",
     "returns_cancellations_claims",
     "realization_settlement_reports",
-    "seller_warehouses_geography",
-    "advertising_performance_api",
-    "reviews_questions"
-  ]
+    "seller_warehouses_geography_delivery_availability",
+    "advertising_performance_api_exact_hosts_auth_methods",
+    "reviews_questions_buyer_communications",
+    "per_method_current_rate_limits_pagination_history_permissions"
+  ],
+  "blocking_reason": "Official interactive Seller API library and attempted docs swagger path return redirect loop in the current research environment. No third-party copy is promoted to source of truth.",
+  "coding_gate": "Do not start 03A.4 until the required current official surface is verified."
 }
