@@ -3,7 +3,7 @@
 Статус: **[~] В РАБОТЕ**  
 Дата начала: 2026-08-04  
 Оценка: **примерно 37–54 рана**  
-Фактически выполнено: **03.1 закрыт; в 03.2 выполнены 10 новых API measurement, валидных root GetTop вместе с historical baseline — 11/14**
+Фактически выполнено: **03.1 закрыт; в 03.2 выполнены 11 новых API measurement, валидных root GetTop вместе с historical baseline — 12/14**
 
 ## Цель пункта
 
@@ -25,7 +25,7 @@
 ## [~] 03.2 — Снять GetTop по root-кластерам и сформировать фактическую карту формулировок
 
 **Оценка:** примерно 13–17 API-ранов + 1 аналитический проход.  
-**Текущий прогресс:** **11/14 root GetTop**, из них **10** новых API measurement выполнены внутри roadmap 03.
+**Текущий прогресс:** **12/14 root GetTop**, из них **11** новых API measurement выполнены внутри roadmap 03.
 
 Измерено:
 
@@ -39,7 +39,8 @@
 - `славянский оберег в машину` — `72`;
 - `подвеска на зеркало в машину` — `973`;
 - `печать велеса значение` — `617`;
-- `медвежья и волчья печать велеса отличие` — `1`.
+- `медвежья и волчья печать велеса отличие` — `1`;
+- `какой оберег выбрать в машину` — `12`.
 
 Для каждого measurement сохранены raw/normalized evidence и обновлён Ledger. Running log: `marketing/research/R1_WORDSTAT_ROOT_GETTOP_LOG_2026-08-04.md`.
 
@@ -49,9 +50,11 @@ Meaning-layer подтверждён отдельным root `печать ве�
 
 Exact comparison wording `медвежья и волчья печать велеса отличие` дал только `totalCount=1`; HTTP 200 payload содержал только `totalCount`, без `results`/`associations`, поэтому дочерние comparison formulations не выводятся. Это слабый broad signal именно для данной формулировки и не отменяет отдельный спрос на bear/wolf variant roots.
 
-Три последовательных measurement ранее прошли в controlled autorun live-test без ручного Copy. Дополнительные controlled manual live-tests на `подвеска на зеркало в машину` и текущий comparison-root дали по одному HTTP 200 request и вернули результат в ChatGPT. `печать велеса значение` также был успешно выполнен autorun-цепочкой после Start-parity hotfix.
+Automotive-choice root `какой оберег выбрать в машину` дал `totalCount=12` и один релевантный `RESULT`: `обереги в машину какой лучше выбрать = 12`. Пятнадцать `ASSOCIATION` в основном относятся к общему автоподбору, надёжности автомобилей и подбору комплектующих, поэтому не трактуются как demand evidence для оберега. Choice intent существует, но остаётся узким по текущему GetTop.
 
-Следующий root: **`какой оберег выбрать в машину` / GetTop / Россия / все устройства**.
+Три последовательных measurement ранее прошли в controlled autorun live-test без ручного Copy. Дополнительные controlled manual live-tests на `подвеска на зеркало в машину` и comparison-root дали по одному HTTP 200 request и вернули результат в ChatGPT. В текущем Autorun `какой оберег выбрать в машину` также выполнен одним Yandex request с HTTP 200 и сохранён в raw/normalized/Ledger.
+
+Следующий root: **`подарок автомобилисту` / GetTop / Россия / все устройства**.
 
 ## [ ] 03.3 — Измерить operator variants для high-value запросов
 
@@ -81,11 +84,11 @@ Exact comparison wording `медвежья и волчья печать веле
 # Текущее состояние
 
 - [x] 03.1 — scope/execution plan;
-- [~] 03.2 — GetTop root discovery: **11/14**;
+- [~] 03.2 — GetTop root discovery: **12/14**;
 - [ ] 03.3 — operator precision;
 - [ ] 03.4 — dynamics/seasonality;
 - [ ] 03.5 — device/region samples;
 - [ ] 03.6 — Tier 2/gap closure;
 - [ ] 03.7 — normalized dataset/Ledger/final R1.
 
-Текущий следующий measurement: **`какой оберег выбрать в машину` / GetTop / Россия / DEVICE_ALL**.
+Текущий следующий measurement: **`подарок автомобилисту` / GetTop / Россия / DEVICE_ALL**.
