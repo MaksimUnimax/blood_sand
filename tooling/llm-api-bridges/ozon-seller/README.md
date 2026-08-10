@@ -1,22 +1,40 @@
 # Ozon Seller API research
 
-Статус: **research/planning; Ozon browser extension NOT STARTED**.
+Статус: **API research in progress. Ozon browser extension does not exist and development has not started.**
 
-## Текущий этап
+Эта директория хранит только исследовательские материалы для будущего read-only LLM↔Ozon bridge.
 
-Сейчас здесь хранится только исследование официальной read-only поверхности Ozon API, необходимой для будущего LLM↔Ozon bridge и для последующего импорта полного магазина/аналитики продавца.
+## Канонические research artifacts
 
-Разработка расширения ещё не начата. В репозитории не должно быть Ozon extension candidate, acceptance evidence или утверждений о пройденных browser tests до отдельного этапа разработки из roadmap.
+- `OZON_API_CAPABILITY_AUDIT_2026-08-10.md` — основной capability audit и provenance уже подтверждённых official methods;
+- `OZON_OFFICIAL_API_VERIFICATION_PASS_2026-08-10.md` — второй official-source verification pass, полный blocking data-surface checklist и правила promotion endpoint → future implementation spec;
+- `OZON_READ_ONLY_ALLOWLIST_V1.json` — **research-only** machine-readable список методов, уже подтверждённых официальными Ozon materials. Это не код расширения и не production allowlist.
 
-## Текущие артефакты
+## Текущий research scope
 
-- `OZON_API_CAPABILITY_AUDIT_2026-08-10.md` — текущий официальный capability audit;
-- `OZON_READ_ONLY_ALLOWLIST_V1.json` — исследовательский machine-readable список только тех read methods, которые уже подтверждены официальными материалами и являются кандидатами для будущего bridge.
+До разработки расширения нужно получить достаточный current official read surface для:
 
-## Будущая разработка
+- полного seller catalog/listing master;
+- product attributes/media/status;
+- prices/discounts/promotions;
+- stocks/FBO/FBS/warehouses/clusters/geography;
+- seller/product/search-query analytics;
+- FBO/FBS postings;
+- cancellations/returns;
+- supply/replenishment;
+- finance/realization/reports;
+- advertising statistics;
+- reviews/questions там, где официальный API даёт read access;
+- pagination, history windows, quotas/rate limits, auth/account/subscription restrictions.
 
-После завершения API audit отдельным roadmap-шагом будет разработан read-only bridge с локальным хранением `Client-Id`/`Api-Key`, командами `OZON_API_V1` и результатами `OZON_RESULT_V1`.
+## Жёсткое правило
 
-Архитектурным референсом служит действующий Yandex Wordstat bridge и общий design contract `../shared/LLM_API_BRIDGE_PROTOCOL.md`.
+Exact method/path/schema считается подтверждённым только по current official Ozon source. Сторонние SDK/Postman/generated clients могут использоваться для discovery, но не как source of truth.
 
-До начала этого шага `OZON_API_V1` считается только запланированным протоколом, а не существующим расширением.
+Неподтверждённые endpoints не добавляются в будущий bridge. Scraping кабинета/сайта не является заменой API.
+
+## Следующий этап
+
+Сейчас выполняется roadmap `03A.3 — Полный официальный API-аудит Ozon`.
+
+`03A.4 — Разработать Ozon LLM browser extension` остаётся **НЕ НАЧАТО** и начнётся только после достаточного закрытия blocking API research.
