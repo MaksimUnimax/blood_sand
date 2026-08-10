@@ -5,7 +5,7 @@
 
 ## Почему этот пункт добавлен
 
-Текущий Wordstat/SERP research был построен как пилот вокруг референсного семейства «Печать Велеса / автомобильные подвески». Фактический бизнес-scope — перенос полного магазина, порядка 70 товаров. Продолжать SERP/Alice/контентную стратегию по одному пилотному семейству означало бы принять пилот за весь ассортимент.
+Текущий Wordstat/SERP research был построен как пилот вокруг референсного семейства «Печать Велеса / автомобильные подвески». Фактический business scope — перенос полного магазина, порядка 70 товаров. Продолжать SERP/Alice/контентную стратегию по одному пилотному семейству означало бы принять пилот за весь ассортимент.
 
 Стратегия AI-Native Hybrid Search Commerce **не меняется**. Меняется полнота входных данных и объект исследования: от одного reference family к полному брендовому каталогу.
 
@@ -14,8 +14,8 @@
 Пункт закрывается только когда одновременно:
 
 - текущий Yandex Wordstat bridge сохранён как reference tooling;
-- создан и acceptance-tested read-only Ozon bridge;
-- создан и acceptance-tested read-only Wildberries bridge;
+- создан и real-account acceptance-tested read-only Ozon bridge;
+- создан и real-account acceptance-tested read-only Wildberries bridge;
 - получен полный доступный ассортимент продавца с обеих площадок;
 - создан канонический Product/SKU/Listing/Category master с cross-platform identity mapping;
 - определены product families/categories для семантического исследования;
@@ -27,18 +27,18 @@
 
 ### [x] 03A.1 — Зафиксировать проблему scope и остановить дальнейшие Wordstat API-вызовы
 
-Результат: пилотный Wordstat остаётся evidence; текущий root set имеет 13/14, но не считается полным исследованием бренда. Autorun остановлен оператором.
+Пилотный Wordstat остаётся evidence; root set остановлен на 13/14 и не считается полным исследованием бренда. Последний старый root не запускается до re-baseline полного ассортимента.
 
 ### [~] 03A.2 — Создать общий LLM↔API toolkit и импортировать актуальный Yandex reference
 
 Сделано:
 
 - создан `tooling/llm-api-bridges/`;
-- создан общий архитектурный контракт `shared/LLM_API_BRIDGE_PROTOCOL.md`;
-- предоставленный владельцем Wordstat v1.1.5 зафиксирован как canonical reference в `yandex-wordstat/CANONICAL_REFERENCE_1.1.5.md`;
-- исходный предоставленный ZIP повторно проверен: version `1.1.5`, SHA-256 `a39bbe65b046ef6eac5a7890b8afd84e69550db34debf271b7c373d08a1fef1a`, regression `283/283 PASS`.
+- создан общий контракт `shared/LLM_API_BRIDGE_PROTOCOL.md`;
+- предоставленный владельцем Wordstat v1.1.5 закреплён как canonical reference;
+- exact uploaded ZIP повторно проверен: version `1.1.5`, SHA-256 `a39bbe65b046ef6eac5a7890b8afd84e69550db34debf271b7c373d08a1fef1a`, regression `283/283 PASS`.
 
-Остаётся до `[x]`: физически сохранить/материализовать executable artifact/source representation внутри repository и доказать восстановление byte-for-byte до того же ZIP/hash.
+Остаётся до `[x]`: сохранить executable Wordstat artifact/source representation внутри repository и доказать byte-for-byte reconstruction до того же hash.
 
 ### [~] 03A.3 — Провести полный официальный API-аудит Ozon
 
@@ -46,109 +46,130 @@
 
 - `tooling/llm-api-bridges/ozon-seller/OZON_API_CAPABILITY_AUDIT_2026-08-10.md`
 
-Уже подтверждены официальными источниками и внесены в first read-only provider core:
+Официально подтверждены и уже allowlisted в provider core:
 
 - product stocks;
-- general analytics;
+- general seller/product analytics;
 - product search-query analytics;
 - FBO/FBS postings;
 - finance transaction list;
 - FBO supply order/details.
 
-Также подтверждён отдельный advertising API contour.
+Подтверждён отдельный advertising API contour.
 
-Почему шаг ещё не `[x]`: официальный интерактивный Seller API library/Swagger в текущем research environment попадает в redirect loop. Поэтому exact current methods/schemas для полного product catalog, prices/promotions, returns, realization/reports, seller warehouse/geography и advertising endpoint set не выдумываются и должны быть дополнительно сняты из доступного official library snapshot/live docs.
+Шаг остаётся `[~]`: текущий official interactive Seller API library/Swagger недоступен из research environment из-за redirect loop. Поэтому exact current read methods/schemas для полного catalog, prices/promotions, returns, realization/reports, warehouse/geography и advertising surface не выдумываются и должны быть завершены по доступному official snapshot/live docs.
 
 ### [~] 03A.4 — Реализовать и acceptance-test Ozon LLM bridge
 
 Сделано:
 
-- `ozon-seller/provider/ozon_protocol.js`;
 - `OZON_API_V1 → OZON_RESULT_V1`;
-- symbolic allowlist only;
-- fixed `api-seller.ozon.ru` host;
-- read-only aliases только для уже подтверждённых official methods;
-- `Client-Id` + `Api-Key` добавляются worker/provider layer, а не LLM command;
-- arbitrary URL/host/headers/method/credentials injection запрещены;
-- Unicode command/result поддерживается;
-- evidence-redaction не возвращает credentials.
+- symbolic hard allowlist; assistant не передаёт raw URL/host/method/headers;
+- `Client-Id` + `Api-Key` существуют только local worker/provider path;
+- read-only provider core;
+- общий exactly-once transport;
+- durable operation model и execution core;
+- concurrent duplicate fence;
+- no hidden retry on 429/network/timeout;
+- old-session `requesting` после worker restart → `REQUEST_OUTCOME_UNKNOWN`, no replay;
+- committed `delivering` recovery без повторного Ozon request;
+- tab ownership/rebind protection;
+- Manual + Autorun + Pause/Resume/Finish browser-extension candidate собран;
+- source candidate: manifest v3 / version `0.1.0`, JS syntax PASS;
+- full real Chromium MV3 mocked lifecycle PASS;
+- Manual: 1 accepted command → exactly 1 mock Seller API request;
+- Autorun: 2 sequential commands → exactly 2 additional requests, `sequence=2`;
+- Pause → Resume → Finish PASS;
+- fresh ZIP extraction byte-compare: `13/13` files identical;
+- полный Chromium lifecycle повторён **из clean extracted fresh ZIP**: PASS;
+- candidate ZIP SHA-256: `5a50cbd79d0e5710d40410d921a189af602dbe337add07c50d36270b8270d2ac`.
 
-Provider core входит в общий security regression `shared/tests/provider_protocols.test.mjs`.
+Evidence:
 
-Остаётся: browser extension runtime/popup/manual/autorun/exactly-once/durable recovery, completion Ozon allowlist после 03A.3, packaged Chromium tests и real seller-account smoke requests.
+- `tooling/llm-api-bridges/ozon-seller/ACCEPTANCE_CANDIDATE_0.1.0.md`
 
-### [x] 03A.5 — Провести полный официальный API-аудит Wildberries для initial read-only bridge
+Почему ещё не `[x]`:
 
-Артефакт:
+- real Ozon Seller credentials/account не тестировались;
+- Ozon exact API audit ещё не полностью закрыт;
+- real response schemas, account permissions, pagination/rate-limit behaviour не подтверждены.
 
-- `tooling/llm-api-bridges/wildberries/WB_API_CAPABILITY_AUDIT_2026-08-10.md`
+### [x] 03A.5 — Провести официальный API-аудит Wildberries для initial read-only bridge
 
-Официально подтверждены необходимые для первой read-only версии поверхности:
+Артефакты:
 
-- cards/catalog identity;
-- categories/subjects/attributes reference layer;
-- prices/discounts/quarantine;
-- seller warehouses + FBS stock;
-- WB stock analytics/history;
-- sales funnel;
-- search-query analytics;
-- generated analytics CSV;
-- FBS orders;
-- region/brand/hidden-product/return reports;
-- finance/realization;
-- promotion campaigns, products, cluster stats, campaign stats and promotion calendar;
-- отдельные optional feedback/question/chat/return domains для будущего content/customer evidence.
+- `tooling/llm-api-bridges/wildberries/WB_API_CAPABILITY_AUDIT_2026-08-10.md`;
+- `tooling/llm-api-bridges/wildberries/WB_API_CAPABILITY_CORRECTIONS_2026-08-10.md` — текущие точечные corrections имеют приоритет при конфликте со старой формулировкой audit.
 
-Зафиксированы token categories, official API domains, Jam restrictions where documented, known date/history windows and deprecated endpoints that must not be used for new bridge.
+Для initial read-only bridge подтверждены: cards/catalog, product reference data, prices/discounts/quarantine, seller warehouses/FBS stock, stock analytics/history, sales funnel, search-query analytics, generated analytics CSV, FBS orders, regional/return reports, finance/realization, promotion campaigns/products/query-cluster/campaign stats и promotions calendar.
 
-Правило: каждый alias всё равно revalidated against current official OpenAPI непосредственно перед production coding/release, потому что WB активно заменяет/deprecates methods.
+Перед browser acceptance дополнительно перепроверены и исправлены:
+
+- `Authorization: Bearer <token>`;
+- promotions calendar → `dp-calendar-api.wildberries.ru`;
+- calendar credential category → Prices and Discounts;
+- finance `reportId` → decimal int64-only path parameter.
+
+Deprecated endpoints не используются как основа нового bridge. Каждый alias всё равно revalidated непосредственно перед production release.
 
 ### [~] 03A.6 — Реализовать и acceptance-test Wildberries LLM bridge
 
 Сделано:
 
-- `wildberries/provider/wb_protocol.js`;
 - `WB_API_V1 → WB_RESULT_V1`;
-- fixed host aliases по official WB domains;
-- operation → fixed host/method/path/credential-category mapping;
-- Content / Prices / Marketplace / Analytics / Promotion / Finance credential slots;
-- typed path params, которые не позволяют path injection;
-- arbitrary URL/host/headers/method/token injection запрещены;
-- только READ aliases;
-- binary analytics download явно маркируется как binary response;
-- Jam restriction маркируется в operation metadata.
+- fixed official host aliases and credential-category mapping;
+- Bearer auth worker-side only;
+- typed path params/path traversal rejection;
+- read-only allowlist;
+- общий exactly-once transport + durable runtime/execution core;
+- binary analytics download явно отделён от JSON result;
+- Jam restriction маркируется в operation metadata;
+- shared provider protocol/transport/runtime/execution regression после current corrections: **38/38 PASS**;
+- full real Chromium MV3 mocked lifecycle PASS;
+- popup `/ping` → one mock request with exact Bearer header;
+- Manual `cards_list` → exactly 1 request;
+- Autorun `cards_list` + `sales_funnel_products` → exactly 2 requests, `sequence=2`;
+- Pause → Resume → Finish PASS;
+- total mock API calls = 4 (`ping + Manual + 2 Autorun`), duplicates = 0;
+- fresh ZIP source/extracted byte compare `13/13`;
+- full lifecycle повторён **из clean extracted fresh ZIP**: PASS;
+- candidate ZIP SHA-256: `612f0509003ef6bdbdba565d377ac61a29e2b361bb20bca9bf04e51b53b1b989`.
 
-Ozon+WB provider-core regression:
+Evidence:
 
-- `11/11 PASS`;
-- `node --check` обоих provider protocol modules — PASS;
-- live GitHub blob SHA provider files и теста совпали с байтами, на которых выполнен этот regression.
+- `tooling/llm-api-bridges/wildberries/ACCEPTANCE_CANDIDATE_0.1.0.md`
 
-Остаётся: browser extension runtime/popup/manual/autorun/exactly-once/durable recovery, expanded alias validation schemas, packaged Chromium tests и real WB-account smoke requests.
+Почему ещё не `[x]`:
+
+- real WB token/account не тестировались;
+- фактически доступные token categories и Jam entitlement неизвестны;
+- real pagination/rate limits/binary generated reports ещё не проверены.
 
 ### [ ] 03A.7 — Выгрузить полный ассортимент и доступные seller facts из Ozon и WB
 
-Собрать прежде всего: identifiers, titles, seller article/SKU, marketplace listing ids, categories/subjects, attributes, media refs, prices/discounts, status, warehouse stock, availability и другие доступные product-level facts.
+После real-account acceptance собрать identifiers, titles, seller article/SKU, marketplace listing IDs, categories/subjects, variants, attributes, media refs, prices/discounts, listing state, warehouses/stocks/availability и другие доступные product-level facts.
 
 ### [ ] 03A.8 — Построить канонический product-centric data layer
 
-Добавить сущности минимум: Product, SKU/Variant, ProductFamily, Category, MarketplaceAccount, MarketplaceListing, Warehouse, StockSnapshot, Order/Sale observation, Return, Finance observation, AdCampaign/AdProduct observation. Query evidence должен уметь ссылаться на family/category/SKU, а не жить отдельно от ассортимента.
+Добавить сущности минимум: Product, SKU/Variant, ProductFamily, Category, MarketplaceAccount, MarketplaceListing, Warehouse, StockSnapshot, Order/Sale observation, Return, Finance observation, AdCampaign/AdProduct observation. Query evidence должен ссылаться на family/category/SKU, а не жить отдельно от ассортимента.
 
 ### [ ] 03A.9 — Выполнить cross-platform seller analytics baseline
 
-Получить доступную историческую статистику продаж/заказов/остатков/цен/финансов/рекламы и сформировать первый диагностический baseline. Цель — уметь расследовать падение продаж через причинную цепочку: demand → listing availability → regional stock → ad delivery → traffic → conversion → orders → cancellations/returns → finance.
+Получить доступную историческую статистику продаж/заказов/остатков/цен/финансов/рекламы и сформировать первый diagnostic baseline. Цель: расследовать падение продаж через причинную цепочку `demand → listing eligibility → price/promo → regional/warehouse stock → ad delivery → traffic → funnel → orders → cancellations/returns → replenishment → finance`.
 
 ### [ ] 03A.10 — Re-baseline roadmap 03 по всему ассортименту
 
-Сгруппировать ~70 товаров в реальные категории/product families, определить для каждой семьи seed/root queries и приоритет. Печать Велеса становится одним уже исследованным pilot family. После этого пересчитать объём 03 и только затем возобновить Wordstat, далее 04 SERP/Alice.
+Сгруппировать ~70 товаров в реальные categories/product families, определить seed/root queries и приоритет для каждой семьи. «Печать Велеса» становится одним уже исследованным pilot family. Только после этого возобновить Wordstat и затем 04 SERP/Alice.
 
-## Оценка ранов
+## Текущий технический regression baseline
 
-После первого официального API-аудита диапазон **15–30 содержательных ранов** остаётся рабочим. Основная неопределённость теперь не в доступности данных WB, а в completion Ozon exact library surface, browser-extension parity с proven Wordstat lifecycle, real-account acceptance и последующем cross-platform ingestion.
+Общий provider protocol + transport + durable runtime/execution suite: **38/38 PASS**.
+
+Mocked Chromium используется только для доказательства lifecycle/exactly-once/security mechanics и не подменяет real marketplace account acceptance.
 
 ## Блокеры
 
-- пользователь создаёт/выдаёт необходимые Ozon и WB API credentials/scopes;
-- доступность конкретных API методов зависит от типа кабинета, схемы работы, подписки и выданных прав;
-- Ozon official interactive Seller API library должен стать доступен для completion exact endpoint/schema audit;
-- любые write/mutation scopes не являются обязательными для этого этапа и по умолчанию отключены.
+- владелец создаёт и вводит Ozon/WB credentials **только в local extension popup, не в чат и не в GitHub**;
+- фактические API capabilities зависят от типа кабинета, token scopes/categories, subscription/Jam и account permissions;
+- completion Ozon exact official API surface ещё нужен;
+- write/mutation operations не являются частью initial bridge и остаются запрещёнными.
