@@ -43,16 +43,16 @@ Root set:
 - `славянский оберег в машину` — `totalCount=72`;
 - `подвеска на зеркало в машину` — `totalCount=973`;
 - `печать велеса значение` — `totalCount=617`;
-- `медвежья и волчья печать велеса отличие` — `totalCount=1`.
+- `медвежья и волчья печать велеса отличие` — `totalCount=1`;
+- `какой оберег выбрать в машину` — `totalCount=12`.
 
-**Meaning / comparison / choice — осталось**
-- `какой оберег выбрать в машину`.
+**Meaning / comparison / choice — закрыто в root discovery**
 
 **Gift — осталось**
 - `подарок автомобилисту`;
 - `подарок мужчине в машину`.
 
-Текущий прогресс root set: **11/14** валидных GetTop.
+Текущий прогресс root set: **12/14** валидных GetTop.
 
 ### B. Operator precision
 
@@ -158,8 +158,15 @@ Running log root measurements:
 - `results` и `associations` отсутствовали, поэтому child/related observations не выводятся;
 - exact comparison wording имеет очень слабый broad signal и не является high-value operator candidate по текущему Wordstat evidence.
 
+### `какой оберег выбрать в машину`
+
+- `totalCount = 12`;
+- один `RESULT`: `обереги в машину какой лучше выбрать = 12`;
+- 15 `ASSOCIATION` в основном относятся к автоподбору, надёжности автомобилей и подбору комплектующих и не трактуются как спрос на обереги;
+- direct automotive-choice intent наблюдается, но остаётся узким по текущему broad GetTop.
+
 ## 7. Следующий measurement
 
-`GetTop("какой оберег выбрать в машину")`, Россия (`225`), `DEVICE_ALL`, `numPhrases=100`.
+`GetTop("подарок автомобилисту")`, Россия (`225`), `DEVICE_ALL`, `numPhrases=100`.
 
-Причина: comparison root уже измерен и дал `totalCount=1`. Следующий незакрытый root исходной очереди — automotive choice query, который должен показать фактический human-demand слой формулировок выбора оберега для автомобиля.
+Причина: meaning/comparison/choice root-set закрыт. Следующий незакрытый слой root discovery — gift; `подарок автомобилисту` является первым gift-root исходной очереди и одновременно предварительным кандидатом для operator precision/dynamics при подтверждении достаточного broad demand.
