@@ -7,8 +7,8 @@
 
 ## Прогресс root set
 
-- root measurements с валидным GetTop: **11/14**;
-- из них выполнено непосредственно в roadmap 03: **10**;
+- root measurements с валидным GetTop: **12/14**;
+- из них выполнено непосредственно в roadmap 03: **11**;
 - historical baseline: **1** (`печать велеса`).
 
 ## 1. `печать велеса`
@@ -257,18 +257,54 @@ Measurement:
 3. Этот exact comparison wording сам по себе не даёт основания считать comparison intent крупным самостоятельным кластером; operator, SERP и Alice evidence остаются pending.
 4. Низкий count не отменяет ранее измеренный спрос на отдельные bear/wolf variant и meaning roots; это разные query entities и их counts не суммируются.
 
+## 12. `какой оберег выбрать в машину`
+
+Measurement:
+
+- дата capture: `2026-08-10` (точность DATE; payload не содержит точного времени);
+- режим: текущий controlled Autorun live-test;
+- raw envelope: `bridge=wordstat-manual-bridge`, `version=1.1.1`;
+- report prefix наблюдался как `Тест префикс` перед `WORDSTAT_RESULT_V1`, но не включается внутрь raw API envelope;
+- `query_id = q_5b5d025fa1c6`;
+- `measurement_id = m_wordstat_20260810_62413d0f`;
+- `request_id = cdf23a53-9478-4166-9d48-85793c515423`;
+- Россия `225`, `DEVICE_ALL`, `numPhrases=100`;
+- HTTP 200, `elapsed_ms=198`;
+- `totalCount = 12`;
+- 1 `RESULT`;
+- 15 `ASSOCIATION`.
+
+Артефакты:
+
+- raw: `marketing/data/raw/wordstat/20260810__wordstat__gettop__kakoy-obereg-vybrat-v-mashinu__225__all.json`;
+- normalized: `marketing/data/normalized/wordstat/20260810__wordstat__gettop__kakoy-obereg-vybrat-v-mashinu__225__all.csv`;
+- Ledger: `marketing/data/ledger/query_evidence_ledger.csv`.
+
+Ключевой `RESULT`:
+
+- `обереги в машину какой лучше выбрать` — 12.
+
+### Что это позволяет утверждать сейчас
+
+1. Direct automotive-choice intent существует, но broad signal узкий: `totalCount = 12`.
+2. Returned RESULT фактически совпадает по намерению с root и имеет count `12`; отдельный более широкий relevant child в этом ответе не появился.
+3. Все 15 `ASSOCIATION` относятся в основном к общему выбору/подбору автомобиля, его надёжности или подбору комплектующих и не повышаются до спроса на оберег.
+4. Этот root закрывает meaning/comparison/choice часть исходного root-set; следующим остаётся gift-layer.
+
 ## Bridge live acceptance — текущие факты
 
 Три последовательных API measurement ранее прошли в controlled autorun live-test без ручного Copy: `печать велеса в машину` → `оберег в машину` → `славянский оберег в машину`. Во всех трёх случаях расширение автоматически захватило новый `WORDSTAT_API_V1`, выполнило один Yandex request, вернуло `WORDSTAT_RESULT_V1` с настроенным префиксом и отправило его в ChatGPT.
 
 Controlled manual live-test на `подвеска на зеркало в машину` успешно доказал цепочку: явная работа в привязанном диалоге → manual trigger → один Yandex request → HTTP 200 → настроенный prefix + `WORDSTAT_RESULT_V1` в ChatGPT. Raw envelope сохраняет фактически полученную metadata version без вмешательства в payload.
 
-Текущий autorun после Start-parity hotfix успешно доставил первый measurement `печать велеса значение`: команда была захвачена autorun, выполнен один Yandex request, получен HTTP 200 и возвращён настроенный prefix + `WORDSTAT_RESULT_V1`.
+Autorun после Start-parity hotfix успешно доставил measurement `печать велеса значение`: команда была захвачена autorun, выполнен один Yandex request, получен HTTP 200 и возвращён настроенный prefix + `WORDSTAT_RESULT_V1`.
 
-Новый controlled manual live-test на `медвежья и волчья печать велеса отличие` также прошёл: один `WORDSTAT_API_V1` → один Yandex request → HTTP 200 → `WORDSTAT_RESULT_V1`; measured `totalCount=1` сохранён без восстановления отсутствующих `results`/`associations`.
+Controlled manual live-test на `медвежья и волчья печать велеса отличие` также прошёл: один `WORDSTAT_API_V1` → один Yandex request → HTTP 200 → `WORDSTAT_RESULT_V1`; measured `totalCount=1` сохранён без восстановления отсутствующих `results`/`associations`.
+
+Текущий controlled Autorun measurement `какой оберег выбрать в машину` прошёл: один `WORDSTAT_API_V1` → один Yandex request → HTTP 200 → report prefix + `WORDSTAT_RESULT_V1`; measured `totalCount=12`, один RESULT и 15 ASSOCIATION сохранены в raw/normalized evidence.
 
 ## Следующий root
 
-`какой оберег выбрать в машину` — GetTop / Россия / DEVICE_ALL.
+`подарок автомобилисту` — GetTop / Россия / DEVICE_ALL.
 
-Причина: comparison-root закрыт measurement с `totalCount=1`; следующий незакрытый root исходной очереди 03.2 — automotive choice intent `какой оберег выбрать в машину`.
+Причина: meaning/comparison/choice часть root discovery закрыта; следующий незакрытый слой исходной очереди 03.2 — gift intent, начиная с `подарок автомобилисту`.
