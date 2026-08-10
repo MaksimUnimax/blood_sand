@@ -1,9 +1,43 @@
-# Ozon Seller bridge
+# Ozon Seller LLM Bridge
 
-Статус: **research/design**.
+Статус: **read-only candidate 0.1.0; real seller-account acceptance pending**.
 
-Первый этап — полный аудит актуальной официальной документации Ozon API: authentication/scopes, seller/catalog, listings, attributes/media, prices, stocks/warehouses, postings/orders/returns, finance/accruals, analytics, reports, promotion/advertising, reviews/questions where officially exposed, rate limits, pagination и ограничения доступа.
+## Назначение
 
-После API matrix строится read-only LLM bridge с командами `OZON_API_V1` и результатами `OZON_RESULT_V1`.
+Локальный LLM↔Ozon Seller API bridge для controlled analytics/assortment collection без передачи `Client-Id`/`Api-Key` модели.
 
-Первая прикладная задача проекта после acceptance: получить полный Ozon assortment/listings и доступную историческую статистику продавца для построения общего Product/SKU master и диагностики продаж.
+Командный протокол:
+
+- `OZON_API_V1`
+- `OZON_RESULT_V1`
+
+Канонический общий lifecycle/security contract:
+
+`../shared/LLM_API_BRIDGE_PROTOCOL.md`
+
+## Текущие артефакты
+
+- официальный capability audit: `OZON_API_CAPABILITY_AUDIT_2026-08-10.md`;
+- machine-readable confirmed read allowlist: `OZON_READ_ONLY_ALLOWLIST_V1.json`;
+- provider protocol core: `provider/ozon_protocol.js`;
+- current acceptance evidence: `ACCEPTANCE_CANDIDATE_0.1.0.md`;
+- installable tested candidate: `artifacts/ozon-bridge-v0.1.0-candidate.zip`.
+
+Current tested ZIP SHA-256:
+
+`c4bb7969de1d42782a074be0f014851ade2fd5ee146bd88baeb69c997bc4c015`
+
+## Текущий acceptance status
+
+Проверено в local/mock environment:
+
+- read-only symbolic operation allowlist;
+- one command → at most one external request;
+- Manual exactly-once;
+- two sequential Autorun operations;
+- delivery back into ChatGPT mock;
+- Pause / Resume / Finish;
+- fresh ZIP extraction 14/14 byte-identical;
+- full real Chromium MV3 lifecycle repeated from clean extracted ZIP.
+
+Не проверено пока: реальные Ozon Seller credentials/account, account permissions, current real response schemas, rate limits/pagination and still-pending official API sections. Поэтому 03A.4 остаётся `[~]`.
