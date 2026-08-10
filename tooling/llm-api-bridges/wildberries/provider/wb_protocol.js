@@ -11,7 +11,8 @@
     prices: "discounts-prices-api.wildberries.ru",
     marketplace: "marketplace-api.wildberries.ru",
     promotion: "advert-api.wildberries.ru",
-    finance: "finance-api.wildberries.ru"
+    finance: "finance-api.wildberries.ru",
+    calendar: "dp-calendar-api.wildberries.ru"
   });
 
   const OPERATIONS = Object.freeze({
@@ -39,7 +40,7 @@
     goods_returns: { method: "GET", host: "analytics", path: "/api/v1/analytics/goods-return", credential: "analytics", effect: "READ", query: true },
     seller_balance: { method: "GET", host: "finance", path: "/api/v1/account/balance", credential: "finance", effect: "READ", query: true },
     realization_details_period: { method: "POST", host: "finance", path: "/api/finance/v1/sales-reports/detailed", credential: "finance", effect: "READ", body: true },
-    realization_details_report: { method: "POST", host: "finance", path: "/api/finance/v1/sales-reports/detailed/{reportId}", credential: "finance", effect: "READ", body: true, pathParam: "reportId", pathType: "safe_id" },
+    realization_details_report: { method: "POST", host: "finance", path: "/api/finance/v1/sales-reports/detailed/{reportId}", credential: "finance", effect: "READ", body: true, pathParam: "reportId", pathType: "uint" },
     campaigns_list: { method: "GET", host: "promotion", path: "/adv/v1/promotion/count", credential: "promotion", effect: "READ", query: true },
     campaigns_info: { method: "GET", host: "promotion", path: "/api/advert/v2/adverts", credential: "promotion", effect: "READ", query: true },
     campaign_products: { method: "POST", host: "promotion", path: "/adv/v2/supplier/nms", credential: "promotion", effect: "READ", body: true },
@@ -47,8 +48,8 @@
     campaign_cluster_stats: { method: "POST", host: "promotion", path: "/adv/v0/normquery/stats", credential: "promotion", effect: "READ", body: true },
     campaign_stats: { method: "GET", host: "promotion", path: "/adv/v3/fullstats", credential: "promotion", effect: "READ", query: true },
     promotion_balance: { method: "GET", host: "promotion", path: "/adv/v1/balance", credential: "promotion", effect: "READ", query: true },
-    promotions_calendar: { method: "GET", host: "promotion", path: "/api/v1/calendar/promotions", credential: "promotion", effect: "READ", query: true },
-    promotions_details: { method: "GET", host: "promotion", path: "/api/v1/calendar/promotions/details", credential: "promotion", effect: "READ", query: true }
+    promotions_calendar: { method: "GET", host: "calendar", path: "/api/v1/calendar/promotions", credential: "prices", effect: "READ", query: true },
+    promotions_details: { method: "GET", host: "calendar", path: "/api/v1/calendar/promotions/details", credential: "prices", effect: "READ", query: true }
   });
   for (const value of Object.values(OPERATIONS)) Object.freeze(value);
 
@@ -120,7 +121,7 @@
     const token = String(credentials?.[request.credential] || "").trim();
     if (!token) fail("TOKEN_MISSING", `Нет WB token категории ${request.credential}.`);
     if (/[^\x20-\x7E]/.test(token)) fail("INVALID_CREDENTIAL_ENCODING", "WB token должен быть ASCII header-safe.");
-    return Object.freeze({ ...request, headers: Object.freeze({ ...request.headers, Authorization: token }) });
+    return Object.freeze({ ...request, headers: Object.freeze({ ...request.headers, Authorization: `Bearer ${token}` }) });
   }
   function redactRequestForEvidence(request) { return Object.freeze({ host: request.host, method: request.method, path: new URL(request.url).pathname,
     credential: request.credential, effect: request.effect, response: request.response, restriction: request.restriction }); }

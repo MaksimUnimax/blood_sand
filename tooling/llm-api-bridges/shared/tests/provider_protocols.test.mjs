@@ -79,7 +79,7 @@ test('WB: credential category is selected by operation, token is not evidence', 
   assert.equal(req.host, 'advert-api.wildberries.ru');
   assert.equal(req.credential, 'promotion');
   const authed = wb.attachCredentials(req, { promotion: 'secret-token' });
-  assert.equal(authed.headers.Authorization, 'secret-token');
+  assert.equal(authed.headers.Authorization, 'Bearer secret-token');
   assert.doesNotMatch(JSON.stringify(wb.redactRequestForEvidence(authed)), /secret-token/);
 });
 
@@ -100,4 +100,17 @@ test('Both: result reports do not invent credentials and fingerprints are stable
   const wc = wb.normalizeCommand({ operation:'cards_list', params:{locale:'ru'} });
   const wreport = wb.formatResultReport({requestId:'r', command:wc, httpStatus:200, elapsedMs:1, result:{ok:true}});
   assert.match(wreport, /^WB_RESULT_V1\n/);
+});
+
+
+test('WB: promotions calendar uses official dp-calendar host and Prices credential', () => {
+  const req = wb.buildRequest(wb.normalizeCommand({ operation: 'promotions_calendar', params: { startDateTime: '2026-08-01T00:00:00Z', endDateTime: '2026-08-31T23:59:59Z', allPromo: true } }));
+  assert.equal(req.host, 'dp-calendar-api.wildberries.ru');
+  assert.equal(req.credential, 'prices');
+});
+
+test('WB: finance reportId is numeric int64 path, path injection rejected', () => {
+  const req = wb.buildRequest(wb.normalizeCommand({ operation: 'realization_details_report', path: { reportId: '9223372036854775807' }, params: { fields: ['nmId'] } }));
+  assert.equal(req.url, 'https://finance-api.wildberries.ru/api/finance/v1/sales-reports/detailed/9223372036854775807');
+  throwsCode(() => wb.normalizeCommand({ operation: 'realization_details_report', path: { reportId: 'abc' }, params: {} }), 'INVALID_PATH_PARAM');
 });
