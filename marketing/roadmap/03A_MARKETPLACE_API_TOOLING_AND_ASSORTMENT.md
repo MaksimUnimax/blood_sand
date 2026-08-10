@@ -42,9 +42,10 @@
 
 ### [~] 03A.3 — Провести полный официальный API-аудит Ozon
 
-Артефакт:
+Артефакты:
 
-- `tooling/llm-api-bridges/ozon-seller/OZON_API_CAPABILITY_AUDIT_2026-08-10.md`
+- `tooling/llm-api-bridges/ozon-seller/OZON_API_CAPABILITY_AUDIT_2026-08-10.md`;
+- `tooling/llm-api-bridges/ozon-seller/OZON_READ_ONLY_ALLOWLIST_V1.json` — machine-readable список только подтверждённых read methods.
 
 Официально подтверждены и уже allowlisted в provider core:
 
@@ -57,36 +58,48 @@
 
 Подтверждён отдельный advertising API contour.
 
-Шаг остаётся `[~]`: текущий official interactive Seller API library/Swagger недоступен из research environment из-за redirect loop. Поэтому exact current read methods/schemas для полного catalog, prices/promotions, returns, realization/reports, warehouse/geography и advertising surface не выдумываются и должны быть завершены по доступному official snapshot/live docs.
+Шаг остаётся `[~]`: текущий official interactive Seller API library/Swagger недоступен из research environment из-за redirect loop. Поэтому exact current read methods/schemas для полного catalog, prices/promotions, returns, realization/reports, warehouse/geography и advertising surface не выдумываются и должны быть завершены по доступному official snapshot/live docs или real-account official smoke.
 
 ### [~] 03A.4 — Реализовать и acceptance-test Ozon LLM bridge
 
-Сделано:
+Текущий candidate 0.1.0:
 
 - `OZON_API_V1 → OZON_RESULT_V1`;
 - symbolic hard allowlist; assistant не передаёт raw URL/host/method/headers;
 - `Client-Id` + `Api-Key` существуют только local worker/provider path;
 - read-only provider core;
-- общий exactly-once transport;
-- durable operation model и execution core;
+- один accepted command = максимум один внешний Ozon request;
+- без hidden retry и hidden pagination;
+- durable manual/autorun ownership/recovery сохранён из audited lifecycle;
 - concurrent duplicate fence;
-- no hidden retry on 429/network/timeout;
-- old-session `requesting` после worker restart → `REQUEST_OUTCOME_UNKNOWN`, no replay;
-- committed `delivering` recovery без повторного Ozon request;
-- tab ownership/rebind protection;
-- Manual + Autorun + Pause/Resume/Finish browser-extension candidate собран;
-- source candidate: manifest v3 / version `0.1.0`, JS syntax PASS;
-- full real Chromium MV3 mocked lifecycle PASS;
-- Manual: 1 accepted command → exactly 1 mock Seller API request;
-- Autorun: 2 sequential commands → exactly 2 additional requests, `sequence=2`;
-- Pause → Resume → Finish PASS;
-- fresh ZIP extraction byte-compare: `13/13` files identical;
+- old-session unknown request не переигрывается автоматически;
+- delivery recovery не повторяет Ozon request;
+- explicit conversation binding + duplicate-tab ownership protection;
+- Manual + Autorun + Pause/Resume/Finish;
+- source candidate: Manifest V3 / version `0.1.0`;
+- final runtime JS syntax: PASS;
+- protocol matrix: **15/15 PASS** по 9 allowlisted operations;
+- Node VM Manual exactly-once: PASS, **1 accepted command → 1 external request**, duplicate manual request id → без второго request;
+- real Chromium MV3 source-tree lifecycle: PASS;
+- Manual `product_stocks` → exactly 1 request;
+- Autorun `analytics_data` + `finance_transactions` → exactly 2 additional requests;
+- run `sequence=2`, `waiting_command`;
+- Pause → Resume → Finish/Stop: PASS;
+- total Chromium mock API requests = **3**, duplicates = 0;
+- tested paths exactly `/v4/product/info/stocks`, `/v1/analytics/data`, `/v3/finance/transaction/list`;
+- fresh ZIP extraction: **14/14 byte-identical**;
+- protocol + worker manual smoke повторены из fresh ZIP: PASS;
 - полный Chromium lifecycle повторён **из clean extracted fresh ZIP**: PASS;
-- candidate ZIP SHA-256: `5a50cbd79d0e5710d40410d921a189af602dbe337add07c50d36270b8270d2ac`.
+- Chromium managed block policy после каждого test restored;
+- current candidate ZIP size: **67,828 bytes**;
+- current candidate ZIP SHA-256: `c4bb7969de1d42782a074be0f014851ade2fd5ee146bd88baeb69c997bc4c015`;
+- exact tested binary stored in repository: `tooling/llm-api-bridges/ozon-seller/artifacts/ozon-bridge-v0.1.0-candidate.zip`.
 
 Evidence:
 
-- `tooling/llm-api-bridges/ozon-seller/ACCEPTANCE_CANDIDATE_0.1.0.md`
+- `tooling/llm-api-bridges/ozon-seller/ACCEPTANCE_CANDIDATE_0.1.0.md`.
+
+Первый Chromium manual failure (`manual API count 0`) был локализован как defect **тестового mock DOM**: mock не соответствовал ни current, ни legacy supported writing-block adapter. После исправления mock на поддержанную current writing-block структуру production capture algorithm не менялся, и весь lifecycle прошёл. Это отдельно подтверждает fail-closed на неподдержанном DOM.
 
 Почему ещё не `[x]`:
 
@@ -164,6 +177,8 @@ Evidence:
 ## Текущий технический regression baseline
 
 Общий provider protocol + transport + durable runtime/execution suite: **38/38 PASS**.
+
+Ozon current standalone candidate additionally имеет protocol matrix `15/15`, worker Manual exactly-once smoke и source/fresh-ZIP real Chromium lifecycle PASS.
 
 Mocked Chromium используется только для доказательства lifecycle/exactly-once/security mechanics и не подменяет real marketplace account acceptance.
 
