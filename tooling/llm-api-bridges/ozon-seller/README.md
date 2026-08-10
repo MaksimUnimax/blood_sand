@@ -1,43 +1,22 @@
-# Ozon Seller LLM Bridge
+# Ozon Seller API research
 
-Статус: **read-only candidate 0.1.0; real seller-account acceptance pending**.
+Статус: **research/planning; Ozon browser extension NOT STARTED**.
 
-## Назначение
+## Текущий этап
 
-Локальный LLM↔Ozon Seller API bridge для controlled analytics/assortment collection без передачи `Client-Id`/`Api-Key` модели.
+Сейчас здесь хранится только исследование официальной read-only поверхности Ozon API, необходимой для будущего LLM↔Ozon bridge и для последующего импорта полного магазина/аналитики продавца.
 
-Командный протокол:
-
-- `OZON_API_V1`
-- `OZON_RESULT_V1`
-
-Канонический общий lifecycle/security contract:
-
-`../shared/LLM_API_BRIDGE_PROTOCOL.md`
+Разработка расширения ещё не начата. В репозитории не должно быть Ozon extension candidate, acceptance evidence или утверждений о пройденных browser tests до отдельного этапа разработки из roadmap.
 
 ## Текущие артефакты
 
-- официальный capability audit: `OZON_API_CAPABILITY_AUDIT_2026-08-10.md`;
-- machine-readable confirmed read allowlist: `OZON_READ_ONLY_ALLOWLIST_V1.json`;
-- provider protocol core: `provider/ozon_protocol.js`;
-- current acceptance evidence: `ACCEPTANCE_CANDIDATE_0.1.0.md`;
-- installable tested candidate: `artifacts/ozon-bridge-v0.1.0-candidate.zip`.
+- `OZON_API_CAPABILITY_AUDIT_2026-08-10.md` — текущий официальный capability audit;
+- `OZON_READ_ONLY_ALLOWLIST_V1.json` — исследовательский machine-readable список только тех read methods, которые уже подтверждены официальными материалами и являются кандидатами для будущего bridge.
 
-Current tested ZIP SHA-256:
+## Будущая разработка
 
-`c4bb7969de1d42782a074be0f014851ade2fd5ee146bd88baeb69c997bc4c015`
+После завершения API audit отдельным roadmap-шагом будет разработан read-only bridge с локальным хранением `Client-Id`/`Api-Key`, командами `OZON_API_V1` и результатами `OZON_RESULT_V1`.
 
-## Текущий acceptance status
+Архитектурным референсом служит действующий Yandex Wordstat bridge и общий design contract `../shared/LLM_API_BRIDGE_PROTOCOL.md`.
 
-Проверено в local/mock environment:
-
-- read-only symbolic operation allowlist;
-- one command → at most one external request;
-- Manual exactly-once;
-- two sequential Autorun operations;
-- delivery back into ChatGPT mock;
-- Pause / Resume / Finish;
-- fresh ZIP extraction 14/14 byte-identical;
-- full real Chromium MV3 lifecycle repeated from clean extracted ZIP.
-
-Не проверено пока: реальные Ozon Seller credentials/account, account permissions, current real response schemas, rate limits/pagination and still-pending official API sections. Поэтому 03A.4 остаётся `[~]`.
+До начала этого шага `OZON_API_V1` считается только запланированным протоколом, а не существующим расширением.
