@@ -7,8 +7,8 @@
 
 ## Прогресс root set
 
-- root measurements с валидным GetTop: **12/14**;
-- из них выполнено непосредственно в roadmap 03: **11**;
+- root measurements с валидным GetTop: **13/14**;
+- из них выполнено непосредственно в roadmap 03: **12**;
 - historical baseline: **1** (`печать велеса`).
 
 ## 1. `печать велеса`
@@ -291,6 +291,52 @@ Measurement:
 3. Все 15 `ASSOCIATION` относятся в основном к общему выбору/подбору автомобиля, его надёжности или подбору комплектующих и не повышаются до спроса на оберег.
 4. Этот root закрывает meaning/comparison/choice часть исходного root-set; следующим остаётся gift-layer.
 
+## 13. `подарок автомобилисту`
+
+Measurement:
+
+- дата capture: `2026-08-10` (точность DATE; payload не содержит точного времени);
+- режим: текущий controlled Autorun live-test;
+- raw envelope: `bridge=wordstat-manual-bridge`, `version=1.1.1`;
+- report prefix наблюдался как `Тест префикс` перед `WORDSTAT_RESULT_V1`, но не включается внутрь raw API envelope;
+- `query_id = q_c2f45c10ecf5`;
+- `measurement_id = m_wordstat_20260810_81b917e1`;
+- `request_id = 526c687d-8b9a-4fd2-a9e8-42f81345f4c7`;
+- Россия `225`, `DEVICE_ALL`, `numPhrases=100`;
+- HTTP 200, `elapsed_ms=506`;
+- `totalCount = 1192`;
+- 27 `RESULT`;
+- 16 `ASSOCIATION`.
+
+Артефакты:
+
+- raw: `marketing/data/raw/wordstat/20260810__wordstat__gettop__podarok-avtomobilistu__225__all.json`;
+- normalized: `marketing/data/normalized/wordstat/20260810__wordstat__gettop__podarok-avtomobilistu__225__all.csv`;
+- Ledger: `marketing/data/ledger/query_evidence_ledger.csv`.
+
+Ключевые `RESULT`:
+
+- `подарок автомобилисту` — 1192;
+- `подарок автомобилисту мужчине` — 429;
+- `подарок день автомобилиста` — 257;
+- `подарок автомобилисту на день рождения` — 240;
+- `подарок автомобилисту мужчине на день рождения` — 187;
+- `подарок для автомобилиста мужчине на день` — 78;
+- `подарок автомобилисту женщине` — 51;
+- `идеи подарков автомобилисту` — 44;
+- `подарки для автомобилистов в машину` — 41;
+- `подарки для автомобилистов в машину мужчине` — 31;
+- `что купить автомобилисту в подарок` — 25.
+
+### Что это позволяет утверждать сейчас
+
+1. Gift-root имеет крупный broad signal: `totalCount = 1192`, сопоставимый по масштабу с общим automotive-obereg root `1388`.
+2. Мужская gift-ветка выражена явно (`429`), как и birthday-intent (`240`) и их пересечение в отдельной формулировке (`187`). Counts пересекаются и не суммируются.
+3. Есть прямой product/use-case слой `подарки для автомобилистов в машину = 41` и explicit shopping-research formulation `что купить автомобилисту в подарок = 25`.
+4. Женская ветка также наблюдается (`51`), поэтому gift-demand не ограничивается только мужской аудиторией.
+5. Associations в основном относятся к общему подарочному спросу; они не считаются child demand для автомобилистов и не суммируются с RESULT.
+6. `подарок автомобилисту` подтверждается как high-value gift root и остаётся обоснованным кандидатом для operator precision/dynamics после завершения root discovery.
+
 ## Bridge live acceptance — текущие факты
 
 Три последовательных API measurement ранее прошли в controlled autorun live-test без ручного Copy: `печать велеса в машину` → `оберег в машину` → `славянский оберег в машину`. Во всех трёх случаях расширение автоматически захватило новый `WORDSTAT_API_V1`, выполнило один Yandex request, вернуло `WORDSTAT_RESULT_V1` с настроенным префиксом и отправило его в ChatGPT.
@@ -303,8 +349,12 @@ Controlled manual live-test на `медвежья и волчья печать 
 
 Текущий controlled Autorun measurement `какой оберег выбрать в машину` прошёл: один `WORDSTAT_API_V1` → один Yandex request → HTTP 200 → report prefix + `WORDSTAT_RESULT_V1`; measured `totalCount=12`, один RESULT и 15 ASSOCIATION сохранены в raw/normalized evidence.
 
+Следующий controlled Autorun measurement `подарок автомобилисту` также прошёл: один `WORDSTAT_API_V1` → один Yandex request → HTTP 200 → report prefix + `WORDSTAT_RESULT_V1`; measured `totalCount=1192`, 27 RESULT и 16 ASSOCIATION сохранены в raw/normalized evidence и Ledger.
+
+После полной фиксации результата `подарок автомобилисту` оператор явно остановил Autorun. **Новый API-вызов не выполняется и следующая исполняемая команда не выдаётся.**
+
 ## Следующий root
 
-`подарок автомобилисту` — GetTop / Россия / DEVICE_ALL.
+Плановый, но не запущенный root: `подарок мужчине в машину` — GetTop / Россия / DEVICE_ALL.
 
-Причина: meaning/comparison/choice часть root discovery закрыта; следующий незакрытый слой исходной очереди 03.2 — gift intent, начиная с `подарок автомобилисту`.
+Причина: после `подарок автомобилисту` root discovery имеет прогресс `13/14`; в исходном root-set остаётся один gift-root. Его выполнение отложено до отдельной команды оператора.
