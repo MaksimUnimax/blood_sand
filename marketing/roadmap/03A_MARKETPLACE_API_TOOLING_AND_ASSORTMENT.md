@@ -64,19 +64,36 @@
 Текущие исследовательские артефакты:
 
 - `tooling/llm-api-bridges/ozon-seller/OZON_API_CAPABILITY_AUDIT_2026-08-10.md`;
+- `tooling/llm-api-bridges/ozon-seller/OZON_OFFICIAL_REVALIDATION_2026-08-10.md` — свежая повторная official-source сверка;
 - `tooling/llm-api-bridges/ozon-seller/OZON_READ_ONLY_ALLOWLIST_V1.json` — исследовательский machine-readable список подтверждённых read methods, не implementation code.
 
-Уже подтверждены официальными материалами Ozon как минимум следующие необходимые классы данных/методы:
+Повторно подтверждены официальными Ozon-источниками:
 
-- текущие остатки товара;
-- seller/product analytics;
-- search-query analytics по собственным товарам;
-- FBO/FBS postings;
-- finance transaction list;
-- FBO supply order/details;
-- существование отдельного advertising API contour.
+- public API only: scraping кабинета/непубличных Ozon surfaces не использовать;
+- Seller API host/auth contour: `api-seller.ozon.ru`, `Client-Id` + `Api-Key`;
+- current stock family: `POST /v4/product/info/stocks`;
+- seller/product analytics: `POST /v1/analytics/data`;
+- query analytics: `POST /v1/analytics/product-queries` и `/details`;
+- FBO postings: `/v3/posting/fbo/list`;
+- FBS posting detail: `/v3/posting/fbs/get`;
+- finance transactions: `/v3/finance/transaction/list`;
+- FBO supply: `/v3/supply-order/get` и `/v1/supply-order/details`;
+- отдельное существование advertising API contour.
 
-Шаг остаётся `[~]`, потому что нужно довести exact current read surface для полного catalog/listing master, prices/discounts/promotions, returns/cancellations, reports/realization/settlement, warehouses/geography/delivery availability, advertising statistics и reviews/questions там, где они официально доступны. Неподтверждённые endpoints не выдумывать.
+Важно: старый Ozon example использует `/v3/product/info/stocks`; current official evidence 2025 подтверждает `/v4/product/info/stocks`, поэтому будущая разработка не должна копировать старую v3 ручку из historical example.
+
+Шаг остаётся `[~]`. Повторная попытка открыть official interactive Seller API library `https://docs.ozon.ru/api/seller/` в research environment снова дала redirect loop. Поэтому ещё нужно снять current exact read surface и schemas для:
+
+- полного catalog/listing master;
+- prices/discounts/promotions;
+- returns/cancellations/claims;
+- reports/realization/settlement;
+- warehouses/geography/delivery availability;
+- advertising campaign/product/statistics methods и auth/hosts;
+- reviews/questions/buyer communications;
+- current per-method pagination, limits, history windows и account/Premium restrictions.
+
+До закрытия этого gap **03A.4 не начинать** и неподтверждённые endpoints не выдумывать.
 
 ### [ ] 03A.4 — Разработать Ozon LLM browser extension
 
@@ -101,12 +118,26 @@
 Исследовательские артефакты:
 
 - `tooling/llm-api-bridges/wildberries/WB_API_CAPABILITY_AUDIT_2026-08-10.md`;
-- `tooling/llm-api-bridges/wildberries/WB_API_CAPABILITY_CORRECTIONS_2026-08-10.md`;
+- `tooling/llm-api-bridges/wildberries/WB_API_CAPABILITY_CORRECTIONS_2026-08-10.md` — current corrections имеют приоритет при конфликте со старой формулировкой audit;
 - `tooling/llm-api-bridges/wildberries/READ_ONLY_OPERATION_MATRIX_V1.md`.
 
-Для будущего bridge исследованы необходимые read-классы: cards/catalog, product reference data, prices/discounts/quarantine, seller warehouses/FBS stock, stock analytics/history, sales funnel, search-query analytics, generated analytics reports, FBS orders, regional/return reports, finance/realization, promotion campaigns/statistics и promotions calendar.
+Для будущего bridge исследованы необходимые read-классы: cards/catalog, prices/discounts, seller warehouses/FBS stock, WB warehouse remains, sales funnel, generated analytics reports, FBS orders, finance/realization, promotion campaigns/statistics и promotions calendar.
 
-Точечные current corrections зафиксированы отдельно; deprecated endpoints не должны использоваться при будущей разработке. Перед coding/release каждый фактически используемый endpoint повторно сверяется с актуальной официальной документацией.
+Fresh 2026 revalidation выявила обязательные current corrections:
+
+- auth: `Authorization: Bearer <token>`; Service/Basic flow может дополнительно требовать `X-Client-Secret`;
+- cards master: `POST content-api.wildberries.ru/content/v2/get/cards/list` + отдельный trash list, cursor pagination >100;
+- prices: `GET discounts-prices-api.wildberries.ru/api/v2/list/goods/filter`, `limit <= 1000` + offset;
+- seller warehouses: `GET marketplace-api.wildberries.ru/api/v3/warehouses`;
+- FBS inventory: `POST marketplace-api.wildberries.ru/api/v3/stocks/{warehouseId}`;
+- старый `GET statistics-api.../api/v1/supplier/stocks` помечен deprecated/к удалению; current WB warehouse remains строится через async `seller-analytics-api ... /api/v1/warehouse_remains` task/status/download flow;
+- FBS orders: `GET /api/v3/orders/new`, `GET /api/v3/orders`, `POST /api/v3/orders/status`; list period максимум 30 календарных дней одним запросом;
+- критично: старый `GET /api/v5/supplier/reportDetailByPeriod` был объявлен к отключению 2026-07-15 и не должен использоваться будущим bridge;
+- current finance replacement: `POST finance-api.wildberries.ru/api/finance/v1/sales-reports/list`, `/detailed`, `/detailed/{reportId}`; отдельные acquiring report methods также существуют;
+- sales funnel current family: `/api/analytics/v3/sales-funnel/...`; generated CSV flow используется для более длинных периодов и имеет собственные ограничения/Jam requirements;
+- promotion API имеет отдельный contour; promotions calendar использует `dp-calendar-api.wildberries.ru` и Prices & Discounts category.
+
+Deprecated endpoints не использовать. Перед coding/release каждый фактически используемый endpoint повторно сверяется с актуальной официальной документацией/release notes.
 
 ### [ ] 03A.6 — Разработать Wildberries LLM browser extension
 
@@ -116,7 +147,7 @@
 
 Планируемые требования:
 
-- локальное хранение WB token(s) с учётом реальных category/scope requirements;
+- локальное хранение WB token(s) с учётом реальных category/scope/token-type requirements;
 - read-only hard allowlist;
 - `WB_API_V1 → WB_RESULT_V1`;
 - Manual и Autorun;
@@ -163,6 +194,6 @@ Query evidence должен ссылаться на family/category/SKU, а не
 
 - Ozon/WB credentials вводятся только локально после разработки соответствующего расширения;
 - до 03A.4 и 03A.6 никаких утверждений о существовании Ozon/WB extension быть не должно;
-- фактические API capabilities зависят от типа кабинета, token scopes/categories, подписок и account permissions;
+- фактические API capabilities зависят от типа кабинета, token scopes/categories, token type, подписок и account permissions;
 - write/mutation operations не являются частью initial bridges и остаются запрещёнными до отдельного решения;
 - API research и extension development — разные этапы и не должны смешиваться в статусах roadmap.
