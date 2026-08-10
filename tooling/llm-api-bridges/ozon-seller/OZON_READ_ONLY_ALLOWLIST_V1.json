@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0",
+  "provider": "ozon",
+  "generated_at": "2026-08-10",
+  "status": "confirmed-methods-only",
+  "base_url": "https://api-seller.ozon.ru",
+  "credential_model": {
+    "type": "seller_api",
+    "headers": ["Client-Id", "Api-Key"],
+    "storage": "local_extension_only"
+  },
+  "invariants": {
+    "read_only": true,
+    "one_command_one_external_request": true,
+    "automatic_retry": false,
+    "arbitrary_url_allowed": false,
+    "credentials_in_llm_payload": false
+  },
+  "operations": {
+    "product_stocks": {
+      "method": "POST",
+      "path": "/v4/product/info/stocks",
+      "effect": "READ",
+      "purpose": ["current_stock", "fbo_fbs_split", "warehouse_availability", "stockout_diagnostics"],
+      "official_evidence": "https://dev.ozon.ru/community/1747-v4-product-info-stocks-daet-ne-korrektnye-ostatki/"
+    },
+    "analytics_data": {
+      "method": "POST",
+      "path": "/v1/analytics/data",
+      "effect": "READ",
+      "purpose": ["impressions", "sessions", "conversion", "revenue", "returns", "ordered_units", "product_funnel"],
+      "official_evidence": "https://dev.ozon.ru/case/98-Keis-o-novom-instrumente-dlia-kontrolia-tovarnykh-ostatkov-na-sklade/"
+    },
+    "product_queries": {
+      "method": "POST",
+      "path": "/v1/analytics/product-queries",
+      "effect": "READ",
+      "purpose": ["search_query_analytics", "semantic_research", "search_visibility_diagnostics"],
+      "official_evidence": "https://dev.ozon.ru/news/512-Novye-metody-dlia-raboty-s-analitikoi-po-zaprosam-tovarov-v-Seller-API/"
+    },
+    "product_query_details": {
+      "method": "POST",
+      "path": "/v1/analytics/product-queries/details",
+      "effect": "READ",
+      "purpose": ["query_detail_analytics", "semantic_research", "search_visibility_diagnostics"],
+      "official_evidence": "https://dev.ozon.ru/news/512-Novye-metody-dlia-raboty-s-analitikoi-po-zaprosam-tovarov-v-Seller-API/"
+    },
+    "fbo_postings": {
+      "method": "POST",
+      "path": "/v3/posting/fbo/list",
+      "effect": "READ",
+      "purpose": ["fbo_orders", "posting_status", "order_timeline"],
+      "official_evidence": "https://dev.ozon.ru/community?category_id=2&page=4"
+    },
+    "fbs_posting": {
+      "method": "POST",
+      "path": "/v3/posting/fbs/get",
+      "effect": "READ",
+      "purpose": ["fbs_order_details", "per_product_order_price", "order_finance_reconciliation"],
+      "official_evidence": "https://dev.ozon.ru/community/712-Zapros-v3-finance-transaction-list-kak-uznat-tsenu-za-tovar"
+    },
+    "finance_transactions": {
+      "method": "POST",
+      "path": "/v3/finance/transaction/list",
+      "effect": "READ",
+      "purpose": ["finance_transactions", "fees", "services", "order_finance_reconciliation"],
+      "official_evidence": "https://dev.ozon.ru/community/712-Zapros-v3-finance-transaction-list-kak-uznat-tsenu-za-tovar"
+    },
+    "fbo_supply_order": {
+      "method": "POST",
+      "path": "/v3/supply-order/get",
+      "effect": "READ",
+      "purpose": ["fbo_supply", "replenishment", "cluster_supply_diagnostics"],
+      "official_evidence": "https://dev.ozon.ru/news/647-Izmeneniia-v-metodakh-Seller-API-pri-rabote-s-postavkami-FBO/"
+    },
+    "fbo_supply_details": {
+      "method": "POST",
+      "path": "/v1/supply-order/details",
+      "effect": "READ",
+      "purpose": ["fbo_supply_details", "replenishment", "cluster_supply_diagnostics"],
+      "official_evidence": "https://dev.ozon.ru/news/647-Izmeneniia-v-metodakh-Seller-API-pri-rabote-s-postavkami-FBO/"
+    }
+  },
+  "pending_exact_official_library_verification": [
+    "full_product_catalog",
+    "product_attributes_media_status",
+    "prices_discounts_promotions",
+    "returns_cancellations_claims",
+    "realization_settlement_reports",
+    "seller_warehouses_geography",
+    "advertising_performance_api",
+    "reviews_questions"
+  ]
+}
