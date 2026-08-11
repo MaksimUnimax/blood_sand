@@ -74,6 +74,32 @@
       "must_extract": ["warehouse identifiers", "restriction summary/counts", "pagination", "scheme coverage", "permissions", "rate limit"]
     }
   ],
+  "conditional_manual_operations": [
+    {
+      "id": "delivery_availability_check",
+      "priority": "OPTIONAL_MANUAL_DELIVERY_QUOTE",
+      "path": "/v1/delivery/check",
+      "currentness": "method documented 2025-12-30; client_phone marked required 2026-02-12",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "pii_warning": "client_phone is a required request parameter in current Ozon notification evidence",
+      "automatic_baseline_allowed": false,
+      "side_effect_classification": "PENDING",
+      "must_extract": ["full request/response", "availability semantics", "minimum PII", "whether request creates server-side state", "permissions", "rate limit", "privacy/data-retention implications"]
+    },
+    {
+      "id": "delivery_checkout_quote",
+      "priority": "OPTIONAL_MANUAL_DELIVERY_QUOTE",
+      "path": "/v2/delivery/checkout",
+      "currentness": "method documented 2025-12-30; error body updated 2026-07-09; preliminary service cost added alongside preliminary delivery time 2026-08-06",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "known_business_meaning": "pre-order delivery options/quote including preliminary delivery time and service cost for a concrete delivery scenario",
+      "automatic_baseline_allowed": false,
+      "side_effect_classification": "PENDING",
+      "must_extract": ["full request/response", "required customer/location/order context", "delivery option ids/timeslot semantics", "preliminary time/cost fields", "whether request creates reservation/session state", "permissions", "rate limit", "privacy implications"]
+    }
+  ],
   "confirmed_cross_surface_fragments": [
     {
       "path": "/v3/posting/fbs/get",
@@ -95,6 +121,10 @@
     {"path": "/v1/posting/carriage-available/list", "replacement": "/v2/carriage/delivery/list", "status": "deprecated"},
     {"path": "/v1/carriage/delivery/list", "replacement": "/v2/carriage/delivery/list", "status": "deprecated"}
   ],
+  "explicit_mutations_outside_initial_scope": [
+    "/v2/order/create",
+    "any delivery/order operation that creates/cancels/changes an order or shipment"
+  ],
   "confirmed_identity_relations": [
     "warehouse_id and delivery_method_id are distinct identifiers used together in current Ozon logistics workflows",
     "/v2/carriage/delivery/list request supports filter.delivery_method_id",
@@ -112,7 +142,13 @@
     "posting promised-delivery fields where confirmed",
     "posting/order outcome"
   ],
-  "delivery_quality_gap": "The retired Average Delivery Time aggregate analytics has no confirmed one-to-one replacement. Current restriction/error-index/posting-promise families reduce the diagnostic blind spot but do not recreate the retired aggregate metric.",
-  "bridge_rule": "The dependency graph does not authorize automatic fan-out. Each read request and each pagination step must be an explicit controlled provider operation.",
-  "completion_rule": "Logistics diagnostics surface is not implementation-ready until every selected current target has an Ozon-owned full contract, identifier joins, history/pagination and operational limits."
+  "optional_manual_quote_graph": [
+    "explicit user-authorized customer/destination scenario",
+    "/v1/delivery/check availability preflight",
+    "/v2/delivery/checkout preliminary options/time/cost quote",
+    "STOP before any order mutation"
+  ],
+  "delivery_quality_gap": "The retired Average Delivery Time aggregate analytics has no confirmed one-to-one replacement. Current restriction/error-index/posting-promise families reduce the diagnostic blind spot. Optional check/checkout can provide prospective scenario-specific delivery evidence only after full contract, PII and side-effect review.",
+  "bridge_rule": "No graph authorizes automatic fan-out. Each read/calculation request and each pagination step must be an explicit controlled provider operation. Delivery check/checkout must not run automatically across seller catalog or customers.",
+  "completion_rule": "Logistics diagnostics surface is not implementation-ready until every selected current target has an Ozon-owned full contract, identifier joins, history/pagination and operational limits. Conditional delivery quote operations additionally require PII and side-effect classification."
 }
