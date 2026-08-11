@@ -1,0 +1,50 @@
+{
+  "schema": "OZON_REALIZATION_SETTLEMENT_CONTRACT_FRAGMENT_V1",
+  "as_of": "2026-08-11",
+  "authority_class": "ozon_owned_notification_fragments",
+  "direct_methods": [
+    {
+      "path": "/v2/finance/realization",
+      "role": "current replacement for retired /v1/finance/realization",
+      "retired_predecessor": "/v1/finance/realization",
+      "response_fields_removed_current": ["result.header.doc_amount", "result.header.vat_amount"],
+      "removal_effective": "2025-12-14"
+    },
+    {
+      "path": "/v1/finance/realization/posting",
+      "role": "per-posting realization report",
+      "beta_added": "2025-04-17",
+      "description_refresh_observed": "2025-07-24",
+      "response_fields_removed_current": ["header.doc_amount", "header.vat_amount"],
+      "removal_effective": "2025-12-14"
+    },
+    {
+      "path": "/v1/finance/realization/by-day",
+      "role": "realization report by day",
+      "beta_added": "2025-04-10",
+      "moved_to_main": "2025-07-15",
+      "description_refresh_observed": "2025-11-11"
+    }
+  ],
+  "generated_report": {
+    "candidate_path": "/v1/report/realization/posting/create",
+    "current_full_contract": "PENDING",
+    "report_lifecycle_rule": "Keep report creation, status/list/info and file retrieval explicit; do not infer report identifiers or polling from other report types."
+  },
+  "engineering_rules": [
+    "Do not use retired /v1/finance/realization.",
+    "Do not expect doc_amount or vat_amount in current realization headers.",
+    "Do not treat generated realization report creation as equivalent to direct realization reads until its current request/result contract is recovered.",
+    "Do not claim settlement/payout completeness from realization reports alone."
+  ],
+  "still_missing": [
+    "HTTP verbs/full request schemas where unresolved",
+    "complete current response schemas",
+    "period/history limits",
+    "posting/product reconciliation identifiers",
+    "settlement/payout coverage",
+    "generated realization report create/result contract",
+    "permissions and method-specific quotas/errors"
+  ],
+  "implementation_allowed": false
+}
