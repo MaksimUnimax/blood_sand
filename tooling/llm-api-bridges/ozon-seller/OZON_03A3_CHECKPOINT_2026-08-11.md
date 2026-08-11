@@ -2,193 +2,85 @@
 
 Статус: **IN PROGRESS**  
 `03A.4 Ozon extension`: **NOT STARTED**  
-Machine gate: `OZON_03A3_COMPLETENESS_V1.json` → `closure_allowed=false`, `extension_development_allowed=false`.
+Machine gate: `closure_allowed=false`, `extension_development_allowed=false`.
 
-## Evidence levels
+## Current upper checkpoint
 
-Research разделяет:
-
-1. **path/currentness**;
-2. **contract fragments**;
-3. **full implementation contract**.
-
-Production provider нельзя строить только по 1–2 уровню.
+В доступном Ozon-owned Seller API changelog текущий верхний method-change checkpoint этого прохода — **2026-08-06**. Это не утверждение, что после 6 августа изменений нет; только граница найденного индексируемого evidence.
 
 ## Critical logistics correction
 
-The earlier research state treated these methods as current after their descriptions were refreshed on 2026-03-17:
+Average Delivery Time analytics fully retired in a later 2026 Ozon announcement. Do not target `/v1/analytics/average-delivery-time`, `/details`, `/summary`. No one-to-one replacement is confirmed.
 
-- `/v1/analytics/average-delivery-time`;
-- `/v1/analytics/average-delivery-time/details`;
-- `/v1/analytics/average-delivery-time/summary`.
+Current delivery diagnostics instead include:
 
-A later Ozon-owned 2026 announcement supersedes that state: the **Average Delivery Time functionality is fully disabled and its methods are removed from documentation**.
+- FBS/rFBS error-index families;
+- FBS product/warehouse delivery restrictions;
+- FBS posting promised-delivery fields;
+- warehouse/delivery-method/carriage configuration.
 
-Disposition:
+## Conditional delivery quote
 
-- all three = **DISABLED / DO NOT TARGET**;
-- one-to-one replacement = **NOT CONFIRMED**;
-- no scraping or compatibility fallback.
+Current pre-order contour:
 
-Canonical correction: `OZON_AVERAGE_DELIVERY_TIME_RETIREMENT_2026-08-11.md`.
+`/v1/delivery/check → /v2/delivery/checkout → /v2/order/create`.
 
-## Current delivery diagnostics after retirement
+Research disposition:
 
-Ozon-owned current family evidence provides other causal layers; they are **not a direct replacement for the retired aggregate metric**.
+- `/v1/delivery/check`: `client_phone` is required in current documentation changes → PII/manual gate;
+- `/v2/delivery/checkout`: updated **2026-08-06**; returns preliminary service cost in addition to preliminary delivery time;
+- check/checkout are scenario-specific quote/preflight operations, **not seller-wide automatic baseline analytics**;
+- side-effect/server-state classification remains pending;
+- `/v2/order/create` is mutation and remains outside initial bridge.
 
-Moved from beta to main on 2026-02-02:
+Canonical artifact: `OZON_DELIVERY_QUOTE_PREFLIGHT_2026-08-11.md`.
 
-- `/v1/rating/index/fbs/info` — FBS/rFBS error index;
-- `/v1/rating/index/fbs/posting/list` — posting-level FBS/rFBS error-index evidence;
-- `/v1/warehouse/invalid-products/get` — products with FBS delivery restrictions;
-- `/v1/warehouse/warehouses-with-invalid-products` — warehouses containing restricted products.
+## Product Master + generated report fallback
 
-Current `/v3/posting/fbs/get` has documented response fragments:
+Primary chain remains direct current Product API families, joined by confirmed `sku` where proven.
 
-- `result.analytics_data.client_delivery_date_begin`;
-- `result.analytics_data.client_delivery_date_end`.
+Unresolved current fields still include title/name, barcodes, dimensions/weight, current category/type placement, video/rich-content and full moderation/error state.
 
-These give posting-level promised-delivery evidence for FBS, not aggregate Average Delivery Time analytics.
+`/v1/report/products/create` is a current generated-report fallback candidate; request `visibility` was updated 2026-01-22. Its current output columns/report type are not available from Ozon-owned indexed docs in this runtime, so it closes **none** of those gaps yet.
 
-Current logistics causal graph:
+Report execution must remain explicit create → status/info → retrieval, with no hidden polling.
 
-`logistics connection → warehouse → stock → delivery method → delivery restrictions → FBS/rFBS error index → carriage/shipment → cluster/geography → FBS posting promise where confirmed → posting/order outcome`.
+Canonical artifact: `OZON_PRODUCT_REPORT_FALLBACK_2026-08-11.md`.
 
-Every API call remains explicit; graph ≠ automatic fan-out.
+## Orders / finance / reports
 
-Canonical additional evidence: `OZON_DELIVERY_DIAGNOSTICS_ALTERNATIVES_2026-08-11.md`.
+Current posting targets: `/v3/posting/fbo/list`, `/v3/posting/fbs/get`, `/v4/posting/fbs/list`, `/v4/posting/fbs/unfulfilled/list`.
 
-## Product Master
+Finance target: `/v1/finance/accrual/postings`, `/types`, `/by-day`; old transaction list/totals shut down 2026-09-08. Current by-day field is `accrual_id`, not renamed `type_id`.
 
-Research chain:
+Generated reports are explicit asynchronous/multi-step operations; no hidden polling/fan-out.
 
-`/v3/product/list`
-→ `/v3/product/info/list`
-→ `/v4/product/info/attributes`
-→ `/v2/product/pictures/info`
-→ description-category dictionaries
-→ `/v5/product/info/prices`
-→ stock/warehouse layers.
+## Performance API — primary external blocker
 
-Confirmed SKU join:
-
-- `/v3/product/list.result.items.sku`;
-- `/v3/product/info/list.items.sku`.
-
-Still unresolved on current full contracts:
-
-- title/name;
-- barcodes;
-- dimensions/weight;
-- current `description_category_id` / `type_id` placement;
-- video/rich-content;
-- complete moderation/error state.
-
-Category/attribute dictionaries remain freshness-aware evidence.
-
-## Prices / promotions
-
-Current target families:
-
-- `/v5/product/info/prices`;
-- `/v1/product/prices/details`;
-- `/v1/seller-actions/list`;
-- `/v1/seller-actions/products/list`.
-
-Known corrections:
-
-- `price.marketing_price` removed;
-- v5 exposes `marketing_actions` fragments;
-- `/v1/product/prices/details` requires `skus`.
-
-Full price/promotion contracts remain pending.
-
-## Stock / warehouses
-
-Current layers include core `/v4/product/info/stocks`, warehouse-level stock, `/v2/warehouse/list`, Ozon/FBO warehouse dictionaries and `/v2/cluster/list`.
-
-Warehouse v2 pagination fragments:
-
-- request `limit`, `cursor`;
-- response `cursor`, `has_next`.
-
-`/v1/analytics/stocks` is announced to switch to real-time on **2026-08-17** and cannot be post-transition revalidated on 2026-08-11.
-
-## Orders / returns / cancellations
-
-Current posting targets:
-
-- `/v3/posting/fbo/list`;
-- `/v3/posting/fbs/get`;
-- `/v4/posting/fbs/list`;
-- `/v4/posting/fbs/unfulfilled/list`.
-
-Do not target v3 FBS list/unfulfilled; shutdown scheduled 2026-08-31.
-
-Cancellation evidence includes return families, cancel-reason/status families and `/v2/conditional-cancellation/list`. Mutation siblings remain excluded.
-
-## Finance / realization / reports
-
-Do not target `/v3/finance/transaction/list` or `/v3/finance/transaction/totals`; shutdown scheduled 2026-09-08.
-
-Future finance target:
-
-- `/v1/finance/accrual/postings`;
-- `/v1/finance/accrual/types`;
-- `/v1/finance/accrual/by-day`.
-
-Known `by-day` fragments:
-
-- request `date`, `last_id`;
-- response `last_id`, `accruals.container_fees`, `accruals.accrued_category`, `accruals.accrual_id`;
-- `accruals.type_id` renamed to `accruals.accrual_id` on 2026-06-09.
-
-Generated reports use explicit create → status/info/list → retrieval operations. Hidden polling is forbidden.
-
-## Operational evidence
-
-- Seller API keys under 2026 policy: 6-month lifetime;
-- `/v1/roles` exposes `expires_at`;
-- last explicit general-rate evidence: 50 requests/s per Client ID; revalidate before coding;
-- unified product-operation limit model exists;
-- `/v4/product/info/limit` exposes `operation_limits`;
-- numeric product quota/reset semantics remain pending.
-
-## Performance API — main external blocker
-
-Confirmed:
-
-- Performance API is a separate public Ozon advertising API contour;
-- official root: `https://docs.ozon.ru/api/performance/`;
-- Ozon-owned 2026 public-API migration material still explicitly includes Performance API.
+Ozon-owned 2026 material still explicitly includes Performance API among public APIs. Official root: `https://docs.ozon.ru/api/performance/`.
 
 Still unavailable from Ozon-owned method docs in this runtime:
 
-- host/auth/token lifecycle;
+- current API host/auth/token lifecycle;
 - campaign inventory/product mapping;
-- statistics endpoints and metric/dimension contracts;
-- attributed order/revenue fields;
-- report/rate/history/access lifecycle.
+- statistics endpoints and metric/dimension schemas;
+- attributed outcome fields;
+- budget/bid read context;
+- rate/history/access lifecycle.
 
 Third-party candidates remain discovery-only.
 
-## Why full contracts are still blocked
+## Full-contract environment blocker
 
-Direct Seller/Performance operation pages remain unavailable in the current research runtime due redirect-loop behavior. This does not permit third-party Swagger/SDK as implementation authority.
+Canonical Seller/Performance docs operation URLs consistently fail in this runtime with redirect-loop behavior; container network also cannot resolve `api-seller.ozon.ru`. This is not permission to use third-party Swagger/SDK as implementation authority.
 
-## Current authoritative next targets
+## Next targets
 
-1. Obtain Ozon-owned full P0 Product Master contracts.
-2. Extract full contracts/joins/reason taxonomies for delivery restrictions and FBS/rFBS error-index methods.
-3. Obtain full warehouse/logistics/posting/return/finance/report contracts.
-4. Resolve Ozon-owned Performance API host/auth/read-statistics contract.
-5. Extract numeric quotas, page sizes, history windows and role/subscription restrictions.
-6. Revalidate `/v1/analytics/stocks` after 2026-08-17.
-7. Run final deprecation pass immediately before 03A.4.
+1. Ozon-owned full P0 Product Master contracts and product-report output schema.
+2. Full contracts for delivery restrictions/error index and posting delivery fields.
+3. Ozon-owned Performance API host/auth/read-statistics contract.
+4. Numeric quotas/page sizes/history/access restrictions.
+5. Revalidate `/v1/analytics/stocks` after 2026-08-17.
+6. Final deprecation scan immediately before 03A.4.
 
-Until these gates are closed:
-
-- no Ozon extension code;
-- no provider manifest/service worker/content script/popup;
-- no real credentials;
-- no marketplace write operations.
+Until then: no Ozon extension code, no real credentials, no write operations.
