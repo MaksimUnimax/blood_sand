@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Wordstat Bridge</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Wordstat Bridge</h1>
+        <p class="lead">ChatGPT ↔ Yandex Wordstat: explicit binding диалога, manual и autorun.</p>
+      </div>
+      <span class="badge" id="versionBadge">v1.1.5</span>
+    </header>
+
+    <section class="priority-section">
+      <div class="binding-banner unbound" id="bindingBanner">
+        <div>
+          <span class="eyebrow">Привязка</span>
+          <strong id="bindingState">Проверяю привязку…</strong>
+          <div id="bindingMeta" class="meta compact">Manual и Autorun требуют явной привязки текущего ChatGPT-диалога.</div>
+        </div>
+        <button id="bindConversation" class="primary">Привязать диалог</button>
+      </div>
+
+      <h2>Управление run</h2>
+      <div class="action-grid action-grid-four">
+        <button id="startAuto" class="primary">▶ Авторежим</button>
+        <button id="pauseAuto" class="secondary">Ⅱ Пауза</button>
+        <button id="resumeAuto" class="secondary">▶ Продолжить</button>
+        <button id="finishAuto" class="danger">■ Завершить</button>
+      </div>
+      <div class="run-summary">
+        <div class="row"><span>Run текущего диалога</span><strong id="runState">Не запущен</strong></div>
+        <div class="row"><span>Итерация</span><strong id="runSequence">0</strong></div>
+        <div class="row"><span>Последний API</span><strong id="lastCommand">—</strong></div>
+      </div>
+      <p class="warning">Autorun автоматически выполняет каждый новый валидный <code>WORDSTAT_API_V1</code> block этого диалога. Один block = один Yandex API request. Отдельный Copy-click для каждой команды в autorun не требуется.</p>
+
+      <div class="switch-stack">
+        <label class="switch-row" for="manualMode">
+          <span><strong>Ручной режим Wordstat</strong><small id="manualModeMeta">Выключен: страница не наблюдается.</small></span>
+          <span class="switch"><input id="manualMode" type="checkbox"><span class="slider"></span></span>
+        </label>
+      </div>
+      <p class="meta">Manual и Autorun взаимоисключаются. На паузе autorun ручной режим можно включить и выполнять Copy-команды как раньше.</p>
+    </section>
+
+    <section>
+      <h2>Стартовый prompt Autorun</h2>
+      <p class="warning">Этот текст отправляется один раз при нажатии «▶ Авторежим». Префикс результата сюда НЕ добавляется. По умолчанию prompt запрещает любые специальные writing/code blocks, кроме ровно одной исполняемой команды <code>WORDSTAT_API_V1</code>, и требует свежую проверку официальной цены Яндекса перед каждым API-вызовом.</p>
+      <label for="autoStartPromptText">Текст стартового prompt</label>
+      <textarea id="autoStartPromptText" rows="14" spellcheck="true"></textarea>
+      <div class="buttons single-row">
+        <button id="resetAutoStartPrompt" class="secondary wide">Вернуть стартовый prompt по умолчанию</button>
+      </div>
+      <p class="meta">Настройка хранится отдельно для текущего ChatGPT-диалога. Оператор может изменить её; autorun использует сохранённый текст дословно.</p>
+    </section>
+
+    <section>
+      <h2>Префикс результата Wordstat</h2>
+      <label class="switch-row" for="reportPrefixEnabled">
+        <span><strong>Добавлять префикс только перед результатом API</strong><small>Префикс применяется к outgoing WORDSTAT_RESULT_V1 после работы Yandex API и никогда не попадает в стартовый prompt autorun.</small></span>
+        <span class="switch"><input id="reportPrefixEnabled" type="checkbox"><span class="slider"></span></span>
+      </label>
+      <label for="reportPrefixText">Текст префикса</label>
+      <textarea id="reportPrefixText" rows="7" placeholder="Например: Мы продолжаем roadmap 03.2. Обработай WORDSTAT_RESULT_V1, сохрани raw/normalized/Ledger и продолжи следующий root."></textarea>
+      <label>Добавлять раз в N подтверждённых результатов
+        <input id="reportPrefixInterval" type="number" min="1" max="999" value="1">
+      </label>
+      <p id="reportPrefixHint" class="meta">N = 1 — перед каждым подтверждённо доставленным результатом. Чистый WORDSTAT_RESULT_V1 внутри не изменяется.</p>
+      <div class="row"><span>Доставлено результатов</span><strong id="prefixDelivered">0</strong></div>
+    </section>
+
+    <section>
+      <h2>Yandex API</h2>
+      <label>Yandex API key
+        <input id="apiKey" type="password" autocomplete="off" placeholder="Вставьте новый ключ; сохранённый ключ не показывается">
+      </label>
+      <div id="keyState" class="meta"></div>
+
+      <label>Folder ID
+        <input id="folderId" type="text" value="b1gqfm5c5vn6aingakbe" spellcheck="false">
+      </label>
+
+      <label class="check"><input id="autoSend" type="checkbox" checked> В manual-режиме автоматически отправлять полученный результат в ChatGPT</label>
+      <p class="meta">Эта настройка относится только к manual Copy-path. Autorun всегда доставляет результат автоматически, как в референсе.</p>
+
+      <div class="buttons">
+        <button id="save" class="primary">Сохранить</button>
+        <button id="test" class="secondary">Проверить API</button>
+        <button id="clearKey" class="danger wide">Удалить ключ</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Кнопки ChatGPT</h2>
+      <p class="meta">Выбор необязателен: по умолчанию расширение распознаёт Send и локальные Copy автоматически. Ручной picker нужен только как fallback при изменении DOM ChatGPT.</p>
+      <div class="row"><span>Кнопка отправки результата</span><strong id="sendButtonState">Не выбрана</strong></div>
+      <div class="buttons">
+        <button id="pickSend" class="secondary">Выбрать Send-кнопку</button>
+        <button id="clearSend" class="secondary">Сбросить Send-кнопку</button>
+      </div>
+      <div class="row"><span>Кнопки Copy writing/code block</span><strong id="copyButtonState">2 встроенных</strong></div>
+      <div class="buttons">
+        <button id="pickCopy" class="secondary">Добавить Copy-кнопку</button>
+        <button id="clearCopy" class="secondary">Сбросить выбранные</button>
+      </div>
+      <p class="meta">Два встроенных адаптера остаются всегда: current writing block и legacy code block. Пользовательский Copy-profile добавляется к ним и не превращает общую «Копировать ответ» в trigger.</p>
+    </section>
+
+    <section>
+      <h2>Диагностика Autorun / Send</h2>
+      <p class="meta">Как в Business Bridge reference: журнал хранится локально, автоматически обновляется и не содержит API key, полного WORDSTAT_API_V1 или полного WORDSTAT_RESULT_V1.</p>
+      <div class="row"><span>Событий в журнале</span><strong id="diagnosticsCount">0</strong></div>
+      <label for="diagnosticsFilter">Показывать</label>
+      <select id="diagnosticsFilter">
+        <option value="current">Текущий run и общие события</option>
+        <option value="send">Только composer / Send</option>
+        <option value="errors">Только ошибки и предупреждения</option>
+        <option value="all">Все события</option>
+      </select>
+      <div class="action-grid action-grid-four">
+        <button id="loadDiagnostics" class="secondary">Обновить</button>
+        <button id="copyDiagnostics" class="secondary">Скопировать</button>
+        <button id="downloadDiagnostics" class="secondary">Скачать JSON</button>
+        <button id="clearDiagnostics" class="secondary">Очистить</button>
+      </div>
+      <p id="diagnosticsMeta" class="meta">Журнал обновляется автоматически, пока popup открыт.</p>
+      <pre id="diagnostics"></pre>
+    </section>
+
+    <div id="status" class="status">Загрузка…</div>
+
+    <details>
+      <summary>Как работает</summary>
+      <ol>
+        <li><strong>Привязка:</strong> сначала явно привяжите текущий подтверждённый ChatGPT-диалог. Без binding Manual/Autorun не имеют API/Send side effects.</li>
+        <li><strong>Manual:</strong> включаете переключатель → последние 5 и новые локальные Copy становятся жёлтыми → реальный Copy валидного WORDSTAT_API_V1 делает один запрос.</li>
+        <li><strong>Autorun:</strong> нажимаете «Авторежим» → расширение отправляет сохранённый стартовый prompt без report-prefix → ждёт новый устойчивый WORDSTAT_API_V1 writing/code block только в owner-вкладке этого conversation → делает один запрос → возвращает результат → снова ждёт следующий block.</li>
+        <li><strong>Пауза:</strong> если запрос уже выполняется, он не отменяется; результат доводится до доставки, затем run останавливается на паузе.</li>
+        <li><strong>Префикс:</strong> добавляется только после Yandex API к outgoing result text; к стартовому prompt не применяется. Чистый WORDSTAT_RESULT_V1 остаётся отдельной неизменённой сущностью.</li>
+        <li><strong>Завершить:</strong> новые API-вызовы прекращаются; уже начатый запрос не дублируется.</li>
+      </ol>
+    </details>
+
+    <p class="security">API key хранится только в <code>chrome.storage.local</code>, не передаётся content script и не включается в результаты.</p>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
