@@ -1,0 +1,36 @@
+{
+  "schema": "OZON_BRIDGE_CONTRACT_PROBE_CAPTURE_V1",
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.1",
+  "request_id": "a5762d85-be8a-4346-b6cf-1d06aab76545",
+  "operation": "analytics_data",
+  "command_fingerprint": "13b0c515",
+  "request_meta": {
+    "provider": "ozon",
+    "host_alias": "seller_api",
+    "http_method": "POST",
+    "path_alias": "analytics_data"
+  },
+  "request_params": {
+    "date_from": "2026-07-12",
+    "date_to": "2026-08-10",
+    "metrics": ["session_view", "ordered_units", "revenue"],
+    "dimension": ["sku"],
+    "sort": [{"key": "session_view", "order": "DESC"}],
+    "limit": 100,
+    "offset": 0
+  },
+  "http_status": 200,
+  "elapsed_ms": 3095,
+  "rate_limit": null,
+  "provider_timestamp": "2026-08-11 10:45:53",
+  "observed_response_shape": {
+    "requested_metric_count": 3,
+    "returned_metric_vector_length_per_observed_sku": 2,
+    "totals_vector": [562, 944360],
+    "totals_vector_length": 2
+  },
+  "contract_status": "AMBIGUOUS_METRIC_MAPPING",
+  "technical_note": "The request asked for session_view, ordered_units and revenue, but the HTTP 200 response exposed only two numeric values per SKU and two totals. No value is assigned to session_view from this measurement. A single-metric session_view probe is required before the metric can be normalized.",
+  "business_interpretation": null
+}
