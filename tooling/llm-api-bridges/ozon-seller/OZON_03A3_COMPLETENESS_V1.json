@@ -2,9 +2,20 @@
   "schema": "OZON_03A3_COMPLETENESS_V1",
   "as_of": "2026-08-11",
   "purpose": "Machine-readable research gate before Ozon bridge implementation",
-  "source_policy": "Exact current endpoint/path/schema may be confirmed only from Ozon-owned current sources. Third-party discovery hints cannot close a gate.",
+  "source_policy": {
+    "full_contract": "Ozon-owned current source containing the required method contract; interactive Seller API library preferred",
+    "currentness_deprecation": "dev.ozon.ru plus verified @OzonSellerAPI changelog that links to Seller API documentation",
+    "third_party": "discovery only"
+  },
   "closure_allowed": false,
   "extension_development_allowed": false,
+  "major_currentness_corrections": [
+    "/v3/product/list and /v3/product/info/list are current families in July 2026",
+    "/v5/product/info/prices is current and exposes marketing_actions context",
+    "/v2/warehouse/list replaced disabled /v1/warehouse/list",
+    "/v4/posting/fbs/list and /v4/posting/fbs/unfulfilled/list replace v3 list families on 2026-08-31",
+    "/v3/finance/transaction/list is deprecated and scheduled for shutdown 2026-09-08; future target is /v1/finance/accrual/*"
+  ],
   "surfaces": [
     {
       "id": "auth_transport",
@@ -14,249 +25,234 @@
         "public API only; no cabinet/site scraping fallback",
         "Seller API host/auth contour uses api-seller.ozon.ru with Client-Id + Api-Key for seller-created credentials",
         "OAuth without a private/public Ozon application does not exist"
-      ],
-      "sources": [
-        "https://dev.ozon.ru/start/298-Seller-API-kak-izbezhat-blokirovok/",
-        "https://dev.ozon.ru/community/2154-Avtorizatsiia-cherez-OAuth-token/"
       ]
     },
     {
       "id": "catalog_product_master",
       "blocking": true,
-      "status": "pending",
-      "required": [
-        "seller product enumeration",
-        "offer_id/product_id/SKU identity",
-        "title",
-        "visibility/status/moderation/errors",
-        "category/type",
-        "attributes",
-        "barcodes",
-        "dimensions/weight",
-        "media",
-        "description/rich content where exposed"
-      ],
-      "candidate_paths_not_confirmed": [
+      "status": "partial_current_paths_confirmed_contract_pending",
+      "current_paths": [
         "/v3/product/list",
         "/v3/product/info/list",
         "/v4/product/info/attributes"
       ],
-      "reason": "Official-domain exact searches and Russian capability searches did not yield current exact method/schema; live Seller API library is not readable in current research runtime."
+      "currentness": {
+        "/v3/product/list": "2026-07-09",
+        "/v3/product/info/list": "2026-07-10",
+        "/v4/product/info/attributes": "2026-02-10"
+      },
+      "known_current_fields": [
+        "/v3/product/list filter.skus",
+        "/v3/product/list result.items.sku",
+        "/v3/product/info/list items.showcases_visibility"
+      ],
+      "missing_before_close": [
+        "HTTP verbs from authoritative contract where not separately confirmed",
+        "full request/response schemas",
+        "pagination/batch limits",
+        "archive/hidden/moderation/error semantics",
+        "category/type linkage",
+        "media/description/rich-content coverage",
+        "permissions"
+      ]
     },
     {
       "id": "stocks_availability",
       "blocking": true,
-      "status": "confirmed_partial_history",
-      "confirmed_methods": [
-        "POST /v4/product/info/stocks"
+      "status": "confirmed_plus_warehouse_families_contract_pending",
+      "confirmed_methods": ["POST /v4/product/info/stocks"],
+      "current_path_families": [
+        "/v2/product/info/stocks-by-warehouse/fbs",
+        "/v1/product/info/stocks-by-warehouse/fbo",
+        "/v1/analytics/stocks"
       ],
-      "confirmed_fields": [
-        "product_id",
-        "offer_id",
-        "FBO/FBS blocks",
-        "present",
-        "reserved",
-        "sku",
-        "shipment_type",
-        "warehouse_ids"
+      "notable_currentness": [
+        "/v1/product/info/stocks-by-warehouse/fbs disabled 2026-04-07; use v2",
+        "/v1/analytics/stocks becomes real-time 2026-08-17"
       ],
-      "missing": [
-        "historical stockout intervals unless another history method is confirmed or snapshots are persisted"
-      ],
-      "sources": [
-        "https://dev.ozon.ru/community/1747-v4-product-info-stocks-daet-ne-korrektnye-ostatki/"
+      "missing_before_close": [
+        "full warehouse-stock schemas/limits",
+        "historical stockout strategy if API history is insufficient"
       ]
     },
     {
       "id": "seller_product_analytics",
       "blocking": true,
       "status": "confirmed_schema_refresh_pending",
-      "confirmed_methods": [
-        "POST /v1/analytics/data"
-      ],
-      "known_capabilities": [
-        "impressions/shows",
-        "sessions",
-        "conversion",
-        "revenue",
-        "returns aggregate",
-        "ordered_units"
-      ],
-      "missing": [
-        "current complete metric/dimension enumeration",
-        "date limits",
-        "pagination/limit semantics",
-        "account-plan restrictions"
-      ],
-      "sources": [
-        "https://dev.ozon.ru/case/98-Keis-o-novom-instrumente-dlia-kontrolia-tovarnykh-ostatkov-na-sklade/",
-        "https://dev.ozon.ru/community?category_id=2&page=4"
-      ]
+      "confirmed_methods": ["POST /v1/analytics/data"],
+      "known_capabilities": ["impressions/shows", "sessions", "conversion", "revenue", "returns aggregate", "ordered_units"],
+      "missing_before_close": ["current complete metric/dimension enumeration", "date limits", "pagination/limit semantics", "account-plan restrictions"]
     },
     {
       "id": "product_query_analytics",
       "blocking": false,
       "status": "confirmed_schema_refresh_pending",
-      "confirmed_methods": [
-        "/v1/analytics/product-queries",
-        "/v1/analytics/product-queries/details"
-      ],
-      "missing": [
-        "current full fields/history limits",
-        "Premium/Premium Plus exact restrictions"
-      ],
-      "sources": [
-        "https://dev.ozon.ru/news/512-Novye-metody-dlia-raboty-s-analitikoi-po-zaprosam-tovarov-v-Seller-API/"
-      ]
+      "confirmed_methods": ["/v1/analytics/product-queries", "/v1/analytics/product-queries/details"],
+      "missing_before_close": ["current full fields/history limits", "Premium/Premium Plus exact restrictions"]
     },
     {
       "id": "prices_promotions",
       "blocking": true,
-      "status": "partial",
-      "confirmed": [
-        "seller promotions/actions API capability is active in 2026"
+      "status": "partial_current_paths_confirmed_contract_pending",
+      "current_paths": [
+        "/v5/product/info/prices",
+        "/v1/product/prices/details",
+        "/v1/seller-actions/list",
+        "/v1/seller-actions/products/list"
       ],
-      "candidate_paths_not_confirmed": [
-        "/v5/product/info/prices"
+      "known_currentness": [
+        "/v5/product/info/prices updated 2026-05-28",
+        "/v1/product/prices/details moved to main 2026-03-04",
+        "seller-actions read families added as beta 2026-03-02"
       ],
-      "missing": [
-        "current seller/listing price read method",
-        "old/marketing/card price semantics",
-        "read-only promotion list/detail",
-        "product promotion participation",
-        "price index/competitiveness where exposed"
+      "known_fields": [
+        "items.marketing_actions.actions.date_from",
+        "items.marketing_actions.actions.date_to",
+        "items.marketing_actions.actions.title",
+        "items.marketing_actions.actions.value"
       ],
-      "sources": [
-        "https://dev.ozon.ru/community/1942-v1-seller-actions-products-add-404-poka/"
+      "missing_before_close": [
+        "HTTP verbs/full contracts",
+        "complete current/old/marketing/card price semantics",
+        "promotion pagination and participation semantics",
+        "access restrictions"
       ]
     },
     {
       "id": "warehouses_clusters_geography",
       "blocking": true,
-      "status": "partial",
-      "confirmed": [
+      "status": "partial_current_paths_confirmed_contract_pending",
+      "current_paths": [
+        "/v2/warehouse/list",
+        "/v1/warehouse/ozon/list",
+        "/v1/warehouse/fbo/seller/list",
+        "/v2/cluster/list"
+      ],
+      "deprecated": [
+        "/v1/warehouse/list disabled 2026-04-07"
+      ],
+      "confirmed_context": [
         "stock response carries warehouse_ids",
-        "cross-dock FBO supply uses macrolocal_cluster_id from 2026-02-16",
-        "/v3/supply-order/get and /v1/supply-order/details are current confirmed families"
+        "cross-dock FBO supply uses macrolocal_cluster_id",
+        "/v2/cluster/list moved to main 2026-06-01"
       ],
-      "missing": [
-        "current seller warehouse dictionary/list endpoint",
-        "warehouse/cluster names and geography mapping",
-        "delivery availability/geography surface where exposed"
-      ],
-      "sources": [
-        "https://dev.ozon.ru/news/647-Izmeneniia-v-metodakh-Seller-API-pri-rabote-s-postavkami-FBO/",
-        "https://dev.ozon.ru/community/1747-v4-product-info-stocks-daet-ne-korrektnye-ostatki/"
+      "missing_before_close": [
+        "HTTP verbs/full schemas",
+        "warehouse/cluster identity and geography joins",
+        "coverage differences seller/FBO/Ozon warehouse lists",
+        "delivery availability/geography semantics"
       ]
     },
     {
       "id": "orders_postings",
       "blocking": true,
-      "status": "partial",
-      "confirmed_methods": [
+      "status": "partial_current_versions_confirmed_contract_pending",
+      "current_families": [
         "/v3/posting/fbo/list",
-        "/v3/posting/fbs/get"
+        "/v3/posting/fbs/get",
+        "/v4/posting/fbs/list",
+        "/v4/posting/fbs/unfulfilled/list"
       ],
-      "missing": [
-        "full current FBS posting list/history method and date window",
-        "complete current response/status schemas"
+      "deprecated": [
+        "/v2/posting/fbo/list shutdown scheduled 2026-08-31",
+        "/v3/posting/fbs/list shutdown scheduled 2026-08-31",
+        "/v3/posting/fbs/unfulfilled/list shutdown scheduled 2026-08-31"
       ],
-      "sources": [
-        "https://dev.ozon.ru/community?category_id=2&page=4",
-        "https://dev.ozon.ru/community/712-Zapros-v3-finance-transaction-list-kak-uznat-tsenu-za-tovar"
+      "missing_before_close": [
+        "v4 FBS HTTP/full schema",
+        "date windows and pagination",
+        "complete status/cancellation semantics"
       ]
     },
     {
       "id": "returns_cancellations",
       "blocking": true,
-      "status": "pending",
-      "confirmed": [
-        "partial FBS cancellation detection is a current 2026 integration need",
-        "aggregate returns can be part of analytics evidence"
+      "status": "partial_current_paths_confirmed_contract_pending",
+      "current_families": [
+        "/v1/returns/list",
+        "/v2/returns/rfbs/list",
+        "/v2/report/returns/create",
+        "/v1/cancel-reason/list",
+        "/v1/cancel-reason/list-by-order",
+        "/v1/cancel-reason/list-by-posting",
+        "/v1/order/cancel/status",
+        "/v1/posting/cancel/status"
       ],
-      "missing": [
-        "event-level return list/detail",
-        "partial/full cancellation event detection",
-        "product quantities",
-        "timestamps",
-        "reasons/status dictionaries",
-        "FBO/FBS semantics",
-        "claims/disputes read surface where available"
+      "known_currentness": [
+        "/v2/report/returns/create documented 2026-02-12",
+        "cancel status methods updated 2026-07-09",
+        "cancel-reason families documented 2025-12-30"
       ],
-      "sources": [
-        "https://dev.ozon.ru/community?category_id=2&page=4"
+      "missing_before_close": [
+        "HTTP verbs/full contracts",
+        "event-level product quantities/timestamps/reasons across FBO/FBS/rFBS",
+        "pagination/history",
+        "how partial cancellation is represented across current list/detail families",
+        "claims/disputes read surface if available"
       ]
     },
     {
       "id": "fbo_supply_replenishment",
       "blocking": true,
       "status": "confirmed_schema_refresh_pending",
-      "confirmed_methods": [
-        "/v3/supply-order/get",
-        "/v1/supply-order/details"
-      ],
-      "confirmed": [
-        "macrolocal_cluster_id added for cross-dock",
-        "warehouse_id loses relevance for cross-dock"
-      ],
-      "missing": [
-        "current complete status chronology/schema",
-        "pagination/history limitations where applicable"
-      ],
-      "sources": [
-        "https://dev.ozon.ru/news/647-Izmeneniia-v-metodakh-Seller-API-pri-rabote-s-postavkami-FBO/"
-      ]
+      "confirmed_methods": ["/v3/supply-order/get", "/v1/supply-order/details"],
+      "confirmed": ["macrolocal_cluster_id added for cross-dock", "warehouse_id loses relevance for cross-dock"],
+      "missing_before_close": ["current complete status chronology/schema", "pagination/history limitations where applicable"]
     },
     {
-      "id": "finance_transactions",
+      "id": "finance",
       "blocking": true,
-      "status": "confirmed_schema_refresh_pending",
-      "confirmed_methods": [
-        "/v3/finance/transaction/list"
+      "status": "migration_required_new_contract_pending",
+      "deprecated_transition": {
+        "paths": ["/v3/finance/transaction/list", "/v3/finance/transaction/totals"],
+        "shutdown": "2026-09-08"
+      },
+      "future_current_paths": [
+        "/v1/finance/accrual/postings",
+        "/v1/finance/accrual/types",
+        "/v1/finance/accrual/by-day"
       ],
-      "confirmed": [
-        "transaction evidence may require joining to /v3/posting/fbs/get products for product-level sold price"
+      "currentness": [
+        "replacements announced 2026-07-14",
+        "/v1/finance/accrual/by-day updated 2026-07-21"
       ],
-      "missing": [
-        "current complete transaction types/fields",
-        "date limits",
-        "pagination"
-      ],
-      "sources": [
-        "https://dev.ozon.ru/community/712-Zapros-v3-finance-transaction-list-kak-uznat-tsenu-za-tovar"
-      ]
+      "missing_before_close": ["HTTP verbs/full schemas", "pagination/history", "product/posting reconciliation semantics", "service/fee taxonomy"]
     },
     {
       "id": "realization_reports_settlement",
       "blocking": true,
-      "status": "pending",
-      "historical_leads_not_current": [
-        "/v1/finance/realization"
+      "status": "partial_current_paths_confirmed_contract_pending",
+      "current_families": [
+        "/v2/finance/realization",
+        "/v1/finance/realization/posting",
+        "/v1/report/list",
+        "/v1/report/info",
+        "/v1/report/postings/create",
+        "/v2/report/returns/create"
       ],
-      "missing": [
-        "current realization/settlement report API",
-        "generated report job/list/info methods",
-        "commission/services/logistics/storage/acceptance detail",
-        "payout/reconciliation data"
+      "known_currentness": [
+        "realization families updated 2025-12-25",
+        "report list/info updated 2026-02-03",
+        "postings/returns report create documented 2026-02-12"
       ],
-      "reason": "Only historical 2023 official path was found; no fresh current confirmation/replacement was obtained."
+      "missing_before_close": [
+        "2026 realization refresh",
+        "HTTP verbs/full contracts",
+        "history/period limits",
+        "settlement/payout reconciliation coverage",
+        "generated report retrieval lifecycle"
+      ]
     },
     {
       "id": "advertising",
       "blocking": true,
       "status": "pending",
-      "confirmed": [
-        "separate Ozon advertising API contour is visible on official Ozon for dev surfaces"
-      ],
-      "missing": [
+      "confirmed": ["separate Ozon advertising API contour is visible on Ozon for dev"],
+      "missing_before_close": [
         "current host/auth",
         "campaign list/status/type",
         "campaign-product mapping",
-        "impressions",
-        "clicks",
-        "spend",
-        "CTR",
-        "CPC/CPM",
+        "impressions/clicks/spend/CTR/CPC/CPM",
         "attributed orders/revenue",
         "query/placement/category/region dimensions where exposed",
         "read-only budget/bid context"
@@ -266,34 +262,28 @@
     {
       "id": "reviews_questions",
       "blocking": false,
-      "status": "partial",
-      "confirmed": [
-        "review API capability is visible: official 2025 topic references /v1/review/comment/create"
-      ],
-      "missing": [
-        "exact read-only review list/detail method",
-        "questions list/detail read method",
-        "rating/status/answer metadata schemas"
-      ],
-      "write_scope": "excluded",
-      "sources": [
-        "https://dev.ozon.ru/community/1766-v1-review-comment-create-rabota-s-otzyvami/"
-      ]
+      "status": "current_read_families_confirmed_contract_pending",
+      "current_review_paths": ["/v1/review/list", "/v1/review/info", "/v1/review/count", "/v1/review/comment/list"],
+      "review_currentness": "2026-03-31",
+      "current_question_paths": ["/v1/question/list", "/v1/question/info", "/v1/question/count", "/v1/question/top-sku"],
+      "question_currentness": "latest direct /v1/question/list update found 2025-09-18",
+      "missing_before_close": ["HTTP verbs/full schemas", "pagination/access restrictions", "2026 question-family refresh"]
     },
     {
       "id": "method_level_operational_constraints",
       "blocking": true,
       "status": "pending",
       "missing": [
-        "per-method pagination/page-size/cursor semantics",
+        "per-method HTTP verbs where not explicitly established",
+        "full request/response schemas",
+        "pagination/page-size/cursor semantics",
         "history/date windows",
         "rate limits/quotas",
         "account role/scopes",
         "Premium/subscription restrictions",
-        "deprecation/replacement notices",
         "JSON vs generated/binary report classification"
       ],
-      "reason": "Official interactive Seller API library is not available as a stable browsable snapshot in the current research runtime."
+      "reason": "Verified changelog solves currentness/deprecation but the interactive Seller API library is still unavailable as a stable browsable snapshot in this runtime."
     }
   ],
   "blocking_surface_ids_still_not_closed": [
@@ -302,9 +292,10 @@
     "warehouses_clusters_geography",
     "orders_postings",
     "returns_cancellations",
+    "finance",
     "realization_reports_settlement",
     "advertising",
     "method_level_operational_constraints"
   ],
-  "next_action": "Continue official Ozon evidence extraction. Do not start 03A.4 and do not promote third-party candidate endpoints."
+  "next_action": "Extract implementation contracts for now-confirmed current families and resolve advertising current API. Do not start 03A.4 until these blocking contracts are verified."
 }
