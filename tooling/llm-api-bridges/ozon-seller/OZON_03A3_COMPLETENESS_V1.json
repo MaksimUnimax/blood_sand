@@ -1,301 +1,41 @@
 {
   "schema": "OZON_03A3_COMPLETENESS_V1",
   "as_of": "2026-08-11",
-  "purpose": "Machine-readable research gate before Ozon bridge implementation",
-  "source_policy": {
-    "full_contract": "Ozon-owned current source containing the required method contract; interactive Seller API library preferred",
-    "currentness_deprecation": "dev.ozon.ru plus verified @OzonSellerAPI changelog that links to Seller API documentation",
-    "third_party": "discovery only"
-  },
   "closure_allowed": false,
   "extension_development_allowed": false,
-  "major_currentness_corrections": [
-    "/v3/product/list and /v3/product/info/list are current families in July 2026",
-    "/v5/product/info/prices is current and exposes marketing_actions context",
-    "/v2/warehouse/list replaced disabled /v1/warehouse/list",
-    "/v4/posting/fbs/list and /v4/posting/fbs/unfulfilled/list replace v3 list families on 2026-08-31",
-    "/v3/finance/transaction/list is deprecated and scheduled for shutdown 2026-09-08; future target is /v1/finance/accrual/*"
+  "currentness_checkpoint": "2026-08-04 for active posting targets; 2026-07-30 finance accrual; 2026-07-28 realization/report",
+  "key_corrections": [
+    "catalog current families are /v3/product/list, /v3/product/info/list, /v4/product/info/attributes",
+    "bulk price current family /v5/product/info/prices includes marketing_actions context",
+    "seller warehouse current family /v2/warehouse/list replaces disabled /v1/warehouse/list",
+    "FBS list target is v4; v3 list/unfulfilled shuts down 2026-08-31",
+    "finance v3 transaction list/totals shut down 2026-09-08; target finance/accrual family",
+    "order-level realization report beta /v1/report/realization/posting/create added 2026-07-28"
   ],
   "surfaces": [
-    {
-      "id": "auth_transport",
-      "blocking": true,
-      "status": "confirmed",
-      "facts": [
-        "public API only; no cabinet/site scraping fallback",
-        "Seller API host/auth contour uses api-seller.ozon.ru with Client-Id + Api-Key for seller-created credentials",
-        "OAuth without a private/public Ozon application does not exist"
-      ]
-    },
-    {
-      "id": "catalog_product_master",
-      "blocking": true,
-      "status": "partial_current_paths_confirmed_contract_pending",
-      "current_paths": [
-        "/v3/product/list",
-        "/v3/product/info/list",
-        "/v4/product/info/attributes"
-      ],
-      "currentness": {
-        "/v3/product/list": "2026-07-09",
-        "/v3/product/info/list": "2026-07-10",
-        "/v4/product/info/attributes": "2026-02-10"
-      },
-      "known_current_fields": [
-        "/v3/product/list filter.skus",
-        "/v3/product/list result.items.sku",
-        "/v3/product/info/list items.showcases_visibility"
-      ],
-      "missing_before_close": [
-        "HTTP verbs from authoritative contract where not separately confirmed",
-        "full request/response schemas",
-        "pagination/batch limits",
-        "archive/hidden/moderation/error semantics",
-        "category/type linkage",
-        "media/description/rich-content coverage",
-        "permissions"
-      ]
-    },
-    {
-      "id": "stocks_availability",
-      "blocking": true,
-      "status": "confirmed_plus_warehouse_families_contract_pending",
-      "confirmed_methods": ["POST /v4/product/info/stocks"],
-      "current_path_families": [
-        "/v2/product/info/stocks-by-warehouse/fbs",
-        "/v1/product/info/stocks-by-warehouse/fbo",
-        "/v1/analytics/stocks"
-      ],
-      "notable_currentness": [
-        "/v1/product/info/stocks-by-warehouse/fbs disabled 2026-04-07; use v2",
-        "/v1/analytics/stocks becomes real-time 2026-08-17"
-      ],
-      "missing_before_close": [
-        "full warehouse-stock schemas/limits",
-        "historical stockout strategy if API history is insufficient"
-      ]
-    },
-    {
-      "id": "seller_product_analytics",
-      "blocking": true,
-      "status": "confirmed_schema_refresh_pending",
-      "confirmed_methods": ["POST /v1/analytics/data"],
-      "known_capabilities": ["impressions/shows", "sessions", "conversion", "revenue", "returns aggregate", "ordered_units"],
-      "missing_before_close": ["current complete metric/dimension enumeration", "date limits", "pagination/limit semantics", "account-plan restrictions"]
-    },
-    {
-      "id": "product_query_analytics",
-      "blocking": false,
-      "status": "confirmed_schema_refresh_pending",
-      "confirmed_methods": ["/v1/analytics/product-queries", "/v1/analytics/product-queries/details"],
-      "missing_before_close": ["current full fields/history limits", "Premium/Premium Plus exact restrictions"]
-    },
-    {
-      "id": "prices_promotions",
-      "blocking": true,
-      "status": "partial_current_paths_confirmed_contract_pending",
-      "current_paths": [
-        "/v5/product/info/prices",
-        "/v1/product/prices/details",
-        "/v1/seller-actions/list",
-        "/v1/seller-actions/products/list"
-      ],
-      "known_currentness": [
-        "/v5/product/info/prices updated 2026-05-28",
-        "/v1/product/prices/details moved to main 2026-03-04",
-        "seller-actions read families added as beta 2026-03-02"
-      ],
-      "known_fields": [
-        "items.marketing_actions.actions.date_from",
-        "items.marketing_actions.actions.date_to",
-        "items.marketing_actions.actions.title",
-        "items.marketing_actions.actions.value"
-      ],
-      "missing_before_close": [
-        "HTTP verbs/full contracts",
-        "complete current/old/marketing/card price semantics",
-        "promotion pagination and participation semantics",
-        "access restrictions"
-      ]
-    },
-    {
-      "id": "warehouses_clusters_geography",
-      "blocking": true,
-      "status": "partial_current_paths_confirmed_contract_pending",
-      "current_paths": [
-        "/v2/warehouse/list",
-        "/v1/warehouse/ozon/list",
-        "/v1/warehouse/fbo/seller/list",
-        "/v2/cluster/list"
-      ],
-      "deprecated": [
-        "/v1/warehouse/list disabled 2026-04-07"
-      ],
-      "confirmed_context": [
-        "stock response carries warehouse_ids",
-        "cross-dock FBO supply uses macrolocal_cluster_id",
-        "/v2/cluster/list moved to main 2026-06-01"
-      ],
-      "missing_before_close": [
-        "HTTP verbs/full schemas",
-        "warehouse/cluster identity and geography joins",
-        "coverage differences seller/FBO/Ozon warehouse lists",
-        "delivery availability/geography semantics"
-      ]
-    },
-    {
-      "id": "orders_postings",
-      "blocking": true,
-      "status": "partial_current_versions_confirmed_contract_pending",
-      "current_families": [
-        "/v3/posting/fbo/list",
-        "/v3/posting/fbs/get",
-        "/v4/posting/fbs/list",
-        "/v4/posting/fbs/unfulfilled/list"
-      ],
-      "deprecated": [
-        "/v2/posting/fbo/list shutdown scheduled 2026-08-31",
-        "/v3/posting/fbs/list shutdown scheduled 2026-08-31",
-        "/v3/posting/fbs/unfulfilled/list shutdown scheduled 2026-08-31"
-      ],
-      "missing_before_close": [
-        "v4 FBS HTTP/full schema",
-        "date windows and pagination",
-        "complete status/cancellation semantics"
-      ]
-    },
-    {
-      "id": "returns_cancellations",
-      "blocking": true,
-      "status": "partial_current_paths_confirmed_contract_pending",
-      "current_families": [
-        "/v1/returns/list",
-        "/v2/returns/rfbs/list",
-        "/v2/report/returns/create",
-        "/v1/cancel-reason/list",
-        "/v1/cancel-reason/list-by-order",
-        "/v1/cancel-reason/list-by-posting",
-        "/v1/order/cancel/status",
-        "/v1/posting/cancel/status"
-      ],
-      "known_currentness": [
-        "/v2/report/returns/create documented 2026-02-12",
-        "cancel status methods updated 2026-07-09",
-        "cancel-reason families documented 2025-12-30"
-      ],
-      "missing_before_close": [
-        "HTTP verbs/full contracts",
-        "event-level product quantities/timestamps/reasons across FBO/FBS/rFBS",
-        "pagination/history",
-        "how partial cancellation is represented across current list/detail families",
-        "claims/disputes read surface if available"
-      ]
-    },
-    {
-      "id": "fbo_supply_replenishment",
-      "blocking": true,
-      "status": "confirmed_schema_refresh_pending",
-      "confirmed_methods": ["/v3/supply-order/get", "/v1/supply-order/details"],
-      "confirmed": ["macrolocal_cluster_id added for cross-dock", "warehouse_id loses relevance for cross-dock"],
-      "missing_before_close": ["current complete status chronology/schema", "pagination/history limitations where applicable"]
-    },
-    {
-      "id": "finance",
-      "blocking": true,
-      "status": "migration_required_new_contract_pending",
-      "deprecated_transition": {
-        "paths": ["/v3/finance/transaction/list", "/v3/finance/transaction/totals"],
-        "shutdown": "2026-09-08"
-      },
-      "future_current_paths": [
-        "/v1/finance/accrual/postings",
-        "/v1/finance/accrual/types",
-        "/v1/finance/accrual/by-day"
-      ],
-      "currentness": [
-        "replacements announced 2026-07-14",
-        "/v1/finance/accrual/by-day updated 2026-07-21"
-      ],
-      "missing_before_close": ["HTTP verbs/full schemas", "pagination/history", "product/posting reconciliation semantics", "service/fee taxonomy"]
-    },
-    {
-      "id": "realization_reports_settlement",
-      "blocking": true,
-      "status": "partial_current_paths_confirmed_contract_pending",
-      "current_families": [
-        "/v2/finance/realization",
-        "/v1/finance/realization/posting",
-        "/v1/report/list",
-        "/v1/report/info",
-        "/v1/report/postings/create",
-        "/v2/report/returns/create"
-      ],
-      "known_currentness": [
-        "realization families updated 2025-12-25",
-        "report list/info updated 2026-02-03",
-        "postings/returns report create documented 2026-02-12"
-      ],
-      "missing_before_close": [
-        "2026 realization refresh",
-        "HTTP verbs/full contracts",
-        "history/period limits",
-        "settlement/payout reconciliation coverage",
-        "generated report retrieval lifecycle"
-      ]
-    },
-    {
-      "id": "advertising",
-      "blocking": true,
-      "status": "pending",
-      "confirmed": ["separate Ozon advertising API contour is visible on Ozon for dev"],
-      "missing_before_close": [
-        "current host/auth",
-        "campaign list/status/type",
-        "campaign-product mapping",
-        "impressions/clicks/spend/CTR/CPC/CPM",
-        "attributed orders/revenue",
-        "query/placement/category/region dimensions where exposed",
-        "read-only budget/bid context"
-      ],
-      "write_scope": "excluded"
-    },
-    {
-      "id": "reviews_questions",
-      "blocking": false,
-      "status": "current_read_families_confirmed_contract_pending",
-      "current_review_paths": ["/v1/review/list", "/v1/review/info", "/v1/review/count", "/v1/review/comment/list"],
-      "review_currentness": "2026-03-31",
-      "current_question_paths": ["/v1/question/list", "/v1/question/info", "/v1/question/count", "/v1/question/top-sku"],
-      "question_currentness": "latest direct /v1/question/list update found 2025-09-18",
-      "missing_before_close": ["HTTP verbs/full schemas", "pagination/access restrictions", "2026 question-family refresh"]
-    },
-    {
-      "id": "method_level_operational_constraints",
-      "blocking": true,
-      "status": "pending",
-      "missing": [
-        "per-method HTTP verbs where not explicitly established",
-        "full request/response schemas",
-        "pagination/page-size/cursor semantics",
-        "history/date windows",
-        "rate limits/quotas",
-        "account role/scopes",
-        "Premium/subscription restrictions",
-        "JSON vs generated/binary report classification"
-      ],
-      "reason": "Verified changelog solves currentness/deprecation but the interactive Seller API library is still unavailable as a stable browsable snapshot in this runtime."
-    }
+    {"id": "auth_transport", "blocking": true, "status": "confirmed", "remaining": []},
+    {"id": "catalog_product_master", "blocking": true, "status": "current_paths_confirmed_contract_pending", "paths": ["/v3/product/list", "/v3/product/info/list", "/v4/product/info/attributes"], "remaining": ["full HTTP/request/response contracts", "pagination/batch limits", "visibility/archive/moderation/error semantics", "category/type/media/rich-content completeness", "permissions"]},
+    {"id": "stocks_availability", "blocking": true, "status": "core_confirmed_warehouse_contracts_pending", "paths": ["POST /v4/product/info/stocks", "/v2/product/info/stocks-by-warehouse/fbs", "/v1/product/info/stocks-by-warehouse/fbo", "/v1/analytics/stocks"], "remaining": ["warehouse method full contracts", "history strategy", "real-time transition validation after 2026-08-17"]},
+    {"id": "seller_product_analytics", "blocking": true, "status": "confirmed_schema_refresh_pending", "paths": ["POST /v1/analytics/data"], "remaining": ["complete current metrics/dimensions", "date/history limits", "pagination/limits", "plan restrictions"]},
+    {"id": "product_query_analytics", "blocking": false, "status": "confirmed_schema_refresh_pending", "paths": ["POST /v1/analytics/product-queries", "POST /v1/analytics/product-queries/details"], "remaining": ["current fields/history", "Premium restrictions"]},
+    {"id": "prices_promotions", "blocking": true, "status": "current_paths_confirmed_contract_pending", "paths": ["/v5/product/info/prices", "/v1/product/prices/details", "/v1/seller-actions/list", "/v1/seller-actions/products/list"], "remaining": ["full contracts", "complete price semantics", "promotion participation semantics", "pagination/access"]},
+    {"id": "warehouses_clusters_geography", "blocking": true, "status": "current_paths_confirmed_contract_pending", "paths": ["/v2/warehouse/list", "/v1/warehouse/ozon/list", "/v1/warehouse/fbo/seller/list", "/v2/cluster/list"], "remaining": ["full contracts", "seller/FBO/Ozon warehouse coverage", "warehouse-cluster-geography joins", "delivery geography where exposed"]},
+    {"id": "orders_postings", "blocking": true, "status": "current_versions_confirmed_contract_pending", "paths": ["/v3/posting/fbo/list", "/v3/posting/fbs/get", "/v4/posting/fbs/list", "/v4/posting/fbs/unfulfilled/list"], "latest_currentness": "2026-08-04", "remaining": ["v4 full contracts", "date windows", "pagination", "status/cancellation semantics"]},
+    {"id": "returns_cancellations", "blocking": true, "status": "families_confirmed_contract_and_chronology_pending", "paths": ["/v1/returns/list", "/v2/returns/rfbs/list", "/v2/report/returns/create", "/v1/cancel-reason/list", "/v1/cancel-reason/list-by-order", "/v1/cancel-reason/list-by-posting", "/v1/order/cancel/status", "/v1/posting/cancel/status"], "remaining": ["full contracts", "event quantities/timestamps/reasons", "FBO/FBS/rFBS coverage", "partial cancellation representation", "pagination/history", "claims/disputes if available"]},
+    {"id": "fbo_supply_replenishment", "blocking": true, "status": "confirmed_schema_refresh_pending", "paths": ["POST /v3/supply-order/get", "POST /v1/supply-order/details"], "remaining": ["complete status chronology", "pagination/history"]},
+    {"id": "finance", "blocking": true, "status": "migration_target_confirmed_contract_pending", "deprecated": ["/v3/finance/transaction/list", "/v3/finance/transaction/totals"], "shutdown": "2026-09-08", "target_paths": ["/v1/finance/accrual/postings", "/v1/finance/accrual/types", "/v1/finance/accrual/by-day"], "latest_currentness": "2026-07-30", "remaining": ["full contracts", "pagination/history", "posting/product reconciliation", "fee/accrual taxonomy"]},
+    {"id": "realization_reports_settlement", "blocking": true, "status": "current_paths_confirmed_contract_pending", "paths": ["/v2/finance/realization", "/v1/finance/realization/posting", "/v1/report/realization/posting/create", "/v1/report/list", "/v1/report/info", "/v1/report/postings/create", "/v2/report/returns/create"], "latest_currentness": "2026-07-28", "remaining": ["full contracts", "period/history limits", "settlement/payout coverage", "generated-report create→retrieve lifecycle"]},
+    {"id": "advertising_performance_api", "blocking": true, "status": "pending", "confirmed": ["Performance API exists as separate public Ozon API contour", "Ozon for dev exposes API advertising-platform category"], "remaining": ["current host/auth", "campaign list/status/type", "campaign-product mapping", "impressions/clicks/spend", "CTR/CPC/CPM", "attributed orders/revenue", "query/placement/category/region dimensions", "read-only budget/bid context"]},
+    {"id": "reviews_questions", "blocking": false, "status": "read_families_confirmed_contract_pending", "paths": ["/v1/review/list", "/v1/review/info", "/v1/review/count", "/v1/review/comment/list", "/v1/question/list", "/v1/question/info", "/v1/question/count", "/v1/question/top-sku"], "remaining": ["full contracts", "pagination/access", "2026 question-family refresh"]},
+    {"id": "push_notifications", "blocking": false, "status": "optional_current_capability", "currentness": "2026-08-04", "known_events": ["TYPE_FBO_POSTING_NEW", "TYPE_FBO_POSTING_CANCELLED", "TYPE_FBO_POSTING_STATE_CHANGED", "TYPE_FBO_POSTING_DELIVERY_DATE_CHANGED", "TYPE_FBO_STOCKS_CHANGED", "TYPE_ORDER_NEW", "TYPE_ORDER_CANCELLED", "TYPE_ORDER_STATE_CHANGED"], "initial_bridge_rule": "do not silently create or mutate subscriptions"},
+    {"id": "method_level_operational_constraints", "blocking": true, "status": "pending", "remaining": ["HTTP verbs where not independently established", "full request/response schemas", "pagination/page-size/cursor", "history/date windows", "rate limits/quotas", "roles/scopes/subscription restrictions", "JSON vs generated/binary response behavior", "final pre-coding deprecation recheck"]}
   ],
-  "blocking_surface_ids_still_not_closed": [
-    "catalog_product_master",
-    "prices_promotions",
-    "warehouses_clusters_geography",
-    "orders_postings",
-    "returns_cancellations",
-    "finance",
-    "realization_reports_settlement",
-    "advertising",
-    "method_level_operational_constraints"
+  "blocking_not_closed": ["catalog_product_master", "stocks_availability", "seller_product_analytics", "prices_promotions", "warehouses_clusters_geography", "orders_postings", "returns_cancellations", "fbo_supply_replenishment", "finance", "realization_reports_settlement", "advertising_performance_api", "method_level_operational_constraints"],
+  "primary_remaining_research_targets": [
+    "extract implementation contracts for current-confirmed Seller API families",
+    "resolve current Performance API host/auth/read statistics methods",
+    "verify operational limits/history/access constraints",
+    "perform final deprecation scan immediately before 03A.4"
   ],
-  "next_action": "Extract implementation contracts for now-confirmed current families and resolve advertising current API. Do not start 03A.4 until these blocking contracts are verified."
+  "next_action": "Continue 03A.3. Do not start Ozon extension."
 }
