@@ -1,0 +1,128 @@
+{
+  "schema": "OZON_PRODUCT_MASTER_CONTRACT_QUEUE_V1",
+  "as_of": "2026-08-11",
+  "purpose": "P0 contract queue for complete Ozon-side Product/SKU/MarketplaceListing/Category master",
+  "implementation_allowed": false,
+  "intended_data_chain_not_automatic_fanout": [
+    "/v3/product/list",
+    "/v3/product/info/list",
+    "/v4/product/info/attributes",
+    "/v2/product/pictures/info",
+    "/v1/description-category/tree",
+    "/v1/description-category/attribute",
+    "/v1/description-category/attribute/values",
+    "/v5/product/info/prices",
+    "/v4/product/info/stocks",
+    "/v2/warehouse/list"
+  ],
+  "confirmed_cross_method_join": {
+    "key": "sku",
+    "product_list_field": "result.items.sku",
+    "product_info_field": "items.sku",
+    "evidence": ["/v3/product/info/list items.sku added 2025-08-14", "/v3/product/list result.items.sku added 2026-07-09"]
+  },
+  "operations": [
+    {
+      "id": "enumeration",
+      "path": "/v3/product/list",
+      "canonical_operation_id": "ProductAPI_GetProductListv3",
+      "currentness": "2026-07-09",
+      "known_fields": ["filter.skus", "result.items.sku"],
+      "full_contract": false,
+      "missing": ["HTTP verb", "full filters", "pagination/page size", "all product/listing identifiers", "archived/hidden/status/error coverage", "permissions", "unified product-operation quota cost"]
+    },
+    {
+      "id": "bulk_info",
+      "path": "/v3/product/info/list",
+      "canonical_operation_id": "ProductAPI_GetProductInfoList",
+      "currentness": "2026-07-10",
+      "known_fields": ["items.sku", "items.promotions", "items.promotions.is_enabled", "items.promotions.type", "items.showcases_visibility", "items.is_kgt"],
+      "removed_current_fields": ["items.images360"],
+      "full_contract": false,
+      "missing": ["HTTP verb", "input identifier/batch limits", "title/name field", "barcodes", "dimensions/weight", "complete status/visibility", "category/type fields", "ordinary media fields", "rich-content refs", "permissions/quota"]
+    },
+    {
+      "id": "attributes",
+      "path": "/v4/product/info/attributes",
+      "currentness": "current family visible 2026-02-10",
+      "full_contract": false,
+      "historical_lineage_not_assumed_current": ["description_category_id", "type_id"],
+      "missing": ["canonical operation id for current v4", "HTTP verb", "request identifiers", "attribute schema", "current description_category_id/type_id placement", "pagination/batch limit", "permissions/quota"]
+    },
+    {
+      "id": "pictures",
+      "path": "/v2/product/pictures/info",
+      "canonical_operation_id": "ProductAPI_ProductInfoPicturesV2",
+      "currentness": "updated 2026-06-09",
+      "removed_current_fields": ["items.photo_360"],
+      "full_contract": false,
+      "missing": ["HTTP verb", "input identifiers", "batch/page limits", "primary/image ordering semantics", "complete image fields", "video/rich-media coverage", "permissions/quota"]
+    },
+    {
+      "id": "description_category_tree",
+      "path": "/v1/description-category/tree",
+      "canonical_operation_id": "DescriptionCategoryAPI_GetTree",
+      "currentness": "official canonical replacement lineage; direct 2026 method refresh pending",
+      "full_contract": false,
+      "missing": ["2026 currentness", "HTTP verb", "tree node schema", "description_category_id/type_id semantics", "pagination if any", "permissions"]
+    },
+    {
+      "id": "description_category_attributes",
+      "path": "/v1/description-category/attribute",
+      "canonical_operation_id": "DescriptionCategoryAPI_GetAttributes",
+      "currentness": "official canonical replacement lineage; direct 2026 method refresh pending",
+      "full_contract": false,
+      "missing": ["2026 currentness", "HTTP verb", "request category/type identifiers", "attribute metadata schema", "required/optional semantics", "permissions"]
+    },
+    {
+      "id": "description_category_attribute_values",
+      "path": "/v1/description-category/attribute/values",
+      "canonical_operation_id": "DescriptionCategoryAPI_GetAttributeValues",
+      "currentness": "official canonical replacement lineage; direct 2026 method refresh pending",
+      "full_contract": false,
+      "missing": ["2026 currentness", "HTTP verb", "request ids/search/pagination", "value schema", "permissions"]
+    },
+    {
+      "id": "prices",
+      "path": "/v5/product/info/prices",
+      "currentness": "2026-05-28",
+      "known_fields": ["items.marketing_actions", "items.marketing_actions.actions.date_from", "items.marketing_actions.actions.date_to", "items.marketing_actions.actions.title", "items.marketing_actions.actions.value"],
+      "removed_current_fields": ["price.marketing_price"],
+      "full_contract": false,
+      "missing": ["HTTP verb", "input identifiers", "pagination/batch size", "complete seller/current/old/card/marketing price semantics", "price index fields", "visibility/status relationship", "permissions/quota"]
+    },
+    {
+      "id": "product_operation_quota_preflight",
+      "path": "/v4/product/info/limit",
+      "canonical_operation_id": "ProductAPI_GetUploadQuota",
+      "currentness": "updated 2026-07-10; operation_limits added 2026-06-09",
+      "known_fields": ["operation_limits"],
+      "full_contract": false,
+      "missing": ["HTTP verb", "complete operation_limits schema", "numeric quotas", "bucket/reset semantics", "which P0 read methods consume which bucket", "whether preflight itself has relevant rate cost"]
+    },
+    {
+      "id": "current_stock",
+      "path": "/v4/product/info/stocks",
+      "currentness": "confirmed current",
+      "known_http_verb": "POST",
+      "known_fields": ["product_id", "offer_id", "FBO/FBS blocks", "present", "reserved", "sku", "shipment_type", "warehouse_ids"],
+      "deprecated_field_warning": "items.stocks.warehouseId is deprecated; use current warehouse_ids/warehouse-level families according to full contract",
+      "full_contract": false,
+      "missing": ["current request/batch contract", "all stock type semantics", "quota", "permissions"]
+    },
+    {
+      "id": "seller_warehouses",
+      "path": "/v2/warehouse/list",
+      "currentness": "current replacement; v1 disabled",
+      "pagination_fragments": {"request": ["limit", "cursor"], "response": ["cursor", "has_next"]},
+      "full_contract": false,
+      "missing": ["HTTP verb", "numeric max limit", "warehouse identity/name/type/geography fields", "cursor terminal details", "permissions"]
+    }
+  ],
+  "fields_required_by_blood_sand_master": {
+    "confirmed_or_partially_confirmed": ["sku", "product/list enumeration", "showcase visibility context", "promotion context", "attributes contour", "pictures contour", "price contour", "stock", "warehouse identifiers", "category dictionary lineage"],
+    "still_not_proven_in_current_read_contract": ["complete seller offer/article field mapping", "complete Ozon product/listing ids across all methods", "title/name", "barcodes", "dimensions/weight", "current description_category_id/type_id placement", "video", "rich content/description", "complete moderation/error state"]
+  },
+  "identity_rule": "Preserve seller offer/article, product/listing id, SKU, description_category_id and type_id as distinct identifiers when current contracts expose them. SKU is a confirmed join key but must not become the only master identity.",
+  "completion_rule": "Product Master API research is not complete until all required fields are either tied to current Ozon-owned read contracts or explicitly classified as unavailable gaps."
+}
