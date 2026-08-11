@@ -12,23 +12,24 @@
 2. `OZON_READ_ONLY_ALLOWLIST_V1.json` — current candidate registry + deprecated/do-not-use paths;
 3. `OZON_IMPLEMENTATION_CONTRACT_QUEUE_V1.json` — общая per-operation очередь contract gaps;
 4. `OZON_PRODUCT_MASTER_CONTRACT_QUEUE_V1.json` — P0 contract queue для Product/SKU/Listing/Category master;
-5. `OZON_LOGISTICS_CONTRACT_QUEUE_V1.json` — current warehouse → delivery method → carriage contract queue;
-6. `OZON_AVERAGE_DELIVERY_TIME_RETIREMENT_2026-08-11.md` — current correction: Average Delivery Time analytics family fully retired, do not target;
-7. `OZON_PRODUCT_MASTER_JOIN_EVIDENCE_V1.json` — доказанные cross-method identifiers/fields;
-8. `OZON_PRODUCT_MASTER_COVERAGE_2026-08-11.md` — product master read-chain coverage;
-9. `OZON_CATEGORY_ATTRIBUTE_FRESHNESS_2026-08-11.md` — dynamic category/attribute freshness requirement;
-10. `OZON_LOGISTICS_GEOGRAPHY_COVERAGE_2026-08-11.md` — logistics/geography diagnostic coverage;
-11. `OZON_CONTRACT_FRAGMENT_REGISTRY_2026-08-11.json` — Ozon-owned pagination/expiry/rate/field fragments;
-12. `OZON_CANONICAL_OPERATION_LOCATORS_2026-08-11.json` — exact official `#operation` locators only where actually observed;
-13. `OZON_OPERATIONAL_CONSTRAINTS_2026-08-11.md` — key lifetime, rate/product-operation limits, reports/pagination;
-14. `OZON_OFFICIAL_NOTIFICATION_CURRENTNESS_2026-08-11.md` — currentness/deprecation evidence;
-15. `OZON_PERFORMANCE_API_GAP_2026-08-11.md` — Performance API blocker;
-16. `OZON_PERFORMANCE_DISCOVERY_QUEUE_V1.json` — discovery-only probes, all unverified by Ozon contract until promoted explicitly;
-17. base audits/revalidation files.
+5. `OZON_LOGISTICS_CONTRACT_QUEUE_V1.json` — current logistics/restriction/error diagnostics contract queue;
+6. `OZON_AVERAGE_DELIVERY_TIME_RETIREMENT_2026-08-11.md` — correction: Average Delivery Time family retired;
+7. `OZON_DELIVERY_DIAGNOSTICS_ALTERNATIVES_2026-08-11.md` — current FBS/rFBS error-index, delivery-restriction and posting-promise alternatives;
+8. `OZON_PRODUCT_MASTER_JOIN_EVIDENCE_V1.json` — доказанные cross-method identifiers/fields;
+9. `OZON_PRODUCT_MASTER_COVERAGE_2026-08-11.md` — product master read-chain coverage;
+10. `OZON_CATEGORY_ATTRIBUTE_FRESHNESS_2026-08-11.md` — dynamic category/attribute freshness requirement;
+11. `OZON_LOGISTICS_GEOGRAPHY_COVERAGE_2026-08-11.md` — logistics/geography diagnostic coverage;
+12. `OZON_CONTRACT_FRAGMENT_REGISTRY_2026-08-11.json` — Ozon-owned pagination/expiry/rate/field fragments;
+13. `OZON_CANONICAL_OPERATION_LOCATORS_2026-08-11.json` — exact official `#operation` locators only where observed;
+14. `OZON_OPERATIONAL_CONSTRAINTS_2026-08-11.md` — key lifetime, rate/product-operation limits, reports/pagination;
+15. `OZON_OFFICIAL_NOTIFICATION_CURRENTNESS_2026-08-11.md` — currentness/deprecation evidence;
+16. `OZON_PERFORMANCE_API_GAP_2026-08-11.md` — Performance API blocker;
+17. `OZON_PERFORMANCE_DISCOVERY_QUEUE_V1.json` — discovery-only probes;
+18. base audits/revalidation files.
 
 `OZON_NEGATIVE_VERIFICATION_2026-08-11.md` is historical / partially superseded and is not current status authority for families later confirmed by Ozon changelog evidence.
 
-## Product Master — current research state
+## Product Master
 
 Current/canonical research chain:
 
@@ -36,35 +37,29 @@ Current/canonical research chain:
 → `/v3/product/info/list`
 → `/v4/product/info/attributes`
 → `/v2/product/pictures/info`
-→ `/v1/description-category/tree`
-→ `/v1/description-category/attribute`
-→ `/v1/description-category/attribute/values`
+→ description-category dictionary chain
 → `/v5/product/info/prices`
-→ stock/warehouse families.
+→ stock/warehouse layers.
 
-This is a **research dependency chain, not an automatic execution chain**.
-
-Confirmed join:
+Confirmed SKU join:
 
 - `/v3/product/list.result.items.sku` ↔ `/v3/product/info/list.items.sku`.
 
-Confirmed fragments include product-info promotions/showcase visibility, current pictures lineage and current price `marketing_actions`. Removed legacy fields such as `images360`, `photo_360` and `price.marketing_price` must not be treated as current.
-
-Still not proven on current contracts and therefore not promised by the future master:
+Still not proven on current full contracts:
 
 - complete seller offer/article mapping;
-- title/name on current v3 bulk-info contract;
-- barcodes on current v3 contract;
+- title/name;
+- barcodes on current v3 bulk info;
 - dimensions/weight;
 - current `description_category_id` / `type_id` placement in v4 attributes;
-- video/rich-content coverage;
+- video/rich-content;
 - complete moderation/error state.
 
-Category/attribute dictionaries are dynamic evidence; Product Master must preserve source/snapshot freshness.
+Category/attribute dictionaries are dynamic evidence and must preserve snapshot freshness.
 
 ## Warehouses / logistics / geography
 
-Current warehouse/configuration families include:
+Current configuration families:
 
 - `/v2/warehouse/list`;
 - `/v1/warehouse/ozon/list`;
@@ -75,34 +70,43 @@ Current warehouse/configuration families include:
 - `/v2/delivery-method/list`;
 - `/v2/carriage/delivery/list`.
 
-Confirmed `/v2/warehouse/list` pagination fragments:
+Warehouse v2 pagination fragments: request `limit`, `cursor`; response `cursor`, `has_next`.
 
-- request `limit`, `cursor`;
-- response `cursor`, `has_next`.
+### Average Delivery Time — retired
 
-### Current correction: Average Delivery Time analytics retired
+A later Ozon-owned 2026 announcement supersedes the March description refresh: the **Average Delivery Time functionality was fully disabled and its methods removed from documentation**.
 
-The earlier March-2026 description refresh for:
+Do not target:
 
 - `/v1/analytics/average-delivery-time`;
 - `/v1/analytics/average-delivery-time/details`;
-- `/v1/analytics/average-delivery-time/summary`
+- `/v1/analytics/average-delivery-time/summary`.
 
-is superseded by a later Ozon-owned 2026 retirement announcement: the **Average Delivery Time functionality was fully disabled and its methods removed from documentation**.
+One-to-one replacement is not confirmed.
 
-Therefore all three are now **DO NOT TARGET**. No replacement read method is confirmed.
+### Current delivery diagnostics alternatives
 
-Correct current logistics dependency:
+Current main families identified by Ozon:
 
-`seller logistics connection`
-→ `warehouse`
-→ `SKU stock by warehouse`
-→ `delivery method`
-→ `carriage/shipment availability`
-→ `cluster/geography`
-→ `posting/order outcome`.
+- `/v1/rating/index/fbs/info` — FBS/rFBS error-index information;
+- `/v1/rating/index/fbs/posting/list` — posting-level FBS/rFBS error-index evidence;
+- `/v1/warehouse/invalid-products/get` — products with FBS delivery restrictions;
+- `/v1/warehouse/warehouses-with-invalid-products` — warehouses containing such products.
 
-If current posting or another Ozon-owned method exposes delivery-date/quality evidence, it must be verified separately before use; no replacement is inferred.
+All four were moved from beta to main on 2026-02-02. Full contracts remain pending.
+
+Current `/v3/posting/fbs/get` has documented response fragments:
+
+- `result.analytics_data.client_delivery_date_begin`;
+- `result.analytics_data.client_delivery_date_end`.
+
+These are posting-level promised-delivery fields, **not** a replacement aggregate Average Delivery Time metric.
+
+Correct current diagnostic chain:
+
+`logistics connection → warehouse → stock → delivery method → delivery restrictions → FBS/rFBS error index → carriage/shipment → cluster/geography → posting promise → posting/order outcome`.
+
+No hidden automatic fan-out is authorized.
 
 ## Orders / returns / cancellations
 
@@ -121,7 +125,7 @@ Returns/cancellation evidence includes general/rFBS return families, generated r
 
 Do not design future code around `/v3/finance/transaction/list` or `/v3/finance/transaction/totals`; shutdown is scheduled for **2026-09-08**.
 
-Future finance target family:
+Future finance target:
 
 - `/v1/finance/accrual/postings`;
 - `/v1/finance/accrual/types`;
@@ -129,29 +133,29 @@ Future finance target family:
 
 Current `by-day` fragments include request `date`, `last_id`; response `last_id`, `accruals.container_fees`, `accruals.accrued_category`, `accruals.accrual_id`.
 
-Important correction: `accruals.type_id` was renamed to `accruals.accrual_id` on 2026-06-09. Do not model the old field name as current.
+Correction: `accruals.type_id` was renamed to `accruals.accrual_id` on 2026-06-09.
 
-Generated reports remain explicit create → later status/info/list → explicit retrieval operations. Hidden polling/fan-out is forbidden.
+Generated reports remain explicit create → status/info/list → explicit retrieval operations. Hidden polling/fan-out is forbidden.
 
-## Operational constraints already established
+## Operational constraints
 
 - Seller API key lifetime under the 2026 policy: **6 months**; `/v1/roles` exposes `expires_at`;
-- last explicit Ozon notification general-rate evidence: **50 requests/s across all methods per Client ID**; revalidate before coding rather than hardcoding permanently;
+- last explicit Ozon notification general-rate evidence: **50 requests/s across all methods per Client ID**; revalidate before coding;
 - unified product-operation limit model exists;
 - `/v4/product/info/limit` exposes `operation_limits`; numeric bucket/reset semantics remain pending;
 - `/v1/product/prices/details` requires `skus`;
 - generated report expiry is exposed;
-- `/v1/analytics/stocks` is announced to switch to real-time on **2026-08-17** and cannot be revalidated before that future date.
+- `/v1/analytics/stocks` is announced to switch to real-time on **2026-08-17** and cannot be post-transition revalidated yet on 2026-08-11.
 
 No unknown quota/page-size value is guessed.
 
 ## Performance API — primary separate blocker
 
-Ozon-owned sources confirm Performance API as a separate public advertising API and 2026 public-API migration material still explicitly includes Performance API. Official root:
+Ozon-owned sources confirm Performance API as a separate public advertising API; 2026 public-API migration material still includes it. Official root:
 
 `https://docs.ozon.ru/api/performance/`
 
-The current runtime receives a redirect loop from that documentation surface. Therefore candidate host/auth/statistics paths from third-party indexes remain **discovery only** and are not promoted to the allowlist.
+The current runtime receives a redirect loop. Candidate host/auth/statistics paths from third-party indexes remain discovery-only and are not promoted.
 
 Still missing Ozon-owned contracts for host/auth/token lifecycle, campaign inventory/product mapping, advertising statistics/metrics/dimensions, read-only budget/bid context and report/rate/history/access restrictions.
 
