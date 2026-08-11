@@ -1,0 +1,54 @@
+name: Research fetch official Ozon Seller Swagger
+
+on:
+  push:
+    branches:
+      - research/ozon-official-swagger-fetch
+    paths:
+      - .github/workflows/ozon-official-swagger-fetch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-official-swagger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/ozon-official-swagger-fetch
+
+      - name: Fetch official Ozon Seller Swagger
+        shell: bash
+        run: |
+          set -euo pipefail
+          out='tooling/llm-api-bridges/ozon-seller/research-snapshots'
+          mkdir -p "$out"
+          url='https://docs.ozon.ru/api/seller/swagger.json'
+          curl --fail --silent --show-error --location --max-redirs 20 "$url" -o "$out/seller-swagger.json"
+          jq -e 'type == "object" and (.swagger != null or .openapi != null) and (.paths | type == "object")' "$out/seller-swagger.json" >/dev/null
+          sha256sum "$out/seller-swagger.json" | tee "$out/seller-swagger.sha256"
+          printf '%s\n' "$url" > "$out/seller-swagger.source-url.txt"
+          python - <<'PY'
+          import json
+          p='tooling/llm-api-bridges/ozon-seller/research-snapshots/seller-swagger.json'
+          d=json.load(open(p,encoding='utf-8'))
+          print('spec_version=', d.get('openapi') or d.get('swagger'))
+          print('path_count=', len(d.get('paths',{})))
+          print('title=', d.get('info',{}).get('title'))
+          print('version=', d.get('info',{}).get('version'))
+          PY
+
+      - name: Commit verified official snapshot to research branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tooling/llm-api-bridges/ozon-seller/research-snapshots/
+          if git diff --cached --quiet; then
+            echo 'No snapshot changes'
+            exit 0
+          fi
+          git commit -m 'research: capture official Ozon Seller Swagger snapshot'
+          git push origin HEAD:research/ozon-official-swagger-fetch
