@@ -1,11 +1,16 @@
 {
-  "schema_version": "1.1-research",
+  "schema_version": "1.2-research",
   "provider": "ozon",
-  "generated_at": "2026-08-10",
+  "generated_at": "2026-08-11",
   "artifact_role": "research_capability_candidates",
   "implementation_status": "not_started",
   "extension_exists": false,
-  "verification_policy": "official_ozon_sources_only",
+  "verification_policy": {
+    "full_contract_authority": "current Ozon-owned Seller API library or explicit Ozon-owned source containing the full required contract",
+    "currentness_authority": "dev.ozon.ru current materials plus verified Ozon Seller API notification changelog linking to Seller API documentation",
+    "third_party_discovery_only": true,
+    "important_distinction": "current path confirmation is not implementation-ready confirmation; HTTP verb/full schema/pagination/limits/history/access must still be verified before coding"
+  },
   "base_url_evidence": "https://api-seller.ozon.ru",
   "credential_model_evidence": {
     "type": "seller_api",
@@ -19,7 +24,7 @@
     "arbitrary_url_allowed": false,
     "credentials_in_llm_payload": false
   },
-  "confirmed_research_methods": {
+  "confirmed_research_methods_with_http_contract_evidence": {
     "product_stocks": {
       "method": "POST",
       "path": "/v4/product/info/stocks",
@@ -55,19 +60,15 @@
       "purpose": ["fbo_orders", "posting_status", "order_timeline"],
       "official_evidence": "https://dev.ozon.ru/community?category_id=2&page=4"
     },
-    "fbs_posting": {
+    "fbs_posting_detail": {
       "method": "POST",
       "path": "/v3/posting/fbs/get",
-      "verification": "official_method_evidence_schema_recheck_required",
+      "verification": "official_method_evidence_plus_2026_currentness",
       "purpose": ["fbs_order_details", "per_product_order_price", "order_finance_reconciliation"],
-      "official_evidence": "https://dev.ozon.ru/community/712-Zapros-v3-finance-transaction-list-kak-uznat-tsenu-za-tovar"
-    },
-    "finance_transactions": {
-      "method": "POST",
-      "path": "/v3/finance/transaction/list",
-      "verification": "official_method_evidence_schema_recheck_required",
-      "purpose": ["finance_transactions", "fees", "services", "order_finance_reconciliation"],
-      "official_evidence": "https://dev.ozon.ru/community/712-Zapros-v3-finance-transaction-list-kak-uznat-tsenu-za-tovar"
+      "official_evidence": [
+        "https://dev.ozon.ru/community/712-Zapros-v3-finance-transaction-list-kak-uznat-tsenu-za-tovar",
+        "https://t.me/s/OzonSellerAPI"
+      ]
     },
     "fbo_supply_order": {
       "method": "POST",
@@ -84,17 +85,75 @@
       "official_evidence": "https://dev.ozon.ru/news/647-Izmeneniia-v-metodakh-Seller-API-pri-rabote-s-postavkami-FBO/"
     }
   },
-  "not_yet_confirmed_for_future_implementation": [
-    "full_product_catalog_and_listing_master",
-    "product_attributes_media_status_current_schema",
-    "prices_discounts_promotions_current_read_surface",
-    "returns_cancellations_claims",
-    "realization_settlement_reports",
-    "seller_warehouses_geography_delivery_availability",
-    "advertising_performance_api_exact_hosts_auth_methods",
-    "reviews_questions_buyer_communications",
-    "per_method_current_rate_limits_pagination_history_permissions"
+  "confirmed_current_paths_pending_full_contract": {
+    "catalog_product_master": [
+      {"path": "/v3/product/list", "currentness": "2026-07-09", "evidence": "https://t.me/s/OzonSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "pagination/limits", "visibility/archive semantics", "permissions"]},
+      {"path": "/v3/product/info/list", "currentness": "2026-07-10", "evidence": "https://t.me/s/OzonSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full response schema", "batch limits", "permissions"]},
+      {"path": "/v4/product/info/attributes", "currentness": "2026-02-10", "evidence": "https://t.me/s/OzonSellerAPI/619", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "pagination/limits", "category/type linkage"]}
+    ],
+    "prices_promotions": [
+      {"path": "/v5/product/info/prices", "currentness": "2026-05-28", "evidence": "https://t.me/s/OzonSellerAPI", "known_current_fields": ["items.marketing_actions", "items.marketing_actions.actions.date_from", "items.marketing_actions.actions.date_to", "items.marketing_actions.actions.title", "items.marketing_actions.actions.value"], "missing_before_implementation": ["HTTP verb confirmation", "complete price semantics", "pagination/limits", "permissions"]},
+      {"path": "/v1/product/prices/details", "currentness": "moved_to_main_2026-03-04", "evidence": "https://t.me/s/OzonSellerAPI/619", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "limits", "permissions"]},
+      {"path": "/v1/seller-actions/list", "currentness": "beta_added_2026-03-02", "evidence": "https://t.me/s/OzonEnSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full read schema", "pagination", "access restrictions"]},
+      {"path": "/v1/seller-actions/products/list", "currentness": "beta_added_2026-03-02", "evidence": "https://t.me/s/OzonEnSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full read schema", "pagination", "access restrictions"]}
+    ],
+    "warehouses_clusters_geography": [
+      {"path": "/v2/warehouse/list", "currentness": "main_and_active_2026-04-07", "evidence": "https://t.me/s/OzonSellerAPI?before=661", "replaces": "/v1/warehouse/list", "missing_before_implementation": ["HTTP verb confirmation", "full fields/pagination", "warehouse-type semantics"]},
+      {"path": "/v1/warehouse/ozon/list", "currentness": "beta_added_2026-03-12", "evidence": "https://t.me/s/OzonSellerAPI?before=639", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "coverage/permissions"]},
+      {"path": "/v1/warehouse/fbo/seller/list", "currentness": "beta_added_2026-01-16", "evidence": "https://t.me/s/OzonSellerAPI/592", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "coverage/permissions"]},
+      {"path": "/v2/cluster/list", "currentness": "moved_to_main_2026-06-01", "evidence": "https://t.me/s/OzonSellerAPI/476", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "join semantics"]},
+      {"path": "/v2/product/info/stocks-by-warehouse/fbs", "currentness": "replacement_active_2026-04-07", "evidence": "https://t.me/s/OzonSellerAPI?before=642", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "limits"]},
+      {"path": "/v1/product/info/stocks-by-warehouse/fbo", "currentness": "new_current_method_visible_2026", "evidence": "https://t.me/s/OzonSellerAPI", "missing_before_implementation": ["exact publication date capture", "HTTP verb confirmation", "full schema", "limits"]},
+      {"path": "/v1/analytics/stocks", "currentness": "main_2026-03-24_realtime_from_2026-08-17", "evidence": "https://t.me/s/OzonSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full dimensions/fields", "date/history limits"]}
+    ],
+    "fbs_posting_lists": [
+      {"path": "/v4/posting/fbs/list", "currentness": "replacement_target_before_2026-08-31", "evidence": "https://t.me/s/OzonSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "complete current schema", "date window", "pagination"]},
+      {"path": "/v4/posting/fbs/unfulfilled/list", "currentness": "replacement_target_before_2026-08-31", "evidence": "https://t.me/s/OzonSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "complete current schema", "date window", "pagination"]}
+    ],
+    "returns_cancellations": [
+      {"path": "/v1/returns/list", "currentness": "active_2025-11-20", "evidence": "https://t.me/s/OzonSellerAPI?after=578", "known_current_fields": ["filter.compensation_status_id", "returns.compensation_status"], "missing_before_implementation": ["2026 currentness refresh", "HTTP verb confirmation", "full event schema", "pagination/history", "scheme coverage"]},
+      {"path": "/v2/returns/rfbs/list", "currentness": "active_2025-12-26", "evidence": "https://t.me/s/OzonSellerAPI?before=600", "missing_before_implementation": ["2026 currentness refresh", "HTTP verb confirmation", "full schema", "pagination/history"]},
+      {"path": "/v2/report/returns/create", "currentness": "documented_2026-02-12", "evidence": "https://t.me/s/OzonSellerAPI/619", "known_current_constraints": ["filter required"], "missing_before_implementation": ["HTTP verb confirmation", "report type/result contract", "history limits"]},
+      {"path": "/v1/cancel-reason/list", "currentness": "descriptions_updated_2025-12-30", "evidence": "https://t.me/s/OzonEnSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full schema"]},
+      {"path": "/v1/cancel-reason/list-by-order", "currentness": "descriptions_updated_2025-12-30", "evidence": "https://t.me/s/OzonEnSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full schema"]},
+      {"path": "/v1/cancel-reason/list-by-posting", "currentness": "descriptions_updated_2025-12-30", "evidence": "https://t.me/s/OzonEnSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full schema"]},
+      {"path": "/v1/order/cancel/status", "currentness": "updated_2026-07-09", "evidence": "https://t.me/s/OzonSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full state schema", "read coverage"]},
+      {"path": "/v1/posting/cancel/status", "currentness": "updated_2026-07-09", "evidence": "https://t.me/s/OzonSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full state schema", "read coverage"]}
+    ],
+    "finance_current_replacements": [
+      {"path": "/v1/finance/accrual/postings", "currentness": "replacement_announced_2026-07-14", "evidence": "https://t.me/s/OzonSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "pagination/history", "reconciliation semantics"]},
+      {"path": "/v1/finance/accrual/types", "currentness": "replacement_announced_2026-07-14", "evidence": "https://t.me/s/OzonSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full schema"]},
+      {"path": "/v1/finance/accrual/by-day", "currentness": "updated_2026-07-21", "evidence": "https://t.me/s/OzonSellerAPI", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "date limits"]}
+    ],
+    "realization_reports": [
+      {"path": "/v2/finance/realization", "currentness": "updated_2025-12-25", "evidence": "https://t.me/s/OzonSellerAPI?after=578", "missing_before_implementation": ["2026 currentness refresh", "HTTP verb confirmation", "full schema/history"]},
+      {"path": "/v1/finance/realization/posting", "currentness": "updated_2025-12-25", "evidence": "https://t.me/s/OzonSellerAPI?after=578", "missing_before_implementation": ["2026 currentness refresh", "HTTP verb confirmation", "full schema/history"]},
+      {"path": "/v1/report/list", "currentness": "updated_2026-02-03", "evidence": "https://t.me/s/OzonSellerAPI?after=606", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "pagination"]},
+      {"path": "/v1/report/info", "currentness": "updated_2026-02-03", "evidence": "https://t.me/s/OzonSellerAPI?after=606", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "report retrieval semantics"]},
+      {"path": "/v1/report/postings/create", "currentness": "documented_2026-02-12", "evidence": "https://t.me/s/OzonSellerAPI/619", "missing_before_implementation": ["HTTP verb confirmation", "complete filters/date limits"]}
+    ],
+    "reviews_questions": [
+      {"path": "/v1/review/list", "currentness": "updated_2026-03-31", "evidence": "https://t.me/s/OzonSellerAPI?before=656", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "pagination/access restrictions"]},
+      {"path": "/v1/review/info", "currentness": "updated_2026-03-31", "evidence": "https://t.me/s/OzonSellerAPI?before=656", "missing_before_implementation": ["HTTP verb confirmation", "full schema", "access restrictions"]},
+      {"path": "/v1/review/count", "currentness": "updated_2026-03-31", "evidence": "https://t.me/s/OzonSellerAPI?before=656", "missing_before_implementation": ["HTTP verb confirmation", "full schema"]},
+      {"path": "/v1/question/list", "currentness": "updated_2025-09-18", "evidence": "https://t.me/s/OzonSellerAPI?after=524", "missing_before_implementation": ["2026 currentness refresh", "HTTP verb confirmation", "full schema", "pagination/access restrictions"]}
+    ]
+  },
+  "deprecated_or_disabled_do_not_target_future_bridge": [
+    {"path": "/v1/warehouse/list", "status": "disabled_2026-04-07", "replacement": "/v2/warehouse/list"},
+    {"path": "/v1/product/info/stocks-by-warehouse/fbs", "status": "disabled_2026-04-07", "replacement": "/v2/product/info/stocks-by-warehouse/fbs"},
+    {"path": "/v2/posting/fbo/list", "status": "scheduled_shutdown_2026-08-31", "replacement": "/v3/posting/fbo/list"},
+    {"path": "/v3/posting/fbs/list", "status": "scheduled_shutdown_2026-08-31", "replacement": "/v4/posting/fbs/list"},
+    {"path": "/v3/posting/fbs/unfulfilled/list", "status": "scheduled_shutdown_2026-08-31", "replacement": "/v4/posting/fbs/unfulfilled/list"},
+    {"path": "/v3/finance/transaction/list", "status": "scheduled_shutdown_2026-09-08", "replacement": ["/v1/finance/accrual/postings", "/v1/finance/accrual/types", "/v1/finance/accrual/by-day"]},
+    {"path": "/v3/finance/transaction/totals", "status": "scheduled_shutdown_2026-09-08", "replacement": ["/v1/finance/accrual/postings", "/v1/finance/accrual/types", "/v1/finance/accrual/by-day"]}
   ],
-  "blocking_reason": "Official interactive Seller API library and attempted docs swagger path return redirect loop in the current research environment. No third-party copy is promoted to source of truth.",
-  "coding_gate": "Do not start 03A.4 until the required current official surface is verified."
+  "still_blocking_for_future_implementation": [
+    "full HTTP verbs and request/response contracts for newly current-confirmed families",
+    "per-method pagination, limits, history windows and account/subscription restrictions",
+    "complete cross-scheme return/cancellation chronology semantics",
+    "complete warehouse/cluster/geography join semantics",
+    "advertising performance API exact current hosts/auth/read methods/statistics schema"
+  ],
+  "coding_gate": "Do not start 03A.4 until blocking implementation contracts are verified; current path existence alone is insufficient."
 }
