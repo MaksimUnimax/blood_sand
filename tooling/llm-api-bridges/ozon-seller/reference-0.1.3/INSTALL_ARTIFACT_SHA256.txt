@@ -1,0 +1,3 @@
+ozon-bridge-v0.1.3-extension.zip
+size_bytes=79343
+sha256=fe535cbe1f34d7a1e7684346ca7cad0a71c3ff6ac1018854cde03dd26fe6c5a9
