@@ -1,0 +1,43 @@
+{
+  "schema": "OZON_RETURNS_CANCELLATIONS_CONTRACT_FRAGMENT_V1",
+  "as_of": "2026-08-11",
+  "authority_class": "ozon_owned_notification_fragments",
+  "fragments": [
+    {
+      "path": "/v2/returns/rfbs/list",
+      "request_fields_confirmed": ["last_id"],
+      "request_field_evidence_date": "2025-09-24",
+      "response_fields_retired": [{"field": "returns.client_name", "disabled_from": "2026-02-02"}],
+      "engineering_rule": "Do not require or model returns.client_name as a current response field."
+    },
+    {
+      "paths": ["/v1/cancel-reason/list", "/v1/cancel-reason/list-by-order", "/v1/cancel-reason/list-by-posting"],
+      "response_fields_confirmed": ["reasons.id"],
+      "evidence_date": "2025-12-30",
+      "note": "Ozon added/updated method descriptions and reasons.id description; complete reason taxonomy remains unresolved."
+    },
+    {
+      "paths": ["/v1/order/cancel/status", "/v1/posting/cancel/status"],
+      "response_fields_confirmed": ["state"],
+      "latest_description_update_observed": "2026-07-09",
+      "state_enum": "PENDING"
+    },
+    {
+      "path": "/v2/report/returns/create",
+      "request_required_confirmed": ["filter"],
+      "evidence_date": "2026-02-12"
+    }
+  ],
+  "still_missing": [
+    "HTTP verbs for unresolved methods",
+    "complete request schemas",
+    "complete return event/status/reason fields",
+    "state/reason enums",
+    "quantities and event timestamps",
+    "scheme coverage",
+    "last_id terminal semantics",
+    "history windows",
+    "permissions and method-specific quotas"
+  ],
+  "implementation_allowed": false
+}
