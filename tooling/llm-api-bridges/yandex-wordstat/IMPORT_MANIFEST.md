@@ -41,9 +41,25 @@ Fresh checks on that exact uploaded file:
 - production/shared/test layout matches the accepted 1.1.5 package;
 - fresh `npm test`: `283/283 PASS`, `0 FAIL`.
 
-This re-verification strengthens provenance but **does not by itself close roadmap 03A.2**. The current GitHub connector available to this execution environment writes UTF-8 repository files but does not expose a direct binary upload action for the ZIP. Therefore this manifest must not falsely claim that the executable ZIP/source payload is already stored byte-for-byte in the repository.
+This re-verification strengthens provenance but **does not by itself close roadmap 03A.2**. The current GitHub connector available to this execution environment does not expose a reliable direct binary upload path for the ZIP.
 
-Roadmap 03A.2 remains `[~]` until an actual repository payload is present and can be reconstructed/verified against the canonical SHA above.
+### Repository transport integrity test — 2026-08-11
+
+A controlled attempt was made to preserve the exact ZIP as Base64 repository payload on a disposable work branch.
+
+Integrity checks failed before merge:
+
+- a planned `20000`-character Base64 chunk was stored by the connector as a `18536`-byte blob;
+- the resulting Git blob SHA did not match the SHA calculated locally for the intended chunk;
+- a second direct Git-blob experiment with a smaller payload also failed the precomputed Git blob SHA check.
+
+Therefore:
+
+- the experimental work branch is **not authority** and must not be merged into `main`;
+- no truncated/corrupted payload is accepted as canonical evidence;
+- `main` continues to contain only provenance/verification metadata for the supplied artifact, not a falsely claimed byte-identical repository copy.
+
+Roadmap 03A.2 remains `[~]` until an actual repository payload can be transferred through a channel whose bytes can be verified against the canonical SHA above.
 
 ## Proven invariants reused as design requirements for Ozon/Wildberries
 
