@@ -15,6 +15,14 @@
   },
   "warehouse_level_stock": [
     {
+      "path": "/v1/product/info/warehouse/stocks",
+      "purpose_confirmed": "get FBS and rFBS warehouse stock",
+      "beta_added": "2025-10-02",
+      "moved_to_main": "2025-10-30",
+      "relationship_to_stocks_by_warehouse_fbs": "DISTINCT_CONTOUR_SCHEMA_COMPARISON_PENDING",
+      "full_contract": "PENDING"
+    },
+    {
       "path": "/v2/product/info/stocks-by-warehouse/fbs",
       "beta_added": "2025-12-02",
       "moved_to_main": "2026-02-02",
@@ -38,7 +46,8 @@
   "engineering_rules": [
     "Separate aggregate product availability from warehouse-level stock extraction.",
     "Do not join warehouse allocation from deprecated warehouseId/warehouse_ids fields in /v4/product/info/stocks.",
-    "Use dedicated FBS/FBO warehouse-level stock methods once their complete contracts are verified.",
+    "Do not collapse /v1/product/info/warehouse/stocks and /v2/product/info/stocks-by-warehouse/fbs into aliases until their current schemas and semantics are compared from Ozon-owned contracts.",
+    "Use dedicated FBS/rFBS/FBO warehouse-level stock methods once their complete contracts are verified.",
     "Keep /v1/analytics/stocks behavior date-aware across the 2026-08-17 real-time transition."
   ],
   "still_missing": [
@@ -46,6 +55,7 @@
     "HTTP verbs where unresolved",
     "current pagination and numeric limits",
     "stock quantity semantics including present/reserved/available",
+    "schema/semantic difference between /v1/product/info/warehouse/stocks and /v2/product/info/stocks-by-warehouse/fbs",
     "FBO warehouse-level method pagination and identifiers",
     "history depth before/after 2026-08-17",
     "permissions and method-specific quotas/errors"
