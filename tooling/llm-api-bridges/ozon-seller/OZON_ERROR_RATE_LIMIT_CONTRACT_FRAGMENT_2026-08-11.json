@@ -1,0 +1,31 @@
+{
+  "schema": "OZON_ERROR_RATE_LIMIT_CONTRACT_FRAGMENT_V1",
+  "as_of": "2026-08-11",
+  "authority_class": "ozon_owned_notification_fragments",
+  "provider_wide": {
+    "error_description_confirmed": "You have reached request rate limit per second",
+    "scope": "all Seller API methods",
+    "evidence_date": "2025-06-05",
+    "last_general_rate_evidence": "50 requests per second across all methods per Client ID from 2025-05-22; method-specific limits may differ"
+  },
+  "method_specific_429_headers": {
+    "path": "/v1/product/unarchive",
+    "evidence": "Ozon announced additional response headers on 429 Too Many Requests in 2026",
+    "provider_wide_inference_allowed": false
+  },
+  "not_proven_provider_wide": [
+    "Retry-After header",
+    "rate-limit remaining/reset header names",
+    "whether all methods return the same 429 body",
+    "whether every quota breach uses HTTP 429",
+    "automatic retry delay",
+    "idempotent retry safety for every read/report operation"
+  ],
+  "engineering_rules": [
+    "Recognize the Ozon-owned rate-limit error as a rate-limit condition, but do not invent universal rate-limit headers.",
+    "Do not auto-retry external requests in the initial bridge; preserve one explicit command -> one external request invariant.",
+    "Surface rate-limit errors to the caller with sanitized metadata; credentials must never be included.",
+    "Revalidate current general and method-specific quotas immediately before 03A.4 and real-account acceptance."
+  ],
+  "implementation_allowed": false
+}
