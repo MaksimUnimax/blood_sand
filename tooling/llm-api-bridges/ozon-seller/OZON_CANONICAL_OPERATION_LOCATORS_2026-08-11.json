@@ -36,6 +36,14 @@
       "full_contract": false
     },
     {
+      "path": "/v4/product/info/limit",
+      "operation_id": "ProductAPI_GetUploadQuota",
+      "canonical_locator": "https://docs.ozon.ru/api/seller/#operation/ProductAPI_GetUploadQuota",
+      "evidence_event": "2023-08-22 old /v2/product/info/limit and /v3/product/info/limit removed in favour of /v4/product/info/limit",
+      "currentness_crosscheck": "operation_limits added to v4 response 2026-06-09 and method description updated again 2026-07-10",
+      "full_contract": false
+    },
+    {
       "path": "/v1/description-category/tree",
       "operation_id": "DescriptionCategoryAPI_GetTree",
       "canonical_locator": "https://docs.ozon.ru/api/seller/#operation/DescriptionCategoryAPI_GetTree",
