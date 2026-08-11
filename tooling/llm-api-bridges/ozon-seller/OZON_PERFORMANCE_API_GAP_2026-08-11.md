@@ -1,30 +1,40 @@
 # Ozon Performance API — blocking research gap — 2026-08-11
 
-Статус: **API CONTOUR CONFIRMED / IMPLEMENTATION CONTRACT PENDING / BLOCKING 03A.3**
+Статус: **API CONTOUR CONFIRMED / OFFICIAL DOC ROOT IDENTIFIED / IMPLEMENTATION CONTRACT PENDING / BLOCKING 03A.3**
 
 ## 1. Что уже подтверждено Ozon-owned sources
 
-Performance API — не стороннее название и не предположение.
+Performance API — отдельный публичный Ozon API для автоматизации рекламных процессов.
 
-Ozon Seller API notification в сообщении о миграции TLS прямо перечисляет `Seller API, Performance API и другие публичные API Ozon`.
+Evidence:
 
-Ozon Реклама — верифицированный канал рекламной платформы Ozon — прямо рекомендует продавцам, которые хотят автоматизировать продвижение, начинать с `Performance API`, и ссылается на вебинар `Внешнее API`, посвящённый автоматизации рекламных кампаний.
+- `Ozon Seller API notification` прямо перечисляет `Seller API, Performance API и другие публичные API Ozon`;
+- верифицированный канал `Ozon Реклама` рекомендует продавцам начинать автоматизацию продвижения с Performance API;
+- Ozon Реклама проводил отдельный вебинар `Внешнее API`, посвящённый автоматизации рекламных кампаний;
+- Ozon Реклама отдельно сообщал, что изменения ставок в `Продвижении в поиске` затрагивают Performance API и приводят к deprecation/replacement API methods;
+- `dev.ozon.ru` community имеет отдельную категорию `API рекламной платформы`.
 
-Тот же Ozon Реклама ранее сообщал, что изменения логики ставок в `Продвижении в поиске` затрагивают работу в Performance API: старые методы ставок должны становиться deprecated/заменяться новыми.
+Conclusion: **существование и актуальность advertising API contour подтверждены**.
 
-`dev.ozon.ru` community отдельно показывает категорию `API рекламной платформы`.
+## 2. Official documentation root найден
 
-Вывод: **существование и актуальность отдельного рекламного API-контура подтверждены**.
+Discovery pass выявил точный Ozon-owned documentation root:
 
-## 2. Что нам реально нужно для `blood_sand`
+- `https://docs.ozon.ru/api/performance/`
 
-Будущий read-only bridge должен уметь получать evidence минимум по следующим слоям:
+Прямое открытие этого exact official URL в текущем web runtime возвращает `400 Redirect loop detected`. Независимая попытка получить тот же Ozon URL из container runtime не дошла до HTTP из-за DNS failure этой среды.
+
+Следовательно проблема сейчас не в неизвестном адресе документации, а в том, что current execution environment не может получить её authoritative contents.
+
+## 3. Что нам нужно для `blood_sand`
+
+Future read-only bridge должен получить evidence минимум по:
 
 1. campaign inventory:
    - campaign id;
    - status;
    - type/tool;
-   - date/lifecycle state;
+   - lifecycle/dates;
 2. campaign → product/SKU mapping;
 3. delivery:
    - impressions;
@@ -32,79 +42,113 @@ Ozon Реклама — верифицированный канал реклам
    - spend;
    - CTR;
    - CPC/CPM where applicable;
-4. outcome attribution:
+4. attributed outcome:
    - orders;
    - units;
-   - revenue/sales attributed to promotion;
+   - revenue/sales;
    - DRR/ACOS-like metrics where exposed;
-5. dimensions useful for root-cause analysis:
+5. diagnostic dimensions:
    - product;
    - day/date;
    - campaign;
    - placement/tool;
-   - search/query where exposed;
+   - query/search where exposed;
    - category/region where exposed;
 6. read-only context:
-   - current budget;
+   - budget;
    - strategy/bid state where exposed.
 
-Mutations campaign/bid/budget are explicitly outside initial scope.
+Campaign/bid/budget mutations are outside initial scope.
 
-## 3. Что текущий research pass НЕ смог подтвердить
+## 4. Third-party discovery hints — NOT AUTHORITY / NOT ALLOWLIST
 
-Несмотря на Ozon-owned confirmation самого Performance API, текущая индексируемая поверхность не дала authoritative exact method contract для:
+A current documentation index that states it mirrors `https://docs.ozon.ru/api/performance/` exposes candidate contract hints. They are preserved here **only so a later official-doc pass knows what exact strings to verify**.
 
-- current API host/base URL;
-- authentication headers/token flow;
-- campaign list endpoint;
-- campaign product endpoint;
-- statistics request endpoint(s);
-- statistics result/download endpoint(s), если используется async report flow;
-- exact metric names;
-- supported grouping/dimensions;
-- period/history limits;
+Unverified discovery candidates include:
+
+- possible host: `api-performance.ozon.ru`;
+- possible auth shape: Bearer/service-account credentials;
+- campaign family candidate: `GET /api/client/campaign`;
+- statistics candidates:
+  - `POST /api/client/statistics/json`;
+  - `GET /api/client/statistics/{UUID}`;
+  - `GET /api/client/statistics/report`;
+  - `GET /api/client/statistics/list`;
+  - `GET /api/client/statistics/externallist`;
+  - `GET /api/client/statistics/campaign/product`;
+- product mapping candidate: `/campaign/{campaignId}/products` family.
+
+**None of these candidates is promoted to `OZON_READ_ONLY_ALLOWLIST_V1.json`.**
+
+Why: project source policy requires current Ozon-owned contract confirmation. Mirrored snippets can be stale, can collapse multiple versions and do not provide a reliable deprecation/currentness boundary.
+
+## 5. Independent corroboration — also NOT Ozon authority
+
+Current Yandex-owned integration documentation for Ozon Performance API tells Ozon sellers to create Performance API credentials and supplies `Client ID` + `Client Secret` to the integration.
+
+This is useful corroboration that a service-account credential model exists, but it is **not used to establish Ozon endpoint/auth contract** because the project requires Ozon-owned authority for provider implementation.
+
+## 6. Business metrics definitely exist in Ozon advertising analytics, API exposure not assumed
+
+Ozon Реклама current materials discuss campaign analytics with business metrics such as:
+
+- impressions;
+- clicks;
+- orders/sales;
+- conversion;
+- DRR;
+- campaign/tool-level breakdowns.
+
+This confirms that our desired diagnostic data classes are product-relevant. It does **not** prove that every UI metric is exposed via Performance API or under the discovery candidate methods above.
+
+UI capability ≠ API contract.
+
+## 7. Current exact gap
+
+Authoritative Ozon method contracts are still missing for:
+
+- current host/base URL;
+- authentication/token lifetime/refresh model;
+- campaign list/status/type;
+- campaign→product mapping;
+- statistics generation/retrieval;
+- exact metric names and units;
+- supported dimensions/grouping;
+- sync vs async report lifecycle;
 - pagination;
+- date/history windows;
 - quotas/rate limits;
-- account/role restrictions.
+- account/role restrictions;
+- deprecation/currentness for each target read method.
 
-Official `docs.ozon.ru` Seller API library не является заменой: Performance API — отдельный contour. Нужна именно его current Ozon-owned documentation surface.
+## 8. Gate
 
-## 4. Почему сторонние SDK/интеграторы не закрывают gap
-
-Поиск находит сторонние системы, которые утверждают, что получают рекламную статистику через Performance API. Это полезно как evidence того, что practical statistics integration существует, но не подходит как authority для:
-
-- exact current endpoint;
-- auth;
-- schemas;
-- deprecation/currentness;
-- limits;
-- safety allowlist будущего расширения.
-
-Поэтому ни один сторонний path не переносится в `OZON_READ_ONLY_ALLOWLIST_V1.json`.
-
-## 5. Дополнительное product-level evidence
-
-Ozon Реклама подтверждает, что рекламная аналитика оперирует такими бизнес-метриками, как показы, клики, заказы/продажи, конверсии и ДРР в зависимости от инструмента. Это подтверждает правильность наших требуемых data classes, но **не доказывает, что все эти поля доступны через Performance API конкретными методами**.
-
-Следовательно UI analytics и API capability нельзя автоматически отождествлять.
-
-## 6. Gate
-
-До получения current Ozon-owned Performance API contract:
+Until a current Ozon-owned Performance API method reference/spec is successfully retrieved:
 
 - `advertising_performance_api.status = pending`;
+- no advertising path enters research allowlist;
 - `03A.3 = IN PROGRESS`;
 - `03A.4 Ozon extension = NOT STARTED`;
-- advertising endpoints не добавляются в allowlist;
-- scraping рекламного кабинета не используется как fallback.
+- scraping the advertising cabinet is not a fallback;
+- mutation methods are excluded even if discovered.
 
-## 7. Следующая verification target
+## 9. Next verification target
 
-Нужно получить один из следующих authoritative artifacts:
+Preferred authoritative artifacts, in order:
 
-1. current Ozon Performance API documentation index;
-2. Ozon-owned method reference pages;
-3. Ozon-owned OpenAPI/Swagger/specification;
-4. Ozon-owned current technical material, где явно перечислены host/auth/read methods/statistics contract.
+1. current content from `https://docs.ozon.ru/api/performance/`;
+2. Ozon-owned OpenAPI/Swagger/spec referenced by that documentation;
+3. Ozon-owned current technical article/changelog that explicitly supplies host/auth/read methods and schemas.
 
-После этого для каждого read method нужно записать: HTTP verb/path, auth, request/response, pagination/async lifecycle, history window, quota/rate limit, account restrictions, deprecation status и business-side-effect classification.
+The next pass should use the discovery candidates only as exact search probes against those Ozon-owned sources, then record for every accepted read method:
+
+- HTTP verb/path;
+- auth;
+- required parameters/body;
+- response schema/metrics;
+- pagination or async report lifecycle;
+- date/history limits;
+- quota/rate limit;
+- account restrictions;
+- current/deprecated status;
+- business-side-effect classification.
