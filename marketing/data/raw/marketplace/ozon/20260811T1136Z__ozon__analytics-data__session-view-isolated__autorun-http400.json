@@ -1,0 +1,27 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.2",
+  "request_id": "bf5e6877-a2c1-4185-a5e9-1d06b1a2f721",
+  "operation": "analytics_data",
+  "command": {
+    "operation": "analytics_data",
+    "fingerprint": "0d59f5a0"
+  },
+  "request_meta": {
+    "provider": "ozon",
+    "host_alias": "seller_api",
+    "http_method": "POST",
+    "path_alias": "analytics_data"
+  },
+  "http_status": 400,
+  "elapsed_ms": 152,
+  "pagination": null,
+  "rate_limit": null,
+  "result": {
+    "error": {
+      "http_status": 400,
+      "code": "3",
+      "message": "Ozon API request failed. Provider error text is withheld from LLM output; inspect local sanitized diagnostics."
+    }
+  }
+}
