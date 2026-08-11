@@ -1,0 +1,105 @@
+{
+  "schema": "OZON_CONTRACT_FRAGMENT_REGISTRY_V1",
+  "as_of": "2026-08-11",
+  "purpose": "Ozon-owned contract fragments that reduce uncertainty without pretending to be full method schemas.",
+  "full_contracts_complete": false,
+  "fragments": [
+    {
+      "path": "/v2/warehouse/list",
+      "evidence_date": "2025-11-27",
+      "request_fields_confirmed": ["limit", "cursor"],
+      "response_fields_confirmed": ["cursor"],
+      "pagination_model": "cursor_based_partial_evidence",
+      "later_evidence": [
+        {"date": "2025-12-16", "response_fields_added": ["has_next"]},
+        {"date": "2026-04-07", "response_fields_added": ["warehouses.pause_at"]}
+      ],
+      "still_missing": ["HTTP verb", "numeric max limit", "cursor terminal semantics beyond has_next", "full warehouse schema", "permissions", "rate limit"]
+    },
+    {
+      "path": "/v4/product/info/stocks",
+      "evidence_date": "2025-11-27",
+      "deprecated_response_fields": ["items.stocks.warehouseId"],
+      "replacement_context": "Use current warehouse_ids-based evidence rather than copying the deprecated singular warehouseId field.",
+      "still_missing": ["full current request schema", "batch limits", "quota semantics"]
+    },
+    {
+      "path": "/v5/product/info/prices",
+      "evidence_date": "2025-11-12",
+      "deprecated_removed_fields": ["price.marketing_price"],
+      "later_current_fields": [
+        "items.price.net_price",
+        "items.price.retail_price",
+        "items.marketing_actions",
+        "items.marketing_actions.actions.date_from",
+        "items.marketing_actions.actions.date_to",
+        "items.marketing_actions.actions.title",
+        "items.marketing_actions.actions.value"
+      ],
+      "engineering_rule": "Do not design current price semantics around the removed price.marketing_price field.",
+      "still_missing": ["complete current price field semantics", "HTTP verb", "pagination/batch limit", "permissions", "quota"]
+    },
+    {
+      "path": "/v1/report/info",
+      "evidence_date": "2025-11-18",
+      "response_fields_confirmed": ["result.expires_at"],
+      "later_currentness": "2026-07-28 result.additional_data update",
+      "engineering_rule": "Generated-report lifecycle can explicitly reason about report expiry instead of treating a report id as indefinitely retrievable.",
+      "still_missing": ["HTTP verb", "status enum/current terminal states", "result locator/content type", "permissions", "rate limit"]
+    },
+    {
+      "path": "/v1/report/list",
+      "evidence_date": "2025-11-18",
+      "response_fields_confirmed": ["result.reports.expires_at"],
+      "later_currentness": "2026-07-28 result.reports.additional_data update",
+      "still_missing": ["HTTP verb", "pagination", "filters", "status/type enums", "permissions"]
+    },
+    {
+      "path": "/v1/finance/accrual/by-day",
+      "evidence_date": "2026-07-30",
+      "request_fields_confirmed": ["date", "last_id"],
+      "response_fields_confirmed": ["last_id", "accruals.container_fees", "accruals.accrued_category"],
+      "pagination_model": "continuation_field_visible_but_semantics_pending",
+      "engineering_rule": "Automatic unbounded continuation is prohibited; each continuation request must be explicit/controlled until last_id semantics and terminal conditions are verified.",
+      "still_missing": ["HTTP verb", "page-size/terminal semantics", "date/history limits", "complete accrual schema", "permissions", "rate limit"]
+    },
+    {
+      "path": "/v2/conditional-cancellation/list",
+      "business_scope": "rFBS conditional cancellation applications",
+      "lifecycle": [
+        {"date": "2025-04-30", "state": "beta_added"},
+        {"date": "2025-06-03", "state": "moved_to_main"},
+        {"date": "2025-09-03", "state": "confirmed_replacement_for_removed_v1_list/get"}
+      ],
+      "read_only_relevance": "This is a separate cancellation evidence layer and should be evaluated alongside posting/order cancel status and reason dictionaries.",
+      "deprecated_predecessors": ["/v1/conditional-cancellation/get", "/v1/conditional-cancellation/list"],
+      "write_siblings_excluded_from_initial_scope": ["/v2/conditional-cancellation/approve", "/v2/conditional-cancellation/reject"],
+      "still_missing": ["HTTP verb", "full filters", "event/request fields", "pagination/history", "rFBS coverage semantics", "permissions", "2026 currentness refresh"]
+    },
+    {
+      "scope": "Seller API provider-wide request rate",
+      "evidence_date": "2025-05-22",
+      "last_explicit_ozon_notification_value": "50 requests per second across all methods per Client ID",
+      "previous_value": "10 requests per second",
+      "additional_evidence": {
+        "date": "2025-06-05",
+        "common_error": "You have reached request rate limit per second",
+        "scope": "all methods"
+      },
+      "currentness_status": "last_explicit_notification_evidence_no_later_change_found_in_2026_search",
+      "engineering_rule": "Treat 50 rps as research evidence, not a permanently hardcoded constant; re-read current documentation before 03A.4 and acceptance."
+    },
+    {
+      "scope": "Seller API product-operation quota",
+      "evidence_date": "2026-02-24_and_2026-06-09",
+      "confirmed": ["unified product-operation limit model exists", "/v4/product/info/limit response includes operation_limits"],
+      "still_missing": ["numeric quotas", "bucket/reset semantics", "which target read methods consume which operation limit", "full operation_limits schema"]
+    }
+  ],
+  "source_policy": "All fragments above are derived from Ozon-owned notification evidence. Missing fields remain missing; no third-party contract is used to fill them.",
+  "impact": {
+    "implementation_allowed": false,
+    "improved_surfaces": ["warehouse pagination", "price field currentness", "generated report expiry", "finance continuation", "rFBS conditional cancellations", "provider-wide rate-limit evidence"],
+    "next_action": "Merge these fragments into the 03A.3 gate and continue exact contract extraction."
+  }
+}
