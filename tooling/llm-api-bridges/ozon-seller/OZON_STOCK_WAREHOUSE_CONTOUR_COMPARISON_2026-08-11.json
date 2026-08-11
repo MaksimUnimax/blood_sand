@@ -1,0 +1,50 @@
+{
+  "schema": "OZON_STOCK_WAREHOUSE_CONTOUR_COMPARISON_V1",
+  "as_of": "2026-08-11",
+  "authority_class": "ozon_owned_notification_fragments",
+  "contours": [
+    {
+      "path": "/v1/product/info/warehouse/stocks",
+      "business_purpose_confirmed": "FBS/rFBS warehouse stock",
+      "beta_added": "2025-10-02",
+      "moved_to_main": "2025-10-30",
+      "current_request_fields_confirmed": [],
+      "current_response_fields_confirmed": [],
+      "pagination_contract": "PENDING"
+    },
+    {
+      "path": "/v2/product/info/stocks-by-warehouse/fbs",
+      "business_purpose_confirmed": "seller warehouse stock",
+      "beta_added": "2025-12-02",
+      "moved_to_main": "2026-02-02",
+      "current_request_required_confirmed": ["limit"],
+      "current_response_fields_confirmed": [],
+      "pagination_contract": "PENDING"
+    }
+  ],
+  "historical_predecessor_evidence_not_inherited": {
+    "path": "/v1/product/info/stocks-by-warehouse/fbs",
+    "field_history": ["request sku", "response result.sku"],
+    "field_evidence_date": "2023-07-31",
+    "shutdown": "2026-04-07",
+    "rule": "Do not copy predecessor sku placement into /v2/product/info/stocks-by-warehouse/fbs without current Ozon-owned evidence."
+  },
+  "comparison_result": "DISTINCT_CURRENT_CONTOURS_SCHEMA_DIFFERENCE_UNRESOLVED",
+  "not_proven": [
+    "whether the two current methods return the same stock quantities",
+    "sku/product identifier placement",
+    "warehouse identifier placement",
+    "present/reserved/available quantity semantics",
+    "cursor/offset model",
+    "numeric page limit",
+    "rFBS coverage differences",
+    "permissions and rate limits"
+  ],
+  "engineering_rules": [
+    "Do not implement the two current paths as aliases.",
+    "Do not merge their results until current identifier and quantity semantics are verified.",
+    "Do not inherit predecessor request/response fields into v2 by version similarity.",
+    "Keep both paths discovery candidates until full current contracts resolve which one is required for 03A.4."
+  ],
+  "implementation_allowed": false
+}
