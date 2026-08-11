@@ -1,7 +1,7 @@
 {
   "schema": "OZON_LOGISTICS_CONTRACT_QUEUE_V1",
   "as_of": "2026-08-11",
-  "purpose": "P0 contract queue for current seller logistics, delivery methods and carriages; retired delivery-time analytics are tracked separately as do-not-target",
+  "purpose": "P0/P1 contract queue for current seller logistics, delivery configuration, delivery restrictions and FBS/rFBS error diagnostics; retired Average Delivery Time analytics are do-not-target",
   "implementation_allowed": false,
   "current_operations": [
     {
@@ -32,6 +32,54 @@
       "full_contract": false,
       "known_request_fields": ["filter.delivery_method_id"],
       "must_extract": ["full filters", "carriage/shipping ids", "status/date/timeslot fields", "pagination/history", "scheme coverage", "permissions", "rate limit"]
+    },
+    {
+      "id": "fbs_error_index_info",
+      "priority": "P0_delivery_operational_quality",
+      "path": "/v1/rating/index/fbs/info",
+      "currentness": "beta_added_2025-11-20; moved_to_main_2026-02-02",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "known_business_meaning": "FBS/rFBS error-index information",
+      "must_extract": ["request scope", "error/rating metrics", "status/threshold semantics", "history", "permissions", "rate limit"]
+    },
+    {
+      "id": "fbs_error_index_postings",
+      "priority": "P0_delivery_operational_quality",
+      "path": "/v1/rating/index/fbs/posting/list",
+      "currentness": "beta_added_2025-11-20; moved_to_main_2026-02-02",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "known_business_meaning": "posting-level FBS/rFBS error-index evidence",
+      "must_extract": ["request filters", "posting identifiers", "error reasons/metrics", "pagination/history", "permissions", "rate limit"]
+    },
+    {
+      "id": "warehouse_invalid_products",
+      "priority": "P0_delivery_restrictions",
+      "path": "/v1/warehouse/invalid-products/get",
+      "currentness": "beta_added_2025-12-15; moved_to_main_2026-02-02",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "known_business_meaning": "products with FBS delivery restrictions",
+      "must_extract": ["warehouse/product filters", "product/SKU identifiers", "restriction reason/status", "pagination", "scheme coverage", "permissions", "rate limit"]
+    },
+    {
+      "id": "warehouses_with_invalid_products",
+      "priority": "P0_delivery_restrictions",
+      "path": "/v1/warehouse/warehouses-with-invalid-products",
+      "currentness": "beta_added_2025-12-15; moved_to_main_2026-02-02",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "known_business_meaning": "warehouses that contain products with FBS delivery restrictions",
+      "must_extract": ["warehouse identifiers", "restriction summary/counts", "pagination", "scheme coverage", "permissions", "rate limit"]
+    }
+  ],
+  "confirmed_cross_surface_fragments": [
+    {
+      "path": "/v3/posting/fbs/get",
+      "currentness": "current target family; delivery fields updated 2026-03-17 and method remained active in later 2026 changes",
+      "response_fields": ["result.analytics_data.client_delivery_date_begin", "result.analytics_data.client_delivery_date_end"],
+      "role": "posting-level FBS promised delivery window; not aggregate Average Delivery Time analytics"
     }
   ],
   "disabled_do_not_target": [
@@ -41,18 +89,8 @@
       "replacement": "NOT_CONFIRMED",
       "evidence": "Ozon-owned 2026 retirement announcement says Average Delivery Time functionality is fully disabled and its methods are removed from documentation"
     },
-    {
-      "path": "/v1/analytics/average-delivery-time/details",
-      "status": "feature_fully_disabled_2026",
-      "replacement": "NOT_CONFIRMED",
-      "evidence": "same retired Average Delivery Time family"
-    },
-    {
-      "path": "/v1/analytics/average-delivery-time/summary",
-      "status": "feature_fully_disabled_2026",
-      "replacement": "NOT_CONFIRMED",
-      "evidence": "same retired Average Delivery Time family"
-    },
+    {"path": "/v1/analytics/average-delivery-time/details", "status": "feature_fully_disabled_2026", "replacement": "NOT_CONFIRMED"},
+    {"path": "/v1/analytics/average-delivery-time/summary", "status": "feature_fully_disabled_2026", "replacement": "NOT_CONFIRMED"},
     {"path": "/v1/delivery-method/list", "replacement": "/v2/delivery-method/list", "status": "deprecated/disabled in 2026 migration"},
     {"path": "/v1/posting/carriage-available/list", "replacement": "/v2/carriage/delivery/list", "status": "deprecated"},
     {"path": "/v1/carriage/delivery/list", "replacement": "/v2/carriage/delivery/list", "status": "deprecated"}
@@ -67,11 +105,14 @@
     "seller warehouse status",
     "SKU stock by warehouse",
     "warehouse delivery method",
+    "product/warehouse FBS delivery restrictions",
+    "FBS/rFBS error index",
     "carriage/shipment availability",
     "cluster/geography",
+    "posting promised-delivery fields where confirmed",
     "posting/order outcome"
   ],
-  "delivery_quality_gap": "The Average Delivery Time analytics feature is retired. No replacement read method is confirmed. Delivery-quality/date evidence may only be added later from separately verified current Ozon-owned contracts; do not infer a replacement.",
+  "delivery_quality_gap": "The retired Average Delivery Time aggregate analytics has no confirmed one-to-one replacement. Current restriction/error-index/posting-promise families reduce the diagnostic blind spot but do not recreate the retired aggregate metric.",
   "bridge_rule": "The dependency graph does not authorize automatic fan-out. Each read request and each pagination step must be an explicit controlled provider operation.",
-  "completion_rule": "Logistics diagnostics surface is not implementation-ready until every selected current target has an Ozon-owned full contract, scheme coverage and operational limits."
+  "completion_rule": "Logistics diagnostics surface is not implementation-ready until every selected current target has an Ozon-owned full contract, identifier joins, history/pagination and operational limits."
 }
