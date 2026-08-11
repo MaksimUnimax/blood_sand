@@ -1,0 +1,48 @@
+{
+  "schema": "OZON_FBS_POSTING_V4_CONTRACT_FRAGMENT_V1",
+  "as_of": "2026-08-11",
+  "authority_class": "ozon_owned_notification_fragments",
+  "targets": [
+    {
+      "path": "/v4/posting/fbs/list",
+      "currentness": "target replacement for v3 list before 2026-08-31 shutdown",
+      "request_fields_confirmed": ["filter.integration_type_flow"],
+      "response_fields_confirmed": ["postings.integration_type_flow", "postings.sorting_center"],
+      "evidence_date": "2026-07-22"
+    },
+    {
+      "path": "/v4/posting/fbs/unfulfilled/list",
+      "currentness": "target replacement for v3 unfulfilled list before 2026-08-31 shutdown",
+      "response_fields_confirmed": ["postings.integration_type_flow", "postings.sorting_center"],
+      "evidence_date": "2026-07-22"
+    },
+    {
+      "path": "/v3/posting/fbs/get",
+      "response_fields_confirmed": [
+        "result.integration_type_flow",
+        "result.sorting_center",
+        "result.analytics_data.client_delivery_date_begin",
+        "result.analytics_data.client_delivery_date_end",
+        "result.tariffication_steps"
+      ],
+      "evidence_dates": ["2026-03-17", "2026-04-06", "2026-07-22"]
+    }
+  ],
+  "explicit_non_transfer_rule": {
+    "field": "tariffication_steps",
+    "confirmed_for": ["/v3/posting/fbs/list", "/v3/posting/fbs/get", "/v3/posting/fbs/unfulfilled/list"],
+    "not_confirmed_for": ["/v4/posting/fbs/list", "/v4/posting/fbs/unfulfilled/list"],
+    "rule": "Do not copy v3 tarification_steps into v4 schemas without current Ozon-owned evidence."
+  },
+  "still_missing_for_v4": [
+    "HTTP verb if not independently established",
+    "complete filters",
+    "date window",
+    "pagination/terminal semantics",
+    "complete posting/status/cancellation schema",
+    "delivery-date field parity with v3",
+    "tarification_steps parity with v3",
+    "permissions and method-specific limits"
+  ],
+  "implementation_allowed": false
+}
