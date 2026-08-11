@@ -12,9 +12,19 @@
     },
     {
       "path": "/v1/report/postings/create",
-      "evidence_date": "2026-02-12",
+      "evidence_dates": ["2025-09-29", "2026-02-12"],
       "request_required_confirmed": ["filter.processed_at_from", "filter.processed_at_to"],
-      "still_missing": ["HTTP verb if not independently established", "other filter fields", "maximum interval/history", "result/report id contract", "quota", "permissions"]
+      "request_fields_confirmed": [
+        "filter.warehouse_id",
+        "filter.delivery_method_id",
+        "filter.is_express",
+        "with.additional_data",
+        "with.analytics_data",
+        "with.customer_data",
+        "with.jewelry_codes"
+      ],
+      "engineering_rule": "Customer-data inclusion is explicit request scope; do not request with.customer_data by default in a read-only diagnostic bridge.",
+      "still_missing": ["HTTP verb if not independently established", "field types/current enum", "maximum interval/history", "result/report id contract", "quota", "permissions"]
     },
     {
       "scope": "generated report lifecycle",
