@@ -1,0 +1,1 @@
+measurement_id,source_type,marketplace,operation,observed_at,observed_at_precision,request_id,http_status,elapsed_ms,provider_total,result_cursor,raw_ref,record_status,normalization_status,notes
