@@ -1,0 +1,428 @@
+{
+  "schema": "OZON_IMPLEMENTATION_CONTRACT_QUEUE_V1",
+  "as_of": "2026-08-11",
+  "purpose": "Exact contract extraction queue for current-confirmed Ozon Seller API families before 03A.4 coding",
+  "implementation_allowed": false,
+  "rules": {
+    "currentness_is_not_full_contract": true,
+    "third_party_contracts_allowed": false,
+    "required_before_provider_allowlist": [
+      "current Ozon-owned evidence",
+      "HTTP verb",
+      "exact path/version",
+      "authentication contour",
+      "required request parameters/body",
+      "response fields needed by blood_sand",
+      "pagination/cursor/page-size semantics",
+      "history/date limits",
+      "rate limit/quota behavior",
+      "account/role/subscription restrictions",
+      "deprecation/replacement status",
+      "response type and async lifecycle",
+      "read-only/business-side-effect classification"
+    ]
+  },
+  "priority_order": [
+    "P0_assortment_master",
+    "P0_prices_listing_state",
+    "P0_warehouse_stock_geography",
+    "P0_orders_returns_cancellations",
+    "P0_finance_realization",
+    "P0_performance_advertising",
+    "P1_analytics_search",
+    "P1_supply_replenishment",
+    "P2_reviews_questions"
+  ],
+  "operations": [
+    {
+      "id": "seller_product_list",
+      "priority": "P0_assortment_master",
+      "path": "/v3/product/list",
+      "currentness": "confirmed_2026-07-09",
+      "known_current_contract_fragments": ["request filter.skus", "response result.items.sku", "filter.visibility documented"],
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["filters including visibility/archive semantics", "pagination/continuation", "max batch/page", "product/listing ids", "listing status/error fields", "permissions", "quota interaction with unified product-operation limit"]
+    },
+    {
+      "id": "seller_product_info_list",
+      "priority": "P0_assortment_master",
+      "path": "/v3/product/info/list",
+      "currentness": "confirmed_2026-07-10",
+      "known_current_contract_fragments": ["items.showcases_visibility exists", "items.images360 removed 2026-07-10", "items.is_kgt documented"],
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["input identifiers", "batch limit", "title/status/visibility", "barcodes", "dimensions/weight", "media", "description/rich content refs", "category/type refs", "permissions"]
+    },
+    {
+      "id": "seller_product_attributes",
+      "priority": "P0_assortment_master",
+      "path": "/v4/product/info/attributes",
+      "currentness": "confirmed_2026-02-10",
+      "known_current_contract_fragments": ["filter.visibility documented"],
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["request identifiers/filter", "attribute structure", "category/type ids", "pagination/batch limit", "dictionary joins", "permissions", "quota"]
+    },
+    {
+      "id": "product_prices_bulk",
+      "priority": "P0_prices_listing_state",
+      "path": "/v5/product/info/prices",
+      "currentness": "confirmed_2026-05-28",
+      "known_current_contract_fragments": ["filter.visibility documented", "items.marketing_actions", "action date_from/date_to/title/value"],
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["seller/current/marketing/old price semantics", "Ozon card/promotion price fields where exposed", "price index fields", "pagination/batch limit", "visibility/status", "permissions", "quota"]
+    },
+    {
+      "id": "product_price_details",
+      "priority": "P0_prices_listing_state",
+      "path": "/v1/product/prices/details",
+      "currentness": "main_since_2026-03-04",
+      "known_current_contract_fragments": ["request skus required as of 2026-02-12"],
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["max skus", "response price components", "promotion/card semantics", "permissions", "quota"]
+    },
+    {
+      "id": "seller_actions_list",
+      "priority": "P0_prices_listing_state",
+      "path": "/v1/seller-actions/list",
+      "currentness": "beta_added_2026-03-02",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["read-only request", "action ids/status/type/dates", "pagination", "seller-created action scope", "permissions", "beta stability"]
+    },
+    {
+      "id": "seller_action_products",
+      "priority": "P0_prices_listing_state",
+      "path": "/v1/seller-actions/products/list",
+      "currentness": "beta_added_2026-03-02",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["action identifier", "product/SKU identifiers", "participation/status fields", "pagination", "permissions", "beta stability"]
+    },
+    {
+      "id": "product_stock_core",
+      "priority": "P0_warehouse_stock_geography",
+      "path": "/v4/product/info/stocks",
+      "currentness": "confirmed_current",
+      "http_verb": "POST",
+      "known_current_contract_fragments": ["product_id", "offer_id", "FBO/FBS", "present", "reserved", "sku", "shipment_type", "warehouse_ids"],
+      "full_contract": false,
+      "must_extract": ["current request schema", "batch limits", "pagination if any", "stock type semantics", "rate/quota", "permissions"]
+    },
+    {
+      "id": "seller_warehouse_list",
+      "priority": "P0_warehouse_stock_geography",
+      "path": "/v2/warehouse/list",
+      "currentness": "current_replacement_since_2026-04-07",
+      "replaces": "/v1/warehouse/list",
+      "known_current_contract_fragments": ["warehouses.pause_at added 2026-04-07"],
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["warehouse ids/names/types", "FBS/FBO relevance", "status", "geography fields", "pagination", "permissions"]
+    },
+    {
+      "id": "ozon_warehouse_list",
+      "priority": "P0_warehouse_stock_geography",
+      "path": "/v1/warehouse/ozon/list",
+      "currentness": "beta_added_2026-03-12",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["warehouse identity/geography", "coverage", "pagination", "permissions", "beta stability"]
+    },
+    {
+      "id": "fbo_seller_warehouse_list",
+      "priority": "P0_warehouse_stock_geography",
+      "path": "/v1/warehouse/fbo/seller/list",
+      "currentness": "moved_to_main_2026-03-02",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["seller/FBO warehouse relation", "fields", "pagination", "permissions"]
+    },
+    {
+      "id": "cluster_list",
+      "priority": "P0_warehouse_stock_geography",
+      "path": "/v2/cluster/list",
+      "currentness": "main_since_2026-06-01",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["cluster ids/names", "macrolocal relation", "warehouse joins", "geography", "pagination", "permissions"]
+    },
+    {
+      "id": "fbs_stock_by_warehouse",
+      "priority": "P0_warehouse_stock_geography",
+      "path": "/v2/product/info/stocks-by-warehouse/fbs",
+      "currentness": "current_replacement_2026-04-07",
+      "replaces": "/v1/product/info/stocks-by-warehouse/fbs",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["product identifiers", "warehouse identifiers", "stock fields", "pagination/batch limits", "rate/quota"]
+    },
+    {
+      "id": "fbo_stock_by_warehouse",
+      "priority": "P0_warehouse_stock_geography",
+      "path": "/v1/product/info/stocks-by-warehouse/fbo",
+      "currentness": "new_method_2026-07",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["product identifiers", "warehouse identifiers", "stock fields", "pagination/batch limits", "rate/quota"]
+    },
+    {
+      "id": "stock_analytics",
+      "priority": "P0_warehouse_stock_geography",
+      "path": "/v1/analytics/stocks",
+      "currentness": "main; real_time_announced_2026-08-17",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["revalidate after 2026-08-17", "dimensions", "freshness timestamp", "pagination", "history", "permissions"]
+    },
+    {
+      "id": "fbo_posting_list",
+      "priority": "P0_orders_returns_cancellations",
+      "path": "/v3/posting/fbo/list",
+      "currentness": "updated_2026-08-04",
+      "http_verb": "POST",
+      "full_contract": false,
+      "must_extract": ["request filters", "date window", "pagination", "posting/product/status fields", "cancellation fields", "financial/analytics fields", "rate limit"]
+    },
+    {
+      "id": "fbs_posting_list",
+      "priority": "P0_orders_returns_cancellations",
+      "path": "/v4/posting/fbs/list",
+      "currentness": "updated_2026-08-04",
+      "replaces": "/v3/posting/fbs/list on 2026-08-31",
+      "http_verb": "PENDING",
+      "known_current_contract_fragments": ["filter.integration_type_flow", "postings.integration_type_flow", "postings.sorting_center", "postings.products.is_marketplace_buyout"],
+      "full_contract": false,
+      "must_extract": ["HTTP verb", "date window", "pagination", "status/cancellation fields", "product/price fields", "rate limit"]
+    },
+    {
+      "id": "fbs_unfulfilled_list",
+      "priority": "P0_orders_returns_cancellations",
+      "path": "/v4/posting/fbs/unfulfilled/list",
+      "currentness": "updated_2026-08-04",
+      "replaces": "/v3/posting/fbs/unfulfilled/list on 2026-08-31",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["HTTP verb", "filters", "date window", "pagination", "status/reason fields", "rate limit"]
+    },
+    {
+      "id": "fbs_posting_detail",
+      "priority": "P0_orders_returns_cancellations",
+      "path": "/v3/posting/fbs/get",
+      "currentness": "updated_2026-08-04",
+      "http_verb": "POST",
+      "known_current_contract_fragments": ["products usable for sold price reconciliation", "integration_type_flow", "sorting_center"],
+      "full_contract": false,
+      "must_extract": ["complete product/status/cancellation schema", "request identifiers", "rate limit"]
+    },
+    {
+      "id": "returns_list",
+      "priority": "P0_orders_returns_cancellations",
+      "path": "/v1/returns/list",
+      "currentness": "active_2025-11-20; 2026 refresh pending",
+      "http_verb": "PENDING",
+      "known_current_contract_fragments": ["filter.compensation_status_id", "returns.compensation_status"],
+      "full_contract": false,
+      "must_extract": ["2026 currentness", "event timestamps", "product/SKU/quantity", "reason/status", "scheme coverage", "pagination/history", "permissions"]
+    },
+    {
+      "id": "rfbs_returns_list",
+      "priority": "P0_orders_returns_cancellations",
+      "path": "/v2/returns/rfbs/list",
+      "currentness": "active_2025-12-26; 2026 refresh pending",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["2026 currentness", "event fields", "pagination/history", "reason/status", "permissions"]
+    },
+    {
+      "id": "return_report_create",
+      "priority": "P0_orders_returns_cancellations",
+      "path": "/v2/report/returns/create",
+      "currentness": "documented_2026-02-12",
+      "known_current_contract_fragments": ["filter required"],
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["full filter/date range", "report result type", "job id", "period limits", "permissions"]
+    },
+    {
+      "id": "cancel_reason_list",
+      "priority": "P0_orders_returns_cancellations",
+      "path": "/v1/cancel-reason/list",
+      "currentness": "updated_2025-12-30",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["2026 currentness", "reason ids/categories", "scope", "permissions"]
+    },
+    {
+      "id": "order_cancel_status",
+      "priority": "P0_orders_returns_cancellations",
+      "path": "/v1/order/cancel/status",
+      "currentness": "updated_2026-07-09",
+      "known_current_contract_fragments": ["response state documented"],
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["input id", "state enum", "reason relation", "read-only semantics", "rate limit"]
+    },
+    {
+      "id": "posting_cancel_status",
+      "priority": "P0_orders_returns_cancellations",
+      "path": "/v1/posting/cancel/status",
+      "currentness": "updated_2026-07-09",
+      "known_current_contract_fragments": ["response state documented"],
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["input posting id", "state enum", "reason relation", "read-only semantics", "rate limit"]
+    },
+    {
+      "id": "finance_accrual_postings",
+      "priority": "P0_finance_realization",
+      "path": "/v1/finance/accrual/postings",
+      "currentness": "replacement_announced_2026-07-14",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["request period/filters", "posting/product joins", "accrual/service fields", "pagination", "history window", "permissions"]
+    },
+    {
+      "id": "finance_accrual_types",
+      "priority": "P0_finance_realization",
+      "path": "/v1/finance/accrual/types",
+      "currentness": "replacement_announced_2026-07-14",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["accrual type taxonomy", "ids/names/categories", "currentness lifecycle", "permissions"]
+    },
+    {
+      "id": "finance_accrual_by_day",
+      "priority": "P0_finance_realization",
+      "path": "/v1/finance/accrual/by-day",
+      "currentness": "updated_2026-07-30",
+      "known_current_contract_fragments": ["request date", "request last_id", "response last_id", "accruals.container_fees", "accruals.accrued_category"],
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["HTTP verb", "last_id continuation semantics", "page size", "date window", "product/posting structure", "services/fees", "rate limit", "permissions"]
+    },
+    {
+      "id": "finance_realization_posting",
+      "priority": "P0_finance_realization",
+      "path": "/v1/finance/realization/posting",
+      "currentness": "updated_2026-07-28",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["request period/ids", "response posting/product economics", "pagination/history", "permissions"]
+    },
+    {
+      "id": "realization_report_create",
+      "priority": "P0_finance_realization",
+      "path": "/v1/report/realization/posting/create",
+      "currentness": "beta_added_2026-07-28",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["request period/filters", "report job/result identifier", "period limit", "beta restrictions", "permissions"]
+    },
+    {
+      "id": "report_list",
+      "priority": "P0_finance_realization",
+      "path": "/v1/report/list",
+      "currentness": "updated_2026-07-28",
+      "known_current_contract_fragments": ["result.reports.additional_data"],
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["filters/pagination", "report statuses/types", "result locator", "expiry", "permissions"]
+    },
+    {
+      "id": "report_info",
+      "priority": "P0_finance_realization",
+      "path": "/v1/report/info",
+      "currentness": "updated_2026-07-28",
+      "known_current_contract_fragments": ["result.additional_data"],
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["report identifier", "status/result locator", "content type", "expiry", "permissions"]
+    },
+    {
+      "id": "seller_analytics_data",
+      "priority": "P1_analytics_search",
+      "path": "/v1/analytics/data",
+      "currentness": "confirmed_current_family",
+      "http_verb": "POST",
+      "full_contract": false,
+      "must_extract": ["complete current metric enum", "dimension enum", "date window", "limit/offset", "SKU/product dimensions", "Premium/plan restrictions", "rate limit"]
+    },
+    {
+      "id": "product_queries",
+      "priority": "P1_analytics_search",
+      "path": "/v1/analytics/product-queries",
+      "currentness": "official_family_since_2025",
+      "http_verb": "POST",
+      "full_contract": false,
+      "must_extract": ["current fields", "history", "pagination", "Premium restrictions", "rate limit"]
+    },
+    {
+      "id": "product_query_details",
+      "priority": "P1_analytics_search",
+      "path": "/v1/analytics/product-queries/details",
+      "currentness": "official_family_since_2025",
+      "http_verb": "POST",
+      "full_contract": false,
+      "must_extract": ["query/product identifiers", "current fields", "history", "pagination", "Premium restrictions", "rate limit"]
+    },
+    {
+      "id": "supply_order_get",
+      "priority": "P1_supply_replenishment",
+      "path": "/v3/supply-order/get",
+      "currentness": "confirmed_2026",
+      "http_verb": "POST",
+      "known_current_contract_fragments": ["supplies.macrolocal_cluster_id"],
+      "full_contract": false,
+      "must_extract": ["full statuses/timestamps", "supply/warehouse/cluster fields", "history/pagination", "rate limit"]
+    },
+    {
+      "id": "supply_order_details",
+      "priority": "P1_supply_replenishment",
+      "path": "/v1/supply-order/details",
+      "currentness": "confirmed_2026",
+      "http_verb": "POST",
+      "known_current_contract_fragments": ["supplies.macrolocal_cluster_id"],
+      "full_contract": false,
+      "must_extract": ["full details/status chronology", "history/pagination", "rate limit"]
+    },
+    {
+      "id": "review_list",
+      "priority": "P2_reviews_questions",
+      "path": "/v1/review/list",
+      "currentness": "updated_2026-03-31",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["product/SKU ids", "rating/text/date/status", "pagination/history", "access restrictions"]
+    },
+    {
+      "id": "review_info",
+      "priority": "P2_reviews_questions",
+      "path": "/v1/review/info",
+      "currentness": "updated_2026-03-31",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["review identifier", "detail schema", "access restrictions"]
+    },
+    {
+      "id": "question_list",
+      "priority": "P2_reviews_questions",
+      "path": "/v1/question/list",
+      "currentness": "updated_2025-09-18; 2026 refresh pending",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["2026 currentness", "product/SKU ids", "question text/date/status", "pagination/history", "access restrictions"]
+    }
+  ],
+  "provider_wide_open_items": [
+    "Complete Seller API library contract extraction remains blocked by docs.ozon.ru redirect loop in current runtime",
+    "Unified product-operation limit numeric/field semantics still need full /v4/product/info/limit contract",
+    "API key lifetime 6 months is confirmed; roles/expiry operational handling must be acceptance-tested",
+    "Performance API has its own separate contract queue",
+    "Every target must receive a fresh deprecation scan immediately before implementation"
+  ],
+  "completion_rule": "No operation becomes implementation-ready until its full_contract is explicitly switched to true with Ozon-owned provenance."
+}
