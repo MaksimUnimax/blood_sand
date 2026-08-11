@@ -1,0 +1,55 @@
+{
+  "schema": "OZON_ANALYTICS_DATA_CONTRACT_FRAGMENT_V1",
+  "as_of": "2026-08-11",
+  "path": "/v1/analytics/data",
+  "authority_class": "ozon_owned_partial_contract_plus_2026_currentness",
+  "implementation_gate_effect": "reduces uncertainty only; does not authorize extension development",
+  "confirmed": {
+    "http_method": "POST",
+    "host_contour": "https://api-seller.ozon.ru",
+    "request_fields_observed": [
+      "date_from",
+      "date_to",
+      "metrics",
+      "dimension",
+      "sort",
+      "limit",
+      "offset"
+    ],
+    "request_example_values_observed": {
+      "metrics": ["ordered_units", "returns"],
+      "dimension": ["sku"],
+      "sort_key": "ordered_units",
+      "sort_order": "DESC",
+      "limit": 1000,
+      "offset": 0
+    },
+    "response_traversal_observed": [
+      "result.data[]",
+      "result.data[].dimensions[0].id",
+      "result.data[].metrics[]"
+    ],
+    "auth_headers_observed_in_ozon_owned_case": ["Client-Id", "Api-Key"],
+    "2026_currentness_evidence": "Ozon for dev Seller API community still discusses /v1/analytics/data in May 2026, including session_view metric semantics."
+  },
+  "not_proven_current_complete": [
+    "complete 2026 metric enum",
+    "complete 2026 dimension enum",
+    "maximum/current limit",
+    "offset terminal/pagination semantics",
+    "maximum date interval and history depth",
+    "Premium/Premium Plus restrictions for this exact method",
+    "rate limit specific to this method",
+    "complete error taxonomy",
+    "complete response schema"
+  ],
+  "source_locators": [
+    "https://dev.ozon.ru/case/98-Keis-o-novom-instrumente-dlia-kontrolia-tovarnykh-ostatkov-na-sklade/",
+    "https://dev.ozon.ru/community?category_id=2&page=4"
+  ],
+  "engineering_rules": [
+    "Do not hardcode the observed 1000 limit as a permanent current maximum until revalidated.",
+    "Do not infer metric/dimension availability beyond values explicitly confirmed by current Ozon-owned evidence.",
+    "Keep pagination/date-window handling fail-closed until current terminal and history rules are verified."
+  ]
+}
