@@ -1,160 +1,170 @@
 # Ozon Seller API — logistics / delivery / geography coverage — 2026-08-11
 
-Статус: **RESEARCH COVERAGE MAP — current configuration families confirmed; Average Delivery Time analytics retired; full contracts pending**
+Статус: **RESEARCH COVERAGE MAP — current configuration + restriction/error families confirmed; Average Delivery Time retired; full contracts pending**
 
-Цель: дополнить seller diagnostics слоем между `warehouse stock` и `order/posting`: наличие товара на складе само по себе не доказывает, что для этого склада/схемы была доступна и корректно настроена доставка.
+Цель: объяснять logistics-related sales decline шире, чем `stock > 0`.
 
-## 1. Seller account / Ozon Logistics connection
+## 1. Seller/Ozon Logistics connection
 
 ### `/v1/seller/ozon-logistics/info`
 
-Ozon Seller API notification:
+Lifecycle evidence:
 
-- beta added 2025-11-11 for seller connection information to Ozon Logistics;
-- moved beta → main 2025-12-30;
-- method was again announced in Seller API changes on 2026-03-24.
+- beta 2025-11-11;
+- main 2025-12-30;
+- method announced again 2026-03-24.
 
-Role in diagnostics:
+Role: account-level logistics connection state.
 
-- account-level logistics connection evidence;
-- distinguish seller/account logistics state from product/warehouse stock state.
+Still pending: HTTP verb, request/response, exact status fields, scheme coverage, permissions/rate limits.
 
-Still pending before implementation:
-
-- HTTP verb;
-- full request/response schema;
-- exact connection/status fields;
-- permissions/role restrictions;
-- fulfilment-scheme coverage.
-
-## 2. Delivery methods per seller warehouse
+## 2. Delivery methods per warehouse
 
 ### `/v2/delivery-method/list`
 
-Ozon-owned lifecycle evidence:
+- beta 2025-12-02;
+- main 2026-02-02;
+- current replacement for old v1.
 
-- beta introduced 2025-12-02 as a method for getting delivery methods on a warehouse;
-- moved beta → main 2026-02-02;
-- method name/description updated 2026-02-09;
-- old `/v1/delivery-method/list` was later deprecated/disabled in favour of v2.
+Role: warehouse → delivery-method relation and detection of absent/paused/misconfigured delivery path.
 
-Engineering boundary:
+Still pending: warehouse filter/id, response ids/names/types/statuses, scheme coverage, pagination/access/rate limits.
 
-- do not generalise scheme coverage beyond the full current contract;
-- verify whether v2 covers FBS, rFBS, realFBS or only specific warehouse types.
-
-Role in diagnostics:
-
-- warehouse → delivery-method relation;
-- evidence for stock-positive but delivery-method-absent/paused/misconfigured cases;
-- join posting/carriage `delivery_method_id` to warehouse logistics configuration where current contracts allow it.
-
-Still pending:
-
-- HTTP verb;
-- required warehouse identifier/filter;
-- response ids/names/types/statuses;
-- pagination;
-- scheme coverage;
-- permissions/rate limits.
-
-## 3. Delivery methods and carriages/shipments
+## 3. Carriage/shipment configuration
 
 ### `/v2/carriage/delivery/list`
 
-Ozon-owned lifecycle evidence:
+- beta 2025-12-02;
+- main 2026-02-02;
+- current request fragment: `filter.delivery_method_id`.
 
-- beta introduced 2025-12-02;
-- moved beta → main 2026-02-02;
-- on 2026-02-09 Ozon updated request field `filter.delivery_method_id`;
-- older `/v1/posting/carriage-available/list` and `/v1/carriage/delivery/list` were deprecated in favour of v2.
+Role: delivery method → carriage/shipment availability/context.
 
-Confirmed join fragment:
+Still pending: HTTP/full request, response fields, date/status filters, pagination/history, scheme coverage, access/rate limits.
 
-- request has `filter.delivery_method_id`.
+## 4. FBS/rFBS error index — current main diagnostic family
 
-Related write-method changes also show `warehouse_id` and `delivery_method_id` as separate logistics identifiers. Those mutation methods are **not** initial bridge targets; they are only identity-model evidence.
+### `/v1/rating/index/fbs/info`
+### `/v1/rating/index/fbs/posting/list`
 
-Role in read-only diagnostics:
+Ozon-owned lifecycle:
 
-- delivery method → carriage/shipment availability/context;
-- investigate whether a warehouse was operational but no appropriate shipment/carriage path was available;
-- link delivery configuration to posting/logistics anomalies where current read contracts permit it.
+- 2025-11-20: added as beta methods for FBS/rFBS error index;
+- 2026-02-02: moved from beta to the main Seller API section.
+
+Diagnostic role:
+
+- seller/posting operational error-quality evidence;
+- distinguish logistics/fulfilment errors from demand, advertising or simple stock problems;
+- allow posting-level causal investigation once current identifier schema is extracted.
 
 Still pending:
 
-- HTTP verb/full request;
-- response carriage/shipment fields;
-- date/status filters;
+- HTTP verbs;
+- request filters;
+- exact error/rating metrics and status taxonomy;
+- posting identifiers;
 - pagination/history;
+- permissions/rate limits.
+
+## 5. FBS product/warehouse delivery restrictions — current main diagnostic family
+
+### `/v1/warehouse/invalid-products/get`
+### `/v1/warehouse/warehouses-with-invalid-products`
+
+Ozon-owned lifecycle:
+
+- 2025-12-15: beta methods added specifically for FBS delivery restrictions;
+- 2026-02-02: moved to main.
+
+Diagnostic role:
+
+- product has stock but is restricted for delivery;
+- warehouse contains products with delivery restrictions;
+- identify delivery-eligibility problems before attributing decline to traffic or conversion.
+
+Still pending:
+
+- HTTP verbs;
+- product/warehouse identifiers;
+- restriction reason/status schema;
+- pagination;
 - exact scheme coverage;
-- rate/access restrictions.
+- permissions/rate limits.
 
-## 4. Warehouse and cluster context already known
+## 6. Posting-level promised delivery window
 
-Current related read families:
+Current `/v3/posting/fbs/get` received explicit Ozon documentation updates on 2026-03-17 for:
 
-- `/v2/warehouse/list` — seller warehouses; cursor pagination fragments confirmed (`limit`, `cursor`, response `cursor`, `has_next`);
-- `/v1/warehouse/ozon/list` — Ozon warehouses;
-- `/v1/warehouse/fbo/seller/list` — seller/FBO supply warehouses;
-- `/v2/cluster/list` — current cluster dictionary;
-- `/v4/product/info/stocks` — current product stock including `warehouse_ids`;
-- `/v2/product/info/stocks-by-warehouse/fbs` and `/v1/product/info/stocks-by-warehouse/fbo` — warehouse-level stock families;
-- `/v1/analytics/stocks` — stock analytics, with announced real-time transition 2026-08-17.
+- `result.analytics_data.client_delivery_date_begin`;
+- `result.analytics_data.client_delivery_date_end`.
 
-For cross-dock FBO supply, current Ozon 2026 evidence says `macrolocal_cluster_id` is relevant and historical `warehouse_id` assumptions may no longer be sufficient.
+The method remained an active target in later 2026 changes.
 
-## 5. Current correction — Average Delivery Time analytics is retired
+Role:
 
-The earlier research state treated these methods as current because Ozon updated their descriptions on 2026-03-17:
+- posting-level FBS promised delivery window;
+- useful for order-level diagnostics after full semantics/joins are verified.
+
+Boundary:
+
+- this is **not** aggregate Average Delivery Time analytics;
+- do not assume the same fields exist in `/v4/posting/fbs/list` until full current contract is extracted;
+- do not transfer old FBO v2 fields into current FBO v3 without direct evidence.
+
+## 7. Warehouse and cluster context
+
+Related current families:
+
+- `/v2/warehouse/list` — request `limit`, `cursor`; response `cursor`, `has_next`;
+- `/v1/warehouse/ozon/list`;
+- `/v1/warehouse/fbo/seller/list`;
+- `/v2/cluster/list`;
+- `/v4/product/info/stocks`;
+- `/v2/product/info/stocks-by-warehouse/fbs`;
+- `/v1/product/info/stocks-by-warehouse/fbo`;
+- `/v1/analytics/stocks` — announced real-time transition 2026-08-17.
+
+For cross-dock FBO supply, `macrolocal_cluster_id` must be preserved where returned.
+
+## 8. Average Delivery Time retirement — DO NOT TARGET
+
+Earlier research treated:
 
 - `/v1/analytics/average-delivery-time`;
 - `/v1/analytics/average-delivery-time/details`;
-- `/v1/analytics/average-delivery-time/summary`.
+- `/v1/analytics/average-delivery-time/summary`
 
-A later Ozon-owned 2026 announcement supersedes that state: Ozon said the **Average Delivery Time functionality is fully disabled** and its methods are removed from documentation.
+as current because descriptions were updated 2026-03-17.
 
-Current disposition:
+A later Ozon-owned 2026 announcement supersedes that state: the **Average Delivery Time functionality was fully disabled and its methods removed from documentation**.
 
-- all three methods = **DISABLED / DO NOT TARGET**;
-- replacement = **NOT CONFIRMED**;
-- no compatibility wrapper or fallback should be created for them;
-- no scraping fallback.
+Disposition:
 
-Canonical correction artifact:
+- all three = disabled/do-not-target;
+- one-to-one replacement = **NOT CONFIRMED**;
+- no scraping fallback;
+- no compatibility wrapper.
 
-- `OZON_AVERAGE_DELIVERY_TIME_RETIREMENT_2026-08-11.md`.
+Canonical correction: `OZON_AVERAGE_DELIVERY_TIME_RETIREMENT_2026-08-11.md`.
 
-This removes an incorrect branch from the diagnostic graph. It does **not** prove that no current Ozon API exposes delivery dates or delivery-quality evidence elsewhere. Such evidence may only be added from a separately verified current Ozon-owned contract.
-
-## 6. Correct current diagnostic chain
-
-For logistics-related sales decline the future system should not stop at `stock > 0`.
-
-Current evidence chain should be capable of checking, using explicit requests:
+## 9. Correct current causal graph
 
 `seller logistics connection`
-→ `seller warehouse status`
+→ `warehouse status`
 → `SKU stock by warehouse`
-→ `warehouse delivery methods`
-→ `delivery method / carriage availability`
-→ `cluster/geography context`
+→ `delivery method`
+→ `product/warehouse delivery restrictions`
+→ `FBS/rFBS error index`
+→ `carriage/shipment availability`
+→ `cluster/geography`
+→ `posting promised-delivery window where confirmed`
 → `posting/order outcome`.
 
-A separate delivery-quality/date layer is a **research gap**, not an assumed API family.
+This is a research evidence graph, **not permission for hidden fan-out**. Each provider request and pagination step remains explicit.
 
-This is a research dependency graph, not permission for hidden automatic fan-out. Each provider request remains an explicit controlled operation.
+## 10. Gate impact
 
-## 7. Current gate impact
-
-Current read families for seller delivery-method configuration are confirmed at family/currentness level:
-
-- `/v1/seller/ozon-logistics/info`;
-- `/v2/delivery-method/list`;
-- `/v2/carriage/delivery/list`.
-
-Implementation contracts are still pending.
-
-The retired Average Delivery Time family must not enter 03A.4. If a replacement or alternative delivery-quality surface exists, it must be independently confirmed from a current Ozon-owned contract.
+Current logistics diagnostics are materially stronger than the earlier state, because delivery restrictions and error-index families are now identified as main Seller API families. They do not close 03A.3 because full contracts/joins/history/access semantics are still missing.
 
 `03A.3` remains `[~] IN PROGRESS`; `03A.4` remains `NOT STARTED`.
