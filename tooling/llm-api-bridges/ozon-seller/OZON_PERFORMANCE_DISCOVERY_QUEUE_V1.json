@@ -1,0 +1,133 @@
+{
+  "schema": "OZON_PERFORMANCE_DISCOVERY_QUEUE_V1",
+  "as_of": "2026-08-11",
+  "purpose": "Discovery-only queue for exact Ozon-owned verification of Performance API read contracts",
+  "official_contour_confirmed": true,
+  "official_documentation_root": "https://docs.ozon.ru/api/performance/",
+  "official_documentation_access_in_current_runtime": "redirect_loop",
+  "implementation_allowed": false,
+  "promotion_to_ozon_read_allowlist_rule": "Only after current Ozon-owned documentation/source confirms exact host/auth/path/verb/contract/currentness. Third-party mirrors and integrations are discovery hints only.",
+  "ozon_owned_currentness_evidence": [
+    "Verified Ozon Seller API notification explicitly lists Performance API among public Ozon APIs",
+    "Verified Ozon Ads channel recommends Performance API for automation",
+    "Official Ozon Marketplace advertised a 2026-07-31 webinar 'Performance API: как работает инструмент'",
+    "Official Ozon Ads announced that advertising bid changes affect/deprecate Performance API methods"
+  ],
+  "auth_host": {
+    "status": "pending_ozon_owned_contract",
+    "discovery_hints_not_authority": {
+      "possible_host": "api-performance.ozon.ru",
+      "possible_credential_model": "service-account / Client ID + Client Secret / Bearer-like token flow"
+    },
+    "required_official_confirmation": [
+      "base URL/host",
+      "credential creation model",
+      "token acquisition/refresh or direct auth headers",
+      "token/key lifetime",
+      "required scopes/roles",
+      "secret-safe error handling"
+    ]
+  },
+  "operations": [
+    {
+      "id": "campaign_list",
+      "business_need": "enumerate advertising campaigns with id/status/type/lifecycle",
+      "candidate": {"method": "GET", "path": "/api/client/campaign"},
+      "candidate_source": "third_party_index_mirroring_performance_docs",
+      "ozon_owned_confirmed": false,
+      "required_official_confirmation": ["exact verb/path", "request filters", "response schema", "pagination", "campaign type/status enums", "rate limit", "current/deprecated status"]
+    },
+    {
+      "id": "campaign_products",
+      "business_need": "map campaign to promoted products/SKUs",
+      "candidate": {"method": "UNKNOWN", "path_family": "/campaign/{campaignId}/products"},
+      "candidate_source": "third_party_index plus historical Ozon-owned mutation-family evidence",
+      "ozon_owned_confirmed": false,
+      "required_official_confirmation": ["read-only operation exists", "exact verb/path", "product identifiers", "pagination", "status fields", "current/deprecated status"]
+    },
+    {
+      "id": "statistics_create_or_json",
+      "business_need": "request campaign/product/date advertising statistics",
+      "candidate": {"method": "POST", "path": "/api/client/statistics/json"},
+      "candidate_source": "third_party_index_mirroring_performance_docs",
+      "ozon_owned_confirmed": false,
+      "required_official_confirmation": ["sync vs async semantics", "request body", "supported date window", "grouping/dimensions", "metrics", "campaign/product limits", "rate limit"]
+    },
+    {
+      "id": "statistics_job_status",
+      "business_need": "check explicitly-created async advertising statistics job",
+      "candidate": {"method": "GET", "path": "/api/client/statistics/{UUID}"},
+      "candidate_source": "third_party_index_mirroring_performance_docs",
+      "ozon_owned_confirmed": false,
+      "required_official_confirmation": ["whether UUID is a report/job id", "status enum", "result locator", "expiry", "polling constraints", "rate limit"]
+    },
+    {
+      "id": "statistics_report",
+      "business_need": "retrieve an explicitly-requested advertising report",
+      "candidate": {"method": "GET", "path": "/api/client/statistics/report"},
+      "candidate_source": "third_party_index_mirroring_performance_docs",
+      "ozon_owned_confirmed": false,
+      "required_official_confirmation": ["exact parameters", "response content type", "binary/JSON behavior", "job linkage", "report expiry", "rate limit"]
+    },
+    {
+      "id": "statistics_list",
+      "business_need": "list/read advertising statistics in a bounded interval",
+      "candidate": {"method": "GET", "path": "/api/client/statistics/list"},
+      "candidate_source": "third_party_index_mirroring_performance_docs",
+      "ozon_owned_confirmed": false,
+      "required_official_confirmation": ["exact purpose versus report/job listing", "parameters", "pagination", "date limits", "response schema", "rate limit"]
+    },
+    {
+      "id": "statistics_external_list",
+      "business_need": "determine whether this surface is relevant to seller advertising diagnostics",
+      "candidate": {"method": "GET", "path": "/api/client/statistics/externallist"},
+      "candidate_source": "third_party_index_mirroring_performance_docs",
+      "ozon_owned_confirmed": false,
+      "required_official_confirmation": ["business meaning", "seller applicability", "exact contract", "whether initial bridge should exclude it"]
+    },
+    {
+      "id": "campaign_product_statistics",
+      "business_need": "product-level advertising delivery/outcome evidence",
+      "candidate": {"method": "GET", "path": "/api/client/statistics/campaign/product"},
+      "candidate_source": "third_party_index_mirroring_performance_docs",
+      "ozon_owned_confirmed": false,
+      "required_official_confirmation": ["exact request identifiers", "date window", "metrics", "product/SKU identifiers", "pagination", "rate limit", "current/deprecated status"]
+    }
+  ],
+  "required_metrics_to_verify_against_official_api": [
+    "impressions",
+    "clicks",
+    "spend",
+    "CTR",
+    "CPC",
+    "CPM where applicable",
+    "attributed orders",
+    "attributed units",
+    "attributed revenue/sales",
+    "DRR/ACOS-like metric where exposed"
+  ],
+  "required_dimensions_to_verify_against_official_api": [
+    "campaign",
+    "product/SKU",
+    "date/day",
+    "promotion tool/type",
+    "placement",
+    "query/search phrase where exposed",
+    "category where exposed",
+    "region where exposed"
+  ],
+  "explicitly_excluded_initial_scope": [
+    "create campaign",
+    "activate/deactivate campaign",
+    "change bid",
+    "change budget",
+    "add/delete campaign products",
+    "any other advertising mutation"
+  ],
+  "bridge_lifecycle_rule_if_async_reports_confirmed": "Report creation, status check and result retrieval must be separate explicit user/LLM operations. No hidden polling, retries or automatic fan-out.",
+  "next_verification_targets": [
+    "Obtain current Ozon-owned content from docs.ozon.ru/api/performance/",
+    "Locate Ozon-owned Performance API changelog or method reference",
+    "Verify each candidate exact string against Ozon-owned source before promotion"
+  ]
+}
