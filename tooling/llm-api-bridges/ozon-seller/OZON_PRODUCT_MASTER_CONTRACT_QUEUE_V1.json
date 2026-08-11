@@ -15,6 +15,7 @@
     "/v4/product/info/stocks",
     "/v2/warehouse/list"
   ],
+  "fallback_generated_report_not_automatic": "/v1/report/products/create",
   "confirmed_cross_method_join": {
     "key": "sku",
     "product_list_field": "result.items.sku",
@@ -29,7 +30,7 @@
       "currentness": "2026-07-09",
       "known_fields": ["filter.skus", "result.items.sku"],
       "full_contract": false,
-      "missing": ["HTTP verb", "full filters", "pagination/page size", "all product/listing identifiers", "archived/hidden/status/error coverage", "permissions", "unified product-operation quota cost"]
+      "missing": ["HTTP verb", "full filters", "pagination/page size", "max batch/page", "all product/listing identifiers", "archived/hidden/status/error coverage", "permissions", "unified product-operation quota cost"]
     },
     {
       "id": "bulk_info",
@@ -92,6 +93,21 @@
       "missing": ["HTTP verb", "input identifiers", "pagination/batch size", "complete seller/current/old/card/marketing price semantics", "price index fields", "visibility/status relationship", "permissions/quota"]
     },
     {
+      "id": "generated_product_report_fallback",
+      "path": "/v1/report/products/create",
+      "role": "alternate/fallback Product Master extraction candidate, not a primary automatic step",
+      "currentness": "active documented family; visibility request parameter description updated 2026-01-22",
+      "known_request_fragments": ["visibility"],
+      "known_family_lifecycle_fragments": ["generated report family uses code/file concepts", "later explicit report info/list/retrieval flow required"],
+      "canonical_operation_id": "PENDING",
+      "report_type": "PENDING",
+      "full_contract": false,
+      "output_schema": "PENDING",
+      "does_not_close_fields": ["title/name", "seller offer/article", "product/listing ids", "barcodes", "dimensions/weight", "category/type", "moderation/error state", "price", "stock"],
+      "missing": ["HTTP verb", "full request", "visibility enum", "job response", "exact report_type", "output columns", "file format/encoding", "report lifecycle/status semantics", "snapshot/history semantics", "permissions/rate limits", "deprecation check"],
+      "execution_rule": "create/status-info/retrieve must be separate explicit operations; no hidden polling or automatic report creation from product-list command"
+    },
+    {
       "id": "product_operation_quota_preflight",
       "path": "/v4/product/info/limit",
       "canonical_operation_id": "ProductAPI_GetUploadQuota",
@@ -120,9 +136,9 @@
     }
   ],
   "fields_required_by_blood_sand_master": {
-    "confirmed_or_partially_confirmed": ["sku", "product/list enumeration", "showcase visibility context", "promotion context", "attributes contour", "pictures contour", "price contour", "stock", "warehouse identifiers", "category dictionary lineage"],
+    "confirmed_or_partially_confirmed": ["sku", "product/list enumeration", "showcase visibility context", "promotion context", "attributes contour", "pictures contour", "price contour", "stock", "warehouse identifiers", "category dictionary lineage", "generated product report family exists as fallback"],
     "still_not_proven_in_current_read_contract": ["complete seller offer/article field mapping", "complete Ozon product/listing ids across all methods", "title/name", "barcodes", "dimensions/weight", "current description_category_id/type_id placement", "video", "rich content/description", "complete moderation/error state"]
   },
   "identity_rule": "Preserve seller offer/article, product/listing id, SKU, description_category_id and type_id as distinct identifiers when current contracts expose them. SKU is a confirmed join key but must not become the only master identity.",
-  "completion_rule": "Product Master API research is not complete until all required fields are either tied to current Ozon-owned read contracts or explicitly classified as unavailable gaps."
+  "completion_rule": "Product Master API research is not complete until all required fields are either tied to current Ozon-owned read contracts or explicitly classified as unavailable gaps. The generated product report cannot close a field until its current output schema proves that field."
 }
