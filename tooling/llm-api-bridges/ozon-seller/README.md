@@ -10,10 +10,13 @@
 
 1. `OZON_03A3_COMPLETENESS_V1.json` — текущий machine-readable gate;
 2. `OZON_READ_ONLY_ALLOWLIST_V1.json` — current research candidate registry + do-not-use deprecated paths;
-3. `OZON_OFFICIAL_NOTIFICATION_CURRENTNESS_2026-08-11.md` — currentness/deprecation evidence до 2026-08-04;
-4. `OZON_PERFORMANCE_API_GAP_2026-08-11.md` — отдельный advertising/Performance API blocker;
-5. `OZON_OFFICIAL_REVALIDATION_2026-08-11.md`;
-6. `OZON_API_CAPABILITY_AUDIT_2026-08-10.md` и более ранние verification/search snapshots.
+3. `OZON_IMPLEMENTATION_CONTRACT_QUEUE_V1.json` — per-operation очередь недостающих implementation contracts перед coding;
+4. `OZON_OPERATIONAL_CONSTRAINTS_2026-08-11.md` — key lifetime, product-operation limits, 429/report/pagination evidence;
+5. `OZON_OFFICIAL_NOTIFICATION_CURRENTNESS_2026-08-11.md` — currentness/deprecation evidence до 2026-08-04;
+6. `OZON_PERFORMANCE_API_GAP_2026-08-11.md` — advertising/Performance API blocker;
+7. `OZON_PERFORMANCE_DISCOVERY_QUEUE_V1.json` — discovery-only exact probes; `ozon_owned_confirmed=false` до official verification;
+8. `OZON_OFFICIAL_REVALIDATION_2026-08-11.md`;
+9. `OZON_API_CAPABILITY_AUDIT_2026-08-10.md` и более ранние verification/search snapshots.
 
 `OZON_NEGATIVE_VERIFICATION_2026-08-11.md` теперь **historical / partially superseded**: он сохраняется как evidence раннего отрицательного поиска, но не является current status source для catalog/price/warehouse/return/report path families.
 
@@ -55,7 +58,7 @@ Do not build against `/v3/posting/fbs/list` or `/v3/posting/fbs/unfulfilled/list
 
 ### Returns / cancellations
 
-Current families are now visible for general/rFBS returns, generated returns reports, cancel-reason lookup and cancellation status. Complete cross-scheme event chronology still needs method-contract extraction.
+Current families are visible for general/rFBS returns, generated returns reports, cancel-reason lookup and cancellation status. Complete cross-scheme event chronology still needs method-contract extraction.
 
 ### Finance / realization / reports
 
@@ -74,11 +77,24 @@ Generated reports must be modeled as explicit create + later retrieve operations
 - review read family (`/v1/review/list`, `/info`, `/count`, `/comment/list`) has 2026 currentness;
 - question read family exists, but 2026 refresh/access contract is still pending.
 
+## Operational constraints already established
+
+- Seller API keys created from **2026-02-13** have a **6-month lifetime**; `/v1/roles` exposes `expires_at` in current documentation changes;
+- from **2026-02-24** Ozon introduced a unified limit model for many product operations;
+- `/v4/product/info/limit` received `operation_limits` in June 2026;
+- `/v1/product/prices/details` requires `skus` according to the 2026-02-12 documentation change;
+- `/v2/report/returns/create` requires `filter`;
+- `/v1/report/postings/create` requires `filter.processed_at_from` and `filter.processed_at_to`;
+- `/v1/finance/accrual/by-day` uses `date` and `last_id` contract elements, but exact continuation semantics still need full docs;
+- `/v1/analytics/stocks` is scheduled to switch to real-time on **2026-08-17**; this must be revalidated after the transition.
+
+Numeric quotas/page sizes not visible in current official evidence are **not guessed**.
+
 ## Что ещё НЕ готово для coding
 
 Current path/family confirmation не равна implementation-ready contract.
 
-Для большинства newly-confirmed families ещё нужны authoritative Ozon method contracts:
+`OZON_IMPLEMENTATION_CONTRACT_QUEUE_V1.json` tracks every current target separately. For most newly-confirmed families we still need Ozon-owned authoritative contracts for:
 
 - HTTP verb where not independently established;
 - full request/response schema;
@@ -93,9 +109,11 @@ Interactive `docs.ozon.ru/api/seller/` в текущей research environment о
 
 ## Performance API — основной отдельный blocker
 
-Ozon-owned advertising sources подтверждают, что `Performance API` — отдельный публичный API для автоматизации рекламных кампаний. Exact documentation root найден как `https://docs.ozon.ru/api/performance/`, но в текущей runtime он также уходит в redirect loop.
+Ozon-owned sources подтверждают, что `Performance API` — отдельный публичный API для автоматизации рекламных кампаний. Exact documentation root найден как `https://docs.ozon.ru/api/performance/`, но в текущей runtime он также уходит в redirect loop.
 
-Поэтому пока не подтверждены authoritative method contracts для:
+`OZON_PERFORMANCE_DISCOVERY_QUEUE_V1.json` содержит exact candidate probes, найденные через non-authoritative index, но **каждый candidate имеет `ozon_owned_confirmed=false`** и не входит в Seller/Performance allowlist.
+
+Пока authoritative Ozon method contracts не подтверждены для:
 
 - current host/auth;
 - campaign list/status/type;
@@ -104,9 +122,10 @@ Ozon-owned advertising sources подтверждают, что `Performance API
 - CTR/CPC/CPM;
 - attributed orders/revenue;
 - useful dimensions;
-- read-only budget/bid context.
+- read-only budget/bid context;
+- report/token/rate/history lifecycle.
 
-Сторонние индексы могут использоваться только как discovery hints; их endpoint snippets не переносятся в allowlist без Ozon-owned verification.
+Сторонние snippets используются только как exact search probes.
 
 ## Жёсткое правило
 
@@ -116,6 +135,8 @@ Ozon-owned advertising sources подтверждают, что `Performance API
 - no write campaign/bid/budget scope in initial bridge;
 - no deprecated targets;
 - no endpoint promotion from third-party sources;
+- no automatic unbounded pagination;
+- generated reports = separate explicit create/check/retrieve operations;
 - `03A.4` не начинается, пока `OZON_03A3_COMPLETENESS_V1.json` содержит `extension_development_allowed=false`.
 
 ## Current roadmap disposition
