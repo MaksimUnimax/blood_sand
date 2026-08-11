@@ -1,0 +1,29 @@
+{
+  "schema": "OZON_REPORT_REQUEST_CONTRACT_FRAGMENTS_V1",
+  "as_of": "2026-08-11",
+  "authority_class": "ozon_owned_notification_fragments",
+  "implementation_gate_effect": "partial contract evidence only",
+  "fragments": [
+    {
+      "path": "/v2/report/returns/create",
+      "evidence_date": "2026-02-12",
+      "request_required_confirmed": ["filter"],
+      "still_missing": ["HTTP verb if not independently established", "filter subfields/current enum", "date/history limits", "result/report id contract", "quota", "permissions"]
+    },
+    {
+      "path": "/v1/report/postings/create",
+      "evidence_date": "2026-02-12",
+      "request_required_confirmed": ["filter.processed_at_from", "filter.processed_at_to"],
+      "still_missing": ["HTTP verb if not independently established", "other filter fields", "maximum interval/history", "result/report id contract", "quota", "permissions"]
+    },
+    {
+      "scope": "generated report lifecycle",
+      "evidence_date": "2024-07-30_and_2024-08-02",
+      "methods": ["/v1/report/info", "/v1/report/list", "/v1/report/products/create", "/v1/report/returns/create", "/v1/report/postings/create", "/v1/report/discounted/create", "/v1/report/warehouse/stock"],
+      "fields_whose_documentation_was_explicitly_updated": ["code", "file"],
+      "engineering_rule": "Keep create/status/retrieve as explicit operations; do not infer hidden polling or indefinite report availability."
+    }
+  ],
+  "source_policy": "No request fields beyond those explicitly named by Ozon-owned notifications are inferred.",
+  "implementation_allowed": false
+}
