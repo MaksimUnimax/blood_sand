@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.5-research",
+  "schema_version": "1.6-research",
   "provider": "ozon",
   "generated_at": "2026-08-11",
   "artifact_role": "research_read_candidate_registry",
@@ -36,7 +36,7 @@
     {"method": "POST", "path": "/v1/analytics/product-queries", "purpose": ["own-product search-query analytics"]},
     {"method": "POST", "path": "/v1/analytics/product-queries/details", "purpose": ["own-product query details"]},
     {"method": "POST", "path": "/v3/posting/fbo/list", "purpose": ["FBO postings"]},
-    {"method": "POST", "path": "/v3/posting/fbs/get", "purpose": ["FBS posting detail", "product-price reconciliation"]},
+    {"method": "POST", "path": "/v3/posting/fbs/get", "purpose": ["FBS posting detail", "product-price reconciliation", "posting promised-delivery window where current fields apply"]},
     {"method": "POST", "path": "/v3/supply-order/get", "purpose": ["FBO supply"]},
     {"method": "POST", "path": "/v1/supply-order/details", "purpose": ["FBO supply details"]}
   ],
@@ -66,14 +66,20 @@
       {"path": "/v1/product/info/stocks-by-warehouse/fbo", "currentness": "new family announced 2026-07"},
       {"path": "/v1/analytics/stocks", "currentness": "main; real-time switch announced for 2026-08-17"}
     ],
-    "logistics_delivery": [
+    "logistics_delivery_configuration": [
       {"path": "/v1/seller/ozon-logistics/info", "currentness": "main since 2025-12-30; announced again 2026-03-24"},
       {"path": "/v2/delivery-method/list", "currentness": "main since 2026-02-02; current replacement for v1", "business_meaning": "delivery methods associated with warehouse logistics; exact scheme coverage pending"},
       {"path": "/v2/carriage/delivery/list", "currentness": "main since 2026-02-02", "known_request": ["filter.delivery_method_id"]}
     ],
+    "delivery_restrictions_and_error_index": [
+      {"path": "/v1/rating/index/fbs/info", "currentness": "beta 2025-11-20; main since 2026-02-02", "business_meaning": "FBS/rFBS error-index information"},
+      {"path": "/v1/rating/index/fbs/posting/list", "currentness": "beta 2025-11-20; main since 2026-02-02", "business_meaning": "posting-level FBS/rFBS error-index evidence"},
+      {"path": "/v1/warehouse/invalid-products/get", "currentness": "beta 2025-12-15; main since 2026-02-02", "business_meaning": "products with FBS delivery restrictions"},
+      {"path": "/v1/warehouse/warehouses-with-invalid-products", "currentness": "beta 2025-12-15; main since 2026-02-02", "business_meaning": "warehouses containing products with FBS delivery restrictions"}
+    ],
     "orders_postings": [
       {"path": "/v3/posting/fbo/list", "currentness": "updated 2026-08-04"},
-      {"path": "/v3/posting/fbs/get", "currentness": "updated 2026-08-04"},
+      {"path": "/v3/posting/fbs/get", "currentness": "updated through 2026-08-04", "known_response": ["result.analytics_data.client_delivery_date_begin", "result.analytics_data.client_delivery_date_end"]},
       {"path": "/v4/posting/fbs/list", "currentness": "updated 2026-08-04", "replaces": "/v3/posting/fbs/list"},
       {"path": "/v4/posting/fbs/unfulfilled/list", "currentness": "updated 2026-08-04", "replaces": "/v3/posting/fbs/unfulfilled/list"}
     ],
@@ -106,10 +112,10 @@
       {"path": "/v1/review/info", "currentness": "updated 2026-03-31"},
       {"path": "/v1/review/count", "currentness": "updated 2026-03-31"},
       {"path": "/v1/review/comment/list", "currentness": "updated 2026-03-31"},
-      {"path": "/v1/question/list", "currentness": "updated 2025-09-18; 2026 refresh pending"},
-      {"path": "/v1/question/info", "currentness": "family confirmed; refresh pending"},
-      {"path": "/v1/question/count", "currentness": "family confirmed; refresh pending"},
-      {"path": "/v1/question/top-sku", "currentness": "family confirmed; refresh pending"}
+      {"path": "/v1/question/list", "currentness": "updated 2025-09-18; 2026 status-model refresh exists, full contract pending"},
+      {"path": "/v1/question/info", "currentness": "family confirmed; 2026 refresh pending"},
+      {"path": "/v1/question/count", "currentness": "family confirmed; 2026 refresh pending"},
+      {"path": "/v1/question/top-sku", "currentness": "family confirmed; 2026 refresh pending"}
     ]
   },
   "confirmed_cross_method_identity": [
@@ -145,7 +151,8 @@
     "product_operation_limit_model": "exists; /v4/product/info/limit exposes operation_limits; numeric bucket/reset semantics pending",
     "generated_report_rule": "create/status-info/retrieve are separate explicit operations; no hidden polling",
     "category_attribute_freshness": "dynamic; Ozon announced automated change-notification mechanisms in 2026, exact feed contract pending",
-    "average_delivery_time_feature": "fully disabled in 2026; its three analytics methods are do-not-target; no replacement confirmed"
+    "average_delivery_time_feature": "fully disabled in 2026; its three analytics methods are do-not-target; no one-to-one replacement confirmed",
+    "delivery_diagnostics_after_retirement": "current main families exist for FBS/rFBS error index and FBS product/warehouse delivery restrictions; FBS posting detail has promised-delivery date fields"
   },
   "performance_api": {
     "status": "official_contour_and_doc_root_confirmed_contract_pending",
