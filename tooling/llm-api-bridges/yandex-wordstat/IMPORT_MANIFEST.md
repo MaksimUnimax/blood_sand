@@ -29,6 +29,22 @@ Checks:
 
 The source archive contains the production extension files, shared lifecycle modules and exhaustive regression tests. It is the only accepted Wordstat implementation reference for the new `blood_sand/tooling/llm-api-bridges/` family. Older `Brige`, `BridgeSmall`, `bridgeService`, historical Wordstat hotfix archives and prior versions are not authority for this provider.
 
+## Fresh re-verification — 2026-08-11
+
+The project owner's exact uploaded artifact `wordstat-bridge-v1.1.5-full-function-environment-audit(1).zip` was located again in the file library and materialized without substituting the model-generated copy.
+
+Fresh checks on that exact uploaded file:
+
+- size: `174927` bytes;
+- SHA-256: `a39bbe65b046ef6eac5a7890b8afd84e69550db34debf271b7c373d08a1fef1a` — exact canonical match;
+- ZIP entries: `44`;
+- production/shared/test layout matches the accepted 1.1.5 package;
+- fresh `npm test`: `283/283 PASS`, `0 FAIL`.
+
+This re-verification strengthens provenance but **does not by itself close roadmap 03A.2**. The current GitHub connector available to this execution environment writes UTF-8 repository files but does not expose a direct binary upload action for the ZIP. Therefore this manifest must not falsely claim that the executable ZIP/source payload is already stored byte-for-byte in the repository.
+
+Roadmap 03A.2 remains `[~]` until an actual repository payload is present and can be reconstructed/verified against the canonical SHA above.
+
 ## Proven invariants reused as design requirements for Ozon/Wildberries
 
 - credentials remain local and are not emitted to the LLM;
