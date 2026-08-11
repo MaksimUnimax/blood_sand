@@ -43,23 +43,41 @@ Fresh checks on that exact uploaded file:
 
 This re-verification strengthens provenance but **does not by itself close roadmap 03A.2**. The current GitHub connector available to this execution environment does not expose a reliable direct binary upload path for the ZIP.
 
-### Repository transport integrity test — 2026-08-11
+## Repository transport integrity tests — 2026-08-11
 
-A controlled attempt was made to preserve the exact ZIP as Base64 repository payload on a disposable work branch.
+Multiple controlled transfer probes have been rejected before acceptance because Git-side bytes did not match the intended payload.
 
-Integrity checks failed before merge:
+### Earlier probes
 
-- a planned `20000`-character Base64 chunk was stored by the connector as a `18536`-byte blob;
-- the resulting Git blob SHA did not match the SHA calculated locally for the intended chunk;
-- a second direct Git-blob experiment with a smaller payload also failed the precomputed Git blob SHA check.
+- a planned `20000`-character Base64 chunk was stored as a `18536`-byte blob;
+- resulting Git blob SHA did not match the precomputed intended chunk SHA;
+- a separate smaller direct Git-blob experiment also failed its precomputed blob-SHA check.
+
+### Contents API 12000-character probe on `main`
+
+A later controlled probe used the repository contents API with the **first exactly 12000 characters** of Base64 from the freshly re-materialized canonical user ZIP.
+
+Expected locally before upload:
+
+- text length: `12000` bytes;
+- Git blob SHA: `d4a7effc20f29f6f38587cf70b75c36ace6d128c`;
+- text SHA-256: `e27cab4377a27bd9d5f8445c8fde36d6c9eef08ac54c2c270ca67e7a8ecbabeb`.
+
+Git actually stored:
+
+- blob length: **`11852` bytes**;
+- blob SHA: **`b1cea400c1ea998726ad1095b86ef881a775c676`**.
+
+This is a hard integrity failure: the transport changed/truncated the intended text. The probe file was immediately deleted from `main` in cleanup commit `c695ad1a2f1474da28b0b54f8509246bc5a89626`.
 
 Therefore:
 
-- the experimental work branch is **not authority** and must not be merged into `main`;
-- no truncated/corrupted payload is accepted as canonical evidence;
-- `main` continues to contain only provenance/verification metadata for the supplied artifact, not a falsely claimed byte-identical repository copy.
+- neither a successful API response nor a created Git commit is treated as proof of byte integrity;
+- every future text-chunk transport test must be verified by exact Git blob SHA and byte length;
+- no staging payload is canonical until the reconstructed ZIP itself matches the canonical SHA-256;
+- no experimental branch or staging file may be merged merely because GitHub accepted the write.
 
-Roadmap 03A.2 remains `[~]` until an actual repository payload can be transferred through a channel whose bytes can be verified against the canonical SHA above.
+Roadmap 03A.2 remains `[~]` until an actual repository payload can be transferred through a channel whose reconstructed bytes verify to the canonical SHA above.
 
 ## Proven invariants reused as design requirements for Ozon/Wildberries
 
