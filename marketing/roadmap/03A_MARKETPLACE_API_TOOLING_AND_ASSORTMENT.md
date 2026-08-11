@@ -52,7 +52,7 @@ Wordstat/SERP pilot был построен вокруг семейства «П
 
 Pilot Wordstat остаётся evidence. Root set остановлен на 13/14 и не считается полным исследованием бренда. Последний старый root не запускается до re-baseline полного ассортимента.
 
-### [~] 03A.2 — Создать toolkit structure и сохранить актуальный Yandex reference
+### [x] 03A.2 — Создать toolkit structure и сохранить актуальный Yandex reference
 
 Сделано:
 
@@ -66,15 +66,17 @@ Pilot Wordstat остаётся evidence. Root set остановлен на 13/
   - 44 ZIP entries;
   - fresh regression `283/283 PASS`, `0 FAIL`.
 
-Не закрыто:
+Закрыто 2026-08-11:
 
-- exact executable/source repository payload пока отсутствует.
+- canonical executable/source payload физически сохранён в `tooling/llm-api-bridges/yandex-wordstat/reference-1.1.5/`;
+- все `12/12` production-файлов сверены byte-exact по ожидаемым Git blob SHA с exact owner-supplied ZIP;
+- source payload commit: `b9b7f580500742e80901fe2e1c135c056cf239e4`;
+- exact uploaded ZIP: `174927` bytes, SHA-256 `a39bbe65b046ef6eac5a7890b8afd84e69550db34debf271b7c373d08a1fef1a`;
+- fresh regression после импорта: `283/283 PASS`, `0 FAIL`.
 
-Причина не скрывается: controlled Base64/Git-blob transport tests через доступный GitHub connector не прошли byte-integrity validation. Повреждённая экспериментальная ветка не является authority и не сливается в `main`.
+Предыдущие transport failures остаются provenance/evidence, но больше не являются blocker: финальный import принимался только после exact Git blob SHA validation конечных source-файлов.
 
 Authoritative provenance: `tooling/llm-api-bridges/yandex-wordstat/IMPORT_MANIFEST.md`.
-
-До `[x]`: физически сохранить проверяемый executable/source representation через канал, где результат можно сверить с canonical SHA.
 
 ### [~] 03A.3 — Полный официальный API-аудит Ozon
 

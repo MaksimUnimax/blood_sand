@@ -41,7 +41,7 @@ Fresh checks on that exact uploaded file:
 - production/shared/test layout matches the accepted 1.1.5 package;
 - fresh `npm test`: `283/283 PASS`, `0 FAIL`.
 
-This re-verification strengthens provenance but **does not by itself close roadmap 03A.2**. The current GitHub connector available to this execution environment does not expose a reliable direct binary upload path for the ZIP.
+At that checkpoint this re-verification strengthened provenance but **did not by itself close roadmap 03A.2**. The transfer path available at that moment had not yet produced a byte-verified repository source payload.
 
 ## Repository transport integrity tests — 2026-08-11
 
@@ -77,7 +77,23 @@ Therefore:
 - no staging payload is canonical until the reconstructed ZIP itself matches the canonical SHA-256;
 - no experimental branch or staging file may be merged merely because GitHub accepted the write.
 
-Roadmap 03A.2 remains `[~]` until an actual repository payload can be transferred through a channel whose reconstructed bytes verify to the canonical SHA above.
+## Repository source import closure — 2026-08-11
+
+The transport blocker was subsequently resolved without accepting any unverified staging payload. The canonical production source is now physically stored at:
+
+`tooling/llm-api-bridges/yandex-wordstat/reference-1.1.5/`
+
+Closure checks:
+
+- source payload commit on `main`: `b9b7f580500742e80901fe2e1c135c056cf239e4`;
+- `12/12` production files match the exact owner-supplied package by Git blob SHA;
+- `content_script.js`: `751777692b6c156209f52c5559060f9170d10bb1`;
+- `service_worker.js`: `6b86eb118b096c7de0a48b64628d4d04113668ff`;
+- `popup.js`: `a36993c02da6da64e00c114e76847d4a23b5cf36`;
+- exact uploaded ZIP remains `174927` bytes with SHA-256 `a39bbe65b046ef6eac5a7890b8afd84e69550db34debf271b7c373d08a1fef1a`;
+- fresh canonical `npm test` after import: `283/283 PASS`, `0 FAIL`.
+
+The repository payload is therefore accepted as the canonical executable/source representation and roadmap **03A.2 is closed `[x]`**. Earlier failed transport probes remain historical provenance only.
 
 ## Proven invariants reused as design requirements for Ozon/Wildberries
 
