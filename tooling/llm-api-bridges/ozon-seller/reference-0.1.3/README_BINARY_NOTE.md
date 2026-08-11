@@ -1,1 +1,0 @@
-Production ZIP must be stored byte-exact. The authoritative local artifact SHA-256 is fe535cbe1f34d7a1e7684346ca7cad0a71c3ff6ac1018854cde03dd26fe6c5a9. The previous binary object in this branch was not accepted because its stored size did not match the 79,343-byte artifact. This note will be replaced by a verified reference state in the same checkpoint branch.
