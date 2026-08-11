@@ -1,0 +1,46 @@
+{
+  "schema": "OZON_FINANCE_ACCRUAL_CONTRACT_FRAGMENT_V1",
+  "as_of": "2026-08-11",
+  "authority_class": "ozon_owned_notification_fragments_plus_existing_verified_registry",
+  "migration": {
+    "deprecated_methods": ["/v3/finance/transaction/list", "/v3/finance/transaction/totals"],
+    "shutdown_date": "2026-09-08",
+    "target_methods": ["/v1/finance/accrual/postings", "/v1/finance/accrual/types", "/v1/finance/accrual/by-day"],
+    "latest_target_instruction_observed": "2026-07-14"
+  },
+  "by_day": {
+    "path": "/v1/finance/accrual/by-day",
+    "request_fields_confirmed": ["date", "last_id"],
+    "response_fields_confirmed": [
+      "last_id",
+      "accruals.accrual_id",
+      "accruals.container_fees",
+      "accruals.accrued_category",
+      "accruals.posting.products.delivery.services"
+    ],
+    "field_correction": {
+      "old": "accruals.type_id",
+      "current": "accruals.accrual_id",
+      "evidence_date": "2026-06-09"
+    },
+    "delivery_services_description_refresh": "2026-07-21",
+    "continuation_model": "last_id visible; terminal semantics still pending"
+  },
+  "engineering_rules": [
+    "Do not build 03A.4 around /v3/finance/transaction/list or /totals.",
+    "Do not use the retired accruals.type_id name.",
+    "Do not auto-loop last_id until current terminal/page semantics are confirmed.",
+    "Keep posting/product reconciliation explicit until identifier semantics are verified."
+  ],
+  "still_missing": [
+    "HTTP verbs for target methods where not independently established",
+    "full request/response schemas",
+    "last_id terminal semantics and page size",
+    "date/history limits",
+    "complete accrual type/category/service taxonomy",
+    "posting/product identifier reconciliation",
+    "permissions and method-specific rate limits",
+    "settlement/payout completeness"
+  ],
+  "implementation_allowed": false
+}
