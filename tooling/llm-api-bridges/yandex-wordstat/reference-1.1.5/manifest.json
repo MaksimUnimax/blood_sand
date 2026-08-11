@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Wordstat Bridge — ChatGPT ↔ Yandex",
+  "version": "1.1.5",
+  "description": "Контролируемый мост ChatGPT ↔ Yandex Wordstat API: manual, autorun, report prefix, настраиваемый стартовый prompt и явная operator-controlled привязка к ChatGPT-диалогу, manual и autorun.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://searchapi.api.cloud.yandex.net/*"
+  ],
+  "background": {
+    "service_worker": "service_worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": [
+        "shared/conversation_identity.js",
+        "shared/wordstat_protocol.js",
+        "shared/autorun_model.js",
+        "shared/manual_controls.js",
+        "shared/composer_send.js",
+        "shared/proven_writing_block_capture.js",
+        "content_script.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Wordstat Bridge",
+    "default_popup": "popup.html"
+  }
+}
