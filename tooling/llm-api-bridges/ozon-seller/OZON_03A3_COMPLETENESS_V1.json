@@ -7,7 +7,8 @@
     "postings": "2026-08-04",
     "finance_accrual": "2026-07-30",
     "realization_reports": "2026-07-28",
-    "catalog": "2026-07-10"
+    "catalog": "2026-07-10",
+    "average_delivery_time": "retired in later 2026 Ozon announcement after 2026-03 description refresh"
   },
   "authority_files": [
     "OZON_READ_ONLY_ALLOWLIST_V1.json",
@@ -18,6 +19,7 @@
     "OZON_PRODUCT_MASTER_COVERAGE_2026-08-11.md",
     "OZON_CATEGORY_ATTRIBUTE_FRESHNESS_2026-08-11.md",
     "OZON_LOGISTICS_GEOGRAPHY_COVERAGE_2026-08-11.md",
+    "OZON_AVERAGE_DELIVERY_TIME_RETIREMENT_2026-08-11.md",
     "OZON_CONTRACT_FRAGMENT_REGISTRY_2026-08-11.json",
     "OZON_CANONICAL_OPERATION_LOCATORS_2026-08-11.json",
     "OZON_OPERATIONAL_CONSTRAINTS_2026-08-11.md",
@@ -31,10 +33,11 @@
     "Use /v2/product/pictures/info for current product-image read lineage; photo_360/images360 have been removed from current product read responses.",
     "Use canonical description-category dictionary lineage; old category tree/attribute APIs were replaced.",
     "Use /v5/product/info/prices; do not rely on removed price.marketing_price.",
-    "Use /v2/warehouse/list; /v1/warehouse/list was disabled in the 2026 migration.",
-    "Include current delivery-method/carriage layers between warehouse stock and posting outcome.",
+    "Use /v2/warehouse/list; /v1/warehouse/list is deprecated/disabled in the 2026 migration.",
+    "Use current delivery-method/carriage configuration layers, but DO NOT target /v1/analytics/average-delivery-time, /details or /summary: Ozon later fully disabled the Average Delivery Time functionality in 2026 and removed its methods from documentation; no replacement is confirmed.",
     "Use /v4/posting/fbs/list and /v4/posting/fbs/unfulfilled/list; v3 list families shut down 2026-08-31.",
     "Do not target /v3/finance/transaction/list or /totals; they shut down 2026-09-08. Future target is /v1/finance/accrual/*.",
+    "In /v1/finance/accrual/by-day, accruals.type_id was renamed to accruals.accrual_id on 2026-06-09; do not model the old name as current.",
     "Include /v2/conditional-cancellation/list as a distinct rFBS cancellation evidence layer.",
     "Seller API keys under the 2026 policy have a 6-month lifetime; /v1/roles exposes expires_at."
   ],
@@ -99,11 +102,14 @@
     {
       "id": "logistics_delivery_configuration",
       "blocking": true,
-      "status": "current_families_confirmed_contract_pending",
-      "paths": ["/v1/seller/ozon-logistics/info", "/v2/delivery-method/list", "/v2/carriage/delivery/list", "/v1/analytics/average-delivery-time", "/v1/analytics/average-delivery-time/details", "/v1/analytics/average-delivery-time/summary"],
+      "status": "current_configuration_families_confirmed_contract_pending_delivery_quality_replacement_unconfirmed",
+      "paths": ["/v1/seller/ozon-logistics/info", "/v2/delivery-method/list", "/v2/carriage/delivery/list"],
       "known_fragments": ["/v2/carriage/delivery/list request filter.delivery_method_id", "/v2/delivery-method/list is current replacement for v1"],
-      "diagnostic_role": "distinguish positive stock from missing/paused/misconfigured delivery path and degraded delivery-time evidence",
-      "remaining": ["HTTP/full contracts", "warehouse/delivery method identifiers and status", "scheme coverage FBS/rFBS/realFBS", "carriage status/date fields", "delivery-time dimensions", "pagination/history", "access/rate limits"]
+      "retired_do_not_target": ["/v1/analytics/average-delivery-time", "/v1/analytics/average-delivery-time/details", "/v1/analytics/average-delivery-time/summary"],
+      "retirement_reason": "Ozon later announced in 2026 that Average Delivery Time functionality is fully disabled and its methods are removed from documentation",
+      "replacement": "NOT_CONFIRMED",
+      "diagnostic_role": "distinguish positive stock from missing/paused/misconfigured delivery path; separate delivery-quality analytics replacement is not assumed",
+      "remaining": ["HTTP/full contracts", "warehouse/delivery method identifiers and status", "scheme coverage FBS/rFBS/realFBS", "carriage status/date fields", "pagination/history", "access/rate limits", "current replacement/alternative for delivery-quality evidence if Ozon exposes one"]
     },
     {
       "id": "orders_postings",
@@ -111,7 +117,7 @@
       "status": "current_versions_confirmed_contract_pending",
       "paths": ["/v3/posting/fbo/list", "/v3/posting/fbs/get", "/v4/posting/fbs/list", "/v4/posting/fbs/unfulfilled/list"],
       "latest_currentness": "2026-08-04",
-      "remaining": ["v4 full contracts", "date windows", "pagination", "status/cancellation semantics"]
+      "remaining": ["v4 full contracts", "date windows", "pagination", "status/cancellation semantics", "whether current posting contracts expose usable delivery-date/quality evidence"]
     },
     {
       "id": "returns_cancellations",
@@ -136,7 +142,7 @@
       "status": "migration_target_confirmed_contract_pending",
       "deprecated_shutdown_2026_09_08": ["/v3/finance/transaction/list", "/v3/finance/transaction/totals"],
       "target_paths": ["/v1/finance/accrual/postings", "/v1/finance/accrual/types", "/v1/finance/accrual/by-day"],
-      "known_by_day_fragments": {"request": ["date", "last_id"], "response": ["last_id", "accruals.container_fees", "accruals.accrued_category"]},
+      "known_by_day_fragments": {"request": ["date", "last_id"], "response": ["last_id", "accruals.container_fees", "accruals.accrued_category", "accruals.accrual_id"], "rename": "accruals.type_id → accruals.accrual_id on 2026-06-09"},
       "remaining": ["HTTP/full contracts", "last_id terminal/page semantics", "history", "posting/product reconciliation", "fee/accrual taxonomy"]
     },
     {
@@ -152,7 +158,7 @@
       "id": "advertising_performance_api",
       "blocking": true,
       "status": "official_contour_and_doc_root_confirmed_contract_pending",
-      "confirmed": ["Performance API is separate public Ozon API", "official doc root https://docs.ozon.ru/api/performance/", "Ozon-owned advertising sources recommend it for automation"],
+      "confirmed": ["Performance API is separate public Ozon API", "official doc root https://docs.ozon.ru/api/performance/", "Ozon-owned 2026 public-API migration material still includes Performance API"],
       "discovery_queue": "OZON_PERFORMANCE_DISCOVERY_QUEUE_V1.json",
       "remaining": ["Ozon-owned host/auth contract", "campaign inventory", "campaign-product mapping", "impressions/clicks/spend", "CTR/CPC/CPM", "attributed orders/revenue", "dimensions", "read-only budget/bid context", "token/report/rate/history lifecycle"]
     },
@@ -161,7 +167,7 @@
       "blocking": false,
       "status": "read_families_confirmed_contract_pending",
       "paths": ["/v1/review/list", "/v1/review/info", "/v1/review/count", "/v1/review/comment/list", "/v1/question/list", "/v1/question/info", "/v1/question/count", "/v1/question/top-sku"],
-      "remaining": ["full contracts", "pagination/access", "2026 question-family refresh"]
+      "remaining": ["full contracts", "pagination/access", "latest 2026 review/question status-model refresh"]
     },
     {
       "id": "method_level_operational_constraints",
@@ -175,10 +181,10 @@
   "primary_remaining_research_targets": [
     "extract full implementation contracts for current-confirmed Seller API P0 families",
     "resolve Product Master missing fields: title/barcodes/dimensions/current category-type placement",
-    "resolve logistics scheme coverage and delivery-time dimensions",
+    "resolve logistics scheme coverage and any current replacement/alternative for retired Average Delivery Time evidence",
     "resolve Ozon-owned Performance API host/auth/read-statistics contract",
     "extract numeric quotas, pagination/history and access restrictions",
-    "revalidate conditional-cancellation v2 currentness and /v1/analytics/stocks after 2026-08-17",
+    "revalidate /v1/analytics/stocks after 2026-08-17",
     "perform final deprecation scan immediately before 03A.4"
   ],
   "next_action": "Continue 03A.3. Do not start Ozon extension."
