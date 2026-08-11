@@ -1,0 +1,38 @@
+{
+  "schema": "OZON_FBO_SUPPLY_CONTRACT_FRAGMENT_V1",
+  "as_of": "2026-08-11",
+  "authority_class": "ozon_owned_notification_fragments",
+  "methods": [
+    {
+      "path": "/v3/supply-order/get",
+      "beta_added": "2025-09-17",
+      "moved_to_main": "2025-11-03",
+      "response_fields_confirmed": [
+        "orders.order_tags.is_pickup",
+        "orders.order_tags.seller_warehouse_id",
+        "supplies.macrolocal_cluster_id"
+      ],
+      "deprecated_response_fields": ["orders.supplies.storage_warehouse.arrival_date"]
+    },
+    {
+      "path": "/v1/supply-order/details",
+      "moved_to_main": "2026-02-02",
+      "response_fields_confirmed": ["supplies.macrolocal_cluster_id", "vehicle.value"],
+      "deprecated_response_fields": ["supplies.storage_warehouse.arrival_date"]
+    }
+  ],
+  "engineering_rules": [
+    "Use macrolocal_cluster_id as current cluster evidence where provided; do not derive current cross-dock geography solely from historical warehouse_id assumptions.",
+    "Do not require deprecated storage_warehouse.arrival_date in current supply chronology.",
+    "Do not infer complete supply lifecycle/status chronology from these field fragments."
+  ],
+  "still_missing": [
+    "HTTP verbs/full request schemas where unresolved",
+    "complete order/supply status chronology and enums",
+    "pagination/history behavior",
+    "arrival/timeslot chronology replacement for deprecated arrival_date",
+    "warehouse/cluster join semantics",
+    "permissions and method-specific quotas/errors"
+  ],
+  "implementation_allowed": false
+}
