@@ -4,6 +4,8 @@
   "closure_allowed": false,
   "extension_development_allowed": false,
   "currentness_checkpoint": {
+    "seller_api_changelog_upper_observed": "2026-08-06",
+    "delivery_checkout_quote": "2026-08-06",
     "postings": "2026-08-04",
     "finance_accrual": "2026-07-30",
     "realization_reports": "2026-07-28",
@@ -15,7 +17,9 @@
     "OZON_READ_ONLY_ALLOWLIST_V1.json",
     "OZON_IMPLEMENTATION_CONTRACT_QUEUE_V1.json",
     "OZON_PRODUCT_MASTER_CONTRACT_QUEUE_V1.json",
+    "OZON_PRODUCT_REPORT_FALLBACK_2026-08-11.md",
     "OZON_LOGISTICS_CONTRACT_QUEUE_V1.json",
+    "OZON_DELIVERY_QUOTE_PREFLIGHT_2026-08-11.md",
     "OZON_AVERAGE_DELIVERY_TIME_RETIREMENT_2026-08-11.md",
     "OZON_DELIVERY_DIAGNOSTICS_ALTERNATIVES_2026-08-11.md",
     "OZON_PRODUCT_MASTER_JOIN_EVIDENCE_V1.json",
@@ -30,78 +34,64 @@
     "OZON_PERFORMANCE_DISCOVERY_QUEUE_V1.json"
   ],
   "critical_current_corrections": [
-    "Use /v3/product/list, /v3/product/info/list and /v4/product/info/attributes as current catalog families.",
-    "SKU is an Ozon-confirmed cross-method join between /v3/product/list and /v3/product/info/list.",
-    "Use /v2/product/pictures/info for current product-image read lineage; photo_360/images360 have been removed from current product read responses.",
-    "Use canonical description-category dictionary lineage; old category tree/attribute APIs were replaced.",
+    "Current catalog target families are /v3/product/list, /v3/product/info/list and /v4/product/info/attributes; SKU is a confirmed cross-method join.",
+    "Current product images use /v2/product/pictures/info; legacy 360 fields are removed.",
     "Use /v5/product/info/prices; do not rely on removed price.marketing_price.",
-    "Use /v2/warehouse/list; /v1/warehouse/list is deprecated/disabled in the 2026 migration.",
-    "Do not target /v1/analytics/average-delivery-time, /details or /summary: Ozon later fully disabled the Average Delivery Time functionality in 2026 and removed its methods from documentation; no one-to-one replacement is confirmed.",
-    "For delivery diagnostics, current main families exist for FBS/rFBS error index and products/warehouses with FBS delivery restrictions: /v1/rating/index/fbs/info, /v1/rating/index/fbs/posting/list, /v1/warehouse/invalid-products/get, /v1/warehouse/warehouses-with-invalid-products.",
-    "Current /v3/posting/fbs/get has result.analytics_data.client_delivery_date_begin/end fragments; this is posting-level promise evidence, not aggregate Average Delivery Time analytics.",
-    "Use /v4/posting/fbs/list and /v4/posting/fbs/unfulfilled/list; v3 list families shut down 2026-08-31.",
-    "Do not target /v3/finance/transaction/list or /totals; they shut down 2026-09-08. Future target is /v1/finance/accrual/*.",
-    "In /v1/finance/accrual/by-day, accruals.type_id was renamed to accruals.accrual_id on 2026-06-09.",
-    "Include /v2/conditional-cancellation/list as a distinct rFBS cancellation evidence layer.",
-    "Seller API keys under the 2026 policy have a 6-month lifetime; /v1/roles exposes expires_at."
+    "Use /v2/warehouse/list; old warehouse/list is retired.",
+    "Average Delivery Time analytics is fully retired; its three methods are do-not-target and have no confirmed one-to-one replacement.",
+    "Current delivery diagnostics instead include FBS/rFBS error index, FBS product/warehouse delivery restrictions and FBS posting promised-delivery fields.",
+    "/v2/delivery/checkout is current through 2026-08-06 and now returns preliminary service cost in addition to preliminary delivery time; it is a conditional scenario-specific quote candidate, not automatic baseline analytics.",
+    "/v1/delivery/check requires client_phone in current evidence and therefore has a PII/manual-use gate.",
+    "Use /v4 FBS list/unfulfilled; v3 list families shut down 2026-08-31.",
+    "Finance v3 transaction list/totals shut down 2026-09-08; target /v1/finance/accrual/* and use accrual_id rather than renamed type_id.",
+    "/v1/report/products/create is a current generated-report fallback candidate, but its output columns are not proven and cannot close Product Master fields."
   ],
   "surfaces": [
     {
       "id": "auth_transport",
       "blocking": true,
       "status": "confirmed_operational_refresh_pending",
-      "confirmed": ["public API only", "api-seller.ozon.ru Seller API contour", "Client-Id + Api-Key seller credentials", "OAuth requires an Ozon application", "API key lifetime 6 months", "/v1/roles exposes expires_at"],
-      "remaining": ["current auth error taxonomy", "real-account role/key-expiry acceptance without secret leakage"]
+      "confirmed": ["public API only", "api-seller.ozon.ru contour", "Client-Id + Api-Key", "API key lifetime 6 months", "/v1/roles exposes expires_at"],
+      "remaining": ["current auth error taxonomy", "real-account role/key-expiry acceptance"]
     },
     {
       "id": "catalog_product_master",
       "blocking": true,
-      "status": "current_chain_and_join_confirmed_contract_pending",
-      "paths": ["/v3/product/list", "/v3/product/info/list", "/v4/product/info/attributes", "/v2/product/pictures/info", "/v1/description-category/tree", "/v1/description-category/attribute", "/v1/description-category/attribute/values"],
-      "confirmed_join": "sku: /v3/product/list.result.items.sku ↔ /v3/product/info/list.items.sku",
-      "canonical_operation_ids_confirmed": ["ProductAPI_GetProductListv3", "ProductAPI_GetProductInfoList", "ProductAPI_ProductInfoPicturesV2", "DescriptionCategoryAPI_GetTree", "DescriptionCategoryAPI_GetAttributes", "DescriptionCategoryAPI_GetAttributeValues"],
-      "known_read_fragments": ["product-info promotions", "showcases_visibility", "is_kgt", "pictures read contour"],
-      "not_currently_proven_fields": ["title/name on current v3 contract", "barcodes on current v3 contract", "dimensions/weight", "current description_category_id/type_id placement", "video/rich-content", "complete moderation/error state"],
-      "freshness_rule": "category/attribute dictionaries are dynamic evidence and require source/snapshot freshness",
-      "remaining": ["HTTP/full contracts", "pagination/batch limits", "complete identity/status fields", "missing master fields", "dictionary 2026 contract refresh", "permissions", "product-operation quota semantics"]
+      "status": "direct_chain_plus_generated_report_fallback_contract_pending",
+      "direct_paths": ["/v3/product/list", "/v3/product/info/list", "/v4/product/info/attributes", "/v2/product/pictures/info", "/v1/description-category/tree", "/v1/description-category/attribute", "/v1/description-category/attribute/values"],
+      "confirmed_join": "sku",
+      "generated_report_fallback": {"path": "/v1/report/products/create", "currentness": "visibility updated 2026-01-22", "output_schema": "PENDING", "automatic_creation_allowed": false},
+      "unproven_fields": ["title/name", "barcodes", "dimensions/weight", "current description_category_id/type_id placement", "video/rich-content", "complete moderation/error state"],
+      "remaining": ["full contracts", "pagination/batch limits", "missing master fields or explicit unavailable classification", "report output columns", "permissions/quota"]
     },
     {
       "id": "stocks_availability",
       "blocking": true,
       "status": "core_confirmed_warehouse_contracts_pending",
       "paths": ["POST /v4/product/info/stocks", "/v2/product/info/stocks-by-warehouse/fbs", "/v1/product/info/stocks-by-warehouse/fbo", "/v1/analytics/stocks"],
-      "known_current_fragment": "singular items.stocks.warehouseId deprecated; preserve warehouse_ids/current warehouse-level families",
-      "remaining": ["warehouse method full contracts", "history strategy", "revalidate /v1/analytics/stocks after announced real-time transition 2026-08-17"]
+      "remaining": ["warehouse full contracts", "history strategy", "revalidate /v1/analytics/stocks after 2026-08-17"]
     },
     {
       "id": "seller_product_analytics",
       "blocking": true,
       "status": "confirmed_schema_refresh_pending",
       "paths": ["POST /v1/analytics/data"],
-      "remaining": ["complete metric/dimension enum", "date/history limits", "pagination/limits", "plan restrictions"]
-    },
-    {
-      "id": "product_query_analytics",
-      "blocking": false,
-      "status": "confirmed_schema_refresh_pending",
-      "paths": ["POST /v1/analytics/product-queries", "POST /v1/analytics/product-queries/details"],
-      "remaining": ["current fields/history", "Premium restrictions"]
+      "remaining": ["current metric/dimension enum", "date/history limits", "pagination/limits", "plan restrictions"]
     },
     {
       "id": "prices_promotions",
       "blocking": true,
       "status": "current_paths_confirmed_contract_pending",
       "paths": ["/v5/product/info/prices", "/v1/product/prices/details", "/v1/seller-actions/list", "/v1/seller-actions/products/list"],
-      "known_fragments": ["/v1/product/prices/details requires skus", "v5 prices exposes marketing_actions context", "price.marketing_price removed"],
-      "remaining": ["full contracts", "complete current/old/card/marketing price semantics", "promotion participation semantics", "pagination/access", "quota semantics"]
+      "remaining": ["full contracts", "complete price semantics", "promotion participation", "pagination/access/quota"]
     },
     {
       "id": "warehouses_clusters_geography",
       "blocking": true,
-      "status": "current_paths_and_pagination_fragments_confirmed_contract_pending",
+      "status": "current_paths_and_cursor_fragments_confirmed_contract_pending",
       "paths": ["/v2/warehouse/list", "/v1/warehouse/ozon/list", "/v1/warehouse/fbo/seller/list", "/v2/cluster/list"],
-      "pagination_fragment": {"path": "/v2/warehouse/list", "request": ["limit", "cursor"], "response": ["cursor", "has_next"]},
-      "remaining": ["HTTP/full contracts", "numeric max limit", "seller/FBO/Ozon warehouse coverage", "warehouse-cluster-geography joins"]
+      "warehouse_pagination": {"request": ["limit", "cursor"], "response": ["cursor", "has_next"]},
+      "remaining": ["full contracts", "numeric limits", "warehouse-cluster joins"]
     },
     {
       "id": "logistics_delivery_diagnostics",
@@ -109,88 +99,73 @@
       "status": "current_configuration_restriction_error_families_confirmed_contract_pending",
       "configuration_paths": ["/v1/seller/ozon-logistics/info", "/v2/delivery-method/list", "/v2/carriage/delivery/list"],
       "restriction_error_paths": ["/v1/rating/index/fbs/info", "/v1/rating/index/fbs/posting/list", "/v1/warehouse/invalid-products/get", "/v1/warehouse/warehouses-with-invalid-products"],
-      "known_fragments": ["/v2/carriage/delivery/list request filter.delivery_method_id", "all four restriction/error methods moved to main 2026-02-02", "/v3/posting/fbs/get response has result.analytics_data.client_delivery_date_begin/end"],
-      "retired_do_not_target": ["/v1/analytics/average-delivery-time", "/v1/analytics/average-delivery-time/details", "/v1/analytics/average-delivery-time/summary"],
-      "aggregate_delivery_time_replacement": "NOT_CONFIRMED",
-      "diagnostic_role": "separate stock/configuration problems from FBS delivery restrictions, FBS/rFBS error-index issues and posting-level promised delivery windows",
-      "remaining": ["HTTP/full contracts", "identifier joins", "restriction/error reason taxonomies", "scheme coverage", "pagination/history", "access/rate limits", "whether any current aggregate delivery-quality API exists"]
+      "posting_promise_fragments": ["/v3/posting/fbs/get result.analytics_data.client_delivery_date_begin/end"],
+      "retired_do_not_target": ["/v1/analytics/average-delivery-time", "/details", "/summary"],
+      "conditional_manual_quote": [
+        {"path": "/v1/delivery/check", "pii_gate": true, "automatic_baseline": false},
+        {"path": "/v2/delivery/checkout", "currentness": "2026-08-06", "automatic_baseline": false, "side_effect_classification": "PENDING"}
+      ],
+      "remaining": ["full contracts", "identifier/reason taxonomies", "scheme coverage", "pagination/history", "PII/side-effect review for quote contour"]
     },
     {
       "id": "orders_postings",
       "blocking": true,
       "status": "current_versions_confirmed_contract_pending",
       "paths": ["/v3/posting/fbo/list", "/v3/posting/fbs/get", "/v4/posting/fbs/list", "/v4/posting/fbs/unfulfilled/list"],
-      "latest_currentness": "2026-08-04",
-      "known_fbs_detail_fragments": ["result.analytics_data.client_delivery_date_begin", "result.analytics_data.client_delivery_date_end"],
-      "remaining": ["v4 full contracts", "date windows", "pagination", "status/cancellation semantics", "delivery-promise semantics and joins"]
+      "remaining": ["v4 full contracts", "date windows", "pagination", "status/cancellation/delivery semantics"]
     },
     {
       "id": "returns_cancellations",
       "blocking": true,
       "status": "families_confirmed_contract_and_chronology_pending",
       "paths": ["/v1/returns/list", "/v2/returns/rfbs/list", "/v2/report/returns/create", "/v1/cancel-reason/list", "/v1/cancel-reason/list-by-order", "/v1/cancel-reason/list-by-posting", "/v1/order/cancel/status", "/v1/posting/cancel/status", "/v2/conditional-cancellation/list"],
-      "canonical_operation_ids_confirmed": ["returnsList", "ReportAPI_ReportReturnsCreate"],
-      "write_siblings_excluded": ["/v2/conditional-cancellation/approve", "/v2/conditional-cancellation/reject"],
-      "remaining": ["full contracts", "event quantities/timestamps/reasons", "FBO/FBS/rFBS coverage", "partial/conditional cancellation joins", "pagination/history", "claims/disputes if available", "2026 refresh for conditional-cancellation v2"]
+      "remaining": ["full contracts", "event quantities/timestamps/reasons", "scheme coverage", "pagination/history"]
     },
     {
       "id": "fbo_supply_replenishment",
       "blocking": true,
       "status": "confirmed_schema_refresh_pending",
       "paths": ["POST /v3/supply-order/get", "POST /v1/supply-order/details"],
-      "confirmed": ["macrolocal_cluster_id relevant for cross-dock"],
       "remaining": ["complete status chronology", "pagination/history"]
     },
     {
       "id": "finance",
       "blocking": true,
       "status": "migration_target_confirmed_contract_pending",
-      "deprecated_shutdown_2026_09_08": ["/v3/finance/transaction/list", "/v3/finance/transaction/totals"],
       "target_paths": ["/v1/finance/accrual/postings", "/v1/finance/accrual/types", "/v1/finance/accrual/by-day"],
-      "known_by_day_fragments": {"request": ["date", "last_id"], "response": ["last_id", "accruals.container_fees", "accruals.accrued_category", "accruals.accrual_id"], "rename": "accruals.type_id → accruals.accrual_id on 2026-06-09"},
-      "remaining": ["HTTP/full contracts", "last_id terminal/page semantics", "history", "posting/product reconciliation", "fee/accrual taxonomy"]
+      "known_by_day": ["date", "last_id", "accruals.container_fees", "accruals.accrued_category", "accruals.accrual_id"],
+      "remaining": ["full contracts", "last_id semantics", "history", "posting/product reconciliation", "taxonomy"]
     },
     {
       "id": "realization_reports_settlement",
       "blocking": true,
       "status": "current_paths_confirmed_contract_pending",
       "paths": ["/v2/finance/realization", "/v1/finance/realization/posting", "/v1/report/realization/posting/create", "/v1/report/list", "/v1/report/info", "/v1/report/postings/create", "/v2/report/returns/create"],
-      "known_fragments": ["report expires_at", "report postings create requires processed_at_from/to", "returns report requires filter"],
-      "architecture_rule": "create/check-info/retrieve are separate explicit operations; no hidden polling/fan-out",
-      "remaining": ["full contracts", "period/history limits", "settlement/payout coverage", "result/download content type and lifecycle"]
+      "architecture_rule": "report create/status/retrieve are separate explicit operations",
+      "remaining": ["full contracts", "period/history limits", "settlement/payout coverage", "download lifecycle"]
     },
     {
       "id": "advertising_performance_api",
       "blocking": true,
       "status": "official_contour_and_doc_root_confirmed_contract_pending",
-      "confirmed": ["Performance API is separate public Ozon API", "official doc root https://docs.ozon.ru/api/performance/", "Ozon-owned 2026 public-API migration material still includes Performance API"],
-      "discovery_queue": "OZON_PERFORMANCE_DISCOVERY_QUEUE_V1.json",
-      "remaining": ["Ozon-owned host/auth contract", "campaign inventory", "campaign-product mapping", "impressions/clicks/spend", "CTR/CPC/CPM", "attributed orders/revenue", "dimensions", "read-only budget/bid context", "token/report/rate/history lifecycle"]
+      "confirmed": ["Performance API is a public Ozon API contour", "official doc root https://docs.ozon.ru/api/performance/", "2026 Ozon public-API material still includes Performance API"],
+      "remaining": ["Ozon-owned host/auth", "campaign inventory", "campaign-product mapping", "statistics methods/metrics/dimensions", "token/report/rate/history/access lifecycle"]
     },
     {
       "id": "reviews_questions",
       "blocking": false,
       "status": "read_families_confirmed_contract_pending",
       "paths": ["/v1/review/list", "/v1/review/info", "/v1/review/count", "/v1/review/comment/list", "/v1/question/list", "/v1/question/info", "/v1/question/count", "/v1/question/top-sku"],
-      "remaining": ["full contracts", "pagination/access", "latest 2026 review/question status-model refresh"]
+      "remaining": ["full contracts", "pagination/access", "2026 refresh"]
     },
     {
       "id": "method_level_operational_constraints",
       "blocking": true,
       "status": "partial_evidence_contract_pending",
-      "confirmed": ["API key lifetime 6 months", "last explicit Ozon notification general rate evidence: 50 requests/s per Client ID", "unified product-operation limit model exists", "/v4/product/info/limit exposes operation_limits", "generated report expiry exposed", "finance by-day exposes last_id"],
-      "remaining": ["HTTP verbs where not established", "full schemas", "numeric product-operation quotas/reset buckets", "page-size/cursor terminal rules", "history windows", "method-specific limits", "roles/scopes/subscription restrictions", "JSON/binary report behavior", "current error taxonomy", "final pre-coding deprecation scan"]
+      "confirmed": ["API key lifetime 6 months", "last explicit general rate evidence 50 req/s per Client ID", "product-operation limit model", "report expiry", "finance last_id"],
+      "remaining": ["HTTP verbs", "full schemas", "numeric quotas", "page-size/cursor terminal rules", "history windows", "method-specific limits", "roles/scopes/subscriptions", "error taxonomy", "final deprecation scan"]
     }
   ],
   "blocking_not_closed": ["auth_transport", "catalog_product_master", "stocks_availability", "seller_product_analytics", "prices_promotions", "warehouses_clusters_geography", "logistics_delivery_diagnostics", "orders_postings", "returns_cancellations", "fbo_supply_replenishment", "finance", "realization_reports_settlement", "advertising_performance_api", "method_level_operational_constraints"],
-  "primary_remaining_research_targets": [
-    "extract full implementation contracts for current-confirmed Seller API P0 families",
-    "resolve Product Master missing fields: title/barcodes/dimensions/current category-type placement",
-    "extract full contracts and identifier/reason semantics for delivery restrictions and FBS/rFBS error-index methods",
-    "resolve Ozon-owned Performance API host/auth/read-statistics contract",
-    "extract numeric quotas, pagination/history and access restrictions",
-    "revalidate /v1/analytics/stocks after 2026-08-17",
-    "perform final deprecation scan immediately before 03A.4"
-  ],
   "next_action": "Continue 03A.3. Do not start Ozon extension."
 }
