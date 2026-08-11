@@ -119,7 +119,7 @@ Review read family has 2026 currentness; question family exists but needs 2026 a
 - last explicit Ozon notification evidence for provider-wide rate is **50 requests/s across all methods per Client ID** (2025-05-22), with common rate-limit error documented 2025-06-05; no later general-rate change was found in the 2026 notification search, but this is **not hardcoded forever** — revalidate before coding;
 - from 2026-02-24 Ozon has a unified product-operation limit model;
 - `/v4/product/info/limit` exposes `operation_limits`, while numeric bucket/reset semantics remain pending;
-- required-field fragments: `/v1/product/prices/details.sk us` is `skus` required; `/v2/report/returns/create.filter` required; `/v1/report/postings/create.filter.processed_at_from/to` required;
+- required-field fragments: `/v1/product/prices/details` requires `skus`; `/v2/report/returns/create` requires `filter`; `/v1/report/postings/create` requires `filter.processed_at_from` and `filter.processed_at_to`;
 - `/v1/analytics/stocks` announced real-time switch on **2026-08-17**; revalidate after that date before implementation.
 
 No unknown quota/page-size value is guessed.
