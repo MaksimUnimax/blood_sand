@@ -7,7 +7,8 @@
     "Only anchors visible in Ozon-owned notification evidence are recorded.",
     "An operation anchor confirms the canonical locator/name association, not HTTP verb/full schema/current limits.",
     "Do not reuse an older-version operation anchor for a newer path unless Ozon explicitly links the newer path to that anchor.",
-    "Interactive docs redirect failure does not invalidate the anchor, but it keeps full_contract=false."
+    "Interactive docs redirect failure does not invalidate the anchor, but it keeps full_contract=false.",
+    "A canonical replacement anchor may be recorded even when a fresh 2026 method-content update is still pending; currentness and locator authority are separate dimensions."
   ],
   "locators": [
     {
@@ -24,6 +25,38 @@
       "canonical_locator": "https://docs.ozon.ru/api/seller/#operation/ProductAPI_GetProductInfoList",
       "evidence_event": "2024-12-17 beta introduction / 2025-02-17 migration from /v2/product/info/list",
       "currentness_crosscheck": "path updated again 2026-07-10",
+      "full_contract": false
+    },
+    {
+      "path": "/v2/product/pictures/info",
+      "operation_id": "ProductAPI_ProductInfoPicturesV2",
+      "canonical_locator": "https://docs.ozon.ru/api/seller/#operation/ProductAPI_ProductInfoPicturesV2",
+      "evidence_event": "2024-12-11 v2 beta introduction and replacement target for deprecated /v1/product/pictures/info; v1 removed 2025-02-10",
+      "currentness_crosscheck": "items.photo_360 removed from v2 response in 2026-06-09 documentation update",
+      "full_contract": false
+    },
+    {
+      "path": "/v1/description-category/tree",
+      "operation_id": "DescriptionCategoryAPI_GetTree",
+      "canonical_locator": "https://docs.ozon.ru/api/seller/#operation/DescriptionCategoryAPI_GetTree",
+      "evidence_event": "2024-03 old /v2/category/tree removed from documentation and redirected to /v1/description-category/tree",
+      "currentness_crosscheck": "description-category contour remains active in 2026 via /v1/description-category/tips; direct 2026 tree-method refresh still pending",
+      "full_contract": false
+    },
+    {
+      "path": "/v1/description-category/attribute",
+      "operation_id": "DescriptionCategoryAPI_GetAttributes",
+      "canonical_locator": "https://docs.ozon.ru/api/seller/#operation/DescriptionCategoryAPI_GetAttributes",
+      "evidence_event": "2024-03 old /v3/category/attribute removed from documentation and redirected to /v1/description-category/attribute",
+      "currentness_crosscheck": "family canonical; direct 2026 method refresh pending",
+      "full_contract": false
+    },
+    {
+      "path": "/v1/description-category/attribute/values",
+      "operation_id": "DescriptionCategoryAPI_GetAttributeValues",
+      "canonical_locator": "https://docs.ozon.ru/api/seller/#operation/DescriptionCategoryAPI_GetAttributeValues",
+      "evidence_event": "2024-03 old /v2/category/attribute/values removed from documentation and redirected to /v1/description-category/attribute/values",
+      "currentness_crosscheck": "family canonical; direct 2026 method refresh pending",
       "full_contract": false
     },
     {
