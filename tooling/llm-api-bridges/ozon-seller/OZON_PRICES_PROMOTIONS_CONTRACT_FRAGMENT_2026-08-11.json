@@ -1,0 +1,54 @@
+{
+  "schema": "OZON_PRICES_PROMOTIONS_CONTRACT_FRAGMENT_V1",
+  "as_of": "2026-08-11",
+  "authority_class": "ozon_owned_notification_fragments",
+  "price_methods": [
+    {
+      "path": "/v5/product/info/prices",
+      "currentness": "current family",
+      "response_fields_confirmed": [
+        "items.marketing_actions",
+        "items.marketing_actions.actions",
+        "items.marketing_actions.actions.date_from",
+        "items.marketing_actions.actions.date_to",
+        "items.marketing_actions.actions.title",
+        "items.marketing_actions.actions.value"
+      ],
+      "latest_field_description_refresh": "2026-05-28",
+      "retired_do_not_use": ["price.marketing_price"]
+    },
+    {
+      "path": "/v1/product/prices/details",
+      "purpose_confirmed": "detailed product price information",
+      "beta_added": "2026-01-15",
+      "moved_to_main": "2026-03-04"
+    }
+  ],
+  "seller_action_read_methods": [
+    {
+      "path": "/v1/seller-actions/list",
+      "beta_added": "2026-03-02",
+      "main_promotion_in_accessible_ozon_owned_index": "NOT_FOUND"
+    },
+    {
+      "path": "/v1/seller-actions/products/list",
+      "beta_added": "2026-03-02",
+      "main_promotion_in_accessible_ozon_owned_index": "NOT_FOUND"
+    }
+  ],
+  "engineering_rules": [
+    "Do not use removed price.marketing_price in current price logic.",
+    "Treat seller-actions read methods as beta/currentness-pending until an Ozon-owned main-promotion or current method contract is recovered.",
+    "Do not infer promotion participation semantics solely from marketing_actions field names; current complete response contract remains required."
+  ],
+  "still_missing": [
+    "HTTP verbs/full request schemas where unresolved",
+    "complete current price field semantics",
+    "pagination/batch limits",
+    "seller-actions current beta/main status revalidation",
+    "seller-actions response schemas and participation semantics",
+    "roles/subscription restrictions",
+    "method-specific quotas and errors"
+  ],
+  "implementation_allowed": false
+}
