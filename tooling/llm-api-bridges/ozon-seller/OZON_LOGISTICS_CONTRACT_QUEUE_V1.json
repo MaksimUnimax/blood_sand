@@ -1,0 +1,86 @@
+{
+  "schema": "OZON_LOGISTICS_CONTRACT_QUEUE_V1",
+  "as_of": "2026-08-11",
+  "purpose": "P0/P1 contract queue for seller logistics, delivery methods, carriages and delivery-time diagnostics",
+  "implementation_allowed": false,
+  "operations": [
+    {
+      "id": "seller_ozon_logistics_info",
+      "priority": "P0_account_logistics_state",
+      "path": "/v1/seller/ozon-logistics/info",
+      "currentness": "beta_added_2025-11-11; moved_to_main_2025-12-30; current method announced again 2026-03-24",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["request shape", "connection/status fields", "scheme coverage", "permissions", "rate limit"]
+    },
+    {
+      "id": "seller_delivery_methods",
+      "priority": "P0_warehouse_delivery_configuration",
+      "path": "/v2/delivery-method/list",
+      "currentness": "beta_added_2025-12-02; moved_to_main_2026-02-02; current replacement for v1 by 2026-04-07",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "known_business_meaning": "list delivery methods associated with a warehouse; English Ozon notification describes realFBS warehouse context",
+      "must_extract": ["warehouse identifier/filter", "delivery_method_id", "delivery type/name/status", "scheme coverage FBS/rFBS/realFBS", "pagination", "permissions", "rate limit"]
+    },
+    {
+      "id": "delivery_carriage_list",
+      "priority": "P0_delivery_shipment_configuration",
+      "path": "/v2/carriage/delivery/list",
+      "currentness": "beta_added_2025-12-02; moved_to_main_2026-02-02; replaces old v1 carriage methods",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "known_request_fields": ["filter.delivery_method_id"],
+      "must_extract": ["full filters", "carriage/shipping ids", "status/date/timeslot fields", "pagination/history", "scheme coverage", "permissions", "rate limit"]
+    },
+    {
+      "id": "average_delivery_time",
+      "priority": "P1_delivery_quality_diagnostics",
+      "path": "/v1/analytics/average-delivery-time",
+      "currentness": "moved_to_main_2025-11; family descriptions updated again 2026-03",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["date window", "dimensions", "region/cluster/warehouse fields", "delivery-time metric semantics", "pagination", "plan/access restrictions", "rate limit"]
+    },
+    {
+      "id": "average_delivery_time_details",
+      "priority": "P1_delivery_quality_diagnostics",
+      "path": "/v1/analytics/average-delivery-time/details",
+      "currentness": "moved_to_main_2025-11; family descriptions updated again 2026-03",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["detail dimensions", "date window", "region/cluster/product identifiers", "pagination", "plan/access restrictions", "rate limit"]
+    },
+    {
+      "id": "average_delivery_time_summary",
+      "priority": "P1_delivery_quality_diagnostics",
+      "path": "/v1/analytics/average-delivery-time/summary",
+      "currentness": "moved_to_main_2025-11; family descriptions updated again 2026-03",
+      "http_verb": "PENDING",
+      "full_contract": false,
+      "must_extract": ["summary metrics", "date window", "dimensions", "plan/access restrictions", "rate limit"]
+    }
+  ],
+  "confirmed_identity_relations": [
+    "warehouse_id and delivery_method_id are distinct identifiers used together in current Ozon logistics workflows",
+    "/v2/carriage/delivery/list request supports filter.delivery_method_id",
+    "/v2/delivery-method/list is the current replacement for old /v1/delivery-method/list"
+  ],
+  "deprecated_do_not_target": [
+    {"path": "/v1/delivery-method/list", "replacement": "/v2/delivery-method/list", "final_current_state": "deprecated/disabled in 2026 migration"},
+    {"path": "/v1/posting/carriage-available/list", "replacement": "/v2/carriage/delivery/list", "status": "deprecated"},
+    {"path": "/v1/carriage/delivery/list", "replacement": "/v2/carriage/delivery/list", "status": "deprecated"}
+  ],
+  "diagnostic_dependency_graph": [
+    "seller logistics connection",
+    "seller warehouse status",
+    "SKU stock by warehouse",
+    "warehouse delivery method",
+    "carriage/shipment availability",
+    "cluster/geography",
+    "delivery-time analytics",
+    "posting/order outcome"
+  ],
+  "bridge_rule": "The dependency graph does not authorize automatic fan-out. Each read request and each pagination step must be an explicit controlled provider operation.",
+  "completion_rule": "Logistics diagnostics surface is not implementation-ready until every selected target has Ozon-owned full contract, scheme coverage and operational limits."
+}
