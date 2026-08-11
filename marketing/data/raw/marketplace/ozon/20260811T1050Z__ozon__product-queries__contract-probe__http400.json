@@ -1,0 +1,39 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.1",
+  "request_id": "95b863b1-9860-43be-b42c-28c34f5cc395",
+  "operation": "product_queries",
+  "command": {
+    "operation": "product_queries",
+    "fingerprint": "b0f2d398"
+  },
+  "request_meta": {
+    "provider": "ozon",
+    "host_alias": "seller_api",
+    "http_method": "POST",
+    "path_alias": "product_queries"
+  },
+  "request_params": {
+    "date_from": "2026-07-12T00:00:00Z",
+    "date_to": "2026-08-08T23:59:59Z",
+    "page": 1,
+    "page_size": 100,
+    "skus": [],
+    "sort_by": "BY_SEARCHES",
+    "sort_dir": "DESCENDING"
+  },
+  "http_status": 400,
+  "elapsed_ms": 187,
+  "pagination": null,
+  "rate_limit": null,
+  "result": {
+    "error": {
+      "http_status": 400,
+      "code": "3",
+      "message": "Ozon API request failed. Provider error text is withheld from LLM output; inspect local sanitized diagnostics."
+    }
+  },
+  "technical_status": "FAILED_CONTRACT_PROBE",
+  "technical_note": "The attempted product_queries request was rejected with HTTP 400 / provider code 3. No automatic retry was performed. Exact provider validation text is withheld by bridge, so no assumption is made about which request field was invalid.",
+  "business_interpretation": null
+}
