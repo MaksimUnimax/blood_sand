@@ -1,125 +1,166 @@
 {
-  "schema_version": "1.3-research",
+  "schema_version": "1.4-research",
   "provider": "ozon",
   "generated_at": "2026-08-11",
-  "artifact_role": "research_capability_candidates",
+  "artifact_role": "research_read_candidate_registry",
   "implementation_status": "not_started",
   "extension_exists": false,
+  "implementation_allowed": false,
   "verification_policy": {
     "implementation_contract_authority": "current Ozon-owned method documentation containing HTTP verb, request/response contract and operational constraints",
-    "currentness_deprecation_authority": "current dev.ozon.ru evidence plus verified @OzonSellerAPI changelog linking to Seller API documentation",
+    "currentness_deprecation_authority": "current dev.ozon.ru evidence plus verified Ozon Seller API notification changelog linking to Seller API documentation",
     "third_party_sources": "discovery_only",
-    "rule": "current path evidence alone is not implementation-ready confirmation"
+    "rule": "current path evidence or canonical operation locator alone is not implementation-ready confirmation"
   },
   "transport": {
     "seller_api_base_host_evidence": "https://api-seller.ozon.ru",
     "credential_headers": ["Client-Id", "Api-Key"],
-    "credentials_storage": "local_extension_only",
+    "credential_storage_requirement": "local_extension_only",
+    "api_key_lifetime_evidence": "6 months under 2026 policy",
     "public_api_only": true,
     "scraping_fallback_allowed": false
   },
-  "future_bridge_invariants": {
+  "bridge_invariants": {
     "read_only_initial_scope": true,
     "one_explicit_command_one_external_request": true,
     "hidden_retry": false,
-    "hidden_pagination_fanout": false,
+    "hidden_unbounded_pagination": false,
+    "hidden_fanout": false,
     "arbitrary_url": false,
-    "credentials_in_llm_payload": false
+    "credentials_in_llm_payload": false,
+    "generated_report_steps_explicit": true
   },
   "methods_with_separate_http_contract_evidence": [
-    {"method": "POST", "path": "/v4/product/info/stocks", "purpose": ["stock", "fbo_fbs_split", "warehouse_ids"]},
-    {"method": "POST", "path": "/v1/analytics/data", "purpose": ["shows", "sessions", "conversion", "revenue", "returns_aggregate", "ordered_units"]},
-    {"method": "POST", "path": "/v1/analytics/product-queries", "purpose": ["own_product_query_analytics"]},
-    {"method": "POST", "path": "/v1/analytics/product-queries/details", "purpose": ["own_product_query_details"]},
-    {"method": "POST", "path": "/v3/posting/fbo/list", "purpose": ["fbo_postings"]},
-    {"method": "POST", "path": "/v3/posting/fbs/get", "purpose": ["fbs_posting_detail", "product_price_reconciliation"]},
-    {"method": "POST", "path": "/v3/supply-order/get", "purpose": ["fbo_supply"]},
-    {"method": "POST", "path": "/v1/supply-order/details", "purpose": ["fbo_supply_details"]}
+    {"method": "POST", "path": "/v4/product/info/stocks", "purpose": ["current stock", "FBO/FBS split", "warehouse_ids"]},
+    {"method": "POST", "path": "/v1/analytics/data", "purpose": ["shows", "sessions", "conversion", "revenue", "returns aggregate", "ordered_units"]},
+    {"method": "POST", "path": "/v1/analytics/product-queries", "purpose": ["own-product search-query analytics"]},
+    {"method": "POST", "path": "/v1/analytics/product-queries/details", "purpose": ["own-product query details"]},
+    {"method": "POST", "path": "/v3/posting/fbo/list", "purpose": ["FBO postings"]},
+    {"method": "POST", "path": "/v3/posting/fbs/get", "purpose": ["FBS posting detail", "product-price reconciliation"]},
+    {"method": "POST", "path": "/v3/supply-order/get", "purpose": ["FBO supply"]},
+    {"method": "POST", "path": "/v1/supply-order/details", "purpose": ["FBO supply details"]}
   ],
   "current_paths_pending_full_contract": {
-    "catalog_product_master": [
-      {"path": "/v3/product/list", "currentness": "2026-07-09", "known_change": ["filter.skus", "result.items.sku"]},
-      {"path": "/v3/product/info/list", "currentness": "2026-07-10", "known_change": ["items.showcases_visibility", "items.images360 removed"]},
-      {"path": "/v4/product/info/attributes", "currentness": "2026-02-10", "known_change": ["filter.visibility description"]}
+    "product_master": [
+      {"path": "/v3/product/list", "currentness": "2026-07-09", "canonical_operation_id": "ProductAPI_GetProductListv3", "known": ["request filter.skus", "response result.items.sku"]},
+      {"path": "/v3/product/info/list", "currentness": "2026-07-10", "canonical_operation_id": "ProductAPI_GetProductInfoList", "known": ["items.sku", "items.promotions", "items.showcases_visibility", "items.is_kgt"], "removed": ["items.images360"]},
+      {"path": "/v4/product/info/attributes", "currentness": "current family visible 2026-02-10"},
+      {"path": "/v2/product/pictures/info", "currentness": "updated 2026-06-09", "canonical_operation_id": "ProductAPI_ProductInfoPicturesV2", "removed": ["items.photo_360"]},
+      {"path": "/v1/description-category/tree", "currentness": "official canonical lineage; direct 2026 method refresh pending", "canonical_operation_id": "DescriptionCategoryAPI_GetTree"},
+      {"path": "/v1/description-category/attribute", "currentness": "official canonical lineage; direct 2026 method refresh pending", "canonical_operation_id": "DescriptionCategoryAPI_GetAttributes"},
+      {"path": "/v1/description-category/attribute/values", "currentness": "official canonical lineage; direct 2026 method refresh pending", "canonical_operation_id": "DescriptionCategoryAPI_GetAttributeValues"},
+      {"path": "/v4/product/info/limit", "currentness": "updated 2026-07-10", "canonical_operation_id": "ProductAPI_GetUploadQuota", "known": ["response operation_limits"]}
     ],
     "prices_promotions": [
-      {"path": "/v5/product/info/prices", "currentness": "2026-05-28", "known_change": ["items.marketing_actions", "action date/title/value fields"]},
-      {"path": "/v1/product/prices/details", "currentness": "main_since_2026-03-04"},
-      {"path": "/v1/seller-actions/list", "currentness": "beta_visible_2026-03"},
-      {"path": "/v1/seller-actions/products/list", "currentness": "beta_visible_2026-03"}
+      {"path": "/v5/product/info/prices", "currentness": "2026-05-28", "known": ["items.marketing_actions", "actions.date_from", "actions.date_to", "actions.title", "actions.value"], "removed": ["price.marketing_price"]},
+      {"path": "/v1/product/prices/details", "currentness": "main since 2026-03-04", "known_required": ["skus"]},
+      {"path": "/v1/seller-actions/list", "currentness": "beta visible 2026-03"},
+      {"path": "/v1/seller-actions/products/list", "currentness": "beta visible 2026-03"}
     ],
-    "warehouses_clusters_geography": [
-      {"path": "/v2/warehouse/list", "currentness": "active_2026-04-07", "replaces": "/v1/warehouse/list"},
-      {"path": "/v1/warehouse/ozon/list", "currentness": "beta_since_2026-03-12"},
-      {"path": "/v1/warehouse/fbo/seller/list", "currentness": "beta_since_2026-01-16"},
-      {"path": "/v2/cluster/list", "currentness": "main_since_2026-06-01"},
-      {"path": "/v2/product/info/stocks-by-warehouse/fbs", "currentness": "replacement_active_2026-04-07"},
-      {"path": "/v1/product/info/stocks-by-warehouse/fbo", "currentness": "new_method_announced_2026-07"},
-      {"path": "/v1/analytics/stocks", "currentness": "real_time_from_2026-08-17"}
+    "warehouses_stock_geography": [
+      {"path": "/v2/warehouse/list", "currentness": "current replacement in 2026", "known_request": ["limit", "cursor"], "known_response": ["cursor", "has_next", "warehouses.pause_at"]},
+      {"path": "/v1/warehouse/ozon/list", "currentness": "beta since 2026-03-12"},
+      {"path": "/v1/warehouse/fbo/seller/list", "currentness": "main since 2026-03-02"},
+      {"path": "/v2/cluster/list", "currentness": "main since 2026-06-01"},
+      {"path": "/v2/product/info/stocks-by-warehouse/fbs", "currentness": "replacement active 2026-04-07"},
+      {"path": "/v1/product/info/stocks-by-warehouse/fbo", "currentness": "new family announced 2026-07"},
+      {"path": "/v1/analytics/stocks", "currentness": "main; real-time switch announced for 2026-08-17"}
+    ],
+    "logistics_delivery": [
+      {"path": "/v1/seller/ozon-logistics/info", "currentness": "main since 2025-12-30; announced again 2026-03-24"},
+      {"path": "/v2/delivery-method/list", "currentness": "main since 2026-02-02; current replacement for v1", "business_meaning": "delivery methods associated with warehouse logistics; exact scheme coverage pending"},
+      {"path": "/v2/carriage/delivery/list", "currentness": "main since 2026-02-02", "known_request": ["filter.delivery_method_id"]},
+      {"path": "/v1/analytics/average-delivery-time", "currentness": "main since 2025-11; descriptions refreshed 2026-03"},
+      {"path": "/v1/analytics/average-delivery-time/details", "currentness": "main since 2025-11; descriptions refreshed 2026-03"},
+      {"path": "/v1/analytics/average-delivery-time/summary", "currentness": "main since 2025-11; descriptions refreshed 2026-03"}
     ],
     "orders_postings": [
-      {"path": "/v3/posting/fbo/list", "currentness": "updated_2026-08-04"},
-      {"path": "/v3/posting/fbs/get", "currentness": "updated_2026-08-04"},
-      {"path": "/v4/posting/fbs/list", "currentness": "updated_2026-08-04", "replaces": "/v3/posting/fbs/list"},
-      {"path": "/v4/posting/fbs/unfulfilled/list", "currentness": "updated_2026-08-04", "replaces": "/v3/posting/fbs/unfulfilled/list"}
+      {"path": "/v3/posting/fbo/list", "currentness": "updated 2026-08-04"},
+      {"path": "/v3/posting/fbs/get", "currentness": "updated 2026-08-04"},
+      {"path": "/v4/posting/fbs/list", "currentness": "updated 2026-08-04", "replaces": "/v3/posting/fbs/list"},
+      {"path": "/v4/posting/fbs/unfulfilled/list", "currentness": "updated 2026-08-04", "replaces": "/v3/posting/fbs/unfulfilled/list"}
     ],
     "returns_cancellations": [
-      {"path": "/v1/returns/list", "currentness": "active_2025-11-20_refresh_2026_pending"},
-      {"path": "/v2/returns/rfbs/list", "currentness": "active_2025-12-26_refresh_2026_pending"},
-      {"path": "/v2/report/returns/create", "currentness": "documented_2026-02-12", "known_constraint": "filter required"},
-      {"path": "/v1/cancel-reason/list", "currentness": "updated_2025-12-30"},
-      {"path": "/v1/cancel-reason/list-by-order", "currentness": "updated_2025-12-30"},
-      {"path": "/v1/cancel-reason/list-by-posting", "currentness": "updated_2025-12-30"},
-      {"path": "/v1/order/cancel/status", "currentness": "updated_2026-07-09"},
-      {"path": "/v1/posting/cancel/status", "currentness": "updated_2026-07-09"}
+      {"path": "/v1/returns/list", "currentness": "active late 2025; 2026 contract refresh pending", "canonical_operation_id": "returnsList", "known": ["filter.compensation_status_id", "returns.compensation_status"]},
+      {"path": "/v2/returns/rfbs/list", "currentness": "active late 2025; 2026 contract refresh pending"},
+      {"path": "/v2/report/returns/create", "currentness": "documented 2026-02-12", "canonical_operation_id": "ReportAPI_ReportReturnsCreate", "known_required": ["filter"]},
+      {"path": "/v1/cancel-reason/list", "currentness": "updated 2025-12-30"},
+      {"path": "/v1/cancel-reason/list-by-order", "currentness": "updated 2025-12-30"},
+      {"path": "/v1/cancel-reason/list-by-posting", "currentness": "updated 2025-12-30"},
+      {"path": "/v1/order/cancel/status", "currentness": "updated 2026-07-09"},
+      {"path": "/v1/posting/cancel/status", "currentness": "updated 2026-07-09"},
+      {"path": "/v2/conditional-cancellation/list", "currentness": "main since 2025-06-03; v1 removed in favour of v2 2025-09-03", "business_meaning": "rFBS conditional cancellation applications"}
     ],
     "finance_current_target": [
-      {"path": "/v1/finance/accrual/postings", "currentness": "replacement_announced_2026-07-14"},
-      {"path": "/v1/finance/accrual/types", "currentness": "replacement_announced_2026-07-14"},
-      {"path": "/v1/finance/accrual/by-day", "currentness": "updated_2026-07-30", "known_change": ["request date", "request last_id", "response accruals.container_fees", "response accruals.accrued_category", "response last_id"]}
+      {"path": "/v1/finance/accrual/postings", "currentness": "replacement announced 2026-07-14"},
+      {"path": "/v1/finance/accrual/types", "currentness": "replacement announced 2026-07-14"},
+      {"path": "/v1/finance/accrual/by-day", "currentness": "updated 2026-07-30", "known_request": ["date", "last_id"], "known_response": ["last_id", "accruals.container_fees", "accruals.accrued_category"]}
     ],
     "realization_reports": [
-      {"path": "/v2/finance/realization", "currentness": "updated_2025-12-25_refresh_2026_pending"},
-      {"path": "/v1/finance/realization/posting", "currentness": "updated_2026-07-28"},
-      {"path": "/v1/report/realization/posting/create", "currentness": "beta_added_2026-07-28", "purpose": "order_level_realization_report"},
-      {"path": "/v1/report/list", "currentness": "updated_2026-07-28", "known_change": "result.reports.additional_data"},
-      {"path": "/v1/report/info", "currentness": "updated_2026-07-28", "known_change": "result.additional_data"},
-      {"path": "/v1/report/postings/create", "currentness": "documented_2026-02-12"}
+      {"path": "/v2/finance/realization", "currentness": "updated 2025-12-25; 2026 refresh pending"},
+      {"path": "/v1/finance/realization/posting", "currentness": "updated 2026-07-28"},
+      {"path": "/v1/report/realization/posting/create", "currentness": "beta added 2026-07-28"},
+      {"path": "/v1/report/list", "currentness": "updated 2026-07-28", "known_response": ["result.reports.additional_data", "result.reports.expires_at"]},
+      {"path": "/v1/report/info", "currentness": "updated 2026-07-28", "canonical_operation_id": "ReportAPI_ReportInfo", "known_response": ["result.additional_data", "result.expires_at"]},
+      {"path": "/v1/report/postings/create", "currentness": "documented 2026-02-12", "known_required": ["filter.processed_at_from", "filter.processed_at_to"]}
     ],
     "reviews_questions": [
-      {"path": "/v1/review/list", "currentness": "updated_2026-03-31"},
-      {"path": "/v1/review/info", "currentness": "updated_2026-03-31"},
-      {"path": "/v1/review/count", "currentness": "updated_2026-03-31"},
-      {"path": "/v1/review/comment/list", "currentness": "updated_2026-03-31"},
-      {"path": "/v1/question/list", "currentness": "updated_2025-09-18_refresh_2026_pending"},
-      {"path": "/v1/question/info", "currentness": "family_confirmed_refresh_pending"},
-      {"path": "/v1/question/count", "currentness": "family_confirmed_refresh_pending"},
-      {"path": "/v1/question/top-sku", "currentness": "family_confirmed_refresh_pending"}
+      {"path": "/v1/review/list", "currentness": "updated 2026-03-31"},
+      {"path": "/v1/review/info", "currentness": "updated 2026-03-31"},
+      {"path": "/v1/review/count", "currentness": "updated 2026-03-31"},
+      {"path": "/v1/review/comment/list", "currentness": "updated 2026-03-31"},
+      {"path": "/v1/question/list", "currentness": "updated 2025-09-18; 2026 refresh pending"},
+      {"path": "/v1/question/info", "currentness": "family confirmed; refresh pending"},
+      {"path": "/v1/question/count", "currentness": "family confirmed; refresh pending"},
+      {"path": "/v1/question/top-sku", "currentness": "family confirmed; refresh pending"}
     ]
   },
-  "deprecated_or_disabled_do_not_target_03A4": [
-    {"path": "/v1/warehouse/list", "status": "disabled_2026-04-07", "replacement": "/v2/warehouse/list"},
-    {"path": "/v1/product/info/stocks-by-warehouse/fbs", "status": "disabled_2026-04-07", "replacement": "/v2/product/info/stocks-by-warehouse/fbs"},
-    {"path": "/v2/posting/fbo/list", "status": "shutdown_2026-08-31", "replacement": "/v3/posting/fbo/list"},
-    {"path": "/v3/posting/fbs/list", "status": "shutdown_2026-08-31", "replacement": "/v4/posting/fbs/list"},
-    {"path": "/v3/posting/fbs/unfulfilled/list", "status": "shutdown_2026-08-31", "replacement": "/v4/posting/fbs/unfulfilled/list"},
-    {"path": "/v3/finance/transaction/list", "status": "shutdown_2026-09-08", "replacement": ["/v1/finance/accrual/postings", "/v1/finance/accrual/types", "/v1/finance/accrual/by-day"]},
-    {"path": "/v3/finance/transaction/totals", "status": "shutdown_2026-09-08", "replacement": ["/v1/finance/accrual/postings", "/v1/finance/accrual/types", "/v1/finance/accrual/by-day"]}
+  "confirmed_cross_method_identity": [
+    {"key": "sku", "left": "/v3/product/list.result.items.sku", "right": "/v3/product/info/list.items.sku"}
   ],
-  "unresolved_blocking_surface": {
-    "id": "advertising_performance_api",
-    "status": "pending",
-    "confirmed": ["Performance API exists as a separate public Ozon API contour", "dev.ozon.ru exposes an API advertising-platform category"],
-    "missing": ["current host/auth", "campaign list/status/type", "campaign-product mapping", "impressions/clicks/spend", "CTR/CPC/CPM", "attributed orders/revenue", "query/placement/category/region dimensions", "read-only budget/bid context"]
+  "fields_not_yet_proven_in_current_product_read_contract": [
+    "title/name",
+    "barcodes on current v3 bulk info",
+    "dimensions/weight",
+    "current description_category_id/type_id placement in v4 attributes",
+    "video/rich-content",
+    "complete moderation/error state"
+  ],
+  "deprecated_or_disabled_do_not_target_03A4": [
+    {"path": "/v1/warehouse/list", "replacement": "/v2/warehouse/list"},
+    {"path": "/v1/product/info/stocks-by-warehouse/fbs", "replacement": "/v2/product/info/stocks-by-warehouse/fbs"},
+    {"path": "/v1/delivery-method/list", "replacement": "/v2/delivery-method/list"},
+    {"path": "/v1/posting/carriage-available/list", "replacement": "/v2/carriage/delivery/list"},
+    {"path": "/v1/carriage/delivery/list", "replacement": "/v2/carriage/delivery/list"},
+    {"path": "/v2/posting/fbo/list", "shutdown": "2026-08-31", "replacement": "/v3/posting/fbo/list"},
+    {"path": "/v3/posting/fbs/list", "shutdown": "2026-08-31", "replacement": "/v4/posting/fbs/list"},
+    {"path": "/v3/posting/fbs/unfulfilled/list", "shutdown": "2026-08-31", "replacement": "/v4/posting/fbs/unfulfilled/list"},
+    {"path": "/v3/finance/transaction/list", "shutdown": "2026-09-08", "replacement": ["/v1/finance/accrual/postings", "/v1/finance/accrual/types", "/v1/finance/accrual/by-day"]},
+    {"path": "/v3/finance/transaction/totals", "shutdown": "2026-09-08", "replacement": ["/v1/finance/accrual/postings", "/v1/finance/accrual/types", "/v1/finance/accrual/by-day"]},
+    {"path": "/v1/conditional-cancellation/list", "replacement": "/v2/conditional-cancellation/list"},
+    {"path": "/v1/conditional-cancellation/get", "replacement": "/v2/conditional-cancellation/list or current v2 family subject to full contract"}
+  ],
+  "operational_evidence": {
+    "general_rate_last_explicit_notification": "50 requests/second across all methods per Client ID; must be revalidated before coding",
+    "product_operation_limit_model": "exists; /v4/product/info/limit exposes operation_limits; numeric bucket/reset semantics pending",
+    "generated_report_rule": "create/status-info/retrieve are separate explicit operations; no hidden polling",
+    "category_attribute_freshness": "dynamic; Ozon announced automated change-notification mechanisms in 2026, exact feed contract pending"
+  },
+  "performance_api": {
+    "status": "official_contour_and_doc_root_confirmed_contract_pending",
+    "official_doc_root": "https://docs.ozon.ru/api/performance/",
+    "candidate_registry": "OZON_PERFORMANCE_DISCOVERY_QUEUE_V1.json",
+    "candidate_promotion_allowed": false,
+    "missing": ["Ozon-owned current host/auth", "campaign inventory", "campaign-product mapping", "statistics methods/metrics/dimensions", "token/report lifecycle", "rate/history/access restrictions"]
   },
   "global_contract_gaps_before_coding": [
     "HTTP verbs where not independently confirmed",
     "complete request/response schemas",
-    "pagination/cursor/page-size",
+    "pagination/cursor/page-size/batch limits",
     "history/date windows",
-    "rate limits/quotas",
-    "account/scopes/subscription restrictions",
-    "final deprecation check immediately before implementation"
+    "current rate/quota semantics",
+    "roles/scopes/account/subscription restrictions",
+    "final deprecation scan immediately before implementation"
   ],
-  "coding_gate": "03A.4 must remain NOT STARTED until blocking implementation contracts and Performance API read surface are verified."
+  "coding_gate": "03A.4 must remain NOT STARTED until selected P0 operations have full Ozon-owned contracts and the Performance API read surface is verified."
 }
