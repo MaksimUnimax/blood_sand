@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.4-research",
+  "schema_version": "1.5-research",
   "provider": "ozon",
   "generated_at": "2026-08-11",
   "artifact_role": "research_read_candidate_registry",
@@ -69,10 +69,7 @@
     "logistics_delivery": [
       {"path": "/v1/seller/ozon-logistics/info", "currentness": "main since 2025-12-30; announced again 2026-03-24"},
       {"path": "/v2/delivery-method/list", "currentness": "main since 2026-02-02; current replacement for v1", "business_meaning": "delivery methods associated with warehouse logistics; exact scheme coverage pending"},
-      {"path": "/v2/carriage/delivery/list", "currentness": "main since 2026-02-02", "known_request": ["filter.delivery_method_id"]},
-      {"path": "/v1/analytics/average-delivery-time", "currentness": "main since 2025-11; descriptions refreshed 2026-03"},
-      {"path": "/v1/analytics/average-delivery-time/details", "currentness": "main since 2025-11; descriptions refreshed 2026-03"},
-      {"path": "/v1/analytics/average-delivery-time/summary", "currentness": "main since 2025-11; descriptions refreshed 2026-03"}
+      {"path": "/v2/carriage/delivery/list", "currentness": "main since 2026-02-02", "known_request": ["filter.delivery_method_id"]}
     ],
     "orders_postings": [
       {"path": "/v3/posting/fbo/list", "currentness": "updated 2026-08-04"},
@@ -94,7 +91,7 @@
     "finance_current_target": [
       {"path": "/v1/finance/accrual/postings", "currentness": "replacement announced 2026-07-14"},
       {"path": "/v1/finance/accrual/types", "currentness": "replacement announced 2026-07-14"},
-      {"path": "/v1/finance/accrual/by-day", "currentness": "updated 2026-07-30", "known_request": ["date", "last_id"], "known_response": ["last_id", "accruals.container_fees", "accruals.accrued_category"]}
+      {"path": "/v1/finance/accrual/by-day", "currentness": "updated 2026-07-30", "known_request": ["date", "last_id"], "known_response": ["last_id", "accruals.container_fees", "accruals.accrued_category", "accruals.accrual_id"], "removed_or_renamed": ["accruals.type_id renamed to accruals.accrual_id on 2026-06-09"]}
     ],
     "realization_reports": [
       {"path": "/v2/finance/realization", "currentness": "updated 2025-12-25; 2026 refresh pending"},
@@ -132,6 +129,9 @@
     {"path": "/v1/delivery-method/list", "replacement": "/v2/delivery-method/list"},
     {"path": "/v1/posting/carriage-available/list", "replacement": "/v2/carriage/delivery/list"},
     {"path": "/v1/carriage/delivery/list", "replacement": "/v2/carriage/delivery/list"},
+    {"path": "/v1/analytics/average-delivery-time", "status": "feature_fully_disabled_2026", "replacement": "NOT_CONFIRMED"},
+    {"path": "/v1/analytics/average-delivery-time/details", "status": "feature_fully_disabled_2026", "replacement": "NOT_CONFIRMED"},
+    {"path": "/v1/analytics/average-delivery-time/summary", "status": "feature_fully_disabled_2026", "replacement": "NOT_CONFIRMED"},
     {"path": "/v2/posting/fbo/list", "shutdown": "2026-08-31", "replacement": "/v3/posting/fbo/list"},
     {"path": "/v3/posting/fbs/list", "shutdown": "2026-08-31", "replacement": "/v4/posting/fbs/list"},
     {"path": "/v3/posting/fbs/unfulfilled/list", "shutdown": "2026-08-31", "replacement": "/v4/posting/fbs/unfulfilled/list"},
@@ -144,7 +144,8 @@
     "general_rate_last_explicit_notification": "50 requests/second across all methods per Client ID; must be revalidated before coding",
     "product_operation_limit_model": "exists; /v4/product/info/limit exposes operation_limits; numeric bucket/reset semantics pending",
     "generated_report_rule": "create/status-info/retrieve are separate explicit operations; no hidden polling",
-    "category_attribute_freshness": "dynamic; Ozon announced automated change-notification mechanisms in 2026, exact feed contract pending"
+    "category_attribute_freshness": "dynamic; Ozon announced automated change-notification mechanisms in 2026, exact feed contract pending",
+    "average_delivery_time_feature": "fully disabled in 2026; its three analytics methods are do-not-target; no replacement confirmed"
   },
   "performance_api": {
     "status": "official_contour_and_doc_root_confirmed_contract_pending",
