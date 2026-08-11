@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.6-research",
+  "schema_version": "1.7-research",
   "provider": "ozon",
   "generated_at": "2026-08-11",
   "artifact_role": "research_read_candidate_registry",
@@ -28,7 +28,8 @@
     "hidden_fanout": false,
     "arbitrary_url": false,
     "credentials_in_llm_payload": false,
-    "generated_report_steps_explicit": true
+    "generated_report_steps_explicit": true,
+    "customer_pii_in_llm_result_or_logs": false
   },
   "methods_with_separate_http_contract_evidence": [
     {"method": "POST", "path": "/v4/product/info/stocks", "purpose": ["current stock", "FBO/FBS split", "warehouse_ids"]},
@@ -36,7 +37,7 @@
     {"method": "POST", "path": "/v1/analytics/product-queries", "purpose": ["own-product search-query analytics"]},
     {"method": "POST", "path": "/v1/analytics/product-queries/details", "purpose": ["own-product query details"]},
     {"method": "POST", "path": "/v3/posting/fbo/list", "purpose": ["FBO postings"]},
-    {"method": "POST", "path": "/v3/posting/fbs/get", "purpose": ["FBS posting detail", "product-price reconciliation", "posting promised-delivery window where current fields apply"]},
+    {"method": "POST", "path": "/v3/posting/fbs/get", "purpose": ["FBS posting detail", "product-price reconciliation", "posting promised-delivery window"]},
     {"method": "POST", "path": "/v3/supply-order/get", "purpose": ["FBO supply"]},
     {"method": "POST", "path": "/v1/supply-order/details", "purpose": ["FBO supply details"]}
   ],
@@ -68,7 +69,7 @@
     ],
     "logistics_delivery_configuration": [
       {"path": "/v1/seller/ozon-logistics/info", "currentness": "main since 2025-12-30; announced again 2026-03-24"},
-      {"path": "/v2/delivery-method/list", "currentness": "main since 2026-02-02; current replacement for v1", "business_meaning": "delivery methods associated with warehouse logistics; exact scheme coverage pending"},
+      {"path": "/v2/delivery-method/list", "currentness": "main since 2026-02-02; current replacement for v1"},
       {"path": "/v2/carriage/delivery/list", "currentness": "main since 2026-02-02", "known_request": ["filter.delivery_method_id"]}
     ],
     "delivery_restrictions_and_error_index": [
@@ -92,7 +93,7 @@
       {"path": "/v1/cancel-reason/list-by-posting", "currentness": "updated 2025-12-30"},
       {"path": "/v1/order/cancel/status", "currentness": "updated 2026-07-09"},
       {"path": "/v1/posting/cancel/status", "currentness": "updated 2026-07-09"},
-      {"path": "/v2/conditional-cancellation/list", "currentness": "main since 2025-06-03; v1 removed in favour of v2 2025-09-03", "business_meaning": "rFBS conditional cancellation applications"}
+      {"path": "/v2/conditional-cancellation/list", "currentness": "main since 2025-06-03; v1 removed in favour of v2 2025-09-03"}
     ],
     "finance_current_target": [
       {"path": "/v1/finance/accrual/postings", "currentness": "replacement announced 2026-07-14"},
@@ -118,6 +119,39 @@
       {"path": "/v1/question/top-sku", "currentness": "family confirmed; 2026 refresh pending"}
     ]
   },
+  "generated_report_fallback_candidates": [
+    {
+      "path": "/v1/report/products/create",
+      "role": "Product Master alternate/fallback extraction route only",
+      "currentness": "visibility request parameter updated 2026-01-22",
+      "known_request": ["visibility"],
+      "canonical_operation_id": "PENDING",
+      "report_type": "PENDING",
+      "output_schema": "PENDING",
+      "does_not_close_fields": ["title/name", "offer/article", "product/listing ids", "barcodes", "dimensions/weight", "category/type", "moderation/error state", "price", "stock"],
+      "automatic_creation_allowed": false,
+      "execution_rule": "report create, status/info and retrieval are separate explicit operations; no hidden polling"
+    }
+  ],
+  "conditional_manual_delivery_quote_candidates": [
+    {
+      "path": "/v1/delivery/check",
+      "currentness": "client_phone marked required 2026-02-12",
+      "automatic_baseline_allowed": false,
+      "pii_gate_required": true,
+      "side_effect_classification": "PENDING",
+      "full_contract": false
+    },
+    {
+      "path": "/v2/delivery/checkout",
+      "currentness": "error body updated 2026-07-09; preliminary service cost added alongside preliminary delivery time 2026-08-06",
+      "role": "scenario-specific prospective delivery options/time/cost quote before order creation",
+      "automatic_baseline_allowed": false,
+      "pii_and_context_review_required": true,
+      "side_effect_classification": "PENDING",
+      "full_contract": false
+    }
+  ],
   "confirmed_cross_method_identity": [
     {"key": "sku", "left": "/v3/product/list.result.items.sku", "right": "/v3/product/info/list.items.sku"}
   ],
@@ -146,13 +180,15 @@
     {"path": "/v1/conditional-cancellation/list", "replacement": "/v2/conditional-cancellation/list"},
     {"path": "/v1/conditional-cancellation/get", "replacement": "/v2/conditional-cancellation/list or current v2 family subject to full contract"}
   ],
+  "explicit_mutations_outside_initial_scope": ["/v2/order/create", "campaign/bid/budget mutations", "return/cancellation approval/reject mutations"],
   "operational_evidence": {
     "general_rate_last_explicit_notification": "50 requests/second across all methods per Client ID; must be revalidated before coding",
     "product_operation_limit_model": "exists; /v4/product/info/limit exposes operation_limits; numeric bucket/reset semantics pending",
     "generated_report_rule": "create/status-info/retrieve are separate explicit operations; no hidden polling",
     "category_attribute_freshness": "dynamic; Ozon announced automated change-notification mechanisms in 2026, exact feed contract pending",
-    "average_delivery_time_feature": "fully disabled in 2026; its three analytics methods are do-not-target; no one-to-one replacement confirmed",
-    "delivery_diagnostics_after_retirement": "current main families exist for FBS/rFBS error index and FBS product/warehouse delivery restrictions; FBS posting detail has promised-delivery date fields"
+    "average_delivery_time_feature": "fully disabled in 2026; no one-to-one replacement confirmed",
+    "delivery_diagnostics_after_retirement": "current main families exist for FBS/rFBS error index and FBS product/warehouse delivery restrictions; FBS posting detail has promised-delivery fields",
+    "delivery_checkout_currentness": "updated 2026-08-06 with preliminary service cost in addition to preliminary delivery time"
   },
   "performance_api": {
     "status": "official_contour_and_doc_root_confirmed_contract_pending",
@@ -168,6 +204,7 @@
     "history/date windows",
     "current rate/quota semantics",
     "roles/scopes/account/subscription restrictions",
+    "side-effect/PII classification for conditional delivery check/checkout",
     "final deprecation scan immediately before implementation"
   ],
   "coding_gate": "03A.4 must remain NOT STARTED until selected P0 operations have full Ozon-owned contracts and the Performance API read surface is verified."
