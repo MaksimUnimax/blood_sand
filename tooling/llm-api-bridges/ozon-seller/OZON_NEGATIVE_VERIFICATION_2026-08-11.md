@@ -1,119 +1,131 @@
 # Ozon Seller API — negative verification pass — 2026-08-11
 
-Статус: **RESEARCH EVIDENCE — НЕ endpoint allowlist**
+Статус: **HISTORICAL RESEARCH EVIDENCE — PARTIALLY SUPERSEDED LATER THE SAME DAY**
 
-Цель: зафиксировать не только найденные подтверждения, но и точный отрицательный результат поиска current official evidence. Это защищает будущую реализацию от подмены official provenance сторонними SDK, зеркалами и памятью о старых версиях API.
+> **Priority note:** этот документ фиксирует результат раннего прохода, когда поиск current evidence выполнялся через индексируемые `dev.ozon.ru` / interactive-library surfaces и не находил ряд exact paths. Позднее в тот же research cycle был найден верифицированный `Ozon Seller API notification` changelog, который ссылается на Seller API documentation и дал более свежий currentness/deprecation evidence. При конфликте статусов приоритет имеют:
+>
+> 1. `OZON_OFFICIAL_NOTIFICATION_CURRENTNESS_2026-08-11.md`;
+> 2. `OZON_READ_ONLY_ALLOWLIST_V1.json` current version;
+> 3. `OZON_03A3_COMPLETENESS_V1.json` current version.
+>
+> В частности, ранние `NOT CONFIRMED` для `/v3/product/list`, `/v3/product/info/list`, `/v4/product/info/attributes`, `/v5/product/info/prices`, warehouse/return/report families **больше нельзя читать как текущий статус существования path family**. Changelog позже подтвердил current families. При этом full implementation contracts всё ещё pending.
+
+Цель этого файла теперь — сохранить воспроизводимость отрицательного поиска и показать, почему отсутствие результата в одном official-domain search channel нельзя трактовать как отсутствие метода.
 
 ## Правило интерпретации
 
-`NOT CONFIRMED` здесь означает: в текущем проходе не удалось получить достаточное подтверждение exact current method/path/schema из официальной поверхности Ozon (`dev.ozon.ru` / official Seller API library).
+`NOT CONFIRMED AT THIS PASS` означает: на момент данного раннего прохода не удалось получить достаточное подтверждение exact current method/path/schema через использованную поверхность.
 
-Это **не означает**, что метода не существует. Это означает, что его нельзя переносить в `OZON_READ_ONLY_ALLOWLIST_V1.json`, provider code или acceptance registry до official confirmation.
+Это никогда не означало «метода не существует». Последующий changelog-pass как раз подтвердил это различие.
 
-## 1. Exact product/catalog candidates — NOT CONFIRMED
+## 1. Catalog / product candidates — ранний отрицательный результат, позже superseded по currentness
 
-Были выполнены отдельные official-domain searches как по exact candidate paths, так и по русским названиям capability для полного каталога продавца.
-
-Не получено current official exact confirmation для:
+Ранние exact searches не дали current official results для:
 
 - `/v3/product/list`;
 - `/v3/product/info/list`;
 - `/v4/product/info/attributes`;
 - `/v5/product/info/prices`.
 
-Также не найден current official exact replacement/version, который можно было бы безопасно записать вместо них.
+**Later correction:** verified Ozon Seller API notification changelog затем подтвердил current activity:
 
-Discovery-хинты из сторонних SDK/collections продолжают показывать похожие families, но они остаются только hints.
+- `/v3/product/list` — изменение 2026-07-09;
+- `/v3/product/info/list` — изменение 2026-07-10;
+- `/v4/product/info/attributes` — изменение 2026-02-10;
+- `/v5/product/info/prices` — изменение 2026-05-28.
 
-**Disposition:** catalog/product master и prices остаются blocking surfaces roadmap 03A.3.
+Следовательно ранний negative result полезен только как evidence ограниченности search surface. Current status смотрите в currentness/allowlist artifacts.
 
-## 2. Official library remains inaccessible from research runtime
+## 2. Official interactive library remains inaccessible from research runtime
 
-Попытка открыть:
+Попытки открыть:
 
 - `https://docs.ozon.ru/api/seller/`
 
-снова приводит к redirect/error loop в доступной research environment.
+продолжают приводить к redirect/error loop в текущей research environment.
 
-Из-за этого в текущем проходе нельзя достоверно снять:
+Из-за этого даже после подтверждения current path families всё ещё нельзя достоверно снять из library:
 
-- request/response schemas;
-- pagination/cursor/page-size semantics;
-- date/history windows;
+- полный request/response contract;
+- HTTP verb там, где он не подтверждён отдельно;
+- pagination/cursor/page-size;
+- history/date windows;
 - quotas/rate limits;
-- account/Premium restrictions;
-- deprecation/replacement notices
-
-для blocking method families.
+- roles/scopes/subscription restrictions;
+- complete error/deprecation details.
 
 Это не даёт права заменять library сторонним зеркалом.
 
-## 3. Current 2026 activity that IS officially visible
+## 3. Current 2026 activity already visible on `dev.ozon.ru`
 
-Current official Seller API community page за май 2026 подтверждает активную интеграционную жизнь следующих already-known families:
+До changelog-pass официальный Seller API community уже подтверждал активную интеграционную жизнь:
 
-- `/v1/analytics/data` — вопрос о семантике `session_view`, 2026-05-22;
-- `/v3/supply-order/get` — вопрос о warehouse fields, 2026-05-19;
-- `/v3/posting/fbo/list` — вопрос о filters, 2026-05-14.
-
-На той же official surface 2026-05-26 есть отдельный кейс `Частичная отмена FBS - как определить через API`.
+- `/v1/analytics/data` — current 2026 discussion;
+- `/v3/supply-order/get` — current 2026 discussion;
+- `/v3/posting/fbo/list` — current 2026 discussion;
+- отдельный кейс `Частичная отмена FBS - как определить через API` от 2026-05-26.
 
 Source:
 
 - `https://dev.ozon.ru/community?category_id=2&page=4`
 
-**Interpretation:** эти записи поддерживают current relevance already-confirmed families и доказывают, что cancellation detection — реальная текущая integration need. Они не дают exact cancellation endpoint/schema.
+Это поддерживало current relevance, но не давало полного contract.
 
-## 4. Seller promotions — capability current, read endpoints still NOT CONFIRMED
+## 4. Seller promotions — ранняя capability evidence, позже exact families стали видимы
 
-Official topic 2026-02-27 по `/v1/seller-actions/products/add` содержит ответ менеджера Ozon: методы управления собственными акциями работают, документация находится в library в разделе `БЕТА-МЕТОДЫ → Акции продавца`.
+Official topic 2026-02-27 по `/v1/seller-actions/products/add` подтверждал, что seller-actions API работает и documented under `БЕТА-МЕТОДЫ → Акции продавца`.
 
 Source:
 
 - `https://dev.ozon.ru/community/1942-v1-seller-actions-products-add-404-poka/`
 
-Это подтверждает current seller-actions capability, но не подтверждает нужные проекту read-only list/detail/product-participation methods.
+Later notification evidence показал read-family paths `/v1/seller-actions/list` и `/v1/seller-actions/products/list`.
 
-**Disposition:** promotions capability = `CONFIRMED ACTIVE`; exact read surface = `PENDING`.
+Current status: **path family visible/current; full read contract pending**.
 
-## 5. Historical official leads deliberately NOT promoted
+## 5. Historical official paths still must not be promoted automatically
 
-Официальные community materials более старых лет содержат исторические paths, которые полезны только как verification leads:
+Этот вывод не superseded и остаётся обязательным.
 
-- `/v1/finance/realization` встречается в community material 2023;
-- `/v2/category/attribute/values` встречается в community material 2023;
-- старый stock example 2023 использует `/v3/product/info/stocks`, тогда как current 2025 official evidence уже подтверждает `/v4/product/info/stocks`.
+Примеры:
 
-Source examples:
+- старый `/v3/product/info/stocks` уже вытеснен current `/v4/product/info/stocks`;
+- `/v1/warehouse/list` позже официально отключён и заменён `/v2/warehouse/list`;
+- `/v3/finance/transaction/list` теперь официально deprecated и запланирован к отключению 2026-09-08.
 
-- `https://dev.ozon.ru/community?page=72`
-- `https://dev.ozon.ru/case/98-Keis-o-novom-instrumente-dlia-kontrolia-tovarnykh-ostatkov-na-sklade/`
+Следствие: наличие path на official domain в старой статье ≠ current implementation target.
 
-**Disposition:** старые paths не считаются current только потому, что они находятся на официальном домене. Для каждого нужен fresh current confirmation или replacement notice.
+## 6. Advertising API — отрицательный результат НЕ superseded
 
-## 6. Advertising API — contour visible, exact read surface unresolved
+Здесь ранний вывод по-прежнему актуален.
 
-Official community навигация явно содержит отдельную категорию `API рекламной платформы`, а historical official community material показывает campaign/product API calls. Однако найденный конкретный пример относится к mutation ставки и не подтверждает требуемую read-only statistics surface.
+Ozon-owned surfaces подтверждают отдельный `API рекламной платформы` / Performance API contour, но исследование пока не получило current Ozon-owned method contract для требуемых read-only данных:
 
-Source examples:
+- campaign list/status/type;
+- campaign→product mapping;
+- impressions/clicks/spend;
+- CTR/CPC/CPM;
+- attributed orders/revenue;
+- query/placement/category/region dimensions;
+- read-only budget/bid context;
+- current host/auth.
 
-- `https://dev.ozon.ru/community?category_id=2&page=4`
-- `https://dev.ozon.ru/community/1110-Stavka-ne-vkhodit-v-diapazon-dopustimykh-znachenii/`
+Mutation examples и сторонние Performance API integrations не являются authority для initial read-only bridge.
 
-**Disposition:** существование отдельного advertising API contour сохраняется как confirmed capability, но current host/auth/campaign list/product mapping/statistics endpoints и schemas остаются `PENDING`. Mutation endpoints не входят в initial bridge scope.
+Status: **PENDING / BLOCKING**.
 
-## 7. Result for roadmap 03A.3
+## 7. Research lesson / current disposition
 
-Этот проход **не закрывает** 03A.3. Он уменьшает риск неверной реализации тем, что явно фиксирует, какие правдоподобные endpoint names не имеют достаточного current official provenance.
+Этот файл не является current allowlist и не должен использоваться как implementation source.
 
-Остаются blocking gaps:
+Его полезный вывод:
 
-1. seller product enumeration + canonical product info;
-2. current price semantics + read-only promotion state;
-3. warehouses/clusters/geography dictionaries;
-4. returns/cancellations/reasons/statuses;
-5. realization/reports/settlement;
-6. advertising exact read API;
-7. per-method pagination/history/limits/access restrictions.
+- negative search result фиксирует предел конкретного канала поиска, а не отсутствие API;
+- currentness/deprecation нужно проверять отдельным Ozon-owned evidence stream;
+- full implementation contract всё равно требует authoritative method documentation;
+- third-party SDK/collections не закрывают пробел.
 
-`03A.4 — Ozon browser extension` остаётся **НЕ НАЧАТО**.
+Roadmap остаётся:
+
+- `03A.3` = **IN PROGRESS**;
+- `03A.4 Ozon extension` = **NOT STARTED**.
