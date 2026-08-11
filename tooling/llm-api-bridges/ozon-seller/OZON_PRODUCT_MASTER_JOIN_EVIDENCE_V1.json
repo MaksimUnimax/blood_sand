@@ -1,0 +1,96 @@
+{
+  "schema": "OZON_PRODUCT_MASTER_JOIN_EVIDENCE_V1",
+  "as_of": "2026-08-11",
+  "purpose": "Only Ozon-owned evidence for identifiers and cross-method joins usable by the future Product/SKU master. Expected-but-unverified fields are kept separate.",
+  "implementation_ready": false,
+  "confirmed_joins": [
+    {
+      "join_key": "sku",
+      "left": {
+        "path": "/v3/product/list",
+        "field": "result.items.sku",
+        "currentness": "added 2026-07-09"
+      },
+      "right": {
+        "path": "/v3/product/info/list",
+        "field": "items.sku",
+        "currentness": "added 2025-08-14; method current through 2026-07-10"
+      },
+      "status": "confirmed_cross_method_identifier",
+      "engineering_use": "Enumeration results can be joined to bulk product-info records by Ozon SKU where both responses expose the field. Preserve seller offer/article and product identifiers separately when current contract confirms them; do not collapse identity to SKU only."
+    }
+  ],
+  "confirmed_product_info_fragments": [
+    {
+      "path": "/v3/product/info/list",
+      "fields": ["items.sku", "items.promotions", "items.promotions.is_enabled", "items.promotions.type", "items.showcases_visibility", "items.is_kgt"],
+      "currentness_notes": [
+        "sku and promotions fields added 2025-08-14",
+        "is_kgt description updated 2026-02-26",
+        "showcases_visibility added 2026-04-06",
+        "images360 removed 2026-07-10"
+      ],
+      "engineering_use": [
+        "SKU identity",
+        "listing/storefront visibility context",
+        "listing-level promotion context",
+        "large-item classification context"
+      ]
+    },
+    {
+      "path": "/v3/product/list",
+      "fields": ["filter.skus", "result.items.sku"],
+      "currentness_notes": ["both added 2026-07-09"],
+      "engineering_use": ["SKU-based enumeration/filtering", "identity seed"]
+    },
+    {
+      "path": "/v2/product/pictures/info",
+      "fields_removed": ["items.photo_360"],
+      "currentness_notes": ["photo_360 removed 2026-06-09/July documentation stream"],
+      "engineering_use": ["ordinary product-image read contour remains current; 360-degree media must not be promised from this family"]
+    }
+  ],
+  "category_type_lineage": {
+    "official_dictionary_chain": [
+      "/v1/description-category/tree",
+      "/v1/description-category/attribute",
+      "/v1/description-category/attribute/values"
+    ],
+    "canonical_operation_ids": [
+      "DescriptionCategoryAPI_GetTree",
+      "DescriptionCategoryAPI_GetAttributes",
+      "DescriptionCategoryAPI_GetAttributeValues"
+    ],
+    "migration_evidence": [
+      "description_category_id replaced old category_id semantics in product/category workflow",
+      "type_id was added to product attributes lineage in 2024",
+      "old /v2/category/tree, /v3/category/attribute and /v2/category/attribute/values were removed in favour of description-category methods"
+    ],
+    "freshness": "canonical lineage confirmed; direct 2026 tree/attribute/values currentness refresh pending",
+    "warning": "Do not assume historical description_category_id/type_id field placement survives unchanged in current /v4/product/info/attributes without full current schema."
+  },
+  "not_currently_proven_on_v3_product_info_list": [
+    {
+      "field_class": "barcodes",
+      "reason": "Ozon notification confirms barcodes on old /v2/product/info and /v2/product/info/list lineage, but the current indexed pass did not confirm barcodes on /v3/product/info/list."
+    },
+    {
+      "field_class": "title/name",
+      "reason": "Current v3 notification evidence did not explicitly expose the response field name; mutation /v3/product/import name evidence is not sufficient for read-contract promotion."
+    },
+    {
+      "field_class": "dimensions/weight",
+      "reason": "No current v3 product-info response fragment found in the indexed Ozon-owned changelog pass."
+    },
+    {
+      "field_class": "description_category_id/type_id current v4 placement",
+      "reason": "Historical lineage establishes the identifiers, but the current /v4/product/info/attributes contract is still inaccessible."
+    },
+    {
+      "field_class": "video/rich_content",
+      "reason": "No current read-contract fragment verified in this pass."
+    }
+  ],
+  "identity_model_rule": "Future Product/SKU master must preserve all distinct identifiers returned by current contracts (seller offer/article, Ozon product/listing id, SKU, description_category_id, type_id) rather than coercing them into one id column.",
+  "next_action": "Extract full current /v3/product/info/list and /v4/product/info/attributes contracts from Ozon-owned documentation; verify barcode/title/dimensions/category/type/media fields before coding."
+}
