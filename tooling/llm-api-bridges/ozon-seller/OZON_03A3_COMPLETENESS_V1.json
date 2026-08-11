@@ -11,6 +11,7 @@
     "realization_reports": "2026-07-28",
     "catalog": "2026-07-10",
     "delivery_restriction_error_index": "main since 2026-02-02",
+    "fbs_error_index_business_semantics": "transition effective 2026-08-12",
     "average_delivery_time": "retired in later 2026 Ozon announcement"
   },
   "authority_files": [
@@ -22,16 +23,19 @@
     "OZON_DELIVERY_QUOTE_PREFLIGHT_2026-08-11.md",
     "OZON_AVERAGE_DELIVERY_TIME_RETIREMENT_2026-08-11.md",
     "OZON_DELIVERY_DIAGNOSTICS_ALTERNATIVES_2026-08-11.md",
+    "OZON_FBS_ERROR_INDEX_TRANSITION_2026-08-12.md",
     "OZON_PRODUCT_MASTER_JOIN_EVIDENCE_V1.json",
     "OZON_PRODUCT_MASTER_COVERAGE_2026-08-11.md",
     "OZON_CATEGORY_ATTRIBUTE_FRESHNESS_2026-08-11.md",
     "OZON_LOGISTICS_GEOGRAPHY_COVERAGE_2026-08-11.md",
     "OZON_CONTRACT_FRAGMENT_REGISTRY_2026-08-11.json",
+    "OZON_ANALYTICS_DATA_CONTRACT_FRAGMENT_2026-08-11.json",
     "OZON_CANONICAL_OPERATION_LOCATORS_2026-08-11.json",
     "OZON_OPERATIONAL_CONSTRAINTS_2026-08-11.md",
     "OZON_OFFICIAL_NOTIFICATION_CURRENTNESS_2026-08-11.md",
     "OZON_PERFORMANCE_API_GAP_2026-08-11.md",
-    "OZON_PERFORMANCE_DISCOVERY_QUEUE_V1.json"
+    "OZON_PERFORMANCE_DISCOVERY_QUEUE_V1.json",
+    "OZON_PERFORMANCE_EXACT_PROBE_PASS_2026-08-11.md"
   ],
   "critical_current_corrections": [
     "Current catalog target families are /v3/product/list, /v3/product/info/list and /v4/product/info/attributes; SKU is a confirmed cross-method join.",
@@ -40,6 +44,7 @@
     "Use /v2/warehouse/list; old warehouse/list is retired.",
     "Average Delivery Time analytics is fully retired; its three methods are do-not-target and have no confirmed one-to-one replacement.",
     "Current delivery diagnostics instead include FBS/rFBS error index, FBS product/warehouse delivery restrictions and FBS posting promised-delivery fields.",
+    "From 2026-08-12 Ozon Marketplace announces overdue FBS shipments will enter the error-index calculation; interpretation must be date-aware and the API contract must be revalidated after the transition becomes effective.",
     "/v2/delivery/checkout is current through 2026-08-06 and now returns preliminary service cost in addition to preliminary delivery time; it is a conditional scenario-specific quote candidate, not automatic baseline analytics.",
     "/v1/delivery/check requires client_phone in current evidence and therefore has a PII/manual-use gate.",
     "Use /v4 FBS list/unfulfilled; v3 list families shut down 2026-08-31.",
@@ -74,9 +79,15 @@
     {
       "id": "seller_product_analytics",
       "blocking": true,
-      "status": "confirmed_schema_refresh_pending",
+      "status": "partial_contract_confirmed_schema_refresh_pending",
       "paths": ["POST /v1/analytics/data"],
-      "remaining": ["current metric/dimension enum", "date/history limits", "pagination/limits", "plan restrictions"]
+      "confirmed_fragment": {
+        "request_fields": ["date_from", "date_to", "metrics", "dimension", "sort", "limit", "offset"],
+        "observed_metrics": ["ordered_units", "returns"],
+        "observed_dimension": ["sku"],
+        "response_traversal": ["result.data[]", "result.data[].dimensions[0].id", "result.data[].metrics[]"]
+      },
+      "remaining": ["current metric/dimension enum", "date/history limits", "pagination/limit terminal semantics", "plan restrictions", "complete response/error contract"]
     },
     {
       "id": "prices_promotions",
@@ -100,12 +111,13 @@
       "configuration_paths": ["/v1/seller/ozon-logistics/info", "/v2/delivery-method/list", "/v2/carriage/delivery/list"],
       "restriction_error_paths": ["/v1/rating/index/fbs/info", "/v1/rating/index/fbs/posting/list", "/v1/warehouse/invalid-products/get", "/v1/warehouse/warehouses-with-invalid-products"],
       "posting_promise_fragments": ["/v3/posting/fbs/get result.analytics_data.client_delivery_date_begin/end"],
+      "business_semantics_transition": {"effective": "2026-08-12", "change": "overdue FBS shipments enter error-index calculation", "revalidation_required_after_effective_date": true},
       "retired_do_not_target": ["/v1/analytics/average-delivery-time", "/details", "/summary"],
       "conditional_manual_quote": [
         {"path": "/v1/delivery/check", "pii_gate": true, "automatic_baseline": false},
         {"path": "/v2/delivery/checkout", "currentness": "2026-08-06", "automatic_baseline": false, "side_effect_classification": "PENDING"}
       ],
-      "remaining": ["full contracts", "identifier/reason taxonomies", "scheme coverage", "pagination/history", "PII/side-effect review for quote contour"]
+      "remaining": ["full contracts", "identifier/reason taxonomies", "scheme coverage", "pagination/history", "PII/side-effect review for quote contour", "post-2026-08-12 error-index API revalidation"]
     },
     {
       "id": "orders_postings",
@@ -147,9 +159,9 @@
     {
       "id": "advertising_performance_api",
       "blocking": true,
-      "status": "official_contour_and_doc_root_confirmed_contract_pending",
-      "confirmed": ["Performance API is a public Ozon API contour", "official doc root https://docs.ozon.ru/api/performance/", "2026 Ozon public-API material still includes Performance API"],
-      "remaining": ["Ozon-owned host/auth", "campaign inventory", "campaign-product mapping", "statistics methods/metrics/dimensions", "token/report/rate/history/access lifecycle"]
+      "status": "official_contour_and_current_training_locator_confirmed_contract_pending",
+      "confirmed": ["Performance API is a public Ozon API contour", "official doc root https://docs.ozon.ru/api/performance/", "2026 Ozon public-API material still includes Performance API", "Ozon Learning currently publishes a dedicated Performance API automation course locator"],
+      "remaining": ["Ozon-owned API host/auth", "campaign inventory", "campaign-product mapping", "statistics methods/metrics/dimensions", "token/report/rate/history/access lifecycle"]
     },
     {
       "id": "reviews_questions",
@@ -162,8 +174,8 @@
       "id": "method_level_operational_constraints",
       "blocking": true,
       "status": "partial_evidence_contract_pending",
-      "confirmed": ["API key lifetime 6 months", "last explicit general rate evidence 50 req/s per Client ID", "product-operation limit model", "report expiry", "finance last_id"],
-      "remaining": ["HTTP verbs", "full schemas", "numeric quotas", "page-size/cursor terminal rules", "history windows", "method-specific limits", "roles/scopes/subscriptions", "error taxonomy", "final deprecation scan"]
+      "confirmed": ["API key lifetime 6 months", "last explicit general rate evidence 50 req/s per Client ID", "product-operation limit model", "report expiry", "finance last_id", "POST /v1/analytics/data partial request/response contract"],
+      "remaining": ["HTTP verbs for unresolved target methods", "full schemas", "numeric quotas", "page-size/cursor terminal rules", "history windows", "method-specific limits", "roles/scopes/subscriptions", "error taxonomy", "final deprecation scan"]
     }
   ],
   "blocking_not_closed": ["auth_transport", "catalog_product_master", "stocks_availability", "seller_product_analytics", "prices_promotions", "warehouses_clusters_geography", "logistics_delivery_diagnostics", "orders_postings", "returns_cancellations", "fbo_supply_replenishment", "finance", "realization_reports_settlement", "advertising_performance_api", "method_level_operational_constraints"],
