@@ -1,0 +1,44 @@
+{
+  "schema": "OZON_READ_ONLY_ALLOWLIST_CORRECTIONS_V1",
+  "as_of": "2026-08-11",
+  "applies_to": "OZON_READ_ONLY_ALLOWLIST_V1.json",
+  "reason": "The large allowlist cannot be safely rewritten through the current connector because reads are truncated; this overlay explicitly supersedes stale research descriptions until an atomic full-file rewrite is available.",
+  "implementation_allowed": false,
+  "corrections": [
+    {
+      "path": "/v4/product/info/stocks",
+      "supersedes": "purpose includes warehouse_ids as a current warehouse-level join",
+      "replacement": {
+        "purpose": ["aggregate/current stock", "FBO/FBS stock type evidence"],
+        "warehouse_level_join": "DO_NOT_USE",
+        "deprecated_fields": ["items.stocks.warehouseId", "items.stocks.warehouse_ids"],
+        "warehouse_level_replacement_strategy": "Use dedicated stocks-by-warehouse methods after their current full contracts are verified."
+      }
+    },
+    {
+      "paths": ["/v1/seller-actions/list", "/v1/seller-actions/products/list"],
+      "status_correction": "beta/currentness-pending; no main-promotion recovered in accessible Ozon-owned index"
+    },
+    {
+      "path": "/v1/warehouse/ozon/list",
+      "status_correction": "beta/currentness-pending; no main-promotion recovered in accessible Ozon-owned index"
+    },
+    {
+      "paths": ["/v4/posting/fbs/list", "/v4/posting/fbs/unfulfilled/list"],
+      "partial_current_fields": ["integration_type_flow", "sorting_center"],
+      "do_not_transfer_from_v3_without_evidence": ["tariffication_steps"]
+    },
+    {
+      "path": "/v1/finance/accrual/by-day",
+      "partial_current_fields": ["date", "last_id", "accruals.accrual_id", "accruals.container_fees", "accruals.accrued_category", "accruals.posting.products.delivery.services"],
+      "renamed_do_not_use": ["accruals.type_id"]
+    },
+    {
+      "path": "/v1/report/postings/create",
+      "partial_request_fields": ["filter.processed_at_from", "filter.processed_at_to", "filter.warehouse_id", "filter.delivery_method_id", "filter.is_express", "with.additional_data", "with.analytics_data", "with.customer_data", "with.jewelry_codes"],
+      "privacy_rule": "with.customer_data must not be enabled by default"
+    }
+  ],
+  "authority_rule": "When this overlay conflicts with the older allowlist wording, this overlay and OZON_03A3_COMPLETENESS_V1.json govern research interpretation until the base allowlist is atomically rewritten.",
+  "coding_gate": "03A.4 remains NOT STARTED."
+}
