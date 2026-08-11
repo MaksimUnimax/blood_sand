@@ -1,0 +1,66 @@
+{
+  "schema": "OZON_CANONICAL_OPERATION_LOCATORS_V1",
+  "as_of": "2026-08-11",
+  "purpose": "Exact canonical Seller API operation anchors observed in Ozon-owned notification links. This registry does not assert full method contracts.",
+  "authority": "Verified @OzonSellerAPI notifications whose method migration links include docs.ozon.ru Seller API #operation anchors.",
+  "rules": [
+    "Only anchors visible in Ozon-owned notification evidence are recorded.",
+    "An operation anchor confirms the canonical locator/name association, not HTTP verb/full schema/current limits.",
+    "Do not reuse an older-version operation anchor for a newer path unless Ozon explicitly links the newer path to that anchor.",
+    "Interactive docs redirect failure does not invalidate the anchor, but it keeps full_contract=false."
+  ],
+  "locators": [
+    {
+      "path": "/v3/product/list",
+      "operation_id": "ProductAPI_GetProductListv3",
+      "canonical_locator": "https://docs.ozon.ru/api/seller/#operation/ProductAPI_GetProductListv3",
+      "evidence_event": "2024-12-09 migration from /v2/product/list to /v3/product/list",
+      "currentness_crosscheck": "path updated again 2026-07-09",
+      "full_contract": false
+    },
+    {
+      "path": "/v3/product/info/list",
+      "operation_id": "ProductAPI_GetProductInfoList",
+      "canonical_locator": "https://docs.ozon.ru/api/seller/#operation/ProductAPI_GetProductInfoList",
+      "evidence_event": "2024-12-17 beta introduction / 2025-02-17 migration from /v2/product/info/list",
+      "currentness_crosscheck": "path updated again 2026-07-10",
+      "full_contract": false
+    },
+    {
+      "path": "/v1/returns/list",
+      "operation_id": "returnsList",
+      "canonical_locator": "https://docs.ozon.ru/api/seller/#operation/returnsList",
+      "evidence_event": "2024-10-31 replacement target for deprecated /v3/returns/company/fbo and /v3/returns/company/fbs",
+      "currentness_crosscheck": "return family remained active in later Ozon notification evidence",
+      "full_contract": false
+    },
+    {
+      "path": "/v2/report/returns/create",
+      "operation_id": "ReportAPI_ReportReturnsCreate",
+      "canonical_locator": "https://docs.ozon.ru/api/seller/#operation/ReportAPI_ReportReturnsCreate",
+      "evidence_event": "2024-12-20 replacement target for deprecated /v1/report/returns/create",
+      "currentness_crosscheck": "request filter requirement documented 2026-02-12",
+      "full_contract": false
+    },
+    {
+      "path": "/v1/report/info",
+      "operation_id": "ReportAPI_ReportInfo",
+      "canonical_locator": "https://docs.ozon.ru/api/seller/#operation/ReportAPI_ReportInfo",
+      "evidence_event": "Ozon notification explicitly directs deprecated discounted-report flows to /v1/report/info using #operation/ReportAPI_ReportInfo",
+      "currentness_crosscheck": "result.additional_data updated 2026-07-28",
+      "full_contract": false
+    }
+  ],
+  "not_recorded_without_current_exact_link": [
+    "/v4/product/info/attributes",
+    "/v5/product/info/prices",
+    "/v2/warehouse/list",
+    "/v4/posting/fbs/list",
+    "/v4/posting/fbs/unfulfilled/list",
+    "/v1/finance/accrual/postings",
+    "/v1/finance/accrual/types",
+    "/v1/finance/accrual/by-day",
+    "/v1/report/realization/posting/create"
+  ],
+  "next_action": "Search Ozon-owned notification links for exact #operation locators of remaining P0 current targets, but do not infer operation IDs from naming conventions."
+}
