@@ -1,0 +1,54 @@
+{
+  "schema": "OZON_STOCKS_AVAILABILITY_CONTRACT_FRAGMENT_V1",
+  "as_of": "2026-08-11",
+  "authority_class": "ozon_owned_notification_fragments",
+  "aggregate_stock": {
+    "path": "/v4/product/info/stocks",
+    "request_fields_confirmed": ["filter.visibility"],
+    "response_fields_with_deprecation_history": [
+      {"field": "items.stocks.warehouseId", "status": "deprecated", "evidence": "late-2025 Ozon notification"},
+      {"field": "items.stocks.warehouse_ids", "added": "2025-06-11", "status": "deprecated", "deprecation_evidence": "2025-12-18 Ozon notification"}
+    ],
+    "response_fields_confirmed_currentish": ["items.stocks.type"],
+    "method_description_refreshed": "2026-01-27",
+    "architecture_rule": "Do not treat /v4/product/info/stocks as authoritative warehouse-level allocation after warehouse identifier deprecations."
+  },
+  "warehouse_level_stock": [
+    {
+      "path": "/v2/product/info/stocks-by-warehouse/fbs",
+      "beta_added": "2025-12-02",
+      "moved_to_main": "2026-02-02",
+      "request_required_confirmed": ["limit"],
+      "predecessor": "/v1/product/info/stocks-by-warehouse/fbs",
+      "predecessor_shutdown": "2026-04-07"
+    },
+    {
+      "path": "/v1/product/info/stocks-by-warehouse/fbo",
+      "status": "new current method announced by Ozon in 2026",
+      "exact_announcement_date_from_index": "PENDING",
+      "full_contract": "PENDING"
+    }
+  ],
+  "history_analytics": {
+    "path": "/v1/analytics/stocks",
+    "moved_to_main": "2026-03-24",
+    "current_refresh_model_as_of_2026-08-11": "twice daily at 07:00 and 16:00 UTC",
+    "future_transition": {"effective": "2026-08-17", "model": "real-time", "revalidation_required": true}
+  },
+  "engineering_rules": [
+    "Separate aggregate product availability from warehouse-level stock extraction.",
+    "Do not join warehouse allocation from deprecated warehouseId/warehouse_ids fields in /v4/product/info/stocks.",
+    "Use dedicated FBS/FBO warehouse-level stock methods once their complete contracts are verified.",
+    "Keep /v1/analytics/stocks behavior date-aware across the 2026-08-17 real-time transition."
+  ],
+  "still_missing": [
+    "full request/response schemas",
+    "HTTP verbs where unresolved",
+    "current pagination and numeric limits",
+    "stock quantity semantics including present/reserved/available",
+    "FBO warehouse-level method pagination and identifiers",
+    "history depth before/after 2026-08-17",
+    "permissions and method-specific quotas/errors"
+  ],
+  "implementation_allowed": false
+}
