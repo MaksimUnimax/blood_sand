@@ -1,6 +1,7 @@
 # Ozon API endpoint discovery / verification queue
 
 Дата: 2026-08-10  
+Последняя revalidation: 2026-08-11  
 Статус: **RESEARCH QUEUE — NOT AN ALLOWLIST**
 
 ## Правило
@@ -8,6 +9,8 @@
 Этот файл содержит endpoint families/paths, которые нужно проверить в current official Ozon documentation. Наличие строки здесь **не означает**, что метод подтверждён, актуален, доступен конкретному кабинету или будет включён в будущий bridge.
 
 В future implementation method можно переносить только после фиксации current official provenance, HTTP method, request/response schema, pagination/history/limits и auth/access restrictions.
+
+Сторонние SDK/Postman/generated clients/зеркала допускаются только для discovery. Они не могут повысить item до `CONFIRMED`.
 
 ## Уже подтверждено и queue не требуется
 
@@ -23,7 +26,9 @@
 - `/v3/supply-order/get`;
 - `/v1/supply-order/details`.
 
-## Queue 1 — full catalog / product master
+Fresh 2026-08-11 official revalidation: `OZON_OFFICIAL_REVALIDATION_2026-08-11.md`.
+
+## Queue 1 — full catalog / product master — BLOCKING
 
 Проверить current official equivalents/versions для следующих discovered method families:
 
@@ -37,7 +42,13 @@
 
 Нужно определить, одного ли bulk method достаточно для полного seller master или требуется `list → info → attributes/media` chain.
 
-## Queue 2 — prices / promotions
+### 2026-08-11 status
+
+Search/discovery surfaces показывают candidate versioned paths, но current official Seller API library snapshot получить не удалось. Поэтому **ни один candidate catalog endpoint не повышен до CONFIRMED**.
+
+Остаётся blocking.
+
+## Queue 2 — prices / promotions — BLOCKING
 
 Проверить current official equivalents/versions для:
 
@@ -49,7 +60,22 @@
 
 Write methods изменения price/actions исключены из initial scope.
 
-## Queue 3 — warehouses / logistics geography
+### 2026-08-11 status
+
+Official Ozon project manager confirmed on 2026-02-27 that methods for managing seller's own promotions are working and documented under `БЕТА-МЕТОДЫ → Акции продавца`:
+
+- https://dev.ozon.ru/community/1942-v1-seller-actions-products-add-404-poka/
+
+Therefore seller promotions/actions capability is now:
+
+- `CAPABILITY_CONFIRMED`;
+- exact read-only endpoints/schema/pagination/access: `PENDING`.
+
+Do **not** infer a read endpoint from the write-method name mentioned in the topic.
+
+Остаётся blocking.
+
+## Queue 3 — warehouses / logistics geography — BLOCKING
 
 Проверить current official equivalents/versions для:
 
@@ -58,7 +84,18 @@ Write methods изменения price/actions исключены из initial s
 - FBO/FBS availability mapping;
 - delivery method/geography/cluster fields if exposed by read API.
 
-## Queue 4 — returns / cancellations
+### 2026-08-11 status
+
+Official evidence confirms that current stock data includes `warehouse_ids`, while the 2026 FBO cross-dock change makes `macrolocal_cluster_id` important for supply semantics. This does not replace a current warehouse/cluster dictionary.
+
+Sources:
+
+- https://dev.ozon.ru/community/1747-v4-product-info-stocks-daet-ne-korrektnye-ostatki/
+- https://dev.ozon.ru/news/647-Izmeneniia-v-metodakh-Seller-API-pri-rabote-s-postavkami-FBO/
+
+Остаётся blocking.
+
+## Queue 4 — returns / cancellations — BLOCKING
 
 Проверить current official equivalents/versions для:
 
@@ -68,7 +105,22 @@ Write methods изменения price/actions исключены из initial s
 - product quantities and timestamps;
 - claims/disputes where a read API exists.
 
-## Queue 5 — reports / realization / settlement
+### 2026-08-11 status
+
+Current official Seller API community page contains a 2026-05-26 topic `Частичная отмена FBS - как определить через API`. This confirms that partial-cancellation detection remains a current integration need, but the accessible official surface did not provide a resolved exact endpoint/schema.
+
+Source:
+
+- https://dev.ozon.ru/community?category_id=2&page=4
+
+Status:
+
+- current business need: `CONFIRMED`;
+- exact return/cancellation read endpoint: `PENDING`.
+
+Остаётся blocking.
+
+## Queue 5 — reports / realization / settlement — BLOCKING
 
 Проверить current official equivalents/versions for:
 
@@ -79,7 +131,13 @@ Write methods изменения price/actions исключены из initial s
 
 Generated-report APIs должны быть помечены отдельно: logical read может состоять из явной операции создания report job и отдельной явной операции получения результата; скрытый polling/fan-out будущим bridge запрещён.
 
-## Queue 6 — advertising API
+### 2026-08-11 status
+
+Fresh pass не получил current exact official methods/schemas для этого слоя.
+
+Остаётся blocking.
+
+## Queue 6 — advertising API — BLOCKING
 
 Отдельный contour; проверить current official host/auth и exact read endpoints для:
 
@@ -93,7 +151,13 @@ Generated-report APIs должны быть помечены отдельно: l
 
 Никаких campaign/bid/budget mutations в initial bridge.
 
-## Queue 7 — reviews / questions
+### 2026-08-11 status
+
+Отдельный advertising API contour остаётся подтверждён как существующий, но current exact read host/auth/stat schema этим проходом не закрыта.
+
+Остаётся blocking.
+
+## Queue 7 — reviews / questions — DESIRABLE/PENDING
 
 Проверить current official read endpoints/permissions for:
 
@@ -103,6 +167,10 @@ Generated-report APIs должны быть помечены отдельно: l
 - complaint/problem themes.
 
 Это desirable surface: отсутствие доступа не блокирует первый assortment import, но должно быть явно отражено как data gap.
+
+### 2026-08-11 status
+
+Fresh pass не получил exact current official read surface.
 
 ## Acceptance checklist для каждого queue item
 
@@ -124,3 +192,5 @@ Generated-report APIs должны быть помечены отдельно: l
 ## Stop condition
 
 Если current official source не подтверждает метод или его schema, item остаётся в queue. Нельзя закрывать пробел сторонним SDK и нельзя проектировать endpoint в extension «по памяти».
+
+До закрытия blocking queues 1–6 roadmap `03A.4 — Ozon LLM browser extension` не начинается.
