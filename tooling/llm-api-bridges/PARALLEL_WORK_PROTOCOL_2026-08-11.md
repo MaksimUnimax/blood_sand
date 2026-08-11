@@ -31,10 +31,13 @@ Canonical reference for WB implementation:
 
 The reference contains:
 
-- tested production extension ZIP;
-- source/tests/evidence ZIP;
+- the exact tested production extension encoded as nine base64 parts under `archive-exact/`;
+- `rebuild_extension.py`, which reconstructs the ZIP and fails closed unless its size and SHA-256 match the tested artifact;
 - documentation;
-- build/test evidence.
+- build/test evidence;
+- the install-artifact SHA-256 manifest.
+
+The separately generated source/tests/evidence bundle is not treated as a canonical GitHub binary reference because direct binary upload through the connector was not byte-exact. The GitHub reference authority is the reconstructed, hash-verified production ZIP plus the documentation/build evidence above.
 
 The reference is immutable during parallel work. WB may copy/adapt patterns from it but must not edit files under `reference-0.1.3/`.
 
