@@ -1,0 +1,44 @@
+{
+  "schema": "OZON_WAREHOUSE_CLUSTER_CONTRACT_FRAGMENT_V1",
+  "as_of": "2026-08-11",
+  "authority_class": "ozon_owned_notification_fragments_plus_existing_verified_pagination_fragment",
+  "methods": [
+    {
+      "path": "/v2/warehouse/list",
+      "moved_to_main": "2026-02-02",
+      "request_fields_confirmed": ["limit", "cursor"],
+      "response_fields_confirmed": ["cursor", "has_next", "warehouses.pause_at"],
+      "pause_at_added": "2026-04-07",
+      "pagination_model": "cursor_based_partial_evidence"
+    },
+    {
+      "path": "/v1/warehouse/fbo/seller/list",
+      "moved_to_main": "2026-03-02"
+    },
+    {
+      "path": "/v2/cluster/list",
+      "moved_to_main": "2026-06-01"
+    },
+    {
+      "path": "/v1/warehouse/ozon/list",
+      "beta_added": "2026-03-12",
+      "main_promotion_in_accessible_ozon_owned_index": "NOT_FOUND"
+    }
+  ],
+  "engineering_rules": [
+    "Do not use retired /v1/warehouse/list; target /v2/warehouse/list.",
+    "Treat /v1/warehouse/ozon/list as beta/currentness-pending until Ozon-owned main/current contract evidence is recovered.",
+    "Do not infer warehouse-to-cluster joins solely from path names; identifier joins remain contract-pending.",
+    "Do not hardcode an unverified numeric cursor limit."
+  ],
+  "still_missing": [
+    "HTTP verbs where unresolved",
+    "complete warehouse/cluster schemas",
+    "numeric page limits and cursor terminal rules",
+    "warehouse-to-cluster/geography join identifiers",
+    "scheme coverage semantics",
+    "permissions and method-specific quotas/errors",
+    "current status of /v1/warehouse/ozon/list"
+  ],
+  "implementation_allowed": false
+}
