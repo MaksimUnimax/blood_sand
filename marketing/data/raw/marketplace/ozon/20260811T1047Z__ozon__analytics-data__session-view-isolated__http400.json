@@ -1,0 +1,39 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.1",
+  "request_id": "c7c70142-06c5-44f4-917d-9a3687fa8219",
+  "operation": "analytics_data",
+  "command": {
+    "operation": "analytics_data",
+    "fingerprint": "0d59f5a0"
+  },
+  "request_meta": {
+    "provider": "ozon",
+    "host_alias": "seller_api",
+    "http_method": "POST",
+    "path_alias": "analytics_data"
+  },
+  "request_params": {
+    "date_from": "2026-07-12",
+    "date_to": "2026-08-10",
+    "metrics": ["session_view"],
+    "dimension": ["sku"],
+    "sort": [{"key": "session_view", "order": "DESC"}],
+    "limit": 100,
+    "offset": 0
+  },
+  "http_status": 400,
+  "elapsed_ms": 102,
+  "pagination": null,
+  "rate_limit": null,
+  "result": {
+    "error": {
+      "http_status": 400,
+      "code": "3",
+      "message": "Ozon API request failed. Provider error text is withheld from LLM output; inspect local sanitized diagnostics."
+    }
+  },
+  "technical_status": "FAILED_CONTRACT_PROBE",
+  "technical_note": "Isolated session_view request was rejected with HTTP 400 / provider code 3. No automatic retry was performed. The exact provider validation text was not exposed by the bridge, so the precise contract failure remains unresolved from LLM-visible evidence.",
+  "business_interpretation": null
+}
