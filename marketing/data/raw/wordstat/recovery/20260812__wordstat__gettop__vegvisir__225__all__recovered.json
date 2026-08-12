@@ -1,0 +1,31 @@
+{
+  "recovery_status": "RECOVERED_FROM_NORMALIZED_AND_PRIOR_WORDSTAT_RESULT_V1",
+  "raw_fidelity": "DECISION_ROWS_PLUS_TOTAL",
+  "recovery_note": "The original provider raw capture was not persisted successfully. This artifact is an auditable recovery from the already-persisted normalized observations and the prior AUTORUN result. It preserves request identity and decision-bearing rows, and is not represented as byte-for-byte provider raw. elapsed_ms was not recoverable from the persisted evidence and is therefore omitted rather than guessed.",
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "acdaf01d-22db-4b18-af41-7fdd6160c63e",
+  "command": {
+    "method": "getTop",
+    "phrase": "вегвизир",
+    "numPhrases": 2000,
+    "regions": ["225"],
+    "devices": ["DEVICE_ALL"]
+  },
+  "http_status": 200,
+  "result": {
+    "results_recovered": [
+      {"phrase":"вегвизир","count":"5938"},
+      {"phrase":"вегвизир значение","count":"991"},
+      {"phrase":"компас вегвизир","count":"499"},
+      {"phrase":"оберег вегвизир","count":"178"},
+      {"phrase":"скандинавский вегвизир","count":"155"},
+      {"phrase":"амулет вегвизир","count":"114"},
+      {"phrase":"вегвизир купить","count":"57"},
+      {"phrase":"скандинавский оберег вегвизир","count":"34"},
+      {"phrase":"вегвизир подвеска","count":"21"},
+      {"phrase":"наклейка на авто вегвизир рунический компас","count":"5"}
+    ],
+    "totalCount": "5938"
+  }
+}
