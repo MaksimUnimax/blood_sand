@@ -32,8 +32,8 @@ v0.1.3 parsed an autorun writing block in `content_script.js`. If `OzonContract.
      - `operation:null`;
      - `command.accepted:false`;
      - `request_meta.stage`;
-     - `request_meta.external_request_executed:false`;
-     - `http_status:0`;
+      - `request_meta.external_request_executed:false`;
+    - `http_status:0`;
      - `result.error.automatic_retry:false`;
      - `result.error.external_request_executed:false`;
    - reuses existing bridge-error redaction for URLs, credential labels, e-mail, phone and long secret-like strings.
@@ -44,13 +44,14 @@ v0.1.3 parsed an autorun writing block in `content_script.js`. If `OzonContract.
 
 ## Automated tests
 
-Final suite: **26/26 PASS**.
+Final suite: **32/32 PASS**.
 
-The worker integration harness emulates Chrome MV3 runtime pieces used by the changed path: `chrome.runtime.onMessage`, `chrome.storage.local`, `chrome.tabs.get/query/sendMessage`, live ChatGPT conversation identity, binding state, autorun run state, delivery push, WebCrypto, and a counted provider `fetch`.
+The test harnesses execute the actual changed contract/worker code and VM-execute the actual `reportAutoPreExecutionError()` content-script function. The worker integration harness emulates Chrome MV3 runtime pieces used by the changed path: `chrome.runtime.onMessage`, `chrome.storage.local`, `chrome.tabs.get/query/sendMessage`, live ChatGPT conversation identity, binding state, autorun run state, delivery push, WebCrypto, and a counted provider `fetch`.
 
 Covered cases include:
 
 - exact malformed JSON/control-character class that caused the observed failure;
+- actual content-script pre-execution helper with accepted/ignored/paused/rejected/no-watch branches and safe payload assertions;
 - content control-flow regression: invalid parse no longer takes toast-only `stopAutoWatch("invalid_command")` path;
 - pre-execution report envelope and safe redaction;
 - malformed command -> chat delivery claim -> **provider fetch count = 0**;
@@ -88,5 +89,5 @@ Evidence files:
 - `evidence/SHA256SUMS.txt`
 - `evidence/OZON_BRIDGE_V0.1.4_PATCH.diff`
 
-Executable regression tests are committed under `tests/`; `run_tests.sh` runs the full 26-test suite with Node coverage enabled.
+Executable regression tests are committed under `tests/`; `run_tests.sh` runs the full 32-test suite with Node coverage enabled.
 `run_tests.sh` reconstructs v0.1.4 from the canonical sibling v0.1.3 exact archive plus the committed patch, verifies all 16 production file hashes, and then runs the regression suite. The separately packaged release ZIP is identified by the SHA-256 above.
