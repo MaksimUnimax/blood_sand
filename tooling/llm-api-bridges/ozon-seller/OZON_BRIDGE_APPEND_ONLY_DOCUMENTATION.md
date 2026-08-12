@@ -336,7 +336,6 @@ Commit `921e7f3518265f4475dc4b68214122b3b376b013` unintentionally replaced the p
 
 This correction records the incident transparently and appends the verification section after the restored v0.1.5 entry. No production bridge code, immutable `reference-0.1.5/` snapshot, or release ZIP changed as part of the documentation repair.
 
-
 ---
 
 ## 2026-08-12 — Seller/Performance boundary audit checkpoint
@@ -412,3 +411,65 @@ The next bridge revision must:
 - test every behavior-changing line and dependent path under the v0.1.5 changed-line standard before release acceptance.
 
 No production bridge code, immutable `reference-0.1.5/` snapshot, or v0.1.5 release ZIP is changed by this documentation commit.
+
+---
+
+## 2026-08-12 — Ozon Bridge v0.1.6: provider-boundary correction
+
+Release reference:
+
+`tooling/llm-api-bridges/ozon-seller/reference-0.1.6/`
+
+Release ZIP SHA-256:
+
+`6ff4a7daab51f05b0beb5942e5f7f6ef155b3ffa29a3a78e69eca9b7b8229242`
+
+### Mandate implemented
+
+v0.1.6 applies the provider-boundary rule established by the preceding Seller/Performance audit: when the supplied official Ozon OpenAPI contracts establish an operation-specific limit, that Ozon limit remains authoritative; when no Ozon-side limit was established, the extension no longer imposes an arbitrary smaller generic data/request/response limit.
+
+This does not assert that Ozon has infinite capacity. It prevents the bridge from inventing undocumented provider semantics or silently losing otherwise valid Ozon data.
+
+### Bridge-owned limits removed
+
+The v0.1.5 generic request caps `maxDepth=10`, `maxItems=5000`, `maxKeys=2000` and serialized `params <= 200000` UTF-8 bytes were removed from the accepted data path.
+
+The v0.1.5 result limits and silent truncation behavior were removed: no `[REDACTED_DEPTH]` substitution based on the former depth threshold, no `slice(0, 10000)`, no 20000-key `__truncated__` cutoff, and no second generic result `maxDepth=16` / `maxItems=10000` / `maxKeys=25000` budget.
+
+The bridge-owned provider response ceiling of 1.5 MB and synchronous provider timeout of 30 seconds were removed because those values were not established as global Ozon limits in the supplied Seller/Performance contracts.
+
+The former Seller credential length ceilings 256/2048 and visible-ASCII-only restriction were removed because they were not established as Ozon provider limits. Header-safety validation remains: CR/LF/control-character injection is rejected and credentials remain isolated.
+
+### Provider-owned limits retained
+
+Operation-specific Ozon constraints remain enforced for the currently enabled aliases, including Seller analytics pagination/metrics/rate/history rules, FBO period/page/filter limits, supply-order batch size, query page/SKU/detail limits and stock page limits as documented in the boundary audit.
+
+### Privacy/security/lifecycle retained
+
+The release keeps the fixed trusted Seller host, read-only operation registry, no arbitrary transport/auth injection, credential isolation, PII safeguards, one command <= one provider request, no hidden retry/pagination/fan-out/polling, durable delivery/recovery and v0.1.5 Manual/Autorun controlled-error observability.
+
+Privacy redaction is separated from generic data-size truncation. Current allowed Seller paths explicitly redact FBO legal/digital-code data and supply driver/phone/vehicle-number fields while preserving documented seller operational warehouse-address fields required for factual logistics analysis.
+
+### Verification
+
+Final source-tree suite: **89/89 PASS**, 0 fail, 0 skipped, 0 cancelled.
+
+A second full suite was run against a fresh extraction of the final ZIP: **89/89 PASS**.
+
+Changed-line audit: every v0.1.5 -> v0.1.6 changed production line is V8-covered or exact-source asserted; removed-cap behavior has explicit regressions.
+
+Fresh release package checks:
+
+- 16/16 production files byte-identical to source;
+- all production JavaScript parses with `node --check`;
+- Chromium extension pack check exit 0;
+- no tests/evidence inside production ZIP;
+- release SHA-256 `6ff4a7daab51f05b0beb5942e5f7f6ef155b3ffa29a3a78e69eca9b7b8229242`.
+
+Boundary regressions include deep JSON, >2500 keys, >6000 generic array items, >220000-byte request data, `stocks_current` filter >6000 IDs where the supplied Ozon schema defines no maxItems, >10000 provider-result array elements, >20000 result keys/items, deep provider results, >1.5 MB provider responses, long credentials with CR/LF rejection, all documented operation-specific Ozon limits, transport/auth injection rejection, exactly-one-fetch and retained Manual/Autorun error/delivery behavior.
+
+No live Ozon brute-force probing of undocumented limits was performed.
+
+### Acceptance state
+
+v0.1.6 supersedes v0.1.5 as the current Seller bridge implementation authority for provider-boundary handling. The immutable v0.1.5 snapshot remains historical evidence. The Performance API is still a separate, not-yet-implemented bridge/auth surface.
