@@ -1,0 +1,27 @@
+Ozon Bridge v0.1.5 final reconstructed source-tree test run
+Date: 2026-08-12
+
+Node test result:
+tests=67
+pass=67
+fail=0
+cancelled=0
+skipped=0
+
+Coverage summary:
+all_files_lines=51.29%
+all_files_branches=58.77%
+all_files_functions=73.98%
+ozon_contract_lines=95.63%
+runtime_names_lines=100.00%
+content_manual_runtime_test_lines=100.00%
+content_manual_runtime_test_functions=100.00%
+content_command_key_test_lines=100.00%
+manual_pipeline_test_lines=98.81%
+manual_pipeline_test_branches=91.23%
+manual_pipeline_test_functions=91.49%
+
+The 67-test suite executes the actual changed Manual content functions through VM harnesses, the actual worker/contract pipeline with emulated Chrome MV3 storage/runtime/tabs, counted provider fetches, retained Autorun regression paths, package/version/permission checks, and static architecture invariants. Whole legacy-extension coverage is intentionally not claimed as 100%.
+
+Deterministic rebuilt release SHA-256:
+130d88f3225087aaecbf12819d39949ff68b9ab6d422ff8d3cd7b55953cd4651

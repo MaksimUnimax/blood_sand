@@ -1,0 +1,431 @@
+--- a/content_script.js
++++ b/content_script.js
+@@ -2,7 +2,7 @@
+ (() => {
+   "use strict";
+ 
+-  const VERSION = "0.1.4";
++  const VERSION = "0.1.5";
+   const runtimeId = `${VERSION}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+   const RUNTIME_KEY = "__OZON_LLM_API_BRIDGE_RUNTIME__";
+   const STAGE_ATTR = "data-ozon-bridge-stage";
+@@ -407,9 +407,7 @@
+   function commandKey(binding, text) {
+     const turn = binding.section.getAttribute("data-turn-id") || "assistant";
+     const explicit = binding.root.getAttribute("data-writing-block-id") || binding.root.id || "block";
+-    let fingerprint = "00000000";
+-    try { fingerprint = OzonContract.commandFingerprint(OzonContract.parseCommand(text)); } catch (_) {}
+-    return `${turn}:${explicit}:${fingerprint}`;
++    return `${turn}:${explicit}:${OzonContract.textFingerprint(text)}`;
+   }
+ 
+   function styleSnapshot(element, property) {
+@@ -448,12 +446,6 @@
+       toast("Ozon: это не OZON_API_V1. Выполнено только обычное копирование; API-запрос не отправлен.", "info", 5000);
+       return;
+     }
+-    let parsed;
+-    try { parsed = OzonContract.parseCommand(text); }
+-    catch (error) {
+-      toast(`Ozon: команда не выполнена — ${error.message}`, "error", 7000);
+-      return;
+-    }
+     const key = commandKey(binding, text);
+     if (BUSY.has(key)) {
+       toast("Ozon: этот блок уже выполняется. Повторный API-вызов не отправлен.", "info");
+@@ -463,12 +455,13 @@
+     const operationConversationKey = String(manualConversationKey || currentKey);
+     const manualRequestId = crypto.randomUUID();
+     let manualOperationId = "";
+-    toast(`Ozon: выполняю ${parsed.operation} через Ozon Seller API…`, "info", 0, "operation-state");
++    toast("Ozon: проверяю и выполняю OZON_API_V1 через bridge…", "info", 0, "operation-state");
+     try {
+       const response = await sendRuntime("OZ_EXECUTE_COMMAND", { command_text: text, conversation_key: operationConversationKey, manual_request_id: manualRequestId });
+       manualOperationId = String(response.manual_operation_id || "");
+-      if (!response.report_text) throw Object.assign(new Error(response.error || "Ozon API не вернул отчёт."), { code: response.code || "NO_REPORT" });
+-      if (!response.ok) toast(`Ozon API вернул ошибку ${response.http_status || ""}. Отчёт будет передан в чат.`, "error", 0, "operation-state");
++      if (!response.report_text) throw Object.assign(new Error(response.error || "Ozon Bridge не вернул отчёт."), { code: response.code || "NO_REPORT" });
++      if (response.pre_execution_error === true) toast("Ozon: ошибка команды передаётся в чат; внешний Ozon API request не выполнялся.", "error", 0, "operation-state");
++      else if (!response.ok) toast(`Ozon API/bridge вернул ошибку ${response.http_status || ""}. Отчёт будет передан в чат.`, "error", 0, "operation-state");
+       else toast("Ozon: ответ получен. Передаю результат в ChatGPT…", "success", 0, "operation-state");
+       const delivery = await deliverReport(response.outgoing_text || response.report_text, response.auto_send !== false, { confirmUserTurn: response.auto_send !== false, runId: `manual:${manualOperationId || operationConversationKey}`, deliveryId: response.delivery_id || `manual-${response.request_id || Date.now()}`, requestId: response.request_id || "", requireCommit: false, conversationKey: operationConversationKey });
+       if (manualOperationId) {
+--- a/manifest.json
++++ b/manifest.json
+@@ -1,7 +1,7 @@
+ {
+   "manifest_version": 3,
+   "name": "Ozon Bridge — ChatGPT ↔ Ozon Seller API",
+-  "version": "0.1.4",
++  "version": "0.1.5",
+   "description": "Контролируемый read-only мост ChatGPT ↔ Ozon Seller API: conversation binding, manual, autorun, exactly-once delivery/recovery и локальные credentials.",
+   "permissions": [
+     "storage",
+--- a/popup.html
++++ b/popup.html
+@@ -8,7 +8,7 @@
+ </head>
+ <body>
+   <main>
+-    <header><div><h1>Ozon Bridge</h1><p class="lead">ChatGPT ↔ Ozon Seller API: read-only, explicit binding, manual и autorun.</p></div><span class="badge" id="versionBadge">v0.1.4</span></header>
++    <header><div><h1>Ozon Bridge</h1><p class="lead">ChatGPT ↔ Ozon Seller API: read-only, explicit binding, manual и autorun.</p></div><span class="badge" id="versionBadge">v0.1.5</span></header>
+     <div id="status" class="status">Загрузка…</div>
+     <section class="priority-section">
+       <div class="binding-banner unbound" id="bindingBanner"><div><span class="eyebrow">Привязка</span><strong id="bindingState">Проверяю привязку…</strong><div id="bindingMeta" class="meta compact">Manual и Autorun требуют явной привязки текущего ChatGPT-диалога.</div></div><button id="bindConversation" class="primary">Привязать диалог</button></div>
+--- a/popup.js
++++ b/popup.js
+@@ -112,7 +112,7 @@
+   lastState = state;
+   const pageAvailable = state.page_context_available !== false;
+   const bound = pageAvailable && state.binding?.bound === true;
+-  $("versionBadge").textContent = `v${state.version || "0.1.4"}`;
++  $("versionBadge").textContent = `v${state.version || "0.1.5"}`;
+     $("autoSend").checked = state.auto_send !== false;
+   $("manualMode").checked = pageAvailable && state.manual_mode === true;
+   $("credentialState").textContent = state.seller_credentials_present ? "Client-Id и Api-Key сохранены локально. Для замены вставьте новое значение и нажмите «Сохранить»." : "Seller credentials ещё не сохранены полностью.";
+@@ -455,7 +455,7 @@
+   const payload = {
+     format: "ozon-bridge-diagnostics",
+     exported_at: new Date().toISOString(),
+-    extension_version: "0.1.4",
++    extension_version: "0.1.5",
+     current_run_id: lastState?.auto_run?.run_id || null,
+     events: lastDiagnostics
+   };
+--- a/service_worker.js
++++ b/service_worker.js
+@@ -1,7 +1,7 @@
+ /* global BB2ConversationIdentity, BB2ManualControls, OzonRuntime, OzonCredentials, OzonContract, BridgeAutorunModel, ProviderTransportCore, OzonProvider */
+ importScripts("shared/conversation_identity.js", "shared/runtime_names.js", "shared/manual_controls.js", "shared/ozon_credentials.js", "shared/ozon_contract.js", "shared/bridge_autorun_model.js", "shared/provider_transport_core.js", "shared/ozon_provider.js");
+ 
+-const VERSION = "0.1.4";
++const VERSION = "0.1.5";
+ const CREDENTIAL_BACKUP_FORMAT = "ozon-bridge-seller-credentials-backup";
+ const CREDENTIAL_BACKUP_VERSION = 1;
+ const KEYS = OzonRuntime.STORAGE_KEYS;
+@@ -841,7 +841,7 @@
+   }
+ }
+ 
+-function buildAutoExecutionErrorResult(command, fingerprint, error, elapsedMs = 0) {
++function buildExecutionErrorResult(command, fingerprint, error, elapsedMs = 0) {
+   const safe = OzonContract.safeBridgeErrorPayload(error, Number(error?.http_status || 0));
+   const preflight = OzonContract.preflightExecution(command);
+   const requestId = crypto.randomUUID();
+@@ -867,7 +867,8 @@
+     command_fingerprint: fingerprint,
+     http_status: safe.http_status,
+     report_text: reportText,
+-    response_meta: null
++    response_meta: null,
++    error: safe
+   });
+ }
+ 
+@@ -875,6 +876,112 @@
+   const prefix = await getReportPrefix(conversationKey);
+   const result = BridgeAutorunModel.applyReportPrefix(reportText, prefix);
+   return { outgoing_text: result.text, report_prefix_applied: result.applied };
++}
++
++function buildPreExecutionErrorResult({ error, stage = "command_parse", commandFingerprint = "", requestIdPrefix = "preexec" }) {
++  const sourceError = error instanceof Error ? error : Object.assign(new Error(String(error || "Ozon Bridge pre-execution error.")), { code: "PREEXEC_ERROR" });
++  const safe = OzonContract.safeBridgeErrorPayload(sourceError, 0);
++  const cleanStage = String(stage || "pre_execution").slice(0, 80);
++  const suppliedFingerprint = String(commandFingerprint || "").trim().toLowerCase();
++  const fingerprint = /^[a-f0-9]{8,64}$/.test(suppliedFingerprint)
++    ? suppliedFingerprint
++    : OzonContract.textFingerprint(`${cleanStage}|${safe.code}|${safe.message}`);
++  const requestId = `${String(requestIdPrefix || "preexec").replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "preexec"}-${crypto.randomUUID()}`;
++  const reportText = OzonContract.formatPreExecutionErrorReport({
++    requestId,
++    error: sourceError,
++    stage: cleanStage,
++    commandFingerprint: fingerprint
++  });
++  return Object.freeze({
++    ok: false,
++    bridge_error: true,
++    pre_execution_error: true,
++    request_id: requestId,
++    operation: null,
++    command_fingerprint: fingerprint,
++    http_status: 0,
++    report_text: reportText,
++    external_request_executed: false
++  });
++}
++
++async function claimManualPreExecutionError({ key, requestToken, liveIdentity, binding, senderTabId, error, stage = "command_parse", commandFingerprint = "", autoSend = true }) {
++  const result = buildPreExecutionErrorResult({ error, stage, commandFingerprint, requestIdPrefix: "manual-preexec" });
++  const prefixed = await applyPrefixToReport(key, result.report_text);
++  const operationId = `ozmanual-${crypto.randomUUID()}`;
++  const deliveryId = `manual-delivery-${operationId}`;
++  const now = new Date().toISOString();
++  const safe = OzonContract.safeBridgeErrorPayload(error, 0);
++  let duplicateOperation = null;
++  const operation = await mutateManualOperation(key, (current) => {
++    if (current?.manual_request_id === requestToken) {
++      duplicateOperation = current;
++      return current;
++    }
++    if (manualOperationActive(current)) return current;
++    return {
++      operation_id: operationId,
++      manual_request_id: requestToken,
++      conversation_key: key,
++      origin: liveIdentity.origin,
++      conversation_id: liveIdentity.conversation_id,
++      binding_snapshot: bindingSnapshot(binding),
++      tab_id: senderTabId,
++      status: MANUAL_OPERATION_STATUSES.DELIVERING,
++      operation: null,
++      command_summary: `pre_execution_error:${safe.code}`,
++      request_id: result.request_id,
++      request_worker_session_id: null,
++      delivery_id: deliveryId,
++      outgoing_text: prefixed.outgoing_text || result.report_text,
++      auto_send: autoSend !== false,
++      report_prefix_applied: prefixed.report_prefix_applied === true,
++      delivery_confirmed: false,
++      created_at: now,
++      completed_at: null,
++      last_error: {
++        code: safe.code,
++        message: safe.message,
++        stage: String(stage || "pre_execution").slice(0, 80),
++        external_request_executed: false
++      }
++    };
++  });
++  if (duplicateOperation) {
++    throw Object.assign(new Error("Эта ручная операция уже принята. Повторная доставка запрещена."), { code: "MANUAL_REQUEST_DUPLICATE", operation_id: duplicateOperation.operation_id });
++  }
++  if (!operation || operation.operation_id !== operationId) {
++    throw Object.assign(new Error("Bridge уже выполняет или доставляет ручной Ozon-запрос."), { code: "MANUAL_OPERATION_ACTIVE" });
++  }
++  await diagnostic("MANUAL_PREEXEC_ERROR_CLAIMED", {
++    operation_id: operationId,
++    manual_request_id: requestToken,
++    conversation_id: liveIdentity.conversation_id,
++    tab_id: senderTabId,
++    request_id: result.request_id,
++    delivery_id: deliveryId,
++    stage: String(stage || "pre_execution").slice(0, 80),
++    code: safe.code,
++    command_fingerprint: result.command_fingerprint,
++    external_request_executed: false
++  }, { level: "warning" });
++  await diagnostic("MANUAL_OPERATION_DELIVERING", {
++    operation_id: operationId,
++    delivery_id: deliveryId,
++    request_id: result.request_id,
++    tab_id: senderTabId,
++    source: "pre_execution_error",
++    external_request_executed: false
++  }, { level: "warning" });
++  return {
++    ...result,
++    ...prefixed,
++    manual_operation_id: operationId,
++    manual_request_id: requestToken,
++    delivery_id: deliveryId,
++    auto_send: autoSend !== false
++  };
+ }
+ 
+ async function executeManualCommand(commandText, conversationKey, sender, manualRequestId) {
+@@ -887,14 +994,33 @@
+   if (!requestToken) throw Object.assign(new Error("Manual request ID отсутствует."), { code: "MANUAL_REQUEST_ID_MISSING" });
+   const liveIdentity = await assertTabConversation(senderTabId, key);
+   const binding = await strictBindingForIdentity(liveIdentity);
++  const manualAutoSend = (await getSettings()).autoSend !== false;
+   if (!(await getManualMode(key))) {
+-    throw Object.assign(new Error("Ручной режим Ozon выключен для этого ChatGPT-диалога. API-запрос по Copy не выполнен."), { code: "MANUAL_MODE_OFF" });
++    const error = Object.assign(new Error("Ручной режим Ozon выключен для этого ChatGPT-диалога. API-запрос не выполнен."), { code: "MANUAL_MODE_OFF" });
++    return await claimManualPreExecutionError({ key, requestToken, liveIdentity, binding, senderTabId, error, stage: "manual_gate", commandFingerprint: OzonContract.textFingerprint(commandText), autoSend: manualAutoSend });
+   }
+   const run = await getAutoRun(key);
+   if (run && !BridgeAutorunModel.canEnableManualMode(run.status)) {
+-    throw Object.assign(new Error("Авторежим активен. Ручной API-вызов разрешён только когда run на паузе."), { code: "AUTO_MODE_ACTIVE" });
+-  }
+-  const parsed = OzonContract.parseCommand(commandText);
++    const error = Object.assign(new Error("Авторежим активен. Ручной API-вызов не выполнен."), { code: "AUTO_MODE_ACTIVE" });
++    return await claimManualPreExecutionError({ key, requestToken, liveIdentity, binding, senderTabId, error, stage: "manual_gate", commandFingerprint: OzonContract.textFingerprint(commandText), autoSend: manualAutoSend });
++  }
++  let parsed;
++  try {
++    parsed = OzonContract.parseCommand(commandText);
++  } catch (error) {
++    return await claimManualPreExecutionError({
++      key,
++      requestToken,
++      liveIdentity,
++      binding,
++      senderTabId,
++      error,
++      stage: "command_parse",
++      commandFingerprint: OzonContract.textFingerprint(commandText),
++      autoSend: manualAutoSend
++    });
++  }
++  const fingerprint = OzonContract.commandFingerprint(parsed);
+   let duplicateOperation = null;
+   const operationId = `ozmanual-${crypto.randomUUID()}`;
+   const now = new Date().toISOString();
+@@ -919,7 +1045,7 @@
+       request_worker_session_id: WORKER_SESSION_ID,
+       delivery_id: null,
+       outgoing_text: null,
+-      auto_send: true,
++      auto_send: manualAutoSend,
+       report_prefix_applied: false,
+       delivery_confirmed: false,
+       created_at: now,
+@@ -933,34 +1059,52 @@
+   if (!operation || operation.operation_id !== operationId) {
+     throw Object.assign(new Error("Bridge уже выполняет или доставляет ручной Ozon-запрос."), { code: "MANUAL_OPERATION_ACTIVE" });
+   }
+-  await diagnostic("MANUAL_OPERATION_CLAIMED", { operation_id: operationId, manual_request_id: requestToken, conversation_id: liveIdentity.conversation_id, tab_id: senderTabId, operation: parsed.operation });
++  await diagnostic("MANUAL_OPERATION_CLAIMED", { operation_id: operationId, manual_request_id: requestToken, conversation_id: liveIdentity.conversation_id, tab_id: senderTabId, operation: parsed.operation, command_fingerprint: fingerprint });
++  let result;
++  const requestStartedAt = Date.now();
+   try {
+-    const result = await executeOzonCore(commandText);
+-    const prefixed = await applyPrefixToReport(key, result.report_text);
+-    const deliveryId = `manual-delivery-${operationId}`;
+-    await mutateManualOperation(key, (current) => {
+-      if (!current || current.operation_id !== operationId) return current;
+-      return {
+-        ...current,
+-        status: MANUAL_OPERATION_STATUSES.DELIVERING,
+-        request_id: result.request_id || null,
+-        delivery_id: deliveryId,
+-        outgoing_text: prefixed.outgoing_text || result.report_text,
+-        auto_send: result.auto_send !== false,
+-        report_prefix_applied: prefixed.report_prefix_applied === true,
+-        last_error: null
+-      };
+-    });
+-    await diagnostic("MANUAL_OPERATION_DELIVERING", { operation_id: operationId, delivery_id: deliveryId, request_id: result.request_id || null, tab_id: senderTabId });
+-    return { ...result, ...prefixed, manual_operation_id: operationId, manual_request_id: requestToken, delivery_id: deliveryId };
++    result = await executeOzonCore(commandText);
+   } catch (error) {
+-    await mutateManualOperation(key, (current) => {
+-      if (!current || current.operation_id !== operationId) return current;
+-      return { ...current, status: MANUAL_OPERATION_STATUSES.FAILED, completed_at: new Date().toISOString(), last_error: { code: error.code || "MANUAL_OPERATION_FAILED", message: String(error.message || error) } };
+-    });
+-    await diagnostic("MANUAL_OPERATION_FAILED", { operation_id: operationId, code: error.code || "MANUAL_OPERATION_FAILED", error: String(error.message || error) }, { level: "error" });
+-    throw error;
+-  }
++    try {
++      result = buildExecutionErrorResult(parsed, fingerprint, error, Date.now() - requestStartedAt);
++      await diagnostic("MANUAL_REQUEST_ERROR_REPORT_CREATED", {
++        operation_id: operationId,
++        operation: parsed.operation,
++        request_id: result.request_id,
++        code: OzonContract.safeBridgeErrorPayload(error).code,
++        http_status: result.http_status
++      }, { level: "warning" });
++    } catch (reportError) {
++      await mutateManualOperation(key, (current) => {
++        if (!current || current.operation_id !== operationId) return current;
++        return { ...current, status: MANUAL_OPERATION_STATUSES.FAILED, completed_at: new Date().toISOString(), last_error: { code: reportError.code || "MANUAL_ERROR_REPORT_FAILED", message: String(reportError.message || reportError) } };
++      });
++      await diagnostic("MANUAL_OPERATION_FAILED", { operation_id: operationId, code: reportError.code || "MANUAL_ERROR_REPORT_FAILED", error: String(reportError.message || reportError) }, { level: "error" });
++      throw reportError;
++    }
++  }
++  const prefixed = await applyPrefixToReport(key, result.report_text);
++  const deliveryId = `manual-delivery-${operationId}`;
++  await mutateManualOperation(key, (current) => {
++    if (!current || current.operation_id !== operationId) return current;
++    return {
++      ...current,
++      status: MANUAL_OPERATION_STATUSES.DELIVERING,
++      request_id: result.request_id || null,
++      request_worker_session_id: null,
++      delivery_id: deliveryId,
++      outgoing_text: prefixed.outgoing_text || result.report_text,
++      auto_send: result.bridge_error ? manualAutoSend : result.auto_send !== false,
++      report_prefix_applied: prefixed.report_prefix_applied === true,
++      last_error: result.bridge_error ? {
++        code: result.error?.code || "OZON_BRIDGE_ERROR",
++        message: result.error?.message || "Bridge execution error converted to chat result.",
++        external_request_executed: true
++      } : null
++    };
++  });
++  await diagnostic("MANUAL_OPERATION_DELIVERING", { operation_id: operationId, delivery_id: deliveryId, request_id: result.request_id || null, tab_id: senderTabId, source: result.bridge_error ? "execution_error" : "provider_result" });
++  return { ...result, ...prefixed, auto_send: result.bridge_error ? manualAutoSend : result.auto_send !== false, manual_operation_id: operationId, manual_request_id: requestToken, delivery_id: deliveryId };
+ }
+ 
+ function manualDeliveryRecoveryPayload(operation) {
+@@ -1423,17 +1567,15 @@
+   });
+   const safe = OzonContract.safeBridgeErrorPayload(sourceError, 0);
+   const stage = String(message.error_stage || "pre_execution").slice(0, 80);
+-  const suppliedFingerprint = String(message.command_fingerprint || "").trim().toLowerCase();
+-  const fingerprint = /^[a-f0-9]{8,64}$/.test(suppliedFingerprint)
+-    ? suppliedFingerprint
+-    : OzonContract.textFingerprint(`${stage}|${assistantTurnId}|${safe.code}|${safe.message}`);
+-  const requestId = `preexec-${crypto.randomUUID()}`;
+-  const reportText = OzonContract.formatPreExecutionErrorReport({
+-    requestId,
++  const preexec = buildPreExecutionErrorResult({
+     error: sourceError,
+     stage,
+-    commandFingerprint: fingerprint
+-  });
++    commandFingerprint: String(message.command_fingerprint || ""),
++    requestIdPrefix: "auto-preexec"
++  });
++  const fingerprint = preexec.command_fingerprint;
++  const requestId = preexec.request_id;
++  const reportText = preexec.report_text;
+   const prefixed = await applyPrefixToReport(key, reportText);
+   const outgoingHash = await sha256Hex(prefixed.outgoing_text);
+   const deliveryId = `delivery-${crypto.randomUUID()}`;
+@@ -1576,7 +1718,7 @@
+     result = await executeOzonCore(commandText);
+   } catch (error) {
+     try {
+-      result = buildAutoExecutionErrorResult(parsed, fingerprint, error, Date.now() - requestStartedAt);
++      result = buildExecutionErrorResult(parsed, fingerprint, error, Date.now() - requestStartedAt);
+       await diagnostic("AUTO_REQUEST_ERROR_REPORT_CREATED", {
+         run_id: runId,
+         operation: parsed.operation,
+--- a/shared/ozon_contract.js
++++ b/shared/ozon_contract.js
+@@ -124,7 +124,7 @@
+     operations = OPERATIONS,
+     prefix = "OZON_API_V1",
+     resultPrefix = "OZON_RESULT_V1",
+-    version = "0.1.4",
++    version = "0.1.5",
+     sellerApiBase = "https://api-seller.ozon.ru"
+   } = {}) {
+     const registry = {};
+--- a/shared/runtime_names.js
++++ b/shared/runtime_names.js
+@@ -1,7 +1,7 @@
+ (() => {
+   "use strict";
+   const RUNTIME = Object.freeze({
+-    version: "0.1.4",
++    version: "0.1.5",
+     commandPrefix: "OZON_API_V1",
+     resultPrefix: "OZON_RESULT_V1",
+     messagePrefix: "OZ_",
+@@ -35,9 +35,9 @@
+     "Один OZON_API_V1 = не более одного внешнего Ozon API request. Никаких скрытых retry, pagination-loop или fan-out.",
+     "Если результат содержит cursor/offset/last_id/следующую страницу, сформируй отдельную следующую OZON_API_V1 команду только если она действительно нужна.",
+     "При HTTP 429/4xx/5xx или result.error от bridge/provider не повторяй тот же запрос автоматически: сначала обработай OZON_RESULT_V1, причину ошибки и при необходимости измени следующий read-only запрос.",
+-    "Ошибки autorun до внешнего Ozon API request (parse/validation/watcher) также приходят как OZON_RESULT_V1; request_meta.external_request_executed=false означает, что внешний Ozon API request не выполнялся.",
++    "Ошибки manual и autorun до внешнего Ozon API request (parse/validation/watcher) также приходят как OZON_RESULT_V1; request_meta.external_request_executed=false означает, что внешний Ozon API request не выполнялся.",
+     "Не передавай url, host, HTTP method, headers, Client-Id, Api-Key, Client Secret или Authorization: выбирай только operation из allowlist и params.",
+-    "Разрешённые operation aliases v0.1.4: roles, stocks_current, analytics_data, product_queries, product_queries_details, posting_fbo_list, supply_order_get, supply_order_details.",
++    "Разрешённые operation aliases v0.1.5: roles, stocks_current, analytics_data, product_queries, product_queries_details, posting_fbo_list, supply_order_get, supply_order_details.",
+     "posting_fbs_get намеренно заблокирован: endpoint может содержать customer PII.",
+     "Не запрашивай customer PII и не используй mutation/write operations.",
+     "",

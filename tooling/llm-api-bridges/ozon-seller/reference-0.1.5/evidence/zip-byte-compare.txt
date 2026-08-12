@@ -1,0 +1,6 @@
+release_zip=ozon-bridge-v0.1.5-extension.zip
+fresh_extract=true
+production_files=16
+byte_exact=16/16
+production_zip_contains_tests=false
+production_zip_contains_evidence=false

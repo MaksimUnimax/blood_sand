@@ -1,0 +1,9 @@
+const test=require('node:test'); const assert=require('node:assert/strict'); const fs=require('node:fs'); const path=require('node:path');
+const ROOT=path.resolve(__dirname,'../ozon-bridge-v0.1.5-extension');
+const content=fs.readFileSync(path.join(ROOT,'content_script.js'),'utf8'); const worker=fs.readFileSync(path.join(ROOT,'service_worker.js'),'utf8');
+function sliceBetween(s,a,b){const i=s.indexOf(a),j=s.indexOf(b,i+a.length); assert.ok(i>=0&&j>i); return s.slice(i,j);}
+test('manual content path has no local parseCommand gate or toast-only invalid JSON return',()=>{const h=sliceBetween(content,'  async function handleCopy','  function decorateBinding'); assert.equal(h.includes('parseCommand('),false); assert.match(h,/sendRuntime\("OZ_EXECUTE_COMMAND"/); assert.match(h,/pre_execution_error/);});
+test('manual worker parser catch routes into durable pre-execution delivery helper',()=>{const h=sliceBetween(worker,'async function executeManualCommand','function manualDeliveryRecoveryPayload'); assert.match(h,/catch \(error\)[\s\S]*claimManualPreExecutionError/); assert.match(h,/buildExecutionErrorResult/);});
+test('manual and autorun execution exceptions share one generic execution-error result builder',()=>{assert.equal((worker.match(/function buildExecutionErrorResult/g)||[]).length,1); assert.ok((worker.match(/buildExecutionErrorResult\(/g)||[]).length>=3); assert.equal(worker.includes('buildAutoExecutionErrorResult'),false);});
+test('manual and autorun pre-execution paths share one generic pre-execution result builder',()=>{assert.equal((worker.match(/function buildPreExecutionErrorResult/g)||[]).length,1); assert.ok((worker.match(/buildPreExecutionErrorResult\(/g)||[]).length>=3);});
+test('no new manual-specific runtime message type was introduced as a side-channel',()=>{assert.equal(worker.includes('OZ_MANUAL_PREEXEC_ERROR'),false); assert.equal(content.includes('OZ_MANUAL_PREEXEC_ERROR'),false);});

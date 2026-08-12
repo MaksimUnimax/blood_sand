@@ -1,0 +1,16 @@
+Ozon Bridge v0.1.5 fresh-release extraction verification
+Date: 2026-08-12
+
+release_zip=ozon-bridge-v0.1.5-extension.zip
+release_sha256=130d88f3225087aaecbf12819d39949ff68b9ab6d422ff8d3cd7b55953cd4651
+fresh_extract=true
+production_files=16
+byte_exact=16/16
+node_tests=67
+node_pass=67
+node_fail=0
+node_cancelled=0
+node_skipped=0
+chromium_pack_exit_code=0
+
+The complete committed test suite was executed against the production tree reconstructed from the immutable v0.1.4 reference plus the reviewed v0.1.5 patch. A fresh extraction of the deterministic release ZIP was then verified byte-for-byte and the same 67-test suite passed against that extracted production tree.

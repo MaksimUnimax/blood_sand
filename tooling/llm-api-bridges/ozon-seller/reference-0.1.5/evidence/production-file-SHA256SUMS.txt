@@ -1,0 +1,16 @@
+ad0481bb77ff4209094de2cd467da940238170eb932c623f4774c8fbf852df5d  ozon-bridge-v0.1.5-extension/content_script.js
+9755ddbcafc85437e56822e96d5035a520f5467b077a2b6463cf8ea92622c9b9  ozon-bridge-v0.1.5-extension/manifest.json
+dd7249e12813f54af66b35a07dab93189d6643416019f0873f9d5624297e34b5  ozon-bridge-v0.1.5-extension/popup.css
+fa8844bb22ebc7a79adadd8df3cf07c4acb23c565798bee30edb6f6c2ab63801  ozon-bridge-v0.1.5-extension/popup.html
+53f452bd5a74c2944847848efe41860c7654529e97406816fb2fa8a3a69d1266  ozon-bridge-v0.1.5-extension/popup.js
+f7812c93d42533e63ebce845485bc3935525884ee235bfc4c96d2abd4a058fae  ozon-bridge-v0.1.5-extension/service_worker.js
+dff5265640ec4b848b4dee6019261c7b230d015eeac6f12fd85b9b7c2e93c22c  ozon-bridge-v0.1.5-extension/shared/bridge_autorun_model.js
+a6a2b25ea29637b76250a9f29fdcb177b52824a16a193b44ca5603df2494da79  ozon-bridge-v0.1.5-extension/shared/composer_send.js
+e56a9f352c4668f47a0f72c2044a943a88457024c4400fa878a974551518114a  ozon-bridge-v0.1.5-extension/shared/conversation_identity.js
+81f302487da7b5ff7c1b746298353438b2cfec100a5bb8f7fa2c80d1e033c81e  ozon-bridge-v0.1.5-extension/shared/manual_controls.js
+d85ff58d82c533e6ecd33db90885e38cb4814889cad9d0865cb41c35311c49b2  ozon-bridge-v0.1.5-extension/shared/ozon_contract.js
+74ff17f27ad6bdfd9ede3a671400b3ddfe588ab0a73a6215e5cbc9acfc326b17  ozon-bridge-v0.1.5-extension/shared/ozon_credentials.js
+611911cf6a354f2e3de99a86fce4b59db6d086f301b1658baf9c991ddb736d76  ozon-bridge-v0.1.5-extension/shared/ozon_provider.js
+5b0eaac9619cb827d1e74c61f53e2755c084a1d4b60c64d23f5fd4a5354c3aef  ozon-bridge-v0.1.5-extension/shared/proven_writing_block_capture.js
+76681b0de04f8781b4a5b7f2a37ad2cb2cfecf5503cc1ad3e296908463ba2ddb  ozon-bridge-v0.1.5-extension/shared/provider_transport_core.js
+7304e9c28f16245949485b63a3b4cadf75a9796c13d765226a67f901c703cea4  ozon-bridge-v0.1.5-extension/shared/runtime_names.js

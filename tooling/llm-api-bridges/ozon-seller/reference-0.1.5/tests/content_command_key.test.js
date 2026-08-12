@@ -1,0 +1,6 @@
+const test=require('node:test'); const assert=require('node:assert/strict'); const fs=require('node:fs'); const path=require('node:path'); const vm=require('node:vm');
+const ROOT=path.resolve(__dirname,'../ozon-bridge-v0.1.5-extension'); const source=fs.readFileSync(path.join(ROOT,'content_script.js'),'utf8');
+const a=source.indexOf('  function commandKey'); const b=source.indexOf('  function styleSnapshot',a); assert.ok(a>=0&&b>a); const code=source.slice(a,b);
+function run(text){const ctx={OzonContract:{textFingerprint(v){ctx.seen=String(v); return 'deadbeef';}}}; vm.createContext(ctx); vm.runInContext(`${code}\nthis.commandKey=commandKey;`,ctx); const binding={section:{getAttribute(){return 'turn-1';}},root:{getAttribute(){return 'block-1';},id:'fallback'}}; return {key:ctx.commandKey(binding,text),seen:ctx.seen};}
+test('actual commandKey fingerprints malformed text without parsing it',()=>{const bad='OZON_API_V1 {"x":"bad\ncontrol"}'; const r=run(bad); assert.equal(r.seen,bad); assert.equal(r.key,'turn-1:block-1:deadbeef');});
+test('actual commandKey uses same text-fingerprint path for valid commands',()=>{const good='OZON_API_V1 {"operation":"roles","params":{}}'; const r=run(good); assert.equal(r.seen,good); assert.equal(r.key,'turn-1:block-1:deadbeef');});
