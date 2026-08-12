@@ -473,3 +473,60 @@ No live Ozon brute-force probing of undocumented limits was performed.
 ### Acceptance state
 
 v0.1.6 supersedes v0.1.5 as the current Seller bridge implementation authority for provider-boundary handling. The immutable v0.1.5 snapshot remains historical evidence. The Performance API is still a separate, not-yet-implemented bridge/auth surface.
+
+---
+
+## 2026-08-12 — Ozon Bridge v0.1.7: bounded exactly-once-safe Send retry
+
+Release reference:
+
+`tooling/llm-api-bridges/ozon-seller/reference-0.1.7/`
+
+Release ZIP SHA-256:
+
+`9b4ee937d186f3a39d318c0e3d43f02d5a405799259225e00192aff0db68ea1c`
+
+### Incident and rejected workaround
+
+During live FBO pagination, Ozon returned HTTP 200 and the bridge had already prepared/staged the result, but ChatGPT delivery stopped before commit because the Send target did not become ready under the single-wait policy (`DELIVERY_SEND_TARGET_NOT_READY_BEFORE_COMMIT`).
+
+JSON compaction/truncation/reformatting is explicitly rejected as a fix for this incident: the observed failure was in browser composer/send readiness, not provider-result serialization. v0.1.7 preserves the v0.1.6 provider-boundary/result policy.
+
+### Delivery correction
+
+`content_script.js` now uses bounded validated Send-target reacquisition before commit instead of one fixed target wait. Each retry re-resolves and validates the current composer/form/button against the exact staged text. Text mutation and runtime supersession fail closed. Exhaustion is explicit rather than silently looping.
+
+The post-commit send path is now exactly-once-safe. Retry of `button.click()` is permitted only while the bridge has evidence that no click event was observed. Once a click event is observed, no second Send click is allowed; the bridge waits for composer settlement and continues through confirmation/reconciliation/recovery instead.
+
+`shared/composer_send.js` now guarantees click-trace cleanup even if `button.click()` throws and reports whether a click event had already been observed. This lets the caller distinguish a safe pre-event retry from an unsafe post-event retry.
+
+Worker commit remains the irreversible boundary and still precedes the browser click. A rejected or already-used commit permission produces zero new clicks. Browser delivery retry never replays the Ozon provider request.
+
+### Verification
+
+Final source-tree suite: **119/119 PASS**, 0 fail, 0 skipped, 0 cancelled.
+
+Fresh final ZIP extraction: **119/119 PASS**, 0 fail, 0 skipped, 0 cancelled.
+
+Changed-line audit:
+
+- `content_script.js`: 104/104 changed lines mapped to exact-source runtime/integration/version tests;
+- `shared/composer_send.js`: 15/15 changed lines mapped to full-module production-source tests;
+- all other changed production lines are version-only and exact-equivalence tested;
+- every other production file remains byte-identical to v0.1.6.
+
+Package/build checks:
+
+- exactly 16 production files in the ZIP;
+- 16/16 fresh-extracted files byte-identical to tested source;
+- all production JavaScript passes `node --check`;
+- Chromium headless extension pack exits 0;
+- no tests/evidence inside the production ZIP;
+- deterministic rebuild is byte-identical;
+- ZIP SHA-256 `9b4ee937d186f3a39d318c0e3d43f02d5a405799259225e00192aff0db68ea1c`.
+
+### Acceptance state
+
+v0.1.7 supersedes v0.1.6 for ChatGPT browser Send-delivery behavior. v0.1.6 provider-boundary semantics, read-only operation constraints, privacy/security controls, credential isolation, one-command/one-provider-request rule and no hidden provider retry/pagination/fan-out remain unchanged.
+
+Automated/package acceptance is complete. Logged-in live ChatGPT field acceptance of the original Send-readiness incident remains pending installation and a live continuation run with v0.1.7.
