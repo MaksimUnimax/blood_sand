@@ -174,3 +174,107 @@ From this point forward:
 - corrections are append-only and must explicitly identify the older entry being corrected;
 - `reference-*` directories remain immutable version-specific evidence snapshots;
 - research-era lifecycle/status files remain provenance artifacts but do not override the implemented bridge/version authority recorded here and in the immutable reference snapshots.
+
+---
+
+## 2026-08-12 — Ozon Bridge v0.1.5: Manual error-to-chat lifecycle completed
+
+Primary implementation/evidence commit:
+
+`6eafe32df1111fd6133a9546c30e2260e1941139`
+
+README authority update commit:
+
+`4643a95ab282213d47577ac455fc7a1fe8dc3570`
+
+Reference snapshot:
+
+`tooling/llm-api-bridges/ozon-seller/reference-0.1.5/`
+
+Release ZIP SHA-256:
+
+`130d88f3225087aaecbf12819d39949ff68b9ab6d422ff8d3cd7b55953cd4651`
+
+### Live failure that forced the correction
+
+After v0.1.4 was installed, a deliberately malformed Manual `OZON_API_V1` writing block containing a raw newline/control character inside a JSON string produced only the local message `Ozon: команда не выполнена — Некорректный JSON: Bad control character...`. No `OZON_RESULT_V1` appeared in ChatGPT. Diagnostics showed no Manual operation/request/delivery ownership because execution stopped in the content script before the worker was called. No provider request occurred.
+
+The root cause was a scope error in v0.1.4: the observed Autorun parser failure was fixed as an Autorun-specific path, while the project invariant was broader — controlled errors for both Manual and Autorun must become observable bridge results once the trusted target conversation/binding is established.
+
+### Architecture correction
+
+v0.1.5 removes the Manual content-script parser gate instead of adding another mode-specific side channel.
+
+`content_script.js`:
+
+- `handleCopy()` no longer calls `OzonContract.parseCommand()` before the worker;
+- after the existing `OZON_API_V1` prefix recognition, Manual Copy sends the command through the existing `OZ_EXECUTE_COMMAND` message path;
+- `commandKey()` fingerprints raw command text using `textFingerprint()`, so malformed commands still receive deterministic busy/dedup identity without requiring a successful parse;
+- the existing Manual delivery path remains authoritative: `deliverReport()` → `OZ_MANUAL_DELIVERY_COMPLETE` / `OZ_REPORT_DELIVERY_CONFIRMED`, with `OZ_MANUAL_DELIVERY_FAILED` on delivery failure.
+
+`service_worker.js`:
+
+- Manual parsing/validation is worker-owned;
+- controlled parser/contract errors become canonical `OZON_RESULT_V1` pre-execution reports and durable Manual delivery operations with `operation:null`, `http_status:0`, `automatic_retry:false`, and `external_request_executed:false`;
+- Manual-mode race-off and active-Autorun gate failures, after trusted tab/conversation/binding verification, also become chat-visible pre-execution results with zero provider requests;
+- a single generic `buildPreExecutionErrorResult()` is shared by Manual and Autorun;
+- a single generic `buildExecutionErrorResult()` is shared by Manual and Autorun;
+- Manual provider transport exceptions after exactly one attempted provider request become `OZON_RESULT_V1 result.error` and enter the normal Manual delivery lifecycle instead of becoming worker-only terminal failures;
+- no `OZ_MANUAL_PREEXEC_ERROR` runtime message/parallel protocol was introduced.
+
+Security boundaries remain fail-closed: missing sender tab, missing/invalid trusted conversation identity, conversation mismatch and unbound/wrong conversation conditions are not injected into an untrusted chat and perform zero provider requests.
+
+### Test and dependency evidence
+
+Final source-tree suite: **67/67 PASS**, 0 fail, 0 skipped, 0 cancelled.
+
+The same **67/67 PASS** suite was run again against a fresh extraction of the final deterministic production ZIP.
+
+The test matrix exercises the behavior-changing code and its dependent lifecycle rather than only scanning patched text:
+
+- actual production `handleCopy()` is VM-executed for malformed, valid, non-command, Manual-disabled, conversation-resync, BUSY duplicate, missing-report, delivery-failure and `auto_send=false` branches;
+- actual production `commandKey()` is VM-executed for valid and malformed command text;
+- exact raw-newline/control-character malformed JSON incident class → Manual chat result, provider fetch count = 0;
+- unsupported operation → chat result, fetch count = 0;
+- unknown top-level field → chat result, fetch count = 0 and unsafe URL text not echoed;
+- Manual mode race-off and active-Autorun gate failures → chat results, fetch count = 0;
+- valid Manual request → exactly one provider fetch;
+- provider HTTP 400 → exactly one provider fetch and provider error result;
+- provider transport exception → exactly one provider fetch, bridge error result, `automatic_retry:false`;
+- Manual pre-execution delivery completion/failure transitions;
+- duplicate Manual request-id fence and active-operation fence;
+- report-prefix and `auto_send=false` behavior;
+- conversation mismatch, wrong tab, missing tab/request-id security failure paths → fail closed with fetch count = 0;
+- retained v0.1.4 Autorun pre-execution, duplicate, delivery, recovery, finish and valid-one-fetch regression suite;
+- static architecture invariants prove the Manual content path has no local `parseCommand()` gate, Manual and Autorun share generic pre-execution/execution error builders, and no Manual-specific pre-execution side-channel message exists;
+- every production JavaScript file passes `node --check`;
+- manifest host permissions remain ChatGPT plus the fixed `api-seller.ozon.ru` host only.
+
+Coverage evidence is intentionally not misrepresented as 100% of unrelated legacy code. Whole reconstructed production/test execution: 51.29% lines, 58.77% branches, 73.98% functions. `shared/ozon_contract.js`: 95.63% lines. `shared/runtime_names.js`: 100% lines. The changed Manual runtime harness and command-key harness execute 100% of their extracted behavior-changing functions, while the worker Manual pipeline test reaches 98.81% lines, 91.23% branches and 91.49% functions in that test surface.
+
+### Packaging/build evidence
+
+- v0.1.5 reconstructs deterministically from the immutable v0.1.4 reference plus the reviewed v0.1.4→v0.1.5 patch;
+- 16/16 production file SHA-256 hashes are verified by the reconstruction harness;
+- clean production ZIP contains no tests/evidence;
+- fresh ZIP extraction matches 16/16 production files byte-for-byte;
+- the complete 67-test suite passes against the fresh extracted production package;
+- fresh extracted extension passes Chromium `--pack-extension` with exit code 0;
+- deterministic release SHA-256 is `130d88f3225087aaecbf12819d39949ff68b9ab6d422ff8d3cd7b55953cd4651`.
+
+Detailed evidence:
+
+- `reference-0.1.5/OZON_BRIDGE_V0.1.5_CHANGELOG_AND_TEST_EVIDENCE.md`;
+- `reference-0.1.5/evidence/OZON_BRIDGE_V0.1.5_PATCH.diff`;
+- `reference-0.1.5/evidence/node-tests-and-coverage-summary.txt`;
+- `reference-0.1.5/evidence/node-tests-and-coverage.txt`;
+- `reference-0.1.5/evidence/release-extracted-tests.txt`;
+- `reference-0.1.5/evidence/production-file-SHA256SUMS.txt`;
+- `reference-0.1.5/evidence/zip-byte-compare.txt`;
+- `reference-0.1.5/evidence/chromium-pack-status.txt`;
+- `reference-0.1.5/evidence/release-SHA256.txt`;
+- executable regression tests under `reference-0.1.5/tests/`.
+
+### Acceptance state
+
+v0.1.5 is accepted as the current Seller bridge reference for the controlled-error invariant: once trusted conversation/binding ownership is established, Manual and Autorun controlled pre-execution errors are observable as `OZON_RESULT_V1`; malformed/validation failures prove zero provider requests, while provider transport failures prove one attempted request and no automatic retry. Identity/binding failures that cannot safely establish the target chat remain fail-closed.
