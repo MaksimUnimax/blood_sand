@@ -1,0 +1,46 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "8ff8e036-1d4b-4ec4-9f85-448d63dd7217",
+  "command": {
+    "method": "getTop",
+    "phrase": "талисман в машину",
+    "numPhrases": 2000,
+    "regions": ["225"],
+    "devices": ["DEVICE_ALL"]
+  },
+  "http_status": 200,
+  "elapsed_ms": 753,
+  "result": {
+    "results": [
+      {"phrase": "талисман в машину", "count": "177"},
+      {"phrase": "оберег талисман в машину", "count": "10"},
+      {"phrase": "талисман в машину мягкая игрушка", "count": "9"},
+      {"phrase": "защита в машину талисман японский", "count": "5"},
+      {"phrase": "рыбка талисман в машине", "count": "5"},
+      {"phrase": "талисман мишка в машину", "count": "5"},
+      {"phrase": "мк подвеска талисман в машину вмф", "count": "5"}
+    ],
+    "associations": [
+      {"phrase": "оберег", "count": "317831"},
+      {"phrase": "амулет", "count": "503655"},
+      {"phrase": "mg5 автомобиль", "count": "1211"},
+      {"phrase": "автомобильные войска", "count": "6678"},
+      {"phrase": "авто ам", "count": "3302"},
+      {"phrase": "танк авто", "count": "10270"},
+      {"phrase": "марки автомобилей со значками", "count": "3244"},
+      {"phrase": "привоз авто", "count": "15778"},
+      {"phrase": "car money", "count": "2915"},
+      {"phrase": "авто по номеру автомобиля", "count": "7422"},
+      {"phrase": "бор авто", "count": "6626"},
+      {"phrase": "подвеска автомобиля это", "count": "703"},
+      {"phrase": "окз водитель автомобиля", "count": "2762"},
+      {"phrase": "амулет это", "count": "3087"},
+      {"phrase": "li7 автомобиль", "count": "679"},
+      {"phrase": "значки автомобилей иномарок и их названия", "count": "322"},
+      {"phrase": "xm3 автомобиль", "count": "445"},
+      {"phrase": "водитель автомобиля", "count": "235730"}
+    ],
+    "totalCount": "177"
+  }
+}
