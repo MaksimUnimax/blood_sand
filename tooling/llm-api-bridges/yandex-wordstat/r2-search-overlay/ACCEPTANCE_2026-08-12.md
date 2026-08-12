@@ -117,3 +117,19 @@ The live probe must:
 - preserve the returned envelope as raw evidence.
 
 Only after that probe succeeds may the primary mobile SERP pass continue.
+
+## Append-only documentation handoff
+
+The canonical owner-supplied documentation is append-only. The 1.1.6 Search overlay documentation therefore does **not** replace or rewrite the 1.1.5 history.
+
+A new full documentation artifact was produced by preserving the complete prior document byte-for-byte and appending one new 2026-08-12 / 1.1.6 Search-overlay entry at the end.
+
+- prior canonical documentation bytes: `171659`;
+- prior canonical documentation SHA-256: `437a69022b31621d7a749e3b92c0faf0c45f3d7be60e1a901cda65c3faf0a25a`;
+- preserved prefix equality: `true`;
+- new documentation file: `WORDSTAT_BRIDGE_DOCUMENTATION_APPEND_ONLY_FULL_FUNCTION_ENVIRONMENT_AUDIT_R2_SEARCH_OVERLAY_1.1.6.md`;
+- new documentation SHA-256: `62548d39f0cb363e21a8ca703d24c8bdcd5de3c2ce41edbcf345f373c9919416`;
+- full 1.1.6 extension ZIP SHA-256: `371a7f0f2cd36ce6ffbbe4f921344207a1e441bf7be6c26f4cb731bfd27e02b9`;
+- in-place patch ZIP SHA-256: `a850d26dbb0998ad14629d27d8735f2189cc6c30fb8064d74565fcbbf04b0e9a`.
+
+As in the historical Wordstat documentation policy, the canonical documentation remains a **separate companion artifact** and is not hidden inside the extension ZIP. Future live-provider results or corrections must be appended as new entries, never retroactively rewritten.
