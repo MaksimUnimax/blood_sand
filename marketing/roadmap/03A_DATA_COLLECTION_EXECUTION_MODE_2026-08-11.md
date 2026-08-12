@@ -1,212 +1,100 @@
-# 03A — Режим сбора marketplace-данных до возврата к сайту
+# 03A — Режим marketplace-данных до возврата к Wordstat
 
 Статус: **[~] АКТИВНЫЙ EXECUTION RULE ДЛЯ 03A**  
-Дата фиксации: 2026-08-11  
-Scope: Ozon → Wildberries → только затем возврат к выводам и проектированию сайта.
+Исходная фиксация: 2026-08-11  
+Owner override: **2026-08-12**  
+Scope: **Ozon-primary → Ozon-centric master → re-baseline 03 → Wordstat. Wildberries выполняется параллельно и не блокирует этот путь.**
 
-## Решение владельца
+## Приоритет этого документа
 
-На текущем этапе задача — **только собрать, сохранить и проверить доступные фактические данные marketplace**.
+Это текущий owner execution rule. В части, где старые формулировки `03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md`, `roadmap/README.md` или иных документов требуют обязательного завершения Wildberries до Ozon-centric master / re-baseline Wordstat, действует owner override от 2026-08-12 из этого файла.
 
-До завершения сбора по **обоим** marketplace запрещено использовать частичный Ozon-only или WB-only dataset для дальнейших выводов по сайту.
+Wildberries не удаляется из проекта и не объявляется ненужным. WB bridge остаётся отдельным параллельным track и позднее должен обогатить product master дополнительными listing/seller facts, но **его отсутствие больше не является gate для продолжения текущего исследования**.
 
-До этого момента не выполняются:
+## Решение владельца от 2026-08-12
 
-- проектирование окончательных категорий сайта;
-- приоритизация SKU/товаров для сайта;
-- re-baseline Wordstat;
-- новый полный SERP/Alice pass;
-- окончательные SEO/content/Page Job решения;
-- окончательная коммерческая модель сайта;
-- выводы вида «товар хороший/плохой», «категория приоритетная/неприоритетная» только по данным одной площадки.
+Для текущего исследования товарный и seller baseline строится по Ozon, потому что Ozon является основной площадкой по фактическому объёму продаж данного магазина. Информация о товарах для текущего re-baseline берётся из Ozon evidence. Wildberries до готовности собственного расширения пропускается в critical path.
 
-Разрешены только технические выводы, необходимые для корректного сбора данных: schema/contract validation, pagination, availability, identity joins, currentness, permissions, read/write classification, ошибки/пропуски и качество capture.
+Это разрешает после технического закрытия текущего Ozon collection pass:
 
-## Порядок исполнения
+- построить Ozon-centric Product/SKU/Listing master;
+- сгруппировать фактический Ozon ассортимент в ProductFamily;
+- использовать Ozon ordered-units/revenue как seller evidence для определения порядка исследования семей;
+- выполнить re-baseline roadmap 03;
+- возобновить Wordstat по всему фактическому Ozon ассортименту.
 
-1. Довести Ozon read-only bridge до покрытия данных, необходимых текущему этапу.
-2. Через реальный Ozon account собрать полный доступный Ozon dataset.
-3. Сохранить raw evidence без перезаписи и отдельно normalized records.
-4. Для каждого требуемого слоя либо получить данные, либо явно зафиксировать `UNAVAILABLE / NOT_EXPOSED / CONTRACT_GAP / ACCESS_RESTRICTED` с причиной.
-5. После завершения Ozon collection перейти к Wildberries bridge.
-6. Довести WB read-only bridge до эквивалентного требуемого покрытия.
-7. Собрать и сохранить полный доступный WB dataset теми же правилами.
-8. Только после завершения обеих площадок строить cross-platform Product/SKU/Listing/Category master и возвращаться к дальнейшей работе по сайту.
+Это **не разрешает** подменять отсутствующие факты догадками или считать Ozon evidence доказательством поведения Wildberries.
 
-## Что обязательно собрать по Ozon на этом этапе
+## Текущий порядок исполнения
 
-### Product / listing identity и полный ассортимент
+1. Закрыть текущий Ozon read-only collection pass: для каждого требуемого слоя иметь либо capture, либо доказанный gap/ограничение.
+2. Нормализовать доказанный Ozon ассортимент и identity из доступных captures.
+3. Построить Ozon-centric Product/SKU/ProductFamily baseline.
+4. Свести доступный Ozon seller analytics baseline без выдумывания отсутствующих метрик.
+5. Зафиксировать product-family re-baseline для roadmap 03 и новый seed/root scope.
+6. **Остановиться перед первым новым Wordstat API measurement и запросить запуск Wordstat extension у владельца.**
+7. Wildberries bridge/ingestion продолжать параллельно отдельным track; после готовности добавить WB mapping в master как enrichment, а не как prerequisite для текущего Wordstat pass.
 
-- seller offer/article identity;
-- Ozon product/listing identifiers;
-- SKU;
-- полный доступный список seller listings/products, включая доступные visibility/archive состояния;
-- marketplace title/name;
-- listing visibility/status/moderation/error facts, где API их отдаёт.
+## Критерий закрытия текущего Ozon collection pass
 
-### Category / type / attributes
+Ozon pass считается достаточным для перехода к Ozon-centric master, когда для каждого обязательного слоя выполнено одно из двух:
 
-- `description_category_id`, где current contract его отдаёт;
-- `type_id`, где current contract его отдаёт;
-- category/type dictionary evidence;
-- характеристики/attributes;
-- размеры, вес и другие доступные product facts;
-- barcodes, если read contract их отдаёт.
+1. данные реально сняты и сохранены с provenance; или
+2. доказано и явно зафиксировано `UNAVAILABLE / NOT_EXPOSED / CONTRACT_GAP / ACCESS_RESTRICTED / RATE_LIMITED`.
 
-### Media / content
+Не требуется бесконечно повторять rate-limited или contract-failed запросы. Один и тот же HTTP 429/4xx запрос без нового contract evidence автоматически не повторяется.
 
-- изображения и их доступные identifiers/URLs/ordering facts;
-- video/rich-content/description refs только там, где current read API реально их отдаёт;
-- отсутствие поля фиксируется как отсутствие, без реконструкции и догадок.
+## Фактический Ozon checkpoint на 2026-08-12
 
-### Price / promotions
+Canonical browser extension `ozon-llm-api-bridge` v0.1.3 прошёл real-account usage в текущем governed capture flow.
 
-- current seller/customer price facts;
-- old/card/marketing price semantics, где доступны;
-- promotion participation/context;
-- seller/Ozon-funded context только если API явно позволяет его определить.
+Доказано и сохранено:
 
-### Stock / availability / geography
+- `roles` — real-account read capability evidence;
+- `stocks_current` — полный product-level snapshot: **76 current stock items**, terminal continuation подтверждён;
+- `analytics_data` — SKU-level `ordered_units + revenue` для нескольких периодов; 90-day offset=0 capture содержит **1519 ordered units / 2,584,012 RUB revenue**;
+- `posting_fbo_list` — cursor pagination полностью закрыта для трёх смежных окон **2026-05-13..2026-08-10**;
+- FBO captures содержат product joins, status/cancellation facts, warehouse/cluster и финансовые поля в пределах sanitized evidence;
+- повторные analytics continuation для нескольких окон получили HTTP 429 и не повторяются автоматически;
+- isolated `returns` analytics probe получил HTTP 400;
+- `product_queries` contract probe получил HTTP 400;
+- `session_view` isolated probe получил HTTP 400.
 
-- FBO/FBS stock;
-- present/reserved и другие доступные stock states;
-- warehouse identifiers;
-- seller warehouse dictionaries;
-- cluster/geography joins, где доступны;
-- текущая availability snapshot.
+Явные текущие gaps/ограничения:
 
-Если исторической истории остатков/цен API не предоставляет, это фиксируется как gap; исторические значения не выдумываются.
+- catalog product list/info/attributes aliases отсутствуют в bridge v0.1.3;
+- current price/promotions aliases отсутствуют;
+- warehouse/cluster dictionaries и dedicated warehouse-stock aliases отсутствуют;
+- finance/accrual aliases отсутствуют;
+- dedicated returns/cancellations aliases отсутствуют;
+- reviews/questions не входят в bridge allowlist;
+- Performance API advertising contour не подключён;
+- `posting_fbs_get` намеренно не используется из-за customer-PII risk;
+- `product_queries_details` не вызывается без валидных identifiers/request contract;
+- supply-order aliases не вызываются без доказанных IDs/request contract;
+- часть analytics pagination/history остаётся rate-limited; это фиксируется как gap, а не заполняется предположением.
 
-### Seller analytics / demand
+Эти gaps не отменяют существование соответствующих Ozon API families; они означают только, что текущий governed bridge/capture не доказал их usable contract/data в этой сессии.
 
-Собрать реально доступные product/SKU-level metrics и их фактические contracts, включая там, где API позволяет:
+## Правило хранения и доказательности
 
-- impressions/shows;
-- sessions/traffic;
-- conversion metrics;
-- ordered units/orders;
-- revenue;
-- другие доступные read-only metrics.
+Канонический поток:
 
-Периоды и granularity сохраняются как часть measurement provenance. Не смешивать разные метрики и периоды в один искусственный показатель.
+`measurement registry → raw Ozon evidence → normalized Ozon records → Ozon-centric product-family baseline`
 
-### Marketplace search evidence
-
-- product queries;
-- product query details;
-- доступную историю/глубину;
-- query ↔ SKU/listing identity links.
-
-### Orders / fulfilment
-
-- FBO postings;
-- FBS postings/list/detail в current версиях;
-- quantities/status/timestamps/product joins, где доступны;
-- без customer PII в LLM/GitHub evidence.
-
-### Returns / cancellations
-
-- returns;
-- cancellations;
-- reason/status/timestamps/quantities, где доступны;
-- partial events сохранять как фактические события, не сворачивая их в неподтверждённую интерпретацию.
-
-### Reviews / questions
-
-- review list/info/count/comment metadata, где доступно;
-- question list/info/count/top-SKU, где доступно;
-- customer text допускается только в рамках принятой privacy/sanitization policy и без избыточного PII.
-
-### Finance / realization
-
-- current accrual families;
-- product/posting joins;
-- commissions/services/logistics/other accrual types, где их отдаёт current API;
-- realization/settlement evidence;
-- generated reports только явными create/status/retrieve операциями, без скрытого polling/fan-out.
-
-Не строить новый слой на deprecated `/v3/finance/transaction/list` как на future target.
-
-### Supply / logistics
-
-- supply order facts;
-- replenishment/status evidence;
-- warehouse/cluster links;
-- доступные read-only logistics facts.
-
-### Advertising
-
-Если официальный Ozon Performance API удаётся authoritative подключить в read-only режиме, собрать:
-
-- campaign list/status/type;
-- campaign ↔ product mapping;
-- impressions;
-- clicks;
-- spend;
-- CTR/CPC/CPM;
-- attributed orders/revenue;
-- read-only budget/bid context;
-- доступные dimensions.
-
-Если Performance API остаётся недоступен или current contract не подтверждён, фиксируется явный gap; Seller API данными этот слой не подменяется.
-
-## Правило хранения
-
-Канонический поток текущего этапа:
-
-`request/measurement registry → raw marketplace evidence → normalized marketplace records`
-
-До завершения Ozon + WB **derived site conclusions не создаются**.
-
-Обязательные свойства capture:
+Требования:
 
 - raw append-only;
-- timestamp/date и precision;
-- provider/account contour без secrets;
-- operation/path alias;
-- request parameters без credentials;
-- pagination/cursor/offset state;
-- status/error semantics;
-- raw response reference;
-- normalized record provenance;
-- `null`, `0`, `not measured`, `not exposed`, `access denied` и `contract gap` не смешиваются.
+- normalized записи имеют provenance;
+- `null`, `0`, `not measured`, `not exposed`, `access denied`, `rate limited` и `contract gap` не смешиваются;
+- secrets и customer PII не сохраняются в LLM/GitHub evidence;
+- marketplace facts не превращаются автоматически в окончательные site/business решения;
+- product-family grouping допустим как исследовательская классификация фактического Ozon assortment и должен быть отделён от Ozon category taxonomy, если category API не был снят.
 
 ## Security rule
 
-`/v1/roles` используется только как capability evidence и **не является security allowlist**.
-
-Наличие path в Ozon role не означает, что bridge имеет право его исполнять.
-
-Начальный bridge остаётся read-only и fail-closed:
-
-- verified READ operation → может быть разрешена;
-- MUTATION → блокируется;
-- UNKNOWN effect → блокируется до отдельной проверки.
-
-Методы наподобие `cargoes/create`, `cargoes/delete`, `transport/create`, `bind`, `activate` не становятся разрешёнными только потому, что Ozon включает их в read-only role capability list.
-
-## Текущий фактический Ozon checkpoint
-
-Внешний локальный Ozon bridge `v0.1.1` уже прошёл начальный real-account transport acceptance в пользовательском окружении:
-
-- `OZON_API_V1 → OZON_RESULT_V1` работает в том же диалоге;
-- `roles` → `POST /v1/roles` → HTTP 200;
-- `analytics_data` → `POST /v1/analytics/data` → HTTP 200 на реальных seller data;
-- текущая capability-конфигурация после возврата широкого доступа снова включает `Admin read only` и granular read-only roles.
-
-Это **не означает**, что Ozon collection завершён, и не означает, что все необходимые Product Master operations уже реализованы в bridge.
-
-Пока source/package этого runtime не принят в GitHub как governed canonical Ozon extension, существующие утверждения основного 03A-файла о repository implementation status не считаются автоматически закрытыми этой заметкой.
-
-## Критерий завершения текущего Ozon collection pass
-
-Ozon pass считается собранным только когда для каждого обязательного слоя выше выполнено одно из двух:
-
-1. данные реально сняты и сохранены с provenance; или
-2. наличие gap/ограничения доказано и явно записано.
-
-После этого без site-analysis переходить к Wildberries.
+`/v1/roles` — capability evidence, а не security allowlist. Разрешены только read-only aliases текущего bridge. Mutation/write operations запрещены. Неизвестный side effect блокируется fail-closed.
 
 ## Следующее действие
 
-Начать системный Ozon capture с уже работающих read operations и параллельно добавлять только те недостающие read operations, без которых невозможно закрыть обязательные слои этого документа.
+Построить Ozon-centric normalized Product/SKU/ProductFamily baseline из доказанного полного 76-item stock snapshot и 90-day seller analytics, затем подготовить новый roadmap-03 Wordstat scope. Первый новый Wordstat request не запускать до явного сигнала владельца о запуске Wordstat extension.
