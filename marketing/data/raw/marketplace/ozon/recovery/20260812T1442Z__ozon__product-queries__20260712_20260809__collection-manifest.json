@@ -1,0 +1,67 @@
+{
+  "schema": "ozon-chat-recovery-manifest-v1",
+  "created_at": "2026-08-12T14:42:00Z",
+  "source": "Ozon Seller API via ozon-llm-api-bridge v0.1.7",
+  "purpose": "Durable preservation/recovery map for the completed product_queries and product_queries_details collection from the active ChatGPT Ozon task.",
+  "analytics_period": {
+    "date_from": "2026-07-12T00:00:00Z",
+    "date_to": "2026-08-09T23:59:59Z"
+  },
+  "skus": [
+    "1636048691","1602717077","1602722942","2559748332","1602715556","2271188511","2186857668","1629553898","1640276582","1720147059","1842444165","1720155616","1720151850","1720148880","2184234912","2271251938","1640337426","1629493686","1640251697","2183921966","2183985513","2186836116","1640326205","1640326230","2184153852","2186802133","1720161841","1640264403","1636041142","2271219774","1720141903","1720153914","2184199958","2271270261","1640330072","2186796339","2271240621","2559437928","2186850644","1720137256","2271275793","2271210394","2271234726","2186848313","2186856503","1611643847","2271262133","2326866320","1720124782","2186843798","1630033296","2186846833","1720160556","1611695246","2559817779","1640306007","2184168890","1640334195","2186852750","2271246783","1630040194","2271292556","2186766628","2184098058","1720131759","2271285786","2186865070","1623753672","1720144370","2184932293","2184133137","2183808182","1943215793","2186839757"
+  ],
+  "product_queries": {
+    "status": "HTTP 200 collected",
+    "request_id": "ab8420a9-b626-4ff4-8d7c-a5317d11a47f",
+    "request_params": {
+      "page": 0,
+      "page_size": 1000,
+      "sort_by": "BY_SEARCHES",
+      "sort_dir": "DESCENDING"
+    },
+    "total": 74,
+    "page_count": 1,
+    "note": "Full 74-row payload was observed in chat but was not present in GitHub before this recovery manifest was created. Re-execute the recorded fixed-period query if byte-for-byte row preservation is required."
+  },
+  "product_queries_details": {
+    "status": "HTTP 200 complete",
+    "request_params": {
+      "page_size": 100,
+      "limit_by_sku": 15
+    },
+    "total": 1110,
+    "page_count": 12,
+    "pages": [
+      {"page":0,"query_index_from":1,"query_index_to":100,"request_id":"ab81f44a-c130-4ab0-a2db-a0a9ab56528b"},
+      {"page":1,"query_index_from":101,"query_index_to":200,"request_id":"0d915a30-6c3b-4118-91b7-b8c52cad9387"},
+      {"page":2,"query_index_from":201,"query_index_to":300,"request_id":"57e9ae59-ad7e-488d-b864-7af5aa6dad98"},
+      {"page":3,"query_index_from":301,"query_index_to":400,"request_id":"fef29021-6bd6-40db-9d39-e304809cb52a"},
+      {"page":4,"query_index_from":401,"query_index_to":500,"request_id":"cef717ad-2eab-4f0b-b54f-ed01ae57f935"},
+      {"page":5,"query_index_from":501,"query_index_to":600,"request_id":"ec58ee35-2610-41b7-8105-e5c0b0119d0e"},
+      {"page":6,"query_index_from":601,"query_index_to":700,"request_id":"15e505ef-c951-4d2a-8846-14d7ab6ef44d"},
+      {"page":7,"query_index_from":701,"query_index_to":800,"request_id":"9657860c-ec04-45e4-9208-a08b4c0e2c6b"},
+      {"page":8,"query_index_from":801,"query_index_to":900,"request_id":"966cb644-6772-4378-997a-26e01be734f8"},
+      {"page":9,"query_index_from":901,"query_index_to":1000,"request_id":"fc3f9994-d3ff-46ab-81e9-48959c6c1151"},
+      {"page":10,"query_index_from":1001,"query_index_to":1100,"request_id":"2ec2e097-8387-4ac1-9676-cc0908cfdf90"},
+      {"page":11,"query_index_from":1101,"query_index_to":1110,"request_id":"894433c1-0556-4d4e-9f90-a5ff53df175d"}
+    ],
+    "observed_field_semantics": {
+      "currency": "RUB",
+      "position": "null throughout observed pages",
+      "unique_view_users": "null throughout observed pages",
+      "view_conversion": "null throughout observed pages",
+      "order_count_warning": "GMV can be >0 while order_count=0; do not treat order_count as a consistently interpretable sales count."
+    },
+    "preservation_state_at_manifest_creation": {
+      "page_0_full_rows_in_git": false,
+      "page_1_full_rows_in_git": false,
+      "pages_2_to_11_full_rows_in_current_chat": true,
+      "note": "This manifest is an immediate anti-loss checkpoint. Full raw/recovered page payloads must be committed separately; pages 0-1 should be re-read from Ozon if their complete chat payload is no longer available to the model context."
+    }
+  },
+  "provenance": {
+    "repository": "MaksimUnimax/blood_sand",
+    "branch": "work/ozon-data-collection-2026-08-11",
+    "head_before_recovery_write": "9355db757711e6efacb3ee2a0ad1e7ea377636c9"
+  }
+}
