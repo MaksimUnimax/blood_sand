@@ -61,8 +61,8 @@ def main() -> int:
     sw = replace_once(sw, 'const VERSION = "1.1.5";', 'const VERSION = "1.1.6";', label="service_worker version")
     sw = replace_once(
         sw,
-        '  "shared/wordstat_protocol.js",\n',
-        '  "shared/wordstat_protocol.js",\n  "shared/yandex_search_protocol_overlay.js",\n',
+        'importScripts("shared/conversation_identity.js", "shared/manual_controls.js", "shared/wordstat_protocol.js", "shared/autorun_model.js");',
+        'importScripts("shared/conversation_identity.js", "shared/manual_controls.js", "shared/wordstat_protocol.js", "shared/yandex_search_protocol_overlay.js", "shared/autorun_model.js");',
         label="service_worker import",
     )
     service_worker_path.write_text(sw, encoding="utf-8")
