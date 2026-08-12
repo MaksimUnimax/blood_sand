@@ -1,0 +1,32 @@
+{
+  "schema": "OZON_STOCKS_CURRENT_TERMINAL_EVIDENCE_V1",
+  "observed_at": "2026-08-12T01:48Z",
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.3",
+  "request_id": "c1258c03-c621-4088-8b86-6b7427f503d1",
+  "operation": "stocks_current",
+  "command": {
+    "operation": "stocks_current",
+    "fingerprint": "aefadf70"
+  },
+  "http_status": 200,
+  "elapsed_ms": 405,
+  "result": {
+    "items": [],
+    "total": 76,
+    "cursor": ""
+  },
+  "continuation_of": {
+    "request_id": "30418b9b-1908-4cb2-a9da-9841ec4ece8a",
+    "raw_ref": "marketing/data/raw/marketplace/ozon/20260811T1025Z__ozon__stocks-current__all.json",
+    "previous_total": 76,
+    "previous_cursor": "WzIzMjQ0Njc4NTUsMjMyNDQ2Nzg1NV0="
+  },
+  "evidence_interpretation": {
+    "pagination_complete": true,
+    "new_items_on_terminal_page": 0,
+    "complete_snapshot_item_count": 76,
+    "warehouse_geography_inference_allowed": false,
+    "note": "Terminal continuation returned no additional items and an empty cursor. The 76 items captured in the initial page therefore form the complete product-level stocks_current snapshot for this measurement. Deprecated/empty warehouse_ids are not promoted to warehouse-level geography."
+  }
+}
