@@ -1,0 +1,29 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.7",
+  "request_id": "894433c1-0556-4d4e-9f90-a5ff53df175d",
+  "operation": "product_queries_details",
+  "command": {"operation":"product_queries_details","fingerprint":"8c44c93b"},
+  "request_meta": {"provider":"ozon","host_alias":"seller_api","http_method":"POST","path_alias":"product_queries_details"},
+  "http_status": 200,
+  "elapsed_ms": 424,
+  "pagination": null,
+  "rate_limit": null,
+  "result": {
+    "analytics_period": {"date_from":"2026-07-12 00:00:00 +0000 UTC","date_to":"2026-08-09 23:59:59 +0000 UTC"},
+    "queries": [
+      {"sku":2271292556,"currency":"RUB","gmv":0,"order_count":0,"position":null,"query":"подвеска на машину","view_conversion":null,"query_index":1101,"unique_search_users":37,"unique_view_users":null},
+      {"sku":2271285786,"currency":"RUB","gmv":0,"order_count":0,"position":null,"query":"скорпион в машину","view_conversion":null,"query_index":1102,"unique_search_users":36,"unique_view_users":null},
+      {"sku":2186852750,"currency":"RUB","gmv":0,"order_count":0,"position":null,"query":"в машину подвеска","view_conversion":null,"query_index":1103,"unique_search_users":35,"unique_view_users":null},
+      {"sku":1943215793,"currency":"RUB","gmv":0,"order_count":0,"position":null,"query":"подвеска зеркало оберег","view_conversion":null,"query_index":1104,"unique_search_users":34,"unique_view_users":null},
+      {"sku":1943215793,"currency":"RUB","gmv":0,"order_count":0,"position":null,"query":"оберег в машину на зеркало","view_conversion":null,"query_index":1105,"unique_search_users":33,"unique_view_users":null},
+      {"sku":2559817779,"currency":"RUB","gmv":0,"order_count":0,"position":null,"query":"брелок зеркало","view_conversion":null,"query_index":1106,"unique_search_users":34,"unique_view_users":null},
+      {"sku":2559817779,"currency":"RUB","gmv":0,"order_count":0,"position":null,"query":"игрушка на зеркало в машину","view_conversion":null,"query_index":1107,"unique_search_users":25,"unique_view_users":null},
+      {"sku":2559817779,"currency":"RUB","gmv":0,"order_count":0,"position":null,"query":"подарок мужчине на день рождения в машину","view_conversion":null,"query_index":1108,"unique_search_users":25,"unique_view_users":null},
+      {"sku":2271246783,"currency":"RUB","gmv":0,"order_count":0,"position":null,"query":"черная магия","view_conversion":null,"query_index":1109,"unique_search_users":32,"unique_view_users":null},
+      {"sku":2186846833,"currency":"RUB","gmv":0,"order_count":0,"position":null,"query":"шаманское зеркало","view_conversion":null,"query_index":1110,"unique_search_users":29,"unique_view_users":null}
+    ],
+    "total": 1110,
+    "page_count": 12
+  }
+}
