@@ -1,0 +1,93 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "17522aea-88aa-4459-97b1-35717a605089",
+  "command": {
+    "method": "getTop",
+    "phrase": "валькнут амулет",
+    "numPhrases": 2000,
+    "regions": [
+      "225"
+    ],
+    "devices": [
+      "DEVICE_ALL"
+    ]
+  },
+  "http_status": 200,
+  "elapsed_ms": 899,
+  "result": {
+    "results": [
+      {
+        "phrase": "амулет валькнут",
+        "count": "70"
+      },
+      {
+        "phrase": "подвеска амулет валькнут",
+        "count": "10"
+      },
+      {
+        "phrase": "скандинавский амулет валькнут",
+        "count": "8"
+      },
+      {
+        "phrase": "амулет валькнут значение",
+        "count": "5"
+      },
+      {
+        "phrase": "валькнут амулет вайлдберриз",
+        "count": "5"
+      }
+    ],
+    "associations": [
+      {
+        "phrase": "гений телепортации в магической академии",
+        "count": "3455"
+      },
+      {
+        "phrase": "тукуна магическая битва",
+        "count": "202"
+      },
+      {
+        "phrase": "оберег это",
+        "count": "4899"
+      },
+      {
+        "phrase": "бронежилет оберег",
+        "count": "798"
+      },
+      {
+        "phrase": "оберег м рэб",
+        "count": "154"
+      },
+      {
+        "phrase": "талисманы элден elden ring",
+        "count": "196"
+      },
+      {
+        "phrase": "как сделать оберег",
+        "count": "3881"
+      },
+      {
+        "phrase": "оберег для дома",
+        "count": "5874"
+      },
+      {
+        "phrase": "талисман дня",
+        "count": "948"
+      },
+      {
+        "phrase": "песня олений мой талисман",
+        "count": "950"
+      },
+      {
+        "phrase": "natilash amulets украшения",
+        "count": "95"
+      },
+      {
+        "phrase": "заговоры обереги",
+        "count": "2551"
+      }
+    ],
+    "totalCount": "70"
+  }
+}
