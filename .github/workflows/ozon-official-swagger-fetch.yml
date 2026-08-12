@@ -1,4 +1,4 @@
-name: Research fetch official Ozon Seller Swagger
+name: Research fetch official Ozon Swagger
 
 on:
   push:
@@ -18,28 +18,91 @@ jobs:
         with:
           ref: research/ozon-official-swagger-fetch
 
-      - name: Fetch official Ozon Seller Swagger
+      - name: Diagnose and fetch official Ozon Swagger
         shell: bash
         run: |
           set -euo pipefail
           out='tooling/llm-api-bridges/ozon-seller/research-snapshots'
           mkdir -p "$out"
-          url='https://docs.ozon.ru/api/seller/swagger.json'
-          curl --fail --silent --show-error --location --max-redirs 20 "$url" -o "$out/seller-swagger.json"
-          jq -e 'type == "object" and (.swagger != null or .openapi != null) and (.paths | type == "object")' "$out/seller-swagger.json" >/dev/null
-          sha256sum "$out/seller-swagger.json" | tee "$out/seller-swagger.sha256"
-          printf '%s\n' "$url" > "$out/seller-swagger.source-url.txt"
           python - <<'PY'
-          import json
-          p='tooling/llm-api-bridges/ozon-seller/research-snapshots/seller-swagger.json'
-          d=json.load(open(p,encoding='utf-8'))
-          print('spec_version=', d.get('openapi') or d.get('swagger'))
-          print('path_count=', len(d.get('paths',{})))
-          print('title=', d.get('info',{}).get('title'))
-          print('version=', d.get('info',{}).get('version'))
+          import json, os
+          from urllib.parse import urljoin
+          import requests
+
+          out='tooling/llm-api-bridges/ozon-seller/research-snapshots'
+          candidates={
+            'seller': [
+              'https://docs.ozon.ru/api/seller/swagger.json',
+              'https://docs.ozon.ru/api/seller/swagger.json?__rr=1',
+              'https://docs.ozon.ru/api/seller/openapi.json',
+            ],
+            'performance': [
+              'https://docs.ozon.ru/api/performance/swagger.json',
+              'https://docs.ozon.ru/api/performance/swagger.json?__rr=1',
+              'https://docs.ozon.ru/api/performance/openapi.json',
+            ],
+          }
+          headers={
+            'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36',
+            'Accept':'application/json,text/plain,*/*',
+            'Accept-Language':'ru-RU,ru;q=0.9,en;q=0.8',
+          }
+
+          def valid_spec(data):
+            return isinstance(data,dict) and ('swagger' in data or 'openapi' in data) and isinstance(data.get('paths'),dict)
+
+          found={}
+          for kind, urls in candidates.items():
+            for start in urls:
+              print(f'\n=== {kind}: {start} ===')
+              s=requests.Session()
+              url=start
+              seen=[]
+              for hop in range(15):
+                if url in seen:
+                  print('LOOP_DETECTED ->', url)
+                  break
+                seen.append(url)
+                r=s.get(url,headers=headers,allow_redirects=False,timeout=20)
+                loc=r.headers.get('Location')
+                print('hop',hop,'status',r.status_code,'url',url)
+                print('location',loc)
+                print('content-type',r.headers.get('Content-Type'),'bytes',len(r.content))
+                print('cookies',s.cookies.get_dict())
+                if 300 <= r.status_code < 400 and loc:
+                  url=urljoin(url,loc)
+                  continue
+                try:
+                  data=r.json()
+                except Exception:
+                  data=None
+                if valid_spec(data):
+                  path=os.path.join(out,f'{kind}-swagger.json')
+                  with open(path,'w',encoding='utf-8') as f:
+                    json.dump(data,f,ensure_ascii=False,separators=(',',':'))
+                  with open(os.path.join(out,f'{kind}-swagger.source-url.txt'),'w',encoding='utf-8') as f:
+                    f.write(url+'\n')
+                  found[kind]=path
+                  print('VALID_SPEC',kind,'version',data.get('openapi') or data.get('swagger'),'paths',len(data['paths']),'final_url',url)
+                else:
+                  print('NON_SPEC_TERMINAL_BODY',repr(r.text[:300]))
+                break
+              if kind in found:
+                break
+
+          print('\nFOUND',found)
+          if not found:
+            raise SystemExit('No official Swagger/OpenAPI spec fetched; redirect diagnostics above are the evidence')
           PY
 
+          for f in "$out"/*-swagger.json; do
+            [ -f "$f" ] || continue
+            jq -e 'type == "object" and (.swagger != null or .openapi != null) and (.paths | type == "object")' "$f" >/dev/null
+            sha256sum "$f" | tee "$f.sha256"
+          done
+
       - name: Commit verified official snapshot to research branch
+        if: success()
         shell: bash
         run: |
           set -euo pipefail
@@ -50,5 +113,5 @@ jobs:
             echo 'No snapshot changes'
             exit 0
           fi
-          git commit -m 'research: capture official Ozon Seller Swagger snapshot'
+          git commit -m 'research: capture official Ozon Swagger snapshot'
           git push origin HEAD:research/ozon-official-swagger-fetch
