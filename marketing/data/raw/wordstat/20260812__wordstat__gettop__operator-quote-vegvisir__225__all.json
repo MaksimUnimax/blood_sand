@@ -1,0 +1,49 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "ea7bd601-a7cf-4495-95b2-30b271c3e9f8",
+  "command": {
+    "method": "getTop",
+    "phrase": "\"вегвизир\"",
+    "numPhrases": 2000,
+    "regions": [
+      "225"
+    ],
+    "devices": [
+      "DEVICE_ALL"
+    ]
+  },
+  "http_status": 200,
+  "elapsed_ms": 771,
+  "result": {
+    "results": [
+      {
+        "phrase": "вегвизир",
+        "count": "5938"
+      }
+    ],
+    "associations": [
+      {"phrase": "v i", "count": "101761"},
+      {"phrase": "гарда", "count": "96433"},
+      {"phrase": "что такое вегетация", "count": "8490"},
+      {"phrase": "veni vidi vici", "count": "5522"},
+      {"phrase": "веган", "count": "82124"},
+      {"phrase": "что такое всд", "count": "2774"},
+      {"phrase": "визер", "count": "55416"},
+      {"phrase": "вегетативная нервная система это", "count": "7839"},
+      {"phrase": "vega", "count": "366412"},
+      {"phrase": "что такое компас", "count": "1756"},
+      {"phrase": "vegas", "count": "203673"},
+      {"phrase": "визард", "count": "23782"},
+      {"phrase": "дикардплюс", "count": "5394"},
+      {"phrase": "ооо вега", "count": "9265"},
+      {"phrase": "вельзевул это", "count": "1664"},
+      {"phrase": "веды", "count": "148538"},
+      {"phrase": "вега м", "count": "8238"},
+      {"phrase": "вегета", "count": "23552"},
+      {"phrase": "вегови", "count": "2958"},
+      {"phrase": "вегвизер", "count": "377"}
+    ],
+    "totalCount": "1541"
+  }
+}
