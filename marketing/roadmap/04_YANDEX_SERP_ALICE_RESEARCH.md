@@ -110,7 +110,9 @@ Query Evidence Ledger обновляется только по фактичес�
 
 Authority/acceptance artifacts:
 - `marketing/research/R2_YANDEX_SEARCH_API_CHANNEL_AUDIT_2026-08-12.md`;
-- `tooling/llm-api-bridges/yandex-wordstat/r2-search-overlay/ACCEPTANCE_2026-08-12.md`.
+- `marketing/research/R2_YANDEX_SERP_ALICE_CHAT_HANDOFF_2026-08-12.md`;
+- `tooling/llm-api-bridges/yandex-wordstat/r2-search-overlay/ACCEPTANCE_2026-08-12.md`;
+- `tooling/llm-api-bridges/yandex-wordstat/r2-search-overlay/APPEND_ONLY_DOCUMENTATION_1.1.6.md`.
 
 ## Текущий блокер
 
@@ -145,7 +147,9 @@ Consumer Alice UI остаётся потенциальным отдельным
 - официальный direct channel подтверждён через Yandex Search API WebSearch;
 - mobile context задаётся фиксированным mobile User-Agent, region = 225;
 - narrow `YANDEX_SEARCH_API_V1` overlay реализован и CI-accepted;
-- derived 1.1.6 package и in-place patch path подготовлены.
+- derived 1.1.6 package и in-place patch path подготовлены;
+- append-only documentation chain для 1.1.6 зафиксирован в GitHub;
+- chat-handoff checkpoint зафиксирован в GitHub.
 
 Осталось:
 - Reload локального extension с overlay;
@@ -230,3 +234,11 @@ Report должен отвечать:
 - приоритетный handoff в 05.
 
 Оценка: 1–2 рана.
+
+## Chat handoff checkpoint — 2026-08-12
+
+Передача в новый чат зафиксирована в:
+
+`marketing/research/R2_YANDEX_SERP_ALICE_CHAT_HANDOFF_2026-08-12.md`
+
+Новый чат обязан сначала перечитать live HEAD/commit metadata и этот файл вместе с roadmap 04, Search API channel audit, overlay acceptance и append-only continuation. SHA из handoff — только checkpoint, а не authority, потому что branch shared с параллельным Ozon track.
