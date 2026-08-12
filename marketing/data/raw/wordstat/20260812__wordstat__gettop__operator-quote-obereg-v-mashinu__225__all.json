@@ -1,0 +1,73 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "ec78b55f-718a-453a-876a-f4dcfc83e298",
+  "command": {
+    "method": "getTop",
+    "phrase": "\"оберег в машину\"",
+    "numPhrases": 2000,
+    "regions": [
+      "225"
+    ],
+    "devices": [
+      "DEVICE_ALL"
+    ]
+  },
+  "http_status": 200,
+  "elapsed_ms": 771,
+  "result": {
+    "results": [
+      {
+        "phrase": "оберег в машину",
+        "count": "1405"
+      }
+    ],
+    "associations": [
+      {
+        "phrase": "договор дарения автомобиля",
+        "count": "15075"
+      },
+      {
+        "phrase": "значки автомобилей",
+        "count": "30196"
+      },
+      {
+        "phrase": "фильмы про автомобили",
+        "count": "3578"
+      },
+      {
+        "phrase": "кенгурятник на авто",
+        "count": "931"
+      },
+      {
+        "phrase": "зикр автомобиль",
+        "count": "3341"
+      },
+      {
+        "phrase": "знаки автомобилей",
+        "count": "87520"
+      },
+      {
+        "phrase": "автовизитка для автомобиля",
+        "count": "707"
+      },
+      {
+        "phrase": "защитная пленка на авто",
+        "count": "2358"
+      },
+      {
+        "phrase": "значки на панели автомобиля",
+        "count": "6910"
+      },
+      {
+        "phrase": "значки авто",
+        "count": "12958"
+      },
+      {
+        "phrase": "талисман от сглаза",
+        "count": "442"
+      }
+    ],
+    "totalCount": "96"
+  }
+}
