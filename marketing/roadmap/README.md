@@ -1,7 +1,7 @@
 # Roadmap — от стратегии до релиза
 
-Версия: 1.5  
-Дата: 2026-08-10  
+Версия: 1.6  
+Дата: 2026-08-12  
 Статус: **рабочий управляющий roadmap проекта**
 
 Этот каталог задаёт последовательность работы от текущей маркетинговой стадии до production-релиза сайта.
@@ -68,9 +68,9 @@ Roadmap имеет **ровно два уровня**:
 
 - [x] **01. Зафиксировать стратегию и правила принятия решений** — 2–3 рана. Детализация: [`01_STRATEGY_AND_DECISION_RULES.md`](01_STRATEGY_AND_DECISION_RULES.md).
 - [x] **02. Завершить архитектуру исследовательских данных** — **5/5 ранов выполнено**. Детализация: [`02_RESEARCH_DATA_ARCHITECTURE.md`](02_RESEARCH_DATA_ARCHITECTURE.md).
-- [!] **03. Полностью измерить поисковый спрос / Wordstat** — **PAUSED после pilot root discovery 13/14**. Существующие измерения сохраняются как валидный pilot evidence по семейству «Печать Велеса / автомобильные подвески», но больше не считаются полным scope бренда. Перед продолжением обязателен 03A. Детализация: [`03_WORDSTAT_DEMAND_MEASUREMENT.md`](03_WORDSTAT_DEMAND_MEASUREMENT.md).
-- [~] **03A. Создать marketplace API tooling и канонический master полного ассортимента** — обязательный блокирующий этап, ориентир **15–30 ранов**. Yandex reference → Ozon API audit/bridge → WB API audit/bridge → полный seller ingestion → Product/SKU/category master → re-baseline 03. Детализация: [`03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md`](03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md).
-- [ ] **04. Исследовать реальный Yandex SERP и Alice AI** — предварительно 8–15 ранов; запрещено начинать как «полное исследование бренда» до закрытия 03A и re-baseline 03.
+- [x] **03. Полностью измерить поисковый спрос / Wordstat** — **COMPLETE 2026-08-12**. Re-baseline по current Ozon assortment выполнен; family roots, operator precision, Dynamics, device/region, evidence-driven Tier 2, consolidated R1 dataset, Query Evidence Ledger и final R1 report закрыты. Детализация: [`03_WORDSTAT_DEMAND_MEASUREMENT.md`](03_WORDSTAT_DEMAND_MEASUREMENT.md).
+- [~] **03A. Создать marketplace API tooling и канонический master полного ассортимента** — обязательный инфраструктурный этап, ориентир **15–30 ранов**. Yandex reference → Ozon API audit/bridge → WB API audit/bridge → полный seller ingestion → Product/SKU/category master. Детализация: [`03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md`](03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md).
+- [ ] **04. Исследовать реальный Yandex SERP и Alice AI** — предварительно 8–15 ранов; перед стартом должен быть отдельно зафиксирован конечный набор шагов, оценка, критерий завершения, зависимости и блокеры.
 - [ ] **05. Свести Wordstat + SERP + Alice в единую карту возможностей** — предварительно 3–6 ранов.
 - [ ] **06. Завершить исследование покупателей и полный паспорт SKU** — оценка будет пересчитана после импорта фактического ассортимента; исходные 3–6 ранов относились к пилотному SKU и больше не являются валидной оценкой полного каталога.
 - [ ] **07. Завершить конкурентную разведку и определить реальные конкурентные преимущества** — предварительно 3–6 ранов, scope уточняется по product families.
@@ -106,23 +106,14 @@ Roadmap имеет **ровно два уровня**:
 
 # Главная последовательность
 
-`Стратегия → исследовательские данные → pilot Wordstat → marketplace API tooling → полный Ozon/WB assortment master → re-baseline Wordstat по product families → полный Wordstat → Yandex SERP → Alice AI → покупатель/товар → конкуренты → экономика → коммерческая модель → архитектура → контент → ТЗ → UX/UI → разработка → SEO/AI → аналитика → QA → мягкий запуск → измерение → корректировка → полноценный релиз`
+`Стратегия → исследовательские данные → pilot Wordstat → marketplace API tooling → полный assortment master / re-baseline → полный Wordstat → Yandex SERP → Alice AI → покупатель/товар → конкуренты → экономика → коммерческая модель → архитектура → контент → ТЗ → UX/UI → разработка → SEO/AI → аналитика → QA → мягкий запуск → измерение → корректировка → полноценный релиз`
 
 ## Текущая точка
 
-Пункты **01 и 02 закрыты**.
+Пункты **01, 02 и 03 закрыты**.
 
-Пункт **03 — Wordstat** остановлен на pilot root discovery **13/14** по прежнему узкому scope. Последний плановый root прежнего набора (`подарок мужчине в машину`) **не запускается сейчас**.
+Пункт **03 — Wordstat** закрыт 2026-08-12 на re-baselined Ozon scope. Итоговые артефакты: consolidated R1 dataset, обновлённый Query Evidence Ledger, финальный measurement log и `R1_WORDSTAT_FINAL_REPORT_2026-08-12.md`. Дополнительный Wordstat API request для закрытия 03 не требуется.
 
-Активный пункт: **03A — Marketplace API tooling и полный ассортимент**.
+Пункт **03A — Marketplace API tooling и канонический master полного ассортимента** сохраняет собственный статус `[~]`; закрытие Wordstat не меняет автоматически lifecycle этого отдельного инфраструктурного трека.
 
-Текущий порядок внутри 03A:
-
-1. сохранить/импортировать актуальный Yandex Wordstat bridge как reference;
-2. провести полный аудит официального Ozon API;
-3. реализовать и проверить Ozon bridge;
-4. провести полный аудит официального Wildberries API;
-5. реализовать и проверить WB bridge;
-6. получить через оба bridge полный доступный seller/catalog/statistics evidence;
-7. построить cross-platform Product/SKU/category master;
-8. переразметить исследовательский scope и возобновить 03 уже по всему ассортименту.
+Следующий исследовательский пункт — **04. Yandex SERP и Alice AI**, но он **не запущен автоматически**. Перед его стартом должны быть выполнены обязательные правила roadmap: отдельная детализация конечных шагов, оценка ранов, ожидаемые результаты, критерий завершения, зависимости и блокеры.
