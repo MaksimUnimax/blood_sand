@@ -1,0 +1,37 @@
+{
+  "schema": "OZON_ANALYTICS_DATA_TERMINAL_PAGINATION_EVIDENCE_V1",
+  "observed_at": "2026-08-12T01:55Z",
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.3",
+  "request_id": "fc98537a-2bd4-48d6-b1d3-c87bd58992a1",
+  "operation": "analytics_data",
+  "command": {
+    "operation": "analytics_data",
+    "fingerprint": "4f6d3b81"
+  },
+  "http_status": 200,
+  "elapsed_ms": 5359,
+  "request_params": {
+    "date_from": "2026-07-12",
+    "date_to": "2026-08-10",
+    "metrics": ["ordered_units", "revenue"],
+    "dimension": ["sku"],
+    "sort": [{"key": "ordered_units", "order": "DESC"}],
+    "limit": 100,
+    "offset": 100
+  },
+  "result": {
+    "data": [],
+    "totals": [562, 944360],
+    "timestamp": "2026-08-12 01:55:18"
+  },
+  "evidence_interpretation": {
+    "pagination_terminal": true,
+    "initial_page_ref": "marketing/data/raw/marketplace/ozon/20260811T103640Z__ozon__analytics-data__sku__20260712_20260810.json",
+    "initial_page_limit": 100,
+    "terminal_offset": 100,
+    "terminal_data_count": 0,
+    "totals_match_measurement": [562, 944360],
+    "note": "The offset=100 continuation returned an empty data array while preserving the same measurement totals. Together with the initial offset=0 response, this closes pagination for the 2026-07-12..2026-08-10 SKU ordered_units+revenue measurement. No additional metrics or business conclusions are inferred."
+  }
+}
