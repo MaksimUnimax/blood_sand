@@ -1,0 +1,15 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "1af24f2b-4f70-4164-9493-affff1628a52",
+  "command": {
+    "method": "getTop",
+    "phrase": "бусидо талисман",
+    "numPhrases": 2000,
+    "regions": ["225"],
+    "devices": ["DEVICE_ALL"]
+  },
+  "http_status": 200,
+  "elapsed_ms": 693,
+  "result": {}
+}
