@@ -1,35 +1,65 @@
-# Wildberries API research
+# Wildberries Read-Only LLM API Bridge
 
-Статус: **research complete for initial read-only design; Wildberries browser extension NOT STARTED**.
+Version: `0.1.0`  
+Implementation currentness date: **2026-08-12**
 
-## Что здесь хранится сейчас
+This directory contains a local Manifest V3 Chrome extension that implements:
 
-Только исследовательские материалы официальной WB API surface для будущего marketplace bridge и последующего сбора полного ассортимента/статистики продавца.
+`WB_API_V1 → fixed local operation registry → official Wildberries API → WB_RESULT_V1 → same bound ChatGPT conversation`.
 
-Wildberries extension сейчас не существует. Разработка относится к отдельному будущему roadmap-шагу 03A.6.
+The bridge is an evidence-transport component for the marketplace factual-data project. It is **not** a business-analysis layer and it does not decide which products are good/bad or what the site/assortment strategy should be.
 
-## Research artifacts
+## Security contract
 
-- `WB_API_CAPABILITY_AUDIT_2026-08-10.md` — исходный полный аудит API-классов;
-- `WB_API_CAPABILITY_CORRECTIONS_2026-08-10.md` — current-2026 corrections; имеет приоритет при конфликте со старым audit;
-- `READ_ONLY_OPERATION_MATRIX_V1.md` — research capability matrix для будущего design, не implementation allowlist.
+- READ / read-derived only; unknown or mutation effects fail closed.
+- LLM supplies only `operation` + `params`; it cannot supply URL, host, HTTP method, Authorization, token, arbitrary headers or transport configuration.
+- One `WB_API_V1` command causes **at most one external Wildberries HTTP request**.
+- No automatic retry, hidden pagination, polling or fan-out.
+- Each next page, report stage or explicit report retry is a separate command.
+- Seller credentials are stored only in `chrome.storage.local` and are not included in ChatGPT reports, diagnostics, source or build artifacts.
+- Direct buyer/client/courier PII endpoints are not present in the executable registry. Responses from admitted customer-content endpoints are recursively sanitized.
+- Provider HTTP errors are converted into bounded controlled `WB_RESULT_V1` errors and do not trigger automatic repeat.
 
-## Существенные current corrections
+## Executable surface
 
-На текущую дату исследования нельзя строить будущую интеграцию на старых deprecated статистических endpoints:
+Current production registry: **157 operations**.  
+Body-required operations: **53**.  
+Binary response operations: **1**.
 
-- legacy `GET /api/v1/supplier/stocks` не является current foundation для остатков WB;
-- legacy `GET /api/v5/supplier/reportDetailByPeriod` был объявлен к отключению 2026-07-15 и не является current finance foundation.
+Category counts:
+- `analytics`: 39
+- `any`: 7
+- `content`: 15
+- `documents`: 4
+- `feedbacks`: 14
+- `finance`: 7
+- `marketplace`: 34
+- `prices`: 7
+- `promotion`: 20
+- `returns`: 1
+- `statistics`: 2
+- `supplies`: 7
 
-Current research фиксирует новые warehouse-remains Analytics и Finance API families, а также актуальные cards, prices, warehouses/FBS stock, funnel, orders, promotion/calendar, feedback/questions capabilities.
+See `WB_PRODUCTION_ALLOWLIST_V0.1.0.md` for the exact aliases, hosts, methods and paths.
 
-## Будущая разработка
+## Runtime architecture
 
-Перед началом coding:
+Production files are separated into:
 
-1. повторно открыть official WB category Swagger/release notes на дату разработки;
-2. подтвердить exact endpoints, token type/category, schemas, rate limits, pagination/history;
-3. удалить из будущего design всё, что WB успел deprecated;
-4. только затем зафиксировать отдельный implementation allowlist и начать разработку `WB_API_V1 → WB_RESULT_V1` bridge по roadmap 03A.6.
+- `shared/wb_operations.js` — executable fixed registry;
+- `shared/wb_contract.js` — command parsing, transport-key rejection, required params, bounds and sanitization;
+- `shared/wb_credentials.js` — Bearer token / token-type / optional `X-Client-Secret` model;
+- `shared/provider_transport_core.js` — exactly one bounded fetch, no retry;
+- `shared/wb_provider.js` — WB provider adapter and `WB_RESULT_V1` production;
+- `service_worker.js` — credential ownership, durable request/delivery ledgers, manual/autorun state and recovery;
+- `content_script.js` — conversation-scoped capture/delivery/status UI;
+- popup — local setup, diagnostics and operator controls;
+- provider-neutral lifecycle modules inherited from exact Ozon Bridge v0.1.3 where safe.
 
-До этого `WB_API_V1` — только запланированное семейство команд, а не существующий инструмент.
+## Release/reference
+
+`reference-0.1.0/` stores the exact release identity and reconstruction material. The production ZIP itself contains exactly the 17 production extension files and excludes tests, credentials, evidence and private keys.
+
+## Acceptance boundary
+
+Automated source/emulator and fresh-unpack tests are separate from live account acceptance. A seller token and real Wildberries account are never embedded in tests. Live user-account acceptance must be done after installation and is not claimed by automated PASS results.
