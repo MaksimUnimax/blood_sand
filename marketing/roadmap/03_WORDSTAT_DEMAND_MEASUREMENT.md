@@ -1,139 +1,144 @@
 # 03 — Полностью измерить поисковый спрос / Wordstat
 
-Статус: **[!] READY_FOR_WORDSTAT_EXTENSION — re-baseline выполнен, API-вызов не запускать до сигнала владельца**  
+Статус: **[x] COMPLETE — R1 Wordstat measurement layer закрыт 2026-08-12**  
 Дата начала: 2026-08-04  
 Re-baseline: 2026-08-12  
-Оценка исходного pilot: **примерно 37–54 рана**; остаток пересчитывается по evidence нового family scope.  
-Фактически выполнено до re-baseline: **03.1 закрыт; в 03.2 выполнены 12 новых API measurement, валидных root GetTop вместе с historical baseline — 13 pilot roots**.
+Дата закрытия: 2026-08-12
 
 ## Цель пункта
 
-Получить decision-grade картину человеческого поискового спроса в Яндексе по России для фактических product families текущего магазина, сохранить raw/normalized evidence и обновить Query Evidence Ledger без смешивания Wordstat с Search/Alice/commerce evidence.
+Получить decision-grade картину human-search demand в Яндекс Wordstat по России для фактических product families текущего Ozon assortment, сохранить raw/normalized evidence, обновить Query Evidence Ledger и подготовить прямой handoff в Yandex SERP/Alice research.
 
-## Критерий завершения пункта
+## Критерий завершения
 
-Пункт закрывается, когда основные root-кластеры по re-baselined assortment измерены через GetTop, для high-value запросов сняты operator variants, для репрезентативных лидеров проверена сезонность, device/region измерены там, где это влияет на решение, Tier 2 расширен только по evidence, все measurements имеют raw/normalized, Ledger обновлён и выпущен итоговый R1 report.
+Пункт считается закрытым, когда:
 
-## Re-baseline 2026-08-12 — current authority для продолжения 03
+- основные root-кластеры re-baselined assortment измерены через GetTop;
+- high-value roots имеют operator precision;
+- representative leaders имеют Dynamics/seasonality;
+- device/region измерены там, где это влияет на решение;
+- Tier 2 расширен только по evidence;
+- raw/normalized audit trail сохранён или явно помечен recovery-status там, где original raw не был сохранён вовремя;
+- assembled consolidated R1 dataset;
+- Query Evidence Ledger обновлён;
+- выпущен final R1 report / roadmap 04 handoff.
 
-Owner execution rule от 2026-08-12 сделал Wildberries неблокирующим для текущего critical path. Текущий ассортиментный baseline строится по Ozon.
-
-Подготовлены:
-
-- `marketing/data/normalized/marketplace/ozon/20260812__ozon__product-master__current-plus-90d.csv`;
-- `marketing/data/normalized/marketplace/ozon/OZON_PRODUCT_FAMILY_BASELINE_2026-08-12.md`;
-- `marketing/data/normalized/marketplace/ozon/OZON_TO_WORDSTAT_REBASELINE_2026-08-12.md`.
-
-Ozon current product-level snapshot содержит **76 current SKU**. 90-day analytics `2026-05-13..2026-08-10` содержит **1519 ordered units**. Research-family weighting:
-
-- slavic symbols / oberegs — 928 / 61.1%;
-- zodiac combined — 356 / 23.4%;
-- norse/runic — 128 / 8.4%;
-- patriotic — 33 / 2.2%;
-- orthodox — 28 / 1.8%;
-- universal symbols — 27 / 1.8%;
-- warrior talismans — 19 / 1.3%.
-
-Это seller evidence только для sequencing coverage. Оно не является Wordstat demand и не превращается в окончательный site/category verdict.
-
-Старый незапущенный root **`подарок мужчине в машину` больше не является следующим автоматическим measurement**. Он отложен и может вернуться только по evidence нового family pass.
-
-**Первый новый measurement после явного запуска владельцем Wordstat extension:**
-
-`знак зодиака в машину` / GetTop / Россия `225` / все устройства.
-
-Причина выбора: zodiac — крупнейший полностью непокрытый новым Wordstat слоем family group: 356 Ozon ordered units / 23.4% за 90 дней. Slavic/automotive layer уже имеет substantial pilot evidence.
-
-# Шаги
+Все критерии выполнены.
 
 ## [x] 03.1 — Зафиксировать decision-grade scope и план измерений
 
-**Оценка:** 1 ран.  
-**Статус:** исходный pilot plan выполнен 2026-08-04; 2026-08-12 scope re-baselined по current Ozon assortment.
+Выполнено. Исходный pilot plan сохранён; 2026-08-12 scope re-baselined по current Ozon assortment.
+
+Authority:
+- `marketing/research/R1_WORDSTAT_EXECUTION_PLAN_2026-08-04.md`;
+- `marketing/research/R1_WORDSTAT_MEASUREMENT_SPEC_2026-08-04.md`;
+- `marketing/data/normalized/marketplace/ozon/OZON_TO_WORDSTAT_REBASELINE_2026-08-12.md`.
+
+## [x] 03.2 — GetTop root discovery / family map
+
+Выполнено.
+
+- 13 historical pilot roots сохранены как evidence;
+- обязательный new Wave 1 family coverage выполнен;
+- Wave 2 расширен только по фактическому Wordstat evidence / assortment gaps;
+- consolidated R1 summary содержит 44 уникальных root/query rows.
+
+Ключевые broad signals:
+- `славянские обереги` 25737;
+- `вегвизир` 5938;
+- `талисман знак зодиака` 3422;
+- `печать велеса` latest broad RESULT 3330;
+- `алатырь оберег` 1878;
+- `оберег велес` 1507;
+- `оберег в машину` latest broad RESULT 1405;
+- `подарок автомобилисту` 1192;
+- `подвеска на зеркало в машину` latest broad RESULT 1074;
+- `подарок мужчине в машину` 1070.
+
+Пустой HTTP-200 result object у `скандинавский оберег в машину`, `древо жизни в машину`, `бусидо талисман` сохраняется как `MISSING`, а не как `0`.
+
+## [x] 03.3 — Operator precision для high-value roots
+
+Выполнено через quoted operator measurements:
+
+- `"славянские обереги"` 2987 vs broad 25737;
+- `"печать велеса"` 802 vs broad RESULT 3330;
+- `"оберег в машину"` 96 vs broad RESULT 1405;
+- `"подвеска на зеркало в машину"` 266 vs broad RESULT 1074;
+- `"вегвизир"` 1541 vs broad RESULT 5938;
+- `"талисман знак зодиака"` 21 vs broad-form RESULT 3422.
+
+Operator totalCount хранится отдельно от RESULT rows; overlapping observations не суммируются.
+
+## [x] 03.4 — Seasonality / Dynamics
+
+Выполнено для representative leaders, monthly 2025-08..2026-07:
+
+- `славянские обереги`;
+- `талисман знак зодиака`;
+- `вегвизир`;
+- `оберег в машину`.
+
+Ключевые выводы:
+- Slavic demand устойчив и усилился в июле 2026;
+- zodiac peak — декабрь, весенняя просадка;
+- Vegvisir ниже уровня августа 2025;
+- automotive obereg заметно усиливается к лету, июль — максимум серии.
+
+## [x] 03.5 — Device / region differences
+
+Выполнено.
+
+Device:
+- `славянские обереги`: PHONE 22563, DESKTOP 2869;
+- `оберег в машину`: PHONE 1297, DESKTOP 100.
+
+Два independent roots подтверждают strong mobile-first demand environment.
+
+Region distribution измерен на `славянские обереги`. Decision-useful macro-region signal: Юг, Центр и Сибирь выше среднего; Поволжье и Северный Кавказ ниже; small-count high-affinity outliers не повышаются до стратегических приоритетов.
+
+## [x] 03.6 — Tier 2 / gap closure
+
+Выполнено evidence-driven, без механического измерения всех SKU.
+
+Закрыты representative Slavic/Norse roots, включая:
+- `шлем ужаса оберег` 474;
+- `валькнут амулет` 70;
+- `гунгнир амулет` 17;
+- `славянский оберег звезда лады` 118;
+- `славянский оберег громовик` 43;
+- `славянский оберег мара` 49;
+- `славянский оберег перуна` 130;
+- `славянский оберег молвинец` 82;
+- `славянские обереги триглав` 105.
+
+Gift gap закрыт root `подарок мужчине в машину = 1070`; direct product-form child `подарок мужчине от женщины подвеска в машину = 7` наблюдён, но не повышается автоматически до SKU-level commercial verdict.
+
+Gungnir 17 не даёт основания продолжать Norse tail.
+
+## [x] 03.7 — Full normalized R1 dataset / Ledger / final report
+
+Выполнено.
 
 Артефакты:
+- `marketing/data/normalized/wordstat/20260812__wordstat__r1-demand-summary__russia.csv` — полный decision-summary R1, 44 unique roots;
+- `marketing/data/ledger/query_evidence_ledger.csv` — decision-oriented Ledger с historical pilot и ключевыми re-baseline roots;
+- `marketing/research/R1_WORDSTAT_ROOT_GETTOP_LOG_2026-08-04.md` — финальный measurement log;
+- `marketing/research/R1_WORDSTAT_FINAL_REPORT_2026-08-12.md` — итоговый report + roadmap 04 handoff.
 
-- `marketing/research/R1_WORDSTAT_EXECUTION_PLAN_2026-08-04.md` — исходный execution plan;
-- `marketing/data/normalized/marketplace/ozon/OZON_TO_WORDSTAT_REBASELINE_2026-08-12.md` — authority для нового family-level root scope.
+## Audit notes
 
-## [!] 03.2 — Снять GetTop по root-кластерам и сформировать фактическую карту формулировок
+Для части результатов original provider raw не был сохранён в GitHub в момент вызова. Повторные API calls не выполнялись; вместо этого созданы explicit `RECOVERED` audit artifacts, которые не выдаются за byte-for-byte raw:
 
-**Текущий gate:** re-baseline готов; ожидается запуск Wordstat extension владельцем. Никакой новый API request до этого не выполняется.
+- broad `вегвизир`;
+- Slavic PHONE/DESKTOP auxiliary device measurements;
+- Slavic region distribution;
+- `getRegionsTree` lookup metadata.
 
-### Existing pilot evidence — сохраняется и не повторяется без причины
+Legacy deterministic-ID deviations в известных normalized files исправлены.
 
-Измерено:
+## Итоговый результат
 
-- `печать велеса` — `3350` (historical baseline);
-- `оберег печать велеса` — `198`;
-- `подвеска печать велеса` — `80`;
-- `печать велеса медвежья лапа` — `343`;
-- `печать велеса волчья лапа` — `129`;
-- `печать велеса в машину` — `5`;
-- `оберег в машину` — `1388`;
-- `славянский оберег в машину` — `72`;
-- `подвеска на зеркало в машину` — `973`;
-- `печать велеса значение` — `617`;
-- `медвежья и волчья печать велеса отличие` — `1`;
-- `какой оберег выбрать в машину` — `12`;
-- `подарок автомобилисту` — `1192`.
+Wordstat R1 human-demand layer закрыт. Дополнительный Wordstat API call для выполнения roadmap 03 не требуется.
 
-Для каждого measurement сохранены raw/normalized evidence и обновлён Ledger. Running log: `marketing/research/R1_WORDSTAT_ROOT_GETTOP_LOG_2026-08-04.md`.
-
-Текущий automotive pilot evidence: прямая связка `печать велеса в машину` мала (`5`), широкий use-case `оберег в машину` крупнее (`1388`), а близкий к фактической форме товара root `подвеска на зеркало в машину` дал `973`. Counts пересекаются и не суммируются.
-
-Meaning-layer подтверждён root `печать велеса значение = 617`. Exact comparison wording `медвежья и волчья печать велеса отличие` дало `totalCount=1`. Automotive-choice root `какой оберег выбрать в машину` дал `12`. Gift-root `подарок автомобилисту` дал `1192`, но general gift associations не повышаются автоматически до спроса на конкретный товар.
-
-### Новый family-level GetTop scope
-
-Authority: `marketing/data/normalized/marketplace/ozon/OZON_TO_WORDSTAT_REBASELINE_2026-08-12.md`.
-
-Wave 1 включает unmeasured family anchors и representative roots:
-
-- zodiac: `знак зодиака в машину`, `талисман знак зодиака`, `оберег по знаку зодиака`;
-- slavic expansion: `славянские обереги`, `алатырь оберег`, `оберег чур`, `колядник оберег`, `оберег велес`, `сварог оберег`;
-- norse/runic: `вегвизир`, `вегвизир в машину`, `скандинавский оберег в машину`;
-- remaining families/form anchors: `герб россии в машину`, `православный оберег в машину`, `спаси и сохрани в машину`, `древо жизни в машину`, `инь ян в машину`, `талисман в машину`, `амулет в машину`, `бусидо талисман`.
-
-Wave 2 формируется только из фактического Wave 1 Wordstat evidence. Все 76 SKU не превращаются автоматически в 76 roots.
-
-## [ ] 03.3 — Измерить operator variants для high-value запросов
-
-**Оценка:** пересчитать после нового 03.2 root discovery.  
-Ожидаемый результат: broad и более узкие operator-values не смешиваются.
-
-## [ ] 03.4 — Снять сезонность по репрезентативным cluster leaders
-
-**Оценка:** примерно 4–6 ранов, уточнить по family leaders.  
-Ожидаемый результат: пики/просадки и проверка устойчивости snapshot.
-
-## [ ] 03.5 — Проверить device и region differences там, где они decision-useful
-
-**Оценка:** примерно 4–7 ранов.  
-Ожидаемый результат: определить, влияет ли device/geo специфика на приоритизацию.
-
-## [ ] 03.6 — Расширить Tier 2 и закрыть пробелы по evidence
-
-**Оценка:** зависит от Wave 1/2 discovery.  
-Ожидаемый результат: измерить только существенные новые формулировки, а не весь возможный хвост.
-
-## [ ] 03.7 — Нормализовать полный R1 dataset, обновить Ledger и закрыть Wordstat-этап
-
-**Оценка:** 2–3 аналитических рана после завершения measurements.  
-Ожидаемый результат: полный normalized dataset, обновлённый Ledger, итоговый R1 report и список запросов для roadmap 04.
-
-# Текущее состояние
-
-- [x] 03.1 — scope/execution plan + Ozon assortment re-baseline;
-- [!] 03.2 — existing pilot 13 roots preserved; новый full-assortment root scope готов и ожидает запуска Wordstat extension;
-- [ ] 03.3 — operator precision;
-- [ ] 03.4 — dynamics/seasonality;
-- [ ] 03.5 — device/region samples;
-- [ ] 03.6 — Tier 2/gap closure;
-- [ ] 03.7 — normalized dataset/Ledger/final R1.
-
-Текущий следующий measurement **подготовлен, но не запущен**:
-
-**`знак зодиака в машину` / GetTop / Россия `225` / DEVICE_ALL.**
-
-Gate: владелец запускает Wordstat extension и сообщает о готовности; только после этого выполняется первый новый API request.
+Следующий пункт проекта: **04 — исследовать реальный Yandex SERP и Alice AI**. Он не запускается автоматически: сначала фиксируется его конечный список шагов, оценка ранов, критерий завершения, зависимости и blockers по правилу общего roadmap.
