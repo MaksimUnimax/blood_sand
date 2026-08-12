@@ -1,0 +1,81 @@
+name: Yandex Search Overlay
+
+on:
+  push:
+    branches:
+      - work/ozon-data-collection-2026-08-11
+    paths:
+      - '.github/workflows/yandex-search-overlay.yml'
+      - 'tooling/llm-api-bridges/yandex-wordstat/r2-search-overlay/**'
+      - 'tooling/llm-api-bridges/yandex-wordstat/reference-1.1.5/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Test protocol overlay
+        run: node tooling/llm-api-bridges/yandex-wordstat/r2-search-overlay/test_overlay.mjs
+
+      - name: Compile-check Python patchers
+        run: |
+          python -m py_compile tooling/llm-api-bridges/yandex-wordstat/r2-search-overlay/build_overlay.py
+          python -m py_compile tooling/llm-api-bridges/yandex-wordstat/r2-search-overlay/apply_in_place.py
+
+      - name: Build derived extension
+        run: >-
+          python tooling/llm-api-bridges/yandex-wordstat/r2-search-overlay/build_overlay.py
+          --repo-root "$GITHUB_WORKSPACE"
+          --out "$RUNNER_TEMP/yandex-search-bridge-1.1.6"
+
+      - name: Verify derived manifest and imports
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP']) / 'yandex-search-bridge-1.1.6'
+          manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
+          assert manifest['version'] == '1.1.6'
+          scripts = manifest['content_scripts'][0]['js']
+          assert scripts.index('shared/yandex_search_protocol_overlay.js') == scripts.index('shared/wordstat_protocol.js') + 1
+          sw = (root / 'service_worker.js').read_text(encoding='utf-8')
+          assert 'shared/yandex_search_protocol_overlay.js' in sw.splitlines()[1]
+          assert 'const VERSION = "1.1.6";' in sw
+          cs = (root / 'content_script.js').read_text(encoding='utf-8')
+          assert 'const VERSION = "1.1.6";' in cs
+          assert (root / 'shared' / 'yandex_search_protocol_overlay.js').is_file()
+          print('Derived build verification: PASS')
+          PY
+
+      - name: Zip derived extension
+        run: |
+          cd "$RUNNER_TEMP"
+          zip -qr yandex-search-bridge-1.1.6.zip yandex-search-bridge-1.1.6
+          sha256sum yandex-search-bridge-1.1.6.zip > yandex-search-bridge-1.1.6.zip.sha256
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yandex-search-bridge-1.1.6
+          path: |
+            ${{ runner.temp }}/yandex-search-bridge-1.1.6.zip
+            ${{ runner.temp }}/yandex-search-bridge-1.1.6.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
