@@ -1,0 +1,17 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "511ea32e-7948-4b75-a4d4-cf3f75183219",
+  "command": {
+    "method": "getTop",
+    "phrase": "инь ян в машину",
+    "numPhrases": 2000,
+    "regions": ["225"],
+    "devices": ["DEVICE_ALL"]
+  },
+  "http_status": 200,
+  "elapsed_ms": 195,
+  "result": {
+    "totalCount": "5"
+  }
+}
