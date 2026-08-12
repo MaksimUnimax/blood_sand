@@ -1,0 +1,32 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "b087a4a1-d971-4388-a1af-611498f148e6",
+  "command": {
+    "method": "getTop",
+    "phrase": "гунгнир амулет",
+    "numPhrases": 2000,
+    "regions": ["225"],
+    "devices": ["DEVICE_ALL"]
+  },
+  "http_status": 200,
+  "elapsed_ms": 229,
+  "result": {
+    "results": [
+      {"phrase": "гунгнир амулет", "count": "17"}
+    ],
+    "associations": [
+      {"phrase": "блю талисман духи", "count": "3585"},
+      {"phrase": "лунница оберег", "count": "2703"},
+      {"phrase": "шпинель магические свойства", "count": "980"},
+      {"phrase": "легендарные талисманы элден ринг", "count": "281"},
+      {"phrase": "талисманы элден elden ring", "count": "196"},
+      {"phrase": "найдите оберег в шахте дзякоцу", "count": "433"},
+      {"phrase": "талисман черепахи элден ринг", "count": "364"},
+      {"phrase": "талисман кинжала элден ринг", "count": "106"},
+      {"phrase": "оберег чур", "count": "831"},
+      {"phrase": "elden ring талисманы", "count": "3995"}
+    ],
+    "totalCount": "17"
+  }
+}
