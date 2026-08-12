@@ -1,0 +1,36 @@
+{
+  "schema": "OZON_ANALYTICS_DATA_ERROR_EVIDENCE_V1",
+  "observed_at": "2026-08-12T01:53Z",
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.3",
+  "request_id": "7844146f-0a3b-4561-bd36-5ccb12551c17",
+  "operation": "analytics_data",
+  "command": {
+    "operation": "analytics_data",
+    "fingerprint": "e1646dfe"
+  },
+  "http_status": 400,
+  "elapsed_ms": 559,
+  "request_params": {
+    "date_from": "2026-07-12",
+    "date_to": "2026-08-10",
+    "metrics": ["returns"],
+    "dimension": ["sku"],
+    "sort": [{"key": "returns", "order": "DESC"}],
+    "limit": 100,
+    "offset": 0
+  },
+  "result": {
+    "error": {
+      "http_status": 400,
+      "code": "3",
+      "message": "Ozon API request failed. Provider error text is withheld from LLM output; inspect local sanitized diagnostics."
+    }
+  },
+  "evidence_interpretation": {
+    "live_contract_probe_failed": true,
+    "automatic_retry_forbidden": true,
+    "same_request_should_not_be_repeated": true,
+    "note": "The isolated returns metric request failed with provider HTTP 400/code 3. This live result overrides any assumption that the previously observed returns example is currently executable under this exact request shape. No metric values were inferred or normalized."
+  }
+}
