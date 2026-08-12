@@ -335,3 +335,80 @@ Reproducible verification artifacts:
 Commit `921e7f3518265f4475dc4b68214122b3b376b013` unintentionally replaced the preceding v0.1.5 entry while attempting to append the changed-line verification. Commit `b6117f56b097a7403eb6425b45f2659818281df6` restored the prior append-only content byte-for-byte from Git blob `5a13a1b48483b8c882890b8255fbe7ed7f29310f`.
 
 This correction records the incident transparently and appends the verification section after the restored v0.1.5 entry. No production bridge code, immutable `reference-0.1.5/` snapshot, or release ZIP changed as part of the documentation repair.
+
+
+---
+
+## 2026-08-12 — Seller/Performance boundary audit checkpoint
+
+Research artifact:
+
+`tooling/llm-api-bridges/ozon-seller/OZON_BRIDGE_BOUNDARY_AUDIT_2026-08-12.md`
+
+This checkpoint records the provider-boundary audit that was in progress before the v0.1.4/v0.1.5 malformed-command defect work interrupted the main Ozon data-collection track.
+
+The audit compares the exact Ozon Bridge v0.1.5 production data path against the two official Ozon OpenAPI contracts supplied for this work:
+
+- Ozon Seller API OpenAPI 3.0.0, version 2.1, 458 paths;
+- Ozon Performance API OpenAPI 3.0.0, version 2.0, 47 paths.
+
+### Provider-owned limits established for currently enabled Seller aliases
+
+The audit records the following provider constraints as authoritative:
+
+- Seller API global limit: 50 requests/second per Client ID, with additional method-specific limits;
+- `/v4/product/info/stocks`: page `limit` 1..1000; FBO stock belongs to `/v1/analytics/stocks`, not this endpoint;
+- `/v1/analytics/data`: without Premium Plus, last 3 months; at most one request/minute; page `limit` 1..1000; up to 14 metrics;
+- `/v1/analytics/product-queries`: page >= 0, `page_size <= 1000`, up to 1000 SKUs, with subscription/history rules documented by Ozon;
+- `/v1/analytics/product-queries/details`: page >= 0, `page_size <= 100`, up to 1000 SKUs, `limit_by_sku <= 15`;
+- `/v3/posting/fbo/list`: period <= 1 year, `limit` 1..100, up to 1000 order numbers and 1000 posting numbers in the relevant filters;
+- `/v3/supply-order/get`: up to 50 `order_ids`;
+- `/v1/supply-order/details`: one required `order_id`.
+
+Performance API global/statistics limits recorded from the supplied official contract:
+
+- 100,000 requests/day;
+- statistics report period <= 62 days;
+- <= 10 campaigns/report;
+- 1 concurrent export/account and 5 concurrent exports/organization;
+- <= 2000 exports/24h per account and per organization.
+
+### Bridge-owned limits identified
+
+The following v0.1.5 values are bridge-owned and are not documented as global Ozon limits in the supplied contracts:
+
+- request JSON `maxDepth=10`;
+- request array `maxItems=5000`;
+- request aggregate `maxKeys=2000`;
+- serialized `params <= 200000` UTF-8 bytes;
+- result-redaction depth 14;
+- silent result array truncation at 10000 elements;
+- silent result key truncation at 20000 aggregate keys;
+- post-redaction result validation `maxDepth=16`, `maxItems=10000`, `maxKeys=25000`;
+- provider response limit 1.5 MB;
+- client timeout 30 seconds;
+- Seller credential local lengths 256/2048 and visible-ASCII-only validation.
+
+The audit does not interpret the absence of a global body-size/timeout rule in the supplied OpenAPI as proof that Ozon accepts infinite payloads. It establishes only that these specific bridge numbers are not provider-authoritative documented limits.
+
+### Data-integrity defect established
+
+`redactSensitiveResult()` is currently not only a privacy filter. It can silently discard non-sensitive Ozon data through array slicing and aggregate-key truncation, or replace a deep subtree with `[REDACTED_DEPTH]`.
+
+That behavior is incompatible with the full factual seller-dataset goal. Silent truncation is therefore rejected as an acceptable result policy for the next revision.
+
+### Next implementation gate
+
+Production v0.1.5 is unchanged by this research checkpoint.
+
+The next bridge revision must:
+
+- separate Ozon semantic limits from bridge security/privacy and runtime-resource safety;
+- encode provider limits per supported operation;
+- preserve fixed host, credential isolation, READ-only allowlist, no transport/auth injection, PII safeguards, one-command/one-request, no hidden retry, no hidden pagination/fan-out/polling, and durable exactly-once delivery;
+- make PII redaction non-lossy for non-sensitive data;
+- never present a silently truncated provider result as complete;
+- make any runtime resource-safety failure explicit in `OZON_RESULT_V1`;
+- test every behavior-changing line and dependent path under the v0.1.5 changed-line standard before release acceptance.
+
+No production bridge code, immutable `reference-0.1.5/` snapshot, or v0.1.5 release ZIP is changed by this documentation commit.
