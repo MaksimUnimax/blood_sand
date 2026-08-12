@@ -1,0 +1,57 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "4ce70dae-79e1-49e7-b179-4b7d7a3f881c",
+  "command": {
+    "method": "getTop",
+    "phrase": "\"печать велеса\"",
+    "numPhrases": 2000,
+    "regions": [
+      "225"
+    ],
+    "devices": [
+      "DEVICE_ALL"
+    ]
+  },
+  "http_status": 200,
+  "elapsed_ms": 773,
+  "result": {
+    "results": [
+      {
+        "phrase": "печать велеса",
+        "count": "3330"
+      }
+    ],
+    "associations": [
+      {
+        "phrase": "как распечатать документ в ворде",
+        "count": "1264"
+      },
+      {
+        "phrase": "веллес",
+        "count": "2341"
+      },
+      {
+        "phrase": "радуга принт",
+        "count": "1216"
+      },
+      {
+        "phrase": "красная звезда типография",
+        "count": "242"
+      },
+      {
+        "phrase": "как распечатать брошюру в ворде",
+        "count": "439"
+      },
+      {
+        "phrase": "распечатать картинку для проверки принтера",
+        "count": "187"
+      },
+      {
+        "phrase": "флажки распечатать",
+        "count": "1212"
+      }
+    ],
+    "totalCount": "802"
+  }
+}
