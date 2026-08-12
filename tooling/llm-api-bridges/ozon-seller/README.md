@@ -1,14 +1,31 @@
-# Ozon Seller / Performance API research
+# Ozon Seller / Performance API bridge
 
-Статус: **03A.3 API research in progress. Ozon browser extension does not exist; development has not started.**
+Статус: **read-only Ozon LLM↔API Bridge реализован; канонические reference snapshots v0.1.3 и v0.1.4 существуют. Research artifacts 03A.3 сохранены как историческая/provenance база и больше не являются authority для факта существования расширения.**
 
-Эта директория содержит research/provenance artifacts для будущего read-only LLM↔Ozon bridge.
+Эта директория содержит одновременно research/provenance artifacts, operational constraints, versioned immutable bridge snapshots и текущую эксплуатационную документацию.
 
-## Current authority
+## Current implementation authority
 
-Главные state/contract artifacts:
+Для состояния реализованного bridge использовать в таком порядке:
 
-1. `OZON_03A3_COMPLETENESS_V1.json` — machine gate;
+1. `OZON_BRIDGE_APPEND_ONLY_DOCUMENTATION.md` — обязательный канонический append-only журнал истории bridge;
+2. `reference-0.1.4/` — текущий version-specific immutable evidence snapshot для исправления pre-execution observability gap;
+3. `reference-0.1.3/` — неизменяемый предыдущий accepted snapshot и build base для v0.1.4;
+4. version-specific changelog/test/build/package evidence внутри соответствующего `reference-*` каталога.
+
+### Mandatory append-only rule
+
+Любое последующее изменение production bridge, defect fix, security change, test-hardening pass, packaging/build evidence, release, operational incident, acceptance/rejection decision или superseding correction считается документированным только после добавления новой датированной секции **в конец** `OZON_BRIDGE_APPEND_ONLY_DOCUMENTATION.md`.
+
+Исторические записи в `OZON_BRIDGE_APPEND_ONLY_DOCUMENTATION.md` запрещено переписывать, переставлять, удалять, сокращать или молча исправлять. Ошибка в старой записи исправляется только новой append-only correction entry с явной ссылкой на затронутую запись.
+
+Version-specific `reference-*` каталоги являются evidence snapshots и не переписываются задним числом ради нового релиза.
+
+## Historical research authority
+
+Следующие state/contract artifacts остаются важной research/provenance базой, но их старые lifecycle/status формулировки не должны использоваться для вывода, что bridge ещё не существует:
+
+1. `OZON_03A3_COMPLETENESS_V1.json` — исторический research machine gate;
 2. `OZON_READ_ONLY_ALLOWLIST_V1.json` — research candidate registry + do-not-use paths;
 3. `OZON_IMPLEMENTATION_CONTRACT_QUEUE_V1.json` — общая contract queue;
 4. `OZON_PRODUCT_MASTER_CONTRACT_QUEUE_V1.json` + `OZON_PRODUCT_REPORT_FALLBACK_2026-08-11.md`;
@@ -69,18 +86,24 @@ Generated reports are always explicit multi-step operations; hidden polling/fan-
 
 Known: Seller API key lifetime 6 months, `/v1/roles.expires_at`, last explicit general-rate evidence 50 req/s per Client ID, unified product-operation limit model, report expiry fields. Unknown numeric/page/history/access values are not guessed.
 
-`/v1/analytics/stocks` has an announced real-time transition on **2026-08-17** and cannot be post-transition revalidated yet on 2026-08-11.
+`/v1/analytics/stocks` has an announced real-time transition on **2026-08-17** and cannot be post-transition revalidated yet on 2026-08-12.
 
-## Performance API — primary external blocker
+For implemented bridge behavior and current release history, use `OZON_BRIDGE_APPEND_ONLY_DOCUMENTATION.md` plus the matching immutable `reference-*` snapshot rather than stale lifecycle text in older research artifacts.
 
-Ozon-owned 2026 material still explicitly treats Performance API as a public API. Official documentation root is `https://docs.ozon.ru/api/performance/`.
+## Performance API — separate bridge gap
 
-The current runtime cannot retrieve its authoritative method bodies because the docs surface enters a redirect loop. Therefore possible host/auth/campaign/statistics paths from third-party indexes remain discovery-only and are not promoted.
+Ozon-owned 2026 material treats Performance API as a separate public API surface. Performance support is not implied by the Seller bridge reference snapshots.
 
-Still missing: Ozon-owned host/auth/token lifecycle, campaign inventory/product mapping, statistics methods/metrics/dimensions, budget/bid read context, rate/history/access contracts.
+Current Performance research/gap evidence remains in `OZON_PERFORMANCE_API_GAP_2026-08-11.md` and related discovery artifacts. Any future Performance bridge implementation must follow the same read-only/security principles and receive its own explicit implementation/evidence history.
 
-## Coding gate
+## Implementation safety invariants
 
-`03A.4` remains **NOT STARTED** while `OZON_03A3_COMPLETENESS_V1.json` has `extension_development_allowed=false`.
+For the implemented Seller bridge lineage:
 
-No deprecated/retired targets, no third-party endpoint promotion, no hidden retries/fan-out/pagination, no PII leakage and no marketplace mutations.
+- one accepted `OZON_API_V1` command executes at most one external Ozon API request;
+- no hidden retry, pagination loop or fan-out;
+- no arbitrary URL/host/method/header injection from assistant text;
+- credentials remain isolated from ChatGPT/content-script output;
+- no customer PII collection through intentionally blocked surfaces;
+- no mutation/write operations in the read-only bridge;
+- failures that occur before provider execution must be represented observably to ChatGPT with `external_request_executed:false` rather than disappearing into a local-only UI error path.
