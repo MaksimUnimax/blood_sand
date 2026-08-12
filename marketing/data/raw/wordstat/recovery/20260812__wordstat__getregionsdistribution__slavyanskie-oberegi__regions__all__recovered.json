@@ -1,0 +1,41 @@
+{
+  "recovery_status": "RECOVERED_FROM_PRIOR_WORDSTAT_RESULT_V1",
+  "raw_fidelity": "DECISION_REGION_ROWS_ONLY",
+  "recovery_note": "The original large provider envelope was returned in the AUTORUN dialog but was not persisted to GitHub at request time. This recovery artifact preserves exact request metadata and the federal-level / high-volume region rows used for the 03.5 decision. Numerous low-volume granular rows are intentionally omitted here and are not represented as byte-for-byte raw.",
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "d91f26d9-ac4e-498b-a210-2de336d04111",
+  "command": {
+    "method": "getRegionsDistribution",
+    "phrase": "славянские обереги",
+    "region": "REGION_REGIONS",
+    "devices": ["DEVICE_ALL"]
+  },
+  "http_status": 200,
+  "elapsed_ms": 1025,
+  "result": {
+    "results_recovered": [
+      {"region":"225","label":"Россия","count":"25084","share":0.0002457407438426521,"affinityIndex":104.86261579701548},
+      {"region":"1","label":"Москва и область","count":"5006","share":0.0002488469712125527,"affinityIndex":106.18810672772017},
+      {"region":"3","label":"Центр","count":"9279","share":0.00026726521585936547,"affinityIndex":114.04754949595248},
+      {"region":"17","label":"Северо-Запад","count":"2802","share":0.0002464437897283748,"affinityIndex":105.16261989665887},
+      {"region":"26","label":"Юг","count":"3089","share":0.0002990859981276907,"affinityIndex":127.626129967331},
+      {"region":"40","label":"Поволжье","count":"3548","share":0.000184223158030865,"affinityIndex":78.61180014117993},
+      {"region":"52","label":"Урал","count":"2005","share":0.00023466251534593366,"affinityIndex":100.13530847142698},
+      {"region":"59","label":"Сибирь","count":"2807","share":0.0002668391145101693,"affinityIndex":113.86572331046669},
+      {"region":"73","label":"Дальний Восток","count":"962","share":0.0002489086249451825,"affinityIndex":106.21441564001574},
+      {"region":"102444","label":"Северный Кавказ","count":"592","share":0.00017069868149656827,"affinityIndex":72.8406286028542},
+      {"region":"10995","label":"Краснодарский край","count":"1669","share":0.00034285808923116166,"affinityIndex":146.30457905249472},
+      {"region":"10174","label":"Санкт-Петербург и Ленинградская область","count":"1624","share":0.0002308033259697266,"affinityIndex":98.48851320859401},
+      {"region":"11029","label":"Ростовская область","count":"859","share":0.0002879212564926537,"affinityIndex":122.86190571114713},
+      {"region":"11162","label":"Свердловская область","count":"886","share":0.0002524415485555534,"affinityIndex":107.72198660851473},
+      {"region":"11079","label":"Нижегородская область","count":"632","share":0.00022632539256488496,"affinityIndex":96.57768717765633},
+      {"region":"11316","label":"Новосибирская область","count":"620","share":0.00027122609040303316,"affinityIndex":115.73773590540988},
+      {"region":"10672","label":"Воронежская область","count":"488","share":0.00027225562839695383,"affinityIndex":116.17706088431554},
+      {"region":"11069","label":"Ставропольский край","count":"454","share":0.00029193219528818353,"affinityIndex":124.57345556374423},
+      {"region":"11131","label":"Самарская область","count":"419","share":0.00018712777427420593,"affinityIndex":79.85125946892681},
+      {"region":"11108","label":"Пермский край","count":"405","share":0.00025607164037248244,"affinityIndex":109.2710212437735},
+      {"region":"11235","label":"Алтайский край","count":"403","share":0.00031047534252595096,"affinityIndex":132.48619682941953}
+    ]
+  }
+}
