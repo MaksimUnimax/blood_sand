@@ -32,7 +32,7 @@ jobs:
           fi
           echo "chrome=$chrome"
           npm install --no-save puppeteer-core@24
-          cat > /tmp/fetch-ozon-swagger.mjs <<'JS'
+          cat > fetch-ozon-swagger.mjs <<'JS'
           import fs from 'fs';
           import puppeteer from 'puppeteer-core';
 
@@ -87,7 +87,8 @@ jobs:
           }
           if (!found) process.exit(2);
           JS
-          CHROME_BIN="$chrome" xvfb-run -a node /tmp/fetch-ozon-swagger.mjs
+          CHROME_BIN="$chrome" xvfb-run -a node ./fetch-ozon-swagger.mjs
+          rm -f fetch-ozon-swagger.mjs
           for f in "$out"/*-swagger.json; do
             [ -f "$f" ] || continue
             jq -e 'type == "object" and (.swagger != null or .openapi != null) and (.paths | type == "object")' "$f" >/dev/null
@@ -108,5 +109,3 @@ jobs:
           fi
           git commit -m 'research: capture official Ozon Swagger snapshot'
           git push origin HEAD:${{ github.ref_name }}
-
-# browser-probe-trigger: 2026-08-12T05:11Z
