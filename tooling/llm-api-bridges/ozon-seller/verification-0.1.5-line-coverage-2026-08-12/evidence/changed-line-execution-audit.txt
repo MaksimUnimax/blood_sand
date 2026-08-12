@@ -1,0 +1,10 @@
+changed_line_verification=PASS
+service_worker.js: changed_lines_v8_executed=186/186
+shared/ozon_contract.js: changed_lines_v8_executed=1/1
+shared/runtime_names.js: changed_lines_v8_executed=3/3
+content_script.js: changed_behavior_lines_runtime/source_asserted=6/6; deleted_local_parse_gate_absence_asserted=true
+manifest.json: changed_metadata_lines_exact_source_asserted=1/1
+popup.html: changed_metadata_lines_exact_source_asserted=1/1
+popup.js: changed_metadata_lines_exact_source_asserted=2/2
+production_artifact_changed=false
+release_sha256=130d88f3225087aaecbf12819d39949ff68b9ab6d422ff8d3cd7b55953cd4651
