@@ -1,0 +1,31 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.3",
+  "request_id": "74f3ea4e-4ffe-4b16-8404-f421c1aaee83",
+  "operation": "posting_fbo_list",
+  "command": {
+    "operation": "posting_fbo_list",
+    "fingerprint": "c1fef533"
+  },
+  "request_meta": {
+    "provider": "ozon",
+    "host_alias": "seller_api",
+    "http_method": "POST",
+    "path_alias": "posting_fbo_list"
+  },
+  "http_status": 200,
+  "elapsed_ms": 516,
+  "pagination": null,
+  "rate_limit": null,
+  "result": {
+    "has_next": true,
+    "cursor": "9M/fpA0AAAAAAJDfmPsCAAAAAADqjvSv1AIAAAAA",
+    "page_anchor": {
+      "first_posting_number": "0180397336-0022-1",
+      "first_created_at": "2026-07-02T18:46:51.493062Z",
+      "last_posting_number": "48031509-0079-7",
+      "last_created_at": "2026-07-06T18:29:18.394857Z"
+    }
+  },
+  "capture_note": "Sanitized technical evidence for a successful cursor continuation in the 2026-06-12..2026-07-11 FBO posting window. The full postings payload was received in the bound ChatGPT conversation; this repository artifact intentionally preserves provider page boundary and cursor without re-embedding the large posting-detail body. Detailed normalization remains pending until complete posting-detail raw is available in repository-owned form. No customer PII or business conclusions are stored."
+}
