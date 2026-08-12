@@ -18,83 +18,75 @@ jobs:
         with:
           ref: research/ozon-official-swagger-fetch
 
-      - name: Diagnose and fetch official Ozon Swagger
+      - name: Fetch official Ozon Swagger in browser
         shell: bash
         run: |
           set -euo pipefail
           out='tooling/llm-api-bridges/ozon-seller/research-snapshots'
           mkdir -p "$out"
-          python - <<'PY'
-          import json, os
-          from urllib.parse import urljoin
-          import requests
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$chrome" ]; then
+            echo 'No system Chrome/Chromium found'
+            exit 1
+          fi
+          echo "chrome=$chrome"
+          npm install --no-save puppeteer-core@24
+          cat > /tmp/fetch-ozon-swagger.mjs <<'JS'
+          import fs from 'fs';
+          import puppeteer from 'puppeteer-core';
 
-          out='tooling/llm-api-bridges/ozon-seller/research-snapshots'
-          candidates={
-            'seller': [
-              'https://docs.ozon.ru/api/seller/swagger.json',
-              'https://docs.ozon.ru/api/seller/swagger.json?__rr=1',
-              'https://docs.ozon.ru/api/seller/openapi.json',
-            ],
-            'performance': [
-              'https://docs.ozon.ru/api/performance/swagger.json',
-              'https://docs.ozon.ru/api/performance/swagger.json?__rr=1',
-              'https://docs.ozon.ru/api/performance/openapi.json',
-            ],
+          const chrome = process.env.CHROME_BIN;
+          const out = 'tooling/llm-api-bridges/ozon-seller/research-snapshots';
+          const targets = [
+            ['seller', 'https://docs.ozon.ru/api/seller/', 'https://docs.ozon.ru/api/seller/swagger.json'],
+            ['performance', 'https://docs.ozon.ru/api/performance/', 'https://docs.ozon.ru/api/performance/swagger.json'],
+          ];
+
+          const browser = await puppeteer.launch({
+            executablePath: chrome,
+            headless: false,
+            args: ['--no-sandbox', '--disable-dev-shm-usage'],
+          });
+          let found = 0;
+          try {
+            for (const [kind, root, spec] of targets) {
+              const page = await browser.newPage();
+              await page.setViewport({width: 1280, height: 900});
+              await page.setExtraHTTPHeaders({'Accept-Language':'ru-RU,ru;q=0.9,en;q=0.8'});
+              console.log(`\n=== ${kind} root ${root} ===`);
+              try {
+                const rr = await page.goto(root, {waitUntil:'networkidle2', timeout:45000});
+                console.log('root status', rr?.status(), 'final', page.url());
+                await new Promise(r => setTimeout(r, 3000));
+              } catch (e) {
+                console.log('root navigation error', String(e));
+              }
+              console.log(`=== ${kind} spec ${spec} ===`);
+              try {
+                const response = await page.goto(spec, {waitUntil:'networkidle2', timeout:45000});
+                console.log('spec status', response?.status(), 'final', page.url(), 'content-type', response?.headers()?.['content-type']);
+                const text = response ? await response.text() : '';
+                console.log('spec bytes', Buffer.byteLength(text), 'prefix', JSON.stringify(text.slice(0,240)));
+                let data;
+                try { data = JSON.parse(text); } catch { data = null; }
+                const valid = data && typeof data === 'object' && (data.swagger || data.openapi) && data.paths && typeof data.paths === 'object';
+                if (valid) {
+                  fs.writeFileSync(`${out}/${kind}-swagger.json`, JSON.stringify(data));
+                  fs.writeFileSync(`${out}/${kind}-swagger.source-url.txt`, page.url()+'\n');
+                  console.log('VALID_SPEC', kind, data.openapi || data.swagger, 'paths', Object.keys(data.paths).length);
+                  found++;
+                }
+              } catch (e) {
+                console.log('spec navigation error', String(e));
+              }
+              await page.close();
+            }
+          } finally {
+            await browser.close();
           }
-          headers={
-            'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36',
-            'Accept':'application/json,text/plain,*/*',
-            'Accept-Language':'ru-RU,ru;q=0.9,en;q=0.8',
-          }
-
-          def valid_spec(data):
-            return isinstance(data,dict) and ('swagger' in data or 'openapi' in data) and isinstance(data.get('paths'),dict)
-
-          found={}
-          for kind, urls in candidates.items():
-            for start in urls:
-              print(f'\n=== {kind}: {start} ===')
-              s=requests.Session()
-              url=start
-              seen=[]
-              for hop in range(15):
-                if url in seen:
-                  print('LOOP_DETECTED ->', url)
-                  break
-                seen.append(url)
-                r=s.get(url,headers=headers,allow_redirects=False,timeout=20)
-                loc=r.headers.get('Location')
-                print('hop',hop,'status',r.status_code,'url',url)
-                print('location',loc)
-                print('content-type',r.headers.get('Content-Type'),'bytes',len(r.content))
-                print('cookies',s.cookies.get_dict())
-                if 300 <= r.status_code < 400 and loc:
-                  url=urljoin(url,loc)
-                  continue
-                try:
-                  data=r.json()
-                except Exception:
-                  data=None
-                if valid_spec(data):
-                  path=os.path.join(out,f'{kind}-swagger.json')
-                  with open(path,'w',encoding='utf-8') as f:
-                    json.dump(data,f,ensure_ascii=False,separators=(',',':'))
-                  with open(os.path.join(out,f'{kind}-swagger.source-url.txt'),'w',encoding='utf-8') as f:
-                    f.write(url+'\n')
-                  found[kind]=path
-                  print('VALID_SPEC',kind,'version',data.get('openapi') or data.get('swagger'),'paths',len(data['paths']),'final_url',url)
-                else:
-                  print('NON_SPEC_TERMINAL_BODY',repr(r.text[:300]))
-                break
-              if kind in found:
-                break
-
-          print('\nFOUND',found)
-          if not found:
-            raise SystemExit('No official Swagger/OpenAPI spec fetched; redirect diagnostics above are the evidence')
-          PY
-
+          if (!found) process.exit(2);
+          JS
+          CHROME_BIN="$chrome" xvfb-run -a node /tmp/fetch-ozon-swagger.mjs
           for f in "$out"/*-swagger.json; do
             [ -f "$f" ] || continue
             jq -e 'type == "object" and (.swagger != null or .openapi != null) and (.paths | type == "object")' "$f" >/dev/null
@@ -107,7 +99,7 @@ jobs:
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config user.email '41898282+MaksimUnimax@users.noreply.github.com'
           git add tooling/llm-api-bridges/ozon-seller/research-snapshots/
           if git diff --cached --quiet; then
             echo 'No snapshot changes'
