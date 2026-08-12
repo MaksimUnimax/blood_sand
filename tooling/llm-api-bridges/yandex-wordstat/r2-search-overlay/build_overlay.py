@@ -24,7 +24,7 @@ def main() -> int:
     args = parser.parse_args()
 
     script_dir = Path(__file__).resolve().parent
-    repo_root = Path(args.repo_root).resolve() if args.repo_root else script_dir.parents[4]
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else script_dir.parents[3]
     source = repo_root / "tooling" / "llm-api-bridges" / "yandex-wordstat" / f"reference-{BASE_VERSION}"
     overlay = script_dir / "yandex_search_protocol_overlay.js"
     out = Path(args.out).resolve()
@@ -80,7 +80,7 @@ def main() -> int:
         "Added command prefix: YANDEX_SEARCH_API_V1\n"
         "Added result prefix: YANDEX_SEARCH_RESULT_V1\n"
         "Allowlisted methods: webSearch, genSearch\n"
-        "No arbitrary URL/method passthrough. Existing local API key/folder storage keys are preserved.\n",
+        "No arbitrary URL/method passthrough. Existing local API key/folder storage keys are preserved by schema; a separate Chrome extension installation may have separate chrome.storage.\n",
         encoding="utf-8",
     )
 
