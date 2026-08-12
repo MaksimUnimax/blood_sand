@@ -1,0 +1,15 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "3e2a37f3-bd93-4bf1-b6ed-0b5ebbd74b42",
+  "command": {
+    "method": "getTop",
+    "phrase": "скандинавский оберег в машину",
+    "numPhrases": 2000,
+    "regions": ["225"],
+    "devices": ["DEVICE_ALL"]
+  },
+  "http_status": 200,
+  "elapsed_ms": 164,
+  "result": {}
+}
