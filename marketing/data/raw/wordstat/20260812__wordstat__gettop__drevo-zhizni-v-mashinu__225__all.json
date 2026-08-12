@@ -1,0 +1,15 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "818a8071-5552-4c2b-9de2-8489696d1d1c",
+  "command": {
+    "method": "getTop",
+    "phrase": "древо жизни в машину",
+    "numPhrases": 2000,
+    "regions": ["225"],
+    "devices": ["DEVICE_ALL"]
+  },
+  "http_status": 200,
+  "elapsed_ms": 165,
+  "result": {}
+}
