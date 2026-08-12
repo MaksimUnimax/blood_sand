@@ -1,0 +1,34 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "6d9de5d3-8761-4c06-96f2-01e47f16fa27",
+  "command": {
+    "method": "getTop",
+    "phrase": "славянский оберег мара",
+    "numPhrases": 2000,
+    "regions": ["225"],
+    "devices": ["DEVICE_ALL"]
+  },
+  "http_status": 200,
+  "elapsed_ms": 836,
+  "result": {
+    "results": [
+      {"phrase": "славянский оберег мара", "count": "49"}
+    ],
+    "associations": [
+      {"phrase": "символ солнца у славян", "count": "256"},
+      {"phrase": "семаргл бог чего у славян", "count": "182"},
+      {"phrase": "мифология славян", "count": "2136"},
+      {"phrase": "старославянские символы", "count": "917"},
+      {"phrase": "коловрат символ славян", "count": "199"},
+      {"phrase": "алатырь символ славян", "count": "123"},
+      {"phrase": "мифологические существа славян", "count": "142"},
+      {"phrase": "старославянские руны и их значение", "count": "245"},
+      {"phrase": "чертог финиста у славян", "count": "66"},
+      {"phrase": "чертог волка у славян", "count": "105"},
+      {"phrase": "талисман великий щит с гербом дракона", "count": "167"},
+      {"phrase": "талисман щит с гербом дракона", "count": "346"}
+    ],
+    "totalCount": "49"
+  }
+}
