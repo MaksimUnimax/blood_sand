@@ -1,6 +1,6 @@
 # Roadmap — от стратегии до релиза
 
-Версия: 1.6  
+Версия: 1.7  
 Дата: 2026-08-12  
 Статус: **рабочий управляющий roadmap проекта**
 
@@ -70,7 +70,7 @@ Roadmap имеет **ровно два уровня**:
 - [x] **02. Завершить архитектуру исследовательских данных** — **5/5 ранов выполнено**. Детализация: [`02_RESEARCH_DATA_ARCHITECTURE.md`](02_RESEARCH_DATA_ARCHITECTURE.md).
 - [x] **03. Полностью измерить поисковый спрос / Wordstat** — **COMPLETE 2026-08-12**. Re-baseline по current Ozon assortment выполнен; family roots, operator precision, Dynamics, device/region, evidence-driven Tier 2, consolidated R1 dataset, Query Evidence Ledger и final R1 report закрыты. Детализация: [`03_WORDSTAT_DEMAND_MEASUREMENT.md`](03_WORDSTAT_DEMAND_MEASUREMENT.md).
 - [~] **03A. Создать marketplace API tooling и канонический master полного ассортимента** — обязательный инфраструктурный этап, ориентир **15–30 ранов**. Yandex reference → Ozon API audit/bridge → WB API audit/bridge → полный seller ingestion → Product/SKU/category master. Детализация: [`03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md`](03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md).
-- [ ] **04. Исследовать реальный Yandex SERP и Alice AI** — предварительно 8–15 ранов; перед стартом должен быть отдельно зафиксирован конечный набор шагов, оценка, критерий завершения, зависимости и блокеры.
+- [~] **04. Исследовать реальный Yandex SERP и Alice AI** — **IN PROGRESS с 2026-08-12**, оценка 8–15 ранов. Protocol/scope зафиксированы; активный шаг 04.2 — проверка direct Yandex SERP channel и primary mobile pass. Детализация: [`04_YANDEX_SERP_ALICE_RESEARCH.md`](04_YANDEX_SERP_ALICE_RESEARCH.md).
 - [ ] **05. Свести Wordstat + SERP + Alice в единую карту возможностей** — предварительно 3–6 ранов.
 - [ ] **06. Завершить исследование покупателей и полный паспорт SKU** — оценка будет пересчитана после импорта фактического ассортимента; исходные 3–6 ранов относились к пилотному SKU и больше не являются валидной оценкой полного каталога.
 - [ ] **07. Завершить конкурентную разведку и определить реальные конкурентные преимущества** — предварительно 3–6 ранов, scope уточняется по product families.
@@ -116,4 +116,4 @@ Roadmap имеет **ровно два уровня**:
 
 Пункт **03A — Marketplace API tooling и канонический master полного ассортимента** сохраняет собственный статус `[~]`; закрытие Wordstat не меняет автоматически lifecycle этого отдельного инфраструктурного трека.
 
-Следующий исследовательский пункт — **04. Yandex SERP и Alice AI**, но он **не запущен автоматически**. Перед его стартом должны быть выполнены обязательные правила roadmap: отдельная детализация конечных шагов, оценка ранов, ожидаемые результаты, критерий завершения, зависимости и блокеры.
+Активный исследовательский пункт: **04 — Yandex SERP и Alice AI**. Его protocol/scope/acceptance rules зафиксированы в `04_YANDEX_SERP_ALICE_RESEARCH.md`; активный шаг — **04.2, проверка direct Yandex SERP channel и primary mobile SERP pass**. Generic web-search не допускается как подмена Yandex Top-10; Alice evidence принимается только из прямого observation.
