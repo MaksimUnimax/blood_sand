@@ -3,9 +3,10 @@ name: Research fetch official Ozon Swagger
 on:
   push:
     branches:
-      - research/ozon-official-swagger-fetch
+      - 'research/ozon-official-swagger-*'
     paths:
       - .github/workflows/ozon-official-swagger-fetch.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: research/ozon-official-swagger-fetch
+          ref: ${{ github.ref_name }}
 
       - name: Fetch official Ozon Swagger in browser
         shell: bash
@@ -99,11 +100,11 @@ jobs:
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
-          git config user.email '41898282+MaksimUnimax@users.noreply.github.com'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add tooling/llm-api-bridges/ozon-seller/research-snapshots/
           if git diff --cached --quiet; then
             echo 'No snapshot changes'
             exit 0
           fi
           git commit -m 'research: capture official Ozon Swagger snapshot'
-          git push origin HEAD:research/ozon-official-swagger-fetch
+          git push origin HEAD:${{ github.ref_name }}
