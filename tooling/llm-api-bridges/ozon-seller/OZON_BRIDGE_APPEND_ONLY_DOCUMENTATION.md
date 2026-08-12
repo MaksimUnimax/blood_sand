@@ -156,3 +156,21 @@ Detailed v0.1.4 evidence remains in:
 v0.1.4 is the first release in this lineage that explicitly transports autorun pre-execution failures back into ChatGPT using the same worker-owned observable delivery lifecycle while proving `external_request_executed:false` and provider fetch count = 0 for malformed-command failures.
 
 No existing v0.1.3 reference evidence was rewritten to create v0.1.4.
+
+---
+
+## 2026-08-12 — append-only authority activated in directory README
+
+Governance/documentation commit:
+
+`6ad600a21c062024f3d7537891a5e173205c90d4`
+
+The directory-level `README.md` now names this file as the mandatory canonical operational history for the implemented bridge lineage and explicitly supersedes stale research-era wording that claimed the extension did not exist.
+
+From this point forward:
+
+- every production bridge change, defect fix, security change, test-hardening pass, package/build evidence change, release, operational incident, acceptance/rejection decision, or correction MUST append a new dated section to this file before the work is considered fully documented;
+- existing entries in this file are historical records and MUST NOT be rewritten, reordered, deleted, compacted, or silently corrected;
+- corrections are append-only and must explicitly identify the older entry being corrected;
+- `reference-*` directories remain immutable version-specific evidence snapshots;
+- research-era lifecycle/status files remain provenance artifacts but do not override the implemented bridge/version authority recorded here and in the immutable reference snapshots.
