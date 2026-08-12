@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Wildberries Bridge — ChatGPT ↔ WB Seller API",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Контролируемый read-only мост ChatGPT ↔ Wildberries API: fixed operation registry, local credentials, conversation binding, manual/autorun и exactly-once recovery.",
   "permissions": ["storage", "tabs", "unlimitedStorage"],
   "host_permissions": [

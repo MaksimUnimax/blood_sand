@@ -1,7 +1,9 @@
 {
   "name": "wildberries-llm-api-bridge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
-  "scripts": {"test": "node --test tests/*.test.mjs", "test:coverage": "node --experimental-test-coverage --test tests/*.test.mjs"},
-  "description": "Read-only ChatGPT to Wildberries API bridge with exactly-once lifecycle and fixed operation registry."
+  "scripts": {
+    "test": "node tests/test_provider.js && node --test tests/adapted_*.test.mjs",
+    "test:coverage": "node tests/test_provider.js && node --experimental-test-coverage --test tests/adapted_*.test.mjs"
+  }
 }
