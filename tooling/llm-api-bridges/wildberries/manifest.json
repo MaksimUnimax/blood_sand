@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Wildberries Bridge — ChatGPT ↔ WB Seller API",
+  "version": "0.1.0",
+  "description": "Контролируемый read-only мост ChatGPT ↔ Wildberries API: fixed operation registry, local credentials, conversation binding, manual/autorun и exactly-once recovery.",
+  "permissions": ["storage", "tabs", "unlimitedStorage"],
+  "host_permissions": [
+    "https://chatgpt.com/*", "https://chat.openai.com/*",
+    "https://content-api.wildberries.ru/*", "https://discounts-prices-api.wildberries.ru/*", "https://marketplace-api.wildberries.ru/*",
+    "https://seller-analytics-api.wildberries.ru/*", "https://statistics-api.wildberries.ru/*", "https://finance-api.wildberries.ru/*",
+    "https://documents-api.wildberries.ru/*", "https://common-api.wildberries.ru/*", "https://supplies-api.wildberries.ru/*",
+    "https://advert-api.wildberries.ru/*", "https://advert-media-api.wildberries.ru/*", "https://dp-calendar-api.wildberries.ru/*",
+    "https://feedbacks-api.wildberries.ru/*", "https://returns-api.wildberries.ru/*"
+  ],
+  "background": {"service_worker": "service_worker.js"},
+  "content_scripts": [{
+    "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+    "js": ["shared/conversation_identity.js", "shared/runtime_names.js", "shared/wb_operations.js", "shared/wb_contract.js", "shared/bridge_autorun_model.js", "shared/manual_controls.js", "shared/composer_send.js", "shared/proven_writing_block_capture.js", "content_script.js"],
+    "run_at": "document_idle"
+  }],
+  "action": {"default_title": "Wildberries Bridge", "default_popup": "popup.html"}
+}
