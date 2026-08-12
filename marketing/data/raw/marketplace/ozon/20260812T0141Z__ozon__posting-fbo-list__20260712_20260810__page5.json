@@ -1,0 +1,48 @@
+{
+  "capture_kind": "compact_sanitized_evidence",
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.3",
+  "request_id": "4cb1d28b-342b-4704-aaf1-9f7f72c01f77",
+  "operation": "posting_fbo_list",
+  "command_fingerprint": "e2e63739",
+  "http_status": 200,
+  "elapsed_ms": 629,
+  "request_window": {
+    "since": "2026-07-12T00:00:00Z",
+    "to": "2026-08-10T23:59:59Z"
+  },
+  "continuation": {
+    "input_cursor": "1LqXpw0AAAAAAPD7gKwBAAAAAAC0htDn4gIAAAAA",
+    "has_next": false,
+    "result_cursor": ""
+  },
+  "verified_boundaries": {
+    "first_posting_number": "75206595-0546-1",
+    "first_created_at": "2026-08-05T09:52:40.585402Z",
+    "last_visible_posting_number": "66955587-0110-1",
+    "last_visible_created_at": "2026-08-10T21:10:23.559393Z"
+  },
+  "fields_observed": [
+    "posting_number",
+    "order_id",
+    "order_number",
+    "status",
+    "substatus",
+    "cancellation",
+    "products",
+    "analytics_data",
+    "financial_data",
+    "legal_info",
+    "external_order",
+    "cancel_reason_id",
+    "created_at",
+    "in_process_at",
+    "additional_data"
+  ],
+  "notes": [
+    "Cursor continuation advanced from page 4 and did not repeat the prior boundary.",
+    "Provider returned has_next=false with an empty result cursor, so the 2026-07-12..2026-08-10 FBO cursor chain is terminal.",
+    "This repository object is a compact sanitized evidence capture rather than a complete posting-detail payload; pagination is closed, while full raw-detail normalization remains blocked by compact capture for continuation pages.",
+    "No credentials or customer PII are stored."
+  ]
+}
