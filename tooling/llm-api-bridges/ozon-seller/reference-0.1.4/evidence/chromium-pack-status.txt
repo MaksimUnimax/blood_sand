@@ -1,0 +1,5 @@
+chromium_pack_exit=0
+fresh_extracted_extension_packaged=true
+crx_created=true
+private_key_created_temporarily=true
+private_key_not_committed=true
