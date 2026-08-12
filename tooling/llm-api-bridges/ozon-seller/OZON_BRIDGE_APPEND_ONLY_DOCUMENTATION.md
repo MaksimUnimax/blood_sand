@@ -278,3 +278,60 @@ Detailed evidence:
 ### Acceptance state
 
 v0.1.5 is accepted as the current Seller bridge reference for the controlled-error invariant: once trusted conversation/binding ownership is established, Manual and Autorun controlled pre-execution errors are observable as `OZON_RESULT_V1`; malformed/validation failures prove zero provider requests, while provider transport failures prove one attempted request and no automatic retry. Identity/binding failures that cannot safely establish the target chat remain fail-closed.
+
+
+---
+
+## 2026-08-12 — post-release changed-line verification for Ozon Bridge v0.1.5
+
+Verification commit:
+
+`391d78e024df5072eb65b92b58ced88de7848ba3`
+
+Verification directory:
+
+`tooling/llm-api-bridges/ozon-seller/verification-0.1.5-line-coverage-2026-08-12/`
+
+This verification was added after the initial v0.1.5 acceptance because the required test standard is stricter than a passing scenario suite: every behavior-changing production line must be exercised or explicitly source-asserted.
+
+The initial 67/67 suite was re-examined with V8 line coverage against the actual v0.1.4→v0.1.5 production diff. Eight newly-added `service_worker.js` lines were not executed by that first suite: the Manual error-report-construction failure cleanup branch and the Autorun call into the new shared execution-error builder.
+
+Two targeted tests were added in a separate verification overlay without changing the immutable `reference-0.1.5/` snapshot or the production ZIP:
+
+- Manual execution error + forced error-report-builder failure now proves the claimed Manual operation transitions to `FAILED` rather than remaining active;
+- Autorun provider transport exception now proves the shared `buildExecutionErrorResult()` path executes with exactly one provider attempt and `automatic_retry:false`.
+
+Final verification result: **69/69 PASS**, 0 fail, 0 skipped, 0 cancelled.
+
+Changed-line audit result:
+
+- `service_worker.js`: **186/186** newly-added/replaced v0.1.5 lines V8-executed;
+- `shared/ozon_contract.js`: **1/1** changed line V8-executed;
+- `shared/runtime_names.js`: **3/3** changed lines V8-executed;
+- `content_script.js`: **6/6** changed lines runtime/source asserted through the actual-source `commandKey()` / `handleCopy()` VM harnesses plus exact version assertion;
+- deleted Manual local `parseCommand()` gate: explicit architecture-absence assertion remains active;
+- `manifest.json`: **1/1** changed metadata line exact-source asserted;
+- `popup.html`: **1/1** changed metadata line exact-source asserted;
+- `popup.js`: **2/2** changed metadata lines exact-source asserted.
+
+The audit is intentionally scoped to the v0.1.4→v0.1.5 changed production lines. It does not claim 100% runtime coverage of unrelated legacy extension code.
+
+Production artifact was not changed by this verification. Release SHA-256 remains:
+
+`130d88f3225087aaecbf12819d39949ff68b9ab6d422ff8d3cd7b55953cd4651`
+
+Reproducible verification artifacts:
+
+- `verification-0.1.5-line-coverage-2026-08-12/run_verification.sh`;
+- `verification-0.1.5-line-coverage-2026-08-12/changed_line_execution_audit.py`;
+- `verification-0.1.5-line-coverage-2026-08-12/extra-line-coverage-tests.diff`;
+- `verification-0.1.5-line-coverage-2026-08-12/evidence/changed-line-execution-audit.txt`;
+- `verification-0.1.5-line-coverage-2026-08-12/evidence/lineverify-summary.txt`.
+
+---
+
+## 2026-08-12 — documentation integrity correction
+
+Commit `921e7f3518265f4475dc4b68214122b3b376b013` unintentionally replaced the preceding v0.1.5 entry while attempting to append the changed-line verification. Commit `b6117f56b097a7403eb6425b45f2659818281df6` restored the prior append-only content byte-for-byte from Git blob `5a13a1b48483b8c882890b8255fbe7ed7f29310f`.
+
+This correction records the incident transparently and appends the verification section after the restored v0.1.5 entry. No production bridge code, immutable `reference-0.1.5/` snapshot, or release ZIP changed as part of the documentation repair.
