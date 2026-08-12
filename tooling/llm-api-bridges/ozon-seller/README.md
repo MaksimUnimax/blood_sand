@@ -1,6 +1,6 @@
 # Ozon Seller / Performance API bridge
 
-Статус: **read-only Ozon LLM↔API Bridge реализован; канонические reference snapshots v0.1.3 и v0.1.4 существуют. Research artifacts 03A.3 сохранены как историческая/provenance база и больше не являются authority для факта существования расширения.**
+Статус: **read-only Ozon LLM↔API Bridge реализован; канонические reference snapshots v0.1.3, v0.1.4 и v0.1.5 существуют. Research artifacts 03A.3 сохранены как историческая/provenance база и больше не являются authority для факта существования расширения.**
 
 Эта директория содержит одновременно research/provenance artifacts, operational constraints, versioned immutable bridge snapshots и текущую эксплуатационную документацию.
 
@@ -9,9 +9,10 @@
 Для состояния реализованного bridge использовать в таком порядке:
 
 1. `OZON_BRIDGE_APPEND_ONLY_DOCUMENTATION.md` — обязательный канонический append-only журнал истории bridge;
-2. `reference-0.1.4/` — текущий version-specific immutable evidence snapshot для исправления pre-execution observability gap;
-3. `reference-0.1.3/` — неизменяемый предыдущий accepted snapshot и build base для v0.1.4;
-4. version-specific changelog/test/build/package evidence внутри соответствующего `reference-*` каталога.
+2. `reference-0.1.5/` — текущий version-specific immutable evidence snapshot; исправляет Manual error-to-chat lifecycle и завершает общий Manual/Autorun controlled-error invariant;
+3. `reference-0.1.4/` — неизменяемый предыдущий snapshot исправления Autorun pre-execution observability gap;
+4. `reference-0.1.3/` — неизменяемый более ранний accepted snapshot и базовый lineage artifact;
+5. version-specific changelog/test/build/package evidence внутри соответствующего `reference-*` каталога.
 
 ### Mandatory append-only rule
 
@@ -106,4 +107,6 @@ For the implemented Seller bridge lineage:
 - credentials remain isolated from ChatGPT/content-script output;
 - no customer PII collection through intentionally blocked surfaces;
 - no mutation/write operations in the read-only bridge;
-- failures that occur before provider execution must be represented observably to ChatGPT with `external_request_executed:false` rather than disappearing into a local-only UI error path.
+- controlled Manual and Autorun failures that occur after trusted conversation/binding ownership but before provider execution must be represented observably to ChatGPT with `external_request_executed:false` rather than disappearing into a local-only UI error path;
+- provider transport exceptions after one attempted request must be represented as `OZON_RESULT_V1 result.error` with no hidden retry;
+- identity/binding/security failures that cannot safely establish the target conversation remain fail-closed and are not injected into an untrusted or wrong chat.
