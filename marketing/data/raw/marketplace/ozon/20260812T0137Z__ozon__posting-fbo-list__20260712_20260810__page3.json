@@ -1,0 +1,45 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.3",
+  "request_id": "170f52c7-2574-4ecc-9e26-100abf5367af",
+  "operation": "posting_fbo_list",
+  "command": {
+    "operation": "posting_fbo_list",
+    "fingerprint": "bc13768d"
+  },
+  "request_meta": {
+    "provider": "ozon",
+    "host_alias": "seller_api",
+    "http_method": "POST",
+    "path_alias": "posting_fbo_list"
+  },
+  "http_status": 200,
+  "elapsed_ms": 620,
+  "pagination": null,
+  "rate_limit": null,
+  "result_evidence": {
+    "has_next": true,
+    "cursor": "4oXspg0AAAAAAICsiYACAAAAAACu6dam5QIAAAAA",
+    "first_posting": {
+      "posting_number": "76914781-2050-2",
+      "created_at": "2026-07-26T17:10:25.148260Z",
+      "status": "cancelled",
+      "sku": 2559748332,
+      "offer_id": "\"Герб России\""
+    },
+    "last_visible_posting": {
+      "posting_number": "0185595799-0365-1",
+      "created_at": "2026-08-01T05:17:30.129225Z",
+      "status": "delivering",
+      "sku": 1636048691,
+      "offer_id": "Печать Велеса"
+    },
+    "continuation_check": {
+      "previous_page_last_posting": "0170285335-0059-2",
+      "previous_page_last_created_at": "2026-07-26T16:46:21.123854Z",
+      "advanced": true
+    }
+  },
+  "capture_scope": "compact_sanitized_evidence",
+  "capture_note": "The complete provider page payload was delivered by Ozon Bridge in the bound conversation. This repository artifact intentionally preserves the sanitized request/response envelope, pagination cursor and verified page boundaries only; it must not be treated as a complete posting-detail raw payload. No credentials or customer PII are stored."
+}
