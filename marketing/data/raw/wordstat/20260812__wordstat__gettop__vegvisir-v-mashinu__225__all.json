@@ -1,0 +1,17 @@
+{
+  "bridge": "wordstat-manual-bridge",
+  "version": "1.1.1",
+  "request_id": "e5e326e9-58df-4a0c-9f5b-67df04e494c2",
+  "command": {
+    "method": "getTop",
+    "phrase": "вегвизир в машину",
+    "numPhrases": 2000,
+    "regions": ["225"],
+    "devices": ["DEVICE_ALL"]
+  },
+  "http_status": 200,
+  "elapsed_ms": 196,
+  "result": {
+    "totalCount": "4"
+  }
+}
