@@ -635,3 +635,49 @@ Reproducible patch checksums:
 ### Acceptance boundary
 
 Automated/source/package/emulator acceptance is complete. Logged-in live v0.1.9 field acceptance is still pending. The intended live scale sequence remains **1 → 2 → 5 → 15 → 30 → 60**. No live PASS is claimed before actual extension results.
+
+---
+
+## 2026-08-13 — Ozon Bridge v0.1.10: field-readiness, one-shot delivery watch and Unicode discovery hardening
+
+Release reference:
+
+`tooling/llm-api-bridges/ozon-seller/reference-0.1.10/`
+
+Release ZIP SHA-256:
+
+`e84ecce82bd97f6a57b9e9a08228d0773d625422b2c075bc5a5da28ba75ad818`
+
+### v0.1.9 live field evidence now completed
+
+The logged-in v0.1.9 Manual/Copy scale sequence **1 → 2 → 5 → 15 → 30 → 60** completed at the batch-mechanics level. Each batch produced the expected result count, preserved order, executed identical commands separately with unique request IDs, and produced one combined `OZON_BATCH_RESULT_V1`. The repeated `posting_fbo_list` probes returned provider HTTP 400/code `3`; those provider responses are separate from the verified batch queue mechanics.
+
+Free-form discovery probes also passed arbitrary prose, Markdown, unrelated JSON, multiline JSON, adjacent commands, Unicode spacing and other command-placement variations. A final Unicode separator matrix exposed three reproducible v0.1.9 discovery failures: U+200B ZERO WIDTH SPACE, U+2060 WORD JOINER and U+00AD SOFT HYPHEN between `OZON_API_V1` and an otherwise valid JSON object produced local `MISSING_JSON` with `external_request_executed:false`.
+
+### Corrections in v0.1.10
+
+Manual code-block Copy is executable by the bridge only while worker state says Manual mode is ready. While a prior request/delivery is active, native Copy remains available but no new `OZ_EXECUTE_COMMAND` admission is attempted. Ozon-blue styling is therefore a readiness indicator rather than merely a Manual-mode indicator, and readiness is restored only after confirmed Microphone completion/worker cleanup.
+
+The delivery watcher is now delivery-scoped and one-shot. The old blind initial 2-second wait is removed; classification begins immediately and a composer-scoped MutationObserver wakes the watcher, with a 2-second timer retained only as fallback. The staged report Send may be clicked at most once. After that click, any later `send_active` state is ignored, preventing an ordinary user-created Send control from being clicked while the same delivery still waits for Microphone. Microphone remains the sole success marker and watcher/wake teardown occurs on completion/failure/stop.
+
+Command discovery now treats U+200B, U+2060 and U+00AD as ignorable marker-to-object separators. JSON parsing/validation remains strict; malformed JSON is not repaired.
+
+### Verification and packaging
+
+The accepted v0.1.9 baseline was rerun before changes: **201/201 PASS**.
+
+Final v0.1.10 development suite: **208/208 PASS**, 0 fail, 0 skipped, 0 cancelled.
+
+Fresh extraction directly from the final deterministic ZIP with the same external harness: **208/208 PASS**, 0 fail, 0 skipped, 0 cancelled.
+
+The permanent field-form regressions cover all four live discovery rounds: 10/10, 10/10, 11/11 and 10/10 expected command counts, including the three former Unicode failures. Explicit lifecycle regressions verify busy Copy is native-copy-only, blue state exists only while ready, admission removes readiness, confirmed Microphone restores it, report Send is clicked at most once, later user Send controls are ignored, and watcher teardown prevents ordinary user Send clicks afterward.
+
+The retained suite covers the common batch engine, 1/2/5/15/30/60 scale matrix, max provider concurrency 1, no dedupe, one final delivery, pre-request zero-provider failures, recovery/no replay, operation/provider/credential/privacy/security invariants and package checks.
+
+Every production JavaScript file passes `node --check`; the ZIP contains exactly 16 production files; fresh extraction is byte-identical to staged production; Chromium 144 `--pack-extension` exits 0; deterministic ZIP rebuild is byte-identical.
+
+Reproducible v0.1.9→v0.1.10 patch evidence is stored in two ordered base64 parts under `reference-0.1.10/`. Raw patch SHA-256 is `96a106a4eacfac0c774ab49d62cd842d5cd29c2f03ad56d1fe8fe21ac638a54d`; deterministic gzip SHA-256 is `8d808e8c28c2ff9198f96f8ad2f4a23ca98e6e90f8464a5adc803a7aae8d01ab`.
+
+### Acceptance boundary
+
+Automated/source/package/emulator regression acceptance is complete for v0.1.10. Logged-in live v0.1.10 acceptance is still pending installation of this new package. In particular, the readiness color/copy-only transition and ordinary user-chat non-interference must be observed in the real ChatGPT UI before live acceptance is claimed.
