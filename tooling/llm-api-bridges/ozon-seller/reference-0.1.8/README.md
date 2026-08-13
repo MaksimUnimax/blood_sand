@@ -24,7 +24,11 @@ Evidence:
 
 - `OZON_BRIDGE_V0.1.8_CHANGELOG_AND_TEST_EVIDENCE.md`
 - `OZON_BRIDGE_V0.1.8_REPRODUCIBLE_EVIDENCE.md`
-- `OZON_BRIDGE_V0.1.8_PATCH.diff.gz.b64`
+- `OZON_BRIDGE_V0.1.8_PATCH.diff.gz.b64.part01` through `.part04` — concatenate in numeric order to reconstruct the exact base64 patch evidence.
+
+Concatenated patch-base64 SHA-256:
+
+`628d49bceabdb658f607f3cef1243a5044205e8d42d29643146bf551c1de250c`
 
 Release ZIP SHA-256:
 
