@@ -530,3 +530,57 @@ Package/build checks:
 v0.1.7 supersedes v0.1.6 for ChatGPT browser Send-delivery behavior. v0.1.6 provider-boundary semantics, read-only operation constraints, privacy/security controls, credential isolation, one-command/one-provider-request rule and no hidden provider retry/pagination/fan-out remain unchanged.
 
 Automated/package acceptance is complete. Logged-in live ChatGPT field acceptance of the original Send-readiness incident remains pending installation and a live continuation run with v0.1.7.
+
+---
+
+## 2026-08-13 — Ozon Bridge v0.1.8: multi-command sequential collection + single final delivery
+
+Release reference:
+
+`tooling/llm-api-bridges/ozon-seller/reference-0.1.8/`
+
+Release ZIP SHA-256:
+
+`79b750b2d16b0f765af674181ea41894681aa778db27e11fb87760960912a5fa`
+
+Base accepted release: v0.1.7 (`9b4ee937d186f3a39d318c0e3d43f02d5a405799259225e00192aff0db68ea1c`).
+
+### Architecture decision
+
+Three materially different queue/recovery architectures were emulated before production implementation. The selected design keeps the ordered command queue, per-entry durable result state, current position and final pending delivery inside the existing worker-owned `auto_run` record. A content-script-owned queue was rejected because restart/acknowledgement loss can replay an already executed provider request. A separate batch store/ID hierarchy was rejected as unnecessary persistence and complexity.
+
+### Behavior implemented
+
+One completed assistant message may now contain multiple literal `OZON_API_V1` markers anywhere in ordinary text/Markdown. Discovery uses balanced-brace structural JSON extraction with string/escape awareness, passes valid objects through the existing strict contract, records malformed/validation entries locally, and continues safely to later markers.
+
+Valid provider requests execute strictly serially with observed maximum concurrency = 1. Each valid command still causes at most one external Ozon request; there is no hidden retry, pagination loop or fan-out. No intermediate result is delivered to ChatGPT. Results are persisted only as transient recovery state while the current batch is active.
+
+Recovery skips already stored completed entries. A provider request left in `requesting` by an older worker session fails closed as `REQUEST_OUTCOME_UNKNOWN_NO_RETRY` and is not blindly replayed.
+
+After all entries are complete, one ordered `OZON_BATCH_RESULT_V1` report is constructed and inserted into the ChatGPT composer once. From insertion onward, the batch path does not read, compare, hash, sample, length-check or otherwise verify composer/report contents and does not inspect ChatGPT attachments.
+
+Final delivery uses the governed size-independent UI FSM: blind initial 2-second wait, then event-scoped 2-second checks that reacquire current controls. Only a fresh active recognized Send may be clicked; disabled Send, Stop, Unknown and Microphone are never clicked. A later active Send may be clicked again after fresh classification. Microphone after the initial wait is the sole success marker and is never clicked. Confirmed success destroys the watcher and clears transient batch/results/delivery state.
+
+Built-in Microphone recognition is present, with independent manual bind/rebind/clear fallback. Manual/legacy and Start contours remain separate.
+
+### Security/provider invariants retained
+
+The Ozon operation registry, HTTP methods, paths, effects and enabled READ-only operation set are unchanged from v0.1.7. Host permissions and extension permissions do not expand. No new Blob/File/ObjectURL/download mechanism is used by batch delivery, no historical batch store is introduced, credentials remain isolated, and delivery recovery cannot cause provider replay.
+
+### Verification and packaging
+
+Source acceptance: **174/174 PASS**, 0 fail, 0 skipped, 0 cancelled.
+
+Fresh extraction of the final deterministic ZIP: **174/174 PASS**, 0 fail, 0 skipped, 0 cancelled.
+
+The acceptance includes retained regression, exhaustive production content-runtime tests, full-message parser/model tests, worker batch integration/recovery tests, DOM delivery/Microphone FSM tests, and static/package/security invariants. Specific evidence includes 1200-command discovery, valid/malformed/valid recovery, 25-request batch with max provider concurrency = 1, zero replay for old-worker in-flight state, no intermediate delivery, watcher dedupe, repeated freshly classified Send attempts, Microphone-only completion, and one-time 2 MB report insertion with no post-insertion composer-content verification.
+
+The production package contains exactly 16 files; every production JavaScript file passes `node --check`; `manifest.json` parses; Chromium 144 `--pack-extension` exits 0; a deterministic second ZIP build is byte-identical.
+
+The v0.1.7→v0.1.8 patch reconstructs the accepted 16-file production tree byte-for-byte. Patch evidence is stored in four ordered base64 parts under `reference-0.1.8/`; concatenated base64 SHA-256 is `628d49bceabdb658f607f3cef1243a5044205e8d42d29643146bf551c1de250c`, decoded patch SHA-256 is `5bfce3cd0d6ecf440f218ce5b90b23b610a7d5541260bb33f321e4003983d3b2`.
+
+### Acceptance state and limitation
+
+v0.1.8 is accepted as the current automated/source/package implementation authority for multi-command sequential collection and single final batch delivery. It supersedes v0.1.7 for Autorun batch/final-delivery behavior while retaining the v0.1.7/v0.1.6 provider, privacy, credential and READ-only safety boundaries.
+
+The Chrome Extension Lab connector was unavailable in this session and local headless Chromium did not expose an MV3 service-worker target. Therefore no logged-in live ChatGPT continuation run with v0.1.8 is claimed. Installation/live field acceptance remains pending.
