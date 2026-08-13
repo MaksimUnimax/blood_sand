@@ -22,12 +22,24 @@ Required v0.1.7 base ZIP SHA-256:
 
 `9b4ee937d186f3a39d318c0e3d43f02d5a405799259225e00192aff0db68ea1c`
 
-Patch evidence:
+Patch evidence is stored as four ordered base64 text parts because the repository connector write path is bounded:
 
-- `OZON_BRIDGE_V0.1.8_PATCH.diff.gz.b64`
-- decoded patch SHA-256: `5bfce3cd0d6ecf440f218ce5b90b23b610a7d5541260bb33f321e4003983d3b2`
-- deterministic gzip SHA-256: `97f91543070e30f86d7e67bb67460305a1d5f85a80414bdcdc419830f84534e7`
-- stored base64 SHA-256: `628d49bceabdb658f607f3cef1243a5044205e8d42d29643146bf551c1de250c`
+- `OZON_BRIDGE_V0.1.8_PATCH.diff.gz.b64.part01` — SHA-256 `c577dbcbae425916b29297fe2e8100da1310b3bc7c3cec5db9313c2fc5c3ac82`;
+- `OZON_BRIDGE_V0.1.8_PATCH.diff.gz.b64.part02` — SHA-256 `55c01f4a2d86a446876591aa73354040dbd8f4bb196fc5a37a7da1532df1ab8a`;
+- `OZON_BRIDGE_V0.1.8_PATCH.diff.gz.b64.part03` — SHA-256 `f46a798f02eb1751d277eac36ac1e155f142f970524170bb5380cf4a38d027db`;
+- `OZON_BRIDGE_V0.1.8_PATCH.diff.gz.b64.part04` — SHA-256 `fa5fc36cdef6437c7ebc4d9b8d79f6152c9d3015b9e3a8ecedfe7a6e51f1c3a3`.
+
+Concatenate those files in numeric order with no transformation. The concatenated stored-base64 SHA-256 is:
+
+`628d49bceabdb658f607f3cef1243a5044205e8d42d29643146bf551c1de250c`
+
+Decoded patch SHA-256:
+
+`5bfce3cd0d6ecf440f218ce5b90b23b610a7d5541260bb33f321e4003983d3b2`
+
+Deterministic gzip patch SHA-256:
+
+`97f91543070e30f86d7e67bb67460305a1d5f85a80414bdcdc419830f84534e7`
 
 The patch changes exactly these eight production paths:
 
@@ -46,10 +58,13 @@ All other production paths are byte-identical to v0.1.7.
 
 From an extracted exact v0.1.7 production tree:
 
-1. base64-decode `OZON_BRIDGE_V0.1.8_PATCH.diff.gz.b64`;
-2. gzip-decompress to `OZON_BRIDGE_V0.1.8_PATCH.diff`;
-3. apply from the extension root using `patch -p1 --forward --batch`;
-4. verify the 16 SHA-256 values below.
+1. concatenate `OZON_BRIDGE_V0.1.8_PATCH.diff.gz.b64.part01` through `.part04` in numeric order;
+2. verify concatenated SHA-256 `628d49bceabdb658f607f3cef1243a5044205e8d42d29643146bf551c1de250c`;
+3. base64-decode the concatenated text;
+4. gzip-decompress to `OZON_BRIDGE_V0.1.8_PATCH.diff`;
+5. verify decoded patch SHA-256 `5bfce3cd0d6ecf440f218ce5b90b23b610a7d5541260bb33f321e4003983d3b2`;
+6. apply from the extension root using `patch -p1 --forward --batch`;
+7. verify the 16 SHA-256 values below.
 
 Accepted production hashes:
 
