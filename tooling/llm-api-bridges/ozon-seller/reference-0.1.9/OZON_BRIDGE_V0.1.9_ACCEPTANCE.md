@@ -87,13 +87,13 @@ Operation registry не расширен. Enabled operations:
 
 ### Functional acceptance
 
-Полный acceptance suite v0.1.9: **199/199 PASS, 0 fail, 0 skipped, 0 cancelled**.
+Полный acceptance suite v0.1.9: **201/201 PASS, 0 fail, 0 skipped, 0 cancelled**.
 
 Тот же suite выполнен трижды на разных уровнях:
 
-1. development working tree: 199/199 PASS;
-2. clean 16-file production tree: 199/199 PASS;
-3. fresh extraction непосредственно из final ZIP: 199/199 PASS.
+1. development working tree: 201/201 PASS;
+2. clean 16-file production tree: 201/201 PASS;
+3. fresh extraction непосредственно из final ZIP: 201/201 PASS.
 
 ### Live-defect regression and scale matrix
 
@@ -124,20 +124,20 @@ Manual/Copy batch emulator проверяет:
 
 ### Production function execution inventory
 
-Raw V8 coverage использован как независимый audit того, были ли production named functions реально выполнены хотя бы один раз в emulator suite. Результат: **356/356 named production functions executed, 0 missing**.
+Raw V8 coverage использован как независимый audit того, были ли production named functions реально выполнены хотя бы один раз в emulator suite. Результат: **379/379 named production functions executed, 0 missing**. При подсчёте исключены только функции, которые test harness технически дописывает за пределами длины исходного production-файла; они не являются кодом расширения.
 
-- `service_worker.js`: 114/114
-- `content_script.js`: 108/108
-- `popup.js`: 15/15
+- `service_worker.js`: 120/120
+- `content_script.js`: 115/115
+- `popup.js`: 16/16
 - `shared/bridge_autorun_model.js`: 18/18
-- `shared/composer_send.js`: 7/7
+- `shared/composer_send.js`: 13/13
 - `shared/conversation_identity.js`: 4/4
 - `shared/manual_controls.js`: 16/16
 - `shared/ozon_contract.js`: 42/42
 - `shared/ozon_credentials.js`: 5/5
-- `shared/ozon_provider.js`: 5/5
+- `shared/ozon_provider.js`: 7/7
 - `shared/proven_writing_block_capture.js`: 17/17
-- `shared/provider_transport_core.js`: 5/5
+- `shared/provider_transport_core.js`: 6/6
 
 Node experimental coverage выводит для VM-loaded scripts пустую таблицу файлов и агрегат `100%`; этот агрегат не используется как evidence, потому что он не атрибутирует VM production scripts. Вместо ложного line-coverage claim используются executable function inventory, branch/input-output emulator tests, static invariants, syntax checks и fresh-package rerun.
 
