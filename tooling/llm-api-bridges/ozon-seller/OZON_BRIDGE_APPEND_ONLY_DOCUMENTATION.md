@@ -584,3 +584,54 @@ The v0.1.7→v0.1.8 patch reconstructs the accepted 16-file production tree byte
 v0.1.8 is accepted as the current automated/source/package implementation authority for multi-command sequential collection and single final batch delivery. It supersedes v0.1.7 for Autorun batch/final-delivery behavior while retaining the v0.1.7/v0.1.6 provider, privacy, credential and READ-only safety boundaries.
 
 The Chrome Extension Lab connector was unavailable in this session and local headless Chromium did not expose an MV3 service-worker target. Therefore no logged-in live ChatGPT continuation run with v0.1.8 is claimed. Installation/live field acceptance remains pending.
+
+---
+
+## 2026-08-13 — Ozon Bridge v0.1.9: Manual/Copy unified into common batch engine
+
+Release reference:
+
+`tooling/llm-api-bridges/ozon-seller/reference-0.1.9/`
+
+Release ZIP SHA-256:
+
+`22665f5e9bb6250eed88fa53a1c4372c9653877d553a23ab36429490e19a9f70`
+
+### Live defect fixed
+
+The first logged-in v0.1.8 Manual/Copy field probe accepted one command, but a two-command message failed before any Ozon request with `request_id=manual-preexec-*`, `INVALID_JSON`, and `external_request_executed:false`. Root cause: v0.1.8 retained the legacy Manual/Copy single-command `parseCommand()` execution/delivery contour while Autorun alone used the new multi-command batch engine.
+
+### Architecture correction
+
+v0.1.9 removes that execution split. Manual/Copy and Autorun both use command discovery → the common `processBatchQueue()` → strict serial provider execution → one combined batch delivery FSM. One command is simply a batch of size 1; no separate single-command provider execution engine remains.
+
+Completed provider work is not replayed during recovery. Old-worker in-flight ambiguity fails closed without blind retry. A common pre-insert composer occupancy check preserves an existing user draft; if the composer is occupied, insertion does not begin and delivery remains recoverable. After programmatic insertion, the batch path still does not read, compare, hash, length-check, or otherwise verify composer contents.
+
+### Verification
+
+Final v0.1.9 acceptance: **201/201 PASS**, 0 fail, 0 skipped, 0 cancelled, on all three tested surfaces:
+
+- development working tree;
+- clean 16-file production tree;
+- fresh extraction directly from the final ZIP.
+
+The explicit Manual/Copy scale matrix **1 / 2 / 5 / 15 / 30 / 60 PASS** proves exact provider request count, strict maximum provider concurrency = 1, ordered results, and one final batch delivery.
+
+Raw V8 production execution inventory: **379/379 named production functions executed, 0 missing**, excluding only test-harness functions injected beyond the original production-source length. The suite also covers every enabled Ozon operation contract, malformed/validation/gate failures with zero provider requests, provider/credential failures, PII redaction and blocked PII operation, recovery/no-replay paths, delivery FSM, user-draft safety, static security/package invariants, and deterministic packaging.
+
+Every production JavaScript file passes `node --check`; Chromium 144 extension pack exits 0; the production ZIP contains exactly 16 files; deterministic rebuild is byte-identical.
+
+No claim of 100% source-line runtime coverage is made: Node's experimental coverage does not correctly attribute the VM-loaded production scripts. Acceptance instead records the full named-production-function execution inventory plus explicit input/output/branch, static-source and fresh-package tests.
+
+### Artifact/evidence
+
+Immutable v0.1.9 evidence and ordered reproducible patch parts are stored under `reference-0.1.9/`.
+
+Reproducible patch checksums:
+
+- raw v0.1.8→v0.1.9 patch SHA-256: `a6450e32a3f9ce2df184e9799c65c6b70bfff8209bb4f23e8d95bc641c4888be`;
+- gzip patch SHA-256: `d238777a2c7f8c21c6ebf16726019bae25a759483c5fad616ad549d83696c893`.
+
+### Acceptance boundary
+
+Automated/source/package/emulator acceptance is complete. Logged-in live v0.1.9 field acceptance is still pending. The intended live scale sequence remains **1 → 2 → 5 → 15 → 30 → 60**. No live PASS is claimed before actual extension results.
