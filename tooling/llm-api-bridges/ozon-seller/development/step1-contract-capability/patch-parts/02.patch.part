@@ -1,0 +1,140 @@
++      if (!entry || entry.kind !== "command" || !entry.command) return entry;
++      const plan = OzonContract.planCommandForSellerCapability(entry.command, profile, planningAtMs);
++      if (plan.action === "reject") {
++        return {
++          ...entry,
++          kind: "planning_error",
++          status: "pending",
++          error: { code: String(plan.error?.code || "CAPABILITY_PLANNING_REJECTED"), message: String(plan.error?.message || "Capability planning rejected command.") },
++          execution_command: null,
++          planning: plan.planning || null
++        };
++      }
++      return { ...entry, execution_command: plan.command, planning: plan.planning || null };
++    });
++  } catch (error) {
++    await failOwner(error.code || "BATCH_CAPABILITY_PLANNING_FAILED", error.message || String(error));
++    return { ok: false, code: error.code || "BATCH_CAPABILITY_PLANNING_FAILED" };
++  }
++
++  let planningStored = false;
++  owner = await mutateOwner((current) => {
++    if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++    if (current.batch.planning_state === "complete") return current;
++    if (Math.max(0, Number(current.batch.next_index || 0)) !== 0 || current.batch.request_state !== "idle") return current;
++    planningStored = true;
++    return {
++      ...current,
++      batch: {
++        ...current.batch,
++        entries: plannedEntries,
++        planning_state: "complete",
++        planning_at_ms: planningAtMs,
++        planning_completed_at: new Date().toISOString()
++      }
++    };
++  });
++  if (!planningStored) {
++    await failOwner("BATCH_PLANNING_STORE_RACE", "Capability plan не удалось сохранить до provider execution; business requests запрещены.");
++    return { ok: false, code: "BATCH_PLANNING_STORE_RACE" };
++  }
++  await diagnostic("BATCH_CAPABILITY_PLANNING_COMPLETED", {
++    owner_kind: ownerKind,
++    owner_id: ownerId,
++    capability_probe_performed: owner.batch.capability_resolution?.probe_performed === true,
++    capability_status: owner.batch.capability_resolution?.profile?.status || "not_needed",
++    planned_command_count: plannedEntries.filter((entry) => entry?.kind === "command").length,
++    planning_error_count: plannedEntries.filter((entry) => entry?.kind === "planning_error").length
++  });
++  return { ok: true, code: "BATCH_PLANNING_READY", owner };
++}
++
+ function processBatchQueue({
+   conversationKey,
+   ownerKind,
+@@ -1756,6 +1997,9 @@
+   const key = normalizeConversationKey(conversationKey);
+   const flightKey = `${String(ownerKind || "batch")}:${String(ownerId || "")}`;
+   return singleFlight(batchCollectionRequests, flightKey, async () => {
++    const prepared = await ensureBatchCapabilityAndPlanning({ ownerKind, ownerId, getOwner, mutateOwner, ownerMatches, isCollecting, failOwner });
++    if (!prepared?.ok) return prepared || { ok: false, code: "BATCH_PLANNING_FAILED" };
++    if (prepared.code === "CAPABILITY_PROBE_IN_PROGRESS") return { ok: true, code: "CAPABILITY_PROBE_IN_PROGRESS" };
+     while (true) {
+       let owner = await getOwner();
+       if (!owner || !ownerMatches(owner)) return { ok: false, code: "BATCH_OWNER_NOT_ACTIVE" };
+@@ -1842,6 +2086,35 @@
+         continue;
+       }
+ 
++      if (entry.kind === "planning_error") {
++        const plan = { error: entry.error || {}, planning: entry.planning || null };
++        const result = buildCapabilityPlanningErrorResult(entry.command, entry.command_fingerprint, plan);
++        let stored = false;
++        await mutateOwner((current) => {
++          if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++          if (Number(current.batch.next_index || 0) !== nextIndex) return current;
++          const currentEntries = [...(current.batch.entries || [])];
++          const currentEntry = currentEntries[nextIndex];
++          if (!currentEntry || currentEntry.status !== "pending" || currentEntry.kind !== "planning_error") return current;
++          currentEntries[nextIndex] = {
++            ...currentEntry,
++            status: "complete",
++            request_id: result.request_id,
++            http_status: 0,
++            external_request_executed: false,
++            report_text: result.report_text,
++            request_completed_at: new Date().toISOString()
++          };
++          stored = true;
++          return { ...current, batch: { ...current.batch, entries: currentEntries, next_index: nextIndex + 1, request_state: "idle", request_worker_session_id: null } };
++        });
++        if (!stored) return { ok: false, code: "BATCH_PLANNING_RESULT_STORE_RACE" };
++        await diagnostic("BATCH_CAPABILITY_RESULT_STORED", {
++          owner_kind: ownerKind, owner_id: ownerId, queue_index: nextIndex, operation: entry.operation, code: entry.error?.code || "CAPABILITY_PLANNING_REJECTED", external_request_executed: false
++        }, { level: "warning" });
++        continue;
++      }
++
+       let requestGranted = false;
+       owner = await mutateOwner((current) => {
+         if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
+@@ -1876,10 +2149,10 @@
+       let result;
+       const requestStartedAt = Date.now();
+       try {
+-        result = await executeOzonCore(liveEntry.command_text);
++        result = await executeOzonCore(liveEntry.command_text, { executionCommand: liveEntry.execution_command || liveEntry.command, planning: liveEntry.planning || null });
+       } catch (error) {
+         try {
+-          result = buildExecutionErrorResult(liveEntry.command, liveEntry.command_fingerprint, error, Date.now() - requestStartedAt);
++          result = buildExecutionErrorResult(liveEntry.command, liveEntry.command_fingerprint, error, Date.now() - requestStartedAt, liveEntry.planning || null);
+         } catch (reportError) {
+           await failOwner(reportError.code || "BATCH_ERROR_REPORT_FAILED", reportError.message || String(reportError));
+           throw reportError;
+@@ -1900,6 +2173,7 @@
+           request_id: result.request_id || null,
+           http_status: Number(result.http_status || 0),
+           external_request_executed: true,
++          executed_command_fingerprint: result.executed_command_fingerprint || null,
+           report_text: String(result.report_text || ""),
+           request_completed_at: new Date().toISOString()
+         };
+@@ -1932,6 +2206,7 @@
+         queue_total: owner.batch.entries.length,
+         operation: liveEntry.operation,
+         request_id: result.request_id || null,
++        executed_command_fingerprint: result.executed_command_fingerprint || null,
+         http_status: Number(result.http_status || 0),
+         external_request_executed: true
+       });
+@@ -1955,9 +2230,9 @@
+   return operation;
+ }
+ 
+-async function finalizeAutoBatch(conversationKey, runId, entries) {
++async function finalizeAutoBatch(conversationKey, runId, entries, batchSnapshot = null) {
+   const key = normalizeConversationKey(conversationKey);
+-  const combinedReport = formatCombinedBatchReport(entries);
++  const combinedReport = formatCombinedBatchReport(entries, batchSnapshot);
+   const prefixed = await applyPrefixToReport(key, combinedReport);
+   const deliveryId = `delivery-${crypto.randomUUID()}`;

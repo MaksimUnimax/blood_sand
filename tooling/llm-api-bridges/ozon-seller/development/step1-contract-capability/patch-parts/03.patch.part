@@ -1,0 +1,140 @@
+   let claimed = false;
+@@ -1991,9 +2266,9 @@
+   return { ok: true, collected: true, result_count: entries.length, delivery_id: deliveryId };
+ }
+ 
+-async function finalizeManualBatch(conversationKey, operationId, entries) {
++async function finalizeManualBatch(conversationKey, operationId, entries, batchSnapshot = null) {
+   const key = normalizeConversationKey(conversationKey);
+-  const combinedReport = formatCombinedBatchReport(entries);
++  const combinedReport = formatCombinedBatchReport(entries, batchSnapshot);
+   const prefixed = await applyPrefixToReport(key, combinedReport);
+   const deliveryId = `manual-delivery-${crypto.randomUUID()}`;
+   let claimed = false;
+@@ -2042,7 +2317,7 @@
+     ownerMatches: (current) => Boolean(current && current.run_id === runId),
+     isCollecting: (current) => Boolean(current && current.status === BridgeAutorunModel.RUN_STATUSES.COLLECTING && current.batch),
+     failOwner: (code, message) => markRunError(key, code, message),
+-    finalizeOwner: (_owner, entries) => finalizeAutoBatch(key, runId, entries)
++    finalizeOwner: (owner, entries) => finalizeAutoBatch(key, runId, entries, owner?.batch || null)
+   });
+ }
+ 
+@@ -2057,7 +2332,7 @@
+     ownerMatches: (current) => Boolean(current && current.operation_id === operationId),
+     isCollecting: (current) => Boolean(current && current.status === MANUAL_OPERATION_STATUSES.REQUESTING && current.batch),
+     failOwner: (code, message) => failManualBatch(key, operationId, code, message),
+-    finalizeOwner: (_owner, entries) => finalizeManualBatch(key, operationId, entries)
++    finalizeOwner: (owner, entries) => finalizeManualBatch(key, operationId, entries, owner?.batch || null)
+   });
+ }
+ 
+@@ -2114,6 +2389,8 @@
+         next_index: 0,
+         request_state: "idle",
+         request_worker_session_id: null,
++        planning_state: "pending",
++        capability_resolution: null,
+         created_at: new Date().toISOString()
+       }
+     };
+--- a/shared/ozon_contract.js
++++ b/shared/ozon_contract.js
+@@ -13,6 +13,29 @@
+     /client[_-]?secret/i, /access[_-]?token/i, /^token$/i
+   ];
+ 
++  const SELLER_SUBSCRIPTION_TYPES = deepFreeze([
++    "UNKNOWN", "UNSPECIFIED", "PREMIUM", "PREMIUM_LITE", "PREMIUM_PLUS", "PREMIUM_PRO"
++  ]);
++  const ANALYTICS_UNIVERSAL_METRICS = deepFreeze(["revenue", "ordered_units"]);
++  const ANALYTICS_RESTRICTED_METRICS = deepFreeze([
++    "unknown_metric", "hits_view_search", "hits_view_pdp", "hits_view",
++    "hits_tocart_search", "hits_tocart_pdp", "hits_tocart",
++    "session_view_search", "session_view_pdp", "session_view",
++    "conv_tocart_search", "conv_tocart_pdp", "conv_tocart",
++    "returns", "cancellations", "delivered_units", "position_category"
++  ]);
++  const ANALYTICS_METRICS = deepFreeze([...ANALYTICS_UNIVERSAL_METRICS, ...ANALYTICS_RESTRICTED_METRICS]);
++  const ANALYTICS_UNIVERSAL_DIMENSIONS = deepFreeze(["unknownDimension", "sku", "spu", "day", "week", "month"]);
++  const ANALYTICS_RESTRICTED_DIMENSIONS = deepFreeze(["year", "category1", "category2", "brand", "modelID", "descriptionType"]);
++  const ANALYTICS_DIMENSIONS = deepFreeze([...ANALYTICS_UNIVERSAL_DIMENSIONS, ...ANALYTICS_RESTRICTED_DIMENSIONS]);
++  const ANALYTICS_FULL_TIERS = deepFreeze(["PREMIUM_PLUS", "PREMIUM_PRO"]);
++  const PRODUCT_QUERIES_FULL_TIERS = deepFreeze(["PREMIUM", "PREMIUM_PLUS", "PREMIUM_PRO"]);
++  const PRODUCT_QUERY_SORT_BY = deepFreeze(["BY_SEARCHES", "BY_VIEWS", "BY_POSITION", "BY_CONVERSION", "BY_GMV"]);
++  const PRODUCT_QUERY_SORT_DIR = deepFreeze(["DESCENDING", "ASCENDING"]);
++  const PRODUCT_QUERY_DETAILS_RESTRICTED_SORT = deepFreeze(["BY_VIEWS", "BY_POSITION", "BY_CONVERSION"]);
++  const PRODUCT_QUERY_DETAILS_RESTRICTED_SORT_TIERS = deepFreeze(["PREMIUM", "PREMIUM_PLUS"]);
++  const FILTER_OPS = deepFreeze(["EQ", "GT", "GTE", "LT", "LTE"]);
++
+   function fail(code, message) {
+     const error = new Error(message);
+     error.code = code;
+@@ -195,6 +218,56 @@
+     return object[field];
+   }
+ 
++  function requireString(value, path, { nonEmpty = true } = {}) {
++    if (typeof value !== "string") fail("INVALID_OPERATION_PARAMS", `${path} должен быть строкой.`);
++    const text = value.trim();
++    if (nonEmpty && !text) fail("INVALID_OPERATION_PARAMS", `${path} не может быть пустой строкой.`);
++    return value;
++  }
++
++  function requireEnum(value, path, allowed) {
++    const text = requireString(value, path).trim();
++    if (!allowed.includes(text)) fail("INVALID_OPERATION_PARAMS", `${path}: неподдерживаемое значение ${text}.`);
++    return text;
++  }
++
++  function requireRfc3339DateTime(value, path) {
++    const text = requireString(value, path).trim();
++    const rfc3339 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
++    if (!rfc3339.test(text) || Number.isNaN(Date.parse(text))) fail("INVALID_OPERATION_PARAMS", `${path} должен быть RFC3339 date-time с часовым поясом.`);
++    return text;
++  }
++
++  function requireAnalyticsDate(value, path) {
++    const text = requireString(value, path).trim();
++    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
++      const parsed = new Date(`${text}T00:00:00Z`);
++      if (!Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === text) return text;
++    }
++    const rfc3339 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
++    if (!rfc3339.test(text) || Number.isNaN(Date.parse(text))) fail("INVALID_OPERATION_PARAMS", `${path} должен быть ISO date (YYYY-MM-DD) или RFC3339 date-time.`);
++    return text;
++  }
++
++  function requireInt64String(value, path) {
++    const text = requireString(value, path).trim();
++    if (!/^-?\d+$/.test(text)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть строковым int64.`);
++    try {
++      const parsed = BigInt(text);
++      if (parsed < -9223372036854775808n || parsed > 9223372036854775807n) fail("INVALID_OPERATION_PARAMS", `${path} выходит за диапазон int64.`);
++    } catch (error) {
++      if (error?.code) throw error;
++      fail("INVALID_OPERATION_PARAMS", `${path} должен быть строковым int64.`);
++    }
++    return text;
++  }
++
++  function validateSkuArray(value, path, maximum) {
++    const array = assertMaxItems(value, path, maximum);
++    for (let index = 0; index < array.length; index += 1) requireInt64String(array[index], `${path}[${index}]`);
++    return array;
++  }
++
+   function normalizeStocksCurrentParams(params) {
+     const normalized = requirePlainObject(params, "params");
+     requirePlainObject(requireField(normalized, "filter"), "params.filter");
+@@ -204,9 +277,38 @@
+ 
+   function normalizeAnalyticsDataParams(params) {
+     const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["date_from", "date_to", "dimension", "metrics", "filters", "sort", "limit", "offset"]);
+     for (const field of ["date_from", "date_to", "dimension", "metrics", "limit"]) requireField(normalized, field);
+-    requireArray(normalized.dimension, "params.dimension");
+-    assertMaxItems(normalized.metrics, "params.metrics", 14);
++    normalized.date_from = requireAnalyticsDate(normalized.date_from, "params.date_from");
++    normalized.date_to = requireAnalyticsDate(normalized.date_to, "params.date_to");
++    const dimensions = requireArray(normalized.dimension, "params.dimension");

@@ -1,0 +1,140 @@
+--- a/service_worker.js
++++ b/service_worker.js
+@@ -942,18 +942,29 @@
+   return clean;
+ }
+ 
+-async function executeOzonCore(commandText) {
++async function executeOzonCore(commandText, { executionCommand = null, planning = null } = {}) {
+   const settings = await getSettings();
+   const command = OzonContract.parseCommand(commandText);
++  const physicalCommand = executionCommand ? OzonContract.normalizeCommand(executionCommand) : command;
++  if (physicalCommand.operation !== command.operation) throw Object.assign(new Error("Planned physical operation не совпадает с logical operation."), { code: "PLANNED_OPERATION_MISMATCH" });
+   const fingerprint = OzonContract.commandFingerprint(command);
+-  await diagnostic("OZON_REQUEST_STARTED", { operation: command.operation, command_fingerprint: fingerprint });
++  const physicalFingerprint = OzonContract.commandFingerprint(physicalCommand);
++  await diagnostic("OZON_REQUEST_STARTED", {
++    operation: command.operation,
++    command_fingerprint: fingerprint,
++    physical_command_fingerprint: physicalFingerprint,
++    command_transformed: fingerprint !== physicalFingerprint
++  });
+   try {
+-    const response = await OzonProvider.executeCommand(commandText, settings.sellerCredentials, settings.performanceCredentials);
++    const response = typeof OzonProvider.executeCommandObject === "function"
++      ? await OzonProvider.executeCommandObject(physicalCommand, settings.sellerCredentials, settings.performanceCredentials, { reportCommand: command, planning })
++      : await OzonProvider.executeCommand(commandText, settings.sellerCredentials, settings.performanceCredentials);
+     await diagnostic("OZON_REQUEST_FINISHED", {
+       request_id: response.request_id || null,
+       operation: command.operation,
+       provider: response.provider || OzonContract.preflightExecution(command).meta.provider || "seller_api",
+       command_fingerprint: fingerprint,
++      physical_command_fingerprint: response.executed_command_fingerprint || physicalFingerprint,
+       http_status: response.http_status,
+       ok: response.ok
+     }, { level: response.ok ? "info" : "warning" });
+@@ -966,6 +977,7 @@
+     await diagnostic("OZON_REQUEST_FAILED", {
+       operation: command.operation,
+       command_fingerprint: fingerprint,
++      physical_command_fingerprint: physicalFingerprint,
+       code: safe.code,
+       error: safe.message,
+       http_status: safe.http_status
+@@ -975,7 +987,7 @@
+   }
+ }
+ 
+-function buildExecutionErrorResult(command, fingerprint, error, elapsedMs = 0) {
++function buildExecutionErrorResult(command, fingerprint, error, elapsedMs = 0, planning = null) {
+   const safe = OzonContract.safeBridgeErrorPayload(error, Number(error?.http_status || 0));
+   const preflight = OzonContract.preflightExecution(command);
+   const requestId = crypto.randomUUID();
+@@ -985,13 +997,16 @@
+     requestMeta: {
+       host_alias: String(preflight.meta.provider || "seller_api"),
+       http_method: preflight.meta.method,
+-      path_alias: command.operation
++      path_alias: command.operation,
++      capability_probe_executed: planning?.capability?.probe_performed === true,
++      capability_probe_http_status: Number(planning?.capability?.probe_http_status || 0)
+     },
+     httpStatus: safe.http_status,
+     result: { error: safe },
+     elapsedMs: Math.max(0, Number(elapsedMs || 0)),
+     pagination: null,
+-    rateLimit: null
++    rateLimit: null,
++    planning
+   });
+   return Object.freeze({
+     ok: false,
+@@ -1006,6 +1021,51 @@
+   });
+ }
+ 
++function buildCapabilityPlanningErrorResult(command, fingerprint, plan) {
++  const source = Object.assign(new Error(String(plan?.error?.message || "Capability planning rejected the command.")), { code: String(plan?.error?.code || "CAPABILITY_PLANNING_REJECTED") });
++  const safe = OzonContract.safeBridgeErrorPayload(source, 0);
++  const preflight = OzonContract.preflightExecution(command);
++  const requestId = `capability-${crypto.randomUUID()}`;
++  const planning = plan?.planning || null;
++  const reportText = OzonContract.formatResultReport({
++    requestId,
++    command,
++    requestMeta: {
++      host_alias: String(preflight.meta.provider || "seller_api"),
++      http_method: preflight.meta.method,
++      path_alias: command.operation,
++      external_request_executed: false,
++      capability_probe_executed: planning?.capability?.probe_performed === true,
++      capability_probe_http_status: Number(planning?.capability?.probe_http_status || 0)
++    },
++    httpStatus: 0,
++    result: {
++      error: {
++        ...safe,
++        stage: "capability_planning",
++        external_request_executed: false
++      }
++    },
++    elapsedMs: 0,
++    pagination: null,
++    rateLimit: null,
++    planning
++  });
++  return Object.freeze({
++    ok: false,
++    bridge_error: true,
++    pre_execution_error: true,
++    request_id: requestId,
++    operation: command.operation,
++    command_fingerprint: fingerprint,
++    http_status: 0,
++    report_text: reportText,
++    response_meta: null,
++    error: safe,
++    external_request_executed: false
++  });
++}
++
+ async function applyPrefixToReport(conversationKey, reportText) {
+   const prefix = await getReportPrefix(conversationKey);
+   const result = BridgeAutorunModel.applyReportPrefix(reportText, prefix);
+@@ -1111,6 +1171,8 @@
+         next_index: 0,
+         request_state: "idle",
+         request_worker_session_id: null,
++        planning_state: "pending",
++        capability_resolution: null,
+         created_at: now
+       },
+       created_at: now,
+@@ -1727,13 +1789,28 @@
+   return OzonContract.discoverCommands(String(text || "")).map(batchEntryFromDiscovery);
+ }
+ 
+-function formatCombinedBatchReport(entries) {
++function safeBatchCapabilitySummary(batch) {
++  const resolution = batch?.capability_resolution;
++  if (!resolution || typeof resolution !== "object") return { performed: false, status: "not_resolved", subscription_type: null, http_status: 0, error_code: null };

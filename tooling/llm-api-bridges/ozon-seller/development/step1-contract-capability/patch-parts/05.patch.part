@@ -1,0 +1,140 @@
++        if (dependencies.restricted_dimensions.length) reasons.push("restricted_dimensions");
++        if (dependencies.restricted_sort_keys.length) reasons.push("restricted_sort");
++        if (dependencies.restricted_filter_keys.length) reasons.push("restricted_filter");
++        if (isOlderThanMonths(normalized.params.date_from, atMs, 3)) reasons.push("history_over_3_months");
++        return deepFreeze({ required: reasons.length > 0, reasons });
++      }
++      if (normalized.operation === "product_queries" || normalized.operation === "product_queries_details") {
++        return deepFreeze({ required: true, reasons: ["subscription_affects_response_scope"] });
++      }
++      return deepFreeze({ required: false, reasons: [] });
++    }
++
++    function planningMeta(profile, entitlement) {
++      const capability = normalizeCapabilityProfile(profile);
++      return deepFreeze({
++        capability: {
++          status: capability.status,
++          subscription_type: capability.subscription_type,
++          is_premium: capability.is_premium,
++          probe_performed: capability.probe_performed,
++          probe_http_status: capability.probe_http_status,
++          probe_error_code: capability.probe_error_code
++        },
++        entitlement: { ...entitlement }
++      });
++    }
++
++    function planningReject(command, profile, { code, message, entitlementStatus, reason, extra = {} }) {
++      return deepFreeze({
++        action: "reject",
++        command: normalizeCommand(command),
++        error: { code, message },
++        planning: planningMeta(profile, {
++          status: entitlementStatus,
++          partial: false,
++          reason,
++          ...extra
++        })
++      });
++    }
++
++    function planningExecute(logicalCommand, executionCommand, profile, entitlement) {
++      return deepFreeze({
++        action: "execute",
++        command: normalizeCommand(executionCommand),
++        logical_command: normalizeCommand(logicalCommand),
++        planning: planningMeta(profile, entitlement)
++      });
++    }
++
++    function planAnalyticsDataForCapability(command, profile, atMs) {
++      const normalized = normalizeCommand(command);
++      const capability = normalizeCapabilityProfile(profile);
++      const dependencies = analyticsRestrictedDependencies(normalized.params);
++      const historyRestricted = isOlderThanMonths(normalized.params.date_from, atMs, 3);
++      const needsCapability = dependencies.restricted_metrics.length || dependencies.restricted_dimensions.length || dependencies.restricted_sort_keys.length || dependencies.restricted_filter_keys.length || historyRestricted;
++      if (!needsCapability) {
++        return planningExecute(normalized, normalized, { status: "not_needed", subscription_type: "UNKNOWN", is_premium: null, probe_performed: false }, {
++          status: "SUPPORTED_AND_ENTITLED", partial: false, capability_required: false, reason: "universal_analytics_scope"
++        });
++      }
++
++      const fullAnalytics = capability.status === "known" && ANALYTICS_FULL_TIERS.includes(capability.subscription_type);
++      const unknown = capability.status !== "known";
++      if (fullAnalytics) {
++        return planningExecute(normalized, normalized, capability, {
++          status: "SUPPORTED_AND_ENTITLED", partial: false, capability_required: true, reason: "premium_plus_or_pro"
++        });
++      }
++
++      const unavailableStatus = unknown ? "ENTITLEMENT_UNKNOWN" : "SUPPORTED_BUT_NOT_ENTITLED";
++      const unavailableCode = unknown ? "ENTITLEMENT_UNKNOWN" : "SUBSCRIPTION_REQUIRED";
++      const unavailableMessage = unknown
++        ? "Не удалось подтвердить подписку продавца для ограниченных analytics_data параметров; restricted часть запроса не отправлена в Ozon."
++        : "Запрошенные analytics_data параметры требуют Ozon Premium Plus или Premium Pro.";
++
++      if (historyRestricted) {
++        return planningReject(normalized, capability, { code: unavailableCode, message: unavailableMessage, entitlementStatus: unavailableStatus, reason: "history_over_3_months", extra: { required_tiers: [...ANALYTICS_FULL_TIERS] } });
++      }
++      if (dependencies.restricted_dimensions.length) {
++        return planningReject(normalized, capability, { code: unavailableCode, message: unavailableMessage, entitlementStatus: unavailableStatus, reason: "restricted_dimension_changes_grain", extra: { unavailable_dimensions: [...dependencies.restricted_dimensions], required_tiers: [...ANALYTICS_FULL_TIERS] } });
++      }
++      if (dependencies.restricted_sort_keys.length) {
++        return planningReject(normalized, capability, { code: unavailableCode, message: unavailableMessage, entitlementStatus: unavailableStatus, reason: "restricted_sort_changes_result_set", extra: { unavailable_sort_keys: [...dependencies.restricted_sort_keys], required_tiers: [...ANALYTICS_FULL_TIERS] } });
++      }
++      if (dependencies.restricted_filter_keys.length) {
++        return planningReject(normalized, capability, { code: unavailableCode, message: unavailableMessage, entitlementStatus: unavailableStatus, reason: "restricted_filter_changes_result_set", extra: { unavailable_filter_keys: [...dependencies.restricted_filter_keys], required_tiers: [...ANALYTICS_FULL_TIERS] } });
++      }
++
++      const allowedMetrics = normalized.params.metrics.filter((metric) => ANALYTICS_UNIVERSAL_METRICS.includes(metric));
++      if (dependencies.restricted_metrics.length && !allowedMetrics.length) {
++        return planningReject(normalized, capability, { code: unavailableCode, message: unavailableMessage, entitlementStatus: unavailableStatus, reason: "all_requested_metrics_unavailable", extra: { unavailable_metrics: [...dependencies.restricted_metrics], required_tiers: [...ANALYTICS_FULL_TIERS] } });
++      }
++      if (dependencies.restricted_metrics.length) {
++        const params = sanitizeJsonValue(normalized.params, "planning.params", { rejectTransportKeys: false });
++        params.metrics = allowedMetrics;
++        const executionCommand = normalizeCommand({ operation: normalized.operation, params });
++        return planningExecute(normalized, executionCommand, capability, {
++          status: unavailableStatus,
++          partial: true,
++          capability_required: true,
++          reason: unknown ? "restricted_metrics_entitlement_unknown" : "restricted_metrics_not_entitled",
++          omitted_metrics: [...dependencies.restricted_metrics],
++          executed_metrics: [...allowedMetrics],
++          required_tiers: [...ANALYTICS_FULL_TIERS]
++        });
++      }
++      return planningExecute(normalized, normalized, capability, {
++        status: unavailableStatus, partial: false, capability_required: true, reason: "capability_checked"
++      });
++    }
++
++    function planProductQueriesForCapability(command, profile, atMs) {
++      const normalized = normalizeCommand(command);
++      const capability = normalizeCapabilityProfile(profile);
++      const fullEntitled = capability.status === "known" && PRODUCT_QUERIES_FULL_TIERS.includes(capability.subscription_type);
++      const oldHistory = isOlderThanMonths(normalized.params.date_from, atMs, 1);
++      if (oldHistory && !fullEntitled) {
++        const unknown = capability.status !== "known";
++        return planningReject(normalized, capability, {
++          code: unknown ? "ENTITLEMENT_UNKNOWN" : "SUBSCRIPTION_REQUIRED",
++          message: unknown ? "Не удалось подтвердить подписку для product_queries за период старше месяца; business request не отправлен." : "Product queries за даты старше месяца требуют Premium, Premium Plus или Premium Pro.",
++          entitlementStatus: unknown ? "ENTITLEMENT_UNKNOWN" : "SUPPORTED_BUT_NOT_ENTITLED",
++          reason: "history_over_1_month",
++          extra: { required_tiers: [...PRODUCT_QUERIES_FULL_TIERS] }
++        });
++      }
++      const scope = capability.status !== "known" ? "unknown" : (fullEntitled ? "full" : "partial_by_subscription");
++      const status = capability.status !== "known" ? "ENTITLEMENT_UNKNOWN" : (fullEntitled ? "SUPPORTED_AND_ENTITLED" : "SUPPORTED_BUT_NOT_ENTITLED");
++      return planningExecute(normalized, normalized, capability, {
++        status,
++        partial: scope !== "full",
++        capability_required: true,
++        reason: "product_queries_response_scope",
++        provider_data_scope: scope,
++        full_analytics_tiers: [...PRODUCT_QUERIES_FULL_TIERS]
++      });
++    }
++
++    function planProductQueriesDetailsForCapability(command, profile, atMs) {

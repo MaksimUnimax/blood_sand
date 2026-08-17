@@ -1,0 +1,140 @@
++    for (let index = 0; index < dimensions.length; index += 1) requireEnum(dimensions[index], `params.dimension[${index}]`, ANALYTICS_DIMENSIONS);
++    const metrics = assertMaxItems(normalized.metrics, "params.metrics", 14);
++    for (let index = 0; index < metrics.length; index += 1) requireEnum(metrics[index], `params.metrics[${index}]`, ANALYTICS_METRICS);
++    if (Object.prototype.hasOwnProperty.call(normalized, "filters")) {
++      const filters = requireArray(normalized.filters, "params.filters");
++      for (let index = 0; index < filters.length; index += 1) {
++        const filter = requirePlainObject(filters[index], `params.filters[${index}]`);
++        assertAllowedFields(filter, ["key", "op", "value"], `params.filters[${index}]`);
++        if (Object.prototype.hasOwnProperty.call(filter, "key")) {
++          const key = requireString(filter.key, `params.filters[${index}].key`).trim();
++          if (key === "brand" || (!ANALYTICS_DIMENSIONS.includes(key) && !ANALYTICS_METRICS.includes(key))) {
++            fail("INVALID_OPERATION_PARAMS", `params.filters[${index}].key не является разрешённой metric/dimension для analytics_data.`);
++          }
++        }
++        if (Object.prototype.hasOwnProperty.call(filter, "op")) requireEnum(filter.op, `params.filters[${index}].op`, FILTER_OPS);
++        if (Object.prototype.hasOwnProperty.call(filter, "value")) requireString(filter.value, `params.filters[${index}].value`, { nonEmpty: false });
++      }
++    }
++    if (Object.prototype.hasOwnProperty.call(normalized, "sort")) {
++      const sort = requireArray(normalized.sort, "params.sort");
++      for (let index = 0; index < sort.length; index += 1) {
++        const item = requirePlainObject(sort[index], `params.sort[${index}]`);
++        assertAllowedFields(item, ["key", "order"], `params.sort[${index}]`);
++        if (Object.prototype.hasOwnProperty.call(item, "key")) requireEnum(item.key, `params.sort[${index}].key`, ANALYTICS_METRICS);
++        if (Object.prototype.hasOwnProperty.call(item, "order")) requireEnum(item.order, `params.sort[${index}].order`, ["ASC", "DESC"]);
++      }
++    }
+     requireInteger(normalized.limit, "params.limit", { minimum: 1, maximum: 1000 });
+     if (Object.prototype.hasOwnProperty.call(normalized, "offset")) requireInteger(normalized.offset, "params.offset", { minimum: 0 });
+     return normalized;
+@@ -214,20 +316,30 @@
+ 
+   function normalizeProductQueriesParams(params) {
+     const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["date_from", "date_to", "page", "page_size", "skus", "sort_by", "sort_dir"]);
+     for (const field of ["date_from", "page_size", "skus"]) requireField(normalized, field);
++    normalized.date_from = requireRfc3339DateTime(normalized.date_from, "params.date_from");
++    if (Object.prototype.hasOwnProperty.call(normalized, "date_to")) normalized.date_to = requireRfc3339DateTime(normalized.date_to, "params.date_to");
+     requireInteger(normalized.page_size, "params.page_size", { maximum: 1000 });
+-    assertMaxItems(normalized.skus, "params.skus", 1000);
++    validateSkuArray(normalized.skus, "params.skus", 1000);
+     if (Object.prototype.hasOwnProperty.call(normalized, "page")) requireInteger(normalized.page, "params.page", { minimum: 0 });
++    if (Object.prototype.hasOwnProperty.call(normalized, "sort_by")) normalized.sort_by = requireEnum(normalized.sort_by, "params.sort_by", PRODUCT_QUERY_SORT_BY);
++    if (Object.prototype.hasOwnProperty.call(normalized, "sort_dir")) normalized.sort_dir = requireEnum(normalized.sort_dir, "params.sort_dir", PRODUCT_QUERY_SORT_DIR);
+     return normalized;
+   }
+ 
+   function normalizeProductQueriesDetailsParams(params) {
+     const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["date_from", "date_to", "limit_by_sku", "page", "page_size", "skus", "sort_by", "sort_dir"]);
+     for (const field of ["date_from", "page_size", "skus", "limit_by_sku"]) requireField(normalized, field);
++    normalized.date_from = requireRfc3339DateTime(normalized.date_from, "params.date_from");
++    if (Object.prototype.hasOwnProperty.call(normalized, "date_to")) normalized.date_to = requireRfc3339DateTime(normalized.date_to, "params.date_to");
+     requireInteger(normalized.page_size, "params.page_size", { maximum: 100 });
+-    assertMaxItems(normalized.skus, "params.skus", 1000);
++    validateSkuArray(normalized.skus, "params.skus", 1000);
+     requireInteger(normalized.limit_by_sku, "params.limit_by_sku", { maximum: 15 });
+     if (Object.prototype.hasOwnProperty.call(normalized, "page")) requireInteger(normalized.page, "params.page", { minimum: 0 });
++    if (Object.prototype.hasOwnProperty.call(normalized, "sort_by")) normalized.sort_by = requireEnum(normalized.sort_by, "params.sort_by", PRODUCT_QUERY_SORT_BY);
++    if (Object.prototype.hasOwnProperty.call(normalized, "sort_dir")) normalized.sort_dir = requireEnum(normalized.sort_dir, "params.sort_dir", PRODUCT_QUERY_SORT_DIR);
+     return normalized;
+   }
+ 
+@@ -390,6 +502,64 @@
+     return true;
+   }
+ 
++  function parseKnownDate(value) {
++    const text = String(value || "").trim();
++    if (!text) return null;
++    const millis = /^\d{4}-\d{2}-\d{2}$/.test(text) ? Date.parse(`${text}T00:00:00Z`) : Date.parse(text);
++    return Number.isFinite(millis) ? millis : null;
++  }
++
++  function shiftUtcMonths(atMs, months) {
++    const source = new Date(Number(atMs));
++    if (Number.isNaN(source.getTime())) return null;
++    const year = source.getUTCFullYear();
++    const month = source.getUTCMonth() + Number(months || 0);
++    const day = source.getUTCDate();
++    const targetFirst = new Date(Date.UTC(year, month, 1, source.getUTCHours(), source.getUTCMinutes(), source.getUTCSeconds(), source.getUTCMilliseconds()));
++    const targetYear = targetFirst.getUTCFullYear();
++    const targetMonth = targetFirst.getUTCMonth();
++    const lastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
++    targetFirst.setUTCDate(Math.min(day, lastDay));
++    return targetFirst.getTime();
++  }
++
++  function normalizeCapabilityProfile(profile) {
++    const source = profile && typeof profile === "object" ? profile : {};
++    const rawStatus = String(source.status || "unknown").toLowerCase();
++    const status = rawStatus === "known" ? "known" : (rawStatus === "not_needed" ? "not_needed" : "unknown");
++    const rawType = String(source.subscription_type || source.type || "UNKNOWN").trim().toUpperCase();
++    const subscriptionType = SELLER_SUBSCRIPTION_TYPES.includes(rawType) ? rawType : "UNKNOWN";
++    return deepFreeze({
++      status,
++      subscription_type: subscriptionType,
++      is_premium: typeof source.is_premium === "boolean" ? source.is_premium : null,
++      probe_performed: source.probe_performed === true,
++      probe_http_status: Number(source.probe_http_status || source.http_status || 0),
++      probe_error_code: source.probe_error_code ? String(source.probe_error_code).slice(0, 160) : null
++    });
++  }
++
++  function analyticsRestrictedDependencies(params) {
++    const metrics = Array.isArray(params.metrics) ? params.metrics : [];
++    const dimensions = Array.isArray(params.dimension) ? params.dimension : [];
++    const sort = Array.isArray(params.sort) ? params.sort : [];
++    const filters = Array.isArray(params.filters) ? params.filters : [];
++    return {
++      restricted_metrics: metrics.filter((metric) => ANALYTICS_RESTRICTED_METRICS.includes(metric)),
++      restricted_dimensions: dimensions.filter((dimension) => ANALYTICS_RESTRICTED_DIMENSIONS.includes(dimension)),
++      restricted_sort_keys: sort.map((item) => item?.key).filter((key) => ANALYTICS_RESTRICTED_METRICS.includes(key)),
++      restricted_filter_keys: filters.map((item) => item?.key).filter((key) => ANALYTICS_RESTRICTED_METRICS.includes(key) || ANALYTICS_RESTRICTED_DIMENSIONS.includes(key))
++    };
++  }
++
++  function isOlderThanMonths(value, atMs, months) {
++    const parsed = parseKnownDate(value);
++    const boundary = shiftUtcMonths(atMs, -Math.abs(Number(months || 0)));
++    return parsed !== null && boundary !== null && parsed < boundary;
++  }
++
++
++
+   function validateOperationMeta(name, meta) {
+     if (!/^[a-z][a-z0-9_]{0,119}$/.test(String(name))) fail("INVALID_REGISTRY_OPERATION", `Некорректный operation alias: ${name}`);
+     if (!meta || typeof meta !== "object") fail("INVALID_REGISTRY_META", `${name}: operation metadata отсутствует.`);
+@@ -460,6 +630,204 @@
+       return deepFreeze({ operation, params: normalizedParams });
+     }
+ 
++    function sellerCapabilityRequirement(command, atMs = Date.now()) {
++      const normalized = normalizeCommand(command);
++      const preflight = resolveOperation(normalized.operation);
++      if (String(preflight.meta.provider || "seller_api") !== "seller_api") return deepFreeze({ required: false, reasons: [] });
++      if (normalized.operation === "analytics_data") {
++        const dependencies = analyticsRestrictedDependencies(normalized.params);
++        const reasons = [];
++        if (dependencies.restricted_metrics.length) reasons.push("restricted_metrics");

@@ -1,0 +1,140 @@
++      const normalized = normalizeCommand(command);
++      const capability = normalizeCapabilityProfile(profile);
++      const fullEntitled = capability.status === "known" && PRODUCT_QUERIES_FULL_TIERS.includes(capability.subscription_type);
++      const oldHistory = isOlderThanMonths(normalized.params.date_from, atMs, 1);
++      if (oldHistory && !fullEntitled) {
++        const unknown = capability.status !== "known";
++        return planningReject(normalized, capability, {
++          code: unknown ? "ENTITLEMENT_UNKNOWN" : "SUBSCRIPTION_REQUIRED",
++          message: unknown ? "Не удалось подтвердить подписку для product_queries_details за период старше месяца; business request не отправлен." : "Product query details за даты старше месяца требуют Premium, Premium Plus или Premium Pro.",
++          entitlementStatus: unknown ? "ENTITLEMENT_UNKNOWN" : "SUPPORTED_BUT_NOT_ENTITLED",
++          reason: "history_over_1_month",
++          extra: { required_tiers: [...PRODUCT_QUERIES_FULL_TIERS] }
++        });
++      }
++
++      const sortBy = String(normalized.params.sort_by || "");
++      if (PRODUCT_QUERY_DETAILS_RESTRICTED_SORT.includes(sortBy)) {
++        if (capability.status !== "known") {
++          return planningReject(normalized, capability, { code: "ENTITLEMENT_UNKNOWN", message: `Не удалось подтвердить entitlement для product_queries_details sort_by=${sortBy}.`, entitlementStatus: "ENTITLEMENT_UNKNOWN", reason: "restricted_sort_entitlement_unknown", extra: { sort_by: sortBy, documented_tiers: [...PRODUCT_QUERY_DETAILS_RESTRICTED_SORT_TIERS] } });
++        }
++        if (capability.subscription_type === "PREMIUM_PRO") {
++          return planningReject(normalized, capability, { code: "ENTITLEMENT_UNKNOWN", message: `Официальный контракт неоднозначен для Premium Pro и product_queries_details sort_by=${sortBy}; bridge не будет угадывать entitlement.`, entitlementStatus: "ENTITLEMENT_UNKNOWN", reason: "premium_pro_sort_contract_ambiguous", extra: { sort_by: sortBy, documented_tiers: [...PRODUCT_QUERY_DETAILS_RESTRICTED_SORT_TIERS] } });
++        }
++        if (!PRODUCT_QUERY_DETAILS_RESTRICTED_SORT_TIERS.includes(capability.subscription_type)) {
++          return planningReject(normalized, capability, { code: "SUBSCRIPTION_REQUIRED", message: `product_queries_details sort_by=${sortBy} требует Premium или Premium Plus по текущему контракту.`, entitlementStatus: "SUPPORTED_BUT_NOT_ENTITLED", reason: "restricted_sort_not_entitled", extra: { sort_by: sortBy, required_tiers: [...PRODUCT_QUERY_DETAILS_RESTRICTED_SORT_TIERS] } });
++        }
++      }
++
++      const scope = capability.status !== "known" ? "unknown" : (fullEntitled ? "full" : "partial_by_subscription");
++      const status = capability.status !== "known" ? "ENTITLEMENT_UNKNOWN" : (fullEntitled ? "SUPPORTED_AND_ENTITLED" : "SUPPORTED_BUT_NOT_ENTITLED");
++      return planningExecute(normalized, normalized, capability, {
++        status,
++        partial: scope !== "full",
++        capability_required: true,
++        reason: "product_queries_details_response_scope",
++        provider_data_scope: scope,
++        full_analytics_tiers: [...PRODUCT_QUERIES_FULL_TIERS]
++      });
++    }
++
++    function planCommandForSellerCapability(command, profile, atMs = Date.now()) {
++      const normalized = normalizeCommand(command);
++      if (normalized.operation === "analytics_data") return planAnalyticsDataForCapability(normalized, profile, atMs);
++      if (normalized.operation === "product_queries") return planProductQueriesForCapability(normalized, profile, atMs);
++      if (normalized.operation === "product_queries_details") return planProductQueriesDetailsForCapability(normalized, profile, atMs);
++      return planningExecute(normalized, normalized, { status: "not_needed", subscription_type: "UNKNOWN", is_premium: null, probe_performed: false }, {
++        status: "SUPPORTED_AND_ENTITLED", partial: false, capability_required: false, reason: "operation_not_subscription_sensitive"
++      });
++    }
++
+     function parseCommand(text) {
+       const source = String(text || "").replace(/\u00a0/g, " ").trim();
+       if (!source.startsWith(prefix)) fail("NOT_OZON_COMMAND", `Команда должна начинаться с ${prefix}`);
+@@ -651,24 +1019,29 @@
+       });
+     }
+ 
+-    function formatResultReport({ requestId, command, requestMeta, httpStatus, result, elapsedMs, pagination = null, rateLimit = null }) {
++    function formatResultReport({ requestId, command, requestMeta, httpStatus, result, elapsedMs, pagination = null, rateLimit = null, planning = null }) {
+       const normalized = normalizeCommand(command);
++      const requestMetaOut = {
++        provider: "ozon",
++        host_alias: String(requestMeta?.host_alias || "seller_api"),
++        http_method: String(requestMeta?.http_method || ""),
++        path_alias: String(requestMeta?.path_alias || normalized.operation)
++      };
++      if (typeof requestMeta?.external_request_executed === "boolean") requestMetaOut.external_request_executed = requestMeta.external_request_executed;
++      if (typeof requestMeta?.capability_probe_executed === "boolean") requestMetaOut.capability_probe_executed = requestMeta.capability_probe_executed;
++      if (Number.isFinite(Number(requestMeta?.capability_probe_http_status))) requestMetaOut.capability_probe_http_status = Number(requestMeta.capability_probe_http_status || 0);
+       const envelope = {
+         bridge: "ozon-llm-api-bridge",
+         version,
+         request_id: String(requestId || ""),
+         operation: normalized.operation,
+         command: { operation: normalized.operation, fingerprint: commandFingerprint(normalized) },
+-        request_meta: {
+-          provider: "ozon",
+-          host_alias: String(requestMeta?.host_alias || "seller_api"),
+-          http_method: String(requestMeta?.http_method || ""),
+-          path_alias: String(requestMeta?.path_alias || normalized.operation)
+-        },
++        request_meta: requestMetaOut,
+         http_status: Number(httpStatus || 0),
+         elapsed_ms: Number(elapsedMs || 0),
+         pagination,
+         rate_limit: rateLimit,
++        planning: planning ? sanitizeJsonValue(planning, "planning", { rejectTransportKeys: false }) : null,
+         result
+       };
+       return `${resultPrefix}\n${JSON.stringify(envelope, null, 2)}`;
+@@ -731,6 +1104,12 @@
+       textFingerprint,
+       safeErrorPayload,
+       safeBridgeErrorPayload,
++      sellerCapabilityRequirement,
++      planCommandForSellerCapability,
++      normalizeCapabilityProfile,
++      SELLER_SUBSCRIPTION_TYPES,
++      ANALYTICS_METRICS,
++      ANALYTICS_DIMENSIONS,
+       formatResultReport,
+       formatPreExecutionErrorReport,
+       isCommandText
+--- a/shared/ozon_provider.js
++++ b/shared/ozon_provider.js
+@@ -77,6 +77,56 @@
+       return { request, response, auth_request_performed: false };
+     }
+ 
++    async function resolveSellerCapability(rawCredentials) {
++      try {
++        const credentials = globalThis.OzonCredentials.normalizeSellerCredentials(rawCredentials, { required: true });
++        const request = Object.freeze({
++          url: `${contract.SELLER_API_BASE}/v1/seller/info`,
++          method: "POST",
++          headers: globalThis.OzonCredentials.sellerHeaders(credentials),
++          body: undefined,
++          operation: "__seller_capability_probe__",
++          path: "/v1/seller/info",
++          host_alias: "seller_api"
++        });
++        const response = await globalThis.ProviderTransportCore.executeJsonOnce({ fetchImpl, request, now });
++        if (!response.ok) {
++          const safeError = contract.safeErrorPayload(response.httpStatus, response.rawText, response.parsed);
++          return Object.freeze({
++            status: "unknown",
++            subscription_type: "UNKNOWN",
++            is_premium: null,
++            probe_performed: true,
++            probe_http_status: response.httpStatus,
++            probe_error_code: safeError.code || "SELLER_CAPABILITY_PROBE_HTTP_ERROR"
++          });
++        }
++        const payload = response.parsed && typeof response.parsed === "object" ? response.parsed : {};
++        const subscription = payload.subscription && typeof payload.subscription === "object" && !Array.isArray(payload.subscription) ? payload.subscription : {};
++        const rawType = String(subscription.type || "UNKNOWN").trim().toUpperCase();
++        const allowedTypes = Array.isArray(contract.SELLER_SUBSCRIPTION_TYPES) ? contract.SELLER_SUBSCRIPTION_TYPES : [];
++        const subscriptionType = allowedTypes.includes(rawType) ? rawType : "UNKNOWN";
++        const known = subscriptionType !== "UNKNOWN";
++        return Object.freeze({

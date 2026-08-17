@@ -1,0 +1,140 @@
++  const profile = resolution.profile && typeof resolution.profile === "object" ? resolution.profile : {};
++  return {
++    performed: resolution.probe_performed === true || profile.probe_performed === true,
++    status: String(profile.status || (resolution.state === "not_needed" ? "not_needed" : "unknown")),
++    subscription_type: profile.subscription_type ? String(profile.subscription_type) : null,
++    http_status: Number(profile.probe_http_status || 0),
++    error_code: profile.probe_error_code ? String(profile.probe_error_code).slice(0, 160) : null
++  };
++}
++
++function formatCombinedBatchReport(entries, batch = null) {
+   const reports = (Array.isArray(entries) ? entries : []).map((entry) => String(entry?.report_text || "").trim()).filter(Boolean);
++  const capabilitySummary = safeBatchCapabilitySummary(batch);
+   const header = {
+     bridge: "ozon-llm-api-bridge",
+     version: VERSION,
+     delivery_mode: "sequential_batch_single_delivery",
+-    result_count: reports.length
++    result_count: reports.length,
++    capability_probe: capabilitySummary
+   };
+   const parts = ["OZON_BATCH_RESULT_V1", JSON.stringify(header, null, 2)];
+   reports.forEach((report, index) => {
+@@ -1742,6 +1819,170 @@
+   return parts.join("\n\n");
+ }
+ 
++function capabilityUnknownProfile(code = "CAPABILITY_PROBE_OUTCOME_UNKNOWN_NO_RETRY") {
++  return Object.freeze({
++    status: "unknown",
++    subscription_type: "UNKNOWN",
++    is_premium: null,
++    probe_performed: true,
++    probe_http_status: 0,
++    probe_error_code: String(code || "CAPABILITY_PROBE_OUTCOME_UNKNOWN_NO_RETRY").slice(0, 160)
++  });
++}
++
++async function ensureBatchCapabilityAndPlanning({ ownerKind, ownerId, getOwner, mutateOwner, ownerMatches, isCollecting, failOwner }) {
++  let owner = await getOwner();
++  if (!owner || !ownerMatches(owner)) return { ok: false, code: "BATCH_OWNER_NOT_ACTIVE" };
++  if (!isCollecting(owner) || !owner.batch) return { ok: true, code: "BATCH_NOT_COLLECTING", owner };
++  if (owner.batch.planning_state === "complete") return { ok: true, code: "BATCH_PLANNING_READY", owner };
++
++  const entries = Array.isArray(owner.batch.entries) ? owner.batch.entries : [];
++  const nextIndex = Math.max(0, Number(owner.batch.next_index || 0));
++  if (nextIndex > 0 || entries.some((entry) => entry?.status === "requesting" || entry?.status === "complete")) {
++    await failOwner("BATCH_PLANNING_MIGRATION_UNSAFE", "Batch уже начал исполнение без Step 1 capability plan; новые provider requests запрещены.");
++    return { ok: false, code: "BATCH_PLANNING_MIGRATION_UNSAFE" };
++  }
++
++  const commandEntries = entries.filter((entry) => entry?.kind === "command" && entry?.command);
++  const planningAtMs = Date.now();
++  const capabilityRequired = commandEntries.some((entry) => {
++    try { return OzonContract.sellerCapabilityRequirement(entry.command, planningAtMs).required === true; }
++    catch (_) { return false; }
++  });
++
++  let resolution = owner.batch.capability_resolution && typeof owner.batch.capability_resolution === "object" ? owner.batch.capability_resolution : null;
++  if (!capabilityRequired) {
++    const profile = { status: "not_needed", subscription_type: "UNKNOWN", is_premium: null, probe_performed: false, probe_http_status: 0, probe_error_code: null };
++    owner = await mutateOwner((current) => {
++      if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch || current.batch.planning_state === "complete") return current;
++      if (Math.max(0, Number(current.batch.next_index || 0)) !== 0 || current.batch.request_state !== "idle") return current;
++      return { ...current, batch: { ...current.batch, capability_resolution: { state: "not_needed", probe_performed: false, profile, resolved_at: new Date().toISOString() } } };
++    });
++    resolution = owner?.batch?.capability_resolution || { state: "not_needed", profile };
++  } else {
++    if (resolution?.state === "requesting" && String(resolution.request_worker_session_id || "") !== WORKER_SESSION_ID) {
++      const profile = capabilityUnknownProfile();
++      owner = await mutateOwner((current) => {
++        if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++        const live = current.batch.capability_resolution;
++        if (live?.state !== "requesting" || String(live.request_worker_session_id || "") === WORKER_SESSION_ID) return current;
++        return { ...current, batch: { ...current.batch, capability_resolution: { state: "complete", probe_performed: true, profile, resolved_at: new Date().toISOString(), request_worker_session_id: null } } };
++      });
++      resolution = owner?.batch?.capability_resolution || { state: "complete", profile };
++      await diagnostic("CAPABILITY_PROBE_RECOVERY_NO_RETRY", { owner_kind: ownerKind, owner_id: ownerId, code: profile.probe_error_code }, { level: "warning" });
++    }
++
++    if (!resolution || !["complete", "not_needed"].includes(String(resolution.state || ""))) {
++      let probeGranted = false;
++      owner = await mutateOwner((current) => {
++        if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++        if (current.batch.planning_state === "complete") return current;
++        const live = current.batch.capability_resolution;
++        if (live?.state === "complete" || live?.state === "not_needed") return current;
++        if (live?.state === "requesting") return current;
++        if (Math.max(0, Number(current.batch.next_index || 0)) !== 0 || current.batch.request_state !== "idle") return current;
++        probeGranted = true;
++        return {
++          ...current,
++          batch: {
++            ...current.batch,
++            capability_resolution: {
++              state: "requesting",
++              probe_performed: true,
++              request_worker_session_id: WORKER_SESSION_ID,
++              started_at: new Date().toISOString(),
++              profile: null
++            }
++          }
++        };
++      });
++      if (probeGranted) {
++        await diagnostic("CAPABILITY_PROBE_STARTED", { owner_kind: ownerKind, owner_id: ownerId, path_alias: "seller_info_internal" });
++        const settings = await getSettings();
++        const profile = await OzonProvider.resolveSellerCapability(settings.sellerCredentials);
++        let stored = false;
++        owner = await mutateOwner((current) => {
++          if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++          const live = current.batch.capability_resolution;
++          if (live?.state !== "requesting" || live?.request_worker_session_id !== WORKER_SESSION_ID) return current;
++          stored = true;
++          return { ...current, batch: { ...current.batch, capability_resolution: { state: "complete", probe_performed: true, profile, resolved_at: new Date().toISOString(), request_worker_session_id: null } } };
++        });
++        if (!stored) {
++          await failOwner("CAPABILITY_PROBE_STORE_RACE", "Capability probe завершился, но durable batch state изменился; business requests запрещены.");
++          return { ok: false, code: "CAPABILITY_PROBE_STORE_RACE" };
++        }
++        await diagnostic("CAPABILITY_PROBE_FINISHED", {
++          owner_kind: ownerKind, owner_id: ownerId, status: profile.status, subscription_type: profile.subscription_type, http_status: profile.probe_http_status, error_code: profile.probe_error_code
++        }, { level: profile.status === "known" ? "info" : "warning" });
++        resolution = owner.batch.capability_resolution;
++      } else {
++        owner = await getOwner();
++        resolution = owner?.batch?.capability_resolution || null;
++        if (resolution?.state === "requesting" && resolution.request_worker_session_id === WORKER_SESSION_ID) return { ok: true, code: "CAPABILITY_PROBE_IN_PROGRESS", owner };
++        if (!resolution || !["complete", "not_needed"].includes(String(resolution.state || ""))) return { ok: false, code: "CAPABILITY_PROBE_NOT_READY" };
++      }
++    }
++  }
++
++  owner = await getOwner();
++  if (!owner || !ownerMatches(owner) || !isCollecting(owner) || !owner.batch) return { ok: false, code: "BATCH_OWNER_NOT_ACTIVE" };
++  if (owner.batch.planning_state === "complete") return { ok: true, code: "BATCH_PLANNING_READY", owner };
++  const profile = owner.batch.capability_resolution?.profile || { status: "not_needed", subscription_type: "UNKNOWN", is_premium: null, probe_performed: false, probe_http_status: 0, probe_error_code: null };
++  let plannedEntries;
++  try {
++    plannedEntries = (owner.batch.entries || []).map((entry) => {

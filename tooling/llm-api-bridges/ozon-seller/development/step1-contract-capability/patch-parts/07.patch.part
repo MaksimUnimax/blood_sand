@@ -1,0 +1,105 @@
++          status: known ? "known" : "unknown",
++          subscription_type: subscriptionType,
++          is_premium: typeof subscription.is_premium === "boolean" ? subscription.is_premium : null,
++          probe_performed: true,
++          probe_http_status: response.httpStatus,
++          probe_error_code: known ? null : "SELLER_CAPABILITY_SUBSCRIPTION_UNKNOWN"
++        });
++      } catch (error) {
++        return Object.freeze({
++          status: "unknown",
++          subscription_type: "UNKNOWN",
++          is_premium: null,
++          probe_performed: true,
++          probe_http_status: Number(error?.http_status || 0),
++          probe_error_code: String(error?.code || "SELLER_CAPABILITY_PROBE_FAILED").slice(0, 160)
++        });
++      }
++    }
++
+     async function executePerformanceCommand(command, rawPerformanceCredentials) {
+       const token = await getPerformanceToken(rawPerformanceCredentials);
+       const request = contract.buildPerformanceRequest(command, globalThis.OzonCredentials.performanceBearerHeaders(token.access_token));
+@@ -85,8 +135,14 @@
+       return { request, response, auth_request_performed: token.auth_request_performed === true };
+     }
+ 
+-    async function executeCommand(commandText, rawCredentials, rawPerformanceCredentials = {}) {
+-      const command = contract.parseCommand(commandText);
++    async function executeCommandObject(commandInput, rawCredentials, rawPerformanceCredentials = {}, { reportCommand = null, planning = null } = {}) {
++      const command = contract.normalizeCommand(commandInput);
++      const logicalCommand = reportCommand ? contract.normalizeCommand(reportCommand) : command;
++      if (logicalCommand.operation !== command.operation) {
++        const error = new Error("Logical и physical operation должны совпадать.");
++        error.code = "PLANNED_OPERATION_MISMATCH";
++        throw error;
++      }
+       const preflight = contract.preflightExecution(command);
+       const provider = String(preflight.meta.provider || "seller_api");
+       const execution = provider === "performance_api"
+@@ -96,22 +152,39 @@
+       const requestId = String(uuid());
+       const errorPayload = response.ok ? null : contract.safeErrorPayload(response.httpStatus, response.rawText, response.parsed);
+       const result = response.ok ? contract.sanitizeResult(command, response.parsed ?? response.rawText) : { error: errorPayload };
++      const safePlanning = planning ? {
++        ...planning,
++        execution: {
++          logical_command_fingerprint: contract.commandFingerprint(logicalCommand),
++          physical_command_fingerprint: contract.commandFingerprint(command),
++          command_transformed: contract.commandFingerprint(logicalCommand) !== contract.commandFingerprint(command)
++        }
++      } : null;
+       const reportText = contract.formatResultReport({
+         requestId,
+-        command,
+-        requestMeta: { host_alias: request.host_alias, http_method: request.method, path_alias: command.operation },
++        command: logicalCommand,
++        requestMeta: {
++          host_alias: request.host_alias,
++          http_method: request.method,
++          path_alias: logicalCommand.operation,
++          external_request_executed: true,
++          capability_probe_executed: planning?.capability?.probe_performed === true,
++          capability_probe_http_status: Number(planning?.capability?.probe_http_status || 0)
++        },
+         httpStatus: response.httpStatus,
+         result,
+         elapsedMs: response.elapsedMs,
+         pagination: null,
+-        rateLimit: response.responseMeta.retry_after ? { retry_after: response.responseMeta.retry_after } : null
++        rateLimit: response.responseMeta.retry_after ? { retry_after: response.responseMeta.retry_after } : null,
++        planning: safePlanning
+       });
+       return Object.freeze({
+         ok: response.ok,
+         request_id: requestId,
+-        operation: command.operation,
++        operation: logicalCommand.operation,
+         provider: request.host_alias,
+-        command_fingerprint: contract.commandFingerprint(command),
++        command_fingerprint: contract.commandFingerprint(logicalCommand),
++        executed_command_fingerprint: contract.commandFingerprint(command),
+         http_status: response.httpStatus,
+         report_text: reportText,
+         response_meta: response.responseMeta,
+@@ -119,6 +192,11 @@
+       });
+     }
+ 
++    async function executeCommand(commandText, rawCredentials, rawPerformanceCredentials = {}) {
++      const command = contract.parseCommand(commandText);
++      return executeCommandObject(command, rawCredentials, rawPerformanceCredentials);
++    }
++
+     async function testConnection(rawCredentials, probeCommandText = null) {
+       const credentials = globalThis.OzonCredentials.normalizeSellerCredentials(rawCredentials, { required: true });
+       if (probeCommandText) return executeCommand(probeCommandText, rawCredentials, {});
+@@ -175,7 +253,7 @@
+       }
+     }
+ 
+-    return Object.freeze({ executeCommand, testConnection, testPerformanceConnection, clearPerformanceToken });
++    return Object.freeze({ executeCommand, executeCommandObject, resolveSellerCapability, testConnection, testPerformanceConnection, clearPerformanceToken });
+   }
+ 
+   const OzonProvider = createOzonProvider();
