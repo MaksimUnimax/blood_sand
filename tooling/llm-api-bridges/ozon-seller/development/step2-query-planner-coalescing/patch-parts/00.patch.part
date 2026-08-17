@@ -1,0 +1,145 @@
+diff --git a/service_worker.js b/service_worker.js
+index c53ac1d..6a9ef9f 100644
+--- a/service_worker.js
++++ b/service_worker.js
+@@ -1173,6 +1173,8 @@ async function executeManualCommand(commandText, conversationKey, sender, manual
+         request_worker_session_id: null,
+         planning_state: "pending",
+         capability_resolution: null,
++        query_planning_state: "pending",
++        query_plan: null,
+         created_at: now
+       },
+       created_at: now,
+@@ -1805,12 +1807,14 @@ function safeBatchCapabilitySummary(batch) {
+ function formatCombinedBatchReport(entries, batch = null) {
+   const reports = (Array.isArray(entries) ? entries : []).map((entry) => String(entry?.report_text || "").trim()).filter(Boolean);
+   const capabilitySummary = safeBatchCapabilitySummary(batch);
++  const queryPlannerSummary = safeBatchQueryPlannerSummary(batch, entries);
+   const header = {
+     bridge: "ozon-llm-api-bridge",
+     version: VERSION,
+     delivery_mode: "sequential_batch_single_delivery",
+     result_count: reports.length,
+-    capability_probe: capabilitySummary
++    capability_probe: capabilitySummary,
++    query_planner: queryPlannerSummary
+   };
+   const parts = ["OZON_BATCH_RESULT_V1", JSON.stringify(header, null, 2)];
+   reports.forEach((report, index) => {
+@@ -1983,6 +1987,306 @@ async function ensureBatchCapabilityAndPlanning({ ownerKind, ownerId, getOwner,
+   return { ok: true, code: "BATCH_PLANNING_READY", owner };
+ }
+ 
++function safeBatchQueryPlannerSummary(batch, entries = []) {
++  const plan = batch?.query_plan && typeof batch.query_plan === "object" ? batch.query_plan : {};
++  const groups = Array.isArray(plan.groups) ? plan.groups : [];
++  const completed = Array.isArray(entries) ? entries : [];
++  const businessEntries = completed.filter((entry) => entry?.external_request_executed === true);
++  const physicalIds = new Set();
++  for (const entry of businessEntries) {
++    const identity = String(entry?.physical_request_id || entry?.request_id || "").trim();
++    if (identity) physicalIds.add(identity);
++  }
++  return {
++    status: String(batch?.query_planning_state || "not_planned"),
++    coalesced_group_count: groups.length,
++    coalesced_logical_count: groups.reduce((total, group) => total + (Array.isArray(group?.member_indexes) ? group.member_indexes.length : 0), 0),
++    logical_business_result_count: businessEntries.length,
++    physical_business_request_count: physicalIds.size
++  };
++}
++
++function buildBatchQueryPlan(entries) {
++  const source = Array.isArray(entries) ? entries : [];
++  const plannedEntries = source.map((entry) => entry && typeof entry === "object" ? { ...entry } : entry);
++  const groups = [];
++  let index = 0;
++  while (index < plannedEntries.length) {
++    const first = plannedEntries[index];
++    if (!first || first.kind !== "command" || !first.command) {
++      index += 1;
++      continue;
++    }
++    const firstExecution = first.execution_command || first.command;
++    let firstDescriptor;
++    try {
++      firstDescriptor = OzonContract.analyticsCoalescingDescriptor(firstExecution);
++    } catch (_) {
++      index += 1;
++      continue;
++    }
++    if (!firstDescriptor?.eligible) {
++      index += 1;
++      continue;
++    }
++
++    const memberIndexes = [index];
++    const executionCommands = [firstExecution];
++    const unionMetrics = [...firstDescriptor.metrics];
++    const seenMetrics = new Set(unionMetrics);
++    let cursor = index + 1;
++    while (cursor < plannedEntries.length) {
++      const candidate = plannedEntries[cursor];
++      if (!candidate || candidate.kind !== "command" || !candidate.command) break;
++      const candidateExecution = candidate.execution_command || candidate.command;
++      let descriptor;
++      try {
++        descriptor = OzonContract.analyticsCoalescingDescriptor(candidateExecution);
++      } catch (_) {
++        break;
++      }
++      if (!descriptor?.eligible || descriptor.compatibility_key !== firstDescriptor.compatibility_key) break;
++      const nextUnion = [...unionMetrics];
++      const nextSeen = new Set(seenMetrics);
++      for (const metric of descriptor.metrics) {
++        if (!nextSeen.has(metric)) {
++          nextSeen.add(metric);
++          nextUnion.push(metric);
++        }
++      }
++      if (nextUnion.length > 14) break;
++      memberIndexes.push(cursor);
++      executionCommands.push(candidateExecution);
++      unionMetrics.splice(0, unionMetrics.length, ...nextUnion);
++      seenMetrics.clear();
++      for (const metric of nextSeen) seenMetrics.add(metric);
++      cursor += 1;
++    }
++
++    if (memberIndexes.length < 2) {
++      index += 1;
++      continue;
++    }
++
++    const physical = OzonContract.buildAnalyticsCoalescedCommand(executionCommands);
++    const physicalFingerprint = OzonContract.commandFingerprint(physical.command);
++    const groupId = `analytics-${memberIndexes[0]}-${physical.compatibility_fingerprint}-${physicalFingerprint}`;
++    const group = {
++      group_id: groupId,
++      operation: "analytics_data",
++      leader_index: memberIndexes[0],
++      member_indexes: [...memberIndexes],
++      physical_command: physical.command,
++      physical_command_fingerprint: physicalFingerprint,
++      physical_metrics: [...physical.metrics],
++      compatibility_fingerprint: physical.compatibility_fingerprint
++    };
++    groups.push(group);
++    for (const memberIndex of memberIndexes) {
++      plannedEntries[memberIndex] = {
++        ...plannedEntries[memberIndex],
++        query_group_id: groupId,
++        query_group_leader_index: memberIndexes[0]
++      };
++    }
++    index = cursor;
++  }
++  return Object.freeze({
++    version: 1,
++    strategy: "contiguous_analytics_metric_union",
++    groups: groups.map((group) => Object.freeze({ ...group, member_indexes: Object.freeze([...group.member_indexes]), physical_metrics: Object.freeze([...group.physical_metrics]) })),
++    entries: plannedEntries
++  });
++}
++
