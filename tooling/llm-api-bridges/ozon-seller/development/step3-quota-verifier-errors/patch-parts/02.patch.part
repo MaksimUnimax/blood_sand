@@ -1,0 +1,113 @@
+   tabAIModesWriteLock = next.catch(() => null);
+@@ -942,7 +1142,7 @@ async function setStatus(status) {
+   return clean;
+ }
+ 
+-async function executeOzonCore(commandText, { executionCommand = null, planning = null } = {}) {
++async function executeOzonCore(commandText, { executionCommand = null, planning = null, quotaPermit = null } = {}) {
+   const settings = await getSettings();
+   const command = OzonContract.parseCommand(commandText);
+   const physicalCommand = executionCommand ? OzonContract.normalizeCommand(executionCommand) : command;
+@@ -957,7 +1157,12 @@ async function executeOzonCore(commandText, { executionCommand = null, planning
+   });
+   try {
+     const response = typeof OzonProvider.executeCommandObject === "function"
+-      ? await OzonProvider.executeCommandObject(physicalCommand, settings.sellerCredentials, settings.performanceCredentials, { reportCommand: command, planning })
++      ? await OzonProvider.executeCommandObject(physicalCommand, settings.sellerCredentials, settings.performanceCredentials, {
++          reportCommand: command,
++          planning,
++          quota: safeQuotaMetadata(quotaPermit),
++          onProviderResponse: quotaPermit ? async ({ response }) => extendAnalyticsQuotaFromRetryAfter(quotaPermit, response?.responseMeta?.retry_after) : null
++        })
+       : await OzonProvider.executeCommand(commandText, settings.sellerCredentials, settings.performanceCredentials);
+     await diagnostic("OZON_REQUEST_FINISHED", {
+       request_id: response.request_id || null,
+@@ -966,7 +1171,9 @@ async function executeOzonCore(commandText, { executionCommand = null, planning
+       command_fingerprint: fingerprint,
+       physical_command_fingerprint: response.executed_command_fingerprint || physicalFingerprint,
+       http_status: response.http_status,
+-      ok: response.ok
++      ok: response.ok,
++      quota_family: response.rate_limit?.quota_family || null,
++      next_allowed_at: Number(response.rate_limit?.next_allowed_at || 0)
+     }, { level: response.ok ? "info" : "warning" });
+     await setStatus(response.ok
+       ? { ok: true, code: "CONNECTED", message: "Последний Ozon API запрос выполнен успешно.", http_status: response.http_status }
+@@ -980,7 +1187,8 @@ async function executeOzonCore(commandText, { executionCommand = null, planning
+       physical_command_fingerprint: physicalFingerprint,
+       code: safe.code,
+       error: safe.message,
+-      http_status: safe.http_status
++      http_status: safe.http_status,
++      external_request_executed: safe.external_request_executed === true
+     }, { level: "error" });
+     await setStatus({ ok: false, code: safe.code, message: safe.message, http_status: safe.http_status });
+     throw error;
+@@ -998,6 +1206,7 @@ function buildExecutionErrorResult(command, fingerprint, error, elapsedMs = 0, p
+       host_alias: String(preflight.meta.provider || "seller_api"),
+       http_method: preflight.meta.method,
+       path_alias: command.operation,
++      external_request_executed: safe.external_request_executed === true,
+       capability_probe_executed: planning?.capability?.probe_performed === true,
+       capability_probe_http_status: Number(planning?.capability?.probe_http_status || 0)
+     },
+@@ -1005,7 +1214,7 @@ function buildExecutionErrorResult(command, fingerprint, error, elapsedMs = 0, p
+     result: { error: safe },
+     elapsedMs: Math.max(0, Number(elapsedMs || 0)),
+     pagination: null,
+-    rateLimit: null,
++    rateLimit: error?.rate_limit || null,
+     planning
+   });
+   return Object.freeze({
+@@ -1017,7 +1226,8 @@ function buildExecutionErrorResult(command, fingerprint, error, elapsedMs = 0, p
+     http_status: safe.http_status,
+     report_text: reportText,
+     response_meta: null,
+-    error: safe
++    error: safe,
++    external_request_executed: safe.external_request_executed === true
+   });
+ }
+ 
+@@ -1175,6 +1385,8 @@ async function executeManualCommand(commandText, conversationKey, sender, manual
+         capability_resolution: null,
+         query_planning_state: "pending",
+         query_plan: null,
++        quota_wait: null,
++        request_quota: null,
+         created_at: now
+       },
+       created_at: now,
+@@ -2240,7 +2452,8 @@ function buildCoalescedLogicalResult(entry, group, physicalResult, projectionErr
+     executed_command_fingerprint: physicalFingerprint,
+     http_status: Number(physicalResult?.http_status || 0),
+     report_text: reportText,
+-    error: safeError
++    error: safeError,
++    external_request_executed: true
+   });
+ }
+ 
+@@ -2258,7 +2471,7 @@ function buildCoalescedExecutionErrorResult(entry, group, error, elapsedMs = 0,
+       host_alias: String(preflight.meta.provider || "seller_api"),
+       http_method: preflight.meta.method,
+       path_alias: command.operation,
+-      external_request_executed: true,
++      external_request_executed: safe.external_request_executed === true,
+       capability_probe_executed: planning?.capability?.probe_performed === true,
+       capability_probe_http_status: Number(planning?.capability?.probe_http_status || 0),
+       physical_request_id: physicalAttemptId,
+@@ -2267,10 +2480,10 @@ function buildCoalescedExecutionErrorResult(entry, group, error, elapsedMs = 0,
+       coalesced_logical_count: group.member_indexes.length
+     },
+     httpStatus: Number(safe.http_status || 0),
+-    result: { error: { ...safe, external_request_executed: true } },
++    result: { error: { ...safe, external_request_executed: safe.external_request_executed === true } },
+     elapsedMs: Math.max(0, Number(elapsedMs || 0)),
+     pagination: null,
+-    rateLimit: null,
++    rateLimit: error?.rate_limit || null,
+     planning
+   });
+   return Object.freeze({
