@@ -1,0 +1,112 @@
++            batch: {
++              ...current.batch,
++              entries: currentEntries,
++              next_index: expectedIndexes[expectedIndexes.length - 1] + 1,
++              request_state: "idle",
++              request_worker_session_id: null
++            },
++            last_error: firstBridgeError ? {
++              code: firstBridgeError.error?.code || "OZON_BRIDGE_ERROR",
++              message: firstBridgeError.error?.message || "Coalesced bridge execution error converted to logical results.",
++              at: new Date().toISOString(),
++              recoverable: true
++            } : null
++          };
++        });
++        if (!stored) {
++          await failOwner("BATCH_COALESCED_RESULT_STORE_RACE", "Coalesced Ozon result получен, но durable batch state изменился до atomic logical projection store. Автоматический повтор запрещён.");
++          return { ok: false, code: "BATCH_COALESCED_RESULT_STORE_RACE" };
++        }
++        await diagnostic("BATCH_COALESCED_RESULTS_STORED", {
++          owner_kind: ownerKind,
++          owner_id: ownerId,
++          queue_index: nextIndex,
++          logical_count: logicalResults.length,
++          physical_request_id: physicalResult?.request_id || null,
++          physical_command_fingerprint: physicalResult?.executed_command_fingerprint || group.physical_command_fingerprint || null,
++          http_status: Number(physicalResult?.http_status || logicalResults[0]?.http_status || 0),
++          external_request_executed: true
++        }, { level: logicalResults.some((result) => result?.ok === false) ? "warning" : "info" });
++        continue;
++      }
++
+       let requestGranted = false;
+       owner = await mutateOwner((current) => {
+         if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
+@@ -2391,6 +2845,8 @@ async function handleAutoMessage(message, sender) {
+         request_worker_session_id: null,
+         planning_state: "pending",
+         capability_resolution: null,
++        query_planning_state: "pending",
++        query_plan: null,
+         created_at: new Date().toISOString()
+       }
+     };
+diff --git a/shared/ozon_contract.js b/shared/ozon_contract.js
+index b02a745..0f34674 100644
+--- a/shared/ozon_contract.js
++++ b/shared/ozon_contract.js
+@@ -986,6 +986,103 @@
+       return fnv1aFingerprint(source);
+     }
+ 
++    function stableSemanticClone(value) {
++      if (Array.isArray(value)) return value.map((item) => stableSemanticClone(item));
++      if (value && typeof value === "object") {
++        const out = {};
++        for (const key of Object.keys(value).sort()) out[key] = stableSemanticClone(value[key]);
++        return out;
++      }
++      return value;
++    }
++
++    function analyticsCoalescingDescriptor(command) {
++      const normalized = normalizeCommand(command);
++      if (normalized.operation !== "analytics_data") {
++        return deepFreeze({ eligible: false, reason: "operation_not_analytics_data", metrics: [], compatibility_key: null, compatibility_fingerprint: null });
++      }
++      const metrics = Array.isArray(normalized.params.metrics) ? [...normalized.params.metrics] : [];
++      if (!metrics.length) {
++        return deepFreeze({ eligible: false, reason: "analytics_metrics_empty", metrics, compatibility_key: null, compatibility_fingerprint: null });
++      }
++      if (new Set(metrics).size !== metrics.length) {
++        return deepFreeze({ eligible: false, reason: "duplicate_metrics_preserve_exact_semantics", metrics, compatibility_key: null, compatibility_fingerprint: null });
++      }
++      const params = sanitizeJsonValue(normalized.params, "coalescing.params", { rejectTransportKeys: false });
++      delete params.metrics;
++      const compatibilityKey = JSON.stringify(stableSemanticClone({ operation: normalized.operation, params }));
++      return deepFreeze({
++        eligible: true,
++        reason: "compatible_shape_candidate",
++        metrics,
++        compatibility_key: compatibilityKey,
++        compatibility_fingerprint: fnv1aFingerprint(compatibilityKey)
++      });
++    }
++
++    function buildAnalyticsCoalescedCommand(commands) {
++      const list = Array.isArray(commands) ? commands : [];
++      if (list.length < 2) fail("ANALYTICS_COALESCING_GROUP_TOO_SMALL", "Coalesced analytics group должен содержать минимум две logical команды.");
++      const normalized = list.map((command) => normalizeCommand(command));
++      const descriptors = normalized.map((command) => analyticsCoalescingDescriptor(command));
++      if (descriptors.some((descriptor) => descriptor.eligible !== true)) fail("ANALYTICS_COALESCING_INELIGIBLE", "Одна из analytics_data команд не допускает safe coalescing.");
++      const compatibilityKey = descriptors[0].compatibility_key;
++      if (descriptors.some((descriptor) => descriptor.compatibility_key !== compatibilityKey)) fail("ANALYTICS_COALESCING_SEMANTICS_MISMATCH", "analytics_data команды имеют несовместимую query semantics.");
++      const metrics = [];
++      const seen = new Set();
++      for (const descriptor of descriptors) {
++        for (const metric of descriptor.metrics) {
++          if (!seen.has(metric)) {
++            seen.add(metric);
++            metrics.push(metric);
++          }
++        }
++      }
++      if (metrics.length > 14) fail("ANALYTICS_COALESCING_METRIC_LIMIT", "Union analytics_data metrics превышает 14.");
++      const params = sanitizeJsonValue(normalized[0].params, "coalescing.physical_params", { rejectTransportKeys: false });
++      params.metrics = metrics;
++      const physicalCommand = normalizeCommand({ operation: "analytics_data", params });
++      return deepFreeze({
++        command: physicalCommand,
++        metrics: [...metrics],
++        compatibility_key: compatibilityKey,
