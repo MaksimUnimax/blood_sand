@@ -1,0 +1,102 @@
++async function ensureBatchQueryPlanning({ ownerKind, ownerId, getOwner, mutateOwner, ownerMatches, isCollecting, failOwner }) {
++  let owner = await getOwner();
++  if (!owner || !ownerMatches(owner)) return { ok: false, code: "BATCH_OWNER_NOT_ACTIVE" };
++  if (!isCollecting(owner) || !owner.batch) return { ok: true, code: "BATCH_NOT_COLLECTING", owner };
++  if (owner.batch.query_planning_state === "complete") return { ok: true, code: "BATCH_QUERY_PLANNING_READY", owner };
++  if (owner.batch.planning_state !== "complete") {
++    await failOwner("BATCH_QUERY_PLANNING_BEFORE_CAPABILITY", "Query planning запрещён до завершения Step 1 capability/entitlement planning.");
++    return { ok: false, code: "BATCH_QUERY_PLANNING_BEFORE_CAPABILITY" };
++  }
++  const entries = Array.isArray(owner.batch.entries) ? owner.batch.entries : [];
++  const nextIndex = Math.max(0, Number(owner.batch.next_index || 0));
++  if (nextIndex > 0 || entries.some((entry) => entry?.status === "requesting" || entry?.status === "complete")) {
++    await failOwner("BATCH_QUERY_PLANNING_MIGRATION_UNSAFE", "Batch уже начал business execution без Step 2 query plan; новые provider requests запрещены.");
++    return { ok: false, code: "BATCH_QUERY_PLANNING_MIGRATION_UNSAFE" };
++  }
++
++  let queryPlan;
++  try {
++    queryPlan = buildBatchQueryPlan(entries);
++  } catch (error) {
++    await failOwner(error.code || "BATCH_QUERY_PLANNING_FAILED", error.message || String(error));
++    return { ok: false, code: error.code || "BATCH_QUERY_PLANNING_FAILED" };
++  }
++
++  let stored = false;
++  owner = await mutateOwner((current) => {
++    if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++    if (current.batch.query_planning_state === "complete") return current;
++    if (current.batch.planning_state !== "complete") return current;
++    if (Math.max(0, Number(current.batch.next_index || 0)) !== 0 || current.batch.request_state !== "idle") return current;
++    if ((current.batch.entries || []).some((entry) => entry?.status === "requesting" || entry?.status === "complete")) return current;
++    stored = true;
++    return {
++      ...current,
++      batch: {
++        ...current.batch,
++        entries: queryPlan.entries,
++        query_planning_state: "complete",
++        query_plan: {
++          version: queryPlan.version,
++          strategy: queryPlan.strategy,
++          groups: queryPlan.groups,
++          completed_at: new Date().toISOString()
++        }
++      }
++    };
++  });
++  if (!stored) {
++    owner = await getOwner();
++    if (owner?.batch?.query_planning_state === "complete") return { ok: true, code: "BATCH_QUERY_PLANNING_READY", owner };
++    await failOwner("BATCH_QUERY_PLANNING_STORE_RACE", "Query plan не удалось сохранить до provider execution; business requests запрещены.");
++    return { ok: false, code: "BATCH_QUERY_PLANNING_STORE_RACE" };
++  }
++  await diagnostic("BATCH_QUERY_PLANNING_COMPLETED", {
++    owner_kind: ownerKind,
++    owner_id: ownerId,
++    coalesced_group_count: queryPlan.groups.length,
++    coalesced_logical_count: queryPlan.groups.reduce((total, group) => total + group.member_indexes.length, 0)
++  });
++  return { ok: true, code: "BATCH_QUERY_PLANNING_READY", owner };
++}
++
++function findBatchQueryGroup(batch, groupId) {
++  const groups = Array.isArray(batch?.query_plan?.groups) ? batch.query_plan.groups : [];
++  return groups.find((group) => String(group?.group_id || "") === String(groupId || "")) || null;
++}
++
++function coalescedPlanningForEntry(entry, group, physicalRequestId, physicalFingerprint) {
++  const base = entry?.planning && typeof entry.planning === "object" ? entry.planning : {};
++  const logicalFingerprint = String(entry?.command_fingerprint || OzonContract.commandFingerprint(entry?.command));
++  return {
++    ...base,
++    execution: {
++      ...(base.execution && typeof base.execution === "object" ? base.execution : {}),
++      logical_command_fingerprint: logicalFingerprint,
++      physical_command_fingerprint: String(physicalFingerprint || group?.physical_command_fingerprint || ""),
++      command_transformed: logicalFingerprint !== String(physicalFingerprint || group?.physical_command_fingerprint || ""),
++      coalesced: true,
++      physical_request_id: physicalRequestId ? String(physicalRequestId) : null,
++      coalescing_group_id: String(group?.group_id || ""),
++      coalesced_logical_count: Array.isArray(group?.member_indexes) ? group.member_indexes.length : 0,
++      physical_metrics: Array.isArray(group?.physical_metrics) ? [...group.physical_metrics] : [],
++      projected_metrics: Array.isArray(entry?.execution_command?.params?.metrics) ? [...entry.execution_command.params.metrics] : (Array.isArray(entry?.command?.params?.metrics) ? [...entry.command.params.metrics] : [])
++    }
++  };
++}
++
++function buildCoalescedLogicalResult(entry, group, physicalResult, projectionError = null) {
++  const command = OzonContract.normalizeCommand(entry.command);
++  const preflight = OzonContract.preflightExecution(command);
++  const physicalRequestId = physicalResult?.request_id || physicalResult?.physical_attempt_id || null;
++  const physicalFingerprint = physicalResult?.executed_command_fingerprint || group?.physical_command_fingerprint || null;
++  const planning = coalescedPlanningForEntry(entry, group, physicalRequestId, physicalFingerprint);
++  const requestId = `logical-${crypto.randomUUID()}`;
++  let resultPayload;
++  let bridgeError = false;
++  let safeError = null;
++  if (projectionError) {
++    safeError = OzonContract.safeBridgeErrorPayload(projectionError, Number(physicalResult?.http_status || 0));
++    resultPayload = { error: { ...safeError, stage: "query_projection", external_request_executed: true } };
++    bridgeError = true;
++  } else if (physicalResult?.ok === true) {
