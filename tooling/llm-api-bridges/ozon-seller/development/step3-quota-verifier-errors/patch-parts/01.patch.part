@@ -1,0 +1,104 @@
++      updated_at: new Date(dispatchedAt).toISOString()
++    };
++    await storageSet({ [KEYS.PROVIDER_QUOTA_STATE]: state });
++    return Object.freeze({
++      allowed: true,
++      family: ANALYTICS_QUOTA_FAMILY,
++      min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++      account_hash: identity.account_hash,
++      credential_revision: identity.credential_revision,
++      dispatched_at: dispatchedAt,
++      next_allowed_at: next,
++      wait_ms: 0,
++      automatic_retry: false
++    });
++  });
++}
++
++async function extendAnalyticsQuotaFromRetryAfter(quotaPermit, retryAfter, nowMs = Date.now()) {
++  if (!quotaPermit?.account_hash || !retryAfter) return safeQuotaMetadata(quotaPermit);
++  const retryAt = parseRetryAfterAt(retryAfter, nowMs);
++  if (!retryAt) return safeQuotaMetadata(quotaPermit);
++  return withProviderQuotaWrite(async () => {
++    const data = await storageGet(KEYS.PROVIDER_QUOTA_STATE);
++    const state = normalizedQuotaState(data[KEYS.PROVIDER_QUOTA_STATE]);
++    const account = state.accounts[quotaPermit.account_hash] && typeof state.accounts[quotaPermit.account_hash] === "object"
++      ? { ...state.accounts[quotaPermit.account_hash] }
++      : { credential_revision: quotaPermit.credential_revision || null, families: {} };
++    const families = account.families && typeof account.families === "object" ? { ...account.families } : {};
++    const family = families[ANALYTICS_QUOTA_FAMILY] && typeof families[ANALYTICS_QUOTA_FAMILY] === "object"
++      ? { ...families[ANALYTICS_QUOTA_FAMILY] }
++      : {};
++    const effectiveNext = Math.max(Number(family.next_allowed_at || 0), Number(quotaPermit.next_allowed_at || 0), retryAt);
++    families[ANALYTICS_QUOTA_FAMILY] = {
++      ...family,
++      min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++      last_provider_request_at: Number(family.last_provider_request_at || quotaPermit.dispatched_at || 0),
++      next_allowed_at: effectiveNext,
++      credential_revision: quotaPermit.credential_revision || family.credential_revision || null,
++      retry_after_applied_at: Number(nowMs),
++      updated_at: new Date(Number(nowMs)).toISOString()
++    };
++    state.accounts[quotaPermit.account_hash] = { ...account, families, updated_at: new Date(Number(nowMs)).toISOString() };
++    await storageSet({ [KEYS.PROVIDER_QUOTA_STATE]: state });
++    return safeQuotaMetadata({ ...quotaPermit, next_allowed_at: effectiveNext });
++  });
++}
++
++async function prepareProviderQuotaForCommand(command) {
++  const normalized = OzonContract.normalizeCommand(command);
++  const preflight = OzonContract.preflightExecution(normalized);
++  if (String(preflight.meta.provider || "seller_api") !== "seller_api" || normalized.operation !== "analytics_data") {
++    return Object.freeze({ required: false, allowed: true, quota: null });
++  }
++  let settings;
++  try { settings = await getSettings(); }
++  catch (_) { return Object.freeze({ required: true, allowed: true, quota: null, scheduler_skipped: "credentials_unavailable" }); }
++  let present = false;
++  try { present = OzonCredentials.normalizeSellerCredentials(settings.sellerCredentials, { required: false }).present === true; }
++  catch (_) { present = false; }
++  if (!present) return Object.freeze({ required: true, allowed: true, quota: null, scheduler_skipped: "credentials_unavailable" });
++  try {
++    const permit = await acquireAnalyticsProviderQuota(settings.sellerCredentials);
++    return Object.freeze({ required: true, allowed: permit.allowed === true, quota: permit });
++  } catch (error) {
++    const blocked = Object.assign(new Error("Persistent provider quota state недоступен; analytics_data provider request заблокирован до восстановления scheduler state."), {
++      code: "PROVIDER_QUOTA_STATE_UNAVAILABLE",
++      external_request_executed: false,
++      scheduler_cause_code: String(error?.code || error?.name || "QUOTA_STATE_ERROR").slice(0, 160)
++    });
++    return Object.freeze({ required: true, allowed: false, quota: null, error: blocked });
++  }
++}
++
++function scheduleProviderQuotaWake(whenMs) {
++  const when = Math.max(Date.now() + 1, Number(whenMs || 0));
++  if (chrome.alarms?.create) {
++    try { chrome.alarms.create(PROVIDER_QUOTA_ALARM, { when }); return; } catch (_) {}
++  }
++  setTimeout(() => { void resumeProviderQuotaWaits(); }, Math.max(1, when - Date.now()));
++}
++
++async function resumeProviderQuotaWaits() {
++  const data = await storageGet([KEYS.MANUAL_OPERATIONS, KEYS.AUTO_RUNS]);
++  const now = Date.now();
++  let earliest = null;
++  const manual = data[KEYS.MANUAL_OPERATIONS] && typeof data[KEYS.MANUAL_OPERATIONS] === "object" ? data[KEYS.MANUAL_OPERATIONS] : {};
++  const runs = data[KEYS.AUTO_RUNS] && typeof data[KEYS.AUTO_RUNS] === "object" ? data[KEYS.AUTO_RUNS] : {};
++  for (const [conversationKey, operation] of Object.entries(manual)) {
++    const wait = operation?.batch?.request_state === "quota_waiting" ? Number(operation.batch?.quota_wait?.next_allowed_at || 0) : 0;
++    if (!wait) continue;
++    if (wait <= now) setTimeout(() => { void processManualBatch(conversationKey, operation.operation_id); }, 0);
++    else earliest = earliest === null ? wait : Math.min(earliest, wait);
++  }
++  for (const [conversationKey, run] of Object.entries(runs)) {
++    const wait = run?.batch?.request_state === "quota_waiting" ? Number(run.batch?.quota_wait?.next_allowed_at || 0) : 0;
++    if (!wait) continue;
++    if (wait <= now) setTimeout(() => { void processAutoBatch(conversationKey, run.run_id); }, 0);
++    else earliest = earliest === null ? wait : Math.min(earliest, wait);
++  }
++  if (earliest !== null) scheduleProviderQuotaWake(earliest);
++}
++
+ function withTabAIModesWrite(fn) {
+   const next = tabAIModesWriteLock.then(fn, fn);
