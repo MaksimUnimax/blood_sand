@@ -60,16 +60,17 @@ Manifest host permissions are unchanged. The only new manifest permission is `al
 
 ## Protected worker logic
 
-Brace-aware byte extraction showed these function bodies are identical between accepted Step 2 and the Step-3 candidate:
+Brace-aware byte extraction showed these existing function bodies are identical between accepted Step 2 and the Step-3 candidate:
 
 - `ensureBatchCapabilityAndPlanning`
 - `buildBatchQueryPlan`
 - `ensureBatchQueryPlanning`
-- `processBatchQueue` core function body before Step-3 patching was used as the comparison anchor for regression; Step-3 adds quota gates around physical execution while preserving Step-1/Step-2 planner functions themselves
 - `finalizeAutoBatch`
 - `finalizeManualBatch`
 - `attemptAutoDelivery`
 - `attemptManualBatchDelivery`
+
+`processBatchQueue` is intentionally changed in Step 3 because it is the integration point for durable quota gates immediately before physical execution. Its Step-1 capability-plan and Step-2 query-plan inputs/semantics are retained and covered by regression tests; it is NOT claimed byte-identical.
 
 The Step-1 capability planner and Step-2 query-plan builder functions were not rewritten. AI DOM/composer files are byte-identical.
 
