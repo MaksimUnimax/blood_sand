@@ -1,0 +1,114 @@
++    const logicalMetrics = Array.isArray(entry?.execution_command?.params?.metrics) ? entry.execution_command.params.metrics : entry.command.params.metrics;
++    resultPayload = OzonContract.projectAnalyticsDataResult(physicalResult.result, group.physical_metrics, logicalMetrics);
++  } else {
++    resultPayload = physicalResult?.result && typeof physicalResult.result === "object"
++      ? physicalResult.result
++      : { error: OzonContract.safeBridgeErrorPayload(Object.assign(new Error("Coalesced provider request failed without a safe result payload."), { code: "COALESCED_PROVIDER_RESULT_MISSING" }), Number(physicalResult?.http_status || 0)) };
++  }
++  const reportText = OzonContract.formatResultReport({
++    requestId,
++    command,
++    requestMeta: {
++      host_alias: String(physicalResult?.provider || preflight.meta.provider || "seller_api"),
++      http_method: preflight.meta.method,
++      path_alias: command.operation,
++      external_request_executed: true,
++      capability_probe_executed: planning?.capability?.probe_performed === true,
++      capability_probe_http_status: Number(planning?.capability?.probe_http_status || 0),
++      physical_request_id: physicalRequestId,
++      physical_command_fingerprint: physicalFingerprint,
++      coalescing_group_id: group.group_id,
++      coalesced_logical_count: group.member_indexes.length
++    },
++    httpStatus: Number(physicalResult?.http_status || 0),
++    result: resultPayload,
++    elapsedMs: Number(physicalResult?.elapsed_ms || 0),
++    pagination: null,
++    rateLimit: physicalResult?.rate_limit || null,
++    planning
++  });
++  return Object.freeze({
++    ok: projectionError ? false : physicalResult?.ok === true,
++    bridge_error: bridgeError,
++    request_id: requestId,
++    physical_request_id: physicalRequestId,
++    operation: command.operation,
++    command_fingerprint: String(entry.command_fingerprint || OzonContract.commandFingerprint(command)),
++    executed_command_fingerprint: physicalFingerprint,
++    http_status: Number(physicalResult?.http_status || 0),
++    report_text: reportText,
++    error: safeError
++  });
++}
++
++function buildCoalescedExecutionErrorResult(entry, group, error, elapsedMs = 0, physicalAttemptId = null) {
++  const command = OzonContract.normalizeCommand(entry.command);
++  const preflight = OzonContract.preflightExecution(command);
++  const safe = OzonContract.safeBridgeErrorPayload(error, Number(error?.http_status || 0));
++  const physicalFingerprint = group?.physical_command_fingerprint || null;
++  const planning = coalescedPlanningForEntry(entry, group, physicalAttemptId, physicalFingerprint);
++  const requestId = `logical-${crypto.randomUUID()}`;
++  const reportText = OzonContract.formatResultReport({
++    requestId,
++    command,
++    requestMeta: {
++      host_alias: String(preflight.meta.provider || "seller_api"),
++      http_method: preflight.meta.method,
++      path_alias: command.operation,
++      external_request_executed: true,
++      capability_probe_executed: planning?.capability?.probe_performed === true,
++      capability_probe_http_status: Number(planning?.capability?.probe_http_status || 0),
++      physical_request_id: physicalAttemptId,
++      physical_command_fingerprint: physicalFingerprint,
++      coalescing_group_id: group.group_id,
++      coalesced_logical_count: group.member_indexes.length
++    },
++    httpStatus: Number(safe.http_status || 0),
++    result: { error: { ...safe, external_request_executed: true } },
++    elapsedMs: Math.max(0, Number(elapsedMs || 0)),
++    pagination: null,
++    rateLimit: null,
++    planning
++  });
++  return Object.freeze({
++    ok: false,
++    bridge_error: true,
++    request_id: requestId,
++    physical_request_id: physicalAttemptId,
++    operation: command.operation,
++    command_fingerprint: String(entry.command_fingerprint || OzonContract.commandFingerprint(command)),
++    executed_command_fingerprint: physicalFingerprint,
++    http_status: Number(safe.http_status || 0),
++    report_text: reportText,
++    error: safe
++  });
++}
++
+ function processBatchQueue({
+   conversationKey,
+   ownerKind,
+@@ -2000,6 +2304,8 @@ function processBatchQueue({
+     const prepared = await ensureBatchCapabilityAndPlanning({ ownerKind, ownerId, getOwner, mutateOwner, ownerMatches, isCollecting, failOwner });
+     if (!prepared?.ok) return prepared || { ok: false, code: "BATCH_PLANNING_FAILED" };
+     if (prepared.code === "CAPABILITY_PROBE_IN_PROGRESS") return { ok: true, code: "CAPABILITY_PROBE_IN_PROGRESS" };
++    const queryPrepared = await ensureBatchQueryPlanning({ ownerKind, ownerId, getOwner, mutateOwner, ownerMatches, isCollecting, failOwner });
++    if (!queryPrepared?.ok) return queryPrepared || { ok: false, code: "BATCH_QUERY_PLANNING_FAILED" };
+     while (true) {
+       let owner = await getOwner();
+       if (!owner || !ownerMatches(owner)) return { ok: false, code: "BATCH_OWNER_NOT_ACTIVE" };
+@@ -2115,6 +2421,154 @@ function processBatchQueue({
+         continue;
+       }
+ 
++      if (entry.kind === "command" && entry.query_group_id) {
++        const group = findBatchQueryGroup(owner.batch, entry.query_group_id);
++        if (!group || Number(group.leader_index) !== nextIndex || !Array.isArray(group.member_indexes) || group.member_indexes.length < 2) {
++          await failOwner("BATCH_QUERY_PLAN_CORRUPT", "Durable query plan не совпадает с текущим queue index; provider request запрещён.");
++          return { ok: false, code: "BATCH_QUERY_PLAN_CORRUPT" };
++        }
++        const expectedIndexes = group.member_indexes.map((value) => Number(value));
++        if (expectedIndexes.some((value, offset) => value !== nextIndex + offset)) {
++          await failOwner("BATCH_QUERY_PLAN_NONCONTIGUOUS", "Step 2 coalescing допускает только contiguous logical commands; provider request запрещён.");
++          return { ok: false, code: "BATCH_QUERY_PLAN_NONCONTIGUOUS" };
++        }
++
