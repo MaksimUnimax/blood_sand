@@ -23,8 +23,9 @@ Important separation:
 
 - an **AI logical command** is a data requirement;
 - a **physical provider request** is an optimized transport action;
-- future planner/coalescer work may allow several logical commands to be satisfied by one physical provider request;
-- result provenance must explicitly connect logical command IDs/fingerprints to physical request IDs/fingerprints.
+- several compatible logical commands may be satisfied by one physical request;
+- every logical result must retain its own logical command identity and explicit provenance to the physical request that satisfied it;
+- provider optimization must not alter query meaning or delivery ownership semantics.
 
 ## Batch capability invariant
 
@@ -52,9 +53,9 @@ Reviewed subscription enum:
 
 `UNKNOWN | UNSPECIFIED | PREMIUM | PREMIUM_LITE | PREMIUM_PLUS | PREMIUM_PRO`
 
-Capability must be modeled by operation/field entitlement rules rather than a single global `is_premium` boolean.
+Capability is modeled by operation/field entitlement rules rather than a single global `is_premium` boolean.
 
-## Strict contract behavior
+## Strict contract behavior retained from accepted Step 1
 
 ### analytics_data
 
@@ -85,7 +86,7 @@ Reviewed Premium Plus restricted dimensions:
 - `modelID`;
 - `descriptionType`.
 
-Reviewed advanced metrics include the documented Premium Plus set (`hits_*`, `session_*`, `conv_*`, `returns`, `cancellations`, `delivered_units`, `position_category`). Unknown/invented metrics such as `orders_count` must fail local validation instead of wasting a provider request.
+Reviewed advanced metrics include the documented Premium Plus set (`hits_*`, `session_*`, `conv_*`, `returns`, `cancellations`, `delivered_units`, `position_category`). Unknown/invented metrics such as `orders_count` fail local validation instead of wasting a provider request.
 
 Documented operation limits include:
 
@@ -94,7 +95,7 @@ Documented operation limits include:
 - without Premium Plus, data-history and metric/dimension restrictions apply;
 - provider method limit: `/v1/analytics/data` no more than one request per minute.
 
-The temporal one-request/minute limit is a Step 3 scheduler responsibility, not Step 1.
+The temporal one-request/minute limit remains a **Step 3 scheduler responsibility**, not Step 2.
 
 When some requested analytics metrics are available and some are not entitled:
 
@@ -110,22 +111,22 @@ Restricted dimensions/sort/filter semantics must not be silently removed if doin
 
 Provider operation: `POST /v1/analytics/product-queries`.
 
-Contract hardening direction:
+Retained contract:
 
 - `date_from` / `date_to` use RFC3339 `date-time` where supplied;
 - `page >= 0`;
 - `page_size <= 1000`;
 - `skus` is an array of string int64 values, max 1000;
-- validate documented sort enum/direction;
-- do not invent undocumented minimums.
+- documented sort enum/direction is validated;
+- no invented undocumented minimums.
 
-Recent data may be partially available without subscription. Historical data older than the documented recent window requires an eligible subscription; planning must expose partial subscription scope rather than pretending the response is complete.
+Recent data may be partially available without subscription. Historical data older than the reviewed recent window requires eligible subscription scope.
 
 ### product_queries_details
 
 Provider operation: `POST /v1/analytics/product-queries/details`.
 
-Contract hardening direction:
+Retained contract:
 
 - RFC3339 date-time validation;
 - `page >= 0`;
@@ -135,35 +136,67 @@ Contract hardening direction:
 - documented sort validation;
 - entitlement-aware historical/sort planning.
 
-## Safe coalescing rules (future Step 2)
+## Step 2 safe coalescing contract
 
-The core optimization idea is accepted, but “merge all analytics requests” is rejected as unsafe.
+Step 2 implements a conservative query planner/optimizer and coalescer. “Merge all analytics requests” is explicitly rejected.
 
-`analytics_data` commands may be merged only when query semantics are compatible.
+### Coalescing unit
 
-Safe candidate merge conditions include the same:
+Only logical commands that already survived Step-1 strict validation and entitlement planning may enter Step-2 coalescing.
 
-- date range;
-- dimensions;
-- filters;
-- sort;
-- offset/window semantics;
+Step 2 may coalesce `analytics_data` logical commands only when their executable physical semantics are compatible.
 
-with metrics union not exceeding 14.
+The merge key must preserve equality of:
 
-For otherwise identical requests with different compatible limits, the planner may fetch the larger safe window and project/slice locally only when completeness/order semantics remain valid.
+- operation (`analytics_data` only for metric-union coalescing);
+- `date_from`;
+- `date_to`;
+- ordered dimensions / dimension semantics;
+- filters after deterministic semantic normalization;
+- sort semantics after deterministic semantic normalization;
+- offset/window semantics.
 
-Do **not** blindly merge different:
+The union of physical metrics must not exceed 14.
 
-- dimensions;
-- filters;
+### Limit/window rule
+
+The initial Step-2 implementation is intentionally conservative: different `limit` values are **not coalesced** unless a later independently reviewed rule proves that larger-window fetch + local projection is complete and order-preserving for the exact shape. This avoids accidental top-N or non-additive semantic errors.
+
+### Explicit no-merge cases
+
+Do not coalesce commands with different:
+
+- operations;
 - date ranges;
-- sort semantics;
-- aggregation shapes.
+- dimensions or dimension order/shape;
+- filters;
+- sort metric/direction;
+- offset;
+- limit/window semantics;
+- entitlement-plan semantics that produce different executable query shapes.
 
-Do not derive cross-dimension or cross-window facts unless mathematical correctness and completeness are proven. Non-additive metrics and top-N truncation make naïve local aggregation unsafe.
+Do not derive cross-dimension, cross-filter, cross-window, or cross-date facts. Do not aggregate non-additive metrics locally. Do not infer omitted provider rows from truncated top-N responses.
 
-## Quota/rate architecture (future Step 3)
+### Logical/physical projection requirements
+
+For a successful coalesced physical request:
+
+- execute exactly one physical provider call for that coalescing group;
+- retain every original logical command and logical fingerprint;
+- record one physical request ID/fingerprint and the set/order of metrics physically requested;
+- project the provider response back into one logical result per original command;
+- each logical result exposes only its requested executable metrics, preserving original metric order;
+- Step-1 omitted/restricted metric metadata remains attached to the correct logical command;
+- `external_request_executed` is true for logical results backed by that physical provider call;
+- no extra synthetic AI-visible result item is created for the physical request itself.
+
+If safe projection cannot be proven for a provider response shape, Step 2 must fail closed for that group rather than guess. Full response-shape verification policy remains Step 3, but Step 2 must not manufacture mappings it cannot deterministically establish.
+
+### Non-coalesced behavior
+
+Commands that are incompatible or are not eligible for Step-2 optimization continue through the existing serial business executor. Performance operations and unrelated Seller operations are not semantically merged by Step 2.
+
+## Quota/rate architecture — future Step 3
 
 Provider limits are provider contract, not arbitrary bridge throttles.
 
@@ -184,37 +217,19 @@ Planned model:
 
 The general Seller API limit and method-specific limits remain distinct quota families; the internal `/v1/seller/info` capability probe consumes Seller API capacity but is not evidence of consuming the `/v1/analytics/data` one-minute method bucket.
 
-## Response verification and safe errors (future Step 3)
+## Response verification and safe errors — future Step 3
 
 For multi-metric `analytics_data`, do not silently assume positional mapping if provider shape is inconsistent.
 
 If N metrics were physically requested but a response row/totals metric array has an incompatible count, fail with a contract-mismatch diagnostic rather than guessing.
 
-Provider errors exposed to AI should be sanitized structured data, e.g.:
+Provider errors exposed to AI should be sanitized structured data. Raw provider bodies, credentials and secret-bearing headers are not AI output.
 
-- category;
-- HTTP status;
-- safe provider code;
-- safe message/field violations;
-- `external_request_executed`;
-- retry/next-allowed metadata where known.
-
-Raw provider bodies, credentials and secret-bearing headers are not AI output.
-
-## Cache/prefetch strategy (future Step 4)
+## Cache/prefetch strategy — future Step 4
 
 Batch coalescing alone does not help weak models that ask related questions across multiple turns.
 
-Planned strategy:
-
-- cache verified provider supersets by safe query shape;
-- when an expensive analytics request is made, optionally acquire a safe reusable metric superset, at minimum universal `revenue + ordered_units` when query semantics permit;
-- later subset logical requests may be projected from cache with `external_request_executed=false`;
-- richer Premium bundles require known capability; never blindly add restricted metrics;
-- cache/provenance must state source request and freshness;
-- optional cross-tab identical-request dedupe may be added later, but global quota correctness has higher priority.
-
-High-level semantic aliases for weaker models may later compile deterministically into low-level reviewed operations, e.g. sales/search snapshots, without removing the advanced low-level contract.
+Planned strategy includes safe verified provider-superset caching, optional deterministic semantic acquisition aliases, explicit cache provenance/freshness, and integrated multi-tab/multi-AI regression.
 
 ## Delivery and AI-adapter protection
 
@@ -226,7 +241,8 @@ Protected principles:
 - persistent “Начало диктовки” must not be treated as delivery completion;
 - Alice identity/delivery semantics are handled separately;
 - code-block binding remains native-Copy structural binding to the exact block node, independent of command contents;
-- provider planning must stay service-worker/provider-side and must not require rewriting AI DOM/composer logic.
+- provider planning stays service-worker/provider-side and must not require rewriting AI DOM/composer logic;
+- no global “current conversation”.
 
 ## Engineering steps and status
 
@@ -234,30 +250,42 @@ Protected principles:
 
 Accepted Codex/Puppeteer/Chrome for Testing development harness. Intermediate builds no longer require operator ZIP installation.
 
-### Step 1 — Contract + Capability layer — IMPLEMENTED, VALIDATION RUNNING
+### Step 1 — Contract + Capability layer — ACCEPTED
 
-Frozen implementation SHA:
+Original frozen production-logic SHA:
 
 `370e45a1803976f43d27d5a9d4b5613e09a91623`
 
-Development branch:
+Exact reconstruction-v2 validation target:
 
-`dev/ozon-v0.1.19-step1-contract-capability-2026-08-17`
+`298a4d618c69e8ffd33735ff96a153d42d160143`
 
-Independent Codex validation has been dispatched. Do not begin Step 2 until the report is reviewed.
+Independent accepted validation report commit:
 
-### Step 2 — Query planner + safe coalescing — PENDING
+`249669986d61c5df708dd5b635fe30662120336f`
 
-One coherent step should add the planner/optimizer and safe analytics coalescing while retaining logical-command results/provenance and existing serial delivery semantics.
+Validation branch:
 
-No quota scheduler redesign in this step unless required by the approved Step 2 plan.
+`validation/ozon-step1-contract-capability-retest-v2-2026-08-17`
+
+Verdict:
+
+`STEP1_ACCEPTED_FOR_STEP2`
+
+All load-bearing Step-1 gates passed with `OPERATOR_BROWSER_ACTIONS = 0` and `REAL_OZON_REQUESTS = 0`.
+
+### Step 2 — Query planner + safe coalescing — IN PROGRESS
+
+Implement one coherent conservative planner/optimizer and safe `analytics_data` metric-union coalescer while retaining one logical result per original command, exact provenance, Step-1 capability/entitlement semantics and existing serial delivery behavior.
+
+No Step-3 quota scheduler redesign is in scope.
 
 ### Step 3 — Global provider quota scheduler + response verifier + safe errors — PENDING
 
-Implement persistent Seller-account quota coordination, especially `/v1/analytics/data` one-per-minute behavior, response-shape verification, and sanitized structured provider errors.
+Implement persistent Seller-account/method quota coordination, especially `/v1/analytics/data` one-per-minute behavior across tabs/AIs, response-shape verification and sanitized structured provider errors.
 
 ### Step 4 — Cache/prefetch + semantic acquisition profiles + integrated acceptance — PENDING
 
-Add safe reusable provider cache/prefetch, optional deterministic high-level semantic aliases, then run integrated multi-tab/multi-AI regression and controlled final live acceptance.
+Add safe reusable provider cache/prefetch, optional deterministic high-level semantic aliases, then integrated multi-tab/multi-AI regression and controlled final live acceptance.
 
 This step breakdown is intentionally coarse. Do not split it into dozens of micro-steps unless a concrete validation failure requires a bounded repair inside the current step.
