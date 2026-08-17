@@ -1,0 +1,90 @@
++              request_quota: safeQuotaMetadata(quotaDecision.quota)
+             }
+           };
+         });
+@@ -2482,7 +2770,8 @@ function processBatchQueue({
+         try {
+           physicalResult = { ...(await executeOzonCore(liveLeader.command_text, {
+             executionCommand: group.physical_command,
+-            planning: coalescedPlanningForEntry(liveLeader, group, physicalAttemptId, group.physical_command_fingerprint)
++            planning: coalescedPlanningForEntry(liveLeader, group, physicalAttemptId, group.physical_command_fingerprint),
++            quotaPermit: quotaDecision.quota
+           })), physical_attempt_id: physicalAttemptId };
+           if (physicalResult.ok === true) {
+             try {
+@@ -2527,7 +2816,7 @@ function processBatchQueue({
+               request_id: logicalResult.request_id || null,
+               physical_request_id: logicalResult.physical_request_id || physicalResult?.request_id || null,
+               http_status: Number(logicalResult.http_status || 0),
+-              external_request_executed: true,
++              external_request_executed: logicalResult.external_request_executed === true,
+               executed_command_fingerprint: logicalResult.executed_command_fingerprint || group.physical_command_fingerprint || null,
+               report_text: String(logicalResult.report_text || ""),
+               request_completed_at: completedAt
+@@ -2542,7 +2831,9 @@ function processBatchQueue({
+               entries: currentEntries,
+               next_index: expectedIndexes[expectedIndexes.length - 1] + 1,
+               request_state: "idle",
+-              request_worker_session_id: null
++              request_worker_session_id: null,
++              quota_wait: null,
++              request_quota: null
+             },
+             last_error: firstBridgeError ? {
+               code: firstBridgeError.error?.code || "OZON_BRIDGE_ERROR",
+@@ -2564,11 +2855,35 @@ function processBatchQueue({
+           physical_request_id: physicalResult?.request_id || null,
+           physical_command_fingerprint: physicalResult?.executed_command_fingerprint || group.physical_command_fingerprint || null,
+           http_status: Number(physicalResult?.http_status || logicalResults[0]?.http_status || 0),
+-          external_request_executed: true
++          external_request_executed: logicalResults.some((result) => result?.external_request_executed === true)
+         }, { level: logicalResults.some((result) => result?.ok === false) ? "warning" : "info" });
+         continue;
+       }
+ 
++      const physicalCommandForQuota = entry.execution_command || entry.command;
++      const quotaDecision = await prepareProviderQuotaForCommand(physicalCommandForQuota);
++      if (quotaDecision.error) {
++        const result = buildExecutionErrorResult(entry.command, entry.command_fingerprint, quotaDecision.error, 0, entry.planning || null);
++        let stored = false;
++        owner = await mutateOwner((current) => {
++          if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++          if (Number(current.batch.next_index || 0) !== nextIndex) return current;
++          const currentEntries = [...(current.batch.entries || [])];
++          const currentEntry = currentEntries[nextIndex];
++          if (!currentEntry || currentEntry.status !== "pending") return current;
++          currentEntries[nextIndex] = { ...currentEntry, status: "complete", request_id: result.request_id || null, http_status: 0, external_request_executed: false, executed_command_fingerprint: null, report_text: String(result.report_text || ""), request_completed_at: new Date().toISOString() };
++          stored = true;
++          return { ...current, batch: { ...current.batch, entries: currentEntries, next_index: nextIndex + 1, request_state: "idle", request_worker_session_id: null, quota_wait: null, request_quota: null } };
++        });
++        if (!stored) return { ok: false, code: "PROVIDER_QUOTA_ERROR_STORE_RACE" };
++        await diagnostic("PROVIDER_QUOTA_STATE_UNAVAILABLE", { owner_kind: ownerKind, owner_id: ownerId, queue_index: nextIndex, logical_count: 1, external_request_executed: false }, { level: "error" });
++        continue;
++      }
++      if (quotaDecision.required && !quotaDecision.allowed) {
++        await persistBatchQuotaWait({ ownerKind, ownerId, nextIndex, quota: quotaDecision.quota, mutateOwner, ownerMatches, isCollecting });
++        return { ok: true, code: "PROVIDER_QUOTA_WAITING", next_allowed_at: Number(quotaDecision.quota?.next_allowed_at || 0) };
++      }
++
+       let requestGranted = false;
+       owner = await mutateOwner((current) => {
+         if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
+@@ -2585,7 +2900,9 @@ function processBatchQueue({
+             ...current.batch,
+             entries: currentEntries,
+             request_state: "requesting",
+-            request_worker_session_id: WORKER_SESSION_ID
++            request_worker_session_id: WORKER_SESSION_ID,
++            quota_wait: null,
++            request_quota: safeQuotaMetadata(quotaDecision.quota)
+           }
+         };
+       });
+@@ -2603,7 +2920,7 @@ function processBatchQueue({
+       let result;
+       const requestStartedAt = Date.now();
+       try {
+-        result = await executeOzonCore(liveEntry.command_text, { executionCommand: liveEntry.execution_command || liveEntry.command, planning: liveEntry.planning || null });
++        result = await executeOzonCore(liveEntry.command_text, { executionCommand: liveEntry.execution_command || liveEntry.command, planning: liveEntry.planning || null, quotaPermit: quotaDecision.quota });
+       } catch (error) {
+         try {
