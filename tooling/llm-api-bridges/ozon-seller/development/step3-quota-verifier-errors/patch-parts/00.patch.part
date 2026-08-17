@@ -1,0 +1,125 @@
+diff --git a/manifest.json b/manifest.json
+index 1d45dd5a8bad75cf398db00199939e26c663a463..0ae3eef6e8a520d7c555ebf142c664cd2a9deac6 100644
+--- a/manifest.json
++++ b/manifest.json
+@@ -5,6 +5,7 @@
+   "description": "Контролируемый read-only мост ChatGPT/Alice ↔ Ozon Seller + Performance API: multi-AI adapters, batch collection, recovery и локальные credentials.",
+   "permissions": [
+     "storage",
++    "alarms",
+     "tabs",
+     "unlimitedStorage"
+   ],
+diff --git a/service_worker.js b/service_worker.js
+index 6a9ef9f424d65bed39225ae51b01c8d2aa6a0f5e..dcdac798abf3890dced62e12873d73b7143a98c0 100644
+--- a/service_worker.js
++++ b/service_worker.js
+@@ -25,6 +25,12 @@ let migrationWriteLock = Promise.resolve();
+ let diagnosticsWriteLock = Promise.resolve();
+ let copyProfilesWriteLock = Promise.resolve();
+ let tabAIModesWriteLock = Promise.resolve();
++let providerQuotaWriteLock = Promise.resolve();
++
++const PROVIDER_QUOTA_SCHEMA_VERSION = 1;
++const PROVIDER_QUOTA_ALARM = "ozon-provider-quota-wake-v1";
++const ANALYTICS_QUOTA_FAMILY = "seller.analytics_data.v1";
++const ANALYTICS_MIN_INTERVAL_MS = 60_000;
+ 
+ // Reference-parity single-flight: one worker-owned browser delivery attempt per run.
+ // This is deliberately the same primitive used by Business Bridge 2.0.0.22.
+@@ -45,6 +51,200 @@ function storageRemove(keys) { return chrome.storage.local.remove(keys); }
+ function sessionGet(keys) { return chrome.storage.session.get(keys); }
+ function sessionSet(values) { return chrome.storage.session.set(values); }
+ 
++function withProviderQuotaWrite(fn) {
++  const next = providerQuotaWriteLock.then(fn, fn);
++  providerQuotaWriteLock = next.catch(() => null);
++  return next;
++}
++
++function bytesToHex(buffer) {
++  return [...new Uint8Array(buffer)].map((value) => value.toString(16).padStart(2, "0")).join("");
++}
++
++async function sellerQuotaIdentity(rawCredentials) {
++  const credentials = OzonCredentials.normalizeSellerCredentials(rawCredentials, { required: true });
++  const encoder = new TextEncoder();
++  const accountDigest = await crypto.subtle.digest("SHA-256", encoder.encode(`seller-account-v1\0${credentials.clientId}`));
++  const revisionDigest = await crypto.subtle.digest("SHA-256", encoder.encode(`seller-credential-v1\0${credentials.clientId}\0${credentials.apiKey}`));
++  return Object.freeze({
++    account_hash: bytesToHex(accountDigest),
++    credential_revision: bytesToHex(revisionDigest)
++  });
++}
++
++function normalizedQuotaState(raw) {
++  const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
++  return {
++    schema_version: PROVIDER_QUOTA_SCHEMA_VERSION,
++    accounts: source.accounts && typeof source.accounts === "object" && !Array.isArray(source.accounts) ? { ...source.accounts } : {}
++  };
++}
++
++function parseRetryAfterAt(value, nowMs = Date.now()) {
++  const text = String(value || "").trim();
++  if (!text) return null;
++  if (/^\d+(?:\.\d+)?$/.test(text)) {
++    const seconds = Number(text);
++    if (!Number.isFinite(seconds) || seconds < 0) return null;
++    return Math.ceil(Number(nowMs) + seconds * 1000);
++  }
++  const parsed = Date.parse(text);
++  return Number.isFinite(parsed) ? Math.max(Number(nowMs), parsed) : null;
++}
++
++function safeQuotaMetadata(value) {
++  if (!value || typeof value !== "object") return null;
++  return Object.freeze({
++    family: String(value.family || ANALYTICS_QUOTA_FAMILY),
++    min_interval_ms: Math.max(0, Number(value.min_interval_ms || 0)),
++    dispatched_at: Number(value.dispatched_at || 0),
++    next_allowed_at: Number(value.next_allowed_at || 0),
++    credential_scope_id: String(value.account_hash || "").slice(0, 16) || null,
++    credential_revision: String(value.credential_revision || "").slice(0, 16) || null,
++    automatic_retry: false
++  });
++}
++
++async function acquireAnalyticsProviderQuota(rawCredentials, nowMs = Date.now()) {
++  const identity = await sellerQuotaIdentity(rawCredentials);
++  return withProviderQuotaWrite(async () => {
++    const currentNow = Math.max(Number(nowMs || 0), Date.now());
++    const data = await storageGet(KEYS.PROVIDER_QUOTA_STATE);
++    const state = normalizedQuotaState(data[KEYS.PROVIDER_QUOTA_STATE]);
++    const account = state.accounts[identity.account_hash] && typeof state.accounts[identity.account_hash] === "object"
++      ? { ...state.accounts[identity.account_hash] }
++      : { credential_revision: identity.credential_revision, families: {} };
++    const families = account.families && typeof account.families === "object" ? { ...account.families } : {};
++    const family = families[ANALYTICS_QUOTA_FAMILY] && typeof families[ANALYTICS_QUOTA_FAMILY] === "object"
++      ? { ...families[ANALYTICS_QUOTA_FAMILY] }
++      : {};
++    const nextAllowedAt = Math.max(0, Number(family.next_allowed_at || 0));
++    if (currentNow < nextAllowedAt) {
++      return Object.freeze({
++        allowed: false,
++        family: ANALYTICS_QUOTA_FAMILY,
++        min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++        account_hash: identity.account_hash,
++        credential_revision: identity.credential_revision,
++        next_allowed_at: nextAllowedAt,
++        wait_ms: nextAllowedAt - currentNow,
++        automatic_retry: false
++      });
++    }
++    const dispatchedAt = currentNow;
++    const next = dispatchedAt + ANALYTICS_MIN_INTERVAL_MS;
++    families[ANALYTICS_QUOTA_FAMILY] = {
++      min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++      last_provider_request_at: dispatchedAt,
++      next_allowed_at: next,
++      credential_revision: identity.credential_revision,
++      updated_at: new Date(dispatchedAt).toISOString()
++    };
++    state.accounts[identity.account_hash] = {
++      credential_revision: identity.credential_revision,
++      families,
