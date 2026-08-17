@@ -1,0 +1,104 @@
++        let groupGranted = false;
++        owner = await mutateOwner((current) => {
++          if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++          if (Number(current.batch.next_index || 0) !== nextIndex) return current;
++          if (current.batch.query_planning_state !== "complete" || current.batch.request_state !== "idle") return current;
++          const liveGroup = findBatchQueryGroup(current.batch, entry.query_group_id);
++          if (!liveGroup || Number(liveGroup.leader_index) !== nextIndex) return current;
++          const currentEntries = [...(current.batch.entries || [])];
++          for (const memberIndex of expectedIndexes) {
++            const member = currentEntries[memberIndex];
++            if (!member || member.kind !== "command" || member.status !== "pending" || String(member.query_group_id || "") !== String(group.group_id)) return current;
++          }
++          const startedAt = new Date().toISOString();
++          for (const memberIndex of expectedIndexes) currentEntries[memberIndex] = { ...currentEntries[memberIndex], status: "requesting", request_started_at: startedAt };
++          groupGranted = true;
++          return {
++            ...current,
++            last_operation: "analytics_data",
++            batch: {
++              ...current.batch,
++              entries: currentEntries,
++              request_state: "requesting",
++              request_worker_session_id: WORKER_SESSION_ID
++            }
++          };
++        });
++        if (!groupGranted) continue;
++
++        const liveEntries = owner.batch.entries;
++        const liveMembers = expectedIndexes.map((memberIndex) => liveEntries[memberIndex]);
++        const liveLeader = liveMembers[0];
++        await diagnostic("BATCH_COALESCED_REQUEST_STARTED", {
++          owner_kind: ownerKind,
++          owner_id: ownerId,
++          queue_index: nextIndex,
++          queue_total: liveEntries.length,
++          coalescing_group_id: group.group_id,
++          logical_count: liveMembers.length,
++          physical_command_fingerprint: group.physical_command_fingerprint,
++          physical_metrics: group.physical_metrics
++        });
++
++        const requestStartedAt = Date.now();
++        const physicalAttemptId = `physical-attempt-${crypto.randomUUID()}`;
++        let physicalResult = null;
++        let logicalResults;
++        try {
++          physicalResult = { ...(await executeOzonCore(liveLeader.command_text, {
++            executionCommand: group.physical_command,
++            planning: coalescedPlanningForEntry(liveLeader, group, physicalAttemptId, group.physical_command_fingerprint)
++          })), physical_attempt_id: physicalAttemptId };
++          if (physicalResult.ok === true) {
++            try {
++              logicalResults = liveMembers.map((member) => buildCoalescedLogicalResult(member, group, physicalResult));
++            } catch (projectionError) {
++              logicalResults = liveMembers.map((member) => buildCoalescedLogicalResult(member, group, physicalResult, projectionError));
++              await diagnostic("BATCH_COALESCED_PROJECTION_FAILED", {
++                owner_kind: ownerKind,
++                owner_id: ownerId,
++                coalescing_group_id: group.group_id,
++                physical_request_id: physicalResult.request_id || null,
++                code: String(projectionError?.code || "ANALYTICS_COALESCED_RESPONSE_UNPROJECTABLE")
++              }, { level: "error" });
++            }
++          } else {
++            logicalResults = liveMembers.map((member) => buildCoalescedLogicalResult(member, group, physicalResult));
++          }
++        } catch (error) {
++          logicalResults = liveMembers.map((member) => buildCoalescedExecutionErrorResult(member, group, error, Date.now() - requestStartedAt, physicalAttemptId));
++        }
++
++        let stored = false;
++        owner = await mutateOwner((current) => {
++          if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++          if (Number(current.batch.next_index || 0) !== nextIndex) return current;
++          if (current.batch.request_state !== "requesting" || current.batch.request_worker_session_id !== WORKER_SESSION_ID) return current;
++          const currentEntries = [...(current.batch.entries || [])];
++          for (let offset = 0; offset < expectedIndexes.length; offset += 1) {
++            const memberIndex = expectedIndexes[offset];
++            const currentEntry = currentEntries[memberIndex];
++            const logicalResult = logicalResults[offset];
++            if (!currentEntry || currentEntry.status !== "requesting" || String(currentEntry.query_group_id || "") !== String(group.group_id) || !logicalResult) return current;
++          }
++          const completedAt = new Date().toISOString();
++          for (let offset = 0; offset < expectedIndexes.length; offset += 1) {
++            const memberIndex = expectedIndexes[offset];
++            const currentEntry = currentEntries[memberIndex];
++            const logicalResult = logicalResults[offset];
++            currentEntries[memberIndex] = {
++              ...currentEntry,
++              status: "complete",
++              request_id: logicalResult.request_id || null,
++              physical_request_id: logicalResult.physical_request_id || physicalResult?.request_id || null,
++              http_status: Number(logicalResult.http_status || 0),
++              external_request_executed: true,
++              executed_command_fingerprint: logicalResult.executed_command_fingerprint || group.physical_command_fingerprint || null,
++              report_text: String(logicalResult.report_text || ""),
++              request_completed_at: completedAt
++            };
++          }
++          const firstBridgeError = logicalResults.find((result) => result?.bridge_error === true);
++          stored = true;
++          return {
++            ...current,
