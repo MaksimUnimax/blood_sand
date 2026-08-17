@@ -1,0 +1,103 @@
+@@ -2283,8 +2496,49 @@ function buildCoalescedExecutionErrorResult(entry, group, error, elapsedMs = 0,
+     executed_command_fingerprint: physicalFingerprint,
+     http_status: Number(safe.http_status || 0),
+     report_text: reportText,
+-    error: safe
++    error: safe,
++    external_request_executed: safe.external_request_executed === true
++  });
++}
++
++async function persistBatchQuotaWait({ ownerKind, ownerId, nextIndex, quota, mutateOwner, ownerMatches, isCollecting, groupId = null }) {
++  let stored = false;
++  const safe = safeQuotaMetadata(quota);
++  await mutateOwner((current) => {
++    if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++    if (Number(current.batch.next_index || 0) !== Number(nextIndex)) return current;
++    if (current.batch.request_state === "requesting") return current;
++    stored = true;
++    return {
++      ...current,
++      batch: {
++        ...current.batch,
++        request_state: "quota_waiting",
++        request_worker_session_id: null,
++        quota_wait: {
++          ...safe,
++          owner_kind: String(ownerKind || "batch"),
++          owner_id: String(ownerId || "").slice(0, 200),
++          queue_index: Number(nextIndex),
++          coalescing_group_id: groupId ? String(groupId).slice(0, 120) : null,
++          waiting_since: new Date().toISOString()
++        }
++      }
++    };
+   });
++  if (stored) {
++    await diagnostic("PROVIDER_QUOTA_WAITING", {
++      owner_kind: ownerKind,
++      owner_id: ownerId,
++      queue_index: Number(nextIndex),
++      quota_family: safe?.family || null,
++      next_allowed_at: Number(safe?.next_allowed_at || 0),
++      min_interval_ms: Number(safe?.min_interval_ms || 0),
++      credential_scope_id: safe?.credential_scope_id || null
++    });
++    scheduleProviderQuotaWake(Number(safe?.next_allowed_at || Date.now() + 1000));
++  }
++  return stored;
+ }
+ 
+ function processBatchQueue({
+@@ -2433,11 +2687,43 @@ function processBatchQueue({
+           return { ok: false, code: "BATCH_QUERY_PLAN_NONCONTIGUOUS" };
+         }
+ 
++        const quotaDecision = await prepareProviderQuotaForCommand(group.physical_command);
++        if (quotaDecision.error) {
++          const members = expectedIndexes.map((memberIndex) => owner.batch.entries[memberIndex]);
++          const logicalResults = members.map((member) => buildCoalescedExecutionErrorResult(member, group, quotaDecision.error, 0, null));
++          let stored = false;
++          owner = await mutateOwner((current) => {
++            if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++            if (Number(current.batch.next_index || 0) !== nextIndex) return current;
++            const currentEntries = [...(current.batch.entries || [])];
++            for (let offset = 0; offset < expectedIndexes.length; offset += 1) {
++              const memberIndex = expectedIndexes[offset];
++              const currentEntry = currentEntries[memberIndex];
++              const logicalResult = logicalResults[offset];
++              if (!currentEntry || currentEntry.status !== "pending" || !logicalResult) return current;
++              currentEntries[memberIndex] = {
++                ...currentEntry, status: "complete", request_id: logicalResult.request_id || null, physical_request_id: null,
++                http_status: 0, external_request_executed: false, executed_command_fingerprint: group.physical_command_fingerprint || null,
++                report_text: String(logicalResult.report_text || ""), request_completed_at: new Date().toISOString()
++              };
++            }
++            stored = true;
++            return { ...current, batch: { ...current.batch, entries: currentEntries, next_index: expectedIndexes[expectedIndexes.length - 1] + 1, request_state: "idle", request_worker_session_id: null, quota_wait: null, request_quota: null } };
++          });
++          if (!stored) return { ok: false, code: "PROVIDER_QUOTA_ERROR_STORE_RACE" };
++          await diagnostic("PROVIDER_QUOTA_STATE_UNAVAILABLE", { owner_kind: ownerKind, owner_id: ownerId, queue_index: nextIndex, logical_count: logicalResults.length, external_request_executed: false }, { level: "error" });
++          continue;
++        }
++        if (quotaDecision.required && !quotaDecision.allowed) {
++          await persistBatchQuotaWait({ ownerKind, ownerId, nextIndex, quota: quotaDecision.quota, mutateOwner, ownerMatches, isCollecting, groupId: group.group_id });
++          return { ok: true, code: "PROVIDER_QUOTA_WAITING", next_allowed_at: Number(quotaDecision.quota?.next_allowed_at || 0) };
++        }
++
+         let groupGranted = false;
+         owner = await mutateOwner((current) => {
+           if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
+           if (Number(current.batch.next_index || 0) !== nextIndex) return current;
+-          if (current.batch.query_planning_state !== "complete" || current.batch.request_state !== "idle") return current;
++          if (current.batch.query_planning_state !== "complete" || !["idle", "quota_waiting"].includes(String(current.batch.request_state || "idle"))) return current;
+           const liveGroup = findBatchQueryGroup(current.batch, entry.query_group_id);
+           if (!liveGroup || Number(liveGroup.leader_index) !== nextIndex) return current;
+           const currentEntries = [...(current.batch.entries || [])];
+@@ -2455,7 +2741,9 @@ function processBatchQueue({
+               ...current.batch,
+               entries: currentEntries,
+               request_state: "requesting",
+-              request_worker_session_id: WORKER_SESSION_ID
++              request_worker_session_id: WORKER_SESSION_ID,
++              quota_wait: null,
