@@ -1,0 +1,75 @@
++        compatibility_fingerprint: descriptors[0].compatibility_fingerprint
++      });
++    }
++
++    function projectAnalyticsDataResult(rawResult, physicalMetricsInput, logicalMetricsInput) {
++      const physicalMetrics = Array.isArray(physicalMetricsInput) ? physicalMetricsInput.map((metric) => String(metric)) : [];
++      const logicalMetrics = Array.isArray(logicalMetricsInput) ? logicalMetricsInput.map((metric) => String(metric)) : [];
++      if (!physicalMetrics.length || new Set(physicalMetrics).size !== physicalMetrics.length) fail("ANALYTICS_COALESCED_RESPONSE_UNPROJECTABLE", "Physical metrics list не является однозначным набором.");
++      if (!logicalMetrics.length || new Set(logicalMetrics).size !== logicalMetrics.length) fail("ANALYTICS_COALESCED_RESPONSE_UNPROJECTABLE", "Logical metrics list не является однозначным набором.");
++      const indexByMetric = new Map(physicalMetrics.map((metric, index) => [metric, index]));
++      if (logicalMetrics.some((metric) => !indexByMetric.has(metric))) fail("ANALYTICS_COALESCED_RESPONSE_UNPROJECTABLE", "Logical metrics не являются подмножеством physical metrics.");
++
++      const projected = sanitizeJsonValue(rawResult, "coalesced_result", { rejectTransportKeys: false });
++      if (!projected || typeof projected !== "object" || Array.isArray(projected)) fail("ANALYTICS_COALESCED_RESPONSE_UNPROJECTABLE", "analytics_data response должен быть объектом.");
++      const result = projected.result;
++      if (!result || typeof result !== "object" || Array.isArray(result)) fail("ANALYTICS_COALESCED_RESPONSE_UNPROJECTABLE", "analytics_data response.result отсутствует или имеет неподдерживаемую форму.");
++
++      const logicalIndexes = logicalMetrics.map((metric) => indexByMetric.get(metric));
++      let projectableSurfaceSeen = false;
++      if (Object.prototype.hasOwnProperty.call(result, "data")) {
++        if (!Array.isArray(result.data)) fail("ANALYTICS_COALESCED_RESPONSE_UNPROJECTABLE", "analytics_data result.data должен быть массивом.");
++        result.data = result.data.map((row, rowIndex) => {
++          if (!row || typeof row !== "object" || Array.isArray(row)) fail("ANALYTICS_COALESCED_RESPONSE_UNPROJECTABLE", `analytics_data result.data[${rowIndex}] должен быть объектом.`);
++          if (!Array.isArray(row.metrics) || row.metrics.length !== physicalMetrics.length) fail("ANALYTICS_COALESCED_RESPONSE_UNPROJECTABLE", `analytics_data result.data[${rowIndex}].metrics не совпадает с physical metrics cardinality.`);
++          return { ...row, metrics: logicalIndexes.map((index) => row.metrics[index]) };
++        });
++        projectableSurfaceSeen = true;
++      }
++      if (Object.prototype.hasOwnProperty.call(result, "totals")) {
++        if (!Array.isArray(result.totals) || result.totals.length !== physicalMetrics.length) fail("ANALYTICS_COALESCED_RESPONSE_UNPROJECTABLE", "analytics_data result.totals не совпадает с physical metrics cardinality.");
++        result.totals = logicalIndexes.map((index) => result.totals[index]);
++        projectableSurfaceSeen = true;
++      }
++      if (!projectableSurfaceSeen) fail("ANALYTICS_COALESCED_RESPONSE_UNPROJECTABLE", "analytics_data response не содержит проверяемой metric projection surface.");
++      return deepFreeze(projected);
++    }
++
+     function safeErrorPayload(status, rawText, parsed) {
+       const candidate = parsed && typeof parsed === "object" ? parsed : null;
+       const rawCode = candidate?.code || candidate?.error?.code || candidate?.status || "OZON_API_ERROR";
+@@ -1030,6 +1127,10 @@
+       if (typeof requestMeta?.external_request_executed === "boolean") requestMetaOut.external_request_executed = requestMeta.external_request_executed;
+       if (typeof requestMeta?.capability_probe_executed === "boolean") requestMetaOut.capability_probe_executed = requestMeta.capability_probe_executed;
+       if (Number.isFinite(Number(requestMeta?.capability_probe_http_status))) requestMetaOut.capability_probe_http_status = Number(requestMeta.capability_probe_http_status || 0);
++      if (requestMeta?.physical_request_id) requestMetaOut.physical_request_id = String(requestMeta.physical_request_id).slice(0, 200);
++      if (requestMeta?.physical_command_fingerprint) requestMetaOut.physical_command_fingerprint = String(requestMeta.physical_command_fingerprint).slice(0, 80);
++      if (requestMeta?.coalescing_group_id) requestMetaOut.coalescing_group_id = String(requestMeta.coalescing_group_id).slice(0, 120);
++      if (Number.isInteger(Number(requestMeta?.coalesced_logical_count)) && Number(requestMeta.coalesced_logical_count) > 0) requestMetaOut.coalesced_logical_count = Number(requestMeta.coalesced_logical_count);
+       const envelope = {
+         bridge: "ozon-llm-api-bridge",
+         version,
+@@ -1102,6 +1203,9 @@
+       sanitizeResult,
+       commandFingerprint,
+       textFingerprint,
++      analyticsCoalescingDescriptor,
++      buildAnalyticsCoalescedCommand,
++      projectAnalyticsDataResult,
+       safeErrorPayload,
+       safeBridgeErrorPayload,
+       sellerCapabilityRequirement,
+diff --git a/shared/ozon_provider.js b/shared/ozon_provider.js
+index b2a27bf..9a142f9 100644
+--- a/shared/ozon_provider.js
++++ b/shared/ozon_provider.js
+@@ -188,6 +188,9 @@
+         http_status: response.httpStatus,
+         report_text: reportText,
+         response_meta: response.responseMeta,
++        result,
++        elapsed_ms: Number(response.elapsedMs || 0),
++        rate_limit: response.responseMeta.retry_after ? { retry_after: response.responseMeta.retry_after } : null,
+         auth_request_performed: execution.auth_request_performed === true
+       });
+     }
