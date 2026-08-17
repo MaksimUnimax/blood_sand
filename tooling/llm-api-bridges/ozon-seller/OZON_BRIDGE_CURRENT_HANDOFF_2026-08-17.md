@@ -1,7 +1,7 @@
 # Ozon Bridge — current handoff / continuation state
 
 Date: 2026-08-17
-Status: Step 2 implementation frozen; waiting for independent Codex validation.
+Status: Step 3 implementation frozen; waiting for independent Codex validation.
 
 ## Repository identity
 
@@ -13,19 +13,15 @@ Canonical working branch:
 
 `work/ozon-data-collection-2026-08-11`
 
-Current Step-2 development branch:
+Current development branch:
 
-`dev/ozon-v0.1.19-step2-query-planner-coalescing-2026-08-17`
+`dev/ozon-v0.1.19-step3-quota-verifier-errors-2026-08-17`
 
-Always fetch live refs before continuing. Do not rely on remembered moving branch HEADs.
+Always fetch live refs before continuing. Do not substitute moving branch HEADs for frozen validation targets.
 
-Canonical release/evidence lineage remains:
+Canonical release/evidence lineage remains `reference-0.1.11/`. Operator/local v0.1.12+ candidates are development inputs, not canonical releases automatically.
 
-`reference-0.1.11/`
-
-Operator/local v0.1.12+ candidates are development inputs and are not canonical releases automatically.
-
-## Operator development baseline
+## Operator baseline
 
 Baseline pin commit:
 
@@ -33,14 +29,10 @@ Baseline pin commit:
 
 Exact operator ZIP:
 
-- size `100320` bytes
+- size `100320`
 - SHA-256 `2b86518bfdc81081e271c7f8346188fc7047999385d1da4428fa2a133dba15bf`
 
-Exact reconstruction-v2 artifacts:
-
-`development/operator-v0.1.19/exact-reconstruction-v2/`
-
-Correct concatenated base64 SHA-256:
+Exact reconstruction-v2 base64 SHA-256:
 
 `cb0bf7d1b467e8e28e1f083ed572ee4bb021034c0f2d3cffc734437648cc9d8f`
 
@@ -58,19 +50,13 @@ Do not reopen Step 0 without a concrete later harness failure.
 
 ## Step 1 — CLOSED / ACCEPTED
 
-Step: Contract + Capability layer.
-
 Original production-logic SHA:
 
 `370e45a1803976f43d27d5a9d4b5613e09a91623`
 
-Exact reconstruction-v2 validation target:
+Accepted reconstruction-v2 validation target:
 
 `298a4d618c69e8ffd33735ff96a153d42d160143`
-
-Accepted validation branch:
-
-`validation/ozon-step1-contract-capability-retest-v2-2026-08-17`
 
 Accepted report commit:
 
@@ -80,185 +66,156 @@ Verdict:
 
 `STEP1_ACCEPTED_FOR_STEP2`
 
-Preserve Step-1 invariants:
+Preserve strict contract validation, one Seller capability probe max per relevant batch, zero probe universal/performance, seller-info privacy/non-AI-callability, entitlement semantics and previous-worker no-reprobe behavior.
 
-- strict validation before business execution;
-- at most one internal `/v1/seller/info` capability probe per relevant clicked batch;
-- zero Seller probes for universal/performance-only batches;
-- seller-info raw identity/rating data never reaches AI output;
-- UNKNOWN capability never means “no subscription”;
-- entitlement plan precedes business execution;
-- partial analytics strips only unavailable metrics when semantics remain valid;
-- restricted dimension/sort/filter constraints are never silently removed;
-- no blind capability re-probe after unknown in-flight worker restart;
-- logical/physical fingerprints are distinct when Step-1 planning transforms a command.
+## Step 2 — CLOSED / ACCEPTED
 
-Accepted Step-1 changed production hashes:
-
-- `service_worker.js` — `b594872cff8f7049a441ffe8fe422d761069a14a48a1d32e7e54f568c7f0502a`
-- `shared/ozon_contract.js` — `b8f39ded0163f45714eebff7f8c1a35242712918df5568935fbc77a442cc2987`
-- `shared/ozon_provider.js` — `5e6d6bdf47e2561b0a015836d5a0f1c5ed28bd2a9625e84aadfdc49ab17deb74`
-
-## Step 2 — IMPLEMENTED / FROZEN / VALIDATION PENDING
-
-Step: Query planner + safe coalescing.
-
-Branch base / Step-1 acceptance decision:
-
-`c8d6a10b63b7c02095a6cc6626f5aa508e16a8bd`
-
-**Frozen Step-2 implementation target:**
+Frozen implementation target:
 
 `93c1eae13f518d92d53bbf1af4793b35d26bc5d3`
 
-Do not substitute moving branch HEAD when testing.
+Patch SHA-256:
 
-Step-2 evidence:
+`93e40b59c9128f58b794f2f736377f10777054f51a5de20b25524077c430128b`
 
-`development/step2-query-planner-coalescing/STEP2_IMPLEMENTATION_AND_LOCAL_EVIDENCE.md`
-
-Patch manifest:
-
-`development/step2-query-planner-coalescing/PATCH_PARTS.md`
-
-Concatenated Step-2 patch:
-
-- size `35644`
-- SHA-256 `93e40b59c9128f58b794f2f736377f10777054f51a5de20b25524077c430128b`
-
-Step-2 candidate changed production hashes relative to accepted Step 1:
-
-- `service_worker.js` — `6e50b48a9e908a055f815cc5d683ae565043317fffe050a57eeedc791961996f`
-- `shared/ozon_contract.js` — `f75c45e29035c82115eb22da36cad5e4fba53ec04f6bfdd7080557587da06bac`
-- `shared/ozon_provider.js` — `983b54fbe78e34c02555b28532792b6c786f200da9e85b67e310e023054e5f8d`
-
-Exactly those three production files differ from accepted Step 1. The other fourteen production files remain byte-identical.
-
-The Step-1 `ensureBatchCapabilityAndPlanning` body remains byte-identical, expected SHA-256:
-
-`9aaf433de7baddd52c19e75aef237e3e852aa35519116e09a8fa288177417a9c`
-
-Existing delivery/finalization functions were checked byte-identical where Step 2 does not need to change them.
-
-### Step-2 behavior
-
-Coalescing happens only after Step-1 capability/entitlement planning.
-
-Only contiguous compatible `analytics_data` logical commands are coalesced. Contiguous-only behavior preserves physical execution order around unrelated operations.
-
-Compatibility preserves all executable physical params except metrics. Therefore different date range, dimensions, filters, sort, offset, limit/window or other normalized physical semantics are not merged.
-
-Different limits are intentionally not coalesced.
-
-Metric union preserves deterministic first-seen order and cannot exceed 14.
-
-Duplicate metric positions inside one logical executable command make that command ineligible for coalescing rather than guessing duplicate semantics.
-
-For one coalesced group:
-
-- all members are durably marked requesting under one worker session before provider execution;
-- exactly one physical provider attempt is made;
-- each original logical command receives its own distinct result/request ID;
-- all logical results record shared physical request/fingerprint/group provenance;
-- each logical result exposes only its own executable metrics in original logical metric order;
-- Step-1 omitted/restricted metadata remains attached to that logical command;
-- no extra AI-visible result is created for the physical request;
-- all group logical results are stored atomically before advancing queue index.
-
-Projection validates metric cardinality. An ambiguous/inconsistent response fails closed with `ANALYTICS_COALESCED_RESPONSE_UNPROJECTABLE`, records the already executed physical request, creates logical safe errors, and performs no retry.
-
-Provider HTTP error fans out one safe logical error per group member with shared physical provenance; no retry/scheduler is introduced.
-
-Worker restart while a coalesced group is durably requesting under an older worker session performs zero replay and uses accepted unknown-outcome no-retry behavior.
-
-### Local evidence
-
-Local executable tests used mocked provider transport only. `REAL_OZON_REQUESTS = 0`.
-
-PASS included:
-
-- compatibility/incompatibility matrix;
-- metric projection/order and cardinality fail-closed cases;
-- provider safe internal sanitized result;
-- 3 compatible logical analytics => 1 physical call + 3 logical results;
-- different limit => no merge;
-- contiguous-only grouping;
-- 15th unique metric stays outside a 14-metric group;
-- Step-1 partial entitlement metadata preserved through coalescing;
-- restart no-retry;
-- provider HTTP error fanout;
-- thrown execution one physical attempt identity;
-- 30 recent `product_queries` => 1 capability probe + 30 business calls;
-- 30 universal analytics => 0 probes + 1 physical analytics call;
-- Performance-only => 0 Seller probes and no analytics coalescing;
-- all production JS syntax;
-- fresh reconstruction from accepted Step 1 + Step-2 patch was byte-identical to tested candidate.
-
-Local evidence is not independent acceptance.
-
-## Step-2 Codex validation gate
-
-Standalone plan path:
-
-`validation/plans/OZON_STEP2_QUERY_PLANNER_COALESCING_CODEX_VALIDATION_2026-08-17.md`
-
-Plan documentation commit:
-
-`f628f5c6bd85e925ddf96bea672f6aa080ff5377`
-
-Expected validation branch:
+Accepted validation branch:
 
 `validation/ozon-step2-query-planner-coalescing-2026-08-17`
 
+Accepted report ref supplied by Codex and independently readable via GitHub:
+
+`be7be62`
+
+Verdict:
+
+`STEP2_ACCEPTED_FOR_STEP3`
+
+Step-2 acceptance decision commit:
+
+`51a0b16c51a60b2dc8e656b7fd41eb6d60c446ad`
+
+Preserve contiguous-only compatible `analytics_data` coalescing, deterministic metric union <=14, no different-limit merge, one physical request -> separate logical results/provenance, durable requesting ownership and previous-worker no-replay.
+
+## Step 3 — IMPLEMENTED / FROZEN / VALIDATION PENDING
+
+Step: global analytics quota scheduler + response verifier + safe errors.
+
+Development branch:
+
+`dev/ozon-v0.1.19-step3-quota-verifier-errors-2026-08-17`
+
+Branch base:
+
+`51a0b16c51a60b2dc8e656b7fd41eb6d60c446ad`
+
+**Frozen Step-3 implementation target:**
+
+`eae8988f5baf8c7ead5a82371c9b1057295c906d`
+
+Do not test the later moving dev HEAD.
+
+Evidence:
+
+`development/step3-quota-verifier-errors/STEP3_IMPLEMENTATION_AND_LOCAL_EVIDENCE.md`
+
+Patch manifest:
+
+`development/step3-quota-verifier-errors/PATCH_PARTS.md`
+
+Patch:
+
+- size `42730`
+- SHA-256 `9eee85d648a212e96658514dea8f031223d255cf93c7c73a14107c50817919f5`
+
+Exactly six production files differ from accepted Step 2:
+
+- `manifest.json` `6e314da445166d390a32f3f3afdfdf86a97e2af6eeed0c3cd4a47d34d60550da`
+- `service_worker.js` `bfe2aa15b09f48dffb2dd7ff913f6b527c07fca09e462759dffb30d9dd72c514`
+- `shared/ozon_contract.js` `e303b74b266c685f1ae20b9e3b726211f7b65c56490a3ed09693b84489e58b45`
+- `shared/ozon_provider.js` `16e8f85303e7a6a57d0fc76a6ea0e2e9dd8537341fa57397b38b0c0d52dda97b`
+- `shared/provider_transport_core.js` `7c346ad77dce1bbac73a2170f2f07fe6845f52a10a5b30f448afef2b80c5abb8`
+- `shared/runtime_names.js` `f66a4fc004a59981c59f715ba335c4b2b4b8f750789befb17b045894bb55ac24`
+
+Other eleven production files are byte-identical. AI DOM/composer surfaces are unchanged. The only manifest permission addition is `alarms`; host permissions are unchanged.
+
+### Step-3 scheduler behavior
+
+Explicit persistent quota family:
+
+`seller.analytics_data.v1`
+
+Minimum interval:
+
+`60000 ms`
+
+The bucket is Seller-account scoped and global across ChatGPT, Alice, tabs and conversations. Same Seller Client-Id survives API-key rotation as one account bucket; credential revision changes. Different Seller accounts remain independent. Raw Client-Id/Api-Key are not stored in quota state or emitted to AI.
+
+No generic 60-second interval is invented for other Seller/Performance operations. Internal `/v1/seller/info` capability probes do not consume the analytics-data quota bucket.
+
+Concurrent acquisition uses serialized persistent read-modify-write; only one permit can be granted for a same-account window. One Step-2 coalesced physical analytics group consumes one permit.
+
+Blocked owner state is durably `quota_waiting` before provider execution. `chrome.alarms` and startup recovery resume due waits after MV3 suspension/restart. Existing no-replay behavior for already-`requesting` provider attempts remains intact.
+
+Retry-After only extends effective `next_allowed_at` and cannot shorten it. There is no automatic provider retry.
+
+### Step-3 verifier/errors
+
+Successful `analytics_data` verifies provider result/data/totals metric cardinality before logical projection. Mismatch fails `PROVIDER_RESPONSE_CONTRACT_MISMATCH` after one physical attempt, with no retry or guessed mapping.
+
+Provider errors are sanitized structured data; raw bodies/secrets are withheld. Fetch/network throws are recorded as attempted external requests. Pre-fetch credential/quota-state failures execute zero provider calls and report external=false.
+
+### Local evidence
+
+All provider behavior mocked; `REAL_OZON_REQUESTS = 0`.
+
+PASS covered concurrent quota, cross-conversation same-account wait, different-account independence, key rotation, raw credential privacy, durable wait/restart/alarm, one coalesced permit, Retry-After extension-only, quota-storage fail-closed, missing credentials zero-provider, analytics verifier, 429 sanitization, transport provenance, Step-1/Step-2/Performance regressions, syntax/manifest/diff, and fresh 17/17 patch reconstruction.
+
+Eight GitHub patch parts were verified after transport by exact size and Git blob SHA.
+
+Local evidence is not independent acceptance.
+
+## Step-3 Codex validation gate
+
+Standalone plan:
+
+`validation/plans/OZON_STEP3_QUOTA_VERIFIER_ERRORS_CODEX_VALIDATION_2026-08-17.md`
+
+Plan commit:
+
+`2adf85e78cf21fbe8828be7c3dfdc4f000635450`
+
+Expected validation branch:
+
+`validation/ozon-step3-quota-verifier-errors-2026-08-17`
+
 Expected report:
 
-`validation/reports/OZON_STEP2_QUERY_PLANNER_COALESCING_VALIDATION_2026-08-17.md`
-
-At the time of this handoff update the validation branch does not exist yet.
+`validation/reports/OZON_STEP3_QUOTA_VERIFIER_ERRORS_VALIDATION_2026-08-17.md`
 
 Immediate next action:
 
-1. operator sends the full standalone Step-2 prompt to Codex;
-2. Codex tests exact target `93c1eae13f518d92d53bbf1af4793b35d26bc5d3` using mocked provider transport and accepted Windows harness;
-3. Codex creates report-only validation branch and STOPs;
-4. ChatGPT reads the full GitHub report and either accepts Step 2 for Step 3 or performs one bounded Step-2 repair;
-5. do not start Step 3 before this gate is resolved.
-
-## Step 3 — BLOCKED
-
-Future scope only after Step-2 acceptance:
-
-- global Seller account / quota-family scheduler;
-- persistent `last_provider_request_at` / `next_allowed_at` state;
-- `/v1/analytics/data` one-per-minute coordination across tabs/AIs;
-- Retry-After scheduling without hidden retry;
-- broader response verifier and sanitized error normalization.
-
-Step 2 intentionally does not implement these scheduler behaviors.
+1. send the full standalone Step-3 prompt to Codex;
+2. Codex tests exact target `eae8988f5baf8c7ead5a82371c9b1057295c906d` with mocked providers and accepted Windows harness;
+3. Codex publishes report-only validation branch and STOPs;
+4. ChatGPT reviews the full live GitHub report;
+5. only `STEP3_ACCEPTED_FOR_STEP4` unlocks Step 4; any load-bearing fail triggers one bounded Step-3 repair only.
 
 ## Step 4 — BLOCKED
 
-Future scope after Step 3:
-
-- verified cache/prefetch;
-- safe reusable provider supersets;
-- deterministic semantic acquisition profiles where reviewed;
-- integrated multi-tab/multi-AI and final controlled live acceptance.
+Do not implement cache/prefetch, semantic acquisition profiles, integrated multi-AI final acceptance or live provider acceptance until Step 3 is independently accepted.
 
 ## Standing protected invariants
 
 - Native Copy structurally anchors the exact code block.
-- Ozon button exists for every code block; parser alone decides whether Ozon commands exist.
+- Ozon button exists for every code block; parser alone decides API validity.
 - No block identity from command text/fingerprint.
 - One extension-owned top-level Shadow DOM overlay.
 - Multi-tab/conversation ownership independent; no global current conversation.
 - AI cannot inject arbitrary provider URL/host/method/headers/auth/credentials.
-- Credentials stay isolated.
-- Read-only provider surface; mutations blocked.
-- `posting_fbs_get` remains blocked for customer PII.
+- Credentials stay isolated; read-only surface and PII block remain.
 - No hidden provider retry/pagination/report polling.
 - No arbitrary generic bridge caps or silent result truncation.
-- Proven ChatGPT delivery FSM must not be rewritten by provider/planner work.
+- Proven ChatGPT delivery FSM is not rewritten by provider work; persistent “Начало диктовки” is not completion.
 - Alice lifecycle remains separately protected.
 
 ## Working-method authority
@@ -269,10 +226,10 @@ Future scope after Step 3:
 
 `STEP0 = ACCEPTED`
 
-`STEP1 = ACCEPTED_FOR_STEP2`
+`STEP1 = ACCEPTED`
 
-`STEP2 = FROZEN_WAITING_FOR_CODEX_VALIDATION`
+`STEP2 = ACCEPTED_FOR_STEP3`
 
-`STEP3 = BLOCKED`
+`STEP3 = FROZEN_WAITING_FOR_CODEX_VALIDATION`
 
 `STEP4 = BLOCKED`
