@@ -1,0 +1,112 @@
++    }
++
+     function safeErrorPayload(status, rawText, parsed) {
+       const candidate = parsed && typeof parsed === "object" ? parsed : null;
+       const rawCode = candidate?.code || candidate?.error?.code || candidate?.status || "OZON_API_ERROR";
+       const codeText = String(rawCode).trim();
+       const code = /^[A-Za-z0-9_.:-]{1,160}$/.test(codeText) ? codeText : "OZON_API_ERROR";
+       return Object.freeze({
++        source: "provider",
++        category: providerErrorCategory(status),
+         http_status: Number(status || 0),
+         code,
+-        message: "Ozon API request failed. Provider error text is withheld from LLM output; inspect local sanitized diagnostics."
++        message: "Ozon API request failed. Raw provider error text is withheld from AI output; inspect local sanitized diagnostics.",
++        automatic_retry: false,
++        external_request_executed: true
+       });
+     }
+ 
+@@ -1107,12 +1147,19 @@
+         .replace(/\b[A-Za-z0-9_\-]{32,}\b/g, "[REDACTED_SECRET]")
+         .replace(/\+?\d[\d ()-]{8,}\d/g, "[REDACTED_PHONE]")
+         .slice(0, 700);
++      const externalRequestExecuted = error?.external_request_executed === true || error?.request_attempted === true;
++      const category = code === "PROVIDER_RESPONSE_CONTRACT_MISMATCH" ? "provider_contract"
++        : code === "PROVIDER_FETCH_FAILED" ? "transport"
++        : code.startsWith("PROVIDER_QUOTA_") ? "rate_limit"
++        : "bridge_error";
+       return Object.freeze({
+         source: "bridge",
++        category,
+         http_status: Number(httpStatus || error?.http_status || 0),
+         code,
+         message,
+-        automatic_retry: false
++        automatic_retry: false,
++        external_request_executed: externalRequestExecuted
+       });
+     }
+ 
+@@ -1206,6 +1253,7 @@
+       analyticsCoalescingDescriptor,
+       buildAnalyticsCoalescedCommand,
+       projectAnalyticsDataResult,
++      verifyProviderResponse,
+       safeErrorPayload,
+       safeBridgeErrorPayload,
+       sellerCapabilityRequirement,
+diff --git a/shared/ozon_provider.js b/shared/ozon_provider.js
+index 9a142f93cfe7f3228511dce9a709b0d27e60de5a..d8b0d673fc67a933a0d6530a17fc2947dca4611b 100644
+--- a/shared/ozon_provider.js
++++ b/shared/ozon_provider.js
+@@ -24,6 +24,18 @@
+     return Array.isArray(found) ? found.length : null;
+   }
+ 
++  function safeQuotaRateMeta(quota, retryAfter = null) {
++    const source = quota && typeof quota === "object" ? quota : {};
++    const output = {};
++    if (source.family) output.quota_family = String(source.family).slice(0, 120);
++    if (Number.isFinite(Number(source.min_interval_ms))) output.min_interval_ms = Math.max(0, Number(source.min_interval_ms || 0));
++    if (Number.isFinite(Number(source.dispatched_at))) output.last_provider_request_at = Number(source.dispatched_at);
++    if (Number.isFinite(Number(source.next_allowed_at))) output.next_allowed_at = Number(source.next_allowed_at);
++    if (retryAfter) output.retry_after = String(retryAfter).slice(0, 160);
++    output.automatic_retry = false;
++    return Object.keys(output).length > 1 ? Object.freeze(output) : null;
++  }
++
+   function createOzonProvider({
+     contract = globalThis.OzonContract,
+     fetchImpl = globalThis.fetch,
+@@ -135,7 +147,7 @@
+       return { request, response, auth_request_performed: token.auth_request_performed === true };
+     }
+ 
+-    async function executeCommandObject(commandInput, rawCredentials, rawPerformanceCredentials = {}, { reportCommand = null, planning = null } = {}) {
++    async function executeCommandObject(commandInput, rawCredentials, rawPerformanceCredentials = {}, { reportCommand = null, planning = null, quota = null, onProviderResponse = null } = {}) {
+       const command = contract.normalizeCommand(commandInput);
+       const logicalCommand = reportCommand ? contract.normalizeCommand(reportCommand) : command;
+       if (logicalCommand.operation !== command.operation) {
+@@ -149,9 +161,34 @@
+         ? await executePerformanceCommand(command, rawPerformanceCredentials)
+         : await executeSellerCommand(command, rawCredentials);
+       const { request, response } = execution;
++      let effectiveQuota = quota;
++      if (typeof onProviderResponse === "function") {
++        try { effectiveQuota = await onProviderResponse({ command, request, response, quota }) || quota; }
++        catch (hookError) {
++          hookError.code = hookError.code || "PROVIDER_QUOTA_RESPONSE_HOOK_FAILED";
++          hookError.http_status = Number(response.httpStatus || 0);
++          hookError.external_request_executed = true;
++          hookError.response_meta = response.responseMeta;
++          throw hookError;
++        }
++      }
+       const requestId = String(uuid());
+       const errorPayload = response.ok ? null : contract.safeErrorPayload(response.httpStatus, response.rawText, response.parsed);
+-      const result = response.ok ? contract.sanitizeResult(command, response.parsed ?? response.rawText) : { error: errorPayload };
++      let result;
++      if (response.ok) {
++        try { contract.verifyProviderResponse(command, response.parsed ?? response.rawText); }
++        catch (verificationError) {
++          verificationError.code = verificationError.code || "PROVIDER_RESPONSE_CONTRACT_MISMATCH";
++          verificationError.http_status = Number(response.httpStatus || 0);
++          verificationError.external_request_executed = true;
++          verificationError.response_meta = response.responseMeta;
++          verificationError.rate_limit = safeQuotaRateMeta(effectiveQuota, response.responseMeta.retry_after);
++          throw verificationError;
++        }
++        result = contract.sanitizeResult(command, response.parsed ?? response.rawText);
++      } else {
++        result = { error: errorPayload };
