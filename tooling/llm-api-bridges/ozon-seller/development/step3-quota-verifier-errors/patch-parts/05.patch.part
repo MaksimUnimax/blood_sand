@@ -1,0 +1,96 @@
+           result = buildExecutionErrorResult(liveEntry.command, liveEntry.command_fingerprint, error, Date.now() - requestStartedAt, liveEntry.planning || null);
+@@ -2626,7 +2943,7 @@ function processBatchQueue({
+           status: "complete",
+           request_id: result.request_id || null,
+           http_status: Number(result.http_status || 0),
+-          external_request_executed: true,
++          external_request_executed: result.external_request_executed !== false && (result.external_request_executed === true || result.bridge_error !== true),
+           executed_command_fingerprint: result.executed_command_fingerprint || null,
+           report_text: String(result.report_text || ""),
+           request_completed_at: new Date().toISOString()
+@@ -2639,7 +2956,9 @@ function processBatchQueue({
+             entries: currentEntries,
+             next_index: nextIndex + 1,
+             request_state: "idle",
+-            request_worker_session_id: null
++            request_worker_session_id: null,
++            quota_wait: null,
++            request_quota: null
+           },
+           last_error: result.bridge_error ? {
+             code: result.error?.code || "OZON_BRIDGE_ERROR",
+@@ -2662,7 +2981,7 @@ function processBatchQueue({
+         request_id: result.request_id || null,
+         executed_command_fingerprint: result.executed_command_fingerprint || null,
+         http_status: Number(result.http_status || 0),
+-        external_request_executed: true
++        external_request_executed: result.external_request_executed !== false && (result.external_request_executed === true || result.bridge_error !== true)
+       });
+     }
+   });
+@@ -2847,6 +3166,8 @@ async function handleAutoMessage(message, sender) {
+         capability_resolution: null,
+         query_planning_state: "pending",
+         query_plan: null,
++        quota_wait: null,
++        request_quota: null,
+         created_at: new Date().toISOString()
+       }
+     };
+@@ -3492,6 +3813,14 @@ chrome.tabs.onRemoved.addListener((tabId) => {
+   void clearTabAIMode(tabId).catch(() => null);
+ });
+ 
++if (chrome.alarms?.onAlarm?.addListener) {
++  chrome.alarms.onAlarm.addListener((alarm) => {
++    if (String(alarm?.name || "") !== PROVIDER_QUOTA_ALARM) return;
++    void resumeProviderQuotaWaits();
++  });
++}
++setTimeout(() => { void resumeProviderQuotaWaits(); }, 0);
++
+ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+   (async () => {
+     switch (message?.type) {
+diff --git a/shared/ozon_contract.js b/shared/ozon_contract.js
+index 0f34674fe3afecd880b273358144b28e895e2831..dc1a3ef59d2a6abe08a8951acd6685056aa95b8b 100644
+--- a/shared/ozon_contract.js
++++ b/shared/ozon_contract.js
+@@ -1083,15 +1083,55 @@
+       return deepFreeze(projected);
+     }
+ 
++    function providerErrorCategory(status) {
++      const code = Number(status || 0);
++      if (code === 429) return "rate_limit";
++      if (code === 401 || code === 403) return "auth_or_permission";
++      if (code >= 500) return "provider_server";
++      if (code >= 400) return "provider_request";
++      return "provider_error";
++    }
++
++    function verifyProviderResponse(command, rawResult) {
++      const normalized = normalizeCommand(command);
++      if (rawResult === null || rawResult === undefined) fail("PROVIDER_RESPONSE_CONTRACT_MISMATCH", `${normalized.operation}: provider response body отсутствует.`);
++      if (normalized.operation !== "analytics_data") return deepFreeze({ verified: true, operation: normalized.operation, rule: "sanitization_only" });
++      if (!rawResult || typeof rawResult !== "object" || Array.isArray(rawResult)) fail("PROVIDER_RESPONSE_CONTRACT_MISMATCH", "analytics_data response должен быть JSON object.");
++      const result = rawResult.result;
++      if (!result || typeof result !== "object" || Array.isArray(result)) fail("PROVIDER_RESPONSE_CONTRACT_MISMATCH", "analytics_data response.result отсутствует или имеет неподдерживаемую форму.");
++      const expectedMetrics = Array.isArray(normalized.params.metrics) ? normalized.params.metrics.length : 0;
++      if (!expectedMetrics) fail("PROVIDER_RESPONSE_CONTRACT_MISMATCH", "analytics_data verification requires a non-empty physical metrics list.");
++      let verifiedSurface = false;
++      if (Object.prototype.hasOwnProperty.call(result, "data")) {
++        if (!Array.isArray(result.data)) fail("PROVIDER_RESPONSE_CONTRACT_MISMATCH", "analytics_data result.data должен быть массивом.");
++        for (let index = 0; index < result.data.length; index += 1) {
++          const row = result.data[index];
++          if (!row || typeof row !== "object" || Array.isArray(row)) fail("PROVIDER_RESPONSE_CONTRACT_MISMATCH", `analytics_data result.data[${index}] должен быть объектом.`);
++          if (!Array.isArray(row.metrics) || row.metrics.length !== expectedMetrics) fail("PROVIDER_RESPONSE_CONTRACT_MISMATCH", `analytics_data result.data[${index}].metrics cardinality не совпадает с physical request.`);
++        }
++        verifiedSurface = true;
++      }
++      if (Object.prototype.hasOwnProperty.call(result, "totals")) {
++        if (!Array.isArray(result.totals) || result.totals.length !== expectedMetrics) fail("PROVIDER_RESPONSE_CONTRACT_MISMATCH", "analytics_data result.totals cardinality не совпадает с physical request.");
++        verifiedSurface = true;
++      }
++      if (!verifiedSurface) fail("PROVIDER_RESPONSE_CONTRACT_MISMATCH", "analytics_data response не содержит проверяемой metrics surface.");
++      return deepFreeze({ verified: true, operation: normalized.operation, metric_count: expectedMetrics, rule: "analytics_metric_cardinality" });
