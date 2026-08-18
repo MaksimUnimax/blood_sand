@@ -1,0 +1,115 @@
+     completed_at: operation.completed_at || null,
++    quota_wait: publicQuotaWait(operation),
+     last_error: operation.last_error || null
+   };
+ }
+@@ -144,6 +179,7 @@
+     batch_completed: run.batch ? Math.max(0, Number(run.batch.next_index || 0)) : 0,
+     created_at: run.created_at || null,
+     updated_at: run.updated_at || null,
++    quota_wait: publicQuotaWait(run),
+     last_error: run.last_error || null
+   };
+ }
+--- a/content_script.js
++++ b/content_script.js
+@@ -63,6 +63,11 @@
+   let autoTickInFlight = false;
+   let identityPollTimer = null;
+   let lastObservedConversationKey = null;
++  let quotaWaitCountdownTimer = null;
++  let quotaWaitProbeTimer = null;
++  let quotaWaitProbeDeadline = 0;
++  let activeQuotaWait = null;
++  const QUOTA_WAIT_TOAST_KEY = "provider-quota-wait";
+ 
+   const prior = globalThis[RUNTIME_KEY];
+   if (prior?.dispose) { try { prior.dispose(); } catch (_) {} }
+@@ -261,6 +266,98 @@
+     return item;
+   }
+ 
++  function updateToastText(key, text) {
++    const item = statusToastByKey.get(String(key || ""));
++    if (!item) return false;
++    const first = item.firstChild;
++    if (first && first.nodeType === Node.TEXT_NODE) first.nodeValue = String(text || "");
++    else item.insertBefore(document.createTextNode(String(text || "")), item.firstChild || null);
++    return true;
++  }
++
++  function publicQuotaWaitFromState(response) {
++    const manual = response?.manual_operation?.quota_wait;
++    if (manual && Number(manual.next_allowed_at || 0) > 0) return manual;
++    const auto = response?.auto_run?.quota_wait;
++    if (auto && Number(auto.next_allowed_at || 0) > 0) return auto;
++    return null;
++  }
++
++  function formatLocalClock(epochMs) {
++    try {
++      return new Date(Number(epochMs)).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
++    } catch (_) { return "--:--:--"; }
++  }
++
++  function stopQuotaWaitProbe() {
++    if (quotaWaitProbeTimer) clearInterval(quotaWaitProbeTimer);
++    quotaWaitProbeTimer = null;
++    quotaWaitProbeDeadline = 0;
++  }
++
++  function stopQuotaWaitCountdown({ clear = true } = {}) {
++    if (quotaWaitCountdownTimer) clearInterval(quotaWaitCountdownTimer);
++    quotaWaitCountdownTimer = null;
++    activeQuotaWait = null;
++    if (clear) clearToast(QUOTA_WAIT_TOAST_KEY);
++  }
++
++  function quotaWaitText(wait, now = Date.now()) {
++    const due = Number(wait?.next_allowed_at || 0);
++    if (!due) return "";
++    const remainingMs = Math.max(0, due - Number(now));
++    if (remainingMs <= 0) return "Лимит Ozon снят — отправляем запрос…";
++    const seconds = Math.ceil(remainingMs / 1000);
++    const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
++    const ss = String(seconds % 60).padStart(2, "0");
++    return [
++      "Ожидание лимита Ozon",
++      `Ограничение частоты запросов Ozon. Следующий запрос через ${mm}:${ss}.`,
++      "Запрос сохранён и выполнится автоматически. Повторно нажимать не нужно.",
++      `Следующая попытка: ${formatLocalClock(due)}`
++    ].join("\n");
++  }
++
++  function renderQuotaWait(wait) {
++    const due = Number(wait?.next_allowed_at || 0);
++    if (!due) { stopQuotaWaitCountdown(); return false; }
++    const same = Number(activeQuotaWait?.next_allowed_at || 0) === due;
++    activeQuotaWait = { ...wait, next_allowed_at: due };
++    const text = quotaWaitText(activeQuotaWait);
++    if (!same || !statusToastByKey.has(QUOTA_WAIT_TOAST_KEY)) toast(text, "info", 0, QUOTA_WAIT_TOAST_KEY);
++    else updateToastText(QUOTA_WAIT_TOAST_KEY, text);
++    if (!quotaWaitCountdownTimer) {
++      quotaWaitCountdownTimer = setInterval(() => {
++        if (!current() || !activeQuotaWait) return;
++        updateToastText(QUOTA_WAIT_TOAST_KEY, quotaWaitText(activeQuotaWait));
++      }, 1000);
++    }
++    return true;
++  }
++
++  function syncQuotaWaitFromState(response) {
++    const wait = publicQuotaWaitFromState(response);
++    if (wait) { stopQuotaWaitProbe(); return renderQuotaWait(wait); }
++    if (response?.ready === true || response?.manual_operation_active === false) stopQuotaWaitCountdown();
++    return false;
++  }
++
++  function startQuotaWaitProbe() {
++    stopQuotaWaitProbe();
++    quotaWaitProbeDeadline = Date.now() + 5000;
++    const probe = async () => {
++      if (!current() || !manualEnabled || Date.now() > quotaWaitProbeDeadline) { stopQuotaWaitProbe(); return; }
++      const key = conversationKeyFromLocation();
++      if (!key || key !== manualConversationKey) { stopQuotaWaitProbe(); return; }
++      const response = await sendRuntime("OZ_GET_MANUAL_STATE", { conversation_key: key });
