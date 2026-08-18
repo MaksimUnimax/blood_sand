@@ -1,0 +1,59 @@
+  const toastText=()=>page.evaluate(()=>document.querySelector('#ozon-llm-api-bridge-toast-root')?.innerText||'');
+  const ownButtons=()=>page.evaluate(()=>{const out=[];for(const el of document.querySelectorAll('*'))if(el.shadowRoot)for(const b of el.shadowRoot.querySelectorAll('button'))if((b.textContent||'').trim().startsWith('Ozon'))out.push({text:(b.textContent||'').trim(),disabled:b.disabled,title:b.title});return out;});
+  const setText=async text=>page.evaluate(value=>{const el=document.querySelector('#prompt-textarea');const setter=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;setter.call(el,value);el.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertText',data:value}));el.dispatchEvent(new Event('change',{bubbles:true}));},text);
+
+  // A. Claimed report + occupied composer -> persistent wait -> one insertion/send -> completion.
+  await seed(makeOp('wait','REPORT_FROM_PENDING_DELIVERY'));
+  await page.reload({waitUntil:'domcontentloaded',timeout:10000});
+  await waitFor(async()=>/Очистите поле ввода, чтобы получить отчёт\./.test(await toastText()));
+  assert(await page.$eval('#prompt-textarea',el=>el.value)==='operator draft','occupied composer text was mutated');
+  await new Promise(r=>setTimeout(r,2300));
+  assert(/Очистите поле ввода, чтобы получить отчёт\./.test(await toastText()),'composer-wait plate auto-expired');
+  const busyButtons=await ownButtons();assert(busyButtons.length>0&&busyButtons.some(x=>x.disabled),'Ozon button not busy during pending report');
+  await page.click('#native-copy');assert(await page.evaluate(()=>window.__nativeCopyClicks)===1,'native Copy lost independence while waiting');
+  await setText('');
+  await waitFor(async()=>await page.evaluate(()=>window.__sendClicks)===1,6000);
+  assert(await page.evaluate(()=>window.__sentText)==='REPORT_FROM_PENDING_DELIVERY','wrong report text inserted/sent');
+  await new Promise(r=>setTimeout(r,500));
+  assert(await page.evaluate(()=>window.__sendClicks)===1,'staged delivery clicked Send more than once');
+  await waitFor(async()=>!(await swEval(`chrome.storage.local.get('ozmb_manual_operations').then(x=>Boolean(x.ozmb_manual_operations?.[${JSON.stringify(key)}]))`)),5000);
+  assert(!/Очистите поле ввода, чтобы получить отчёт\./.test(await toastText()),'wait plate remained after insertion/completion');
+  console.log('FULL_BROWSER_MANUAL_OCCUPIED_PLATE_PERSIST_PASS');
+  console.log('FULL_BROWSER_MANUAL_CLEAR_INSERT_ONCE_PASS');
+  console.log('FULL_BROWSER_MANUAL_EXISTING_SEND_MICROPHONE_PASS');
+  console.log('FULL_BROWSER_NATIVE_COPY_WHILE_WAITING_PASS');
+
+  // B. New claimed report -> Manual OFF cancels only pending report; quota/cache survive; OFF->ON restores readiness.
+  await setText('operator draft 2');
+  await page.evaluate(()=>{window.__sendClicks=0;window.__sentText=null;const b=document.querySelector('#send');b.dataset.testid='send-button';b.setAttribute('aria-label','Send');b.textContent='Send';});
+  await seed(makeOp('cancel','REPORT_MUST_BE_CANCELLED'));
+  await page.reload({waitUntil:'domcontentloaded',timeout:10000});
+  await waitFor(async()=>/Очистите поле ввода, чтобы получить отчёт\./.test(await toastText()));
+  const beforeQuota=await swEval(`chrome.storage.local.get('ozmb_provider_quota_state_v1').then(x=>JSON.stringify(x.ozmb_provider_quota_state_v1))`);
+  const beforeCache=await swEval(`chrome.storage.local.get('ozmb_provider_result_cache_v1').then(x=>JSON.stringify(x.ozmb_provider_result_cache_v1))`);
+  const off=await swEval(`chrome.runtime.sendMessage(${JSON.stringify({type:'OZ_SET_MANUAL_MODE',enabled:false,conversation_key:key,tab_id:tab})})`);assert(off?.ok===true&&off.enabled===false,'Manual OFF rejected');
+  await swEval(`new Promise(r=>chrome.tabs.sendMessage(${tab},${JSON.stringify({type:'OZ_APPLY_MANUAL_MODE',enabled:false,conversation_key:key})},x=>r(x||null)))`);
+  await waitFor(async()=>!(await swEval(`chrome.storage.local.get('ozmb_manual_operations').then(x=>Boolean(x.ozmb_manual_operations?.[${JSON.stringify(key)}]))`)));
+  await waitFor(async()=>!/Очистите поле ввода, чтобы получить отчёт\./.test(await toastText()));
+  assert(await swEval(`chrome.storage.local.get('ozmb_provider_quota_state_v1').then(x=>JSON.stringify(x.ozmb_provider_quota_state_v1))`)===beforeQuota,'Manual OFF mutated quota state');
+  assert(await swEval(`chrome.storage.local.get('ozmb_provider_result_cache_v1').then(x=>JSON.stringify(x.ozmb_provider_result_cache_v1))`)===beforeCache,'Manual OFF mutated cache state');
+  assert(await page.$eval('#prompt-textarea',el=>el.value)==='operator draft 2','Manual OFF mutated operator draft');
+  const on=await swEval(`chrome.runtime.sendMessage(${JSON.stringify({type:'OZ_SET_MANUAL_MODE',enabled:true,conversation_key:key,tab_id:tab})})`);assert(on?.ok===true&&on.enabled===true,'Manual ON rejected');
+  await swEval(`new Promise(r=>chrome.tabs.sendMessage(${tab},${JSON.stringify({type:'OZ_APPLY_MANUAL_MODE',enabled:true,conversation_key:key})},x=>r(x||null)))`);
+  await waitFor(async()=>{const bs=await ownButtons();return bs.length>0&&bs.some(x=>!x.disabled);});
+  assert(await swEval(`chrome.storage.local.get('ozmb_provider_quota_state_v1').then(x=>JSON.stringify(x.ozmb_provider_quota_state_v1))`)===beforeQuota,'OFF->ON changed quota state');
+  await setText('');await new Promise(r=>setTimeout(r,2300));
+  assert(await page.evaluate(()=>window.__sendClicks)===0,'cancelled old report inserted after OFF->ON');
+  assert((await page.$eval('#prompt-textarea',el=>el.value))==='','cancelled old report reappeared after composer clear');
+  console.log('FULL_BROWSER_MANUAL_OFF_CANCEL_PENDING_PASS');
+  console.log('FULL_BROWSER_MANUAL_OFF_ON_READY_PASS');
+  console.log('FULL_BROWSER_MANUAL_OFF_ON_QUOTA_CACHE_PRESERVED_PASS');
+  console.log('FULL_BROWSER_CANCELLED_REPORT_NEVER_REAPPEARS_PASS');
+
+  assert(providerNetwork.length===0,`provider network observed: ${providerNetwork.join(',')}`);
+  console.log('REAL_OZON_REQUESTS=0');
+  console.log('REAL_PERFORMANCE_REQUESTS=0');
+  console.log('OZON_COMPOSER_WAIT_BROWSER_HARNESS_PASS');
+} finally {
+  try{await browser.close();}catch(_){};try{child.kill('SIGTERM');}catch(_){};try{fs.rmSync(profile,{recursive:true,force:true});}catch(_){}
+}
