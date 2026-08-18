@@ -59,7 +59,7 @@ No popup, contract, provider, credentials, transport, runtime-names, manifest, A
 
 ## Targeted executable regression harness
 
-The canonical GitHub test bytes are the concatenation of these three files exactly as stored in GitHub. They intentionally define the authority; do not substitute a local pre-upload copy.
+The canonical GitHub test bytes are the concatenation of these four files exactly as stored in GitHub. They intentionally define the authority; do not substitute a local pre-upload copy.
 
 1. `targeted-test-parts/00.mjs.part`
    - bytes: `7975`
@@ -73,17 +73,21 @@ The canonical GitHub test bytes are the concatenation of these three files exact
    - bytes: `4234`
    - SHA-256: `8d44fc9bb0ac49d7341a11159ba20d07fcd7ffa0f2ab30c7a604636f27cfc570`
    - Git blob SHA: `10638ac5c70d07af7f68e51259113e8be63289f4`
+4. `targeted-test-parts/03.mjs.part`
+   - bytes: `1826`
+   - SHA-256: `68f34f7d43955d33649547b34bb773dc9424923b1fc5519ab77092c368cd530a`
+   - Git blob SHA: `42a8e9ee07138eadf62cad80fa584fa532cfc65f`
 
 Reconstruct exactly:
 
 ```bash
-cat targeted-test-parts/00.mjs.part targeted-test-parts/01.mjs.part targeted-test-parts/02.mjs.part > TARGETED_COMPOSER_WAIT_REGRESSION.mjs
+cat targeted-test-parts/00.mjs.part targeted-test-parts/01.mjs.part targeted-test-parts/02.mjs.part targeted-test-parts/03.mjs.part > TARGETED_COMPOSER_WAIT_REGRESSION.mjs
 ```
 
 Expected canonical harness:
 
-- bytes: `20116`
-- SHA-256: `ba5f90e3dcde4cf877e81d645f2b724e545a314ccd07e4f7e0588a11142283ad`
+- bytes: `21942`
+- SHA-256: `ac228da5aef263aa219baac951de3ab6756eb7eaba668054cd1c72985cc32787`
 
 Run:
 
@@ -108,6 +112,7 @@ A passing repaired candidate must emit all of:
 - `TARGETED_COMPOSER_WAIT_RESTART_RESTORE_PASS`
 - `TARGETED_MANUAL_OFF_STOPS_COMPOSER_WAIT_PASS`
 - `TARGETED_MANUAL_COMPOSER_WAIT_HELPER_PRESENT_PASS`
+- `TARGETED_MISSING_COMPOSER_ENTERS_WAIT_PASS`
 - `TARGETED_COMPOSER_WAIT_REGRESSION_PASS`
 
 ## Exact frozen-content compatibility evidence
