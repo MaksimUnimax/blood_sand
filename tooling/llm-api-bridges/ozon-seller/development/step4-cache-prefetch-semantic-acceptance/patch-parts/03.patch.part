@@ -1,0 +1,104 @@
++    planning
++  });
++  return Object.freeze({
++    ok: true,
++    cache_hit: true,
++    request_id: requestId,
++    physical_request_id: null,
++    operation: command.operation,
++    command_fingerprint: String(entry.command_fingerprint || OzonContract.commandFingerprint(command)),
++    executed_command_fingerprint: executionFingerprint,
++    http_status: Number(cacheHit?.http_status || 200),
++    report_text: reportText,
++    result: cacheHit.result,
++    external_request_executed: false,
++    cache: cacheMeta
++  });
++}
++
++function projectPrefetchedSingleResult(entry, providerResult, profile) {
++  if (providerResult?.ok !== true || !profile?.applicable) return providerResult;
++  const executionCommand = OzonContract.normalizeCommand(entry.execution_command || entry.command);
++  const requestedMetrics = Array.isArray(executionCommand.params?.metrics) ? executionCommand.params.metrics : [];
++  const physicalMetrics = Array.isArray(profile.physical_metrics) ? profile.physical_metrics : requestedMetrics;
++  const projected = OzonContract.projectAnalyticsDataResult(providerResult.result, physicalMetrics, requestedMetrics);
++  const command = OzonContract.normalizeCommand(entry.command);
++  const preflight = OzonContract.preflightExecution(command);
++  const planning = acquisitionPlanning(entry.planning || null, profile);
++  const reportText = OzonContract.formatResultReport({
++    requestId: providerResult.request_id,
++    command,
++    requestMeta: {
++      host_alias: String(providerResult.provider || preflight.meta.provider || "seller_api"),
++      http_method: preflight.meta.method,
++      path_alias: command.operation,
++      external_request_executed: true,
++      capability_probe_executed: planning?.capability?.probe_performed === true,
++      capability_probe_http_status: Number(planning?.capability?.probe_http_status || 0),
++      physical_request_id: providerResult.request_id || null,
++      physical_command_fingerprint: providerResult.executed_command_fingerprint || OzonContract.commandFingerprint(profile.command)
++    },
++    httpStatus: Number(providerResult.http_status || 0),
++    result: projected,
++    elapsedMs: Number(providerResult.elapsed_ms || 0),
++    pagination: null,
++    rateLimit: providerResult.rate_limit || null,
++    planning
++  });
++  return Object.freeze({
++    ...providerResult,
++    report_text: reportText,
++    result: projected,
++    external_request_executed: true,
++    acquisition_profile: profile.profile_id || null
++  });
++}
++
+ async function persistBatchQuotaWait({ ownerKind, ownerId, nextIndex, quota, mutateOwner, ownerMatches, isCollecting, groupId = null }) {
+   let stored = false;
+   const safe = safeQuotaMetadata(quota);
+@@ -2687,6 +2937,55 @@ function processBatchQueue({
+           return { ok: false, code: "BATCH_QUERY_PLAN_NONCONTIGUOUS" };
+         }
+ 
++        const groupCacheHit = await readAnalyticsResultCacheForCurrentSettings(group.physical_command);
++        if (groupCacheHit.hit === true) {
++          const members = expectedIndexes.map((memberIndex) => owner.batch.entries[memberIndex]);
++          const virtualPhysicalResult = {
++            ok: true,
++            request_id: null,
++            physical_attempt_id: null,
++            provider: "seller_api",
++            executed_command_fingerprint: group.physical_command_fingerprint,
++            http_status: Number(groupCacheHit.http_status || 200),
++            result: groupCacheHit.result,
++            elapsed_ms: 0,
++            rate_limit: null,
++            external_request_executed: false,
++            cache: groupCacheHit.cache
++          };
++          const logicalResults = members.map((member) => buildCoalescedLogicalResult(member, group, virtualPhysicalResult));
++          let cacheStored = false;
++          owner = await mutateOwner((current) => {
++            if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++            if (Number(current.batch.next_index || 0) !== nextIndex) return current;
++            if (current.batch.request_state === "requesting") return current;
++            const currentEntries = [...(current.batch.entries || [])];
++            for (let offset = 0; offset < expectedIndexes.length; offset += 1) {
++              const memberIndex = expectedIndexes[offset];
++              const currentEntry = currentEntries[memberIndex];
++              const logicalResult = logicalResults[offset];
++              if (!currentEntry || currentEntry.status !== "pending" || !logicalResult) return current;
++              currentEntries[memberIndex] = {
++                ...currentEntry,
++                status: "complete",
++                request_id: logicalResult.request_id || null,
++                physical_request_id: null,
++                http_status: Number(logicalResult.http_status || 0),
++                external_request_executed: false,
++                executed_command_fingerprint: group.physical_command_fingerprint || null,
++                cache_hit: true,
++                report_text: String(logicalResult.report_text || ""),
++                request_completed_at: new Date().toISOString()
++              };
++            }
