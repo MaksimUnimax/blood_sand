@@ -1,0 +1,52 @@
++      if (!response?.ok) return;
++      if (syncQuotaWaitFromState(response)) return;
++      if (response.ready === true || response.manual_operation_active === false) stopQuotaWaitProbe();
++    };
++    quotaWaitProbeTimer = setInterval(() => { void probe(); }, 250);
++    void probe();
++  }
++
+   function visible(element) {
+     if (!(element instanceof Element) || !element.isConnected) return false;
+     const rect = element.getBoundingClientRect();
+@@ -436,6 +533,7 @@
+     const next = ready === true;
+     const changed = manualBridgeReady !== next;
+     manualBridgeReady = next;
++    if (next) stopQuotaWaitCountdown();
+     if (next && manualEnabled) decorateExistingBindings();
+     for (const record of OWN_BUTTONS.values()) renderOwnButton(record);
+     if (changed) recordContentDiagnostic(next ? "MANUAL_BRIDGE_READY" : "MANUAL_BRIDGE_BUSY", {
+@@ -478,6 +576,7 @@
+       if (!response?.ok || response.accepted !== true) throw Object.assign(new Error(response?.error || "Ozon Bridge не принял batch."), { code: response?.code || "BATCH_NOT_ACCEPTED" });
+       accepted = true;
+       toast(`Ozon: batch принят (${Number(response.item_count || 0)} элементов). Запросы выполняются строго последовательно; итог будет отправлен одним сообщением.`, "success", 7000, "operation-state");
++      startQuotaWaitProbe();
+     } catch (error) {
+       toast(`Ozon: ${error.message}`, "error", 0, "operation-state");
+     } finally {
+@@ -642,6 +741,7 @@
+     const enabled = response?.ok && response.enabled === true;
+     applyManualMode(enabled, key);
+     setManualBridgeReady(enabled && response.ready === true, "manual_state_sync");
++    syncQuotaWaitFromState(response);
+     return response;
+   }
+ 
+@@ -1870,6 +1970,7 @@
+     const manualModeEnabled = response?.ok && response.manual_mode === true;
+     applyManualMode(manualModeEnabled, key);
+     setManualBridgeReady(manualModeEnabled && !manualOperationLooksActive(response?.manual_operation), "content_state_sync");
++    syncQuotaWaitFromState(response);
+     if (response?.ok && response.auto_watch?.status === "waiting_command") beginAutoWatch(response.auto_watch);
+     else stopAutoWatch(response?.owner === false ? "duplicate_non_owner" : "sync_not_waiting");
+     if (response?.ok && response.manual_operation_owner !== false && response.manual_recovery) {
+@@ -2125,6 +2226,8 @@
+     try { restoreButtonPicker(); } catch (_) {}
+     if (identityPollTimer) clearInterval(identityPollTimer);
+     identityPollTimer = null;
++    stopQuotaWaitProbe();
++    stopQuotaWaitCountdown();
+     if (runtimeMessageListener) chrome.runtime.onMessage.removeListener(runtimeMessageListener);
+     runtimeMessageListener = null;
+     for (const key of [...statusToastByKey.keys()]) clearToast(key);
