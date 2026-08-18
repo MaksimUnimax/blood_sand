@@ -1,18 +1,34 @@
-# Ozon Bridge — development workflow with Codex validation gates
+# Ozon Bridge — development workflow with targeted engineering tests and final Codex handoff gate
 
 Date adopted: 2026-08-17
+Workflow correction adopted: 2026-08-18
 Status: active project workflow
 Scope: `tooling/llm-api-bridges/ozon-seller/`
 
 ## Purpose
 
-This document fixes the working method for further Ozon Bridge development. The goal is to make each major engineering step independently reproducible and testable without forcing the operator to download/reinstall an intermediate extension build after every code change.
+This document fixes the working method for further Ozon Bridge development.
+
+The central rule is now explicit:
+
+- **while implementation is in progress, test the code being changed and the dependencies directly affected by that change;**
+- **only immediately before an installable/testable build is handed to the operator, freeze the complete candidate and run the permanent project-wide full regression gate in one consolidated Codex execution.**
+
+The permanent full-handoff gate is:
+
+`OZON_BRIDGE_PRE_OPERATOR_HANDOFF_FULL_CODEX_GATE.md`
+
+It is a living acceptance contract and must evolve with production functionality.
+
+## Roles
 
 The workflow separates three roles:
 
-1. **ChatGPT engineering/review role** — architecture, implementation, documentation, Git branch/commit management, review of Codex evidence and the decision to accept/reject a step.
-2. **Codex Windows QA role** — independent execution of an exact validation plan against an exact frozen implementation SHA using the accepted Windows/Puppeteer/Chrome for Testing harness. Codex does not repair production code during a validation gate unless a later task explicitly assigns development work.
-3. **Operator role** — transfers the full standalone validation prompt to Codex and performs only the final real-profile/live acceptance gates that cannot be replaced by the synthetic/dedicated QA browser.
+1. **ChatGPT engineering/review role** — architecture, implementation, targeted development testing, documentation, Git branch/commit management, freeze/package preparation, review of Codex evidence and the decision to accept/reject the pre-operator handoff candidate.
+2. **Codex Windows QA role** — final independent execution of the exact full pre-operator handoff validation plan against one exact frozen implementation SHA using the accepted Windows/Puppeteer/Chrome for Testing harness. Codex does not repair production code during this gate.
+3. **Operator role** — receives a build only after the full consolidated Codex gate passes and performs the real-profile/live acceptance gates that cannot be replaced by synthetic/dedicated QA browser testing.
+
+Historical development steps that used independent Codex validation at intermediate milestones remain valid evidence of those milestones. Going forward, the standing development rule is targeted testing during implementation and one complete Codex regression gate immediately before operator handoff.
 
 ## Source of truth and branch roles
 
@@ -27,172 +43,246 @@ Canonical working branch:
 The canonical release lineage and development candidates must never be conflated.
 
 - `reference-*` directories are immutable version/evidence snapshots.
-- The canonical GitHub release lineage currently reaches `reference-0.1.11/`.
+- The canonical GitHub release lineage currently reaches `reference-0.1.11/` unless later authority explicitly advances it.
 - Operator/local candidates v0.1.12+ are not made canonical merely because they exist or are used as a development baseline.
 - Major new work is done on a dedicated `dev/...` branch.
-- An independent validation branch must be created **from the exact implementation SHA under test**, not from a later moving branch HEAD.
-- A validation branch must contain only the validation report unless the validation plan explicitly states otherwise.
+- Final independent validation must be pinned to an exact frozen candidate SHA, not a moving branch HEAD.
+- Final validation branch must be report-only unless the gate explicitly authorizes otherwise.
 
-## Major-step workflow
+## Development / repair workflow
 
-Development is divided into a small number of coherent major steps. Do not split one architectural objective into dozens of tiny gates.
+Do not split one coherent architectural objective into dozens of tiny governance gates. Work in bounded, understandable changes.
 
-For each major step, use this sequence:
+### 1. Reconstruct and understand the exact baseline
 
-### 1. Plan and freeze the scope
+Before changing production:
+
+- read live GitHub authority;
+- identify the exact baseline/frozen candidate being changed;
+- record relevant production hashes/inventory;
+- identify the specific defect/feature and its direct dependencies;
+- identify protected surfaces that must not change.
+
+Do not patch a shortened proxy when the exact production file/tree is available or reconstructable.
+
+### 2. Define the narrow behavior change
 
 Before implementation:
 
-- collect the latest agreed architecture/behavior changes;
-- update the roadmap/specification;
-- state explicit in-scope and out-of-scope behavior;
-- identify protected production surfaces that must not change;
-- define the acceptance matrix and fail-closed rules.
+- state the exact desired behavior;
+- state what must remain unchanged;
+- define failure/cleanup/recovery semantics;
+- define security/provider boundaries that the change can affect;
+- when practical, create a targeted reproduction test that fails on the current defect.
 
-### 2. Implement one coherent step
+Avoid broad reset helpers, duplicated state machines, unbounded polling loops, magic retry behavior and unrelated refactors merely to close a bounded defect.
 
-Implement only the planned step on a dedicated development branch.
+### 3. Implement one coherent change
 
-Before handing the step to Codex:
+Implement only the planned behavior on the dedicated development branch.
 
-- reconstruct from the exact declared baseline;
-- run local syntax/unit/VM/static checks appropriate to the changed path;
-- record changed production files and byte-identical protected files where practical;
-- freeze the implementation at an exact commit SHA.
+Production changes must be the smallest coherent architecture correction, not a pile of special-case patches.
 
-The frozen implementation SHA is the validation authority. Later documentation commits on the development branch do not change the target under test.
+When a new state is necessary, integrate it into the existing owner/lifecycle authority rather than creating parallel ownership or retry mechanisms without need.
 
-### 3. Commit a standalone Codex validation plan
+### 4. Run targeted development tests only
 
-After implementation is frozen, create a GitHub validation-plan document that contains a **full standalone Codex prompt**.
+During implementation, do **not** repeatedly run the entire project-wide historical suite.
 
-The prompt must include all required context in one message:
+Run the tests needed for the changed code and directly traversed dependencies, for example:
 
-- repository and paths;
-- exact implementation SHA;
-- exact baseline SHA/artifact hash where relevant;
-- goal and scope;
-- protected surfaces;
-- test matrix;
-- browser/harness instructions;
-- security and no-network guards;
-- acceptance criteria;
-- report path/branch/commit rules;
-- final response schema;
-- explicit instruction to STOP after validation and not begin the next engineering step.
+- `node --check` for changed JavaScript files;
+- targeted unit/contract tests;
+- targeted worker/VM state-machine tests;
+- targeted browser/Puppeteer assertions when DOM/runtime behavior changed;
+- targeted owner/isolation tests when ownership changed;
+- targeted quota/cache tests when state transitions could affect quota/cache;
+- targeted delivery tests when composer/Send/recovery changed;
+- targeted security/network assertions for surfaces touched by the change.
 
-Never give Codex a delta such as “add this to the previous prompt”. Every Codex prompt must be independently copyable and executable.
+A bug fix should, when practical, have a RED reproduction against the old candidate and a GREEN result against the corrected candidate.
 
-### 4. Operator sends the prompt to Codex
+The target is confidence in the change without wasting time rerunning every unrelated historical scenario after every edit.
 
-The operator copies the full standalone prompt into the Windows Codex application.
+### 5. Maintain the permanent full-handoff gate as functionality evolves
 
-Intermediate development validation must not require the operator to:
+Whenever functionality is added or materially changed, update:
 
-- download a new ZIP;
-- install/reinstall the extension manually;
-- use `chrome://extensions`;
-- click `Load unpacked` or `Reload` for every revision.
+`OZON_BRIDGE_PRE_OPERATOR_HANDOFF_FULL_CODEX_GATE.md`
 
-### 5. Codex performs independent validation
+Add the new Codex-testable behavior and regressions that must survive future work.
 
-The accepted Windows QA route is:
+Whenever functionality is intentionally removed, remove tests that require the removed behavior while preserving neighboring/invariant tests and recording the feature removal in normal project documentation.
 
-`fixed unpacked source -> Node child_process.spawn() launcher -> Chrome for Testing -> dynamic DevTools endpoint -> Puppeteer connect -> browser.installExtension() -> assertions -> report`
+The gate must reflect actual current product behavior. Do not leave obsolete tests forever and do not weaken valid tests just to pass a candidate.
 
-Qualified harness baseline:
+Updating the gate does not mean running it after every edit.
+
+## Mandatory pre-operator handoff workflow
+
+This sequence is required only when ChatGPT is ready to give the operator an installable/testable build.
+
+### 6. Freeze one exact completed candidate
+
+Before full validation:
+
+- stop production edits;
+- commit exact production changes;
+- record exact candidate SHA;
+- record exact production inventory and hashes;
+- record authorized changed files and protected surfaces;
+- confirm targeted development tests pass.
+
+Any production change after this point invalidates the frozen candidate and requires a new final gate later.
+
+### 7. Prepare one standalone full Codex prompt
+
+The prompt must be independently copyable and executable and must point to:
+
+- repository and exact candidate SHA;
+- exact expected production inventory/hashes;
+- `OZON_BRIDGE_PRE_OPERATOR_HANDOFF_FULL_CODEX_GATE.md` as the functional test authority;
+- accepted QA harness/environment;
+- one consolidated runner/command requirement;
+- provider network blocking/mocking;
+- zero-real-request counters;
+- report-only branch/path;
+- final PASS/FAIL schema;
+- instruction that Codex must not edit production and must STOP after reporting.
+
+Do not send a series of incremental prompt fragments such as “also test this”. The final handoff prompt must contain the whole gate in one standalone task.
+
+### 8. Codex runs the complete gate once
+
+The accepted Windows QA route remains:
+
+`fixed exact source -> Node child_process.spawn() launcher -> Chrome for Testing -> dynamic DevTools endpoint -> Puppeteer connect -> browser.installExtension() -> consolidated assertions -> report`
+
+Qualified harness baseline unless later superseded:
 
 - Puppeteer `25.4.0`;
 - Chrome for Testing `151.0.7922.47`;
 - `--remote-debugging-port=0`;
 - `DevToolsActivePort` discovery;
 - runtime extension install with Puppeteer `browser.installExtension()`;
-- dedicated persistent QA profile;
-- zero operator browser actions during the accepted R1/R2/R3 qualification;
-- content-script, MV3 service-worker, console, network, multi-tab, localStorage and persistent-cookie checks proven.
+- dedicated QA profile;
+- zero operator browser actions;
+- content-script, MV3 service-worker, console, network, multi-tab and persistent-runtime assertions.
 
-Codex must test the exact target SHA, publish a report on a separate validation branch, not change production code, and stop.
+The full gate must be invoked through **one top-level consolidated runner/command**. It may contain multiple internal worker/browser/static/package blocks, but there is one umbrella terminal result.
 
-### 6. ChatGPT reviews the report from GitHub
+Required umbrella marker:
 
-Do not accept a step from the short Codex summary alone when a report exists. Read the full validation report and check:
+`OZON_FULL_PRE_OPERATOR_HANDOFF_GATE_PASS`
 
-- the tested SHA is exact;
-- branch base is correct;
-- report-only branch discipline is preserved;
-- provider/request counters match the intended invariant;
-- evidence is not simulated or overstated;
-- protected files/surfaces stayed unchanged;
-- any FAIL/INCONCLUSIVE is treated as such.
+Codex must:
 
-Then choose exactly one path:
+- test the exact frozen candidate;
+- make zero production edits;
+- use no real Seller/Performance credentials;
+- make zero real Ozon requests;
+- make zero real Performance requests;
+- run every currently applicable mandatory block in the permanent gate;
+- not mark an existing behavior `NOT_APPLICABLE` merely because the harness failed to exercise it;
+- distinguish production failure from harness fixture/environment failure;
+- publish only the validation report on its validation branch;
+- stop.
 
-- **ACCEPT** — update roadmap/current handoff and move to the next major step;
-- **REJECT** — fix the specific defect and issue a bounded retest for the same step.
+### 9. ChatGPT reviews the complete GitHub report
 
-Do not start the next step while the previous major step is unresolved.
+Never approve handoff from the short Codex terminal summary alone when a full report exists.
 
-## Anti-loop rule
+Read the full report and verify:
 
-A failing validation does not justify an endless environment/setup loop.
+- tested candidate SHA is exact;
+- expected production inventory/hashes matched;
+- all currently applicable blocks passed;
+- no mandatory block was skipped or weakened;
+- provider request counters are exactly the required zero-real-network values;
+- validator changed zero production files;
+- owner/quota/cache/delivery/security invariants were genuinely asserted;
+- any FAIL/INCONCLUSIVE is treated as a failed handoff gate until resolved.
 
-- Diagnose the first concrete blocker.
-- Make one coherent correction to that blocker.
-- Re-run a bounded validation.
-- If the harness itself is the blocker and cannot be made reliable after the agreed bounded correction, change the development process instead of creating an infinite series of setup experiments.
+If the failure is an actual production defect, return to the development workflow and fix the defect with targeted tests. After production changes, freeze a new candidate and rerun the entire final handoff gate.
 
-This rule was used to converge the Windows harness from the blocked normal-Chrome integration path to the accepted Node/Puppeteer/Chrome for Testing route.
+If the failure is a genuine harness fixture/environment problem, fix the harness problem without casually changing production and rerun the final gate against the same exact candidate when still valid.
 
-## Reporting cadence
+## Packaging after full gate PASS
 
-The operator receives a clear report after each **major** engineering step, not after every tiny edit.
+Only after the full Codex gate is reviewed as PASS:
 
-A step report must state:
+1. package exactly the tested production tree;
+2. exclude tests/reports/dev artifacts/credentials;
+3. record package SHA-256;
+4. extract the package into a fresh directory;
+5. compare every production file byte-for-byte with the independently tested candidate;
+6. run package integrity/syntax/manifest checks on the fresh extraction;
+7. confirm no production byte changed after validation;
+8. hand that exact package to the operator.
 
-- what changed;
-- exact implementation SHA;
-- validation status;
-- important evidence/counters;
-- unresolved limitations;
-- what the next major step is.
+If packaging changes production bytes or the packaged tree is not exactly the tested tree, handoff is forbidden until corrected and revalidated as required.
 
-## Protected release/live acceptance boundary
+## Operator handoff and live acceptance boundary
 
-The Codex/Puppeteer harness is the default intermediate QA surface. It does **not** replace final release acceptance where the fact under test depends on the operator's real environment.
+The full Codex/Puppeteer gate is the final automated independent gate before operator handoff. It does **not** replace facts that depend on the operator's real environment.
 
-Use the operator's normal browser/profile only at major live gates such as:
+After handoff, use the operator's normal browser/profile only for live gates such as:
 
 - current logged-in ChatGPT behavior;
 - current logged-in Alice behavior;
 - real conversation identity/binding behavior;
 - controlled real Ozon provider responses/rate-limit behavior;
-- final release/package acceptance.
+- final field/package acceptance.
 
 Do not call a local/synthetic/browser-harness test a logged-in live PASS.
 
+Likewise, a partial live test does not retroactively mark the complete package live-tested.
+
+## Anti-loop rule
+
+A failing test does not justify an endless setup loop.
+
+During development:
+
+- diagnose the first concrete blocker;
+- correct the changed production path or targeted test fixture as appropriate;
+- rerun the bounded targeted tests.
+
+During final handoff validation:
+
+- preserve exact candidate identity;
+- classify the failure correctly;
+- do not alter production merely to make a harness failure disappear;
+- rerun the full gate only after the blocker is coherently fixed.
+
+## Reporting cadence
+
+The operator should not be asked to install/download intermediate packages during ordinary implementation.
+
+Engineering updates should report meaningful milestones, while the actual installable build is provided only after the mandatory full Codex handoff gate and packaging checks pass.
+
 ## Standing implementation invariants
 
-Unless a later reviewed step explicitly changes an invariant, preserve:
+Unless a later reviewed change explicitly changes an invariant, preserve:
 
-- native Copy structurally anchors the exact code block; no command discovery/binding by text content;
+- native Copy structurally anchors the correct code block/conversation surface;
 - one extension-owned top-level Shadow DOM overlay;
 - fail-closed conversation/binding ownership;
 - fixed provider hosts and operation registries;
 - no assistant-supplied arbitrary URL/host/method/headers/auth;
 - credentials isolated from page/content output;
-- read-only Ozon operation surface; mutations remain blocked;
+- read-only Ozon operation surface; mutations remain blocked unless explicitly designed and accepted later;
 - no hidden provider retry/pagination/fan-out/report polling;
 - no arbitrary generic bridge caps/silent result truncation reintroduced;
-- proven ChatGPT delivery FSM is protected from unrelated provider/planner work;
-- Alice lifecycle/adapter changes are isolated from proven ChatGPT delivery semantics;
-- independent conversations/tabs remain independently owned; no global “current conversation”.
+- ChatGPT/Alice ownership stays isolated;
+- independent conversations/tabs remain independently owned; no global current conversation;
+- provider quota/cache state is not reset by unrelated UI/delivery cleanup;
+- delivery recovery does not replay provider work.
 
-## Current gate
+## Current handoff-gate authority
 
-Step 0 (Windows Codex/Puppeteer QA harness qualification) is closed and accepted.
+Permanent full gate:
 
-Step 1 (Contract + Capability layer) has an implementation frozen at:
+`OZON_BRIDGE_PRE_OPERATOR_HANDOFF_FULL_CODEX_GATE.md`
 
-`370e45a1803976f43d27d5a9d4b5613e09a91623`
-
-Its independent Codex validation has been dispatched. Step 2 must not begin until the Step 1 validation report is reviewed and Step 1 is explicitly accepted.
+The complete v0.1.19 logged-in live suite remains pending as of 2026-08-18. Current delivery repair work must be completed, targeted-tested, frozen, fully Codex-gated, packaged and then handed to the operator before the full live suite is resumed.
