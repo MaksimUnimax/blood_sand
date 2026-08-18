@@ -1,0 +1,79 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import { webcrypto } from 'node:crypto';
+
+const candidateDir = path.resolve(process.argv[2] || '');
+if (!fs.existsSync(path.join(candidateDir, 'service_worker.js'))) throw new Error('usage: node TARGETED_COMPOSER_WAIT_REGRESSION.mjs <candidate-dir>');
+const assert = (v,m)=>{ if(!v) throw new Error(m); };
+const clone = (v)=> v === undefined ? undefined : structuredClone(v);
+
+function extractFunction(src,name){
+  const patterns=[`async function ${name}(`,`function ${name}(`]; let at=-1;
+  for(const p of patterns){at=src.indexOf(p); if(at>=0) break;}
+  if(at<0) throw new Error(`function missing: ${name}`);
+  const open=src.indexOf('{',at); let depth=0,quote=null,escape=false,line=false,block=false;
+  for(let i=open;i<src.length;i++){
+    const c=src[i],n=src[i+1];
+    if(line){if(c==='\n')line=false;continue;} if(block){if(c==='*'&&n==='/'){block=false;i++;}continue;}
+    if(quote){if(escape){escape=false;continue;}if(c==='\\'){escape=true;continue;}if(c===quote){quote=null;}continue;}
+    if(c==='/'&&n==='/'){line=true;i++;continue;} if(c==='/'&&n==='*'){block=true;i++;continue;} if(c==='"'||c==="'"||c==='`'){quote=c;continue;}
+    if(c==='{')depth++; else if(c==='}'){depth--; if(depth===0) return src.slice(at,i+1);}
+  }
+  throw new Error(`unterminated function: ${name}`);
+}
+
+// ---------- Worker: Manual OFF must cancel only a pre-insert pending manual delivery. ----------
+const local = new Map(), session = new Map();
+const runtimeListeners=[], alarmListeners=[], startupListeners=[], installedListeners=[], removedListeners=[];
+let providerCalls=0;
+function storageGet(map, keys){
+  const out={}; if(keys==null){for(const[k,v]of map)out[k]=clone(v);return Promise.resolve(out);} if(typeof keys==='string')keys=[keys];
+  if(Array.isArray(keys)){for(const k of keys)if(map.has(k))out[k]=clone(map.get(k));}
+  else if(typeof keys==='object'){for(const[k,d]of Object.entries(keys))out[k]=map.has(k)?clone(map.get(k)):clone(d);}
+  return Promise.resolve(out);
+}
+function storageSet(map, values){for(const[k,v]of Object.entries(values||{}))map.set(k,clone(v));return Promise.resolve();}
+function storageRemove(map, keys){if(!Array.isArray(keys))keys=[keys];for(const k of keys)map.delete(k);return Promise.resolve();}
+const tabIdentity={origin:'https://chatgpt.com',ai_id:'chatgpt',conversation_id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',status:'confirmed',source:'path',chat_path:'/c/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'};
+const chrome={
+  runtime:{id:'targeted-regression',lastError:null,onMessage:{addListener:f=>runtimeListeners.push(f)},onStartup:{addListener:f=>startupListeners.push(f)},onInstalled:{addListener:f=>installedListeners.push(f)}},
+  storage:{local:{get:k=>storageGet(local,k),set:v=>storageSet(local,v),remove:k=>storageRemove(local,k),clear:()=>{local.clear();return Promise.resolve();}},session:{get:k=>storageGet(session,k),set:v=>storageSet(session,v),remove:k=>storageRemove(session,k),clear:()=>{session.clear();return Promise.resolve();}}},
+  tabs:{get:async(id)=>({id,url:'https://chatgpt.com/c/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'}),query:async()=>[],sendMessage(id,msg,cb){const r=msg?.type==='OZ_GET_IDENTITY'?{ok:true,identity:clone(tabIdentity)}:{ok:true};if(cb)queueMicrotask(()=>cb(r));else return Promise.resolve(r);},onRemoved:{addListener:f=>removedListeners.push(f)}},
+  alarms:{create(){},clear:async()=>true,get:async()=>null,getAll:async()=>[],onAlarm:{addListener:f=>alarmListeners.push(f)}}
+};
+async function fakeFetch(){providerCalls++; throw new Error('PROVIDER_CALL_FORBIDDEN');}
+const sandbox={console,chrome,crypto:webcrypto,TextEncoder,TextDecoder,URL,URLSearchParams,setTimeout,clearTimeout,setInterval,clearInterval,queueMicrotask,structuredClone,fetch:fakeFetch,AbortController,Headers,Response,Request,FormData,Blob};
+sandbox.globalThis=sandbox;sandbox.self=sandbox;
+const context=vm.createContext(sandbox);
+sandbox.importScripts=(...names)=>{for(const name of names){const p=path.join(candidateDir,name);vm.runInContext(fs.readFileSync(p,'utf8'),context,{filename:p});}};
+vm.runInContext(fs.readFileSync(path.join(candidateDir,'service_worker.js'),'utf8'),context,{filename:'service_worker.js'});
+assert(runtimeListeners.length===1,'expected one worker runtime listener');
+async function send(message,sender={tab:{id:1}}){ return await new Promise((resolve,reject)=>{ let settled=false; const t=setTimeout(()=>{if(!settled){settled=true;reject(new Error(`runtime timeout: ${message.type}`));}},3000); const ret=runtimeListeners[0](message,sender,(response)=>{if(settled)return;settled=true;clearTimeout(t);resolve(response);}); if(ret!==true && !settled){settled=true;clearTimeout(t);resolve(undefined);} }); }
+const KEYS=context.OzonRuntime.STORAGE_KEYS;
+const conversationKey=`${tabIdentity.origin}|${tabIdentity.conversation_id}`;
+const otherKey='https://chatgpt.com|bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const now=Date.now();
+const QUOTA_STORAGE_KEY='ozmb_provider_quota_state_v1';
+const CACHE_STORAGE_KEY='ozmb_provider_result_cache_v1';
+const quotaState={schema_version:1,accounts:{acct:{credential_revision:'rev',families:{'seller.analytics_data.v1':{min_interval_ms:60000,bridge_launch_safety_ms:5000,effective_interval_ms:65000,last_provider_request_at:now-1000,next_allowed_at:now+64000,credential_revision:'rev',updated_at:new Date().toISOString()}}}}};
+const cacheState={schema_version:1,accounts:{acct:{entries:{fingerprint:{stored_at:now-5000,expires_at:now+55000,payload:{ok:true}}}}}};
+const pending={operation_id:'manual-op-pending',manual_request_id:'req-pending',status:'delivering',tab_id:1,conversation_id:tabIdentity.conversation_id,conversation_key:conversationKey,origin:tabIdentity.origin,binding_snapshot:{binding_id:'bind-a',binding_revision:1},delivery_id:'delivery-pending',outgoing_text:'REPORT',delivery:{delivery_id:'delivery-pending',mode:'batch_watch_v1',phase:'claimed',outgoing_text:'REPORT',report_prefix_applied:false,baseline_assistant_turn_ids:[]},batch:{phase:'collected',request_state:'idle',entries:[],next_index:0}};
+const otherPending={...pending,operation_id:'manual-op-other',manual_request_id:'req-other',conversation_id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',conversation_key:otherKey,tab_id:2,delivery_id:'delivery-other',delivery:{...pending.delivery,delivery_id:'delivery-other'}};
+const otherAutorun={run_id:'auto-other',status:'waiting_command',tab_id:3,conversation_key:'https://chatgpt.com|cccccccc-cccc-4ccc-8ccc-cccccccccccc',conversation_id:'cccccccc-cccc-4ccc-8ccc-cccccccccccc'};
+await chrome.storage.local.set({
+  [KEYS.CONVERSATION_BINDINGS]:{[conversationKey]:{binding_id:'bind-a',revision:1,origin:tabIdentity.origin,ai_id:'chatgpt',conversation_id:tabIdentity.conversation_id,conversation_key:conversationKey,bound_at:new Date().toISOString(),updated_at:new Date().toISOString()}},
+  [KEYS.MANUAL_MODES]:{[conversationKey]:true,[otherKey]:true},
+  [KEYS.MANUAL_OPERATIONS]:{[conversationKey]:pending,[otherKey]:otherPending},
+  [KEYS.AUTO_RUNS]:{[otherAutorun.conversation_key]:otherAutorun},
+  [QUOTA_STORAGE_KEY]:quotaState,
+  [CACHE_STORAGE_KEY]:cacheState
+});
+const quotaKey=QUOTA_STORAGE_KEY;
+const cacheKey=CACHE_STORAGE_KEY;
+const beforeQuota=JSON.stringify((await chrome.storage.local.get(quotaKey))[quotaKey]);
+const beforeCache=JSON.stringify((await chrome.storage.local.get(cacheKey))[cacheKey]);
+const beforeOther=JSON.stringify((await chrome.storage.local.get(KEYS.MANUAL_OPERATIONS))[KEYS.MANUAL_OPERATIONS][otherKey]);
+const beforeAuto=JSON.stringify((await chrome.storage.local.get(KEYS.AUTO_RUNS))[KEYS.AUTO_RUNS]);
+const offResponse=await send({type:'OZ_SET_MANUAL_MODE',enabled:false,conversation_key:conversationKey,tab_id:1},{tab:{id:1}});
+assert(offResponse?.ok===true && offResponse?.enabled===false && offResponse?.state?.manual_operation_active===false,'actual OZ_SET_MANUAL_MODE OFF did not release pending Manual operation');
