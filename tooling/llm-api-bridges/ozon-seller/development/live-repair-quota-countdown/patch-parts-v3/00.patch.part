@@ -1,0 +1,91 @@
+--- a/service_worker.js
++++ b/service_worker.js
+@@ -34,5 +34,6 @@
+ const PROVIDER_QUOTA_ALARM = "ozon-provider-quota-wake-v1";
+ const ANALYTICS_QUOTA_FAMILY = "seller.analytics_data.v1";
+ const ANALYTICS_MIN_INTERVAL_MS = 60_000;
++const ANALYTICS_QUOTA_LAUNCH_SAFETY_MS = 5_000;
+ const PROVIDER_RESULT_CACHE_SCHEMA_VERSION = 1;
+ const ANALYTICS_CACHE_TTL_MS = 60_000;
+@@ -270,12 +271,14 @@
+ function safeQuotaMetadata(value) {
+   if (!value || typeof value !== "object") return null;
+   return Object.freeze({
+     family: String(value.family || ANALYTICS_QUOTA_FAMILY),
+     min_interval_ms: Math.max(0, Number(value.min_interval_ms || 0)),
++    bridge_launch_safety_ms: ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++    effective_interval_ms: ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
+     dispatched_at: Number(value.dispatched_at || 0),
+     next_allowed_at: Number(value.next_allowed_at || 0),
+     credential_scope_id: String(value.account_hash || "").slice(0, 16) || null,
+     credential_revision: String(value.credential_revision || "").slice(0, 16) || null,
+     automatic_retry: false
+   });
+ }
+@@ -285,54 +288,64 @@
+ async function acquireAnalyticsProviderQuota(rawCredentials, nowMs = Date.now()) {
+   const identity = await sellerQuotaIdentity(rawCredentials);
+   return withProviderQuotaWrite(async () => {
+     const currentNow = Math.max(Number(nowMs || 0), Date.now());
+     const data = await storageGet(KEYS.PROVIDER_QUOTA_STATE);
+     const state = normalizedQuotaState(data[KEYS.PROVIDER_QUOTA_STATE]);
+     const account = state.accounts[identity.account_hash] && typeof state.accounts[identity.account_hash] === "object"
+       ? { ...state.accounts[identity.account_hash] }
+       : { credential_revision: identity.credential_revision, families: {} };
+     const families = account.families && typeof account.families === "object" ? { ...account.families } : {};
+     const family = families[ANALYTICS_QUOTA_FAMILY] && typeof families[ANALYTICS_QUOTA_FAMILY] === "object"
+       ? { ...families[ANALYTICS_QUOTA_FAMILY] }
+       : {};
+-    const nextAllowedAt = Math.max(0, Number(family.next_allowed_at || 0));
++    const lastProviderRequestAt = Math.max(0, Number(family.last_provider_request_at || 0));
++    const guardedFromLastAttempt = lastProviderRequestAt > 0
++      ? lastProviderRequestAt + ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS
++      : 0;
++    const nextAllowedAt = Math.max(0, Number(family.next_allowed_at || 0), guardedFromLastAttempt);
+     if (currentNow < nextAllowedAt) {
+       return Object.freeze({
+         allowed: false,
+         family: ANALYTICS_QUOTA_FAMILY,
+         min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++        bridge_launch_safety_ms: ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++        effective_interval_ms: ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
+         account_hash: identity.account_hash,
+         credential_revision: identity.credential_revision,
+         next_allowed_at: nextAllowedAt,
+         wait_ms: nextAllowedAt - currentNow,
+         automatic_retry: false
+       });
+     }
+     const dispatchedAt = currentNow;
+-    const next = dispatchedAt + ANALYTICS_MIN_INTERVAL_MS;
++    const next = dispatchedAt + ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS;
+     families[ANALYTICS_QUOTA_FAMILY] = {
+       min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++      bridge_launch_safety_ms: ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++      effective_interval_ms: ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
+       last_provider_request_at: dispatchedAt,
+       next_allowed_at: next,
+       credential_revision: identity.credential_revision,
+       updated_at: new Date(dispatchedAt).toISOString()
+     };
+     state.accounts[identity.account_hash] = {
+       credential_revision: identity.credential_revision,
+       families,
+       updated_at: new Date(dispatchedAt).toISOString()
+     };
+     await storageSet({ [KEYS.PROVIDER_QUOTA_STATE]: state });
+     return Object.freeze({
+       allowed: true,
+       family: ANALYTICS_QUOTA_FAMILY,
+       min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++      bridge_launch_safety_ms: ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++      effective_interval_ms: ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
+       account_hash: identity.account_hash,
+       credential_revision: identity.credential_revision,
+       dispatched_at: dispatchedAt,
+       next_allowed_at: next,
+       wait_ms: 0,
+       automatic_retry: false
+     });
+   });
+ }
