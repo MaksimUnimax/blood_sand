@@ -1,0 +1,92 @@
++    return await storeAnalyticsResultCache(command, providerResult, settings.sellerCredentials, profile);
++  } catch (_) {
++    return false;
++  }
++}
++
+ function normalizedQuotaState(raw) {
+   const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+   return {
+@@ -2378,13 +2545,14 @@ function findBatchQueryGroup(batch, groupId) {
+   return groups.find((group) => String(group?.group_id || "") === String(groupId || "")) || null;
+ }
+ 
+-function coalescedPlanningForEntry(entry, group, physicalRequestId, physicalFingerprint) {
++function coalescedPlanningForEntry(entry, group, physicalRequestId, physicalFingerprint, cacheMeta = null) {
+   const base = entry?.planning && typeof entry.planning === "object" ? entry.planning : {};
+   const logicalFingerprint = String(entry?.command_fingerprint || OzonContract.commandFingerprint(entry?.command));
++  const withCache = cachePlanning(base, cacheMeta);
+   return {
+-    ...base,
++    ...withCache,
+     execution: {
+-      ...(base.execution && typeof base.execution === "object" ? base.execution : {}),
++      ...(withCache.execution && typeof withCache.execution === "object" ? withCache.execution : {}),
+       logical_command_fingerprint: logicalFingerprint,
+       physical_command_fingerprint: String(physicalFingerprint || group?.physical_command_fingerprint || ""),
+       command_transformed: logicalFingerprint !== String(physicalFingerprint || group?.physical_command_fingerprint || ""),
+@@ -2403,14 +2571,15 @@ function buildCoalescedLogicalResult(entry, group, physicalResult, projectionErr
+   const preflight = OzonContract.preflightExecution(command);
+   const physicalRequestId = physicalResult?.request_id || physicalResult?.physical_attempt_id || null;
+   const physicalFingerprint = physicalResult?.executed_command_fingerprint || group?.physical_command_fingerprint || null;
+-  const planning = coalescedPlanningForEntry(entry, group, physicalRequestId, physicalFingerprint);
++  const planning = coalescedPlanningForEntry(entry, group, physicalRequestId, physicalFingerprint, physicalResult?.cache || null);
+   const requestId = `logical-${crypto.randomUUID()}`;
++  const externalRequestExecuted = physicalResult?.external_request_executed !== false;
+   let resultPayload;
+   let bridgeError = false;
+   let safeError = null;
+   if (projectionError) {
+     safeError = OzonContract.safeBridgeErrorPayload(projectionError, Number(physicalResult?.http_status || 0));
+-    resultPayload = { error: { ...safeError, stage: "query_projection", external_request_executed: true } };
++    resultPayload = { error: { ...safeError, stage: "query_projection", external_request_executed: externalRequestExecuted } };
+     bridgeError = true;
+   } else if (physicalResult?.ok === true) {
+     const logicalMetrics = Array.isArray(entry?.execution_command?.params?.metrics) ? entry.execution_command.params.metrics : entry.command.params.metrics;
+@@ -2427,7 +2596,7 @@ function buildCoalescedLogicalResult(entry, group, physicalResult, projectionErr
+       host_alias: String(physicalResult?.provider || preflight.meta.provider || "seller_api"),
+       http_method: preflight.meta.method,
+       path_alias: command.operation,
+-      external_request_executed: true,
++      external_request_executed: externalRequestExecuted,
+       capability_probe_executed: planning?.capability?.probe_performed === true,
+       capability_probe_http_status: Number(planning?.capability?.probe_http_status || 0),
+       physical_request_id: physicalRequestId,
+@@ -2453,7 +2622,7 @@ function buildCoalescedLogicalResult(entry, group, physicalResult, projectionErr
+     http_status: Number(physicalResult?.http_status || 0),
+     report_text: reportText,
+     error: safeError,
+-    external_request_executed: true
++    external_request_executed: externalRequestExecuted
+   });
+ }
+ 
+@@ -2501,6 +2670,87 @@ function buildCoalescedExecutionErrorResult(entry, group, error, elapsedMs = 0,
+   });
+ }
+ 
++function buildCachedSingleResult(entry, cacheHit) {
++  const command = OzonContract.normalizeCommand(entry.command);
++  const executionCommand = OzonContract.normalizeCommand(entry.execution_command || entry.command);
++  const preflight = OzonContract.preflightExecution(command);
++  const cacheMeta = safeAnalyticsCacheMetadata(cacheHit?.cache);
++  const planning = cachePlanning(entry.planning || null, cacheMeta);
++  const requestId = `cache-${crypto.randomUUID()}`;
++  const executionFingerprint = OzonContract.commandFingerprint(executionCommand);
++  const reportText = OzonContract.formatResultReport({
++    requestId,
++    command,
++    requestMeta: {
++      host_alias: String(preflight.meta.provider || "seller_api"),
++      http_method: preflight.meta.method,
++      path_alias: command.operation,
++      external_request_executed: false,
++      capability_probe_executed: planning?.capability?.probe_performed === true,
++      capability_probe_http_status: Number(planning?.capability?.probe_http_status || 0),
++      physical_command_fingerprint: executionFingerprint
++    },
++    httpStatus: Number(cacheHit?.http_status || 200),
++    result: cacheHit.result,
++    elapsedMs: 0,
++    pagination: null,
++    rateLimit: null,
