@@ -1,0 +1,105 @@
+diff --git a/service_worker.js b/service_worker.js
+index dcdac79..85225d4 100644
+--- a/service_worker.js
++++ b/service_worker.js
+@@ -26,11 +26,14 @@ let diagnosticsWriteLock = Promise.resolve();
+ let copyProfilesWriteLock = Promise.resolve();
+ let tabAIModesWriteLock = Promise.resolve();
+ let providerQuotaWriteLock = Promise.resolve();
++let providerResultCacheWriteLock = Promise.resolve();
+ 
+ const PROVIDER_QUOTA_SCHEMA_VERSION = 1;
+ const PROVIDER_QUOTA_ALARM = "ozon-provider-quota-wake-v1";
+ const ANALYTICS_QUOTA_FAMILY = "seller.analytics_data.v1";
+ const ANALYTICS_MIN_INTERVAL_MS = 60_000;
++const PROVIDER_RESULT_CACHE_SCHEMA_VERSION = 1;
++const ANALYTICS_CACHE_TTL_MS = 60_000;
+ 
+ // Reference-parity single-flight: one worker-owned browser delivery attempt per run.
+ // This is deliberately the same primitive used by Business Bridge 2.0.0.22.
+@@ -57,6 +60,12 @@ function withProviderQuotaWrite(fn) {
+   return next;
+ }
+ 
++function withProviderResultCacheWrite(fn) {
++  const next = providerResultCacheWriteLock.then(fn, fn);
++  providerResultCacheWriteLock = next.catch(() => null);
++  return next;
++}
++
+ function bytesToHex(buffer) {
+   return [...new Uint8Array(buffer)].map((value) => value.toString(16).padStart(2, "0")).join("");
+ }
+@@ -72,6 +81,164 @@ async function sellerQuotaIdentity(rawCredentials) {
+   });
+ }
+ 
++function normalizedProviderResultCacheState(raw) {
++  const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
++  return {
++    schema_version: PROVIDER_RESULT_CACHE_SCHEMA_VERSION,
++    accounts: source.accounts && typeof source.accounts === "object" && !Array.isArray(source.accounts) ? { ...source.accounts } : {}
++  };
++}
++
++function jsonCacheClone(value) {
++  return JSON.parse(JSON.stringify(value));
++}
++
++function safeAnalyticsCacheMetadata(value, nowMs = Date.now()) {
++  if (!value || typeof value !== "object") return null;
++  const storedAt = Math.max(0, Number(value.stored_at || 0));
++  const expiresAt = Math.max(0, Number(value.expires_at || 0));
++  return Object.freeze({
++    hit: value.hit === true,
++    profile_id: value.profile_id ? String(value.profile_id).slice(0, 120) : null,
++    stored_at: storedAt,
++    expires_at: expiresAt,
++    age_ms: storedAt ? Math.max(0, Number(nowMs) - storedAt) : 0,
++    source_request_id: value.source_request_id ? String(value.source_request_id).slice(0, 200) : null,
++    source_physical_command_fingerprint: value.source_physical_command_fingerprint ? String(value.source_physical_command_fingerprint).slice(0, 80) : null,
++    cached_metrics: Array.isArray(value.cached_metrics) ? value.cached_metrics.map((metric) => String(metric)) : [],
++    requested_metrics: Array.isArray(value.requested_metrics) ? value.requested_metrics.map((metric) => String(metric)) : []
++  });
++}
++
++function acquisitionPlanning(basePlanning, profile) {
++  const base = basePlanning && typeof basePlanning === "object" ? basePlanning : {};
++  if (!profile?.applicable) return base;
++  return {
++    ...base,
++    acquisition: {
++      profile_id: String(profile.profile_id || "analytics_basic_metrics_v1"),
++      prefetch_applied: profile.prefetch_applied === true,
++      requested_metrics: Array.isArray(profile.requested_metrics) ? [...profile.requested_metrics] : [],
++      physical_metrics: Array.isArray(profile.physical_metrics) ? [...profile.physical_metrics] : []
++    }
++  };
++}
++
++function cachePlanning(basePlanning, cacheMeta) {
++  const base = basePlanning && typeof basePlanning === "object" ? basePlanning : {};
++  const safe = safeAnalyticsCacheMetadata(cacheMeta);
++  return safe ? { ...base, cache: safe } : base;
++}
++
++async function readAnalyticsResultCache(command, rawCredentials, nowMs = Date.now()) {
++  const normalized = OzonContract.normalizeCommand(command);
++  if (normalized.operation !== "analytics_data") return Object.freeze({ hit: false, reason: "operation_not_cacheable" });
++  const descriptor = OzonContract.analyticsCoalescingDescriptor(normalized);
++  if (!descriptor?.eligible) return Object.freeze({ hit: false, reason: "analytics_not_cacheable" });
++  const identity = await sellerQuotaIdentity(rawCredentials);
++  const data = await storageGet(KEYS.PROVIDER_RESULT_CACHE);
++  const state = normalizedProviderResultCacheState(data[KEYS.PROVIDER_RESULT_CACHE]);
++  const account = state.accounts[identity.account_hash];
++  const entries = account?.entries && typeof account.entries === "object" && !Array.isArray(account.entries) ? Object.values(account.entries) : [];
++  const requestedMetrics = [...descriptor.metrics];
++  const candidates = [];
++  for (const entry of entries) {
++    if (!entry || typeof entry !== "object") continue;
++    if (Number(entry.expires_at || 0) <= Number(nowMs)) continue;
++    if (String(entry.compatibility_key || "") !== String(descriptor.compatibility_key || "")) continue;
++    const cachedMetrics = Array.isArray(entry.metrics) ? entry.metrics.map((metric) => String(metric)) : [];
++    if (!cachedMetrics.length || new Set(cachedMetrics).size !== cachedMetrics.length) continue;
++    if (requestedMetrics.some((metric) => !cachedMetrics.includes(metric))) continue;
++    try {
