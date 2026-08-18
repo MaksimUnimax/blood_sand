@@ -1,7 +1,7 @@
 # Ozon live-repair — FINAL pre-freeze completion same-gate rerun correction
 
 Date: 2026-08-18
-Status: SAME FINAL PREFREEZE GATE rerun only. This is not V3G/V3H, not a production repair, not independent acceptance, not live testing, and not release promotion.
+Status: SAME FINAL PREFREEZE GATE rerun only. This is not a new V3 stage, not V3G/V3H, not a production repair, not independent acceptance, not live testing, and not release promotion.
 
 ## Authority
 
@@ -20,167 +20,141 @@ Expected repaired production SHA-256:
 Original consolidated runner Git blob:
 `bdf242f5cb78e506e67adb7b4d06fd0f585824f3`
 
-Same-gate rerun wrapper Git blob:
-`b48b7afbe94c09ff6df4538f914709572dfdf0e3`
+Current same-gate rerun wrapper Git blob:
+`25fc65b021b1b74f37b995d9609b1ecd5c2bc612`
 
 Source harness blobs remain:
 - worker `0da73bdd1bb1608074781bb0c594c7875a4fe3ce`
 - browser `841429741d5ff9144a8a40506e657dc4392fe37c`
 - regression `57574ef6fdb96a5ed5e0b0a02eec5b5ba99e9be5`
 
-## Previous final-gate evidence
+## Previous same-gate evidence
 
-Report commit:
-`9488168153e65387f3d4a0f3fd770f53618f9336`
+Previous rerun report commit:
+`d9bc94e80f44e90fdda70c01f241f19d89c1cd3b`
 
-The previous final consolidated run proved all worker actual-path gates PASS and regression terminal PASS. The only failure was the browser block: after runtime extension installation, the harness timed out for 10 seconds waiting for an MV3 `service_worker` target and produced no browser behavior assertion markers. This was classified `ENVIRONMENT_ERROR`.
+It proved:
+- worker actual-path terminal PASS with every required quota/no-retry marker;
+- regression terminal PASS;
+- production hashes PASS;
+- real Ozon/Performance requests both zero;
+- browser assertions still unexecuted.
 
-Production must not be changed on account of this failure.
+The only browser failure was test environment code calling `ServiceWorker.enable` through a target-level CDP session where that command is unavailable. This is an `ENVIRONMENT_ERROR`, not a production assertion failure.
 
-## Exact test-only correction
+Production must not change because of this failure.
 
-The rerun wrapper must verify the original runner Git blob exactly, then inject exactly one browser-harness correction into that runner:
+## Current exact test-only correction
 
-1. keep existing manual Chrome spawn, dynamic `DevToolsActivePort`, Puppeteer connect, runtime `browser.installExtension()`, writable temp area, node_modules junction, host blocking, and dedicated profile;
-2. immediately after `browser.installExtension(candidateDir)` create a browser-target CDP session;
-3. enable the `ServiceWorker` CDP domain;
-4. call `ServiceWorker.startWorker` with scope URL `chrome-extension://<extensionId>/`;
-5. wait up to 20 seconds for the exact extension `service_worker` target;
-6. if this still times out, print the `startWorker` error (if any) and every current Puppeteer target type+URL before failing.
+The same wrapper file is corrected in place. It still verifies the original consolidated runner blob and changes only the temporary browser harness.
 
-No production bytes may change. No source harness bytes may be edited directly. The wrapper may create only temporary transformed test harness files and must delete them on completion.
+After `browser.installExtension(candidateDir)` it must:
+
+1. arm `browser.waitForTarget()` for the exact `chrome-extension://<extensionId>/` MV3 service worker BEFORE trying to wake it;
+2. create a temporary Puppeteer page;
+3. navigate that page to `chrome-extension://<extensionId>/popup.html`;
+4. from that extension-page context call `chrome.runtime.sendMessage({type:'__OZ_PREFREEZE_WAKE__'})`, ignoring the logical response/error because the purpose is only to deliver a native extension runtime event that wakes the MV3 service worker;
+5. wait up to 20 seconds for the armed service-worker target promise;
+6. close the temporary wake page;
+7. if target discovery still fails, print the wake-page error and all current Puppeteer target type+URL values before failing.
+
+Do NOT call `ServiceWorker.enable` or `ServiceWorker.startWorker`.
+
+No production bytes may change. No source harness bytes may be edited directly. Temporary transformed harness files only.
 
 ## Required execution
 
-Materialize each Git object separately and verify each with `git hash-object`.
+Materialize each Git object separately and verify each with a separate `git hash-object`:
 
-Required files:
-- original consolidated runner blob `bdf242f5cb78e506e67adb7b4d06fd0f585824f3`
-- rerun wrapper blob `b48b7afbe94c09ff6df4538f914709572dfdf0e3`
-- worker source blob `0da73bdd1bb1608074781bb0c594c7875a4fe3ce`
-- browser source blob `841429741d5ff9144a8a40506e657dc4392fe37c`
-- regression source blob `57574ef6fdb96a5ed5e0b0a02eec5b5ba99e9be5`
+- original consolidated runner `bdf242f5cb78e506e67adb7b4d06fd0f585824f3`
+- current rerun wrapper `25fc65b021b1b74f37b995d9609b1ecd5c2bc612`
+- worker source `0da73bdd1bb1608074781bb0c594c7875a4fe3ce`
+- browser source `841429741d5ff9144a8a40506e657dc4392fe37c`
+- regression source `57574ef6fdb96a5ed5e0b0a02eec5b5ba99e9be5`
 
-Run `node --check` on the wrapper and original runner.
+Run `node --check` on the wrapper and original consolidated runner.
 
-Then execute the wrapper with the original runner followed by the original final runner arguments:
+Execute the same final gate command:
 
 `node FINAL_PREFREEZE_COMPLETION_RERUN_WRAPPER.mjs FINAL_PREFREEZE_COMPLETION_RUNNER.mjs worker-source.mjs browser-source.mjs regression-source.mjs <STEP4_EXACT_DIR> <V3_EXACT_DIR> <CFT_EXE> D:\codex\Test\qa-harness\puppeteer-extension-qa`
 
-Environment remains Node `v24.12.0`, Puppeteer `25.4.0`, CFT `151.0.7922.47`. Do not install or update dependencies or browser.
+Existing environment only:
+- Node `v24.12.0`
+- Puppeteer `25.4.0`
+- CFT `151.0.7922.47`
 
-## Required result
+Do not install or update anything.
 
-Worker must again terminate PASS with all prior markers:
-- manual quota_wait
-- autorun quota_wait
-- privacy
-- incompatible miss guarded wait
-- due exactly one provider call
-- mocked 429 exactly one provider call
-- zero immediate retry
-- zero alarm replay
-- zero startup replay
-- Retry-After extension-only.
+## Mandatory results
+
+Worker must again PASS all prior markers:
+- manual public quota wait;
+- autorun public quota wait;
+- privacy;
+- incompatible miss guarded wait;
+- due exactly one mocked provider call;
+- mocked 429 exactly one mocked provider call;
+- zero immediate retry;
+- zero alarm replay;
+- zero startup replay;
+- Retry-After extension only;
+- worker terminal PASS.
 
 Regression must again terminate PASS.
 
-Browser must freshly execute and PASS all required markers:
-- visible wait plate
-- at least three decreasing displayed MM:SS values
-- absolute due HH:MM:SS
-- due sending state
-- restart restore
-- duplicate-click blocked/busy state
-- two-owner isolation
-- ChatGPT binding
-- Alice binding
-- native Copy independent
-- no cross-owner state/delivery regression
-- zero provider network.
+Browser must freshly execute and prove:
+- service-worker target obtained after native runtime-message wake;
+- visible `Ожидание лимита Ozon` plate;
+- three decreasing countdown seconds;
+- absolute `Следующая попытка: HH:MM:SS`;
+- due sending state;
+- restart restore;
+- duplicate Ozon click blocked while busy;
+- two-owner isolation;
+- ChatGPT binding;
+- Alice binding;
+- native Copy independent;
+- no cross-owner regression;
+- zero provider network;
+- operator browser actions `0`;
+- browser terminal PASS.
 
-`REAL_OZON_REQUESTS = 0`
-`REAL_PERFORMANCE_REQUESTS = 0`
+## Safety
 
-If the service-worker target still cannot be obtained, classify `ENVIRONMENT_ERROR` and include exact target diagnostics. Do not create another stage or production repair.
+- no V4;
+- no new V3 stage;
+- no production changes;
+- no V3 patch changes;
+- no dependency/browser installs or updates;
+- no normal operator Chrome profile;
+- no real Seller or Performance credentials;
+- `REAL_OZON_REQUESTS = 0`;
+- `REAL_PERFORMANCE_REQUESTS = 0`.
 
-If an actual production browser assertion executes and fails, classify `PRODUCTION_BEHAVIOR_FAILURE` with exact stdout/stderr and assertion.
+## Classification
 
-Only if worker, regression, and browser all pass may the verdict be:
-`FINAL_PREFREEZE_PASS`.
+If the native wake fails before browser behavior assertions, classify `ENVIRONMENT_ERROR` and preserve the exact wake-page error, target list, stdout and stderr.
 
-## Report-only lineage
+If actual browser behavior assertions execute and one fails, classify `PRODUCTION_BEHAVIOR_FAILURE` with the exact assertion and state evidence.
 
-Create report branch FROM EXACT candidate:
-`88a20984c55da1f813ca1184bd90089823f51883`
+Full worker PASS + regression PASS + browser PASS => `FINAL_PREFREEZE_PASS`.
 
-Branch:
+## Report discipline
+
+Reuse the EXISTING report branch:
+
 `engineering/ozon-live-repair-final-prefreeze-completion-rerun-2026-08-18`
 
-Allow exactly one new report file:
+Do not create another branch or another stage.
+
+Update the existing report file in that branch:
+
 `tooling/llm-api-bridges/ozon-seller/development/live-repair-quota-countdown/FINAL_PREFREEZE_COMPLETION_RERUN_REPORT_2026-08-18.md`
 
-After publishing the report, STOP. No freeze commit, no acceptance plan, no live request, no release promotion in this Codex run.
+The branch must remain report-only relative to exact candidate `88a20984c55da1f813ca1184bd90089823f51883`; no production or harness files may be committed on the report branch.
+
+After publishing the updated report, STOP.
 
 Return exactly:
 
-FINAL_OZON_LIVE_REPAIR_PREFREEZE_RERUN_RESULT
-
-tested_base:
-  <sha>
-
-candidate_checkpoint:
-  <sha>
-
-integrity:
-  source_blobs: PASS|FAIL
-  original_runner_blob: PASS|FAIL
-  rerun_wrapper_blob: PASS|FAIL
-  production_hashes: PASS|FAIL
-
-worker:
-  terminal: PASS|FAIL
-  manual_quota_wait: PASS|FAIL|UNPROVEN
-  autorun_quota_wait: PASS|FAIL|UNPROVEN
-  privacy: PASS|FAIL|UNPROVEN
-  guarded_wait: PASS|FAIL|UNPROVEN
-  due_one_provider_call: PASS|FAIL|UNPROVEN
-  one_429_one_provider_call: PASS|FAIL|UNPROVEN
-  zero_immediate_retry: PASS|FAIL|UNPROVEN
-  zero_alarm_replay: PASS|FAIL|UNPROVEN
-  zero_startup_replay: PASS|FAIL|UNPROVEN
-  retry_after_extension_only: PASS|FAIL|UNPROVEN
-
-browser:
-  terminal: PASS|FAIL
-  service_worker_wake: PASS|FAIL|UNPROVEN
-  visible_wait_plate: PASS|FAIL|UNPROVEN
-  three_decreasing_seconds: PASS|FAIL|UNPROVEN
-  absolute_due_clock: PASS|FAIL|UNPROVEN
-  due_sending_state: PASS|FAIL|UNPROVEN
-  restart_restore: PASS|FAIL|UNPROVEN
-  duplicate_click_blocked: PASS|FAIL|UNPROVEN
-  two_owner_isolation: PASS|FAIL|UNPROVEN
-  chatgpt_binding: PASS|FAIL|UNPROVEN
-  alice_binding: PASS|FAIL|UNPROVEN
-  native_copy_independent: PASS|FAIL|UNPROVEN
-  no_cross_owner_regression: PASS|FAIL|UNPROVEN
-
-regression:
-  terminal: PASS|FAIL
-
-network:
-  real_ozon_requests: 0
-  real_performance_requests: 0
-
-failure_classification:
-  NONE|PRODUCTION_BEHAVIOR_FAILURE|HARNESS_FIXTURE_FAILURE|HARNESS_ERROR|ENVIRONMENT_ERROR|MULTIPLE
-
-report_branch:
-  <branch>
-
-report_commit:
-  <sha>
-
-verdict:
-  FINAL_PREFREEZE_PASS|FINAL_PREFREEZE_FAILED
+`FINAL_OZON_LIVE_REPAIR_PREFREEZE_RERUN_RESULT`
