@@ -1,5 +1,65 @@
 # Ozon live-repair final pre-freeze same-gate rerun report
 
+## Accepted-launcher completion rerun — PASS — 2026-08-18
+
+The prior environment-blocked result is superseded for this run. The previously accepted launcher was used unchanged:
+
+`D:\\codex\\Test\\qa-harness\\puppeteer-extension-qa\\launch-cft.mjs`
+
+Its live GitHub acceptance report was read completely from commit `a5539c8663bb6b48dce197f59e0abfe2d388af93`. The launcher produced dynamic endpoint `http://127.0.0.1:61888`, using Node `v24.12.0`, Puppeteer `25.4.0`, CFT `151.0.7922.47`, its exact executable, exact spawn arguments, dedicated `browser-profile-final-node`, and `runtime browser.installExtension`.
+
+Accepted-launcher sanity result: `ACCEPTED_LAUNCHER_ENVIRONMENT_PASS`. It proved page targets, `browser.newPage()`, two independent pages, runtime extension installation, and MV3 service-worker target on the existing fixed QA fixture. `OPERATOR_BROWSER_ACTIONS=0`.
+
+### Exact V3 production integrity
+
+- frozen Step-4 base: `4ce190c8bbdc438dcdf407ab4be4dbecd846736df`
+- exact V3 candidate: `88a20984c55da1f813ca1184bd90089823f51883`
+- `service_worker.js` SHA-256: `34a84f66284f5aa5f77b9b7cda23d5ddb2431c7b30114cd5fe927798c31e957a`
+- `content_script.js` SHA-256: `d95d2ca040c37f688d33c2caac8a78d95389b8e7acd41fcf11f8e0b4dc59e001`
+- production delta: exactly the repaired `service_worker.js` and `content_script.js`; protected 15-file byte-identical regression passed.
+
+### Final worker and regression results
+
+Worker final actual-path harness exited `0` and emitted all required PASS markers: manual public state, autorun public state, privacy, incompatible-cache guarded wait, guarded-due one provider call, one-429 one provider call, zero immediate retry, zero alarm replay, zero startup replay, Retry-After extension-only, `REAL_OZON_REQUESTS=0`, `REAL_PERFORMANCE_REQUESTS=0`, and `V3_WORKER_ACTUAL_PATH_HARNESS_PASS`.
+
+Regression final harness exited `0` and emitted `V3B_PROTECTED_15_BYTE_IDENTICAL_PASS`, Step-1 security, Step-2 planner/projection, Step-4 cache/prefetch, delivery FSM, Step-3 integration surface, protected contract functions, and `V3_REGRESSION_CARRY_FORWARD_HARNESS_PASS`.
+
+### Final V3 browser UI result
+
+The temporary UI test connected to the endpoint produced by the accepted `launch-cft.mjs` lifecycle and installed the exact V3 candidate with runtime `browser.installExtension`. No `/json/new`, custom Chrome spawn, ServiceWorker.enable, or ServiceWorker.startWorker was used. Provider hosts were blocked and no credentials were present.
+
+Exact browser command:
+
+```text
+node D:\\codex\\Test\\qa-live-repair-final-prefreeze-rerun-current\\accepted-browser-run\\accepted-v3-browser.mjs D:\\codex\\Test\\qa-live-repair-final-prefreeze-rerun-current\\v3-exact http://127.0.0.1:61888 D:\\codex\\Test\\qa-harness\\puppeteer-extension-qa\\chrome\\win64-151.0.7922.47\\chrome-win64\\chrome.exe
+```
+
+Exit code: `0`.
+
+Complete required browser markers:
+
+```text
+V3B_VISIBLE_WAIT_PLATE_PASS
+V3B_THREE_DECREASING_SECONDS_PASS
+V3B_ABSOLUTE_DUE_CLOCK_PASS
+V3B_DUPLICATE_CLICK_BLOCKED_PASS
+V3B_NATIVE_COPY_INDEPENDENT_PASS
+V3B_TWO_OWNER_ISOLATION_INITIAL_PASS
+V3B_RESTART_RESTORE_PASS
+V3B_DUE_SENDING_STATE_PASS
+V3B_TWO_OWNER_ISOLATION_PASS
+V3B_CHATGPT_BINDING_PASS
+V3B_ALICE_BINDING_PASS
+V3B_NO_CROSS_OWNER_REGRESSION_PASS
+OPERATOR_BROWSER_ACTIONS=0
+REAL_OZON_REQUESTS=0
+REAL_PERFORMANCE_REQUESTS=0
+V3_BROWSER_COUNTDOWN_HARNESS_PASS
+V3_ACCEPTED_BROWSER_EXIT=0
+```
+
+Final pre-freeze verdict: `FINAL_PREFREEZE_PASS`. Historical V3C/V3D/V3E/V3F/final failures were harness/environment failures: source materialization/bookkeeping, prohibited or unavailable service-worker CDP assumptions, temporary launcher target discovery, and temporary fixture/context issues. None executed actual production UI assertions and none is classified as a production defect. No V4 was needed. No real Ozon or Performance request occurred.
+
 ## Final in-run harness-corrected gate — 2026-08-18
 
 This is the final same-task attempt requested from the live development authority. No new stage, branch, V4, production edit, V3 patch edit, dependency installation, or real provider request was made. The existing report branch remains report-only relative to `88a20984c55da1f813ca1184bd90089823f51883`.
