@@ -127,6 +127,15 @@ jobs:
           echo "ARTIFACT_SHA256=$ART_SHA"
           echo 'BUILD_TESTED_FROZEN_REPAIR_PASS'
 
+      - name: Upload tested ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac
+          path: |
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip.sha256.txt
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac_BUILDINFO.txt
+
       - name: Commit built artifact
         shell: bash
         run: |
@@ -136,5 +145,9 @@ jobs:
           git add tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip \
                   tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip.sha256.txt \
                   tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac_BUILDINFO.txt
-          git commit -m 'artifact: publish tested Ozon v0.1.19 frozen repair build'
-          git push origin HEAD:dev/ozon-v0.1.19-live-repair-quota-countdown-2026-08-18
+          if git diff --cached --quiet; then
+            echo 'artifact already committed identically'
+          else
+            git commit -m 'artifact: publish tested Ozon v0.1.19 frozen repair build'
+            git push origin HEAD:dev/ozon-v0.1.19-live-repair-quota-countdown-2026-08-18
+          fi
