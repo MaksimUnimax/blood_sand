@@ -12,7 +12,17 @@ Rerun 6 report commit:
 
 The exact candidate reconstructed correctly and blocks 01-14 passed again. Browser block failed before any browser behavior assertion. The validation harness had been manually spawning Chrome for Testing, connecting to its DevToolsActivePort, then calling Puppeteer runtime extension APIs. Even after switching worker discovery to the Puppeteer Extension API, the installed candidate extension worker was not obtained.
 
-Official Puppeteer 25.4.0 extension documentation defines the runtime install path as a Puppeteer-launched browser with extension support enabled, followed by `browser.installExtension(path)`. Puppeteer troubleshooting also documents that extensions are disabled by default unless extension support is explicitly enabled.
+## Official Puppeteer 25.4.0 facts that are now authority
+
+The browser harness must follow Puppeteer 25.4.0's documented extension lifecycle instead of inferring it from target timing:
+
+1. Runtime extension installation is documented as `puppeteer.launch({ enableExtensions: true })` followed by `browser.installExtension(path)`.
+2. `enableExtensions:true` is the launch prerequisite that removes Puppeteer's default browser arguments which otherwise prevent extensions from being enabled.
+3. `browser.extensions()` is the documented API for enumerating the runtime-installed extension.
+4. For MV3, Puppeteer's own Chrome-extension guide also documents ordinary service-worker target discovery with `browser.waitForTarget(target => target.type() === 'service_worker' && ...)` when the extension has been launched with extension support enabled.
+5. `Extension.workers()` is a valid additional extension-scoped API, but failure of earlier `workers()`/target discovery runs must not be treated as evidence about production when the browser itself was not launched through the documented extension-enabled path.
+
+Therefore the root environment correction is the launch architecture. Do not keep changing worker-wake strategies or increasing timeouts before first proving that the extension is actually installed/enabled in a Puppeteer-launched browser.
 
 ## Superseding browser launch architecture
 
@@ -49,11 +59,12 @@ Requirements:
 - do not add `--disable-extensions`;
 - do not use `--load-extension` as a substitute for runtime `browser.installExtension()`;
 - install the exact reconstructed candidate with `browser.installExtension(candidateDir)`;
-- after install, require `browser.extensions()` to contain exactly the returned candidate extension id;
-- log extension id/name/version/enabled/path before any worker wait so future environment failures are diagnosable;
-- use `extension.workers()` as the primary candidate-worker discovery API;
-- if no candidate worker is initially active, one `extension.triggerAction(page)` validation automation is allowed, then bounded polling of `extension.workers()`;
-- if the extension cannot be enumerated after `installExtension()`, or no candidate worker can be obtained after the one bounded action wake, classify `ENVIRONMENT_ERROR` and stop without changing production.
+- immediately enumerate `browser.extensions()` and require the returned extension id to exist, be enabled, and report the expected version/path before any service-worker wait;
+- emit deterministic extension id/name/version/enabled/path diagnostics before any worker discovery;
+- only after extension enumeration succeeds may the harness discover the MV3 worker using either the documented `browser.waitForTarget(...service_worker...)` route scoped to the returned extension id/URL or `extension.workers()`;
+- worker discovery must remain bounded, but do not compensate for failed extension enablement by timeout inflation;
+- do not add synthetic ChatGPT/popup/action wake hacks unless a separately demonstrated MV3 lifecycle requirement makes one necessary after successful extension enumeration;
+- if enumeration fails after `installExtension()`, classify `ENVIRONMENT_ERROR` immediately with diagnostics; do not wait for a worker and do not modify production.
 
 ## DevToolsActivePort corrections superseded
 
@@ -64,12 +75,9 @@ Because Puppeteer owns browser launch and connection in this architecture, the p
 
 They remain historical evidence only.
 
-The following remain applicable where relevant:
+The worker fixture correction `d9d62a44a812b555d23490acc042ac744a2e3c45` remains applicable to the non-browser quota harness.
 
-- worker fixture correction `d9d62a44a812b555d23490acc042ac744a2e3c45`;
-- Puppeteer Extension API worker-discovery semantics from `d9c42e2cbffca37fc84cd14f294d455e423da542`.
-
-Do not use the failed synthetic ChatGPT or popup-only bootstraps as primary discovery mechanisms.
+The earlier synthetic ChatGPT, popup-only, and action-wake attempts remain historical failed environment experiments and are not primary discovery mechanisms in the authoritative path.
 
 ## Assertions remain unchanged
 
@@ -98,4 +106,4 @@ Hard counters remain:
 `OPERATOR_BROWSER_ACTIONS=0`
 `production_modifications_by_validator=0`
 
-If browser launch itself fails, classify `ENVIRONMENT_ERROR`. If the extension loads and browser assertions execute, any assertion failure must be classified according to actual evidence and must not be relabeled environment merely because earlier reruns had environment failures.
+If browser launch itself fails, classify `ENVIRONMENT_ERROR`. If extension enumeration fails after a documented extension-enabled launch, preserve launch/extension diagnostics and classify the environment failure without changing production. If the extension loads and browser assertions execute, any assertion failure must be classified according to actual evidence and must not be relabeled environment merely because earlier reruns had environment failures.
