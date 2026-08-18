@@ -1,0 +1,25 @@
+// Live-regression branch: a temporarily missing composer must enter the same Manual wait instead of failing recovery.
+{
+  let missingWaitStarted=0, missingCommitCalls=0;
+  const missingContext=vm.createContext({
+    sameConversation:()=>true,
+    conversationKeyFromLocation:()=>conversationKey,
+    primaryComposerContext:()=>null,
+    canonicalText:(v)=>String(v||'').trim(),
+    composerText:()=>'',
+    startManualComposerClearWait:(recovery)=>{missingWaitStarted++;return {ok:true,waiting_for_composer_clear:true,recovery};},
+    sendRuntime:async()=>{missingCommitCalls++;return {ok:false};},
+    assistantTurnIds:()=>[],runtimeId:'runtime-missing',setComposerText:()=>{},recordContentDiagnostic:()=>{},toast:()=>{},currentAIAdapter:()=>({label:'ChatGPT'}),runBatchDeliveryWatch:async()=>({ok:true})
+  });
+  vm.runInContext(`${performSrc}\nthis.__perform=performBatchClaimedDelivery;`,missingContext);
+  let missingResult, missingError=null;
+  try {
+    missingResult=await missingContext.__perform({delivery_mode:'batch_watch_v1',owner_kind:'manual',owner_id:'manual-op-missing',conversation_key:conversationKey,origin:tabIdentity.origin,conversation_id:tabIdentity.conversation_id,delivery_id:'delivery-missing',outgoing_text:'REPORT'});
+  } catch (error) { missingError=error; }
+  assert(!missingError,`temporarily missing composer still fails Manual recovery: ${missingError?.code||missingError?.message}`);
+  assert(missingResult?.waiting_for_composer_clear===true,'missing composer did not enter Manual composer-clear wait');
+  assert(missingWaitStarted===1,'missing composer wait not started exactly once');
+  assert(missingCommitCalls===0,'insert commit attempted while composer is missing');
+  console.log('TARGETED_MISSING_COMPOSER_ENTERS_WAIT_PASS');
+}
+console.log('TARGETED_COMPOSER_WAIT_REGRESSION_PASS');
