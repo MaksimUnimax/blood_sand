@@ -1,0 +1,83 @@
++      const params = jsonCacheClone(normalized.params);
++      params.metrics = cachedMetrics;
++      const cachedCommand = OzonContract.normalizeCommand({ operation: "analytics_data", params });
++      OzonContract.verifyProviderResponse(cachedCommand, entry.result);
++      const projected = OzonContract.projectAnalyticsDataResult(entry.result, cachedMetrics, requestedMetrics);
++      candidates.push({ entry, cachedMetrics, projected, extra: cachedMetrics.length - requestedMetrics.length });
++    } catch (_) {}
++  }
++  if (!candidates.length) return Object.freeze({ hit: false, reason: "cache_miss" });
++  candidates.sort((a, b) => a.extra - b.extra || Number(b.entry.stored_at || 0) - Number(a.entry.stored_at || 0));
++  const chosen = candidates[0];
++  const metadata = safeAnalyticsCacheMetadata({
++    hit: true,
++    profile_id: chosen.entry.profile_id || null,
++    stored_at: chosen.entry.stored_at,
++    expires_at: chosen.entry.expires_at,
++    source_request_id: chosen.entry.source_request_id || null,
++    source_physical_command_fingerprint: chosen.entry.source_physical_command_fingerprint || null,
++    cached_metrics: chosen.cachedMetrics,
++    requested_metrics: requestedMetrics
++  }, nowMs);
++  return Object.freeze({ hit: true, result: chosen.projected, http_status: Number(chosen.entry.http_status || 200), cache: metadata });
++}
++
++async function readAnalyticsResultCacheForCurrentSettings(command) {
++  try {
++    const settings = await getSettings();
++    const normalized = OzonCredentials.normalizeSellerCredentials(settings.sellerCredentials, { required: false });
++    if (normalized.present !== true) return Object.freeze({ hit: false, reason: "credentials_unavailable" });
++    return await readAnalyticsResultCache(command, settings.sellerCredentials);
++  } catch (_) {
++    return Object.freeze({ hit: false, reason: "cache_read_unavailable" });
++  }
++}
++
++async function storeAnalyticsResultCache(command, providerResult, rawCredentials, profile = null, nowMs = Date.now()) {
++  const normalized = OzonContract.normalizeCommand(command);
++  if (normalized.operation !== "analytics_data" || providerResult?.ok !== true || !providerResult?.result) return false;
++  const descriptor = OzonContract.analyticsCoalescingDescriptor(normalized);
++  if (!descriptor?.eligible) return false;
++  OzonContract.verifyProviderResponse(normalized, providerResult.result);
++  const identity = await sellerQuotaIdentity(rawCredentials);
++  const storedResult = jsonCacheClone(providerResult.result);
++  await withProviderResultCacheWrite(async () => {
++    const data = await storageGet(KEYS.PROVIDER_RESULT_CACHE);
++    const state = normalizedProviderResultCacheState(data[KEYS.PROVIDER_RESULT_CACHE]);
++    const currentAccount = state.accounts[identity.account_hash] && typeof state.accounts[identity.account_hash] === "object"
++      ? { ...state.accounts[identity.account_hash] }
++      : { entries: {} };
++    const currentEntries = currentAccount.entries && typeof currentAccount.entries === "object" && !Array.isArray(currentAccount.entries) ? { ...currentAccount.entries } : {};
++    for (const [entryId, entry] of Object.entries(currentEntries)) {
++      if (!entry || Number(entry.expires_at || 0) <= Number(nowMs)) delete currentEntries[entryId];
++    }
++    let targetId = null;
++    for (const [entryId, entry] of Object.entries(currentEntries)) {
++      if (String(entry?.compatibility_key || "") !== String(descriptor.compatibility_key || "")) continue;
++      const metrics = Array.isArray(entry?.metrics) ? entry.metrics.map(String) : [];
++      if (JSON.stringify(metrics) === JSON.stringify(descriptor.metrics)) { targetId = entryId; break; }
++    }
++    if (!targetId) targetId = `analytics-${crypto.randomUUID()}`;
++    currentEntries[targetId] = {
++      compatibility_key: descriptor.compatibility_key,
++      compatibility_fingerprint: descriptor.compatibility_fingerprint,
++      metrics: [...descriptor.metrics],
++      result: storedResult,
++      source_request_id: providerResult.request_id ? String(providerResult.request_id).slice(0, 200) : null,
++      source_physical_command_fingerprint: providerResult.executed_command_fingerprint ? String(providerResult.executed_command_fingerprint).slice(0, 80) : OzonContract.commandFingerprint(normalized),
++      http_status: Number(providerResult.http_status || 200),
++      profile_id: profile?.profile_id ? String(profile.profile_id).slice(0, 120) : null,
++      stored_at: Number(nowMs),
++      expires_at: Number(nowMs) + ANALYTICS_CACHE_TTL_MS
++    };
++    state.accounts[identity.account_hash] = { entries: currentEntries, updated_at: new Date(Number(nowMs)).toISOString() };
++    await storageSet({ [KEYS.PROVIDER_RESULT_CACHE]: state });
++  });
++  return true;
++}
++
++async function storeAnalyticsResultCacheForCurrentSettings(command, providerResult, profile = null) {
++  try {
++    const settings = await getSettings();
++    const normalized = OzonCredentials.normalizeSellerCredentials(settings.sellerCredentials, { required: false });
++    if (normalized.present !== true) return false;
