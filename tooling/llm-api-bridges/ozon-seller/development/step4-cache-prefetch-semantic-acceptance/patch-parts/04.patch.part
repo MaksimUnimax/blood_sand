@@ -1,0 +1,66 @@
++            cacheStored = true;
++            return { ...current, batch: { ...current.batch, entries: currentEntries, next_index: expectedIndexes[expectedIndexes.length - 1] + 1, request_state: "idle", request_worker_session_id: null, quota_wait: null, request_quota: null } };
++          });
++          if (!cacheStored) return { ok: false, code: "PROVIDER_CACHE_RESULT_STORE_RACE" };
++          await diagnostic("PROVIDER_CACHE_HIT", { owner_kind: ownerKind, owner_id: ownerId, queue_index: nextIndex, logical_count: logicalResults.length, coalescing_group_id: group.group_id, external_request_executed: false });
++          continue;
++        }
++
+         const quotaDecision = await prepareProviderQuotaForCommand(group.physical_command);
+         if (quotaDecision.error) {
+           const members = expectedIndexes.map((memberIndex) => owner.batch.entries[memberIndex]);
+@@ -2774,6 +3073,7 @@ function processBatchQueue({
+             quotaPermit: quotaDecision.quota
+           })), physical_attempt_id: physicalAttemptId };
+           if (physicalResult.ok === true) {
++            await storeAnalyticsResultCacheForCurrentSettings(group.physical_command, physicalResult, null);
+             try {
+               logicalResults = liveMembers.map((member) => buildCoalescedLogicalResult(member, group, physicalResult));
+             } catch (projectionError) {
+@@ -2860,10 +3160,32 @@ function processBatchQueue({
+         continue;
+       }
+ 
+-      const physicalCommandForQuota = entry.execution_command || entry.command;
++      const requestedPhysicalCommand = entry.execution_command || entry.command;
++      const singleCacheHit = await readAnalyticsResultCacheForCurrentSettings(requestedPhysicalCommand);
++      if (singleCacheHit.hit === true) {
++        const result = buildCachedSingleResult(entry, singleCacheHit);
++        let cacheStored = false;
++        owner = await mutateOwner((current) => {
++          if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
++          if (Number(current.batch.next_index || 0) !== nextIndex) return current;
++          if (current.batch.request_state === "requesting") return current;
++          const currentEntries = [...(current.batch.entries || [])];
++          const currentEntry = currentEntries[nextIndex];
++          if (!currentEntry || currentEntry.status !== "pending" || currentEntry.kind !== "command") return current;
++          currentEntries[nextIndex] = { ...currentEntry, status: "complete", request_id: result.request_id || null, http_status: Number(result.http_status || 0), external_request_executed: false, executed_command_fingerprint: result.executed_command_fingerprint || null, cache_hit: true, report_text: String(result.report_text || ""), request_completed_at: new Date().toISOString() };
++          cacheStored = true;
++          return { ...current, batch: { ...current.batch, entries: currentEntries, next_index: nextIndex + 1, request_state: "idle", request_worker_session_id: null, quota_wait: null, request_quota: null } };
++        });
++        if (!cacheStored) return { ok: false, code: "PROVIDER_CACHE_RESULT_STORE_RACE" };
++        await diagnostic("PROVIDER_CACHE_HIT", { owner_kind: ownerKind, owner_id: ownerId, queue_index: nextIndex, logical_count: 1, operation: entry.operation, external_request_executed: false });
++        continue;
++      }
++      const acquisitionProfile = OzonContract.reviewedAnalyticsAcquisitionProfile(requestedPhysicalCommand);
++      const physicalCommandForQuota = acquisitionProfile?.applicable ? acquisitionProfile.command : requestedPhysicalCommand;
++      const executionPlanning = acquisitionPlanning(entry.planning || null, acquisitionProfile);
+       const quotaDecision = await prepareProviderQuotaForCommand(physicalCommandForQuota);
+       if (quotaDecision.error) {
+-        const result = buildExecutionErrorResult(entry.command, entry.command_fingerprint, quotaDecision.error, 0, entry.planning || null);
++        const result = buildExecutionErrorResult(entry.command, entry.command_fingerprint, quotaDecision.error, 0, executionPlanning);
+         let stored = false;
+         owner = await mutateOwner((current) => {
+           if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch) return current;
+@@ -2920,10 +3242,14 @@ function processBatchQueue({
+       let result;
+       const requestStartedAt = Date.now();
+       try {
+-        result = await executeOzonCore(liveEntry.command_text, { executionCommand: liveEntry.execution_command || liveEntry.command, planning: liveEntry.planning || null, quotaPermit: quotaDecision.quota });
++        result = await executeOzonCore(liveEntry.command_text, { executionCommand: physicalCommandForQuota, planning: executionPlanning, quotaPermit: quotaDecision.quota });
++        if (result?.ok === true && physicalCommandForQuota.operation === "analytics_data") {
++          await storeAnalyticsResultCacheForCurrentSettings(physicalCommandForQuota, result, acquisitionProfile);
++          result = projectPrefetchedSingleResult(liveEntry, result, acquisitionProfile);
++        }
+       } catch (error) {
+         try {
