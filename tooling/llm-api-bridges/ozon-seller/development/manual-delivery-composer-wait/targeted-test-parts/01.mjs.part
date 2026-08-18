@@ -1,0 +1,80 @@
+const afterOff=(await chrome.storage.local.get([KEYS.MANUAL_MODES,KEYS.MANUAL_OPERATIONS,quotaKey,cacheKey,KEYS.AUTO_RUNS]));
+assert(afterOff[KEYS.MANUAL_MODES]?.[conversationKey] !== true,'manual mode did not turn OFF');
+assert(!afterOff[KEYS.MANUAL_OPERATIONS]?.[conversationKey],'Manual OFF did not delete the pending pre-insert delivery');
+assert(JSON.stringify(afterOff[quotaKey])===beforeQuota,'Manual OFF mutated provider quota state');
+assert(JSON.stringify(afterOff[cacheKey])===beforeCache,'Manual OFF mutated provider cache state');
+assert(JSON.stringify(afterOff[KEYS.MANUAL_OPERATIONS]?.[otherKey])===beforeOther,'Manual OFF mutated another owner operation');
+assert(JSON.stringify(afterOff[KEYS.AUTO_RUNS])===beforeAuto,'Manual OFF mutated unrelated autorun state');
+assert(providerCalls===0,'Manual OFF caused a provider request');
+const onResponse=await send({type:'OZ_SET_MANUAL_MODE',enabled:true,conversation_key:conversationKey,tab_id:1},{tab:{id:1}});
+assert(onResponse?.ok===true && onResponse?.enabled===true && onResponse?.state?.manual_operation_active===false,'actual OZ_SET_MANUAL_MODE ON did not restore clean Manual state');
+assert(await vm.runInContext(`getManualMode(${JSON.stringify(conversationKey)})`,context)===true,'Manual mode did not turn back ON');
+assert(await vm.runInContext(`getManualOperation(${JSON.stringify(conversationKey)})`,context)===null,'old pending delivery reappeared after OFF -> ON');
+{ const quotaAfterOn=JSON.stringify((await chrome.storage.local.get(quotaKey))[quotaKey]); assert(quotaAfterOn===beforeQuota,'OFF -> ON reset/changed provider quota timer state'); }
+const publicAfterOn=await send({type:'OZ_GET_MANUAL_STATE',conversation_key:conversationKey},{tab:{id:1}});
+assert(publicAfterOn?.ok===true && publicAfterOn?.bound===true && publicAfterOn?.enabled===true && publicAfterOn?.ready===true && publicAfterOn?.manual_operation_active===false,'OFF -> ON did not restore worker-owned Manual readiness');
+assert(((await chrome.storage.local.get(quotaKey))[quotaKey]).accounts.acct.families['seller.analytics_data.v1'].next_allowed_at===quotaState.accounts.acct.families['seller.analytics_data.v1'].next_allowed_at,'OFF -> ON changed next_allowed_at while restoring readiness');
+console.log('TARGETED_MANUAL_OFF_ON_READY_WITH_QUOTA_PRESERVED_PASS');
+console.log('TARGETED_MANUAL_OFF_PENDING_ONLY_RESET_PASS');
+console.log('TARGETED_QUOTA_CACHE_PRESERVED_PASS');
+console.log('TARGETED_OTHER_OWNER_PRESERVED_PASS');
+console.log('TARGETED_ZERO_PROVIDER_CALLS_ON_TOGGLE_PASS');
+
+// OFF must NOT broadly delete non-cancellable Manual states.
+async function assertNonCancellablePreserved(operation, label){
+  await chrome.storage.local.set({[KEYS.MANUAL_MODES]:{[conversationKey]:true},[KEYS.MANUAL_OPERATIONS]:{[conversationKey]:operation}});
+  await vm.runInContext(`setManualMode(${JSON.stringify(conversationKey)}, false)`,context);
+  const stored=(await chrome.storage.local.get(KEYS.MANUAL_OPERATIONS))[KEYS.MANUAL_OPERATIONS]?.[conversationKey]||null;
+  assert(stored?.operation_id===operation.operation_id,`Manual OFF deleted non-cancellable state: ${label}`);
+}
+await assertNonCancellablePreserved({...pending,operation_id:'manual-requesting',status:'requesting',delivery:null,delivery_id:null,batch:{phase:'collecting',request_state:'quota_waiting',next_allowed_at:now+64000}},'requesting/quota_waiting');
+await assertNonCancellablePreserved({...pending,operation_id:'manual-insert-committed',delivery:{...pending.delivery,phase:'insert_committed'}},'insert_committed');
+await assertNonCancellablePreserved({...pending,operation_id:'manual-inserted',delivery:{...pending.delivery,phase:'inserted'}},'inserted');
+assert(providerCalls===0,'non-cancellable OFF scope test caused provider request');
+console.log('TARGETED_MANUAL_OFF_NARROW_SCOPE_PASS');
+
+// Race barrier: once Manual mode is OFF, a late content runtime cannot obtain insert commit.
+await chrome.storage.local.set({[KEYS.MANUAL_MODES]:{},[KEYS.MANUAL_OPERATIONS]:{[conversationKey]:pending}});
+const deniedCommit=await vm.runInContext(`commitManualBatchDeliveryInsert({conversation_key:${JSON.stringify(conversationKey)},owner_id:'manual-op-pending',delivery_id:'delivery-pending',actor_id:'late-runtime',assistant_baseline_ids:[]},{tab:{id:1}})`,context);
+assert(deniedCommit?.insert_allowed===false&&deniedCommit?.code==='MANUAL_MODE_DISABLED','late insert commit was not blocked after Manual OFF');
+assert(providerCalls===0,'late commit barrier caused provider request');
+console.log('TARGETED_MANUAL_OFF_LATE_INSERT_COMMIT_BLOCKED_PASS');
+
+// ---------- Content: occupied composer must start a wait, not throw delivery failure. ----------
+const contentSrc=fs.readFileSync(path.join(candidateDir,'content_script.js'),'utf8');
+const performSrc=extractFunction(contentSrc,'performBatchClaimedDelivery');
+let waitStarted=0, commitCalls=0;
+const contentContext=vm.createContext({
+  sameConversation:()=>true,
+  conversationKeyFromLocation:()=>conversationKey,
+  primaryComposerContext:()=>({composer:{}}),
+  canonicalText:(v)=>String(v||'').trim(),
+  composerText:()=> 'operator draft',
+  startManualComposerClearWait:(recovery)=>{waitStarted++;return {ok:true,waiting_for_composer_clear:true,recovery};},
+  sendRuntime:async()=>{commitCalls++;return {ok:false};},
+  assistantTurnIds:()=>[], runtimeId:'runtime-test', setComposerText:()=>{}, recordContentDiagnostic:()=>{}, toast:()=>{}, currentAIAdapter:()=>({label:'ChatGPT'}), runBatchDeliveryWatch:async()=>({ok:true})
+});
+vm.runInContext(`${performSrc}\nthis.__perform=performBatchClaimedDelivery;`,contentContext);
+let occupiedResult, occupiedError=null;
+try { occupiedResult=await contentContext.__perform({delivery_mode:'batch_watch_v1',owner_kind:'manual',owner_id:'manual-op',conversation_key:conversationKey,origin:tabIdentity.origin,conversation_id:tabIdentity.conversation_id,delivery_id:'delivery-pending',outgoing_text:'REPORT'}); }
+catch(e){ occupiedError=e; }
+assert(!occupiedError,`occupied composer still fails delivery instead of waiting: ${occupiedError?.code||occupiedError?.message}`);
+assert(occupiedResult?.waiting_for_composer_clear===true,'occupied composer did not enter manual composer-clear wait');
+assert(waitStarted===1,'manual composer-clear wait not started exactly once');
+assert(commitCalls===0,'delivery insert commit attempted while composer occupied');
+console.log('TARGETED_OCCUPIED_COMPOSER_ENTERS_WAIT_PASS');
+
+// Exercise the actual new waiter helpers: persistent plate, no draft mutation, one insert after clear,
+// recovery restart, and local cancellation.
+const helperStart=contentSrc.indexOf('  function stopManualComposerWait');
+const helperEnd=contentSrc.indexOf('  async function performBatchClaimedDelivery',helperStart);
+assert(helperStart>=0&&helperEnd>helperStart,'manual composer wait helper block missing');
+const helperSrc=contentSrc.slice(helperStart,helperEnd);
+let composerValue='operator draft'; let setCalls=[]; let failedCalls=0; let commitCount=0; let insertedCount=0; let watchCount=0;
+let lastObserver=null; const diag=[]; const toastMap=new Map();
+class FakeMutationObserver { constructor(cb){this.cb=cb;lastObserver=this;} observe(){} disconnect(){} trigger(){this.cb();} }
+const deep=vm.createContext({console,setTimeout,clearTimeout,Promise,MutationObserver:FakeMutationObserver,document:{documentElement:{}},
+  activeManualComposerWait:null,manualEnabled:true,manualConversationKey:conversationKey,MANUAL_COMPOSER_WAIT_TOAST_KEY:'manual-report-composer-wait',DELIVERY_WATCH_INTERVAL_MS:2000,
+  statusToastByKey:toastMap,current:()=>true,sameConversation:()=>true,conversationKeyFromLocation:()=>conversationKey,
+  primaryComposerContext:()=>({composer:{},form:{}}),composerText:()=>composerValue,canonicalText:v=>String(v||'').trim(),
+  toast:(text,tone,timeout,key)=>{toastMap.set(key,{text,tone,timeout});return {};},clearToast:(key)=>toastMap.delete(key),
