@@ -1,5 +1,116 @@
 # Ozon live-repair independent synthetic acceptance
 
+## Latest same-acceptance rerun — PASS
+
+This section supersedes historical failed report commit `592f1d483a8b408f58ca10f0b114b25083474b03`. No new stage or branch was created.
+
+Authority: frozen target `66bc4ac712b345d499b10982e7f5124279265b88`; authoritative Step-4 base `4ce190c8bbdc438dcdf407abbe4dbecd846736df`; exact V3 candidate `88a20984c55da1f813ca1184bd90089823f51883`.
+
+Fresh environment: Node `v24.12.0`, Puppeteer `25.4.0`, CFT `151.0.7922.47`; no installation or update. Integrity remained PASS and HEAD/merge-base remained the exact frozen target.
+
+### Worker and regression
+
+```text
+node D:\codex\Test\qa-live-repair-independent-acceptance\worker-acceptance.mjs D:\codex\Test\qa-live-repair-independent-acceptance\v3-exact
+exit=0
+V3B_ACTUAL_MANUAL_PUBLIC_STATE_PASS
+V3B_ACTUAL_AUTORUN_PUBLIC_STATE_PASS
+V3B_ACTUAL_PUBLIC_STATE_PRIVACY_PASS
+V3B_INCOMPATIBLE_CACHE_MISS_GUARDED_WAIT_PASS
+V3B_GUARDED_DUE_ONE_PROVIDER_CALL_PASS
+V3B_ONE_429_ONE_PROVIDER_CALL_PASS
+V3B_ZERO_IMMEDIATE_RETRY_PASS
+V3B_ZERO_ALARM_REPLAY_PASS
+V3B_ZERO_STARTUP_REPLAY_PASS
+V3B_RETRY_AFTER_EXTENSION_ONLY_PASS
+V3_WORKER_ACTUAL_PATH_HARNESS_PASS
+REAL_OZON_REQUESTS=0
+REAL_PERFORMANCE_REQUESTS=0
+```
+
+```text
+node D:\codex\Test\qa-live-repair-independent-acceptance\regression-acceptance.mjs D:\codex\Test\qa-live-repair-independent-acceptance\step4-exact D:\codex\Test\qa-live-repair-independent-acceptance\v3-exact
+exit=0
+V3B_PROTECTED_15_BYTE_IDENTICAL_PASS
+V3B_STEP1_SECURITY_CARRY_FORWARD_PASS
+V3B_STEP2_PLANNER_PROJECTION_CARRY_FORWARD_PASS
+V3B_STEP4_CACHE_PREFETCH_CARRY_FORWARD_PASS
+V3B_DELIVERY_FSM_CARRY_FORWARD_PASS
+V3B_STEP3_INTEGRATION_SURFACE_CARRY_FORWARD_PASS
+V3B_CONTRACT_PROTECTED_FUNCTIONS_PRESENT_PASS
+V3_REGRESSION_CARRY_FORWARD_HARNESS_PASS
+```
+
+### Independent Step 2–4
+
+Step 2 command `node D:\codex\Test\qa-live-repair-independent-acceptance\step2-acceptance.mjs` exited `0`. The corrected temporary fixture reached actual `processBatchQueue`, one synthetic provider call, coalescing/projection, provider-error, restart, and unprojectable-response assertions. The report showed `external_request_executed: true`, `coalesced_logical_count: 3`, physical metrics `revenue, ordered_units, hits_view`, projected metric `revenue`, physical request id `physical-1`, and physical fingerprint `physical-fp`.
+
+Step 3, cache, and queue commands each exited `0`:
+
+```text
+STEP3_INDEPENDENT_VERIFIER_SAFE_ERRORS_PASS
+STEP3_INDEPENDENT_IDENTITY_PRIVACY_PASS
+STEP3_INDEPENDENT_GLOBAL_QUOTA_RETRY_PASS
+STEP3_INDEPENDENT_FAMILY_SCOPE_PASS
+STEP4_INDEPENDENT_CACHE_SEMANTICS_PASS
+STEP4_INDEPENDENT_CACHE_PRIVACY_ADMISSION_PASS
+STEP4_INDEPENDENT_FIXED_PROFILE_PASS
+STEP4_INDEPENDENT_QUEUE_CACHE_ZERO_QUOTA_PROVIDER_PASS
+STEP4_INDEPENDENT_COALESCED_CACHE_FANOUT_PASS
+STEP4_INDEPENDENT_CACHE_PROVENANCE_PASS
+```
+
+### Browser
+
+Command used the accepted launcher endpoint `http://127.0.0.1:50502` and exited `0`:
+
+```text
+node D:\codex\Test\qa-live-repair-final-prefreeze-rerun-current\accepted-browser-run\accepted-v3-browser.mjs D:\codex\Test\qa-live-repair-independent-acceptance\v3-exact http://127.0.0.1:50502 D:\codex\Test\qa-harness\puppeteer-extension-qa\chrome\win64-151.0.7922.47\chrome-win64\chrome.exe
+```
+
+Fresh markers:
+
+```text
+ALICE_SYNTHETIC_DOCUMENT_INTERCEPTED=PASS
+V3B_VISIBLE_WAIT_PLATE_PASS
+V3B_THREE_DECREASING_SECONDS_PASS
+V3B_ABSOLUTE_DUE_CLOCK_PASS
+V3B_DUPLICATE_CLICK_BLOCKED_PASS
+V3B_NATIVE_COPY_INDEPENDENT_PASS
+V3B_TWO_OWNER_ISOLATION_INITIAL_PASS
+V3B_RESTART_RESTORE_PASS
+V3B_DUE_SENDING_STATE_PASS
+V3B_TWO_OWNER_ISOLATION_PASS
+V3B_CHATGPT_BINDING_PASS
+V3B_ALICE_BINDING_PASS
+V3B_NO_CROSS_OWNER_REGRESSION_PASS
+OPERATOR_BROWSER_ACTIONS=0
+REAL_OZON_REQUESTS=0
+REAL_PERFORMANCE_REQUESTS=0
+V3_BROWSER_COUNTDOWN_HARNESS_PASS
+HARNESS_CREATED_PAGES_REMAINING=0
+```
+
+The Alice precondition verified the synthetic marker, active ChatListItem, CodeBlock/message code, and standalone input. Stale pages were closed before the attempt and all harness-created pages were closed in `finally`.
+
+### Latest result
+
+```text
+integrity=PASS
+worker=PASS
+step1_4_regression=PASS
+step2_independent_actual_path=PASS
+browser_ui=PASS
+alice_synthetic_intercept=PASS
+tab_cleanup=PASS
+production_behavior_failure=NONE
+real_ozon_requests=0
+real_performance_requests=0
+operator_browser_actions=0
+failure_classification=NONE
+verdict=INDEPENDENT_ACCEPTANCE_PASS
+```
+
 Date: 2026-08-18
 
 ## Authority and scope
