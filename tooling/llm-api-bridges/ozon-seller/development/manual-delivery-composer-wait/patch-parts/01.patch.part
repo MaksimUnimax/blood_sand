@@ -1,0 +1,108 @@
++    void runManualComposerClearWait(state).catch((error) => {
++      if (activeManualComposerWait === state) stopManualComposerWait("wait_failed");
++      recordContentDiagnostic("MANUAL_COMPOSER_WAIT_FAILED", {
++        owner_id: ownerId,
++        delivery_id: deliveryId,
++        code: error.code || "MANUAL_COMPOSER_WAIT_FAILED",
++        error: error.message || String(error)
++      });
++    });
++    return { ok: true, waiting_for_composer_clear: true };
++  }
++
+   async function performBatchClaimedDelivery(recovery) {
+     if (!recovery || recovery.delivery_mode !== "batch_watch_v1") throw Object.assign(new Error("Неверный batch delivery mode."), { code: "BATCH_DELIVERY_MODE_MISMATCH" });
+     if (!sameConversation(recovery.origin, recovery.conversation_id) || recovery.conversation_key !== conversationKeyFromLocation()) throw Object.assign(new Error("Batch delivery адресована другому AI-диалогу."), { code: "CONVERSATION_MISMATCH" });
+@@ -1159,8 +1300,9 @@
+     const ownerId = String(recovery.owner_id || recovery.run_id || recovery.operation_id || "");
+     if (!ownerId) throw Object.assign(new Error("Batch delivery owner отсутствует."), { code: "BATCH_DELIVERY_OWNER_MISSING" });
+     const preInsertContext = primaryComposerContext();
+-    if (!preInsertContext) throw Object.assign(new Error("Не найден composer текущего AI для batch delivery."), { code: "COMPOSER_NOT_FOUND" });
+-    if (canonicalText(composerText(preInsertContext.composer))) {
++    if (!preInsertContext || canonicalText(composerText(preInsertContext.composer))) {
++      if (ownerKind === "manual") return startManualComposerClearWait(recovery);
++      if (!preInsertContext) throw Object.assign(new Error("Не найден composer текущего AI для batch delivery."), { code: "COMPOSER_NOT_FOUND" });
+       throw Object.assign(new Error("Composer текущего AI содержит пользовательский текст. Batch insertion не начат; существующий текст не изменён."), { code: "COMPOSER_CONTAINS_OTHER_TEXT" });
+     }
+     const commit = await sendRuntime("OZ_BATCH_DELIVERY_INSERT_COMMIT", {
+@@ -1195,6 +1337,7 @@
+     if (!inserted?.ok || inserted.inserted !== true) {
+       throw Object.assign(new Error(inserted?.error || "Worker не подтвердил inserted state; автоматическая повторная вставка запрещена."), { code: inserted?.code || "DELIVERY_INSERT_ACK_FAILED" });
+     }
++    if (ownerKind === "manual") clearToast(MANUAL_COMPOSER_WAIT_TOAST_KEY);
+     toast(`Ozon: полный batch вставлен. Жду Send → ready lifecycle ${currentAIAdapter()?.label || "AI"}, не перечитывая содержимое composer.`, "info", 0, "autorun-state");
+     void runBatchDeliveryWatch(inserted.recovery || { ...recovery, type: "watch_delivery", delivery_phase: "inserted" });
+     return { ok: true, inserted: true, watching: true };
+@@ -2119,6 +2262,7 @@
+   runtime.dispose = () => {
+     if (runtime.disposed) return;
+     runtime.disposed = true;
++    stopManualComposerWait("content_dispose");
+     stopManualObserver();
+     stopAutoWatch("content_dispose");
+     stopDeliveryWatch("content_dispose");
+diff --git a/service_worker.js b/service_worker.js
+index 91f9425..27d4fa6 100644
+--- a/service_worker.js
++++ b/service_worker.js
+@@ -678,6 +678,41 @@ async function mutateManualOperation(conversationKey, mutator) {
+   });
+ }
+ 
++function manualDeliveryPendingBeforeInsert(operation) {
++  return Boolean(
++    operation
++    && operation.status === MANUAL_OPERATION_STATUSES.DELIVERING
++    && operation.delivery?.mode === "batch_watch_v1"
++    && operation.delivery?.phase === BridgeAutorunModel.DELIVERY_PHASES.CLAIMED
++  );
++}
++
++async function cancelManualPendingPreInsertDelivery(conversationKey, reason = "manual_mode_disabled") {
++  const key = normalizeConversationKey(conversationKey);
++  let cancelled = null;
++  await mutateManualOperation(key, (current) => {
++    if (!manualDeliveryPendingBeforeInsert(current)) return current;
++    cancelled = {
++      operation_id: current.operation_id || null,
++      manual_request_id: current.manual_request_id || null,
++      delivery_id: current.delivery?.delivery_id || current.delivery_id || null,
++      tab_id: current.tab_id || null
++    };
++    return null;
++  });
++  if (cancelled) {
++    await diagnostic("MANUAL_PENDING_DELIVERY_CANCELLED", {
++      conversation_key: key,
++      operation_id: cancelled.operation_id,
++      manual_request_id: cancelled.manual_request_id,
++      delivery_id: cancelled.delivery_id,
++      tab_id: cancelled.tab_id,
++      reason
++    });
++  }
++  return cancelled;
++}
++
+ async function getAutoRun(conversationKey) {
+   const key = normalizeConversationKey(conversationKey);
+   const data = await storageGet(KEYS.AUTO_RUNS);
+@@ -717,7 +752,10 @@ async function setManualMode(conversationKey, enabled) {
+   const modes = { ...(data[KEYS.MANUAL_MODES] || {}) };
+   if (enabled === true) modes[key] = true;
+   else delete modes[key];
++  // Persist OFF first. This is the authoritative race barrier: a late content runtime
++  // may no longer acquire insert permission after the operator disables Manual mode.
+   await storageSet({ [KEYS.MANUAL_MODES]: modes });
++  if (enabled !== true) await cancelManualPendingPreInsertDelivery(key, "manual_mode_disabled");
+   return enabled === true;
+ }
+ 
+@@ -2212,6 +2250,7 @@ async function commitManualBatchDeliveryInsert(message, sender) {
+     return { ok: false, committed: false, insert_allowed: false, code: "MANUAL_DELIVERY_STATE_MISMATCH", error: "Manual batch delivery не находится в ожидаемом state." };
+   }
+   if (!Number.isInteger(senderTabId) || senderTabId !== Number(operation.tab_id)) return { ok: false, committed: false, insert_allowed: false, code: "MANUAL_NON_OWNER_TAB", error: "Manual batch delivery insert commit пришёл не из owner-вкладки." };
++  if (!(await getManualMode(key))) return { ok: false, committed: false, insert_allowed: false, code: "MANUAL_MODE_DISABLED", error: "Ручной режим выключен; pending delivery отменена до вставки отчёта." };
+   const liveIdentity = await assertTabConversation(senderTabId, key, operation.conversation_id);
+   const binding = await strictBindingForIdentity(liveIdentity);
+   if (String(operation.binding_snapshot?.binding_id || "") !== String(binding.binding_id || "")) return { ok: false, committed: false, insert_allowed: false, code: "MANUAL_BINDING_MISMATCH", error: "Manual batch binding изменился." };
