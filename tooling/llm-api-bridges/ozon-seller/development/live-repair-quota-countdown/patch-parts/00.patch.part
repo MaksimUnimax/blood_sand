@@ -1,0 +1,99 @@
+--- a/service_worker.js
++++ b/service_worker.js
+@@ -4,6 +4,7 @@
+ const PROVIDER_QUOTA_ALARM = "ozon-provider-quota-wake-v1";
+ const ANALYTICS_QUOTA_FAMILY = "seller.analytics_data.v1";
+ const ANALYTICS_MIN_INTERVAL_MS = 60_000;
++const ANALYTICS_QUOTA_LAUNCH_SAFETY_MS = 5_000;
+ 
+ // Reference-parity single-flight: one worker-owned browser delivery attempt per run.
+ // This is deliberately the same primitive used by Business Bridge 2.0.0.22.
+@@ -13,6 +14,8 @@
+   return Object.freeze({
+     family: String(value.family || ANALYTICS_QUOTA_FAMILY),
+     min_interval_ms: Math.max(0, Number(value.min_interval_ms || 0)),
++    bridge_launch_safety_ms: ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++    effective_interval_ms: ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
+     dispatched_at: Number(value.dispatched_at || 0),
+     next_allowed_at: Number(value.next_allowed_at || 0),
+     credential_scope_id: String(value.account_hash || "").slice(0, 16) || null,
+@@ -34,12 +37,18 @@
+     const family = families[ANALYTICS_QUOTA_FAMILY] && typeof families[ANALYTICS_QUOTA_FAMILY] === "object"
+       ? { ...families[ANALYTICS_QUOTA_FAMILY] }
+       : {};
+-    const nextAllowedAt = Math.max(0, Number(family.next_allowed_at || 0));
++    const lastProviderRequestAt = Math.max(0, Number(family.last_provider_request_at || 0));
++    const guardedFromLastAttempt = lastProviderRequestAt > 0
++      ? lastProviderRequestAt + ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS
++      : 0;
++    const nextAllowedAt = Math.max(0, Number(family.next_allowed_at || 0), guardedFromLastAttempt);
+     if (currentNow < nextAllowedAt) {
+       return Object.freeze({
+         allowed: false,
+         family: ANALYTICS_QUOTA_FAMILY,
+         min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++        bridge_launch_safety_ms: ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++        effective_interval_ms: ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
+         account_hash: identity.account_hash,
+         credential_revision: identity.credential_revision,
+         next_allowed_at: nextAllowedAt,
+@@ -48,9 +57,11 @@
+       });
+     }
+     const dispatchedAt = currentNow;
+-    const next = dispatchedAt + ANALYTICS_MIN_INTERVAL_MS;
++    const next = dispatchedAt + ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS;
+     families[ANALYTICS_QUOTA_FAMILY] = {
+       min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++      bridge_launch_safety_ms: ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++      effective_interval_ms: ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
+       last_provider_request_at: dispatchedAt,
+       next_allowed_at: next,
+       credential_revision: identity.credential_revision,
+@@ -66,6 +77,8 @@
+       allowed: true,
+       family: ANALYTICS_QUOTA_FAMILY,
+       min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++      bridge_launch_safety_ms: ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++      effective_interval_ms: ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
+       account_hash: identity.account_hash,
+       credential_revision: identity.credential_revision,
+       dispatched_at: dispatchedAt,
+@@ -94,6 +107,8 @@
+     families[ANALYTICS_QUOTA_FAMILY] = {
+       ...family,
+       min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++      bridge_launch_safety_ms: ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++      effective_interval_ms: ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
+       last_provider_request_at: Number(family.last_provider_request_at || quotaPermit.dispatched_at || 0),
+       next_allowed_at: effectiveNext,
+       credential_revision: quotaPermit.credential_revision || family.credential_revision || null,
+@@ -106,6 +121,25 @@
+   });
+ }
+ 
++function publicQuotaWait(owner) {
++  const batch = owner?.batch;
++  const wait = batch?.request_state === "quota_waiting" && batch?.quota_wait && typeof batch.quota_wait === "object"
++    ? batch.quota_wait
++    : null;
++  const nextAllowedAt = Math.max(0, Number(wait?.next_allowed_at || 0));
++  if (!wait || nextAllowedAt <= 0) return null;
++  return Object.freeze({
++    family: String(wait.family || ANALYTICS_QUOTA_FAMILY),
++    min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++    bridge_launch_safety_ms: ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++    effective_interval_ms: ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++    next_allowed_at: nextAllowedAt,
++    queue_index: Math.max(0, Number(wait.queue_index || 0)),
++    waiting_since: wait.waiting_since ? String(wait.waiting_since) : null,
++    automatic_retry: false
++  });
++}
++
+ function publicManualOperation(operation) {
+   if (!operation) return null;
+   return {
+@@ -121,6 +155,7 @@
+     created_at: operation.created_at || null,
+     updated_at: operation.updated_at || null,
