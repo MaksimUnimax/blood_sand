@@ -1,0 +1,104 @@
+# Ozon live-repair final pre-freeze same-gate rerun report
+
+Date: 2026-08-18
+Scope: same final pre-freeze gate rerun only; not acceptance, live-provider testing, or release promotion.
+
+## Authority and safety
+
+- Frozen Step-4 base: `4ce190c8bbdc438dcdf407abbe4dbecd846736df`
+- Exact V3 candidate: `88a20984c55da1f813ca1184bd90089823f51883`
+- Repaired worker SHA-256: `34a84f66284f5aa5f77b9b7cda23d5ddb2431c7b30114cd5fe927798c31e957a`
+- Repaired content SHA-256: `d95d2ca040c37f688d33c2caac8a78d95389b8e7acd41fcf11f8e0b4dc59e001`
+- Node: `v24.12.0`; Puppeteer: `25.4.0`; CFT: `151.0.7922.47`.
+- `REAL_OZON_REQUESTS = 0`; `REAL_PERFORMANCE_REQUESTS = 0`.
+- No V4, new stage, production, V3 patch, dependency, credential, or normal-profile changes.
+
+## Individual Git blob integrity
+
+Each object was materialized separately and checked with an individual `git hash-object` command:
+
+- original runner: `bdf242f5cb78e506e67adb7b4d06fd0f585824f3`;
+- rerun wrapper: `b48b7afbe94c09ff6df4538f914709572dfdf0e3`;
+- worker source: `0da73bdd1bb1608074781bb0c594c7875a4fe3ce`;
+- browser source: `841429741d5ff9144a8a40506e657dc4392fe37c`;
+- regression source: `57574ef6fdb96a5ed5e0b0a02eec5b5ba99e9be5`.
+
+Original runner and rerun wrapper `node --check` both exited `0` with empty stdout/stderr. Production hashes and exact 17-file/protected-file checks passed.
+
+## Exact same-gate command
+
+```text
+node inputs/FINAL_PREFREEZE_COMPLETION_RERUN_WRAPPER.mjs inputs/FINAL_PREFREEZE_COMPLETION_RUNNER.mjs inputs/worker-source.mjs inputs/browser-source.mjs inputs/regression-source.mjs D:\\codex\\Test\\qa-live-repair-final-prefreeze-rerun\\step4-exact D:\\codex\\Test\\qa-live-repair-final-prefreeze-rerun\\v3-exact D:\\codex\\Test\\qa-harness\\puppeteer-extension-qa\\chrome\\win64-151.0.7922.47\\chrome-win64\\chrome.exe D:\\codex\\Test\\qa-harness\\puppeteer-extension-qa
+```
+
+Overall exit code: `1`.
+
+## Complete consolidated stdout/stderr
+
+```text
+FINAL_RERUN_ORIGINAL_RUNNER_GIT_BLOB=bdf242f5cb78e506e67adb7b4d06fd0f585824f3
+FINAL_RERUN_SERVICE_WORKER_WAKE_PATCH_ONLY=PASS
+FINAL_SOURCE_GIT_BLOB_INTEGRITY_PASS
+FINAL_PRODUCTION_HASH_INTEGRITY_PASS
+FINAL_WORKER_TEST_FIXTURE_CORRECTION_PASS
+FINAL_WORKER_REALM_SAFE_STORAGE_PASS
+FINAL_BROWSER_EXTENSION_DEBUG_LAUNCH_CORRECTION_PASS
+FINAL_BROWSER_SERVICE_WORKER_WAKE_CORRECTION_PASS
+FINAL_BROWSER_NODE_MODULES_JUNCTION_PASS
+FINAL_TRANSFORMED_HARNESS_SYNTAX_PASS
+===== FINAL_WORKER_RUN_STDOUT_BEGIN =====
+V3B_ACTUAL_MANUAL_PUBLIC_STATE_PASS
+V3B_ACTUAL_AUTORUN_PUBLIC_STATE_PASS
+V3B_ACTUAL_PUBLIC_STATE_PRIVACY_PASS
+V3B_INCOMPATIBLE_CACHE_MISS_GUARDED_WAIT_PASS
+V3B_GUARDED_DUE_ONE_PROVIDER_CALL_PASS
+V3B_ONE_429_ONE_PROVIDER_CALL_PASS
+V3B_ZERO_IMMEDIATE_RETRY_PASS
+V3B_ZERO_ALARM_REPLAY_PASS
+V3B_ZERO_STARTUP_REPLAY_PASS
+V3B_RETRY_AFTER_EXTENSION_ONLY_PASS
+REAL_OZON_REQUESTS=0
+REAL_PERFORMANCE_REQUESTS=0
+V3_WORKER_ACTUAL_PATH_HARNESS_PASS
+===== FINAL_WORKER_RUN_STDOUT_END =====
+===== FINAL_WORKER_RUN_STDERR_BEGIN =====
+===== FINAL_WORKER_RUN_STDERR_END =====
+FINAL_WORKER_RUN_EXIT_CODE=0
+===== FINAL_REGRESSION_RUN_STDOUT_BEGIN =====
+V3B_PROTECTED_15_BYTE_IDENTICAL_PASS
+V3B_STEP1_SECURITY_CARRY_FORWARD_PASS
+V3B_STEP2_PLANNER_PROJECTION_CARRY_FORWARD_PASS
+V3B_STEP4_CACHE_PREFETCH_CARRY_FORWARD_PASS
+V3B_DELIVERY_FSM_CARRY_FORWARD_PASS
+V3B_STEP3_INTEGRATION_SURFACE_PASS
+V3B_CONTRACT_PROTECTED_FUNCTIONS_PRESENT_PASS
+V3_REGRESSION_CARRY_FORWARD_HARNESS_PASS
+===== FINAL_REGRESSION_RUN_STDOUT_END =====
+===== FINAL_REGRESSION_RUN_STDERR_BEGIN =====
+===== FINAL_REGRESSION_RUN_STDERR_END =====
+FINAL_REGRESSION_RUN_EXIT_CODE=0
+===== FINAL_BROWSER_RUN_STDOUT_BEGIN =====
+===== FINAL_BROWSER_RUN_STDOUT_END =====
+===== FINAL_BROWSER_RUN_STDERR_BEGIN =====
+===== FINAL_BROWSER_RUN_STDERR_END =====
+FINAL_BROWSER_RUN_EXIT_CODE=1
+FINAL_PREFREEZE_COMPLETION_FAILED
+file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/CallbackRegistry.js:102
+    #error = new ProtocolError();
+             ^
+
+ProtocolError: Protocol error (ServiceWorker.enable): 'ServiceWorker.enable' wasn't found
+    at <instance_members_initializer> (file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/CallbackRegistry.js:102:14)
+    at new Callback (file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/CallbackRegistry.js:106:16)
+    at CallbackRegistry.create (file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/CallbackRegistry.js:25:26)
+    at CdpSession.send (file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/cdp/CdpSession.js:72:14)
+    at file:///C:/Users/unyma/AppData/Local/Temp/ozon-final-prefreeze-eRG8CU/browser/FINAL_BROWSER_HARNESS.mjs:36:20
+
+Node.js v24.12.0
+```
+
+The worker and regression blocks fully passed. The browser correction reached the CDP wake step but the existing CFT/Puppeteer environment rejected `ServiceWorker.enable` before any browser assertion markers; classification: `ENVIRONMENT_ERROR`.
+
+## Verdict
+
+`FINAL_PREFREEZE_FAILED` due to the browser environment/CDP protocol failure. No real Ozon or Performance request occurred.
