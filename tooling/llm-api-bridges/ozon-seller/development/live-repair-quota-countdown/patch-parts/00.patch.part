@@ -1,10 +1,12 @@
 --- a/service_worker.js
 +++ b/service_worker.js
-@@ -4,6 +4,7 @@
+@@ -34,8 +34,9 @@
  const PROVIDER_QUOTA_ALARM = "ozon-provider-quota-wake-v1";
  const ANALYTICS_QUOTA_FAMILY = "seller.analytics_data.v1";
  const ANALYTICS_MIN_INTERVAL_MS = 60_000;
 +const ANALYTICS_QUOTA_LAUNCH_SAFETY_MS = 5_000;
+ const PROVIDER_RESULT_CACHE_SCHEMA_VERSION = 1;
+ const ANALYTICS_CACHE_TTL_MS = 60_000;
  
  // Reference-parity single-flight: one worker-owned browser delivery attempt per run.
  // This is deliberately the same primitive used by Business Bridge 2.0.0.22.
