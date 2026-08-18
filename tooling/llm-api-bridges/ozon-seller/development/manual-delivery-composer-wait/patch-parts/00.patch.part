@@ -1,0 +1,164 @@
+diff --git a/content_script.js b/content_script.js
+index ca285f8..03d8b02 100644
+--- a/content_script.js
++++ b/content_script.js
+@@ -52,7 +52,9 @@
+   const recoveryInFlight = new Set();
+   const manualRecoveryInFlight = new Set();
+   let activeDeliveryWatch = null;
++  let activeManualComposerWait = null;
+   const DELIVERY_WATCH_INTERVAL_MS = 2000;
++  const MANUAL_COMPOSER_WAIT_TOAST_KEY = "manual-report-composer-wait";
+ 
+   const AUTO_PROMPT_STABILITY_MS = 2000;
+   const AUTO_PROMPT_DEBOUNCE_MS = 200;
+@@ -613,17 +615,22 @@
+     const next = enabled === true;
+     const key = conversationKey || conversationKeyFromLocation();
+     if (!key) {
++      stopManualComposerWait("manual_context_missing");
+       stopManualObserver();
+       manualConversationKey = null;
+       return false;
+     }
+-    if (manualConversationKey && manualConversationKey !== key) stopManualObserver();
++    if (manualConversationKey && manualConversationKey !== key) {
++      stopManualComposerWait("manual_conversation_changed");
++      stopManualObserver();
++    }
+     manualConversationKey = String(key);
+     if (next) {
+       if (manualEnabled && observer) return true;
+       manualEnabled = true;
+       startManualObserver();
+     } else {
++      stopManualComposerWait("manual_mode_disabled");
+       if (!manualEnabled && !observer && OWN_BUTTONS.size === 0) return true;
+       stopManualObserver();
+       manualConversationKey = String(key);
+@@ -1152,6 +1159,140 @@
+     return { ok: false, code: "DELIVERY_WATCH_STOPPED" };
+   }
+ 
++  function stopManualComposerWait(reason = "stopped", { clearPlate = true } = {}) {
++    const state = activeManualComposerWait;
++    if (state) {
++      state.cancelled = true;
++      if (typeof state.wake_cancel === "function") {
++        try { state.wake_cancel(); } catch (_) {}
++        state.wake_cancel = null;
++      }
++      activeManualComposerWait = null;
++      recordContentDiagnostic("MANUAL_COMPOSER_WAIT_STOPPED", {
++        owner_id: state.owner_id,
++        delivery_id: state.delivery_id,
++        reason
++      });
++    }
++    if (clearPlate) clearToast(MANUAL_COMPOSER_WAIT_TOAST_KEY);
++    return Boolean(state);
++  }
++
++  function showManualComposerWaitPlate() {
++    if (!statusToastByKey.has(MANUAL_COMPOSER_WAIT_TOAST_KEY)) {
++      toast("Очистите поле ввода, чтобы получить отчёт.", "info", 0, MANUAL_COMPOSER_WAIT_TOAST_KEY);
++    }
++  }
++
++  async function waitForManualComposerWake(state) {
++    if (!current() || !state || state.cancelled || activeManualComposerWait !== state) return "cancelled";
++    return await new Promise((resolve) => {
++      let settled = false;
++      let timer = null;
++      let observer = null;
++      let cancel = null;
++      const finish = (reason) => {
++        if (settled) return;
++        settled = true;
++        if (timer) clearTimeout(timer);
++        if (observer) {
++          try { observer.disconnect(); } catch (_) {}
++        }
++        if (state.wake_cancel === cancel) state.wake_cancel = null;
++        resolve(reason);
++      };
++      cancel = () => finish("cancelled");
++      state.wake_cancel = cancel;
++      try {
++        const context = primaryComposerContext();
++        const root = context?.form || context?.root || document.documentElement;
++        observer = new MutationObserver(() => finish("mutation"));
++        observer.observe(root, { childList: true, subtree: true, characterData: true });
++      } catch (_) {
++        observer = null;
++      }
++      timer = setTimeout(() => finish("timeout"), DELIVERY_WATCH_INTERVAL_MS);
++    });
++  }
++
++  async function runManualComposerClearWait(state) {
++    if (!state || activeManualComposerWait !== state) return { ok: false, code: "MANUAL_COMPOSER_WAIT_NOT_ACTIVE" };
++    while (current() && activeManualComposerWait === state && !state.cancelled) {
++      if (!manualEnabled || manualConversationKey !== state.conversation_key) {
++        stopManualComposerWait("manual_mode_disabled");
++        return { ok: false, cancelled: true, code: "MANUAL_MODE_DISABLED" };
++      }
++      if (!sameConversation(state.origin, state.conversation_id) || state.conversation_key !== conversationKeyFromLocation()) {
++        stopManualComposerWait("conversation_changed");
++        return { ok: false, cancelled: true, code: "CONVERSATION_MISMATCH" };
++      }
++      const context = primaryComposerContext();
++      if (context && !canonicalText(composerText(context.composer))) {
++        stopManualComposerWait("composer_clear", { clearPlate: false });
++        try {
++          const result = await performBatchClaimedDelivery(state.recovery);
++          if (result?.waiting_for_composer_clear !== true) clearToast(MANUAL_COMPOSER_WAIT_TOAST_KEY);
++          return result;
++        } catch (error) {
++          clearToast(MANUAL_COMPOSER_WAIT_TOAST_KEY);
++          if (error?.code === "MANUAL_MODE_DISABLED" || error?.code === "MANUAL_DELIVERY_STATE_MISMATCH") {
++            return { ok: false, cancelled: true, code: error.code };
++          }
++          await sendRuntime("OZ_BATCH_DELIVERY_FAILED", {
++            owner_kind: "manual",
++            owner_id: state.owner_id,
++            conversation_key: state.conversation_key,
++            delivery_id: state.delivery_id,
++            code: error.code || "MANUAL_DELIVERY_RECOVERY_FAILED",
++            error: error.message || String(error)
++          }).catch(() => null);
++          throw error;
++        }
++      }
++      if (context) showManualComposerWaitPlate();
++      await waitForManualComposerWake(state);
++    }
++    return { ok: false, cancelled: true, code: "MANUAL_COMPOSER_WAIT_STOPPED" };
++  }
++
++  function startManualComposerClearWait(recovery) {
++    const ownerId = String(recovery?.owner_id || recovery?.operation_id || "");
++    const deliveryId = String(recovery?.delivery_id || "");
++    if (!ownerId || !deliveryId) return { ok: false, code: "MANUAL_COMPOSER_WAIT_INVALID" };
++    if (activeManualComposerWait?.owner_id === ownerId && activeManualComposerWait?.delivery_id === deliveryId) {
++      if (primaryComposerContext()) showManualComposerWaitPlate();
++      return { ok: true, waiting_for_composer_clear: true, deduplicated: true };
++    }
++    if (activeManualComposerWait) stopManualComposerWait("replaced");
++    const state = {
++      owner_id: ownerId,
++      delivery_id: deliveryId,
++      conversation_key: String(recovery.conversation_key || ""),
++      origin: String(recovery.origin || "").toLowerCase(),
++      conversation_id: String(recovery.conversation_id || "").toLowerCase(),
++      recovery,
++      wake_cancel: null,
++      cancelled: false
++    };
++    activeManualComposerWait = state;
++    recordContentDiagnostic("MANUAL_COMPOSER_WAIT_STARTED", {
++      owner_id: ownerId,
++      delivery_id: deliveryId,
++      fallback_poll_ms: DELIVERY_WATCH_INTERVAL_MS
++    });
++    if (primaryComposerContext()) showManualComposerWaitPlate();
