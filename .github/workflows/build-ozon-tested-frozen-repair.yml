@@ -1,0 +1,140 @@
+name: Build Ozon tested frozen repair artifact
+
+on:
+  push:
+    paths:
+      - '.github/workflows/build-ozon-tested-frozen-repair.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout build branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: dev/ozon-v0.1.19-live-repair-quota-countdown-2026-08-18
+
+      - name: Reconstruct exact accepted frozen repair
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          FROZEN='66bc4ac712b345d499b10982e7f5124279265b88'
+          PROJECT_REL='tooling/llm-api-bridges/ozon-seller'
+          WORK='/tmp/ozon-tested-build'
+          FROZEN_TREE="$WORK/frozen"
+          EXT="$WORK/extension"
+
+          rm -rf "$WORK"
+          mkdir -p "$WORK" "$EXT"
+          git worktree add --detach "$FROZEN_TREE" "$FROZEN"
+          ROOT="$FROZEN_TREE/$PROJECT_REL"
+
+          python3 "$ROOT/development/operator-v0.1.19/exact-reconstruction-v2/reconstruct_operator_v0.1.19_v2.py" "$WORK/operator-v0.1.19.zip"
+          echo '2b86518bfdc81081e271c7f8346188fc7047999385d1da4428fa2a133dba15bf  '"$WORK/operator-v0.1.19.zip" | sha256sum -c -
+          unzip -q "$WORK/operator-v0.1.19.zip" -d "$EXT"
+
+          cd "$EXT"
+          git init -q
+
+          apply_stage() {
+            local stage="$1"
+            local parts_dir="$2"
+            local expected_sha="$3"
+            local patch_file="$WORK/${stage}.patch"
+            cat "$parts_dir"/*.patch.part > "$patch_file"
+            echo "$expected_sha  $patch_file" | sha256sum -c -
+            git apply --check "$patch_file"
+            git apply "$patch_file"
+            echo "${stage}=PASS"
+          }
+
+          apply_stage step1 "$ROOT/development/step1-contract-capability/patch-parts" '5afe153c15eb4005a836d005bab531f8905dbdcd5b0541d52a6112a3ebb0e3ce'
+          apply_stage step2 "$ROOT/development/step2-query-planner-coalescing/patch-parts" '93e40b59c9128f58b794f2f736377f10777054f51a5de20b25524077c430128b'
+          apply_stage step3 "$ROOT/development/step3-quota-verifier-errors/patch-parts" '9eee85d648a212e96658514dea8f031223d255cf93c7c73a14107c50817919f5'
+          apply_stage step4 "$ROOT/development/step4-cache-prefetch-semantic-acceptance/patch-parts" 'b05bf7f1d147172fbbb9de91a8388ee0cd400f27d9c4a2aaa0d5550535defed6'
+          apply_stage repair_v3 "$ROOT/development/live-repair-quota-countdown/patch-parts-v3" 'aa247ed1b89ac0f708768d6d7057595b99f16b2242a402ca7a7cf1be6e944024'
+
+          echo '34a84f66284f5aa5f77b9b7cda23d5ddb2431c7b30114cd5fe927798c31e957a  service_worker.js' | sha256sum -c -
+          echo 'd95d2ca040c37f688d33c2caac8a78d95389b8e7acd41fcf11f8e0b4dc59e001  content_script.js' | sha256sum -c -
+
+          cat > "$WORK/expected-files.txt" <<'EOF'
+          content_script.js
+          manifest.json
+          popup.css
+          popup.html
+          popup.js
+          service_worker.js
+          shared/ai_adapters.js
+          shared/bridge_autorun_model.js
+          shared/composer_send.js
+          shared/conversation_identity.js
+          shared/manual_controls.js
+          shared/ozon_contract.js
+          shared/ozon_credentials.js
+          shared/ozon_provider.js
+          shared/proven_writing_block_capture.js
+          shared/provider_transport_core.js
+          shared/runtime_names.js
+          EOF
+          sed -i 's/^          //' "$WORK/expected-files.txt"
+          find . -type f ! -path './.git/*' -printf '%P\n' | sort > "$WORK/actual-files.txt"
+          sort -o "$WORK/expected-files.txt" "$WORK/expected-files.txt"
+          diff -u "$WORK/expected-files.txt" "$WORK/actual-files.txt"
+
+          python3 - <<'PY'
+          import json
+          m=json.load(open('manifest.json','r',encoding='utf-8'))
+          assert m['manifest_version']==3
+          assert m['version']=='0.1.19'
+          print('MANIFEST_V0_1_19_PASS')
+          PY
+
+          while IFS= read -r f; do
+            node --check "$f" >/dev/null
+          done < <(find . -type f -name '*.js' ! -path './.git/*' | sort)
+          echo 'JS_SYNTAX_PASS'
+
+          rm -rf .git
+
+          ARTIFACT_DIR="$GITHUB_WORKSPACE/$PROJECT_REL/artifacts"
+          ARTIFACT_NAME='OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip'
+          mkdir -p "$ARTIFACT_DIR"
+          rm -f "$ARTIFACT_DIR/$ARTIFACT_NAME" "$ARTIFACT_DIR/$ARTIFACT_NAME.sha256.txt" "$ARTIFACT_DIR/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac_BUILDINFO.txt"
+
+          zip -X -q -r "$ARTIFACT_DIR/$ARTIFACT_NAME" \
+            content_script.js manifest.json popup.css popup.html popup.js service_worker.js shared
+
+          ART_SHA=$(sha256sum "$ARTIFACT_DIR/$ARTIFACT_NAME" | awk '{print $1}')
+          printf '%s  %s\n' "$ART_SHA" "$ARTIFACT_NAME" > "$ARTIFACT_DIR/$ARTIFACT_NAME.sha256.txt"
+
+          cat > "$ARTIFACT_DIR/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac_BUILDINFO.txt" <<EOF
+          frozen_target=$FROZEN
+          authoritative_step4_base=4ce190c8bbdc438dcdf407abbe4dbecd846736df
+          exact_v3_candidate=88a20984c55da1f813ca1184bd90089823f51883
+          independent_acceptance_report_commit=662efb3737e5f7d702751a2407d9d154a2d83ea9
+          service_worker_sha256=34a84f66284f5aa5f77b9b7cda23d5ddb2431c7b30114cd5fe927798c31e957a
+          content_script_sha256=d95d2ca040c37f688d33c2caac8a78d95389b8e7acd41fcf11f8e0b4dc59e001
+          production_files=17
+          artifact_sha256=$ART_SHA
+          EOF
+          sed -i 's/^          //' "$ARTIFACT_DIR/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac_BUILDINFO.txt"
+
+          echo "ARTIFACT_SHA256=$ART_SHA"
+          echo 'BUILD_TESTED_FROZEN_REPAIR_PASS'
+
+      - name: Commit built artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip \
+                  tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip.sha256.txt \
+                  tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac_BUILDINFO.txt
+          git commit -m 'artifact: publish tested Ozon v0.1.19 frozen repair build'
+          git push origin HEAD:dev/ozon-v0.1.19-live-repair-quota-countdown-2026-08-18
