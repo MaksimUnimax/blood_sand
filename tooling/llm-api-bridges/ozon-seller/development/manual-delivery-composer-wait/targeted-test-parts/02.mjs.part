@@ -1,0 +1,42 @@
+  recordContentDiagnostic:(e,d)=>diag.push([e,d]),assistantTurnIds:()=>[],runtimeId:'runtime-deep',
+  setComposerText:(_c,text)=>{setCalls.push(text);composerValue=text;},currentAIAdapter:()=>({label:'ChatGPT'}),
+  runBatchDeliveryWatch:async()=>{watchCount++;return {ok:true};},
+  sendRuntime:async(type,payload)=>{if(type==='OZ_BATCH_DELIVERY_INSERT_COMMIT'){commitCount++;return {ok:true,insert_allowed:true};}if(type==='OZ_BATCH_DELIVERY_INSERTED'){insertedCount++;return {ok:true,inserted:true,recovery:{...payload,delivery_mode:'batch_watch_v1',type:'watch_delivery'}};}if(type==='OZ_BATCH_DELIVERY_FAILED'){failedCalls++;return {ok:true};}return {ok:true};}
+});
+vm.runInContext(`let activeManualComposerWait=null; let manualEnabled=true; let manualConversationKey=${JSON.stringify(conversationKey)}; const MANUAL_COMPOSER_WAIT_TOAST_KEY='manual-report-composer-wait'; const DELIVERY_WATCH_INTERVAL_MS=2000; ${helperSrc} ${performSrc} this.__start=startManualComposerClearWait; this.__stop=stopManualComposerWait; this.__getActive=()=>activeManualComposerWait; this.__setManual=(v)=>{manualEnabled=v};`,deep);
+const recovery={delivery_mode:'batch_watch_v1',owner_kind:'manual',owner_id:'manual-op-deep',conversation_key:conversationKey,origin:tabIdentity.origin,conversation_id:tabIdentity.conversation_id,delivery_id:'delivery-deep',outgoing_text:'REPORT'};
+const waitResult=deep.__start(recovery);
+assert(waitResult?.waiting_for_composer_clear===true,'deep waiter did not start');
+await new Promise(r=>setTimeout(r,0));
+assert(toastMap.get('manual-report-composer-wait')?.text==='Очистите поле ввода, чтобы получить отчёт.','persistent plate text mismatch');
+assert(composerValue==='operator draft'&&setCalls.length===0,'waiter mutated occupied operator draft');
+assert(commitCount===0,'waiter committed before composer clear');
+// Simulate content runtime restart while still occupied: stop, then recover same worker-owned claimed delivery.
+deep.__stop('content_dispose');
+assert(!toastMap.has('manual-report-composer-wait'),'dispose did not clear old wait plate');
+const restartResult=deep.__start(recovery); assert(restartResult?.waiting_for_composer_clear===true,'recovery did not restore composer wait');
+await new Promise(r=>setTimeout(r,0));
+assert(toastMap.has('manual-report-composer-wait'),'recovery did not restore persistent plate');
+composerValue='';
+assert(lastObserver,'composer wait did not install MutationObserver'); lastObserver.trigger();
+for(let i=0;i<50&&insertedCount<1;i++) await new Promise(r=>setTimeout(r,5));
+assert(commitCount===1&&insertedCount===1,'composer clear did not produce exactly one commit/insert');
+assert(setCalls.length===1&&setCalls[0]==='REPORT','report was not inserted exactly once after clear');
+assert(failedCalls===0,'composer wait path reported a false delivery failure');
+assert(!toastMap.has('manual-report-composer-wait'),'plate remained after successful insert');
+assert(watchCount===1,'existing post-insert delivery watch was not entered exactly once');
+console.log('TARGETED_COMPOSER_WAIT_CLEAR_INSERT_ONCE_PASS');
+console.log('TARGETED_COMPOSER_WAIT_RESTART_RESTORE_PASS');
+// Start another occupied wait and cancel locally as Manual OFF would do.
+composerValue='another draft'; setCalls=[]; commitCount=0; insertedCount=0; watchCount=0;
+const recovery2={...recovery,owner_id:'manual-op-cancel',delivery_id:'delivery-cancel'};
+deep.__setManual(true); deep.__start(recovery2); await new Promise(r=>setTimeout(r,0));
+assert(toastMap.has('manual-report-composer-wait'),'cancel scenario plate missing');
+deep.__setManual(false); deep.__stop('manual_mode_disabled');
+assert(!deep.__getActive(),'Manual OFF did not destroy local composer waiter');
+assert(!toastMap.has('manual-report-composer-wait'),'Manual OFF did not remove wait plate');
+composerValue=''; if(lastObserver) lastObserver.trigger(); await new Promise(r=>setTimeout(r,10));
+assert(commitCount===0&&insertedCount===0&&setCalls.length===0,'cancelled waiter inserted report after Manual OFF');
+console.log('TARGETED_MANUAL_OFF_STOPS_COMPOSER_WAIT_PASS');
+console.log('TARGETED_MANUAL_COMPOSER_WAIT_HELPER_PRESENT_PASS');
+console.log('TARGETED_COMPOSER_WAIT_REGRESSION_PASS');
