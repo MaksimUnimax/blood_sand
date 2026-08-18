@@ -17,14 +17,14 @@ if(actual!==EXPECTED_RUNNER_BLOB) throw new Error(`original final runner Git blo
 let src=raw.toString('utf8');
 const anchor="console.log('FINAL_BROWSER_EXTENSION_DEBUG_LAUNCH_CORRECTION_PASS');";
 const oldBrowser="const extensionId=await browser.installExtension(candidateDir);\n  const swTarget=await browser.waitForTarget(t=>t.type()==='service_worker'&&t.url().startsWith(`chrome-extension://${extensionId}/`),{timeout:10000});";
-const newBrowser="const extensionId=await browser.installExtension(candidateDir);\n  const browserCdp=await browser.target().createCDPSession();\n  await browserCdp.send('ServiceWorker.enable');\n  let swStartError=null;\n  try { await browserCdp.send('ServiceWorker.startWorker',{scopeURL:`chrome-extension://${extensionId}/`}); } catch (error) { swStartError=String(error?.stack||error); }\n  let swTarget;\n  try {\n    swTarget=await browser.waitForTarget(t=>t.type()==='service_worker'&&t.url().startsWith(`chrome-extension://${extensionId}/`),{timeout:20000});\n  } catch (error) {\n    const targets=browser.targets().map(t=>({type:t.type(),url:t.url()}));\n    throw new Error('extension service worker target timeout; startWorker='+String(swStartError||'none')+'; targets='+JSON.stringify(targets)+'; cause='+String(error?.stack||error));\n  }";
+const newBrowser="const extensionId=await browser.installExtension(candidateDir);\n  const swTargetPromise=browser.waitForTarget(t=>t.type()==='service_worker'&&t.url().startsWith(`chrome-extension://${extensionId}/`),{timeout:20000});\n  const wakePage=await browser.newPage();\n  let wakeError=null;\n  try {\n    await wakePage.goto(`chrome-extension://${extensionId}/popup.html`,{waitUntil:'domcontentloaded',timeout:10000});\n    try {\n      await wakePage.evaluate(async()=>{\n        try { await chrome.runtime.sendMessage({type:'__OZ_PREFREEZE_WAKE__'}); } catch (_) {}\n      });\n    } catch (error) { wakeError=String(error?.stack||error); }\n  } catch (error) { wakeError=String(error?.stack||error); }\n  let swTarget;\n  try {\n    swTarget=await swTargetPromise;\n  } catch (error) {\n    const targets=browser.targets().map(t=>({type:t.type(),url:t.url()}));\n    throw new Error('extension service worker target timeout; wakePage='+String(wakeError||'none')+'; targets='+JSON.stringify(targets)+'; cause='+String(error?.stack||error));\n  } finally {\n    try { await wakePage.close(); } catch (_) {}\n  }";
 const injected=[
   anchor,
   '',
   'browserText=replaceExactlyOnce(browserText,',
   `  ${JSON.stringify(oldBrowser)},`,
   `  ${JSON.stringify(newBrowser)},`,
-  "  'browser explicit MV3 service-worker wake');",
+  "  'browser native MV3 runtime-message wake');",
   "console.log('FINAL_BROWSER_SERVICE_WORKER_WAKE_CORRECTION_PASS');"
 ].join('\n');
 const count=src.split(anchor).length-1;
