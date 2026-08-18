@@ -1,0 +1,88 @@
+ async function extendAnalyticsQuotaFromRetryAfter(quotaPermit, retryAfter, nowMs = Date.now()) {
+   if (!quotaPermit?.account_hash || !retryAfter) return safeQuotaMetadata(quotaPermit);
+   const retryAt = parseRetryAfterAt(retryAfter, nowMs);
+   if (!retryAt) return safeQuotaMetadata(quotaPermit);
+   return withProviderQuotaWrite(async () => {
+     const data = await storageGet(KEYS.PROVIDER_QUOTA_STATE);
+     const state = normalizedQuotaState(data[KEYS.PROVIDER_QUOTA_STATE]);
+     const account = state.accounts[quotaPermit.account_hash] && typeof state.accounts[quotaPermit.account_hash] === "object"
+       ? { ...state.accounts[quotaPermit.account_hash] }
+       : { credential_revision: quotaPermit.credential_revision || null, families: {} };
+     const families = account.families && typeof account.families === "object" ? { ...account.families } : {};
+     const family = families[ANALYTICS_QUOTA_FAMILY] && typeof families[ANALYTICS_QUOTA_FAMILY] === "object"
+       ? { ...families[ANALYTICS_QUOTA_FAMILY] }
+       : {};
+     const effectiveNext = Math.max(Number(family.next_allowed_at || 0), Number(quotaPermit.next_allowed_at || 0), retryAt);
+     families[ANALYTICS_QUOTA_FAMILY] = {
+       ...family,
+       min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++      bridge_launch_safety_ms: ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++      effective_interval_ms: ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
+       last_provider_request_at: Number(family.last_provider_request_at || quotaPermit.dispatched_at || 0),
+       next_allowed_at: effectiveNext,
+       credential_revision: quotaPermit.credential_revision || family.credential_revision || null,
+       retry_after_applied_at: Number(nowMs),
+       updated_at: new Date(Number(nowMs)).toISOString()
+     };
+     state.accounts[quotaPermit.account_hash] = { ...account, families, updated_at: new Date(Number(nowMs)).toISOString() };
+     await storageSet({ [KEYS.PROVIDER_QUOTA_STATE]: state });
+     return safeQuotaMetadata({ ...quotaPermit, next_allowed_at: effectiveNext });
+   });
+ }
+@@ -1000,18 +1015,38 @@
++function publicQuotaWait(owner) {
++  const batch = owner?.batch;
++  const wait = batch?.request_state === "quota_waiting" && batch?.quota_wait && typeof batch.quota_wait === "object"
++    ? batch.quota_wait
++    : null;
++  const nextAllowedAt = Math.max(0, Number(wait?.next_allowed_at || 0));
++  if (!wait || nextAllowedAt <= 0) return null;
++  return Object.freeze({
++    family: String(wait.family || ANALYTICS_QUOTA_FAMILY),
++    min_interval_ms: ANALYTICS_MIN_INTERVAL_MS,
++    bridge_launch_safety_ms: ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++    effective_interval_ms: ANALYTICS_MIN_INTERVAL_MS + ANALYTICS_QUOTA_LAUNCH_SAFETY_MS,
++    next_allowed_at: nextAllowedAt,
++    queue_index: Math.max(0, Number(wait.queue_index || 0)),
++    waiting_since: wait.waiting_since ? String(wait.waiting_since) : null,
++    automatic_retry: false
++  });
++}
++
+ function publicManualOperation(operation) {
+   if (!operation) return null;
+   return {
+     operation_id: operation.operation_id || null,
+     manual_request_id: operation.manual_request_id || null,
+     status: operation.status || null,
+     owner_tab_id: operation.tab_id || null,
+     request_id: operation.request_id || null,
+     delivery_id: operation.delivery_id || null,
+     operation: operation.operation || null,
+     command_summary: operation.command_summary || null,
+     delivery_confirmed: operation.delivery_confirmed === true,
+     created_at: operation.created_at || null,
+     updated_at: operation.updated_at || null,
+     completed_at: operation.completed_at || null,
++    quota_wait: publicQuotaWait(operation),
+     last_error: operation.last_error || null
+   };
+ }
+@@ -1210,22 +1245,23 @@
+ function publicRun(run) {
+   if (!run) return null;
+   return {
+     run_id: run.run_id,
+     status: run.status,
+     owner_tab_id: run.tab_id || null,
+     conversation_id: run.conversation_id || null,
+     binding_id: run.binding_snapshot?.binding_id || null,
+     binding_revision: Number(run.binding_snapshot?.binding_revision || 0) || null,
+     sequence: Number(run.sequence || 0),
+     pause_requested: run.pause_requested === true,
+     finish_requested: run.finish_requested === true,
+     last_operation: run.last_operation || null,
+     last_command_summary: run.last_command_summary || null,
+     last_assistant_turn_id: run.last_assistant_turn_id || null,
+     batch_total: Array.isArray(run.batch?.entries) ? run.batch.entries.length : 0,
+     batch_completed: run.batch ? Math.max(0, Number(run.batch.next_index || 0)) : 0,
