@@ -1,5 +1,128 @@
 # Ozon live-repair final pre-freeze same-gate rerun report
 
+## Current correction rerun — correction commit `f07c63b2145090fb78ed01b355f4d5eea740a126`
+
+This section supersedes the earlier same-gate result below. The existing report branch and report file were updated in place; no new stage or branch was created.
+
+Authority remained frozen Step-4 base `4ce190c8bbdc438dcdf407abbe4dbecd846736df` and exact V3 candidate `88a20984c55da1f813ca1184bd90089823f51883`. No production, V3 patch, dependency, credential, or normal-profile changes were made. `REAL_OZON_REQUESTS=0`, `REAL_PERFORMANCE_REQUESTS=0`, and `OPERATOR_BROWSER_ACTIONS=0`.
+
+### Current object integrity
+
+Each object was materialized separately and checked with a separate `git hash-object` command. Observed exact hashes:
+
+- original runner: `bdf242f5cb78e506e67adb7b4d06fd0f585824f3`
+- current rerun wrapper: `25fc65b021b1b74f37b995d9609b1ecd5c2bc612`
+- worker source: `0da73bdd1bb1608074781bb0c594c7875a4fe3ce`
+- browser source: `841429741d5ff9144a8a40506e657dc4392fe37c`
+- regression source: `57574ef6fdb96a5ed5e0b0a02eec5b5ba99e9be5`
+
+Both `node --check` commands exited `0` with empty stdout/stderr.
+
+### Exact command and result
+
+```text
+node D:\\codex\\Test\\qa-live-repair-final-prefreeze-rerun-current\\inputs\\FINAL_PREFREEZE_COMPLETION_RERUN_WRAPPER.mjs D:\\codex\\Test\\qa-live-repair-final-prefreeze-rerun-current\\inputs\\FINAL_PREFREEZE_COMPLETION_RUNNER.mjs D:\\codex\\Test\\qa-live-repair-final-prefreeze-rerun-current\\inputs\\worker-source.mjs D:\\codex\\Test\\qa-live-repair-final-prefreeze-rerun-current\\inputs\\browser-source.mjs D:\\codex\\Test\\qa-live-repair-final-prefreeze-rerun-current\\inputs\\regression-source.mjs D:\\codex\\Test\\qa-live-repair-final-prefreeze-rerun-current\\step4-exact D:\\codex\\Test\\qa-live-repair-final-prefreeze-rerun-current\\v3-exact D:\\codex\\Test\\qa-harness\\puppeteer-extension-qa\\chrome\\win64-151.0.7922.47\\chrome-win64\\chrome.exe D:\\codex\\Test\\qa-harness\\puppeteer-extension-qa
+```
+
+Exit code: `1`.
+
+Complete consolidated stdout/stderr:
+
+```text
+FINAL_RERUN_ORIGINAL_RUNNER_GIT_BLOB=bdf242f5cb78e506e67adb7b4d06fd0f585824f3
+FINAL_RERUN_SERVICE_WORKER_WAKE_PATCH_ONLY=PASS
+FINAL_SOURCE_GIT_BLOB_INTEGRITY_PASS
+FINAL_PRODUCTION_HASH_INTEGRITY_PASS
+FINAL_WORKER_TEST_FIXTURE_CORRECTION_PASS
+FINAL_WORKER_REALM_SAFE_STORAGE_PASS
+FINAL_BROWSER_EXTENSION_DEBUG_LAUNCH_CORRECTION_PASS
+FINAL_BROWSER_SERVICE_WORKER_WAKE_CORRECTION_PASS
+FINAL_BROWSER_NODE_MODULES_JUNCTION_PASS
+FINAL_TRANSFORMED_HARNESS_SYNTAX_PASS
+===== FINAL_WORKER_RUN_STDOUT_BEGIN =====
+V3B_ACTUAL_MANUAL_PUBLIC_STATE_PASS
+V3B_ACTUAL_AUTORUN_PUBLIC_STATE_PASS
+V3B_ACTUAL_PUBLIC_STATE_PRIVACY_PASS
+V3B_INCOMPATIBLE_CACHE_MISS_GUARDED_WAIT_PASS
+V3B_GUARDED_DUE_ONE_PROVIDER_CALL_PASS
+V3B_ONE_429_ONE_PROVIDER_CALL_PASS
+V3B_ZERO_IMMEDIATE_RETRY_PASS
+V3B_ZERO_ALARM_REPLAY_PASS
+V3B_ZERO_STARTUP_REPLAY_PASS
+V3B_RETRY_AFTER_EXTENSION_ONLY_PASS
+REAL_OZON_REQUESTS=0
+REAL_PERFORMANCE_REQUESTS=0
+V3_WORKER_ACTUAL_PATH_HARNESS_PASS
+===== FINAL_WORKER_RUN_STDOUT_END =====
+===== FINAL_WORKER_RUN_STDERR_BEGIN =====
+===== FINAL_WORKER_RUN_STDERR_END =====
+FINAL_WORKER_RUN_EXIT_CODE=0
+===== FINAL_REGRESSION_RUN_STDOUT_BEGIN =====
+V3B_PROTECTED_15_BYTE_IDENTICAL_PASS
+V3B_STEP1_SECURITY_CARRY_FORWARD_PASS
+V3B_STEP2_PLANNER_PROJECTION_CARRY_FORWARD_PASS
+V3B_STEP4_CACHE_PREFETCH_CARRY_FORWARD_PASS
+V3B_DELIVERY_FSM_CARRY_FORWARD_PASS
+V3B_STEP3_INTEGRATION_SURFACE_PASS
+V3B_CONTRACT_PROTECTED_FUNCTIONS_PRESENT_PASS
+V3_REGRESSION_CARRY_FORWARD_HARNESS_PASS
+===== FINAL_REGRESSION_RUN_STDOUT_END =====
+===== FINAL_REGRESSION_RUN_STDERR_BEGIN =====
+===== FINAL_REGRESSION_RUN_STDERR_END =====
+FINAL_REGRESSION_RUN_EXIT_CODE=0
+===== FINAL_BROWSER_RUN_STDOUT_BEGIN =====
+===== FINAL_BROWSER_RUN_STDOUT_END =====
+===== FINAL_BROWSER_RUN_STDERR_BEGIN =====
+===== FINAL_BROWSER_RUN_STDERR_END =====
+FINAL_BROWSER_RUN_EXIT_CODE=1
+FINAL_PREFREEZE_COMPLETION_FAILED
+file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232
+            throw new TimeoutError(`Timed out after waiting ${ms}ms`, { cause });
+                  ^
+TimeoutError: Timed out after waiting 20000ms
+    at file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19
+    at file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19
+    at file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19
+    at file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19
+    at file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19
+    at file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19
+    at file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19
+    at file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19
+    at file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7) {
+  [cause]: undefined
+}
+Node.js v24.12.0
+SAME_GATE_EXIT=1
+```
+
+Worker and regression fully passed. Browser produced no assertion markers and failed while waiting for the exact extension service-worker target after native wake, before browser assertions. Classification: `ENVIRONMENT_ERROR`. Verdict: `FINAL_PREFREEZE_FAILED`.
+
+Verbatim browser stderr captured by the command (complete):
+
+```text
+FINAL_PREFREEZE_COMPLETION_FAILED
+file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232
+            throw new TimeoutError(`Timed out after waiting ${ms}ms`, { cause });
+                  ^
+
+TimeoutError: Timed out after waiting 20000ms
+    at file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19
+    at file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:1944:31
+    at OperatorSubscriber2._this._next (file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:1001:9)
+    at Subscriber2.next (file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:704:12)
+    at AsyncAction2.<anonymous> (file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:2288:31)
+    at AsyncAction2._execute (file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:1368:26)
+    at AsyncScheduler2.flush (file:///D:/codex/Test/qa-harness/puppeteer-extension-qa/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:1435:26)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7) {
+  [cause]: undefined
+}
+
+Node.js v24.12.0
+```
+
 Date: 2026-08-18
 Scope: same final pre-freeze gate rerun only; not acceptance, live-provider testing, or release promotion.
 
