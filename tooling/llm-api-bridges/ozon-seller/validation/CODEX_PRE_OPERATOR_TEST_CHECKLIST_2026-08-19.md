@@ -1,26 +1,27 @@
-# Ozon Bridge v0.1.19 — список проверок для Codex перед передачей сборки
+# Ozon Bridge v0.1.19 — проверки для Codex перед передачей сборки
 
 Дата: 2026-08-19
 Статус: `CODEX_TEST_CHECKLIST_DOCUMENT_ONLY`
 
 Это **только документ с проверками**.
 
-Codex здесь только проверяет готовую сборку. Он **не разрабатывает тесты**, **не пишет тестовые программы**, **не создаёт validator/runner/harness/fixture/helper**, **не исправляет тестовую инфраструктуру** и **не меняет production-код**.
+Codex здесь только проверяет готовую сборку. Он **не разрабатывает тесты**, **не пишет тестовые программы**, **не создаёт validator/runner/harness/fixture/helper**, **не исправляет тестовую инфраструктуру**, **не меняет production-код** и **не собирает финальный ZIP**.
 
-Если какой-то пункт невозможно проверить штатными средствами уже доступной среды Codex, Codex пишет для этого конкретного пункта `BLOCKED` и точную причину. Он не должен придумывать новый способ проверки, писать для этого код или менять сборку.
+Если конкретный пункт нельзя выполнить обычными средствами уже доступной среды Codex, для этого пункта ставится `BLOCKED` с точной причиной. Codex не должен писать код, чтобы «достроить» проверку.
 
 ## Жёсткие правила
 
-1. Проверяется только exact current candidate.
+1. Проверять только exact current candidate.
 2. Production candidate менять запрещено.
-3. Нельзя создавать или изменять `.js`, `.mjs`, `.py`, `.ps1` и другие файлы специально для тестирования.
-4. Нельзя создавать validator, runner, harness, fixture, assertion-ledger, authority bundle, RERUN-планы или любую другую тестовую инфраструктуру.
-5. Можно использовать только уже доступные штатные средства среды Codex: Git/GitHub, обычные команды проверки файлов, уже готовый браузерный QA environment, DevTools, UI самого расширения, существующее сетевое перехватывание/мокирование среды.
+3. Не создавать и не изменять `.js`, `.mjs`, `.py`, `.ps1` или другие файлы специально для тестирования.
+4. Не создавать validator, runner, harness, fixture, assertion-ledger, authority bundle, RERUN-планы и любую другую тестовую инфраструктуру.
+5. Использовать только уже доступные средства среды Codex: Git/GitHub, обычные команды проверки файлов, уже готовую Windows/CFT QA-среду, браузер, DevTools, UI расширения и уже существующее безопасное сетевое перехватывание/мокирование.
 6. Реальные Seller/Performance credentials не использовать.
 7. Реальные запросы к Ozon/Performance/ChatGPT в synthetic browser checks запрещены.
-8. Один упавший пункт не должен автоматически блокировать остальные независимые пункты.
-9. Codex должен пройти весь список и вернуть один полный итоговый отчёт.
-10. Если обнаружена именно ошибка поведения production — описать её и остановиться на отчёте. Production Codex не исправляет.
+8. Один упавший пункт не блокирует остальные независимые пункты.
+9. Пройти весь список B01–B15 и вернуть один итоговый отчёт.
+10. Если обнаружена ошибка именно production — описать её, но production не исправлять.
+11. После отчёта остановиться. Packaging выполняется отдельно только после разбора полного PASS отчёта.
 
 ## Exact candidate
 
@@ -69,7 +70,7 @@ Production inventory: ровно `17` файлов.
 - Проверить SHA frozen ZIP.
 - Проверить starting worker/content hashes.
 - Собрать patch из двух частей в указанном порядке и проверить bytes/SHA.
-- Для каждой директории выполнить обычный Git apply с `core.autocrlf=false`, без fuzz/manual repair.
+- Для каждой директории выполнить `git -c core.autocrlf=false apply --check`, затем обычный `git -c core.autocrlf=false apply`, без fuzz/manual repair и без EOL rewrite.
 - Проверить final worker/content hashes.
 - Сравнить все 17 файлов candidate-A и candidate-B byte-for-byte.
 - Проверить, что изменились только worker/content.
@@ -81,7 +82,7 @@ Production inventory: ровно `17` файлов.
 
 ## PASS
 
-Только если обе reconstruction дают exact final hashes, все 17 файлов A/B одинаковы, изменены только worker/content и нет никакого лишнего production drift.
+Обе reconstruction дают exact final hashes; все 17 файлов A/B одинаковы; изменены только worker/content; лишнего production drift нет.
 
 ---
 
@@ -91,21 +92,18 @@ Production inventory: ровно `17` файлов.
 
 ## Что сделать
 
-1. Поместить корректную Ozon-команду в поддерживаемый code block/message и убедиться, что расширение обнаруживает ровно одну команду.
-2. Ту же строку окружить обычным Markdown/текстом так, чтобы лишний окружающий текст не создавал дополнительных команд.
-3. Проверить поддерживаемые Unicode/separator варианты.
-4. Передать malformed JSON и убедиться, что расширение его не «чинит» молча.
-5. Передать некорректные analytics date/dimension/metric/filter/sort/limit/offset.
-6. Передать некорректные product-query date/SKU/sort/page.
-7. Попробовать удалённые/запрещённые операции.
-8. Попробовать `posting_fbs_get`.
+1. Корректная Ozon-команда в поддерживаемом сообщении/code block → обнаруживается ровно одна команда.
+2. Окружающий Markdown/обычный текст не создаёт лишних команд.
+3. Поддерживаемые Unicode/separator варианты принимаются.
+4. Malformed JSON не исправляется молча.
+5. Некорректные analytics date/dimension/metric/filter/sort/limit/offset отклоняются.
+6. Некорректные product-query date/SKU/sort/page отклоняются.
+7. Удалённые/запрещённые операции не исполняются.
+8. `posting_fbs_get` не исполняется.
 
 ## PASS
 
-- Валидные команды принимаются.
-- Невалидные команды отклоняются до provider request.
-- `posting_fbs_get` не исполняется.
-- Malformed/pre-execution failures дают `0` provider requests.
+Валидные команды принимаются; невалидные отклоняются до provider request; malformed/pre-execution failures дают `0` provider requests.
 
 ---
 
@@ -113,41 +111,36 @@ Production inventory: ровно `17` файлов.
 
 ## Что сделать
 
-- В командном тексте попытаться передать произвольные URL/host/method/headers/auth/credentials.
-- Проверить сетевой журнал среды.
+- Через обычный командный ввод попытаться навязать произвольные URL/host/method/headers/auth/credentials.
+- Проверить уже доступный сетевой журнал среды.
 - Проверить AI-visible output при success/error.
 - Проверить wrong tab/conversation/binding.
 - Проверить отсутствие скрытого retry, pagination, fan-out и polling.
 
 ## PASS
 
-- Используются только фиксированные Seller/Performance endpoints продукта.
-- AI-текст не может выбрать произвольный host/method/auth.
-- Mutation/write operations не появляются.
-- Credentials и customer PII не попадают в AI-visible output.
-- Wrong owner/binding fail closed.
-- Один logical request не создаёт скрытых дополнительных provider calls.
+Используются только разрешённые Seller/Performance endpoints продукта; AI-текст не выбирает arbitrary host/method/auth; credentials/customer PII не выходят в AI-visible output; wrong owner/binding fail closed; скрытых дополнительных provider calls нет.
 
 ---
 
 # B04. Seller capability / entitlement
 
-Проверять обычными запросами продукта с mocked provider responses в уже доступной безопасной среде.
+Проверять обычными запросами продукта с уже доступными mocked responses безопасной среды.
 
 ## Что сделать
 
-1. Universal analytics request: убедиться, что capability probe не выполняется.
-2. Batch с restricted capability: не более одного fresh capability probe на relevant logical batch.
-3. Проверить restart во время/после capability acquisition: начатый probe не должен слепо повторяться.
-4. Проверить mixed universal/restricted analytics: universal часть сохраняется, restricted часть обрабатывается по текущим правилам.
-5. Проверить all-restricted/no-executable: `0` business requests.
-6. Проверить restricted dimension/filter/sort/history: fail closed, без изменения смысла запроса.
-7. Проверить Performance-only flow: `0` Seller capability probes.
-8. Убедиться, что raw seller-info identity/company fields не попадают в AI output.
+1. Universal analytics request → `0` capability probes.
+2. Restricted batch → не более одного fresh capability probe на relevant logical batch.
+3. Restart во время/после capability acquisition → начатый probe не replay-ится слепо.
+4. Mixed universal/restricted analytics → universal часть остаётся исполнимой, restricted часть обрабатывается по текущим правилам.
+5. All-restricted/no-executable → `0` business requests.
+6. Restricted dimension/filter/sort/history → fail closed, без изменения смысла запроса.
+7. Performance-only flow → `0` Seller capability probes.
+8. Raw seller-info identity/company fields не выходят в AI output.
 
 ## PASS
 
-Все восемь пунктов соблюдены, без лишних Seller business calls.
+Все восемь пунктов соблюдены без лишних Seller business calls.
 
 ---
 
@@ -155,39 +148,39 @@ Production inventory: ровно `17` файлов.
 
 ## Что сделать
 
-1. Дать две соседние совместимые analytics-команды, отличающиеся только метриками.
-2. Убедиться, что они могут быть объединены в один physical provider request, а logical results остаются двумя и сохраняют порядок.
-3. Дать две команды с разной non-metric semantics — они не должны объединяться.
-4. Проверить deterministic metric union и предел contract maximum.
-5. Подать mocked provider response с проверяемым порядком метрик и убедиться, что каждый logical result получает правильную проекцию.
-6. Сделать projection непроверяемой/несовместимой — результат должен fail closed.
-7. При provider error/projection failure не должно быть повторного physical request.
-8. После restart уже начатая physical group не должна слепо replay-иться.
+1. Две соседние совместимые analytics-команды, отличающиеся только метриками.
+2. Убедиться: один physical provider request, два logical results, исходный порядок сохранён.
+3. Две команды с разной non-metric semantics → не объединяются.
+4. Проверить deterministic metric union и contract maximum.
+5. Mocked provider response с известным порядком метрик → каждый logical result получает правильную проекцию.
+6. Непроверяемая/несовместимая projection → fail closed.
+7. Provider error/projection failure → без повторного physical request.
+8. Restart после уже начатой physical group → без слепого replay.
 
 ## PASS
 
-Правильное объединение только совместимых запросов, правильное разделение logical results, отсутствие replay.
+Объединяются только совместимые запросы; logical results остаются правильными и отдельными; replay отсутствует.
 
 ---
 
 # B06. Глобальный лимит Seller запросов
 
-**Не подделывать время в storage и не создавать искусственную fixture. Проверять через нормальную последовательность запросов продукта.**
+**Не подделывать время в storage и не создавать искусственные состояния. Проверять нормальной последовательностью запросов продукта.**
 
 ## Что сделать
 
-1. Выполнить первый cold-cache Seller analytics request с mocked successful provider response.
+1. Выполнить первый cold-cache Seller analytics request с уже доступным mocked successful provider response.
 2. Сразу после него, не дожидаясь 65 секунд, выполнить второй cold-cache request того же Seller.
-3. Убедиться, что второй запрос входит в ожидание, а provider call не происходит раньше разрешённого времени.
-4. Наблюдать, что countdown уменьшается.
+3. Убедиться, что второй запрос реально переходит в ожидание и provider call не происходит раньше разрешённого времени.
+4. Наблюдать уменьшающийся countdown.
 5. После наступления разрешённого времени убедиться, что второй provider call происходит автоматически и ровно один раз.
-6. Во время ожидания перезапустить page/content или service-worker lifecycle штатным способом и убедиться, что ожидание восстанавливается, а provider call не дублируется.
-7. Повторить ожидание из другого tab/conversation/ChatGPT/Alice для того же Seller — bucket должен быть общим.
-8. Проверить другого Seller — его bucket независим.
-9. Проверить Api-Key rotation при том же Client-Id — account scope сохраняется, credential revision меняется.
-10. Проверить Retry-After — он может только продлить срок ожидания.
-11. Проверить, что raw credentials не появляются в сохранённом quota state.
-12. Проверить public state: только безопасные timing fields.
+6. Во время ожидания штатно перезапустить page/content lifecycle или MV3 worker и убедиться, что ожидание восстанавливается без duplicate provider call.
+7. Проверить тот же Seller из другого tab/conversation/поддерживаемого AI → bucket общий.
+8. Проверить другого Seller → bucket независим.
+9. Проверить Api-Key rotation при том же Client-Id → account scope сохраняется, credential revision меняется.
+10. Проверить Retry-After → только продлевает срок ожидания.
+11. Проверить, что raw credentials отсутствуют в сохранённом quota state.
+12. Проверить public state → только безопасные timing fields.
 
 ## Обязательные значения
 
@@ -198,25 +191,25 @@ Production inventory: ровно `17` файлов.
 
 ## PASS
 
-Ни одного раннего или повторного provider call; ожидание устойчиво к restart; same Seller делит общий bucket; different Seller независим.
+Нет раннего или повторного provider call; ожидание устойчиво к restart; same Seller делит общий bucket; different Seller независим.
 
 ---
 
-# B07. Проверка provider response и безопасные ошибки
+# B07. Provider response и безопасные ошибки
 
 ## Что сделать
 
-1. Successful valid analytics response → принять.
+1. Valid analytics response → success.
 2. HTTP 200 с неправильной shape/cardinality → safe mismatch после единственной provider attempt.
 3. Verifier failure → без retry.
-4. HTTP 429 → безопасная ошибка, без immediate retry; Retry-After только продлевает deadline.
+4. HTTP 429 → safe error, без immediate retry; Retry-After только продлевает deadline.
 5. Transport error → truthful attempted-request provenance.
 6. Storage/credential failure до fetch → `0` provider requests.
-7. Проверить, что `automatic_retry:false` соответствует реальному поведению.
+7. Проверить, что `automatic_retry:false` соответствует фактическому поведению.
 
 ## PASS
 
-Ошибочные ответы не проходят как success, не кэшируются как valid result и не вызывают скрытого повторного запроса.
+Ошибочные ответы не принимаются как success, не кэшируются как valid result и не вызывают скрытый повторный запрос.
 
 ---
 
@@ -226,15 +219,15 @@ Production inventory: ровно `17` файлов.
 
 1. Выполнить successful verified analytics request.
 2. До истечения 60 секунд выполнить совместимый следующий request того же Seller.
-3. Убедиться, что совместимый cache hit не создаёт второй provider call и не берёт второй quota permit.
-4. Проверить safe metric superset → корректная deterministic projection.
-5. Проверить другой Seller → miss.
-6. Проверить incompatible semantics → miss.
-7. Проверить expired entry → miss.
-8. Проверить malformed/provider-error response → не сохраняется в cache.
-9. Проверить, что credentials отсутствуют в serialized cache.
-10. Проверить, что cache lookup/hit не портит quota state.
-11. Проверить `analytics_basic_metrics_v1`: prefetch расширяет только утверждённый universal subset и не добавляет restricted metrics.
+3. Cache hit → `0` второго provider call и `0` второго quota acquisition.
+4. Safe metric superset → правильная deterministic projection.
+5. Другой Seller → miss.
+6. Incompatible semantics → miss.
+7. Expired entry → miss.
+8. Malformed/provider-error response → не кэшируется.
+9. Credentials отсутствуют в serialized cache.
+10. Cache lookup/hit не меняет quota state неправильно.
+11. `analytics_basic_metrics_v1` prefetch расширяет только утверждённый universal subset и не добавляет restricted metrics.
 
 ## Обязательное значение
 
@@ -253,16 +246,16 @@ Cache работает только на verified data, не создаёт ли
 - Одна команда → один entry.
 - Несколько команд → logical order сохраняется.
 - Несколько необходимых physical calls идут строго последовательно.
-- Malformed/validation entry не ломает безопасную обработку остальных согласно текущей semantics.
+- Malformed/validation entry обрабатывается безопасно согласно текущей semantics.
 - Completed entries не replay-ятся после recovery.
-- Old `requesting` ambiguity fail closed.
-- Нет промежуточной лишней доставки в chat.
-- Итоговый report один, logical count/order и physical count правдивы.
+- Старое неоднозначное `requesting` fail closed.
+- Нет лишней промежуточной доставки в chat.
+- Итоговый report один; logical count/order и physical count правдивы.
 - Manual и Autorun не забирают ownership друг у друга.
 
 ## PASS
 
-Все пункты соблюдены без duplicate provider work и duplicate report delivery.
+Нет duplicate provider work и duplicate report delivery; порядок и ownership правильные.
 
 ---
 
@@ -271,12 +264,12 @@ Cache работает только на verified data, не создаёт ли
 ## Что сделать
 
 1. Получить готовый Manual report при пустом правильном composer.
-2. Убедиться, что используется только правильный owner/conversation.
+2. Используется только правильный owner/conversation.
 3. Report вставляется ровно один раз.
 4. Recognized Send нажимается максимум один раз.
-5. После этого обычный пользовательский Send не должен быть задет старой delivery operation.
-6. Disabled Send / Stop / Unknown / Microphone не должны ошибочно нажиматься как Send.
-7. Microphone/accepted AI-ready state подтверждает завершение.
+5. Поздний обычный пользовательский Send не задевается старой delivery operation.
+6. Disabled Send / Stop / Unknown / Microphone не принимаются за Send.
+7. Microphone/accepted AI-ready state подтверждает completion.
 8. После completion transient delivery очищена, Manual снова ready.
 9. Provider work при recovery не replay-ится.
 
@@ -288,34 +281,31 @@ Cache работает только на verified data, не создаёт ли
 
 # B11. Занятый или временно отсутствующий composer
 
-## Что сделать
+## Занятый composer
 
-### Занятый composer
-
-1. Перед готовностью report поместить в composer пользовательский текст.
-2. Убедиться, что этот текст не очищается, не заменяется, не выделяется и не отправляется.
-3. Убедиться, что появляется точная постоянная надпись:
-   `Очистите поле ввода, чтобы получить отчёт.`
-4. Оставить composer занятым больше 2 секунд — надпись не должна исчезнуть.
-5. Очистить composer вручную.
-6. Убедиться: один insert, один report, максимум один Send, надпись исчезает после успешной вставки.
+1. До готовности report в composer уже есть пользовательский текст.
+2. Текст не очищается, не заменяется, не выделяется и не отправляется.
+3. Появляется точная постоянная надпись: `Очистите поле ввода, чтобы получить отчёт.`
+4. Оставить composer занятым больше 2 секунд → надпись остаётся.
+5. Очистить composer.
+6. Результат: один insert, один report, максимум один Send; надпись исчезает после успешной вставки.
 7. Provider replay = 0.
 
-### Временно отсутствующий composer
+## Временно отсутствующий composer
 
-1. Сделать composer временно отсутствующим во время pending pre-insert report.
-2. Это не должно становиться terminal `COMPOSER_NOT_FOUND`.
+1. Composer временно отсутствует во время pending pre-insert report.
+2. Это не превращается в terminal `COMPOSER_NOT_FOUND`.
 3. Вернуть правильный composer.
-4. При пустом composer report должен вставиться ровно один раз.
+4. При пустом composer report вставляется ровно один раз.
 5. Duplicate Send/provider replay = 0.
 
-### Restart
+## Restart
 
-Во время ожидания перезапустить page/content lifecycle и убедиться, что pending wait восстанавливается без duplicate insert/Send.
+Во время ожидания штатно перезапустить page/content lifecycle и убедиться, что pending wait восстанавливается без duplicate insert/Send.
 
 ## PASS
 
-Пользовательский текст не повреждён, pending report остаётся восстанавливаемым, delivery происходит ровно один раз.
+Пользовательский текст не повреждён; pending report восстанавливается; доставка происходит ровно один раз.
 
 ---
 
@@ -323,24 +313,24 @@ Cache работает только на verified data, не создаёт ли
 
 ## Что сделать
 
-1. Создать pending Manual report до вставки, при занятом composer.
+1. Создать pending Manual report до вставки при занятом composer.
 2. Выключить Manual.
-3. Убедиться, что pending report текущего owner отменён и надпись исчезла.
-4. Очистить composer — старый report не должен появиться.
-5. Включить Manual обратно — control снова usable/ready.
-6. Убедиться, что старый отменённый report не воскресает.
-7. Проверить, что OFF не удаляет состояния `requesting`, `quota_waiting`, `insert_committed`, `inserted`, если они не являются eligible pre-insert claimed operation.
-8. Проверить другого Manual owner — не меняется.
-9. Проверить Autorun owner — не меняется.
-10. Проверить binding/credentials/settings — сохраняются, кроме самого Manual flag.
-11. До и после OFF→ON сравнить cache и quota state.
-12. Проверить `last_provider_request_at`, `next_allowed_at`, Retry-After и 60000/5000/65000 — не меняются из-за toggle.
-13. Выполнить новый cold-cache request того же Seller до старого deadline — он обязан ждать прежний deadline.
+3. Pending report текущего owner отменён, надпись исчезла.
+4. Очистить composer → старый report не появляется.
+5. Включить Manual обратно → control снова ready/usable.
+6. Старый отменённый report не воскресает.
+7. OFF не удаляет `requesting`, `quota_waiting`, `insert_committed`, `inserted`, если это не допустимый pending pre-insert claimed report.
+8. Другой Manual owner не меняется.
+9. Autorun owner не меняется.
+10. Binding/credentials/settings сохраняются, кроме Manual flag.
+11. Cache и quota state до/после OFF→ON не повреждены.
+12. `last_provider_request_at`, `next_allowed_at`, Retry-After и 60000/5000/65000 не меняются из-за toggle.
+13. Новый cold-cache request того же Seller до старого deadline ждёт прежний deadline.
 14. Provider calls из-за OFF/ON = 0.
 
 ## PASS
 
-Отменяется только допустимый pending pre-insert report; quota/cache/owners не повреждаются; OFF→ON готов к новой работе.
+Отменяется только допустимый pending pre-insert report; quota/cache/owners не повреждаются; после ON можно выполнять новую работу.
 
 ---
 
@@ -353,7 +343,7 @@ Cache работает только на verified data, не создаёт ли
 - Native ChatGPT Copy работает независимо от bridge.
 - Native Copy не меняет operation state.
 - Busy/ready соответствует worker-owned state.
-- Manual toggle остаётся доступен для отмены pending Manual report, когда Autorun не является blocking owner.
+- Manual toggle доступен для отмены pending Manual report, когда Autorun не является blocking owner.
 - Два ChatGPT conversation owner не перезаписывают друг друга.
 - ChatGPT и Alice не перезаписывают друг друга.
 - Wait/delivery одного owner не очищает состояние другого.
@@ -361,7 +351,7 @@ Cache работает только на verified data, не создаёт ли
 
 ## PASS
 
-Нет global current-conversation assumption и нет cross-owner state corruption.
+Нет cross-owner state corruption и нет использования неправильного conversation owner.
 
 ---
 
@@ -369,11 +359,11 @@ Cache работает только на verified data, не создаёт ли
 
 ## Что сделать
 
-- Выполнить Performance-only сценарий в synthetic/mocked environment.
+- Выполнить Performance-only сценарий в уже доступной synthetic/mocked environment.
 - Проверить, что host/auth semantics Performance не изменились из-за Seller repair.
-- Проверить, что Performance-only request не вызывает Seller capability probe.
-- Проверить, что Seller quota/cache не применяется к Performance request.
-- Сетевой журнал должен показать `REAL_PERFORMANCE_REQUESTS=0`.
+- Performance-only request не вызывает Seller capability probe.
+- Seller quota/cache не применяется к Performance request.
+- Сетевой журнал показывает `REAL_PERFORMANCE_REQUESTS=0`.
 
 ## PASS
 
@@ -396,49 +386,20 @@ Known environment:
 
 ## Что сделать
 
-1. Убедиться, что browser запускается и остаётся жив.
-2. Установить exact candidate extension обычным уже доступным способом среды.
-3. Проверить version `0.1.19`.
-4. Проверить dynamic extension id.
-5. Открыть synthetic ChatGPT и Alice страницы через уже доступный безопасный механизм среды.
-6. Проверить, что content script запускается.
-7. Проверить, что MV3 service worker активен.
-8. Проверить worker runtime и network observation штатными средствами среды.
-9. Повторить browser-observable проверки из B10–B13:
-   - normal empty composer;
-   - occupied composer;
-   - missing composer recovery;
-   - Manual OFF→ON;
-   - native Copy independence;
-   - two-owner isolation;
-   - ChatGPT/Alice isolation;
-   - restart/recovery;
-   - one Send/Microphone semantics.
-10. Проверить console/runtime errors. Неожиданная ошибка валит конкретный affected test.
+1. Browser запускается и остаётся жив.
+2. Exact candidate extension устанавливается уже доступным способом среды.
+3. Version = `0.1.19`.
+4. Extension id определяется корректно.
+5. Synthetic ChatGPT и Alice открываются уже доступным безопасным способом среды.
+6. Content script запускается.
+7. MV3 service worker активен.
+8. Worker runtime и network observation доступны штатными средствами среды.
+9. В браузере реально повторить B10–B13: empty composer, occupied composer, missing composer recovery, Manual OFF→ON, native Copy, two-owner isolation, ChatGPT/Alice isolation, restart/recovery, one Send/Microphone semantics.
+10. Проверить console/runtime errors; неожиданная ошибка валит соответствующий пункт.
 
 ## PASS
 
-Все перечисленные browser-observable поведения реально наблюдены на exact candidate, без написания нового test code и без реального внешнего network.
-
----
-
-# B16. Packaging
-
-Запускать только если B01–B15 PASS.
-
-## Что сделать
-
-- Собрать новый ZIP ровно из tested 17-file production tree.
-- Не включать tests/reports/credentials/dev artifacts.
-- Посчитать ZIP SHA-256.
-- Fresh-extract ZIP.
-- Сравнить все 17 файлов byte-for-byte с tested candidate.
-- Снова проверить JS syntax, manifest и inventory.
-- Снова проверить exact worker/content hashes.
-
-## PASS
-
-Fresh-extracted package полностью byte-identical tested candidate.
+Все browser-observable поведения реально наблюдены на exact candidate без написания нового test code и без реального внешнего network.
 
 ---
 
@@ -455,21 +416,19 @@ Fresh-extracted package полностью byte-identical tested candidate.
 - production inventory count;
 - changed files;
 - protected 15 identity result;
-- B01–B16: `PASS`, `FAIL` или объективный `BLOCKED`;
-- для каждого FAIL/BLOCKED — конкретное действие, которое было выполнено, и конкретно что наблюдалось;
+- B01–B15: `PASS`, `FAIL` или объективный `BLOCKED`;
+- для каждого FAIL/BLOCKED: какое действие реально выполнено и что реально наблюдалось;
 - полный список фактически выполненных проверок;
 - полный список невыполненных проверок с причиной;
 - `REAL_OZON_REQUESTS=0`;
 - `REAL_PERFORMANCE_REQUESTS=0`;
 - `REAL_CHATGPT_REQUESTS=0` для synthetic browser checks;
-- `production modifications by Codex=0`;
-- package path/SHA только если B01–B15 PASS;
-- fresh-extract byte verification result.
+- `production modifications by Codex=0`.
 
-Полный PASS допускается только если B01–B16 PASS.
+Полный PASS допускается только если B01–B15 PASS.
 
 Terminal marker:
 
-`OZON_FULL_PRE_OPERATOR_HANDOFF_GATE_PASS`
+`OZON_PRE_OPERATOR_TESTS_PASS`
 
-После отчёта Codex останавливается. Logged-in live acceptance выполняется отдельно после передачи exact tested ZIP.
+После публикации отчёта Codex останавливается. **ZIP не собирать.** Packaging и fresh-extract verification выполняются отдельно только после разбора полного PASS отчёта. Logged-in live acceptance также выполняется отдельно после передачи exact tested ZIP.
