@@ -1,0 +1,224 @@
+name: Ozon current test path audit R2
+
+on:
+  push:
+    branches:
+      - dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
+    paths:
+      - '.github/workflows/ozon-current-test-path-audit-r2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-current-test-path-audit-r2
+  cancel-in-progress: false
+
+env:
+  FROZEN_ZIP: tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip
+  FROZEN_ZIP_SHA256: d794e9fe8550dcf20d76d63abf7832d9b28853ad6d7c8e94faa22a3c08a46a2c
+  PATCH_0_BLOB: 4b4578995156cafd60221f8d57f678b99b0b00ff
+  PATCH_1_BLOB: 98feec99e459332df60aae879fa8f2530856c2d0
+  PATCH_SHA256: bd0119212a21c63fbbc2a6d0067c0c19abcf31896007e8f8d3e19efa8255019d
+  FINAL_WORKER_SHA256: dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac
+  FINAL_CONTENT_SHA256: ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda
+  TEST_SOURCE_COMMIT: 5049fe6d579b41f94069d7f2d2a8d3f5d1198c62
+
+jobs:
+  vm-remaining:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24.12.0' }
+
+      - name: Reconstruct exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          W="$RUNNER_TEMP/r2"; C="$W/candidate"; P="$W/repair.patch"
+          rm -rf "$W"; mkdir -p "$C"
+          echo "$FROZEN_ZIP_SHA256  $FROZEN_ZIP" | sha256sum -c -
+          git cat-file blob "$PATCH_0_BLOB" > "$W/00"
+          git cat-file blob "$PATCH_1_BLOB" > "$W/01"
+          cat "$W/00" "$W/01" > "$P"
+          test "$(wc -c < "$P")" -eq 13648
+          echo "$PATCH_SHA256  $P" | sha256sum -c -
+          unzip -q "$FROZEN_ZIP" -d "$C"
+          (cd "$C" && git init -q && git config core.autocrlf false && git apply --check "$P" && git apply "$P")
+          echo "$FINAL_WORKER_SHA256  $C/service_worker.js" | sha256sum -c -
+          echo "$FINAL_CONTENT_SHA256  $C/content_script.js" | sha256sum -c -
+          echo "CANDIDATE=$C" >> "$GITHUB_ENV"
+
+      - name: Build corrected remaining VM fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          T="$RUNNER_TEMP/r2/tests"; mkdir -p "$T"
+          git fetch --no-tags origin "$TEST_SOURCE_COMMIT"
+          git cat-file blob 76cd3a02123636eb60e5e048767a26d0178b49f1 > "$T/B05.mjs"
+          git cat-file blob 07017368b33979169e7b32328280cb8d25e19c3d > "$T/B06.mjs"
+          git cat-file blob 19ed8d8779f72325b7034e746fc8746137592469 > "$T/B09.mjs"
+          python3 - "$T" <<'PY'
+          from pathlib import Path
+          import sys
+          r=Path(sys.argv[1])
+          def rep(n,a,b):
+              p=r/n; s=p.read_text(encoding='utf-8')
+              if a not in s: raise SystemExit(f'missing replacement in {n}: {a[:90]}')
+              p.write_text(s.replace(a,b),encoding='utf-8',newline='\n')
+
+          # B05: construct strict contract inputs and Chrome-storage reads in the VM realm.
+          rep('B05.mjs',
+              "function clone(v){return v===undefined?undefined:structuredClone(v)}",
+              "let context=null;function clone(v){if(v===undefined)return undefined;const j=JSON.stringify(v);return context?vm.runInContext(`(${j})`,context):JSON.parse(j)}")
+          rep('B05.mjs',"const context=vm.createContext(sandbox);","context=vm.createContext(sandbox);")
+          rep('B05.mjs',
+              "const cmd=(metrics=['revenue'],extra={})=>C.normalizeCommand({operation:'analytics_data',params:{date_from:'2026-08-17',date_to:'2026-08-17',dimension:['day'],metrics,limit:10,...extra}});",
+              "const realm=o=>vm.runInContext(`(${JSON.stringify(o)})`,context);const cmd=(metrics=['revenue'],extra={})=>C.parseCommand(`OZON_API_V1\\n${JSON.stringify({operation:'analytics_data',params:{date_from:'2026-08-17',date_to:'2026-08-17',dimension:['day'],metrics,limit:10,...extra}})}`);")
+          rep('B05.mjs',
+              "const providerRaw={result:{data:[{dimensions:[{id:'2026-08-17',name:'2026-08-17'}],metrics:[100,7]}],totals:[100,7]}};",
+              "const providerRaw=realm({result:{data:[{dimensions:[{id:'2026-08-17',name:'2026-08-17'}],metrics:[100,7]}],totals:[100,7]}});")
+          rep('B05.mjs',
+              "const creds={clientId:'SELLER-CLIENT-123',apiKey:'SELLER-API-KEY-SECRET'};\nconst rotated={clientId:'SELLER-CLIENT-123',apiKey:'ROTATED-SELLER-API-KEY'};\nconst other={clientId:'OTHER-SELLER-999',apiKey:'OTHER-KEY'};",
+              "const creds=realm({clientId:'SELLER-CLIENT-123',apiKey:'SELLER-API-KEY-SECRET'});\nconst rotated=realm({clientId:'SELLER-CLIENT-123',apiKey:'ROTATED-SELLER-API-KEY'});\nconst other=realm({clientId:'OTHER-SELLER-999',apiKey:'OTHER-KEY'});")
+          rep('B05.mjs',
+              "assert(hit.hit===true,'same Seller compatible safe superset cache miss');",
+              "console.log('B08_CACHE_HIT_DEBUG='+JSON.stringify(hit));assert(hit.hit===true,'same Seller compatible safe superset cache miss');")
+
+          # B06/B09: actual Chrome storage returns objects in extension realm; emulate that instead of host-realm objects.
+          for n,callsname in [('B06.mjs','providerCalls'),('B09.mjs','calls')]:
+              rep(n,"function clone(v){return v===undefined?undefined:structuredClone(v)}",
+                    "let context=null;function clone(v){if(v===undefined)return undefined;const j=JSON.stringify(v);return context?vm.runInContext(`(${j})`,context):JSON.parse(j)}")
+              rep(n,"const context=vm.createContext(sandbox);","context=vm.createContext(sandbox);")
+              rep(n,
+                  "const response=msg?.type==='OZ_GET_IDENTITY'?{ok:true,identity:clone(tabIdentities.get(id))}:{ok:false,code:'COMPOSER_NOT_FOUND'};",
+                  "const response=msg?.type==='OZ_GET_IDENTITY'?{ok:true,identity:clone(tabIdentities.get(id))}:{ok:true};")
+          rep('B06.mjs',"throw new Error('waitFor timeout')","throw new Error('waitFor timeout calls='+JSON.stringify(providerCalls)+' storage='+JSON.stringify(Object.fromEntries(local)))")
+          rep('B09.mjs',"throw new Error('waitFor timeout')","throw new Error('waitFor timeout calls='+JSON.stringify(calls)+' storage='+JSON.stringify(Object.fromEntries(local)))")
+          PY
+          for f in "$T"/*.mjs; do node --check "$f"; done
+          echo "TESTDIR=$T" >> "$GITHUB_ENV"
+
+      - name: Execute remaining VM paths
+        id: execute
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          L="$RUNNER_TEMP/vm-r2.log"; : > "$L"; bad=0
+          for f in B05.mjs B06.mjs B09.mjs; do
+            echo "===== $f =====" | tee -a "$L"
+            node "$TESTDIR/$f" "$CANDIDATE" 2>&1 | tee -a "$L"
+            rc=${PIPESTATUS[0]}; echo "EXIT_CODE[$f]=$rc" | tee -a "$L"
+            [ "$rc" -eq 0 ] || bad=$((bad+1))
+          done
+          echo "VM_R2_FAILURE_COUNT=$bad" | tee -a "$L"
+          [ "$bad" -eq 0 ]
+
+      - name: Upload VM result
+        if: always()
+        shell: bash
+        run: |
+          O="$RUNNER_TEMP/vm-r2-result.txt"
+          { echo "trigger_sha=$GITHUB_SHA"; echo "execute=${{ steps.execute.outcome }}"; cat "$RUNNER_TEMP/vm-r2.log" 2>/dev/null || true; } > "$O"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-r2-vm
+          path: ${{ runner.temp }}/vm-r2-result.txt
+          retention-days: 7
+
+  browser-remaining:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24.12.0' }
+
+      - name: Reconstruct exact candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'; $w=Join-Path $env:RUNNER_TEMP 'r2'; $c=Join-Path $w 'candidate'; $p=Join-Path $w 'repair.patch'
+          if(Test-Path $w){Remove-Item -Recurse -Force $w}; New-Item -ItemType Directory -Force $c|Out-Null
+          if((Get-FileHash -Algorithm SHA256 $env:FROZEN_ZIP).Hash.ToLowerInvariant() -ne $env:FROZEN_ZIP_SHA256){throw 'frozen zip sha mismatch'}
+          $a=Join-Path $w '00'; $b=Join-Path $w '01'
+          cmd /c "git cat-file blob $env:PATCH_0_BLOB > `"$a`""; if($LASTEXITCODE){throw 'part0'}
+          cmd /c "git cat-file blob $env:PATCH_1_BLOB > `"$b`""; if($LASTEXITCODE){throw 'part1'}
+          $x=[IO.File]::ReadAllBytes($a);$y=[IO.File]::ReadAllBytes($b);$z=New-Object byte[] ($x.Length+$y.Length);[Array]::Copy($x,0,$z,0,$x.Length);[Array]::Copy($y,0,$z,$x.Length,$y.Length);[IO.File]::WriteAllBytes($p,$z)
+          if($z.Length-ne 13648){throw 'patch bytes'};if((Get-FileHash -Algorithm SHA256 $p).Hash.ToLowerInvariant()-ne$env:PATCH_SHA256){throw 'patch sha'}
+          Expand-Archive $env:FROZEN_ZIP $c -Force; Push-Location $c; git init -q; git config core.autocrlf false; git apply --check $p; git apply $p
+          if((Get-FileHash -Algorithm SHA256 service_worker.js).Hash.ToLowerInvariant()-ne$env:FINAL_WORKER_SHA256){throw 'worker sha'}
+          if((Get-FileHash -Algorithm SHA256 content_script.js).Hash.ToLowerInvariant()-ne$env:FINAL_CONTENT_SHA256){throw 'content sha'}
+          Pop-Location; "CANDIDATE=$c"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install exact Puppeteer/CFT and place test beside node_modules
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'; $proj=Join-Path $env:RUNNER_TEMP 'r2-puppeteer';New-Item -ItemType Directory -Force $proj|Out-Null;Push-Location $proj;npm init -y|Out-Null;$env:PUPPETEER_SKIP_DOWNLOAD='true';npm install --no-save --no-audit --no-fund puppeteer@25.4.0;Pop-Location
+          git fetch --no-tags origin $env:TEST_SOURCE_COMMIT
+          $test=Join-Path $proj 'B10_B13_B15_BROWSER_CURRENT.mjs';cmd /c "git cat-file blob e3ea01ff6518626aa1fc9c96398b486cbb584b01 > `"$test`"";if($LASTEXITCODE){throw 'browser blob'};node --check $test
+          $zip=Join-Path $env:RUNNER_TEMP 'cft.zip';$root=Join-Path $env:RUNNER_TEMP 'cft';Invoke-WebRequest 'https://storage.googleapis.com/chrome-for-testing-public/151.0.7922.47/win64/chrome-win64.zip' -OutFile $zip;Expand-Archive $zip $root -Force;$chrome=Get-ChildItem $root -Filter chrome.exe -File -Recurse|Select-Object -First 1;if(-not $chrome){throw 'chrome missing'}
+          if((Get-Item $chrome.FullName).VersionInfo.ProductVersion -notlike '151.0.7922.47*'){throw 'cft version'}
+          "BROWSER_TEST=$test"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append;"CFT_CHROME=$($chrome.FullName)"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Execute current browser path
+        id: execute
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $l=Join-Path $env:RUNNER_TEMP 'browser-r2.log';node $env:BROWSER_TEST $env:CANDIDATE $env:CFT_CHROME 2>&1|Tee-Object $l;$rc=$LASTEXITCODE;"BROWSER_EXIT_CODE=$rc"|Tee-Object $l -Append;if($rc){exit $rc}
+
+      - name: Upload browser result
+        if: always()
+        shell: pwsh
+        run: |
+          $o=Join-Path $env:RUNNER_TEMP 'browser-r2-result.txt';@("trigger_sha=$env:GITHUB_SHA","execute=${{ steps.execute.outcome }}")|Set-Content $o -Encoding utf8NoBOM;$l=Join-Path $env:RUNNER_TEMP 'browser-r2.log';if(Test-Path $l){Get-Content $l|Add-Content $o -Encoding utf8}
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-r2-browser
+          path: ${{ runner.temp }}/browser-r2-result.txt
+          retention-days: 7
+
+  publish:
+    if: always()
+    needs: [vm-remaining,browser-remaining]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ozon-r2-*
+          path: ${{ runner.temp }}/r2-results
+      - name: Append R2 evidence to the single engineering audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          F='tooling/llm-api-bridges/ozon-seller/validation/engineering-preflight/CURRENT_TEST_PATH_AUDIT_2026-08-19.md'
+          V=$(find "$RUNNER_TEMP/r2-results" -name vm-r2-result.txt -print -quit||true);B=$(find "$RUNNER_TEMP/r2-results" -name browser-r2-result.txt -print -quit||true)
+          cat >> "$F" <<EOF
+
+## Engineering follow-up R2 — corrected fixture execution
+
+Trigger commit: \`$GITHUB_SHA\`
+
+### Remaining VM paths
+\`\`\`text
+$(cat "$V" 2>/dev/null || echo VM_R2_RESULT_MISSING)
+\`\`\`
+
+### Browser path after exact-byte reconstruction/module-resolution correction
+\`\`\`text
+$(cat "$B" 2>/dev/null || echo BROWSER_R2_RESULT_MISSING)
+\`\`\`
+EOF
+          git config user.name 'github-actions[bot]';git config user.email '41898282+github-actions[bot]@users.noreply.github.com';git add "$F";git commit -m 'test: append Ozon path audit R2 evidence [skip ci]';git push origin HEAD:dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
