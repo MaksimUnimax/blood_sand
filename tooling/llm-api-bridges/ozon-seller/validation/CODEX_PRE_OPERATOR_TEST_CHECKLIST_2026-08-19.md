@@ -1,498 +1,475 @@
-# Ozon Bridge v0.1.19 — список тестов, которые должен выполнить Codex перед передачей сборки
+# Ozon Bridge v0.1.19 — список проверок для Codex перед передачей сборки
 
 Дата: 2026-08-19
-Статус: `CODEX_TEST_CHECKLIST`
+Статус: `CODEX_TEST_CHECKLIST_DOCUMENT_ONLY`
 
-Это **только список тестов**.
+Это **только документ с проверками**.
 
-Codex — независимый проверяющий. Он должен выполнить перечисленные ниже проверки над точной текущей сборкой и выдать один итоговый отчёт.
+Codex здесь только проверяет готовую сборку. Он **не разрабатывает тесты**, **не пишет тестовые программы**, **не создаёт validator/runner/harness/fixture/helper**, **не исправляет тестовую инфраструктуру** и **не меняет production-код**.
 
-Не требуется создавать отдельный «валидатор», новую архитектуру тестов, RERUN-планы, authority bundles, assertion-ledger инфраструктуру или промежуточные отчёты.
+Если какой-то пункт невозможно проверить штатными средствами уже доступной среды Codex, Codex пишет для этого конкретного пункта `BLOCKED` и точную причину. Он не должен придумывать новый способ проверки, писать для этого код или менять сборку.
 
-## Правило выполнения
+## Жёсткие правила
 
-- Выполнить весь checklist в **одной задаче Codex** перед передачей сборки оператору.
-- Использовать существующие tests/harnesses и обычные временные test-only fixtures/commands, необходимые для проверки конкретного пункта.
-- Codex может менять только временные test-only копии harnesses/fixtures и итоговый report. Production candidate изменять запрещено.
-- Не возвращаться пользователю после первой обычной ошибки test/harness/environment. Выполнить остальные независимые безопасные проверки и собрать полный доступный failure set в одном итоговом отчёте.
-- Провал одного monolithic/historical harness **не имеет права автоматически блокировать независимые блоки**. Если harness упал до нужного assertion, Codex обязан проверить этот независимый блок отдельной test-only fixture/command в этой же задаче.
-- `BLOCKED_BY` допустим только если конкретный test действительно невозможно выполнить из-за провалившегося prerequisite. Нельзя помечать B02–B10 blocked только потому, что другой worker/browser harness завершился раньше.
-- Historical PASS не является текущим PASS: применимое поведение проверяется на exact current candidate.
-- Реальные operator/browser действия в automated gate не требуются.
+1. Проверяется только exact current candidate.
+2. Production candidate менять запрещено.
+3. Нельзя создавать или изменять `.js`, `.mjs`, `.py`, `.ps1` и другие файлы специально для тестирования.
+4. Нельзя создавать validator, runner, harness, fixture, assertion-ledger, authority bundle, RERUN-планы или любую другую тестовую инфраструктуру.
+5. Можно использовать только уже доступные штатные средства среды Codex: Git/GitHub, обычные команды проверки файлов, уже готовый браузерный QA environment, DevTools, UI самого расширения, существующее сетевое перехватывание/мокирование среды.
+6. Реальные Seller/Performance credentials не использовать.
+7. Реальные запросы к Ozon/Performance/ChatGPT в synthetic browser checks запрещены.
+8. Один упавший пункт не должен автоматически блокировать остальные независимые пункты.
+9. Codex должен пройти весь список и вернуть один полный итоговый отчёт.
+10. Если обнаружена именно ошибка поведения production — описать её и остановиться на отчёте. Production Codex не исправляет.
 
-## Отброшенный отчёт 4f9bd6…
+## Exact candidate
 
-Report commit `4f9bd6ba2c64a8cbfba9e14c5c25c52501702fd8` **не является PASS evidence**.
+Frozen ZIP:
+`tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip`
 
-Его `B01 PASS` ошибочен как gate classification, потому что reconstructed hashes:
+Frozen ZIP SHA-256:
+`d794e9fe8550dcf20d76d63abf7832d9b28853ad6d7c8e94faa22a3c08a46a2c`
 
-- worker `a943160760e21df0f04b9ef3787350a7527205d5ae67cea105349d033bf8f95e`;
-- content `82f7d75e4c954e26a2b984e49b8ef9cbdafaa81cfab4681f8bbd015d808092dc`
+Patch parts, строго в этом порядке:
 
-не совпали с уже доказанной exact reconstruction из frozen ZIP + exact patch:
+1. `tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/patch-parts/00.patch.part`
+2. `tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/patch-parts/01.patch.part`
 
-- worker `dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac`;
-- content `ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda`.
+Patch bytes: `13648`
 
-Две одинаковые A/B реконструкции недостаточны, если обе были сделаны способом, который изменил bytes вне patch hunks (например line-ending conversion).
+Patch SHA-256:
+`bd0119212a21c63fbbc2a6d0067c0c19abcf31896007e8f8d3e19efa8255019d`
 
-## Exact candidate identity
+Starting hashes:
 
-Входная authority candidate:
+- `service_worker.js`: `34a84f66284f5aa5f77b9b7cda23d5ddb2431c7b30114cd5fe927798c31e957a`
+- `content_script.js`: `d95d2ca040c37f688d33c2caac8a78d95389b8e7acd41fcf11f8e0b4dc59e001`
 
-1. exact frozen ZIP:
-   `tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip`
-2. frozen ZIP SHA-256:
-   `d794e9fe8550dcf20d76d63abf7832d9b28853ad6d7c8e94faa22a3c08a46a2c`
-3. exact repair patch =
-   `development/manual-delivery-composer-wait/patch-parts/00.patch.part`
-   +
-   `development/manual-delivery-composer-wait/patch-parts/01.patch.part`
-   в этом порядке;
-4. patch bytes: `13648`;
-5. patch SHA-256:
-   `bd0119212a21c63fbbc2a6d0067c0c19abcf31896007e8f8d3e19efa8255019d`;
-6. starting frozen hashes:
-   - worker `34a84f66284f5aa5f77b9b7cda23d5ddb2431c7b30114cd5fe927798c31e957a`;
-   - content `d95d2ca040c37f688d33c2caac8a78d95389b8e7acd41fcf11f8e0b4dc59e001`;
-7. required exact final hashes:
-   - worker `dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac`;
-   - content `ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda`.
-
-Эти final hashes уже были получены из exact frozen artifact + exact patch в report `ee33f38a56e860dac7f2605de496b24c230516e9` с `git -c core.autocrlf=false apply --check` и exact apply. Content hash `ab3408…` также отдельно закреплён candidate checkpoint `1de4cea770fc8ae09280e65d13e60525fd22e4e7`.
-
-### Обязательная reconstruction
-
-Создать две fresh директории `candidate-A` и `candidate-B`.
-
-Для каждой независимо:
-
-1. fresh-extract exact frozen ZIP;
-2. проверить ZIP SHA-256;
-3. проверить starting worker/content hashes;
-4. собрать exact patch и проверить bytes/SHA-256;
-5. из корня extracted production tree выполнить exact check:
-   `git -c core.autocrlf=false apply --check <exact-patch>`;
-6. затем применить ровно один раз:
-   `git -c core.autocrlf=false apply <exact-patch>`;
-7. не использовать PowerShell/редактор/скрипт, который decode/re-encode или нормализует EOL production files;
-8. не использовать fuzz/manual/context repair;
-9. inventory = ровно 17 production files;
-10. changed files = только `service_worker.js`, `content_script.js`;
-11. protected 15 = byte-identical frozen ZIP;
-12. SHA-256 worker/content обязаны быть ровно:
-    - `dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac`;
-    - `ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda`;
-13. A и B сравнить byte-for-byte по всем 17 files.
-
-Только если все пункты выше PASS, exact candidate считается зафиксированным. После этого production candidate bytes неизменяемы до packaging.
-
-Если A/B одинаковы, но final hashes другие — это `CANDIDATE_RECONSTRUCTION_FAILURE`, а не новая candidate identity.
-
-## Existing harnesses — допустимая test-only адаптация
-
-Разрешено копировать historical harness во временную test-only директорию и менять только stale integrity/fixture/transport preconditions, необходимые для исполнения **того же behavioral assertion**.
-
-Запрещено удалять/ослаблять behavioral assertions или менять production.
-
-### Worker/quota fixture
-
-Для carry-forward worker harness blob `0da73bdd1bb1608074781bb0c594c7875a4fe3ce`:
-
-- expected worker/content hashes заменить на exact current hashes `dfc101…` / `ab3408…`;
-- НЕ заменять guarded-due scenario на произвольный `last=now-57000`;
-- использовать утверждённую validation-only correction blob `44e396b9a566f0c33ba3e50ed6dc3dba07770a4d`:
-  - после получения persisted `waiting.batch.quota_wait.next_allowed_at` определить `persistedDue`;
-  - require `persistedDue > 0`;
-  - require `persistedDue >= locally calculated due`;
-  - ждать до `persistedDue + 250 ms`;
-  - вызвать synthetic quota alarm;
-  - ждать provider call до `10000 ms`;
-  - require exactly one mocked provider call;
-  - require call time `>= persistedDue - 5 ms`;
-  - existing duplicate-call assertion после этого остаётся обязательным.
-
-Это fixture timing correction, behavioral quota assertions не ослабляются.
-
-### Regression carry-forward
-
-Historical carry-forward harness blob `57574ef6fdb96a5ed5e0b0a02eec5b5ba99e9be5` использовать как behavioral catalog, но:
-
-- base для composer-wait carry-forward = exact frozen ZIP (`34a84…` / `d95d…`), а candidate = exact current `dfc101…` / `ab3408…`;
-- stale Step4/V3 hash preconditions заменить на эти exact hashes;
-- exact-function assertions для worker regions, которые composer-wait patch не меняет, сохраняются;
-- `buildBatchQueryPlan` и прочие planner/quota/cache functions не должны drift-ить из-за EOL reconstruction;
-- если exact current candidate hashes правильные, а unchanged protected function отличается — это реальная integrity/regression проблема и должна быть исследована как current-candidate failure, а не автоматически списана на stale fixture.
-
-### Browser/runtime transport
-
-Legacy V3 browser harness blob `841429741d5ff9144a8a40506e657dc4392fe37c` содержит старый transport (`browser.newPage()` и старый launch flow). **Его нельзя запускать как есть.**
-
-Его behavioral assertions можно переносить в test-only fixture, но transport обязан использовать уже квалифицированный Windows/CFT/raw-CDP substrate из corrections `ba0f541bea478db22086bbcc15eb5cab713bae15`, `376886cd29d971a354dc18f313fbeb9ba1153922` и integrated mechanics `53f451835ccb8ab3461cae74c6fbd93aa06a94a9`:
-
-- Node `v24.12.0`;
-- Puppeteer `25.4.0`;
-- CFT `151.0.7922.47`;
-- validation-owned byte-identical CFT copy;
-- copied `setup.exe --configure-browser-in-directory=<copiedBrowserDir>` once, `shell:false`, require exit `78`;
-- fresh validation profile;
-- `ignoreDefaultArgs:true`;
-- `headless:false`;
-- `enableExtensions:true`;
-- `waitForInitialPage:false`;
-- `dumpio:true`;
-- exact launch args:
-  1. `--user-data-dir=<fresh-profile>`
-  2. `--remote-debugging-port=0`
-  3. `--no-first-run`
-  4. `--no-default-browser-check`
-  5. `--disable-background-networking`
-  6. `--disable-component-update`
-  7. `--disable-sync`
-  8. `--metrics-recording-only`
-  9. `--host-resolver-rules=MAP api-seller.ozon.ru 0.0.0.0, MAP api-performance.ozon.ru 0.0.0.0`
-  10. `--no-sandbox`
-  11. `about:blank`
-- не использовать `--disable-gpu-sandbox`;
-- не использовать `browser.newPage()`;
-- browser-level `Target.createTarget({url:'about:blank'})`;
-- resolve raw PAGE target/CDP;
-- `Runtime.enable`, `Page.enable`, `Fetch.enable`;
-- supported ChatGPT/Alice synthetic navigation fulfilled locally through interception;
-- `browser.installExtension(candidateDir)` / dynamic extension id;
-- `extension.triggerAction()` запрещён;
-- worker: если `extension.workers()` уже видит candidate worker — использовать его; иначе raw PAGE `ServiceWorker.enable` + exact registration + `ServiceWorker.startWorker({scopeURL})` ровно один раз;
-- worker runtime: `worker.client.send('Runtime.enable')`, затем direct `Runtime.evaluate('1+1')`; `worker.evaluate()` / `worker.evaluateHandle()` запрещены;
-- при необходимости fallback на raw active service-worker CDP target/session той же worker instance без restart;
-- worker `Network.enable` до worker behavioral tests;
-- browser liveness проверять после worker qualification.
-
-`--no-sandbox` разрешён только для disposable isolated synthetic validator CFT/profile и не должен попадать в production/package/operator Chrome.
-
-Во всех automated tests:
-
-- `REAL_OZON_REQUESTS=0`;
-- `REAL_PERFORMANCE_REQUESTS=0`;
-- `REAL_CHATGPT_REQUESTS=0` для synthetic browser tests;
-- реальные Seller/Performance credentials не использовать;
-- production modifications by Codex = `0`.
-
-# 1. Candidate integrity
-
-Проверить:
-
-- exact frozen ZIP SHA-256;
-- exact patch bytes/SHA-256;
-- exact `core.autocrlf=false` patch check/apply;
-- candidate-A и candidate-B exact final worker/content hashes;
-- A/B byte-identical по 17 files;
-- production inventory = 17;
-- changed files = только worker/content;
-- protected 15 byte-identical frozen ZIP;
-- unchanged regions/functions внутри worker/content не получили EOL/global rewrite вне intended patch hunks;
-- все production `.js` проходят `node --check`;
-- `manifest.json` валиден;
-- permissions/host_permissions не расширились неожиданно;
-- tests/reports/dev files/credentials отсутствуют в production tree.
-
-# 2. Command discovery и строгий контракт
-
-Проверить независимо, даже если worker quota/browser harness позже падает:
-
-- команды корректно обнаруживаются в поддерживаемых ChatGPT/Alice code blocks/messages;
-- произвольный окружающий Markdown/текст не создаёт лишние команды;
-- поддерживаемые Unicode/separator варианты принимаются;
-- malformed JSON не чинится молча;
-- malformed/pre-execution failures дают 0 provider requests;
-- analytics date/dimension/metric/filter/sort/limit/offset валидируются строго;
-- product-query date/SKU/sort/page валидируются строго;
-- удалённые/запрещённые операции недоступны;
-- `posting_fbs_get` заблокирован PII boundary.
-
-# 3. Provider/security boundary
-
-Проверить независимо:
-
-- только фиксированные Seller/Performance hosts;
-- AI-текст не выбирает произвольный URL/host/method/headers/auth/credentials;
-- mutation/write operations не открыты;
-- credentials не попадают в AI-visible output;
-- unsafe provider fields/bodies санитизируются;
-- customer PII не выводится;
-- нет скрытых retry/pagination/fan-out/polling;
-- нет тихого truncation/invented generic caps;
-- wrong tab/conversation/binding fail closed.
-
-# 4. Seller capability / entitlement
-
-Проверить независимо test-only worker fixture:
-
-- capability probe внутренний и не AI-callable;
-- raw seller-info identity/company fields не попадают в AI output;
-- universal analytics делает 0 capability probes;
-- relevant logical batch делает максимум 1 fresh capability probe;
-- worker restart не replay-ит уже начатый capability probe;
-- entitlement states явные;
-- mixed universal/restricted analytics сохраняет утверждённую partial semantics;
-- all-restricted/no-executable analytics делает 0 business requests;
-- restricted dimension/filter/sort/history semantics fail closed;
-- Performance-only flow делает 0 Seller capability probes.
-
-# 5. Query planner / coalescing / projection
-
-Проверить независимо:
-
-- coalescing только contiguous compatible analytics commands;
-- различающиеся non-metric semantics не объединяются;
-- metric union deterministic и в пределах contract maximum;
-- logical requests/results раздельны после одного physical request;
-- projection использует verified physical metric order;
-- unprovable projection fail closed;
-- projection failure/provider error не replay-ит provider request;
-- restart после начатого physical group не replay-ит его вслепую.
-
-# 6. Global Seller quota scheduler
-
-Проверить с persisted-due fixture correction выше:
-
-- family `seller.analytics_data.v1`;
-- provider minimum `60000` ms;
-- bridge safety `5000` ms;
-- effective interval `65000` ms;
-- один Seller делит bucket между tabs/conversations/ChatGPT/Alice;
-- разные Seller accounts изолированы;
-- Api-Key rotation при том же Client-Id сохраняет account scope и меняет credential revision;
-- raw credentials отсутствуют в quota persistence;
-- concurrent acquisition выдаёт ровно один permit;
-- cache miss не обходит quota;
-- один coalesced physical request расходует один permit;
-- pre-provider `quota_waiting` переживает MV3 restart;
-- persisted due wake создаёт ровно один mocked provider call;
-- provider call не начинается раньше persisted `next_allowed_at`;
-- requesting/already-attempted work не replay-ится startup/alarm;
-- immediate retry отсутствует;
-- Retry-After только продлевает, но не сокращает due;
-- public quota state содержит только safe timing metadata.
-
-# 7. Response verifier / safe errors
-
-Проверить независимо:
-
-- successful analytics payload проверяется до projection/cache;
-- invalid HTTP-200 payload становится safe mismatch после единственной provider attempt;
-- verifier failure не вызывает retry;
-- HTTP 429 безопасен и только продлевает Retry-After state;
-- transport errors сохраняют truthful attempted-request provenance;
-- storage/credential failure до fetch даёт 0 provider requests;
-- `automatic_retry:false` правдив.
-
-# 8. Verified analytics cache / prefetch
-
-Проверить независимо:
-
-- cache принимает только successful verified analytics responses;
-- cache lookup идёт до quota;
-- TTL = `60000` ms;
-- same Seller + exact non-metric semantics + safe metric superset может дать hit;
-- другой Seller/incompatible semantics/expired entry дают miss;
-- provider error/malformed response не кэшируются;
-- credentials отсутствуют в cache serialization;
-- projection из metric superset deterministic;
-- cache hit сообщает `external_request_executed:false`;
-- `analytics_basic_metrics_v1` расширяет только утверждённый universal subset;
-- prefetch не добавляет restricted metrics и не меняет прочие semantics;
-- совместимый следующий request может дать cache hit без второго provider call/quota acquisition;
-- cache hit/lookup не портит quota state.
-
-# 9. Manual / Autorun common batch engine
-
-Проверить независимо:
-
-- одна команда остаётся one-entry batch;
-- multi-command order сохраняется;
-- несколько physical requests строго serial;
-- malformed/validation entries следуют safe continuation semantics;
-- completed entries не replay-ятся после recovery;
-- old-worker `requesting` ambiguity fail closed;
-- нет unintended intermediate chat delivery;
-- final batch report сохраняет logical order/count и truthful physical count;
-- Manual/Autorun ownership разделены.
-
-# 10. Delivery FSM — нормальный пустой composer
-
-Проверить current candidate browser/test-only fixture:
-
-- ready report + empty правильный composer входит в insertion path;
-- только правильный owner/conversation;
-- worker insert commit остаётся irreversible permission boundary;
-- report вставляется ровно один раз;
-- staged recognized Send нажимается максимум один раз;
-- последующий обычный user Send не затрагивается;
-- disabled Send / Stop / Unknown / Microphone не считаются Send;
-- Microphone/current accepted AI-ready marker подтверждает success;
-- completion очищает transient delivery и возвращает Manual readiness;
-- recovery не replay-ит provider work.
-
-# 11. Manual delivery — занятый или временно отсутствующий composer
-
-Проверить current repair:
-
-- чужой непустой composer text не очищается/заменяется/выделяется/отправляется;
-- temporarily missing composer = recoverable pre-insert state, не terminal failure;
-- occupied/missing composer не запрашивает worker insert commit;
-- pending report остаётся worker-owned;
-- при занятом composer plate точно `Очистите поле ввода, чтобы получить отчёт.`;
-- plate не исчезает по timeout пока report pending;
-- DOM observation/reacquisition работает, fallback polling bounded;
-- правильный пустой composer → ровно один insert commit и одна вставка report;
-- wrong-owner composer не используется;
-- plate исчезает только после успешной вставки или explicit cancellation;
-- content/page restart восстанавливает wait без duplicate insert/Send;
-- downstream one-Send/Microphone flow сохраняется;
-- composer waiting даёт 0 provider replay.
-
-# 12. Manual OFF cancellation / OFF -> ON
-
-Narrow cancellation только для pre-insert claimed delivery:
-
-- `status === delivering`;
-- `delivery.mode === batch_watch_v1`;
-- `delivery.phase === claimed`;
-- insert permission ещё не committed.
-
-Проверить:
-
-- удаляется только eligible pending operation текущего owner;
-- останавливается только его composer waiter/plate;
-- cancelled report не появляется после re-enable;
-- OFF не удаляет `requesting`/`quota_waiting`;
-- OFF не удаляет `insert_committed`;
-- OFF не удаляет `inserted`;
-- OFF flag сохраняется до cancellation;
-- stale content runtime после OFF не получает insert permission;
-- другой Manual owner не меняется;
-- Autorun owner не меняется;
-- binding сохраняется;
-- credentials/settings кроме Manual flag сохраняются;
-- verified cache не меняется;
-- quota state не меняется;
-- `last_provider_request_at` не меняется;
-- `next_allowed_at` не меняется;
-- `60000/5000/65000` не меняются;
-- Retry-After state не меняется;
-- OFF/re-enable делает 0 provider requests/replay;
-- OFF -> ON Manual public state ready при отсутствии новой operation;
-- UI Ozon control снова usable, old busy state не залипает;
-- новый cold-cache same-Seller request после OFF -> ON соблюдает ранее сохранённый deadline.
-
-# 13. UI / bindings / owner isolation
-
-Проверить через qualified raw-CDP browser substrate:
-
-- Ozon controls структурно bind-ятся в ChatGPT/Alice;
-- native ChatGPT Copy независим;
-- native Copy не меняет bridge operation state;
-- busy/ready UI следует worker-owned state;
-- Manual toggle доступен для cancellation pending Manual report, если Autorun не блокирует owner;
-- два ChatGPT owner не перезаписывают друг друга;
-- ChatGPT/Alice ownership изолирован;
-- due/delivery одного owner не очищает wait другого;
-- content restart восстанавливает только правильного owner;
-- нет global current-conversation assumption.
-
-# 14. Performance boundary
-
-Проверить независимо и в browser network accounting:
-
-- Seller changes не меняют Performance host/auth semantics;
-- Performance-only request не вызывает Seller capability probe;
-- Seller quota/cache не применяется к unrelated Performance request;
-- `REAL_PERFORMANCE_REQUESTS=0`.
-
-# 15. Browser/runtime
-
-Использовать только qualified raw-CDP substrate, описанный выше. Старый `V3_BROWSER_COUNTDOWN_HARNESS.mjs` transport как есть запрещён.
-
-Проверить:
-
-- CFT source/copy inventory и setup contract PASS;
-- exact launch options/args PASS;
-- browser alive;
-- extension устанавливается через `browser.installExtension(candidateDir)`;
-- dynamic extension id, version `0.1.19`;
-- raw PAGE `Target.createTarget`/Runtime/Page/Fetch PASS;
-- synthetic supported ChatGPT/Alice pages fulfilled locally;
-- content script стартует;
-- MV3 service worker найден/активирован разрешённым способом;
-- direct worker CDP Runtime PASS;
-- worker Network instrumentation PASS;
-- visible quota countdown / absolute due clock / decreasing seconds;
-- native Copy independence;
-- two-owner isolation;
-- ChatGPT/Alice structural bindings;
-- page/content lifecycle restart не дублирует owner state/provider/insertion/Send;
-- normal empty composer delivery;
-- occupied/missing composer wait/current repair;
-- OFF cancellation + OFF->ON readiness;
-- wrong owner/conversation fail closed;
-- one-Send/Microphone semantics;
-- `REAL_OZON_REQUESTS=0`;
-- `REAL_PERFORMANCE_REQUESTS=0`;
-- `REAL_CHATGPT_REQUESTS=0`;
-- unexpected runtime/console failure валит affected test;
-- environment/harness failure не выдаётся за production behavior failure.
-
-# 16. Packaging
-
-Только если блоки 1–15 PASS:
-
-- собрать **новый** ZIP ровно из exact tested 17-file production tree;
-- не включать tests/reports/credentials/dev artifacts;
-- посчитать ZIP SHA-256;
-- fresh-extract;
-- сравнить все 17 extracted files byte-for-byte с tested candidate;
-- повторно проверить JS syntax, manifest и inventory;
-- повторно проверить worker SHA = `dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac`;
-- повторно проверить content SHA = `ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda`;
-- при любом byte drift пакет не передавать.
-
-# Итоговый отчёт Codex
-
-Для каждого блока 1–16 вывести `PASS` или `FAIL`; только объективно зависимый test может быть `BLOCKED_BY:<причина>`.
-
-Обязательно вывести:
+Required final hashes:
+
+- `service_worker.js`: `dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac`
+- `content_script.js`: `ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda`
+
+Production inventory: ровно `17` файлов.
+
+Изменённые production-файлы: только:
+
+- `service_worker.js`
+- `content_script.js`
+
+Остальные 15 production-файлов должны быть byte-identical frozen ZIP.
+
+---
+
+# B01. Целостность сборки
+
+## Что сделать
+
+- Fresh-extract frozen ZIP два раза в две отдельные директории: candidate-A и candidate-B.
+- Проверить SHA frozen ZIP.
+- Проверить starting worker/content hashes.
+- Собрать patch из двух частей в указанном порядке и проверить bytes/SHA.
+- Для каждой директории выполнить обычный Git apply с `core.autocrlf=false`, без fuzz/manual repair.
+- Проверить final worker/content hashes.
+- Сравнить все 17 файлов candidate-A и candidate-B byte-for-byte.
+- Проверить, что изменились только worker/content.
+- Проверить остальные 15 файлов byte-for-byte против frozen ZIP.
+- Проверить все production `.js` через `node --check`.
+- Проверить `manifest.json`.
+- Проверить, что permissions/host_permissions не расширились.
+- Проверить, что tests/reports/dev files/credentials не попали в production tree.
+
+## PASS
+
+Только если обе reconstruction дают exact final hashes, все 17 файлов A/B одинаковы, изменены только worker/content и нет никакого лишнего production drift.
+
+---
+
+# B02. Обнаружение команд и строгая проверка входа
+
+Проверять через обычное использование расширения на поддерживаемых synthetic ChatGPT/Alice страницах.
+
+## Что сделать
+
+1. Поместить корректную Ozon-команду в поддерживаемый code block/message и убедиться, что расширение обнаруживает ровно одну команду.
+2. Ту же строку окружить обычным Markdown/текстом так, чтобы лишний окружающий текст не создавал дополнительных команд.
+3. Проверить поддерживаемые Unicode/separator варианты.
+4. Передать malformed JSON и убедиться, что расширение его не «чинит» молча.
+5. Передать некорректные analytics date/dimension/metric/filter/sort/limit/offset.
+6. Передать некорректные product-query date/SKU/sort/page.
+7. Попробовать удалённые/запрещённые операции.
+8. Попробовать `posting_fbs_get`.
+
+## PASS
+
+- Валидные команды принимаются.
+- Невалидные команды отклоняются до provider request.
+- `posting_fbs_get` не исполняется.
+- Malformed/pre-execution failures дают `0` provider requests.
+
+---
+
+# B03. Безопасность provider boundary
+
+## Что сделать
+
+- В командном тексте попытаться передать произвольные URL/host/method/headers/auth/credentials.
+- Проверить сетевой журнал среды.
+- Проверить AI-visible output при success/error.
+- Проверить wrong tab/conversation/binding.
+- Проверить отсутствие скрытого retry, pagination, fan-out и polling.
+
+## PASS
+
+- Используются только фиксированные Seller/Performance endpoints продукта.
+- AI-текст не может выбрать произвольный host/method/auth.
+- Mutation/write operations не появляются.
+- Credentials и customer PII не попадают в AI-visible output.
+- Wrong owner/binding fail closed.
+- Один logical request не создаёт скрытых дополнительных provider calls.
+
+---
+
+# B04. Seller capability / entitlement
+
+Проверять обычными запросами продукта с mocked provider responses в уже доступной безопасной среде.
+
+## Что сделать
+
+1. Universal analytics request: убедиться, что capability probe не выполняется.
+2. Batch с restricted capability: не более одного fresh capability probe на relevant logical batch.
+3. Проверить restart во время/после capability acquisition: начатый probe не должен слепо повторяться.
+4. Проверить mixed universal/restricted analytics: universal часть сохраняется, restricted часть обрабатывается по текущим правилам.
+5. Проверить all-restricted/no-executable: `0` business requests.
+6. Проверить restricted dimension/filter/sort/history: fail closed, без изменения смысла запроса.
+7. Проверить Performance-only flow: `0` Seller capability probes.
+8. Убедиться, что raw seller-info identity/company fields не попадают в AI output.
+
+## PASS
+
+Все восемь пунктов соблюдены, без лишних Seller business calls.
+
+---
+
+# B05. Планирование, объединение запросов и разделение результатов
+
+## Что сделать
+
+1. Дать две соседние совместимые analytics-команды, отличающиеся только метриками.
+2. Убедиться, что они могут быть объединены в один physical provider request, а logical results остаются двумя и сохраняют порядок.
+3. Дать две команды с разной non-metric semantics — они не должны объединяться.
+4. Проверить deterministic metric union и предел contract maximum.
+5. Подать mocked provider response с проверяемым порядком метрик и убедиться, что каждый logical result получает правильную проекцию.
+6. Сделать projection непроверяемой/несовместимой — результат должен fail closed.
+7. При provider error/projection failure не должно быть повторного physical request.
+8. После restart уже начатая physical group не должна слепо replay-иться.
+
+## PASS
+
+Правильное объединение только совместимых запросов, правильное разделение logical results, отсутствие replay.
+
+---
+
+# B06. Глобальный лимит Seller запросов
+
+**Не подделывать время в storage и не создавать искусственную fixture. Проверять через нормальную последовательность запросов продукта.**
+
+## Что сделать
+
+1. Выполнить первый cold-cache Seller analytics request с mocked successful provider response.
+2. Сразу после него, не дожидаясь 65 секунд, выполнить второй cold-cache request того же Seller.
+3. Убедиться, что второй запрос входит в ожидание, а provider call не происходит раньше разрешённого времени.
+4. Наблюдать, что countdown уменьшается.
+5. После наступления разрешённого времени убедиться, что второй provider call происходит автоматически и ровно один раз.
+6. Во время ожидания перезапустить page/content или service-worker lifecycle штатным способом и убедиться, что ожидание восстанавливается, а provider call не дублируется.
+7. Повторить ожидание из другого tab/conversation/ChatGPT/Alice для того же Seller — bucket должен быть общим.
+8. Проверить другого Seller — его bucket независим.
+9. Проверить Api-Key rotation при том же Client-Id — account scope сохраняется, credential revision меняется.
+10. Проверить Retry-After — он может только продлить срок ожидания.
+11. Проверить, что raw credentials не появляются в сохранённом quota state.
+12. Проверить public state: только безопасные timing fields.
+
+## Обязательные значения
+
+- family: `seller.analytics_data.v1`
+- provider minimum: `60000 ms`
+- bridge safety: `5000 ms`
+- effective interval: `65000 ms`
+
+## PASS
+
+Ни одного раннего или повторного provider call; ожидание устойчиво к restart; same Seller делит общий bucket; different Seller независим.
+
+---
+
+# B07. Проверка provider response и безопасные ошибки
+
+## Что сделать
+
+1. Successful valid analytics response → принять.
+2. HTTP 200 с неправильной shape/cardinality → safe mismatch после единственной provider attempt.
+3. Verifier failure → без retry.
+4. HTTP 429 → безопасная ошибка, без immediate retry; Retry-After только продлевает deadline.
+5. Transport error → truthful attempted-request provenance.
+6. Storage/credential failure до fetch → `0` provider requests.
+7. Проверить, что `automatic_retry:false` соответствует реальному поведению.
+
+## PASS
+
+Ошибочные ответы не проходят как success, не кэшируются как valid result и не вызывают скрытого повторного запроса.
+
+---
+
+# B08. Verified analytics cache
+
+## Что сделать
+
+1. Выполнить successful verified analytics request.
+2. До истечения 60 секунд выполнить совместимый следующий request того же Seller.
+3. Убедиться, что совместимый cache hit не создаёт второй provider call и не берёт второй quota permit.
+4. Проверить safe metric superset → корректная deterministic projection.
+5. Проверить другой Seller → miss.
+6. Проверить incompatible semantics → miss.
+7. Проверить expired entry → miss.
+8. Проверить malformed/provider-error response → не сохраняется в cache.
+9. Проверить, что credentials отсутствуют в serialized cache.
+10. Проверить, что cache lookup/hit не портит quota state.
+11. Проверить `analytics_basic_metrics_v1`: prefetch расширяет только утверждённый universal subset и не добавляет restricted metrics.
+
+## Обязательное значение
+
+TTL: `60000 ms`.
+
+## PASS
+
+Cache работает только на verified data, не создаёт лишних provider calls и не нарушает quota.
+
+---
+
+# B09. Общий batch engine Manual / Autorun
+
+## Что сделать
+
+- Одна команда → один entry.
+- Несколько команд → logical order сохраняется.
+- Несколько необходимых physical calls идут строго последовательно.
+- Malformed/validation entry не ломает безопасную обработку остальных согласно текущей semantics.
+- Completed entries не replay-ятся после recovery.
+- Old `requesting` ambiguity fail closed.
+- Нет промежуточной лишней доставки в chat.
+- Итоговый report один, logical count/order и physical count правдивы.
+- Manual и Autorun не забирают ownership друг у друга.
+
+## PASS
+
+Все пункты соблюдены без duplicate provider work и duplicate report delivery.
+
+---
+
+# B10. Обычная доставка при пустом composer
+
+## Что сделать
+
+1. Получить готовый Manual report при пустом правильном composer.
+2. Убедиться, что используется только правильный owner/conversation.
+3. Report вставляется ровно один раз.
+4. Recognized Send нажимается максимум один раз.
+5. После этого обычный пользовательский Send не должен быть задет старой delivery operation.
+6. Disabled Send / Stop / Unknown / Microphone не должны ошибочно нажиматься как Send.
+7. Microphone/accepted AI-ready state подтверждает завершение.
+8. После completion transient delivery очищена, Manual снова ready.
+9. Provider work при recovery не replay-ится.
+
+## PASS
+
+Одна вставка, максимум один правильный Send, корректное завершение, no replay.
+
+---
+
+# B11. Занятый или временно отсутствующий composer
+
+## Что сделать
+
+### Занятый composer
+
+1. Перед готовностью report поместить в composer пользовательский текст.
+2. Убедиться, что этот текст не очищается, не заменяется, не выделяется и не отправляется.
+3. Убедиться, что появляется точная постоянная надпись:
+   `Очистите поле ввода, чтобы получить отчёт.`
+4. Оставить composer занятым больше 2 секунд — надпись не должна исчезнуть.
+5. Очистить composer вручную.
+6. Убедиться: один insert, один report, максимум один Send, надпись исчезает после успешной вставки.
+7. Provider replay = 0.
+
+### Временно отсутствующий composer
+
+1. Сделать composer временно отсутствующим во время pending pre-insert report.
+2. Это не должно становиться terminal `COMPOSER_NOT_FOUND`.
+3. Вернуть правильный composer.
+4. При пустом composer report должен вставиться ровно один раз.
+5. Duplicate Send/provider replay = 0.
+
+### Restart
+
+Во время ожидания перезапустить page/content lifecycle и убедиться, что pending wait восстанавливается без duplicate insert/Send.
+
+## PASS
+
+Пользовательский текст не повреждён, pending report остаётся восстанавливаемым, delivery происходит ровно один раз.
+
+---
+
+# B12. Manual OFF во время pending report и последующий ON
+
+## Что сделать
+
+1. Создать pending Manual report до вставки, при занятом composer.
+2. Выключить Manual.
+3. Убедиться, что pending report текущего owner отменён и надпись исчезла.
+4. Очистить composer — старый report не должен появиться.
+5. Включить Manual обратно — control снова usable/ready.
+6. Убедиться, что старый отменённый report не воскресает.
+7. Проверить, что OFF не удаляет состояния `requesting`, `quota_waiting`, `insert_committed`, `inserted`, если они не являются eligible pre-insert claimed operation.
+8. Проверить другого Manual owner — не меняется.
+9. Проверить Autorun owner — не меняется.
+10. Проверить binding/credentials/settings — сохраняются, кроме самого Manual flag.
+11. До и после OFF→ON сравнить cache и quota state.
+12. Проверить `last_provider_request_at`, `next_allowed_at`, Retry-After и 60000/5000/65000 — не меняются из-за toggle.
+13. Выполнить новый cold-cache request того же Seller до старого deadline — он обязан ждать прежний deadline.
+14. Provider calls из-за OFF/ON = 0.
+
+## PASS
+
+Отменяется только допустимый pending pre-insert report; quota/cache/owners не повреждаются; OFF→ON готов к новой работе.
+
+---
+
+# B13. UI, bindings и изоляция владельцев
+
+## Что сделать
+
+- Проверить Ozon controls на synthetic ChatGPT.
+- Проверить Ozon controls на synthetic Alice.
+- Native ChatGPT Copy работает независимо от bridge.
+- Native Copy не меняет operation state.
+- Busy/ready соответствует worker-owned state.
+- Manual toggle остаётся доступен для отмены pending Manual report, когда Autorun не является blocking owner.
+- Два ChatGPT conversation owner не перезаписывают друг друга.
+- ChatGPT и Alice не перезаписывают друг друга.
+- Wait/delivery одного owner не очищает состояние другого.
+- Restart восстанавливает только правильного owner.
+
+## PASS
+
+Нет global current-conversation assumption и нет cross-owner state corruption.
+
+---
+
+# B14. Performance boundary
+
+## Что сделать
+
+- Выполнить Performance-only сценарий в synthetic/mocked environment.
+- Проверить, что host/auth semantics Performance не изменились из-за Seller repair.
+- Проверить, что Performance-only request не вызывает Seller capability probe.
+- Проверить, что Seller quota/cache не применяется к Performance request.
+- Сетевой журнал должен показать `REAL_PERFORMANCE_REQUESTS=0`.
+
+## PASS
+
+Performance остаётся независимым от Seller quota/capability/cache изменений.
+
+---
+
+# B15. Браузер и runtime
+
+Использовать **уже готовую квалифицированную Windows QA среду**. Ничего нового для управления браузером не писать.
+
+Known environment:
+
+- Node `v24.12.0`
+- Puppeteer `25.4.0`
+- CFT `151.0.7922.47`
+- fresh disposable profile
+- validation-owned browser copy
+- real external Seller/Performance network blocked/intercepted
+
+## Что сделать
+
+1. Убедиться, что browser запускается и остаётся жив.
+2. Установить exact candidate extension обычным уже доступным способом среды.
+3. Проверить version `0.1.19`.
+4. Проверить dynamic extension id.
+5. Открыть synthetic ChatGPT и Alice страницы через уже доступный безопасный механизм среды.
+6. Проверить, что content script запускается.
+7. Проверить, что MV3 service worker активен.
+8. Проверить worker runtime и network observation штатными средствами среды.
+9. Повторить browser-observable проверки из B10–B13:
+   - normal empty composer;
+   - occupied composer;
+   - missing composer recovery;
+   - Manual OFF→ON;
+   - native Copy independence;
+   - two-owner isolation;
+   - ChatGPT/Alice isolation;
+   - restart/recovery;
+   - one Send/Microphone semantics.
+10. Проверить console/runtime errors. Неожиданная ошибка валит конкретный affected test.
+
+## PASS
+
+Все перечисленные browser-observable поведения реально наблюдены на exact candidate, без написания нового test code и без реального внешнего network.
+
+---
+
+# B16. Packaging
+
+Запускать только если B01–B15 PASS.
+
+## Что сделать
+
+- Собрать новый ZIP ровно из tested 17-file production tree.
+- Не включать tests/reports/credentials/dev artifacts.
+- Посчитать ZIP SHA-256.
+- Fresh-extract ZIP.
+- Сравнить все 17 файлов byte-for-byte с tested candidate.
+- Снова проверить JS syntax, manifest и inventory.
+- Снова проверить exact worker/content hashes.
+
+## PASS
+
+Fresh-extracted package полностью byte-identical tested candidate.
+
+---
+
+# Что обязательно вернуть в итоговом отчёте
 
 - exact checklist commit;
+- exact branch/candidate authority;
 - frozen ZIP SHA-256;
 - patch bytes/SHA-256;
-- exact patch command/mode (`core.autocrlf=false`);
-- candidate-A worker/content SHA-256;
-- candidate-B worker/content SHA-256;
+- exact patch mode `core.autocrlf=false`;
+- candidate-A worker/content hashes;
+- candidate-B worker/content hashes;
 - `A_B_BYTE_IDENTICAL=true|false`;
 - production inventory count;
 - changed files;
-- protected 15 byte-identical result;
-- unchanged worker-function carry-forward result;
-- worker persisted-due fixture result;
-- browser substrate used (`RAW_PAGE_CDP` + direct worker CDP transport);
-- факт отсутствия `browser.newPage()` / `worker.evaluate()` в current browser execution;
-- все test-only harness adaptations;
-- подтверждение, что behavioral assertions не ослаблялись;
-- полный список executed tests;
-- полный список failed tests;
-- полный список blocked tests;
-- полный список harness/environment failures;
+- protected 15 identity result;
+- B01–B16: `PASS`, `FAIL` или объективный `BLOCKED`;
+- для каждого FAIL/BLOCKED — конкретное действие, которое было выполнено, и конкретно что наблюдалось;
+- полный список фактически выполненных проверок;
+- полный список невыполненных проверок с причиной;
 - `REAL_OZON_REQUESTS=0`;
 - `REAL_PERFORMANCE_REQUESTS=0`;
-- `REAL_CHATGPT_REQUESTS=0`;
-- production modifications by Codex = `0`;
-- package path/SHA только если blocks 1–15 PASS;
+- `REAL_CHATGPT_REQUESTS=0` для synthetic browser checks;
+- `production modifications by Codex=0`;
+- package path/SHA только если B01–B15 PASS;
 - fresh-extract byte verification result.
 
-Полный PASS допускается только если все blocks 1–16 PASS.
+Полный PASS допускается только если B01–B16 PASS.
 
-Терминальный маркер полного PASS:
+Terminal marker:
 
 `OZON_FULL_PRE_OPERATOR_HANDOFF_GATE_PASS`
 
-Этот PASS является automated/synthetic/browser QA. Logged-in live acceptance выполняется отдельно после передачи exact tested ZIP.
+После отчёта Codex останавливается. Logged-in live acceptance выполняется отдельно после передачи exact tested ZIP.
