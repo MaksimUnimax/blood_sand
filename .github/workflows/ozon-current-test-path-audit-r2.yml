@@ -1,4 +1,4 @@
-name: Ozon current browser path audit R5
+name: Ozon current browser path audit R6
 
 on:
   push:
@@ -28,7 +28,7 @@ env:
 jobs:
   browser:
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,7 +43,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $w=Join-Path $env:RUNNER_TEMP 'ozon-r5'
+          $w=Join-Path $env:RUNNER_TEMP 'ozon-r6'
           $c=Join-Path $w 'candidate'
           $p=Join-Path $w 'repair.patch'
           if(Test-Path $w){Remove-Item -Recurse -Force $w}
@@ -68,17 +68,17 @@ jobs:
           if((Get-FileHash -Algorithm SHA256 content_script.js).Hash.ToLowerInvariant()-ne$env:FINAL_CONTENT_SHA256){throw 'content sha mismatch'}
           Pop-Location
           "CANDIDATE=$c"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host 'R5_EXACT_CANDIDATE_RECONSTRUCTION_PASS'
+          Write-Host 'R6_EXACT_CANDIDATE_RECONSTRUCTION_PASS'
 
       - name: Prepare qualified Windows CFT fixture
         id: prepare
         if: steps.reconstruct.outcome == 'success'
         continue-on-error: true
-        timeout-minutes: 5
+        timeout-minutes: 12
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $proj=Join-Path $env:RUNNER_TEMP 'ozon-r5-puppeteer'
+          $proj=Join-Path $env:RUNNER_TEMP 'ozon-r6-puppeteer'
           New-Item -ItemType Directory -Force $proj|Out-Null
           Push-Location $proj
           npm init -y|Out-Null
@@ -127,7 +127,7 @@ assert(!launchArgs.includes('--disable-gpu'),'forbidden --disable-gpu present');
           "BROWSER_TEST=$test"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           "CFT_CHROME=$($chrome.FullName)"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host "CFT_VERSION=$version"
-          Write-Host 'R5_BROWSER_FIXTURE_PREPARE_PASS'
+          Write-Host 'R6_BROWSER_FIXTURE_PREPARE_PASS'
 
       - name: Execute bounded browser matrix
         id: execute
@@ -136,7 +136,7 @@ assert(!launchArgs.includes('--disable-gpu'),'forbidden --disable-gpu present');
         timeout-minutes: 4
         shell: pwsh
         run: |
-          $l=Join-Path $env:RUNNER_TEMP 'ozon-r5-browser.log'
+          $l=Join-Path $env:RUNNER_TEMP 'ozon-r6-browser.log'
           node $env:BROWSER_TEST $env:CANDIDATE $env:CFT_CHROME 2>&1|Tee-Object -FilePath $l
           $rc=$LASTEXITCODE
           "BROWSER_EXIT_CODE=$rc"|Tee-Object -FilePath $l -Append
@@ -146,7 +146,7 @@ assert(!launchArgs.includes('--disable-gpu'),'forbidden --disable-gpu present');
         if: always()
         shell: pwsh
         run: |
-          $o=Join-Path $env:RUNNER_TEMP 'ozon-r5-browser-result.txt'
+          $o=Join-Path $env:RUNNER_TEMP 'ozon-r6-browser-result.txt'
           @(
             "trigger_sha=$env:GITHUB_SHA",
             "node=$(node --version 2>$null)",
@@ -156,7 +156,7 @@ assert(!launchArgs.includes('--disable-gpu'),'forbidden --disable-gpu present');
             "final_worker_sha256=$env:FINAL_WORKER_SHA256",
             "final_content_sha256=$env:FINAL_CONTENT_SHA256"
           )|Set-Content -LiteralPath $o -Encoding utf8NoBOM
-          $l=Join-Path $env:RUNNER_TEMP 'ozon-r5-browser.log'
+          $l=Join-Path $env:RUNNER_TEMP 'ozon-r6-browser.log'
           if(Test-Path $l){Get-Content -LiteralPath $l|Add-Content -LiteralPath $o -Encoding utf8}
           Get-Content -LiteralPath $o
 
@@ -164,8 +164,8 @@ assert(!launchArgs.includes('--disable-gpu'),'forbidden --disable-gpu present');
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ozon-r5-browser
-          path: ${{ runner.temp }}/ozon-r5-browser-result.txt
+          name: ozon-r6-browser
+          path: ${{ runner.temp }}/ozon-r6-browser-result.txt
           if-no-files-found: error
           retention-days: 7
 
@@ -181,17 +181,17 @@ assert(!launchArgs.includes('--disable-gpu'),'forbidden --disable-gpu present');
           fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
-          name: ozon-r5-browser
-          path: ${{ runner.temp }}/r5-result
-      - name: Append R5 engineering evidence
+          name: ozon-r6-browser
+          path: ${{ runner.temp }}/r6-result
+      - name: Append R6 engineering evidence
         shell: bash
         run: |
           set -euo pipefail
           F='tooling/llm-api-bridges/ozon-seller/validation/engineering-preflight/CURRENT_TEST_PATH_AUDIT_2026-08-19.md'
-          R="$RUNNER_TEMP/r5-result/ozon-r5-browser-result.txt"
+          R="$RUNNER_TEMP/r6-result/ozon-r6-browser-result.txt"
           {
             echo
-            echo '## Engineering follow-up R5 — bounded qualified Windows browser execution'
+            echo '## Engineering follow-up R6 — bounded qualified Windows browser execution'
             echo
             echo "Trigger commit: \`$GITHUB_SHA\`"
             echo
@@ -202,5 +202,5 @@ assert(!launchArgs.includes('--disable-gpu'),'forbidden --disable-gpu present');
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add "$F"
-          git commit -m 'test: append Ozon browser path audit R5 evidence [skip ci]'
+          git commit -m 'test: append Ozon browser path audit R6 evidence [skip ci]'
           git push origin HEAD:dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
