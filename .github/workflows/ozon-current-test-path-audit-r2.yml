@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: ozon-current-test-path-audit-r2
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   FROZEN_ZIP: tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip
