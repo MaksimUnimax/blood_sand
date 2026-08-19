@@ -1,4 +1,4 @@
-name: Ozon current browser path audit R3
+name: Ozon current browser path audit R4
 
 on:
   push:
@@ -38,10 +38,12 @@ jobs:
           node-version: '24.12.0'
 
       - name: Reconstruct exact candidate
+        id: reconstruct
+        continue-on-error: true
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $w=Join-Path $env:RUNNER_TEMP 'r3'; $c=Join-Path $w 'candidate'; $p=Join-Path $w 'repair.patch'
+          $w=Join-Path $env:RUNNER_TEMP 'r4'; $c=Join-Path $w 'candidate'; $p=Join-Path $w 'repair.patch'
           if(Test-Path $w){Remove-Item -Recurse -Force $w}; New-Item -ItemType Directory -Force $c|Out-Null
           if((Get-FileHash -Algorithm SHA256 $env:FROZEN_ZIP).Hash.ToLowerInvariant() -ne $env:FROZEN_ZIP_SHA256){throw 'frozen zip sha mismatch'}
           $a=Join-Path $w '00'; $b=Join-Path $w '01'
@@ -57,18 +59,26 @@ jobs:
           if((Get-FileHash -Algorithm SHA256 content_script.js).Hash.ToLowerInvariant()-ne$env:FINAL_CONTENT_SHA256){throw 'content sha'}
           Pop-Location
           "CANDIDATE=$c"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'R4_EXACT_CANDIDATE_RECONSTRUCTION_PASS'
 
-      - name: Prepare exact browser environment and corrected fixture
+      - name: Prepare authorized browser environment and corrected fixture
+        id: prepare
+        if: steps.reconstruct.outcome == 'success'
+        continue-on-error: true
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $proj=Join-Path $env:RUNNER_TEMP 'r3-puppeteer';New-Item -ItemType Directory -Force $proj|Out-Null
+          $proj=Join-Path $env:RUNNER_TEMP 'r4-puppeteer';New-Item -ItemType Directory -Force $proj|Out-Null
           Push-Location $proj; npm init -y|Out-Null; $env:PUPPETEER_SKIP_DOWNLOAD='true'; npm install --no-save --no-audit --no-fund puppeteer@25.4.0; Pop-Location
           git fetch --no-tags origin $env:TEST_SOURCE_COMMIT
           $test=Join-Path $proj 'B10_B13_B15_BROWSER_CURRENT.mjs'
           cmd /c "git cat-file blob e3ea01ff6518626aa1fc9c96398b486cbb584b01 > `"$test`"";if($LASTEXITCODE){throw 'browser blob'}
 
           $src=Get-Content -LiteralPath $test -Raw
+          $forbidden="  '--no-sandbox',`n"
+          if(-not $src.Contains($forbidden)){throw 'expected historical --no-sandbox fixture line missing'}
+          $src=$src.Replace($forbidden,'')
+
           $old=@'
   const samples=[sec(firstA)];await new Promise(r=>setTimeout(r,1100));samples.push(sec(await toastText(pageA)));await new Promise(r=>setTimeout(r,1100));samples.push(sec(await toastText(pageA)));
   assert(samples.every(Number.isFinite)&&samples[0]>samples[1]&&samples[1]>samples[2],`countdown did not decrease: ${samples}`);
@@ -79,9 +89,23 @@ jobs:
   assert(samples.length===3&&samples.every(Number.isFinite)&&samples[0]>samples[1]&&samples[1]>samples[2],`countdown did not expose three decreasing values: ${samples}`);
 '@
           if(-not $src.Contains($old)){throw 'countdown fixture source not found'}
+          $src=$src.Replace($old,$new)
+
+          $oldArgs=@'
+assert(!launchArgs.includes('--disable-gpu-sandbox'),'forbidden --disable-gpu-sandbox present');
+'@
+          $newArgs=@'
+assert(!launchArgs.includes('--disable-gpu-sandbox'),'forbidden --disable-gpu-sandbox present');
+assert(!launchArgs.includes('--no-sandbox'),'forbidden --no-sandbox present');
+assert(!launchArgs.includes('--disable-gpu'),'forbidden --disable-gpu present');
+'@
+          if(-not $src.Contains($oldArgs)){throw 'launch-args assertion source not found'}
+          $src=$src.Replace($oldArgs,$newArgs)
+
           $utf8NoBom=New-Object System.Text.UTF8Encoding($false)
-          [IO.File]::WriteAllText($test,$src.Replace($old,$new),$utf8NoBom)
+          [IO.File]::WriteAllText($test,$src,$utf8NoBom)
           node --check $test
+          if(Select-String -LiteralPath $test -SimpleMatch "'--no-sandbox'" -Quiet){throw 'corrected fixture still contains --no-sandbox'}
 
           $zip=Join-Path $env:RUNNER_TEMP 'cft.zip';$root=Join-Path $env:RUNNER_TEMP 'cft'
           Invoke-WebRequest 'https://storage.googleapis.com/chrome-for-testing-public/151.0.7922.47/win64/chrome-win64.zip' -OutFile $zip
@@ -93,28 +117,43 @@ jobs:
           "BROWSER_TEST=$test"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           "CFT_CHROME=$($chrome.FullName)"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host "CFT_VERSION=$version"
+          Write-Host 'R4_AUTHORIZED_BROWSER_ARGS_FIXTURE_PASS'
 
-      - name: Execute corrected browser path
+      - name: Execute bounded corrected browser path
         id: execute
+        if: steps.reconstruct.outcome == 'success' && steps.prepare.outcome == 'success'
         continue-on-error: true
+        timeout-minutes: 6
         shell: pwsh
         run: |
-          $l=Join-Path $env:RUNNER_TEMP 'browser-r3.log'
+          $l=Join-Path $env:RUNNER_TEMP 'browser-r4.log'
           node $env:BROWSER_TEST $env:CANDIDATE $env:CFT_CHROME 2>&1|Tee-Object $l
-          $rc=$LASTEXITCODE;"BROWSER_EXIT_CODE=$rc"|Tee-Object $l -Append;if($rc){exit $rc}
+          $rc=$LASTEXITCODE
+          "BROWSER_EXIT_CODE=$rc"|Tee-Object $l -Append
+          if($rc){exit $rc}
 
-      - name: Save result
+      - name: Save bounded browser result
         if: always()
         shell: pwsh
         run: |
-          $o=Join-Path $env:RUNNER_TEMP 'browser-r3-result.txt'
-          @("trigger_sha=$env:GITHUB_SHA","execute=${{ steps.execute.outcome }}")|Set-Content $o -Encoding utf8NoBOM
-          $l=Join-Path $env:RUNNER_TEMP 'browser-r3.log';if(Test-Path $l){Get-Content $l|Add-Content $o -Encoding utf8}
+          $o=Join-Path $env:RUNNER_TEMP 'browser-r4-result.txt'
+          @(
+            "trigger_sha=$env:GITHUB_SHA",
+            "node=$(node --version 2>$null)",
+            "reconstruct=${{ steps.reconstruct.outcome }}",
+            "prepare=${{ steps.prepare.outcome }}",
+            "execute=${{ steps.execute.outcome }}",
+            "authorized_no_sandbox=false",
+            "final_worker_sha256=$env:FINAL_WORKER_SHA256",
+            "final_content_sha256=$env:FINAL_CONTENT_SHA256"
+          )|Set-Content $o -Encoding utf8NoBOM
+          $l=Join-Path $env:RUNNER_TEMP 'browser-r4.log';if(Test-Path $l){Get-Content $l|Add-Content $o -Encoding utf8}
+          Get-Content $o
       - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ozon-r3-browser
-          path: ${{ runner.temp }}/browser-r3-result.txt
+          name: ozon-r4-browser
+          path: ${{ runner.temp }}/browser-r4-result.txt
           retention-days: 7
 
   publish:
@@ -129,26 +168,28 @@ jobs:
           fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
-          name: ozon-r3-browser
-          path: ${{ runner.temp }}/r3-result
-      - name: Append browser R3 evidence
+          name: ozon-r4-browser
+          path: ${{ runner.temp }}/r4-result
+      - name: Append browser R4 evidence
         shell: bash
         run: |
           set -euo pipefail
           F='tooling/llm-api-bridges/ozon-seller/validation/engineering-preflight/CURRENT_TEST_PATH_AUDIT_2026-08-19.md'
-          R="$RUNNER_TEMP/r3-result/browser-r3-result.txt"
+          R="$RUNNER_TEMP/r4-result/browser-r4-result.txt"
           cat >> "$F" <<EOF
-          
-          ## Engineering follow-up R3 — browser countdown fixture correction
-          
-          Trigger commit: \`$GITHUB_SHA\`
-          
-          \`\`\`text
-          $(cat "$R" 2>/dev/null || echo BROWSER_R3_RESULT_MISSING)
-          \`\`\`
-          EOF
+
+## Engineering follow-up R4 — bounded authorized browser transport
+
+Trigger commit: \`$GITHUB_SHA\`
+
+This run removes the unauthorized historical \`--no-sandbox\` switch and bounds the executable browser step so evidence survives a hang.
+
+\`\`\`text
+$(cat "$R" 2>/dev/null || echo BROWSER_R4_RESULT_MISSING)
+\`\`\`
+EOF
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add "$F"
-          git commit -m 'test: append Ozon browser path audit R3 evidence [skip ci]'
+          git commit -m 'test: append Ozon browser path audit R4 evidence [skip ci]'
           git push origin HEAD:dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
