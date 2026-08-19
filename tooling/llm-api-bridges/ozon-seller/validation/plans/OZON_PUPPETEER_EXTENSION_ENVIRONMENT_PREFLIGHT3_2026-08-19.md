@@ -113,7 +113,7 @@ After publishing the report, STOP.
 OZON_PUPPETEER_EXTENSION_ENVIRONMENT_PREFLIGHT3_RESULT
 
 gate_input_checkpoint:
-  013aeec19fe44f6c15aaa39d0d70388f1d2029
+  013aeec19fe44f6b6c15aaa39d0d70388f1d2029
 
 preflight3_authority_commit:
   e782c38a6cd681e45fc722a075bb067e48b4f597
