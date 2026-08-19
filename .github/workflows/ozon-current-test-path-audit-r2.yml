@@ -31,9 +31,11 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
-        with: { node-version: '24.12.0' }
+        with:
+          node-version: '24.12.0'
 
       - name: Reconstruct exact candidate
         shell: bash
@@ -71,7 +73,6 @@ jobs:
               if a not in s: raise SystemExit(f'missing replacement in {n}: {a[:90]}')
               p.write_text(s.replace(a,b),encoding='utf-8',newline='\n')
 
-          # B05: construct strict contract inputs and Chrome-storage reads in the VM realm.
           rep('B05.mjs',
               "function clone(v){return v===undefined?undefined:structuredClone(v)}",
               "let context=null;function clone(v){if(v===undefined)return undefined;const j=JSON.stringify(v);return context?vm.runInContext(`(${j})`,context):JSON.parse(j)}")
@@ -89,8 +90,7 @@ jobs:
               "assert(hit.hit===true,'same Seller compatible safe superset cache miss');",
               "console.log('B08_CACHE_HIT_DEBUG='+JSON.stringify(hit));assert(hit.hit===true,'same Seller compatible safe superset cache miss');")
 
-          # B06/B09: actual Chrome storage returns objects in extension realm; emulate that instead of host-realm objects.
-          for n,callsname in [('B06.mjs','providerCalls'),('B09.mjs','calls')]:
+          for n in ['B06.mjs','B09.mjs']:
               rep(n,"function clone(v){return v===undefined?undefined:structuredClone(v)}",
                     "let context=null;function clone(v){if(v===undefined)return undefined;const j=JSON.stringify(v);return context?vm.runInContext(`(${j})`,context):JSON.parse(j)}")
               rep(n,"const context=vm.createContext(sandbox);","context=vm.createContext(sandbox);")
@@ -119,7 +119,7 @@ jobs:
           echo "VM_R2_FAILURE_COUNT=$bad" | tee -a "$L"
           [ "$bad" -eq 0 ]
 
-      - name: Upload VM result
+      - name: Save VM result
         if: always()
         shell: bash
         run: |
@@ -137,48 +137,67 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
-        with: { node-version: '24.12.0' }
+        with:
+          node-version: '24.12.0'
 
       - name: Reconstruct exact candidate
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'; $w=Join-Path $env:RUNNER_TEMP 'r2'; $c=Join-Path $w 'candidate'; $p=Join-Path $w 'repair.patch'
+          $ErrorActionPreference='Stop'
+          $w=Join-Path $env:RUNNER_TEMP 'r2'; $c=Join-Path $w 'candidate'; $p=Join-Path $w 'repair.patch'
           if(Test-Path $w){Remove-Item -Recurse -Force $w}; New-Item -ItemType Directory -Force $c|Out-Null
           if((Get-FileHash -Algorithm SHA256 $env:FROZEN_ZIP).Hash.ToLowerInvariant() -ne $env:FROZEN_ZIP_SHA256){throw 'frozen zip sha mismatch'}
           $a=Join-Path $w '00'; $b=Join-Path $w '01'
           cmd /c "git cat-file blob $env:PATCH_0_BLOB > `"$a`""; if($LASTEXITCODE){throw 'part0'}
           cmd /c "git cat-file blob $env:PATCH_1_BLOB > `"$b`""; if($LASTEXITCODE){throw 'part1'}
-          $x=[IO.File]::ReadAllBytes($a);$y=[IO.File]::ReadAllBytes($b);$z=New-Object byte[] ($x.Length+$y.Length);[Array]::Copy($x,0,$z,0,$x.Length);[Array]::Copy($y,0,$z,$x.Length,$y.Length);[IO.File]::WriteAllBytes($p,$z)
+          $x=[IO.File]::ReadAllBytes($a);$y=[IO.File]::ReadAllBytes($b);$z=New-Object byte[] ($x.Length+$y.Length)
+          [Array]::Copy($x,0,$z,0,$x.Length);[Array]::Copy($y,0,$z,$x.Length,$y.Length);[IO.File]::WriteAllBytes($p,$z)
           if($z.Length-ne 13648){throw 'patch bytes'};if((Get-FileHash -Algorithm SHA256 $p).Hash.ToLowerInvariant()-ne$env:PATCH_SHA256){throw 'patch sha'}
-          Expand-Archive $env:FROZEN_ZIP $c -Force; Push-Location $c; git init -q; git config core.autocrlf false; git apply --check $p; git apply $p
+          Expand-Archive $env:FROZEN_ZIP $c -Force
+          Push-Location $c; git init -q; git config core.autocrlf false; git apply --check $p; git apply $p
           if((Get-FileHash -Algorithm SHA256 service_worker.js).Hash.ToLowerInvariant()-ne$env:FINAL_WORKER_SHA256){throw 'worker sha'}
           if((Get-FileHash -Algorithm SHA256 content_script.js).Hash.ToLowerInvariant()-ne$env:FINAL_CONTENT_SHA256){throw 'content sha'}
-          Pop-Location; "CANDIDATE=$c"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Pop-Location
+          "CANDIDATE=$c"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Install exact Puppeteer/CFT and place test beside node_modules
+      - name: Install exact Puppeteer and CFT and materialize browser source beside node_modules
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'; $proj=Join-Path $env:RUNNER_TEMP 'r2-puppeteer';New-Item -ItemType Directory -Force $proj|Out-Null;Push-Location $proj;npm init -y|Out-Null;$env:PUPPETEER_SKIP_DOWNLOAD='true';npm install --no-save --no-audit --no-fund puppeteer@25.4.0;Pop-Location
+          $ErrorActionPreference='Stop'
+          $proj=Join-Path $env:RUNNER_TEMP 'r2-puppeteer';New-Item -ItemType Directory -Force $proj|Out-Null
+          Push-Location $proj; npm init -y|Out-Null; $env:PUPPETEER_SKIP_DOWNLOAD='true'; npm install --no-save --no-audit --no-fund puppeteer@25.4.0; Pop-Location
           git fetch --no-tags origin $env:TEST_SOURCE_COMMIT
-          $test=Join-Path $proj 'B10_B13_B15_BROWSER_CURRENT.mjs';cmd /c "git cat-file blob e3ea01ff6518626aa1fc9c96398b486cbb584b01 > `"$test`"";if($LASTEXITCODE){throw 'browser blob'};node --check $test
-          $zip=Join-Path $env:RUNNER_TEMP 'cft.zip';$root=Join-Path $env:RUNNER_TEMP 'cft';Invoke-WebRequest 'https://storage.googleapis.com/chrome-for-testing-public/151.0.7922.47/win64/chrome-win64.zip' -OutFile $zip;Expand-Archive $zip $root -Force;$chrome=Get-ChildItem $root -Filter chrome.exe -File -Recurse|Select-Object -First 1;if(-not $chrome){throw 'chrome missing'}
+          $test=Join-Path $proj 'B10_B13_B15_BROWSER_CURRENT.mjs'
+          cmd /c "git cat-file blob e3ea01ff6518626aa1fc9c96398b486cbb584b01 > `"$test`"";if($LASTEXITCODE){throw 'browser blob'}
+          node --check $test
+          $zip=Join-Path $env:RUNNER_TEMP 'cft.zip';$root=Join-Path $env:RUNNER_TEMP 'cft'
+          Invoke-WebRequest 'https://storage.googleapis.com/chrome-for-testing-public/151.0.7922.47/win64/chrome-win64.zip' -OutFile $zip
+          Expand-Archive $zip $root -Force
+          $chrome=Get-ChildItem $root -Filter chrome.exe -File -Recurse|Select-Object -First 1
+          if(-not $chrome){throw 'chrome missing'}
           if((Get-Item $chrome.FullName).VersionInfo.ProductVersion -notlike '151.0.7922.47*'){throw 'cft version'}
-          "BROWSER_TEST=$test"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append;"CFT_CHROME=$($chrome.FullName)"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "BROWSER_TEST=$test"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "CFT_CHROME=$($chrome.FullName)"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Execute current browser path
         id: execute
         continue-on-error: true
         shell: pwsh
         run: |
-          $l=Join-Path $env:RUNNER_TEMP 'browser-r2.log';node $env:BROWSER_TEST $env:CANDIDATE $env:CFT_CHROME 2>&1|Tee-Object $l;$rc=$LASTEXITCODE;"BROWSER_EXIT_CODE=$rc"|Tee-Object $l -Append;if($rc){exit $rc}
+          $l=Join-Path $env:RUNNER_TEMP 'browser-r2.log'
+          node $env:BROWSER_TEST $env:CANDIDATE $env:CFT_CHROME 2>&1|Tee-Object $l
+          $rc=$LASTEXITCODE;"BROWSER_EXIT_CODE=$rc"|Tee-Object $l -Append;if($rc){exit $rc}
 
-      - name: Upload browser result
+      - name: Save browser result
         if: always()
         shell: pwsh
         run: |
-          $o=Join-Path $env:RUNNER_TEMP 'browser-r2-result.txt';@("trigger_sha=$env:GITHUB_SHA","execute=${{ steps.execute.outcome }}")|Set-Content $o -Encoding utf8NoBOM;$l=Join-Path $env:RUNNER_TEMP 'browser-r2.log';if(Test-Path $l){Get-Content $l|Add-Content $o -Encoding utf8}
+          $o=Join-Path $env:RUNNER_TEMP 'browser-r2-result.txt'
+          @("trigger_sha=$env:GITHUB_SHA","execute=${{ steps.execute.outcome }}")|Set-Content $o -Encoding utf8NoBOM
+          $l=Join-Path $env:RUNNER_TEMP 'browser-r2.log';if(Test-Path $l){Get-Content $l|Add-Content $o -Encoding utf8}
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -188,7 +207,9 @@ jobs:
 
   publish:
     if: always()
-    needs: [vm-remaining,browser-remaining]
+    needs:
+      - vm-remaining
+      - browser-remaining
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -204,21 +225,26 @@ jobs:
         run: |
           set -euo pipefail
           F='tooling/llm-api-bridges/ozon-seller/validation/engineering-preflight/CURRENT_TEST_PATH_AUDIT_2026-08-19.md'
-          V=$(find "$RUNNER_TEMP/r2-results" -name vm-r2-result.txt -print -quit||true);B=$(find "$RUNNER_TEMP/r2-results" -name browser-r2-result.txt -print -quit||true)
+          V=$(find "$RUNNER_TEMP/r2-results" -name vm-r2-result.txt -print -quit||true)
+          B=$(find "$RUNNER_TEMP/r2-results" -name browser-r2-result.txt -print -quit||true)
           cat >> "$F" <<EOF
-
-## Engineering follow-up R2 — corrected fixture execution
-
-Trigger commit: \`$GITHUB_SHA\`
-
-### Remaining VM paths
-\`\`\`text
-$(cat "$V" 2>/dev/null || echo VM_R2_RESULT_MISSING)
-\`\`\`
-
-### Browser path after exact-byte reconstruction/module-resolution correction
-\`\`\`text
-$(cat "$B" 2>/dev/null || echo BROWSER_R2_RESULT_MISSING)
-\`\`\`
-EOF
-          git config user.name 'github-actions[bot]';git config user.email '41898282+github-actions[bot]@users.noreply.github.com';git add "$F";git commit -m 'test: append Ozon path audit R2 evidence [skip ci]';git push origin HEAD:dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
+          
+          ## Engineering follow-up R2 — corrected fixture execution
+          
+          Trigger commit: \`$GITHUB_SHA\`
+          
+          ### Remaining VM paths
+          \`\`\`text
+          $(cat "$V" 2>/dev/null || echo VM_R2_RESULT_MISSING)
+          \`\`\`
+          
+          ### Browser path after exact-byte reconstruction/module-resolution correction
+          \`\`\`text
+          $(cat "$B" 2>/dev/null || echo BROWSER_R2_RESULT_MISSING)
+          \`\`\`
+          EOF
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$F"
+          git commit -m 'test: append Ozon path audit R2 evidence [skip ci]'
+          git push origin HEAD:dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
