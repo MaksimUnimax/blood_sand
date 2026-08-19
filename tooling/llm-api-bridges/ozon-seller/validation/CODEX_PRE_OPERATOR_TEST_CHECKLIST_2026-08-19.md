@@ -7,7 +7,17 @@
 
 Codex — независимый проверяющий. Он должен выполнить перечисленные ниже проверки над точной текущей сборкой и выдать один итоговый отчёт.
 
-Не требуется создавать отдельный «валидатор», новую архитектуру тестов, RERUN-планы или промежуточные отчёты.
+Не требуется создавать отдельный «валидатор», новую архитектуру тестов, RERUN-планы, authority bundles, assertion-ledger инфраструктуру или промежуточные отчёты.
+
+## Правило выполнения
+
+- Выполнить весь этот checklist в **одной задаче Codex** перед передачей сборки оператору.
+- Использовать уже существующие тесты/harnesses и обычные test-only команды/временные fixtures, необходимые для проверки конкретного пункта.
+- Codex может создавать/менять только временные test-only файлы и итоговый report; production candidate изменять запрещено.
+- Не останавливаться и не возвращаться пользователю после первой обычной ошибки теста/harness/environment. Выполнить все остальные независимые проверки, которые остаются безопасно выполнимыми, и собрать **полный доступный failure set** в одном итоговом отчёте.
+- Если один тест зависит от провалившегося prerequisite, отметить его как blocked/неисполненный из-за этого prerequisite в итоговом отчёте, а не требовать отдельного пользовательского запуска только ради следующей причины.
+- Не считать historical PASS текущим PASS: каждый применимый пункт ниже должен быть проверен на точном текущем candidate.
+- Реальные operator/browser действия в этом automated gate не требуются.
 
 ## Точная проверяемая сборка
 
@@ -31,6 +41,7 @@ Repair:
 
 - `REAL_OZON_REQUESTS=0`
 - `REAL_PERFORMANCE_REQUESTS=0`
+- `REAL_CHATGPT_REQUESTS=0` для synthetic browser interception
 - реальные Seller/Performance credentials не использовать
 - production-файлы не изменять
 
@@ -272,7 +283,7 @@ Repair:
 - extension устанавливается через доступный Puppeteer/CFT runtime;
 - content script стартует на synthetic supported pages;
 - page/content lifecycle restart не дублирует owner state/provider/insertion/Send;
-- interception подтверждает `REAL_OZON_REQUESTS=0` и `REAL_PERFORMANCE_REQUESTS=0`;
+- interception подтверждает `REAL_OZON_REQUESTS=0`, `REAL_PERFORMANCE_REQUESTS=0`, `REAL_CHATGPT_REQUESTS=0`;
 - неожиданный runtime/console failure валит соответствующий тест;
 - environment/harness failure не выдаётся за production behavior failure.
 
@@ -290,7 +301,7 @@ Repair:
 
 # Итоговый отчёт Codex
 
-Для каждого блока 1–16 вывести `PASS` или `FAIL`.
+Для каждого блока 1–16 вывести `PASS` или `FAIL`; если проверка объективно заблокирована провалившимся prerequisite, явно указать `BLOCKED_BY:<причина>` и не выдавать это за PASS.
 
 Дополнительно вывести:
 
@@ -300,9 +311,10 @@ Repair:
 - protected files verification;
 - `REAL_OZON_REQUESTS=0`;
 - `REAL_PERFORMANCE_REQUESTS=0`;
+- `REAL_CHATGPT_REQUESTS=0` для synthetic browser tests;
 - production modifications by Codex = `0`;
 - package path/SHA только если блоки 1–15 PASS;
-- exact failed tests, если есть.
+- **полный список всех обнаруженных failed/blocked tests в этом одном запуске**.
 
 Полный PASS допускается только если все блоки 1–16 PASS.
 
