@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ozon-current-test-path-audit
@@ -42,6 +42,8 @@ jobs:
           node-version: '24.12.0'
 
       - name: Reconstruct exact current candidate
+        id: reconstruct
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -69,7 +71,10 @@ jobs:
           echo "CANDIDATE=$CANDIDATE" >> "$GITHUB_ENV"
           echo 'CURRENT_CANDIDATE_RECONSTRUCTION_PASS'
 
-      - name: Materialize previously prepared current-hash test sources for audit only
+      - name: Materialize current-hash test sources for engineering audit
+        id: materialize
+        if: steps.reconstruct.outcome == 'success'
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -93,16 +98,21 @@ jobs:
           echo 'CURRENT_TEST_SOURCES_SYNTAX_PASS'
 
       - name: Execute every non-browser path and collect complete result set
+        id: execute
+        if: steps.reconstruct.outcome == 'success' && steps.materialize.outcome == 'success'
+        continue-on-error: true
         shell: bash
         run: |
           set +e
+          LOG="$RUNNER_TEMP/vm-execution.log"
+          : > "$LOG"
           failures=0
           run_one() {
             name="$1"
-            echo "===== $name ====="
-            node "$TESTDIR/$name" "$CANDIDATE"
-            rc=$?
-            echo "EXIT_CODE[$name]=$rc"
+            echo "===== $name =====" | tee -a "$LOG"
+            node "$TESTDIR/$name" "$CANDIDATE" 2>&1 | tee -a "$LOG"
+            rc=${PIPESTATUS[0]}
+            echo "EXIT_CODE[$name]=$rc" | tee -a "$LOG"
             if [ "$rc" -ne 0 ]; then failures=$((failures+1)); fi
           }
           run_one B02_B03_CONTRACT_CURRENT.mjs
@@ -112,13 +122,42 @@ jobs:
           run_one B09_COMMON_BATCH_CURRENT.mjs
           run_one B11_B12_COMPOSER_WAIT_CURRENT.mjs
           run_one B14_PERFORMANCE_CURRENT.mjs
-          echo "NON_BROWSER_FAILURE_COUNT=$failures"
+          echo "NON_BROWSER_FAILURE_COUNT=$failures" | tee -a "$LOG"
           if [ "$failures" -eq 0 ]; then
-            echo 'CURRENT_NON_BROWSER_PATHS_EXECUTE_PASS'
-          else
-            echo 'CURRENT_NON_BROWSER_PATHS_EXECUTE_FAIL'
-            exit 1
+            echo 'CURRENT_NON_BROWSER_PATHS_EXECUTE_PASS' | tee -a "$LOG"
+            exit 0
           fi
+          echo 'CURRENT_NON_BROWSER_PATHS_EXECUTE_FAIL' | tee -a "$LOG"
+          exit 1
+
+      - name: Build non-browser evidence artifact
+        if: always()
+        shell: bash
+        run: |
+          OUT="$RUNNER_TEMP/vm-result.txt"
+          {
+            echo "trigger_sha=$GITHUB_SHA"
+            echo "node=$(node --version 2>/dev/null || true)"
+            echo "reconstruct=${{ steps.reconstruct.outcome }}"
+            echo "materialize=${{ steps.materialize.outcome }}"
+            echo "execute=${{ steps.execute.outcome }}"
+            echo "frozen_zip_sha256=$FROZEN_ZIP_SHA256"
+            echo "patch_sha256=$PATCH_SHA256"
+            echo "final_worker_sha256=$FINAL_WORKER_SHA256"
+            echo "final_content_sha256=$FINAL_CONTENT_SHA256"
+            echo
+            if [ -f "$RUNNER_TEMP/vm-execution.log" ]; then cat "$RUNNER_TEMP/vm-execution.log"; fi
+          } > "$OUT"
+          cat "$OUT"
+
+      - name: Upload non-browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-vm-path-audit
+          path: ${{ runner.temp }}/vm-result.txt
+          if-no-files-found: error
+          retention-days: 7
 
   browser-path:
     name: Execute current browser path on Windows CFT 151
@@ -136,6 +175,8 @@ jobs:
           node-version: '24.12.0'
 
       - name: Reconstruct exact current candidate
+        id: reconstruct
+        continue-on-error: true
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -173,6 +214,9 @@ jobs:
           Write-Host 'CURRENT_CANDIDATE_RECONSTRUCTION_PASS'
 
       - name: Install exact Puppeteer and CFT
+        id: dependencies
+        if: steps.reconstruct.outcome == 'success'
+        continue-on-error: true
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -197,26 +241,118 @@ jobs:
           Write-Host "CFT_VERSION=$version"
           Write-Host 'CURRENT_BROWSER_DEPENDENCIES_READY'
 
-      - name: Materialize current browser source for audit only
+      - name: Materialize current browser source for engineering audit
+        id: materialize
+        if: steps.reconstruct.outcome == 'success' && steps.dependencies.outcome == 'success'
+        continue-on-error: true
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           git fetch --no-tags origin $env:READY_TEST_SOURCE_COMMIT
           $test = Join-Path $env:RUNNER_TEMP 'B10_B13_B15_BROWSER_CURRENT.mjs'
-          git cat-file blob e3ea01ff6518626aa1fc9c96398b486cbb584b01 | Set-Content -LiteralPath $test -Encoding utf8NoBOM
+          cmd /c "git cat-file blob e3ea01ff6518626aa1fc9c96398b486cbb584b01 > `"$test`""
+          if ($LASTEXITCODE -ne 0) { throw 'git cat-file browser blob failed' }
           node --check $test
           "BROWSER_TEST=$test" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host 'CURRENT_BROWSER_SOURCE_SYNTAX_PASS'
 
       - name: Execute browser path
+        id: execute
+        if: steps.reconstruct.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.materialize.outcome == 'success'
+        continue-on-error: true
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Continue'
-          node $env:BROWSER_TEST $env:CANDIDATE $env:CFT_CHROME
+          $log = Join-Path $env:RUNNER_TEMP 'browser-execution.log'
+          node $env:BROWSER_TEST $env:CANDIDATE $env:CFT_CHROME 2>&1 | Tee-Object -FilePath $log
           $rc = $LASTEXITCODE
-          Write-Host "BROWSER_EXIT_CODE=$rc"
+          "BROWSER_EXIT_CODE=$rc" | Tee-Object -FilePath $log -Append
           if ($rc -ne 0) {
-            Write-Host 'CURRENT_BROWSER_PATH_EXECUTE_FAIL'
+            'CURRENT_BROWSER_PATH_EXECUTE_FAIL' | Tee-Object -FilePath $log -Append
             exit $rc
           }
-          Write-Host 'CURRENT_BROWSER_PATH_EXECUTE_PASS'
+          'CURRENT_BROWSER_PATH_EXECUTE_PASS' | Tee-Object -FilePath $log -Append
+
+      - name: Build browser evidence artifact
+        if: always()
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 'browser-result.txt'
+          @(
+            "trigger_sha=$env:GITHUB_SHA"
+            "node=$(node --version 2>$null)"
+            "reconstruct=${{ steps.reconstruct.outcome }}"
+            "dependencies=${{ steps.dependencies.outcome }}"
+            "materialize=${{ steps.materialize.outcome }}"
+            "execute=${{ steps.execute.outcome }}"
+            "frozen_zip_sha256=$env:FROZEN_ZIP_SHA256"
+            "patch_sha256=$env:PATCH_SHA256"
+            "final_worker_sha256=$env:FINAL_WORKER_SHA256"
+            "final_content_sha256=$env:FINAL_CONTENT_SHA256"
+            ''
+          ) | Set-Content -LiteralPath $out -Encoding utf8NoBOM
+          $log = Join-Path $env:RUNNER_TEMP 'browser-execution.log'
+          if (Test-Path $log) { Get-Content -LiteralPath $log | Add-Content -LiteralPath $out -Encoding utf8 }
+          Get-Content -LiteralPath $out
+
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-browser-path-audit
+          path: ${{ runner.temp }}/browser-result.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-result:
+    name: Publish one engineering preflight result
+    if: always()
+    needs: [vm-paths, browser-path]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch for evidence-only commit
+        uses: actions/checkout@v4
+        with:
+          ref: dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
+          fetch-depth: 0
+
+      - name: Download audit evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ozon-*-path-audit
+          path: ${{ runner.temp }}/audit-results
+
+      - name: Publish exact engineering preflight result
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESULT='tooling/llm-api-bridges/ozon-seller/validation/engineering-preflight/CURRENT_TEST_PATH_AUDIT_2026-08-19.md'
+          mkdir -p "$(dirname "$RESULT")"
+          VM=$(find "$RUNNER_TEMP/audit-results" -name vm-result.txt -print -quit || true)
+          BR=$(find "$RUNNER_TEMP/audit-results" -name browser-result.txt -print -quit || true)
+          {
+            echo '# Ozon v0.1.19 — engineering pre-Codex current-path audit'
+            echo
+            echo "Trigger commit: \`$GITHUB_SHA\`"
+            echo
+            echo 'This is engineering preflight evidence only. It is not a Codex PASS and does not authorize packaging.'
+            echo
+            echo '## Non-browser current-hash path execution'
+            echo '```text'
+            if [ -n "$VM" ]; then cat "$VM"; else echo 'VM_RESULT_ARTIFACT_MISSING'; fi
+            echo '```'
+            echo
+            echo '## Windows/CFT browser current-hash path execution'
+            echo '```text'
+            if [ -n "$BR" ]; then cat "$BR"; else echo 'BROWSER_RESULT_ARTIFACT_MISSING'; fi
+            echo '```'
+          } > "$RESULT"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$RESULT"
+          if git diff --cached --quiet; then
+            echo 'engineering preflight result already identical'
+            exit 0
+          fi
+          git commit -m 'test: record Ozon current path audit evidence [skip ci]'
+          git push origin HEAD:dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
