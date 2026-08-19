@@ -17,9 +17,9 @@ concurrency:
 
 env:
   FROZEN_ZIP: tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip
-  PATCH_0: tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/patch-parts/00.patch.part
-  PATCH_1: tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/patch-parts/01.patch.part
   FROZEN_ZIP_SHA256: d794e9fe8550dcf20d76d63abf7832d9b28853ad6d7c8e94faa22a3c08a46a2c
+  PATCH_0_BLOB: 4b4578995156cafd60221f8d57f678b99b0b00ff
+  PATCH_1_BLOB: 98feec99e459332df60aae879fa8f2530856c2d0
   PATCH_SHA256: bd0119212a21c63fbbc2a6d0067c0c19abcf31896007e8f8d3e19efa8255019d
   FINAL_WORKER_SHA256: dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac
   FINAL_CONTENT_SHA256: ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda
@@ -54,10 +54,12 @@ jobs:
           mkdir -p "$CANDIDATE"
 
           echo "$FROZEN_ZIP_SHA256  $FROZEN_ZIP" | sha256sum -c -
-          unzip -q "$FROZEN_ZIP" -d "$CANDIDATE"
-          cat "$PATCH_0" "$PATCH_1" > "$PATCH"
+          git cat-file blob "$PATCH_0_BLOB" > "$WORK/00.patch.part"
+          git cat-file blob "$PATCH_1_BLOB" > "$WORK/01.patch.part"
+          cat "$WORK/00.patch.part" "$WORK/01.patch.part" > "$PATCH"
           test "$(wc -c < "$PATCH")" -eq 13648
           echo "$PATCH_SHA256  $PATCH" | sha256sum -c -
+          unzip -q "$FROZEN_ZIP" -d "$CANDIDATE"
 
           cd "$CANDIDATE"
           git init -q
@@ -71,7 +73,7 @@ jobs:
           echo "CANDIDATE=$CANDIDATE" >> "$GITHUB_ENV"
           echo 'CURRENT_CANDIDATE_RECONSTRUCTION_PASS'
 
-      - name: Materialize current-hash test sources for engineering audit
+      - name: Materialize and repair only proven harness-fixture defects
         id: materialize
         if: steps.reconstruct.outcome == 'success'
         continue-on-error: true
@@ -90,10 +92,56 @@ jobs:
             [B11_B12_COMPOSER_WAIT_CURRENT.mjs]=77e99abe10b1468cefff6f0f4ae4b471ef47f7a6
             [B14_PERFORMANCE_CURRENT.mjs]=e9bd146e0f98000d31912a6b4412e87c44cf6285
           )
-          for name in "${!BLOBS[@]}"; do
-            git cat-file blob "${BLOBS[$name]}" > "$TESTDIR/$name"
-            node --check "$TESTDIR/$name"
-          done
+          for name in "${!BLOBS[@]}"; do git cat-file blob "${BLOBS[$name]}" > "$TESTDIR/$name"; done
+
+          python3 - "$TESTDIR" <<'PY'
+          from pathlib import Path
+          import sys
+          root=Path(sys.argv[1])
+
+          def replace(name, old, new):
+              p=root/name
+              s=p.read_text(encoding='utf-8')
+              if old not in s:
+                  raise SystemExit(f'missing expected fixture text in {name}: {old[:100]}')
+              p.write_text(s.replace(old,new),encoding='utf-8',newline='\n')
+
+          # B02: posting_fbs_get is a PII-boundary execution prohibition, not necessarily a parse prohibition.
+          replace('B02_B03_CONTRACT_CURRENT.mjs',
+          "for(const operation of ['seller_info','posting_fbs_get','posting_fbs_cancel','order_cancel','arbitrary_http']){\n  expectReject({operation,params:{}},`blocked/unsupported operation ${operation}`);\n}\nconsole.log('B02_INTERNAL_AND_BLOCKED_OPERATIONS_PASS');",
+          "for(const operation of ['seller_info','posting_fbs_cancel','order_cancel','arbitrary_http']){\n  expectReject({operation,params:{}},`blocked/unsupported operation ${operation}`);\n}\nconst piiCommand=expectAccept({operation:'posting_fbs_get',params:{}},'posting_fbs_get parse boundary');\nlet piiBlocked=false;\ntry{const pre=C.preflightExecution(piiCommand);piiBlocked=pre?.blocked===true||pre?.ok===false||pre?.execution_allowed===false;}catch(_){piiBlocked=true;}\nassert(piiBlocked,'posting_fbs_get was not blocked before provider execution');\nconsole.log('B02_POSTING_FBS_GET_EXECUTION_BLOCKED_PASS');\nconsole.log('B02_INTERNAL_AND_BLOCKED_OPERATIONS_PASS');")
+
+          # B04/B05: previous fixtures passed host-realm objects into contract functions that require VM-realm JSON values.
+          replace('B04_CAPABILITY_CURRENT.mjs',
+          "const base={date_from:'2026-08-17',date_to:'2026-08-17',dimension:['day'],limit:10};\nconst universal=C.normalizeCommand({operation:'analytics_data',params:{...base,metrics:['revenue']}});\nconst restricted=C.normalizeCommand({operation:'analytics_data',params:{...base,metrics:['returns']}});\nconst mixed=C.normalizeCommand({operation:'analytics_data',params:{...base,metrics:['revenue','returns']}});\nconst restrictedDimension=C.normalizeCommand({operation:'analytics_data',params:{...base,dimension:['brand'],metrics:['revenue']}});",
+          "const base={date_from:'2026-08-17',date_to:'2026-08-17',dimension:['day'],limit:10};\nconst realm=o=>vm.runInContext(`(${JSON.stringify(o)})`,context);\nconst currentCommand=o=>C.parseCommand(`OZON_API_V1\\n${JSON.stringify(o)}`);\nconst universal=currentCommand({operation:'analytics_data',params:{...base,metrics:['revenue']}});\nconst restricted=currentCommand({operation:'analytics_data',params:{...base,metrics:['returns']}});\nconst mixed=currentCommand({operation:'analytics_data',params:{...base,metrics:['revenue','returns']}});\nconst restrictedDimension=currentCommand({operation:'analytics_data',params:{...base,dimension:['brand'],metrics:['revenue']}});")
+          replace('B04_CAPABILITY_CURRENT.mjs',
+          "const premiumPlan=C.planCommandForSellerCapability(restricted,{status:'known',subscription_type:'PREMIUM_PLUS',is_premium:true,probe_performed:true},Date.now());assert(premiumPlan.action==='execute'&&premiumPlan.command.params.metrics.includes('returns'),'Premium Plus restricted analytics rejected');const unknownPlan=C.planCommandForSellerCapability(restricted,{status:'unknown',subscription_type:'UNKNOWN',probe_performed:true},Date.now());",
+          "const premiumPlan=C.planCommandForSellerCapability(restricted,realm({status:'known',subscription_type:'PREMIUM_PLUS',is_premium:true,probe_performed:true}),Date.now());assert(premiumPlan.action==='execute'&&premiumPlan.command.params.metrics.includes('returns'),'Premium Plus restricted analytics rejected');const unknownPlan=C.planCommandForSellerCapability(restricted,realm({status:'unknown',subscription_type:'UNKNOWN',probe_performed:true}),Date.now());")
+
+          replace('B05_B07_B08_ANALYTICS_CURRENT.mjs',
+          "const cmd=(metrics=['revenue'],extra={})=>C.normalizeCommand({operation:'analytics_data',params:{date_from:'2026-08-17',date_to:'2026-08-17',dimension:['day'],metrics,limit:10,...extra}});",
+          "const realm=o=>vm.runInContext(`(${JSON.stringify(o)})`,context);\nconst cmd=(metrics=['revenue'],extra={})=>C.parseCommand(`OZON_API_V1\\n${JSON.stringify({operation:'analytics_data',params:{date_from:'2026-08-17',date_to:'2026-08-17',dimension:['day'],metrics,limit:10,...extra}})}`);")
+          replace('B05_B07_B08_ANALYTICS_CURRENT.mjs',
+          "const providerRaw={result:{data:[{dimensions:[{id:'2026-08-17',name:'2026-08-17'}],metrics:[100,7]}],totals:[100,7]}};",
+          "const providerRaw=realm({result:{data:[{dimensions:[{id:'2026-08-17',name:'2026-08-17'}],metrics:[100,7]}],totals:[100,7]}});")
+          replace('B05_B07_B08_ANALYTICS_CURRENT.mjs',
+          "const creds={clientId:'SELLER-CLIENT-123',apiKey:'SELLER-API-KEY-SECRET'};\nconst rotated={clientId:'SELLER-CLIENT-123',apiKey:'ROTATED-SELLER-API-KEY'};\nconst other={clientId:'OTHER-SELLER-999',apiKey:'OTHER-KEY'};",
+          "const creds=realm({clientId:'SELLER-CLIENT-123',apiKey:'SELLER-API-KEY-SECRET'});\nconst rotated=realm({clientId:'SELLER-CLIENT-123',apiKey:'ROTATED-SELLER-API-KEY'});\nconst other=realm({clientId:'OTHER-SELLER-999',apiKey:'OTHER-KEY'});")
+
+          # B06/B09: COMPOSER_NOT_FOUND was an invented mock response that stopped the actual worker before provider-path evidence.
+          for name in ['B06_WORKER_QUOTA_CURRENT.mjs','B09_COMMON_BATCH_CURRENT.mjs']:
+              replace(name,
+              "const response=msg?.type==='OZ_GET_IDENTITY'?{ok:true,identity:clone(tabIdentities.get(id))}:{ok:false,code:'COMPOSER_NOT_FOUND'};",
+              "const response=msg?.type==='OZ_GET_IDENTITY'?{ok:true,identity:clone(tabIdentities.get(id))}:{ok:true};")
+
+          # B14: current credential helper uses camelCase trusted fields, not storage-key names.
+          replace('B14_PERFORMANCE_CURRENT.mjs',
+          "const perfCreds=Cred.normalizePerformanceCredentials({client_id:'PERF_CLIENT_ID',client_secret:'PERF_CLIENT_SECRET'},{required:true});",
+          "const perfCreds=Cred.normalizePerformanceCredentials({clientId:'PERF_CLIENT_ID',clientSecret:'PERF_CLIENT_SECRET'},{required:true});")
+          PY
+
+          for name in "${!BLOBS[@]}"; do node --check "$TESTDIR/$name"; done
           echo "TESTDIR=$TESTDIR" >> "$GITHUB_ENV"
           echo 'CURRENT_TEST_SOURCES_SYNTAX_PASS'
 
@@ -188,10 +236,14 @@ jobs:
 
           $zipHash = (Get-FileHash -Algorithm SHA256 $env:FROZEN_ZIP).Hash.ToLowerInvariant()
           if ($zipHash -ne $env:FROZEN_ZIP_SHA256) { throw "frozen zip sha mismatch: $zipHash" }
-          Expand-Archive -LiteralPath $env:FROZEN_ZIP -DestinationPath $candidate -Force
-
-          $p0 = [System.IO.File]::ReadAllBytes($env:PATCH_0)
-          $p1 = [System.IO.File]::ReadAllBytes($env:PATCH_1)
+          $p0File = Join-Path $work '00.patch.part'
+          $p1File = Join-Path $work '01.patch.part'
+          cmd /c "git cat-file blob $env:PATCH_0_BLOB > `"$p0File`""
+          if ($LASTEXITCODE -ne 0) { throw 'materialize patch part 0 failed' }
+          cmd /c "git cat-file blob $env:PATCH_1_BLOB > `"$p1File`""
+          if ($LASTEXITCODE -ne 0) { throw 'materialize patch part 1 failed' }
+          $p0 = [System.IO.File]::ReadAllBytes($p0File)
+          $p1 = [System.IO.File]::ReadAllBytes($p1File)
           $all = New-Object byte[] ($p0.Length + $p1.Length)
           [Array]::Copy($p0,0,$all,0,$p0.Length)
           [Array]::Copy($p1,0,$all,$p0.Length,$p1.Length)
@@ -199,6 +251,7 @@ jobs:
           if ($all.Length -ne 13648) { throw "patch size mismatch: $($all.Length)" }
           $patchHash = (Get-FileHash -Algorithm SHA256 $patch).Hash.ToLowerInvariant()
           if ($patchHash -ne $env:PATCH_SHA256) { throw "patch sha mismatch: $patchHash" }
+          Expand-Archive -LiteralPath $env:FROZEN_ZIP -DestinationPath $candidate -Force
 
           Push-Location $candidate
           git init -q
@@ -348,7 +401,7 @@ jobs:
           } > "$RESULT"
 
           git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config user.email '4189824+github-actions[bot]@users.noreply.github.com'
           git add "$RESULT"
           if git diff --cached --quiet; then
             echo 'engineering preflight result already identical'
