@@ -1,0 +1,222 @@
+name: Ozon current test path audit
+
+on:
+  push:
+    branches:
+      - dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
+    paths:
+      - '.github/workflows/ozon-current-test-path-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ozon-current-test-path-audit
+  cancel-in-progress: false
+
+env:
+  FROZEN_ZIP: tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip
+  PATCH_0: tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/patch-parts/00.patch.part
+  PATCH_1: tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/patch-parts/01.patch.part
+  FROZEN_ZIP_SHA256: d794e9fe8550dcf20d76d63abf7832d9b28853ad6d7c8e94faa22a3c08a46a2c
+  PATCH_SHA256: bd0119212a21c63fbbc2a6d0067c0c19abcf31896007e8f8d3e19efa8255019d
+  FINAL_WORKER_SHA256: dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac
+  FINAL_CONTENT_SHA256: ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda
+  READY_TEST_SOURCE_COMMIT: 5049fe6d579b41f94069d7f2d2a8d3f5d1198c62
+
+jobs:
+  vm-paths:
+    name: Reconstruct + execute non-browser paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact branch history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup exact Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+
+      - name: Reconstruct exact current candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORK="$RUNNER_TEMP/ozon-path-audit"
+          CANDIDATE="$WORK/candidate"
+          PATCH="$WORK/composer-wait.patch"
+          rm -rf "$WORK"
+          mkdir -p "$CANDIDATE"
+
+          echo "$FROZEN_ZIP_SHA256  $FROZEN_ZIP" | sha256sum -c -
+          unzip -q "$FROZEN_ZIP" -d "$CANDIDATE"
+          cat "$PATCH_0" "$PATCH_1" > "$PATCH"
+          test "$(wc -c < "$PATCH")" -eq 13648
+          echo "$PATCH_SHA256  $PATCH" | sha256sum -c -
+
+          cd "$CANDIDATE"
+          git init -q
+          git config core.autocrlf false
+          git apply --check "$PATCH"
+          git apply "$PATCH"
+          echo "$FINAL_WORKER_SHA256  service_worker.js" | sha256sum -c -
+          echo "$FINAL_CONTENT_SHA256  content_script.js" | sha256sum -c -
+          find . -type f ! -path './.git/*' -printf '%P\n' | sort > "$WORK/inventory.txt"
+          test "$(wc -l < "$WORK/inventory.txt")" -eq 17
+          echo "CANDIDATE=$CANDIDATE" >> "$GITHUB_ENV"
+          echo 'CURRENT_CANDIDATE_RECONSTRUCTION_PASS'
+
+      - name: Materialize previously prepared current-hash test sources for audit only
+        shell: bash
+        run: |
+          set -euo pipefail
+          TESTDIR="$RUNNER_TEMP/ozon-path-audit/tests"
+          mkdir -p "$TESTDIR"
+          git fetch --no-tags origin "$READY_TEST_SOURCE_COMMIT"
+          declare -A BLOBS=(
+            [B02_B03_CONTRACT_CURRENT.mjs]=b1a79c8eaf115751fa2895e470434c3a06754a7b
+            [B04_CAPABILITY_CURRENT.mjs]=f4cd9ca231a534228a27e913a23fba66f795ed60
+            [B05_B07_B08_ANALYTICS_CURRENT.mjs]=76cd3a02123636eb60e5e048767a26d0178b49f1
+            [B06_WORKER_QUOTA_CURRENT.mjs]=07017368b33979169e7b32328280cb8d25e19c3d
+            [B09_COMMON_BATCH_CURRENT.mjs]=19ed8d8779f72325b7034e746fc8746137592469
+            [B11_B12_COMPOSER_WAIT_CURRENT.mjs]=77e99abe10b1468cefff6f0f4ae4b471ef47f7a6
+            [B14_PERFORMANCE_CURRENT.mjs]=e9bd146e0f98000d31912a6b4412e87c44cf6285
+          )
+          for name in "${!BLOBS[@]}"; do
+            git cat-file blob "${BLOBS[$name]}" > "$TESTDIR/$name"
+            node --check "$TESTDIR/$name"
+          done
+          echo "TESTDIR=$TESTDIR" >> "$GITHUB_ENV"
+          echo 'CURRENT_TEST_SOURCES_SYNTAX_PASS'
+
+      - name: Execute every non-browser path and collect complete result set
+        shell: bash
+        run: |
+          set +e
+          failures=0
+          run_one() {
+            name="$1"
+            echo "===== $name ====="
+            node "$TESTDIR/$name" "$CANDIDATE"
+            rc=$?
+            echo "EXIT_CODE[$name]=$rc"
+            if [ "$rc" -ne 0 ]; then failures=$((failures+1)); fi
+          }
+          run_one B02_B03_CONTRACT_CURRENT.mjs
+          run_one B04_CAPABILITY_CURRENT.mjs
+          run_one B05_B07_B08_ANALYTICS_CURRENT.mjs
+          run_one B06_WORKER_QUOTA_CURRENT.mjs
+          run_one B09_COMMON_BATCH_CURRENT.mjs
+          run_one B11_B12_COMPOSER_WAIT_CURRENT.mjs
+          run_one B14_PERFORMANCE_CURRENT.mjs
+          echo "NON_BROWSER_FAILURE_COUNT=$failures"
+          if [ "$failures" -eq 0 ]; then
+            echo 'CURRENT_NON_BROWSER_PATHS_EXECUTE_PASS'
+          else
+            echo 'CURRENT_NON_BROWSER_PATHS_EXECUTE_FAIL'
+            exit 1
+          fi
+
+  browser-path:
+    name: Execute current browser path on Windows CFT 151
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact branch history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup exact Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+
+      - name: Reconstruct exact current candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $work = Join-Path $env:RUNNER_TEMP 'ozon-path-audit'
+          $candidate = Join-Path $work 'candidate'
+          $patch = Join-Path $work 'composer-wait.patch'
+          if (Test-Path $work) { Remove-Item -Recurse -Force $work }
+          New-Item -ItemType Directory -Force $candidate | Out-Null
+
+          $zipHash = (Get-FileHash -Algorithm SHA256 $env:FROZEN_ZIP).Hash.ToLowerInvariant()
+          if ($zipHash -ne $env:FROZEN_ZIP_SHA256) { throw "frozen zip sha mismatch: $zipHash" }
+          Expand-Archive -LiteralPath $env:FROZEN_ZIP -DestinationPath $candidate -Force
+
+          $p0 = [System.IO.File]::ReadAllBytes($env:PATCH_0)
+          $p1 = [System.IO.File]::ReadAllBytes($env:PATCH_1)
+          $all = New-Object byte[] ($p0.Length + $p1.Length)
+          [Array]::Copy($p0,0,$all,0,$p0.Length)
+          [Array]::Copy($p1,0,$all,$p0.Length,$p1.Length)
+          [System.IO.File]::WriteAllBytes($patch,$all)
+          if ($all.Length -ne 13648) { throw "patch size mismatch: $($all.Length)" }
+          $patchHash = (Get-FileHash -Algorithm SHA256 $patch).Hash.ToLowerInvariant()
+          if ($patchHash -ne $env:PATCH_SHA256) { throw "patch sha mismatch: $patchHash" }
+
+          Push-Location $candidate
+          git init -q
+          git config core.autocrlf false
+          git apply --check $patch
+          git apply $patch
+          $workerHash = (Get-FileHash -Algorithm SHA256 'service_worker.js').Hash.ToLowerInvariant()
+          $contentHash = (Get-FileHash -Algorithm SHA256 'content_script.js').Hash.ToLowerInvariant()
+          if ($workerHash -ne $env:FINAL_WORKER_SHA256) { throw "worker sha mismatch: $workerHash" }
+          if ($contentHash -ne $env:FINAL_CONTENT_SHA256) { throw "content sha mismatch: $contentHash" }
+          Pop-Location
+          "CANDIDATE=$candidate" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'CURRENT_CANDIDATE_RECONSTRUCTION_PASS'
+
+      - name: Install exact Puppeteer and CFT
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $nodeproj = Join-Path $env:RUNNER_TEMP 'ozon-puppeteer-25.4.0'
+          New-Item -ItemType Directory -Force $nodeproj | Out-Null
+          Push-Location $nodeproj
+          npm init -y | Out-Null
+          $env:PUPPETEER_SKIP_DOWNLOAD='true'
+          npm install --no-save --no-audit --no-fund puppeteer@25.4.0
+          Pop-Location
+
+          $zip = Join-Path $env:RUNNER_TEMP 'chrome-win64-151.0.7922.47.zip'
+          $root = Join-Path $env:RUNNER_TEMP 'chrome-win64-151.0.7922.47'
+          Invoke-WebRequest -Uri 'https://storage.googleapis.com/chrome-for-testing-public/151.0.7922.47/win64/chrome-win64.zip' -OutFile $zip
+          Expand-Archive -LiteralPath $zip -DestinationPath $root -Force
+          $chrome = Get-ChildItem -Path $root -Filter chrome.exe -File -Recurse | Select-Object -First 1
+          if (-not $chrome) { throw 'CFT chrome.exe not found' }
+          $version = (Get-Item $chrome.FullName).VersionInfo.ProductVersion
+          if ($version -notlike '151.0.7922.47*') { throw "unexpected CFT version: $version" }
+          "NODE_PATH=$nodeproj\node_modules" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "CFT_CHROME=$($chrome.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "CFT_VERSION=$version"
+          Write-Host 'CURRENT_BROWSER_DEPENDENCIES_READY'
+
+      - name: Materialize current browser source for audit only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git fetch --no-tags origin $env:READY_TEST_SOURCE_COMMIT
+          $test = Join-Path $env:RUNNER_TEMP 'B10_B13_B15_BROWSER_CURRENT.mjs'
+          git cat-file blob e3ea01ff6518626aa1fc9c96398b486cbb584b01 | Set-Content -LiteralPath $test -Encoding utf8NoBOM
+          node --check $test
+          "BROWSER_TEST=$test" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'CURRENT_BROWSER_SOURCE_SYNTAX_PASS'
+
+      - name: Execute browser path
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          node $env:BROWSER_TEST $env:CANDIDATE $env:CFT_CHROME
+          $rc = $LASTEXITCODE
+          Write-Host "BROWSER_EXIT_CODE=$rc"
+          if ($rc -ne 0) {
+            Write-Host 'CURRENT_BROWSER_PATH_EXECUTE_FAIL'
+            exit $rc
+          }
+          Write-Host 'CURRENT_BROWSER_PATH_EXECUTE_PASS'
