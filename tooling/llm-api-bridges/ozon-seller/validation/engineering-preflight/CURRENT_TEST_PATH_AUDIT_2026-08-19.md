@@ -1,12 +1,12 @@
 # Ozon v0.1.19 — engineering pre-Codex current-path audit
 
-Trigger commit: `ed2d2edfbe47ff6c818819917b8a473a040f4df6`
+Trigger commit: `3601f8d0139544d3c6612827b95fd8b6677a0a19`
 
 This is engineering preflight evidence only. It is not a Codex PASS and does not authorize packaging.
 
 ## Non-browser current-hash path execution
 ```text
-trigger_sha=ed2d2edfbe47ff6c818819917b8a473a040f4df6
+trigger_sha=3601f8d0139544d3c6612827b95fd8b6677a0a19
 node=v24.12.0
 reconstruct=success
 materialize=success
@@ -24,51 +24,44 @@ B02_MALFORMED_JSON_FAIL_CLOSED_PASS
 B02_ANALYTICS_STRICT_PARAMS_PASS
 B03_TRANSPORT_FIELD_INJECTION_REJECTED_PASS
 B02_PRODUCT_QUERY_STRICT_PARAMS_PASS
-file:///home/runner/work/_temp/ozon-path-audit/tests/B02_B03_CONTRACT_CURRENT.mjs:12
+B02_POSTING_FBS_GET_EXECUTION_BLOCKED_PASS
+B02_INTERNAL_AND_BLOCKED_OPERATIONS_PASS
+B03_NO_MUTATION_OPERATION_SURFACE_PASS
+B03_PREEXEC_REDACTION_AND_ZERO_REQUEST_PROVENANCE_PASS
+B03_CONTRACT_NO_ARBITRARY_TRANSPORT_SURFACE_PASS
+REAL_OZON_REQUESTS=0
+REAL_PERFORMANCE_REQUESTS=0
+B02_B03_CONTRACT_CURRENT_PASS
+EXIT_CODE[B02_B03_CONTRACT_CURRENT.mjs]=0
+===== B04_CAPABILITY_CURRENT.mjs =====
+B04_UNIVERSAL_ZERO_CAPABILITY_PROBE_PASS
+B04_ONE_PROBE_PER_RELEVANT_BATCH_PASS
+B04_ALL_RESTRICTED_ZERO_EXECUTABLE_BUSINESS_PASS
+B04_SELLER_INFO_PRIVACY_PASS
+B04_MIXED_UNIVERSAL_RESTRICTED_PARTIAL_PASS
+B04_RESTRICTED_DIMENSION_FAIL_CLOSED_PASS
+B04_STALE_PROBE_NO_REPLAY_PASS
+B04_PREMIUM_FULL_SCOPE_AND_UNKNOWN_FAIL_CLOSED_PASS
+REAL_OZON_REQUESTS=0
+REAL_PERFORMANCE_REQUESTS=0
+B04_CAPABILITY_CURRENT_PASS
+EXIT_CODE[B04_CAPABILITY_CURRENT.mjs]=0
+===== B05_B07_B08_ANALYTICS_CURRENT.mjs =====
+B05_COMPATIBLE_COALESCE_PASS
+B05_NONMETRIC_MISMATCH_NO_COALESCE_PASS
+B05_DETERMINISTIC_UNION_AND_PROJECTION_PASS
+B05_UNPROJECTABLE_FAIL_CLOSED_PASS
+B07_VALID_RESPONSE_VERIFIED_PASS
+B07_INVALID_200_FAILS_CLOSED_PASS
+B07_429_SAFE_NO_RETRY_PASS
+B07_TRANSPORT_AND_PREFETCH_PROVENANCE_PASS
+file:///home/runner/work/_temp/ozon-path-audit/tests/B05_B07_B08_ANALYTICS_CURRENT.mjs:12
 const assert=(v,m)=>{if(!v)throw new Error(m)};
                                  ^
 
-Error: blocked/unsupported operation posting_fbs_get was accepted
-    at assert (file:///home/runner/work/_temp/ozon-path-audit/tests/B02_B03_CONTRACT_CURRENT.mjs:12:34)
-    at expectReject (file:///home/runner/work/_temp/ozon-path-audit/tests/B02_B03_CONTRACT_CURRENT.mjs:25:141)
-    at file:///home/runner/work/_temp/ozon-path-audit/tests/B02_B03_CONTRACT_CURRENT.mjs:77:3
-    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
-    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
-
-Node.js v24.12.0
-EXIT_CODE[B02_B03_CONTRACT_CURRENT.mjs]=1
-===== B04_CAPABILITY_CURRENT.mjs =====
-/home/runner/work/_temp/ozon-path-audit/candidate/shared/ozon_contract.js:40
-    const error = new Error(message);
-                  ^
-
-Error: params: разрешены только JSON-значения.
-    at fail (/home/runner/work/_temp/ozon-path-audit/candidate/shared/ozon_contract.js:40:19)
-    at sanitizeJsonValue (/home/runner/work/_temp/ozon-path-audit/candidate/shared/ozon_contract.js:78:7)
-    at Object.normalizeCommand (/home/runner/work/_temp/ozon-path-audit/candidate/shared/ozon_contract.js:626:22)
-    at file:///home/runner/work/_temp/ozon-path-audit/tests/B04_CAPABILITY_CURRENT.mjs:27:19 {
-  code: 'INVALID_PARAMS_VALUE'
-}
-
-Node.js v24.12.0
-EXIT_CODE[B04_CAPABILITY_CURRENT.mjs]=1
-===== B05_B07_B08_ANALYTICS_CURRENT.mjs =====
-/home/runner/work/_temp/ozon-path-audit/candidate/shared/ozon_contract.js:40
-    const error = new Error(message);
-                  ^
-
-Error: params: разрешены только JSON-значения.
-    at fail (/home/runner/work/_temp/ozon-path-audit/candidate/shared/ozon_contract.js:40:19)
-    at sanitizeJsonValue (/home/runner/work/_temp/ozon-path-audit/candidate/shared/ozon_contract.js:78:7)
-    at Object.normalizeCommand (/home/runner/work/_temp/ozon-path-audit/candidate/shared/ozon_contract.js:626:22)
-    at cmd (file:///home/runner/work/_temp/ozon-path-audit/tests/B05_B07_B08_ANALYTICS_CURRENT.mjs:37:45)
-    at file:///home/runner/work/_temp/ozon-path-audit/tests/B05_B07_B08_ANALYTICS_CURRENT.mjs:38:15
-    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
-    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
-  code: 'INVALID_PARAMS_VALUE'
-}
+Error: same Seller compatible safe superset cache miss
+    at assert (file:///home/runner/work/_temp/ozon-path-audit/tests/B05_B07_B08_ANALYTICS_CURRENT.mjs:12:34)
+    at file:///home/runner/work/_temp/ozon-path-audit/tests/B05_B07_B08_ANALYTICS_CURRENT.mjs:96:1
 
 Node.js v24.12.0
 EXIT_CODE[B05_B07_B08_ANALYTICS_CURRENT.mjs]=1
@@ -113,38 +106,50 @@ TARGETED_COMPOSER_WAIT_REGRESSION_PASS
 EXIT_CODE[B11_B12_COMPOSER_WAIT_CURRENT.mjs]=0
 ===== B14_PERFORMANCE_CURRENT.mjs =====
 B14_FIXED_PERFORMANCE_HOST_AND_EXECUTION_PATH_PASS
-/home/runner/work/_temp/ozon-path-audit/candidate/shared/ozon_credentials.js:4
-    const error = new Error(message);
-                  ^
-
-Error: performance_client_id не сохранён.
-    at fail (/home/runner/work/_temp/ozon-path-audit/candidate/shared/ozon_credentials.js:4:19)
-    at normalizeHeaderCredential (/home/runner/work/_temp/ozon-path-audit/candidate/shared/ozon_credentials.js:12:21)
-    at Object.normalizePerformanceCredentials (/home/runner/work/_temp/ozon-path-audit/candidate/shared/ozon_credentials.js:34:22)
-    at file:///home/runner/work/_temp/ozon-path-audit/tests/B14_PERFORMANCE_CURRENT.mjs:41:22
-    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
-    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
-  code: 'MISSING_PERFORMANCE_CLIENT_ID'
-}
-
-Node.js v24.12.0
-EXIT_CODE[B14_PERFORMANCE_CURRENT.mjs]=1
-NON_BROWSER_FAILURE_COUNT=6
+B14_PERFORMANCE_AUTH_SEPARATION_PASS
+B14_PERFORMANCE_ZERO_SELLER_CAPABILITY_BOUNDARY_PASS
+B14_NO_SELLER_QUOTA_OR_CACHE_FOR_PERFORMANCE_PASS
+REAL_OZON_REQUESTS=0
+REAL_PERFORMANCE_REQUESTS=0
+B14_PERFORMANCE_CURRENT_PASS
+EXIT_CODE[B14_PERFORMANCE_CURRENT.mjs]=0
+NON_BROWSER_FAILURE_COUNT=3
 CURRENT_NON_BROWSER_PATHS_EXECUTE_FAIL
 ```
 
 ## Windows/CFT browser current-hash path execution
 ```text
-trigger_sha=ed2d2edfbe47ff6c818819917b8a473a040f4df6
+trigger_sha=3601f8d0139544d3c6612827b95fd8b6677a0a19
 node=v24.12.0
-reconstruct=failure
-dependencies=skipped
-materialize=skipped
-execute=skipped
+reconstruct=success
+dependencies=success
+materialize=success
+execute=failure
 frozen_zip_sha256=d794e9fe8550dcf20d76d63abf7832d9b28853ad6d7c8e94faa22a3c08a46a2c
 patch_sha256=bd0119212a21c63fbbc2a6d0067c0c19abcf31896007e8f8d3e19efa8255019d
 final_worker_sha256=dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac
 final_content_sha256=ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda
 
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'puppeteer-core' imported from D:\a\_temp\B10_B13_B15_BROWSER_CURRENT.mjs
+Did you mean to import "puppeteer-core/lib/puppeteer/puppeteer-core.js"?
+    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:316:9)
+    at packageResolve (node:internal/modules/esm/resolve:768:81)
+    at moduleResolve (node:internal/modules/esm/resolve:858:18)
+    at defaultResolve (node:internal/modules/esm/resolve:990:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:718:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:735:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:764:52)
+    at #resolve (node:internal/modules/esm/loader:700:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:620:35)
+    at onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:649:32) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v24.12.0
+BROWSER_EXIT_CODE=1
+CURRENT_BROWSER_PATH_EXECUTE_FAIL
 ```
