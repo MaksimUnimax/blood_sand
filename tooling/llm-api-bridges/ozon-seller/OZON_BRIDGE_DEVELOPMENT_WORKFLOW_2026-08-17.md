@@ -103,6 +103,10 @@ The following rules are mandatory:
 
 9. **Validate the prompt itself as an executable command.** Before sending it, verify that it unambiguously states the target, branch/report destination when relevant, exact launcher/harness or proven route, permitted temporary operations, required authorization boundaries, prohibited actions, PASS/FAIL/BLOCKED classification and required output. A logically plausible prompt is not sufficient if its execution path has not been checked against known project evidence.
 
+10. **Preserve the lifecycle of a proven PASS route.** If the relevant successful evidence used one fresh browser session, one runtime extension installation and one connected harness, a rerun must keep that lifecycle unless the milestone itself explicitly requires a different lifecycle. Do not add reinstall, unload/reinstall, repeated MV3 target reacquisition, alternate CDP service-worker control, custom browser spawning or another launcher merely to continue a test matrix.
+
+11. **Carry forward exact-target PASS evidence and rerun only missing evidence when safe.** If an earlier rerun already executed and passed product assertions against the same exact candidate and production has not changed, preserve those PASS results in the same report. A later rerun should focus on the still-unproven assertions instead of replaying already-proven cases and re-exposing unrelated environment failure modes. The final stage verdict may aggregate exact-target evidence across reruns when the report clearly records provenance and no intervening production change invalidates it.
+
 ### 6. Handle failures and continue the same stage
 
 If Codex finds a production defect:
