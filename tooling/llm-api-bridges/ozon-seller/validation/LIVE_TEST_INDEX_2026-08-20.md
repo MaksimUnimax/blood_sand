@@ -24,6 +24,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 9.1 | `posting_fbo_list` | `limit=101` exceeds maximum 100 | PASS (negative guard) | `validation/live-results/9.1-posting-fbo-limit-max-guard-2026-08-20.md` |
 | 9.2 | `posting_fbo_list` | request period exceeds one year | PASS (negative guard) | `validation/live-results/9.2-posting-fbo-period-over-one-year-guard-2026-08-20.md` |
 | 9.3 | `stocks_current` | `limit=1001` exceeds maximum 1000 | PASS (negative guard) | `validation/live-results/9.3-stocks-current-limit-max-guard-2026-08-20.md` |
+| 9.4 | `analytics_data` | `limit=1001` exceeds maximum 1000 | PASS (negative guard) | `validation/live-results/9.4-analytics-data-limit-max-guard-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -49,6 +50,8 @@ Test 9.2 proves `posting_fbo_list` rejects a filter period longer than one year 
 
 Test 9.3 proves `stocks_current` enforces `limit <= 1000` locally: `limit=1001` produces `OZON_LIMIT_VIOLATION`, zero physical business requests and no external Ozon request.
 
+Test 9.4 proves `analytics_data` enforces `limit <= 1000` locally: `limit=1001` with otherwise valid recent universal analytics params produces `OZON_LIMIT_VIOLATION`, zero physical business requests, no capability probe and no external Ozon request.
+
 ## Next planned live test
 
-9.4 — verify the documented upper bound for `analytics_data.limit`: `limit=1001` with otherwise valid recent universal analytics params must be rejected locally before capability resolution or any external Ozon request.
+9.5 — verify the documented `analytics_data.metrics` maximum of 14 items. Submit 15 valid metric entries and require local rejection before capability resolution or any external Ozon request.
