@@ -1,15 +1,11 @@
 # Ozon Bridge — incremental development and Codex validation workflow
 
-Originally replaced by a final-gate workflow on 2026-08-17.  
-Incremental workflow restored: 2026-08-20.  
 Status: active project workflow.  
 Scope: `tooling/llm-api-bridges/ozon-seller/`
 
 ## Purpose
 
-Development is again performed in coherent stages with independent Codex validation available after each completed stage.
-
-There is no mandatory permanent project-wide pre-operator test gate, no mandatory B01-B15 umbrella run, and no requirement to postpone Codex until one final frozen candidate.
+Development is performed in coherent stages with independent Codex validation available after each completed stage.
 
 The working loop is:
 
@@ -18,7 +14,7 @@ The working loop is:
 ## Roles
 
 1. **ChatGPT engineering/review** — architecture, implementation, targeted testing, documentation, Git work, analysis of Codex evidence, fixes and preparation of the next coherent stage.
-2. **Codex Windows QA** — independent validation of completed development stages using the available Windows/Puppeteer/Chrome for Testing environment. Codex may be invoked repeatedly across development milestones and may be rerun after a production, harness or environment correction.
+2. **Codex Windows QA** — independent validation of completed development stages using the available Windows/Puppeteer/Chrome for Testing environment. Codex may be invoked repeatedly across development milestones and may be rerun after a production, harness, fixture or environment correction.
 3. **Operator** — receives installable builds when the current development objective has sufficient engineering and independent validation. Operator-only live/profile facts remain operator tests.
 
 ## Source of truth
@@ -79,8 +75,6 @@ A Codex task should:
 - avoid real Seller/Performance credentials unless the operator explicitly authorizes a live test;
 - record concrete PASS/FAIL/BLOCKED evidence.
 
-There is no requirement to combine unrelated historical tests into one global run.
-
 ### 6. Handle failures and continue the same stage
 
 If Codex finds a production defect:
@@ -95,7 +89,7 @@ If Codex finds a harness, fixture or environment defect:
 - fix that test/environment problem without changing production merely to satisfy the harness;
 - rerun the affected validation.
 
-Intermediate reruns are allowed. A failed QA attempt is diagnostic evidence, not a reason to create a permanent governance gate.
+Intermediate reruns are allowed and are part of normal milestone development.
 
 ### 7. Continue to the next stage
 
@@ -110,8 +104,6 @@ When an installable build is ready:
 3. package only production files;
 4. verify the package contents and hashes against the intended candidate;
 5. hand the package to the operator for live/profile-dependent acceptance.
-
-A separate permanent project-wide pre-operator Codex gate is not required.
 
 ## Operator/live boundary
 
@@ -133,7 +125,3 @@ Unless a later reviewed feature explicitly changes them, preserve:
 - independent conversation/tab ownership;
 - provider quota/cache state is not reset by unrelated UI/delivery cleanup;
 - delivery recovery does not replay provider work.
-
-## Retired process
-
-The final-gate workflow introduced on 2026-08-17 and its later B01-B15/pre-operator governance are retired as of 2026-08-20. Historical commits remain historical evidence only and are not active process authority.
