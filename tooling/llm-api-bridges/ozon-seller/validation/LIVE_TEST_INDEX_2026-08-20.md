@@ -34,6 +34,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 9.11 | `stocks_current` | `limit=0` is below minimum 1 | PASS (negative guard) | `validation/live-results/9.11-stocks-current-limit-min-guard-2026-08-20.md` |
 | 9.12 | `analytics_data` | `limit=0` is below minimum 1 | PASS (negative guard) | `validation/live-results/9.12-analytics-data-limit-min-guard-2026-08-20.md` |
 | 9.13 | `posting_fbo_list` | `limit=0` is below minimum 1 | PASS (negative guard) | `validation/live-results/9.13-posting-fbo-limit-min-guard-2026-08-20.md` |
+| 10.1 | `stocks_current` | unknown filter key `definitely_unknown_field`; strict local schema boundary | VALIDATION GAP | `validation/live-results/10.1-stocks-current-unknown-filter-field-validation-gap-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -79,6 +80,10 @@ Test 9.11 proves `stocks_current` enforces `limit >= 1` locally: `limit=0` produ
 
 Test 9.12 proves `analytics_data` enforces `limit >= 1` locally: `limit=0` with otherwise valid recent universal analytics params produces `OZON_LIMIT_VIOLATION`, zero physical business requests, no capability probe and no external Ozon request.
 
+## Stocks filter-schema validation gap
+
+Test 10.1 shows that `stocks_current` does not reject an unmistakably unknown filter key locally. The command was accepted unchanged, one physical business request was sent to Ozon, and Ozon returned HTTP 200 with ordinary stock data. This proves a bridge-side strict filter-schema validation gap; it does not prove semantics for the unknown filter key.
+
 ## Next planned live test
 
-10.1 — investigate the unresolved `stocks_current` filter-schema boundary with an unmistakably unknown filter key. The documented bridge/provider contract only establishes `filter.offer_id` and `filter.product_id`; a made-up field should be rejected locally if the bridge strictly enforces the filter schema. If it is accepted and reaches Ozon, record that behavior as a contract-boundary validation gap rather than claiming filter semantics.
+10.2 — re-verify the documented allowed `stocks_current.filter.offer_id` path with a known live offer id using the exact `OZON_API_V1` envelope. Expect one physical request and HTTP 200 with the matching product only.
