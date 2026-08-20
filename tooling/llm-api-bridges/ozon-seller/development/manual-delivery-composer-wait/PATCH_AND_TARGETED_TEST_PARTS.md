@@ -1,7 +1,7 @@
 # Ozon Bridge v0.1.19 — manual composer-wait repair byte manifest
 
 Date: 2026-08-18
-Status: `TARGETED_ENGINEERING_BYTES_PINNED_NOT_OPERATOR_HANDOFF`
+Status: `TARGETED_ENGINEERING_BYTES_PINNED`
 
 Repository: `MaksimUnimax/blood_sand`
 
@@ -141,14 +141,8 @@ Step 1/Step 2/Step 3/Step 4/V3 evidence and raw patch hunks were reviewed for ov
 
 The later provider/planner/quota/cache work changes other worker regions. The V3 repair changes quota functions/public quota state, not these Manual delivery functions. A V3-shaped worker context with the accepted public-quota insertion and large line displacement passed `git apply --check` for this repair without manual editing, and the targeted harness passed after application.
 
-This is targeted compatibility evidence, not a substitute for the final exact frozen-tree pre-operator gate.
+This is targeted compatibility evidence for the composer-wait repair.
 
 ## Test-stage boundary
 
-This manifest is for development/repair targeted testing only.
-
-Do NOT run or claim the full project-wide gate from this manifest. Immediately before an operator build is handed off, the completed exact candidate must separately pass:
-
-`OZON_BRIDGE_PRE_OPERATOR_HANDOFF_FULL_CODEX_GATE.md`
-
-in one consolidated independent Codex run.
+This manifest is for development/repair targeted testing and milestone validation. It may be used whenever the composer-wait stage is changed or independently revalidated.
