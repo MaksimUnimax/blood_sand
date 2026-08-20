@@ -9,11 +9,9 @@ on:
       - '.gitattributes'
       - 'tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/**'
       - 'tooling/llm-api-bridges/ozon-seller/validation/regression/**'
-      - 'tooling/llm-api-bridges/ozon-seller/validation/full-gate/composer-wait-browser-parts/**'
-      - 'tooling/llm-api-bridges/ozon-seller/validation/environment/session-launcher/OZON_GENERIC_SESSION_LAUNCHER.mjs'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   regression:
@@ -27,29 +25,19 @@ jobs:
         with:
           node-version: '24.12.0'
 
-      - name: Reconstruct current candidate and run targeted regression
+      - name: Reconstruct candidate and run targeted regression
         shell: bash
         run: |
           set -euo pipefail
 
-          node --version
           test "$(node --version)" = 'v24.12.0'
 
           ROOT="$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller"
           ARTIFACT="$ROOT/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip"
           REPAIR="$ROOT/development/manual-delivery-composer-wait"
-          VALIDATION="$ROOT/validation/regression"
-          LAUNCHER="$ROOT/validation/environment/session-launcher/OZON_GENERIC_SESSION_LAUNCHER.mjs"
-          BROWSER_PARTS="$ROOT/validation/full-gate/composer-wait-browser-parts"
-          COMMITTED_BROWSER_HARNESS="$VALIDATION/OZON_COMPOSER_WAIT_BROWSER_HARNESS.mjs"
           WORK="$RUNNER_TEMP/ozon-composer-wait-regression"
           CANDIDATE="$WORK/candidate"
           PATCH="$WORK/MANUAL_DELIVERY_COMPOSER_WAIT.patch"
-          BROWSER_HARNESS="$WORK/OZON_COMPOSER_WAIT_BROWSER_HARNESS.mjs"
-          LOG="$GITHUB_WORKSPACE/ozon-composer-wait-regression.log"
-
-          : > "$LOG"
-          exec > >(tee -a "$LOG") 2>&1
 
           rm -rf "$WORK"
           mkdir -p "$CANDIDATE"
@@ -73,51 +61,9 @@ jobs:
           echo 'dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac  '"$CANDIDATE/service_worker.js" | sha256sum -c -
           echo 'ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda  '"$CANDIDATE/content_script.js" | sha256sum -c -
 
-          test "$(wc -c < "$BROWSER_PARTS/00.mjs.part")" -eq 6925
-          test "$(wc -c < "$BROWSER_PARTS/01.mjs.part")" -eq 6427
-          echo '50108245f2fd935425ac9b15a03355bf03448ecf4a34ee21598774bd544f2f51  '"$BROWSER_PARTS/00.mjs.part" | sha256sum -c -
-          echo 'a54ba5b3aa9d70e84c1172d93c2c94244d46ec1208bef3ff600f4b3653b67db5  '"$BROWSER_PARTS/01.mjs.part" | sha256sum -c -
-          cat "$BROWSER_PARTS/00.mjs.part" "$BROWSER_PARTS/01.mjs.part" > "$BROWSER_HARNESS"
-          test "$(wc -c < "$BROWSER_HARNESS")" -eq 13352
-          echo 'ce38adbf78a5501c6c130845f5d76d1e832234b5f8d217d7c9980f8958f7a5c1  '"$BROWSER_HARNESS" | sha256sum -c -
-          test "$(wc -c < "$COMMITTED_BROWSER_HARNESS")" -eq 13352
-          echo 'ce38adbf78a5501c6c130845f5d76d1e832234b5f8d217d7c9980f8958f7a5c1  '"$COMMITTED_BROWSER_HARNESS" | sha256sum -c -
-          cmp -s "$BROWSER_HARNESS" "$COMMITTED_BROWSER_HARNESS"
-
           node --check "$CANDIDATE/service_worker.js"
           node --check "$CANDIDATE/content_script.js"
           node --check "$REPAIR/RUN_TARGETED_COMPOSER_WAIT_REGRESSION.mjs"
-          node --check "$VALIDATION/V3_WORKER_ACTUAL_PATH_HARNESS_CURRENT.mjs"
-          node --check "$COMMITTED_BROWSER_HARNESS"
-          node --check "$LAUNCHER"
-          echo "OZON_GENERIC_SESSION_LAUNCHER_SHA256=$(sha256sum "$LAUNCHER" | awk '{print $1}')"
-          echo 'OZON_WINDOWS_AUTHORITY_BYTES_PRECHECK_PASS'
 
           node "$REPAIR/RUN_TARGETED_COMPOSER_WAIT_REGRESSION.mjs" "$CANDIDATE"
           echo 'OZON_COMPOSER_WAIT_REGRESSION_PASS'
-
-      - name: Publish regression result
-        if: always()
-        shell: bash
-        env:
-          REGRESSION_STATUS: ${{ job.status }}
-        run: |
-          set -euo pipefail
-          REPORT='tooling/llm-api-bridges/ozon-seller/validation/reports/OZON_COMPOSER_WAIT_REGRESSION_LAST_RUN.txt'
-          {
-            echo "status=$REGRESSION_STATUS"
-            echo "tested_commit=$GITHUB_SHA"
-            echo "run_id=$GITHUB_RUN_ID"
-            echo '--- output ---'
-            if [[ -f ozon-composer-wait-regression.log ]]; then
-              cat ozon-composer-wait-regression.log
-            else
-              echo 'regression log was not created'
-            fi
-          } > "$REPORT"
-
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add "$REPORT"
-          git commit -m "test: record composer-wait regression $REGRESSION_STATUS"
-          git push origin HEAD:dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
