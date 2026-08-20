@@ -17,11 +17,16 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 7.9 | `posting_fbo_list` | pagination page 4 from exact 7.8 cursor; fourth distinct posting and fresh cursor | PASS | `validation/live-results/7.9-posting-fbo-pagination-page4-2026-08-20.md` |
 | 7.10 | `posting_fbo_list` | pagination page 5 from exact 7.9 cursor; fifth distinct posting and fresh cursor | PASS | `validation/live-results/7.10-posting-fbo-pagination-page5-2026-08-20.md` |
 | 8.1 | `supply_order_get` | required `order_ids` pre-execution contract guard | PASS (negative guard) | `validation/live-results/8.1-supply-order-get-required-order-ids-guard-2026-08-20.md` |
+| 8.2 | `supply_order_get` | syntactically valid synthetic `order_ids`; real provider request | PARTIAL PASS / provider-negative | `validation/live-results/8.2-supply-order-get-provider-negative-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
 Tests 7.6–7.10 establish five consecutive live pages with distinct postings, forward provider-cursor movement, HTTP 200 and one physical business request per page. No duplicate posting appeared in the tested five-page chain.
 
+## Supply-order boundary
+
+Test 8.2 proves the bridge accepts the `order_ids` array and reaches Ozon exactly once without capability probing or retry. It is not a positive business-data PASS because the id was synthetic and Ozon returned HTTP 400 / code 9. The current bridge allowlist has no supply-order list alias from which to discover a real supply-order id automatically.
+
 ## Next planned live test
 
-8.2 — execute `supply_order_get` with a syntactically valid `order_ids` array so the request crosses the bridge contract boundary and reaches Ozon. Use a non-existent int64-shaped supply-order id because the current bridge allowlist has no supply-order list operation from which to discover a real supply-order id.
+8.3 — inspect the remaining allowlisted `supply_order_details` operation through a zero-request contract guard to learn its exact required parameter(s) without inventing a schema or sending a malformed provider request.
