@@ -35,6 +35,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 9.12 | `analytics_data` | `limit=0` is below minimum 1 | PASS (negative guard) | `validation/live-results/9.12-analytics-data-limit-min-guard-2026-08-20.md` |
 | 9.13 | `posting_fbo_list` | `limit=0` is below minimum 1 | PASS (negative guard) | `validation/live-results/9.13-posting-fbo-limit-min-guard-2026-08-20.md` |
 | 10.1 | `stocks_current` | unknown filter key `definitely_unknown_field`; strict local schema boundary | VALIDATION GAP | `validation/live-results/10.1-stocks-current-unknown-filter-field-validation-gap-2026-08-20.md` |
+| 10.2 | `stocks_current` | valid documented `filter.offer_id` with a known live offer | PASS | `validation/live-results/10.2-stocks-current-offer-id-filter-pass-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -84,6 +85,8 @@ Test 9.12 proves `analytics_data` enforces `limit >= 1` locally: `limit=0` with 
 
 Test 10.1 shows that `stocks_current` does not reject an unmistakably unknown filter key locally. The command was accepted unchanged, one physical business request was sent to Ozon, and Ozon returned HTTP 200 with ordinary stock data. This proves a bridge-side strict filter-schema validation gap; it does not prove semantics for the unknown filter key.
 
+Test 10.2 confirms the documented `filter.offer_id` path works live: the bridge sent one physical request, Ozon returned HTTP 200 and exactly one matching product (`product_id=1082848375`, known live offer id), with `total=1`.
+
 ## Next planned live test
 
-10.2 — re-verify the documented allowed `stocks_current.filter.offer_id` path with a known live offer id using the exact `OZON_API_V1` envelope. Expect one physical request and HTTP 200 with the matching product only.
+10.3 — verify the documented `stocks_current.filter.product_id` path with the same known live product. Expect one physical request and HTTP 200 with the matching product only.
