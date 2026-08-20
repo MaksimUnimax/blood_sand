@@ -1,6 +1,6 @@
 status=failure
-tested_commit=695c4c0dfef536bca932d369c0d9966358c03821
-run_id=32333167410
+tested_commit=84f8cd789237c82535cdcc31922d4bc88b677761
+run_id=32333214454
 --- output ---
 /home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip: OK
 /home/runner/work/_temp/ozon-composer-wait-regression/candidate/service_worker.js: OK
@@ -8,6 +8,11 @@ run_id=32333167410
 /home/runner/work/_temp/ozon-composer-wait-regression/MANUAL_DELIVERY_COMPOSER_WAIT.patch: OK
 /home/runner/work/_temp/ozon-composer-wait-regression/candidate/service_worker.js: OK
 /home/runner/work/_temp/ozon-composer-wait-regression/candidate/content_script.js: OK
+/home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/validation/full-gate/composer-wait-browser-parts/00.mjs.part: OK
+/home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/validation/full-gate/composer-wait-browser-parts/01.mjs.part: OK
+/home/runner/work/_temp/ozon-composer-wait-regression/OZON_COMPOSER_WAIT_BROWSER_HARNESS.mjs: OK
+OZON_GENERIC_SESSION_LAUNCHER_SHA256=475e4c2b2f99b0813a35fb93b29a1bf106d789461a53dd2dc30979be500724e6
+OZON_WINDOWS_AUTHORITY_BYTES_PRECHECK_PASS
 TARGETED_MANUAL_OFF_ON_READY_WITH_QUOTA_PRESERVED_PASS
 TARGETED_MANUAL_OFF_PENDING_ONLY_RESET_PASS
 TARGETED_QUOTA_CACHE_PRESERVED_PASS
