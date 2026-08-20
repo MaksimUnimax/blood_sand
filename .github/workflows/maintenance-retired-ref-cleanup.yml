@@ -1,18 +1,18 @@
 name: Maintenance retired ref cleanup
 
 on:
-  workflow_run:
-    workflows:
-      - Ozon composer-wait regression
+  pull_request_target:
     types:
-      - completed
+      - opened
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   cleanup:
-    if: github.event.workflow_run.head_sha == 'bb65fc18b2c8ae6dbfb99e536c29b35717ee66de'
+    if: github.event.pull_request.head.ref == 'validation/ozon-resolved-pre-operator-full-gate-2026-08-19'
     runs-on: ubuntu-latest
     steps:
       - name: Delete retired validation ref via GitHub API
