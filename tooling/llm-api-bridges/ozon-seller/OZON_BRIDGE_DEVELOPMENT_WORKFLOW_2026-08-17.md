@@ -107,6 +107,10 @@ The following rules are mandatory:
 
 11. **Carry forward exact-target PASS evidence and rerun only missing evidence when safe.** If an earlier rerun already executed and passed product assertions against the same exact candidate and production has not changed, preserve those PASS results in the same report. A later rerun should focus on the still-unproven assertions instead of replaying already-proven cases and re-exposing unrelated environment failure modes. The final stage verdict may aggregate exact-target evidence across reruns when the report clearly records provenance and no intervening production change invalidates it.
 
+12. **Do not let a later unrelated harness timeout erase earlier product PASS assertions.** Record independent assertions as soon as they are reached. If cancellation, cleanup, late-commit rejection, owner isolation or another assertion has already executed successfully, preserve that result even if a later step in the same physical harness times out. Do not bundle unrelated assertions behind one final marker when doing so can convert proven PASS evidence into `BLOCKED`.
+
+13. **Run non-browser validation independently before browser work when it does not require CFT.** Focused worker/state validation must not be left unfinished merely because a later browser harness is unstable. Complete deterministic worker/state checks first, persist their evidence, then use browser sessions only for assertions that genuinely require browser behavior.
+
 ### 6. Handle failures and continue the same stage
 
 If Codex finds a production defect:
