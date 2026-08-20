@@ -21,11 +21,13 @@ Path:
 
 `tooling/llm-api-bridges/ozon-seller/validation/environment/session-launcher/OZON_GENERIC_SESSION_LAUNCHER.mjs`
 
-Engineering source SHA-256 at creation:
+Frozen engineering source SHA-256 for independent acceptance:
 
-`51a4b5479b384042a5a92972de9c1e8df8780657b6e32b8fd42ca0eda4c56b37`
+`0ab082d81848b5c31cae5594c66d42cc775674b8fb1f03bef1c3dea582475600`
 
 The launcher has no hard-coded Ozon candidate SHA or candidate directory. Candidate identity is supplied through CLI expectations, so a later candidate does not require editing launcher source merely to change expected product bytes.
+
+If the launcher fails after starting its own Chrome process, its fail-clean path terminates only that owned Chrome process tree. A successful session is deliberately left alive.
 
 ## Qualified dependencies
 
@@ -190,7 +192,7 @@ Before the final B01–B15 gate can resume, Codex must perform one environment-o
 
 Required acceptance observations:
 
-1. launcher source SHA matches the committed source;
+1. launcher source SHA matches `0ab082d81848b5c31cae5594c66d42cc775674b8fb1f03bef1c3dea582475600`;
 2. source CFT canonical inventory PASS;
 3. owned copy PASS;
 4. setup exit `78`;
