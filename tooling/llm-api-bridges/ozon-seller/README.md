@@ -2,17 +2,17 @@
 
 Status as of 2026-08-20: active read-only Ozon LLM↔API Bridge development using incremental engineering and independent Codex validation by completed development stage.
 
-The mandatory consolidated pre-operator test-gate process introduced on 2026-08-17 is retired. Development again follows the earlier milestone workflow: implement a coherent stage, run targeted engineering regression, independently validate that stage with Codex, fix/revalidate when needed, then continue.
+Development follows the milestone workflow: implement a coherent stage, run targeted engineering regression, independently validate that stage with Codex, fix/revalidate when needed, then continue.
 
 ## Read this first
 
 For current work, use these documents in this order:
 
-1. `OZON_BRIDGE_CURRENT_HANDOFF_2026-08-17.md` — continuation state and historical milestone handoff pattern.
+1. `OZON_BRIDGE_CURRENT_HANDOFF_2026-08-17.md` — continuation state and milestone handoff pattern.
 2. `OZON_BRIDGE_ROADMAP_2026-08-17.md` — target architecture, provider/planner roadmap and accepted milestone evidence.
-3. `OZON_BRIDGE_DEVELOPMENT_WORKFLOW_2026-08-17.md` — active incremental development/Codex workflow restored on 2026-08-20.
-4. `OZON_BRIDGE_CODEX_QA_HARNESS_ACCEPTANCE_2026-08-17.md` — historical accepted Windows/Puppeteer/Chrome for Testing QA capability.
-5. `OZON_BRIDGE_APPEND_ONLY_DOCUMENTATION.md` — historical append-only release/incident log.
+3. `OZON_BRIDGE_DEVELOPMENT_WORKFLOW_2026-08-17.md` — active incremental development/Codex workflow.
+4. `OZON_BRIDGE_CODEX_QA_HARNESS_ACCEPTANCE_2026-08-17.md` — accepted Windows/Puppeteer/Chrome for Testing QA capability.
+5. `OZON_BRIDGE_APPEND_ONLY_DOCUMENTATION.md` — release/incident log.
 6. matching immutable `reference-*` snapshot for release-specific evidence.
 
 ## Source of truth
@@ -29,7 +29,7 @@ The normal loop is:
 
 `baseline -> coherent implementation stage -> targeted engineering tests -> independent Codex validation of that stage -> correction/revalidation if needed -> next stage`
 
-Codex validation is allowed at intermediate milestones. There is no mandatory B01-B15 umbrella run, no permanent full pre-operator gate, no one-final-run requirement, and no requirement to postpone Codex until all development is complete.
+Codex validation is allowed at intermediate milestones and may be repeated after a production, harness, fixture or environment correction.
 
 ### Engineering tests
 
@@ -41,7 +41,7 @@ Do not rerun unrelated historical suites merely because one small implementation
 
 After a coherent stage is ready, Codex may independently test it on Windows using the available QA environment. A failed production assertion is fixed in production and the affected stage is revalidated. A harness/fixture/environment failure is fixed in the test environment and the affected validation is rerun.
 
-The old milestone history remains valid evidence of this model. Step 1, Step 2 and later development stages were independently accepted before moving to subsequent stages.
+Step 1, Step 2 and later development stages may each be independently accepted before moving to subsequent stages.
 
 ## Current engineering status
 
@@ -56,8 +56,6 @@ Ordinary regression for this repair is kept under:
 Reusable functional browser/worker regression harnesses are kept under:
 
 `validation/regression/`
-
-These are normal engineering/independent validation tools, not a permanent pre-operator governance gate.
 
 ## Packaging and operator checks
 
@@ -86,7 +84,3 @@ Unless explicitly changed by a reviewed feature:
 - no hidden provider retry/pagination/fan-out/report polling;
 - provider quota/cache state is not reset by unrelated UI/delivery cleanup;
 - delivery recovery does not replay provider work.
-
-## Historical documentation
-
-Historical commits and append-only evidence may describe the retired 2026-08-17 through 2026-08-20 test-gate experiment. They are historical evidence only and do not override the active incremental workflow above.
