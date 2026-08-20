@@ -1,3 +1,62 @@
+# Corrected rerun — accepted launcher lifecycle
+
+- tested_target = `14829f418068e40d76c5d992ff9158c4faebbbd0`
+- corrected rerun used only the existing accepted `D:\\codex\\Test\\qa-harness\\puppeteer-extension-qa\\launch-cft.mjs` lifecycle.
+- First direct non-elevated invocation failed before spawn with `EPERM` opening the preserved diagnostics log. The unchanged launcher was then invoked in elevated filesystem context and emitted endpoint `http://127.0.0.1:54718` (root PID 20616).
+- The explicitly authorized validation-owned PID 20616 tree was terminated after stale MV3-target contamination; termination of root and all enumerated descendants was verified.
+- The unchanged accepted launcher was restarted and emitted fresh endpoint `http://127.0.0.1:49266` (root PID 22912).
+
+## Corrected candidate and regression
+
+- candidate_integrity = PASS: ZIP `d794e9fe8550dcf20d76d63abf7832d9b28853ad6d7c8e94faa22a3c08a46a2c`; patch `13648` bytes / `bd0119212a21c63fbbc2a6d0067c0c19abcf31896007e8f8d3e19efa8255019d`; repaired worker/content SHA-256 pins matched.
+- targeted_regression = PASS: all existing `TARGETED_*_PASS` markers were emitted, including pending-only cancellation, quota/cache preservation, other-owner preservation, stale insert-commit block, occupied-wait, insert-once, restart restore, missing composer, and final regression pass.
+
+## Actual browser product assertions reached
+
+Temporary browser connection glue connected Puppeteer to the dynamic endpoint from the accepted launcher, then installed the exact reconstructed candidate. The following actual extension assertions passed before later temporary-target instability:
+
+- `FULL_BROWSER_MANUAL_OCCUPIED_PLATE_PERSIST_PASS`
+- `FULL_BROWSER_MANUAL_CLEAR_INSERT_ONCE_PASS`
+- `FULL_BROWSER_MANUAL_EXISTING_SEND_MICROPHONE_PASS`
+- `FULL_BROWSER_NATIVE_COPY_WHILE_WAITING_PASS`
+
+Those markers prove on the installed extension: unrelated occupied composer text was preserved; the exact persistent Russian wait plate was visible and remained; the report was not inserted while occupied; clearing the correct composer inserted/sent the report exactly once; the downstream Send/Microphone transition occurred once; and native Copy remained independent.
+
+Manual OFF message delivery was corrected from a service-worker self-message (which has no receiver) to a real extension-popup origin. The actual worker cancelled the pending operation before the next wait. A synthetic-page reload initially reset the fixture's hardcoded draft; the fixture was corrected to persist the operator draft across reloads. No production assertion failed.
+
+## Remaining blocker
+
+After the successful product assertions, the temporary harness encountered stale/idled MV3 `Target.attachToTarget` races when reinstalling/reacquiring the same extension ID. Popup activation then left a validation-owned Node harness pending beyond the bounded wait; it exited before targeted termination. These are temporary CDP target lifecycle failures, not product assertion failures. As a result, the remaining browser matrix (missing-composer, restart restoration, full Manual OFF visual cleanup, wrong-owner isolation) and focused independent worker-state harness could not be completed in this rerun.
+
+## Result fields
+
+- candidate_integrity = PASS
+- targeted_regression = PASS
+- worker_state_validation = BLOCKED (canonical targeted evidence passed; focused independent temporary worker harness not completed)
+- browser_composer_validation = BLOCKED (partial actual browser assertions PASS; remaining required matrix blocked by MV3 target lifecycle)
+- restart_recovery = BLOCKED
+- manual_off_cancellation = BLOCKED (worker cancellation reached; complete visual/recovery matrix not completed)
+- quota_cache_preservation = PASS (canonical targeted regression)
+- owner_isolation = PASS (canonical targeted regression)
+- REAL_OZON_REQUESTS = 0
+- REAL_PERFORMANCE_REQUESTS = 0
+- OPERATOR_BROWSER_ACTIONS = 0
+- production_modifications = 0
+
+## Temporary local harness corrections
+
+- candidate patch materialization used raw byte stream followed by LF normalization of extracted candidate bytes only.
+- ESM dependency resolution used a temporary `node_modules` junction to the preserved QA dependencies.
+- committed browser harness copy was changed only to connect to the accepted launcher endpoint; temporary synthetic fixture and message-origin corrections were applied.
+- no temporary file, junction, fixture, browser harness, worker harness, or candidate was committed.
+
+## Corrected rerun verdict
+
+`COMPOSER_WAIT_STAGE_BLOCKED` — production passed every actual assertion reached; required remaining assertions are not proven because the accepted browser session's MV3 target lifecycle became unstable after worker idle/reinstall. No production defect was proven.
+
+---
+
+## Historical blocked report (preserved)
 # Ozon v0.1.19 Manual delivery composer-wait — independent milestone validation
 
 - tested_target = `14829f418068e40d76c5d992ff9158c4faebbbd0`
