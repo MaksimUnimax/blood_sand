@@ -29,6 +29,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 9.6 | `product_queries` | `page_size=1001` exceeds maximum 1000 | PASS (negative guard) | `validation/live-results/9.6-product-queries-page-size-max-guard-2026-08-20.md` |
 | 9.7 | `product_queries_details` | `page_size=101` exceeds maximum 100 | PASS (negative guard) | `validation/live-results/9.7-product-queries-details-page-size-max-guard-2026-08-20.md` |
 | 9.8 | `product_queries_details` | `limit_by_sku=16` exceeds maximum 15 | PASS (negative guard) | `validation/live-results/9.8-product-queries-details-limit-by-sku-max-guard-2026-08-20.md` |
+| 9.9 | `product_queries` | `page=-1` is below minimum 0 | PASS (negative guard) | `validation/live-results/9.9-product-queries-page-min-guard-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -64,6 +65,8 @@ Test 9.7 proves `product_queries_details` enforces `page_size <= 100` locally: `
 
 Test 9.8 proves `product_queries_details` enforces `limit_by_sku <= 15` locally: `limit_by_sku=16` with a real known SKU and otherwise valid recent params produces `OZON_LIMIT_VIOLATION`, zero physical business requests, no capability probe and no external Ozon request.
 
+Test 9.9 proves `product_queries` enforces `page >= 0` locally: `page=-1` with a real known SKU and otherwise valid recent params produces `OZON_LIMIT_VIOLATION`, zero physical business requests, no capability probe and no external Ozon request.
+
 ## Next planned live test
 
-9.9 — verify the documented non-negative page guard for `product_queries`. Submit `page=-1` with the same real known SKU and otherwise valid recent params; it must fail during command discovery before capability probing or any external Ozon request.
+9.10 — verify the same documented non-negative page guard for `product_queries_details`. Submit `page=-1` with the same real known SKU and otherwise valid recent params; it must fail during command discovery before capability probing or any external Ozon request.
