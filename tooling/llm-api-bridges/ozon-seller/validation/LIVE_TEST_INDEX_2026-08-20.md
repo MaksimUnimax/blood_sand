@@ -39,6 +39,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 10.3 | `stocks_current` | valid documented `filter.product_id` with a known live product | PASS | `validation/live-results/10.3-stocks-current-filter-product-id-pass-2026-08-20.md` |
 | 10.4 | `stocks_current` | scalar `filter.offer_id` instead of array; local type boundary | VALIDATION GAP | `validation/live-results/10.4-stocks-current-offer-id-type-validation-gap-2026-08-20.md` |
 | 10.5 | `stocks_current` | scalar `filter.product_id` instead of array; local type boundary | VALIDATION GAP | `validation/live-results/10.5-stocks-current-product-id-scalar-validation-gap-2026-08-20.md` |
+| 11.1 | `analytics_data` | `offset=-1` is below minimum 0 | PASS (negative guard) | `validation/live-results/11.1-analytics-data-offset-min-guard-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -84,6 +85,8 @@ Test 9.11 proves `stocks_current` enforces `limit >= 1` locally: `limit=0` produ
 
 Test 9.12 proves `analytics_data` enforces `limit >= 1` locally: `limit=0` with otherwise valid recent universal analytics params produces `OZON_LIMIT_VIOLATION`, zero physical business requests, no capability probe and no external Ozon request.
 
+Test 11.1 proves `analytics_data` enforces `offset >= 0` locally: `offset=-1` produces `OZON_LIMIT_VIOLATION`, zero physical business requests, no capability probe and no external Ozon request.
+
 ## Stocks filter-schema validation gap
 
 Test 10.1 shows that `stocks_current` does not reject an unmistakably unknown filter key locally. The command was accepted unchanged, one physical business request was sent to Ozon, and Ozon returned HTTP 200 with ordinary stock data. This proves a bridge-side strict filter-schema validation gap; it does not prove semantics for the unknown filter key.
@@ -98,4 +101,4 @@ Test 10.5 shows the same missing local array-shape validation for `filter.produc
 
 ## Next planned live test
 
-11.1 — verify the documented lower bound `analytics_data.offset >= 0`. Submit `offset=-1` with otherwise valid recent universal analytics parameters. It should be rejected locally before capability probing and before any external Ozon request.
+11.2 — verify strict top-level parameter allowlisting for `analytics_data` by adding an unmistakably unknown parameter to otherwise valid recent universal analytics params. It should be rejected locally before capability probing and before any external Ozon request.
