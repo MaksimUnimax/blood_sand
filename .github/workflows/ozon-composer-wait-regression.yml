@@ -8,6 +8,7 @@ on:
       - '.github/workflows/ozon-composer-wait-regression.yml'
       - '.gitattributes'
       - 'tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/**'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/regression/**'
       - 'tooling/llm-api-bridges/ozon-seller/validation/environment/session-launcher/OZON_GENERIC_SESSION_LAUNCHER.mjs'
 
 permissions:
@@ -20,7 +21,7 @@ jobs:
       - name: Checkout exact commit
         uses: actions/checkout@v4
 
-      - name: Reconstruct current candidate and run targeted regression
+      - name: Reconstruct current candidate and run regressions
         shell: bash
         run: |
           set -euo pipefail
@@ -28,6 +29,7 @@ jobs:
           ROOT="$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller"
           ARTIFACT="$ROOT/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip"
           REPAIR="$ROOT/development/manual-delivery-composer-wait"
+          VALIDATION="$ROOT/validation/regression"
           WORK="$RUNNER_TEMP/ozon-composer-wait-regression"
           CANDIDATE="$WORK/candidate"
           PATCH="$WORK/MANUAL_DELIVERY_COMPOSER_WAIT.patch"
@@ -59,9 +61,13 @@ jobs:
           node --check "$CANDIDATE/service_worker.js"
           node --check "$CANDIDATE/content_script.js"
           node --check "$REPAIR/RUN_TARGETED_COMPOSER_WAIT_REGRESSION.mjs"
-          node "$REPAIR/RUN_TARGETED_COMPOSER_WAIT_REGRESSION.mjs" "$CANDIDATE"
+          node --check "$VALIDATION/V3_WORKER_ACTUAL_PATH_HARNESS_CURRENT.mjs"
 
+          node "$REPAIR/RUN_TARGETED_COMPOSER_WAIT_REGRESSION.mjs" "$CANDIDATE"
           echo 'OZON_COMPOSER_WAIT_REGRESSION_PASS'
+
+          node "$VALIDATION/V3_WORKER_ACTUAL_PATH_HARNESS_CURRENT.mjs" "$CANDIDATE"
+          echo 'OZON_WORKER_ACTUAL_PATH_REGRESSION_PASS'
 
       - name: Publish regression result
         if: always()
