@@ -37,6 +37,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 10.1 | `stocks_current` | unknown filter key `definitely_unknown_field`; strict local schema boundary | VALIDATION GAP | `validation/live-results/10.1-stocks-current-unknown-filter-field-validation-gap-2026-08-20.md` |
 | 10.2 | `stocks_current` | valid documented `filter.offer_id` with a known live offer | PASS | `validation/live-results/10.2-stocks-current-offer-id-filter-pass-2026-08-20.md` |
 | 10.3 | `stocks_current` | valid documented `filter.product_id` with a known live product | PASS | `validation/live-results/10.3-stocks-current-filter-product-id-pass-2026-08-20.md` |
+| 10.4 | `stocks_current` | scalar `filter.offer_id` instead of array; local type boundary | VALIDATION GAP | `validation/live-results/10.4-stocks-current-offer-id-type-validation-gap-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -90,6 +91,8 @@ Test 10.2 confirms the documented `filter.offer_id` path works live: the bridge 
 
 Test 10.3 confirms the documented `filter.product_id` path works live: the bridge sent one physical request, Ozon returned HTTP 200 and exactly one matching product (`product_id=1082848375`), with `total=1`.
 
+Test 10.4 shows that `stocks_current` also does not enforce the documented array shape for `filter.offer_id` locally. A scalar string was accepted unchanged and sent as one physical business request; Ozon rejected the request with HTTP 400 / code `3`. This is a bridge-side type-validation gap, not a provider success.
+
 ## Next planned live test
 
-10.4 — probe type validation for `stocks_current.filter.offer_id` by supplying a scalar string instead of the documented array shape. A strict bridge should reject it locally; if it reaches Ozon, record the exact provider behavior without assuming semantics.
+10.5 — probe type validation for `stocks_current.filter.product_id` by supplying a scalar string instead of the documented array shape. A strict bridge should reject it locally; if it reaches Ozon, record the exact provider behavior without assuming semantics.
