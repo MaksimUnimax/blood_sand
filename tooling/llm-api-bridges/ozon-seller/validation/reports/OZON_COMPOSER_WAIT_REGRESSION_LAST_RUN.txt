@@ -1,6 +1,6 @@
 status=success
-tested_commit=3da987e71375fde10b78114a04987d388460007d
-run_id=32333391574
+tested_commit=3516560ac1d1ef180b3b14786665a04c0eb0a606
+run_id=32335553700
 --- output ---
 /home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip: OK
 /home/runner/work/_temp/ozon-composer-wait-regression/candidate/service_worker.js: OK
