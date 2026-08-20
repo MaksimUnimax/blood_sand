@@ -1,179 +1,92 @@
 # Ozon Seller / Performance API bridge
 
-Status as of 2026-08-18: active read-only Ozon LLM↔API Bridge development with separate canonical release lineage, operator development baseline, targeted development tests, and a mandatory consolidated Codex regression gate immediately before operator handoff.
+Status as of 2026-08-20: active read-only Ozon LLM↔API Bridge development using incremental engineering and independent Codex validation by completed development stage.
 
-This directory contains research/provenance artifacts, immutable version snapshots, active development documentation, validation plans/reports, operator-baseline reconstruction artifacts, and the permanent pre-operator full regression gate.
+The mandatory consolidated pre-operator test-gate process introduced on 2026-08-17 is retired. Development again follows the earlier milestone workflow: implement a coherent stage, run targeted engineering regression, independently validate that stage with Codex, fix/revalidate when needed, then continue.
 
 ## Read this first
 
 For current work, use these documents in this order:
 
-1. `OZON_BRIDGE_CURRENT_HANDOFF_2026-08-17.md` — exact continuation state and immediate next action.
-2. `OZON_BRIDGE_ROADMAP_2026-08-17.md` — current target architecture, latest agreed provider/planner changes, major-step roadmap and status.
-3. `OZON_BRIDGE_DEVELOPMENT_WORKFLOW_2026-08-17.md` — fixed development method and separation between targeted development tests and final handoff validation.
-4. `OZON_BRIDGE_PRE_OPERATOR_HANDOFF_FULL_CODEX_GATE.md` — **mandatory living full-functional regression contract. Before any installable/testable build is handed to the operator, one exact frozen candidate must pass this entire gate in one consolidated Codex run.**
-5. `OZON_BRIDGE_CODEX_QA_HARNESS_ACCEPTANCE_2026-08-17.md` — accepted Windows/Puppeteer/Chrome for Testing QA harness.
-6. `OZON_BRIDGE_APPEND_ONLY_DOCUMENTATION.md` — historical append-only release/incident log. Historical entries must not be rewritten.
-7. matching immutable `reference-*` snapshot for release-specific evidence.
+1. `OZON_BRIDGE_CURRENT_HANDOFF_2026-08-17.md` — continuation state and historical milestone handoff pattern.
+2. `OZON_BRIDGE_ROADMAP_2026-08-17.md` — target architecture, provider/planner roadmap and accepted milestone evidence.
+3. `OZON_BRIDGE_DEVELOPMENT_WORKFLOW_2026-08-17.md` — active incremental development/Codex workflow restored on 2026-08-20.
+4. `OZON_BRIDGE_CODEX_QA_HARNESS_ACCEPTANCE_2026-08-17.md` — historical accepted Windows/Puppeteer/Chrome for Testing QA capability.
+5. `OZON_BRIDGE_APPEND_ONLY_DOCUMENTATION.md` — historical append-only release/incident log.
+6. matching immutable `reference-*` snapshot for release-specific evidence.
 
-## Source-of-truth boundaries
+## Source of truth
 
-Repository:
+Repository: `MaksimUnimax/blood_sand`.
 
-`MaksimUnimax/blood_sand`
+Canonical release/evidence snapshots remain under `reference-*`. Development versions and operator candidates do not become canonical merely because they exist or were tested.
 
-Canonical working branch:
+Major work is performed on dedicated `dev/...` branches. Every validation report must identify the exact code/candidate it exercised.
 
-`work/ozon-data-collection-2026-08-11`
+## Active development method
 
-Always read the live GitHub branch ref before assuming a HEAD SHA.
+The normal loop is:
 
-### Canonical release lineage
+`baseline -> coherent implementation stage -> targeted engineering tests -> independent Codex validation of that stage -> correction/revalidation if needed -> next stage`
 
-The canonical GitHub version/evidence lineage currently reaches:
+Codex validation is allowed at intermediate milestones. There is no mandatory B01-B15 umbrella run, no permanent full pre-operator gate, no one-final-run requirement, and no requirement to postpone Codex until all development is complete.
 
-`reference-0.1.11/`
+### Engineering tests
 
-`reference-0.1.11/OZON_BRIDGE_V0.1.11_ACCEPTANCE.md` is the version-specific authority for the canonical v0.1.11 DOM-binding correction candidate.
+Use the tests appropriate to the changed path, including syntax, worker/state-machine, contract/planner, quota/cache, owner/isolation, browser/Puppeteer, composer/delivery/recovery and security/provider-boundary tests as applicable.
 
-Operator/local candidates v0.1.12+ are **not canonical releases** simply because they exist, have been used live, or are used as a development baseline.
+Do not rerun unrelated historical suites merely because one small implementation detail changed.
 
-### Current operator development baseline
+### Codex validation
 
-Current active development started from the exact operator v0.1.19 package pinned on:
+After a coherent stage is ready, Codex may independently test it on Windows using the available QA environment. A failed production assertion is fixed in production and the affected stage is revalidated. A harness/fixture/environment failure is fixed in the test environment and the affected validation is rerun.
 
-`dev/ozon-v0.1.19-step1-contract-capability-2026-08-17`
-
-Baseline pin commit:
-
-`06bbed6649b11c6fd4b81b224ef41d8833ea267c`
-
-Operator baseline ZIP SHA-256:
-
-`2b86518bfdc81081e271c7f8346188fc7047999385d1da4428fa2a133dba15bf`
-
-This baseline is explicitly development-only and does not advance the canonical release lineage.
-
-The later v0.1.19 Step1→Step4/live-repair work remains development/frozen-candidate lineage until the required acceptance/promotion steps are completed. The complete v0.1.19 logged-in live suite must not be claimed as passed unless that suite is actually completed.
-
-## Development testing vs operator handoff testing
-
-These are two different stages and must not be conflated.
-
-### While code is being changed
-
-Run only tests appropriate to the code being changed and dependencies directly traversed by that change:
-
-- syntax/static checks for affected files;
-- targeted unit/VM/integration/browser assertions for changed behavior;
-- targeted dependency regressions;
-- defect reproduction tests when practical;
-- security/invariant checks directly exposed by the changed path.
-
-Do **not** repeatedly run the entire historical project suite after every edit.
-
-### Immediately before handing a build to the operator
-
-The exact completed candidate must pass `OZON_BRIDGE_PRE_OPERATOR_HANDOFF_FULL_CODEX_GATE.md`.
-
-Hard rule:
-
-`freeze exact candidate -> one consolidated full Codex run -> full GitHub report review -> exact package from tested tree -> fresh extraction/hash verification -> operator handoff`
-
-Codex is the final independent validator for this automated gate and must not modify production during validation. If production changes after the full gate, that PASS is invalidated and the entire consolidated gate must be rerun before handoff.
-
-The gate is a living contract: new functionality adds new applicable tests; intentionally removed functionality removes its obsolete tests while retaining neighboring regressions and documenting the removal.
+The old milestone history remains valid evidence of this model. Step 1, Step 2 and later development stages were independently accepted before moving to subsequent stages.
 
 ## Current engineering status
 
-### Step 0 — Codex/Puppeteer QA harness — ACCEPTED
+The active v0.1.19 line includes Contract + Capability, query planner/coalescing, global Seller analytics quota/response verification, verified cache/prefetch, live-repair quota behavior and the current Manual delivery composer-wait repair.
 
-Intermediate browser-extension QA is automated through:
+The current composer-wait repair must preserve operator text when the composer is occupied, insert once when it becomes available, recover correctly after restart, and allow Manual OFF cancellation without resetting unrelated provider quota/cache state.
 
-`fixed unpacked source -> Node launcher -> Chrome for Testing -> dynamic DevTools endpoint -> Puppeteer -> browser.installExtension() -> assertions -> report`
+Ordinary regression for this repair is kept under:
 
-Qualified environment:
+`development/manual-delivery-composer-wait/`
 
-- Puppeteer `25.4.0`;
-- Chrome for Testing `151.0.7922.47`;
-- Node `child_process.spawn()` launcher;
-- `--remote-debugging-port=0` + `DevToolsActivePort` discovery;
-- runtime unpacked extension install;
-- content script, MV3 service worker, console, network, multi-tab and persistent-profile tests;
-- zero operator browser actions in the accepted three-revision qualification.
+Reusable functional browser/worker regression harnesses are kept under:
 
-Therefore the operator does not need to download/reinstall an intermediate ZIP after every engineering edit.
+`validation/regression/`
 
-This does not replace final acceptance in the operator's real logged-in browser/profile.
+These are normal engineering/independent validation tools, not a permanent pre-operator governance gate.
 
-### Current v0.1.19 development line
+## Packaging and operator checks
 
-The provider/planner work added Contract + Capability, query planning/coalescing, global Seller analytics quota/response verification, verified cache/prefetch, and the live-repair quota countdown candidate. Those layers have their own implementation/validation evidence in the development and validation directories.
+When the current development objective is ready for an installable build:
 
-A real-browser delivery defect is currently being repaired: when a completed Manual report reaches an occupied ChatGPT composer, the report must wait without overwriting operator text; Manual OFF cancellation must release only that pending Manual operation while preserving quota/cache/timing state.
+1. identify the exact intended production tree;
+2. ensure the latest relevant engineering and Codex milestone validations cover it;
+3. package only production files;
+4. verify package contents/hashes against that candidate;
+5. hand it to the operator for any live/profile-dependent checks.
 
-The complete v0.1.19 live suite is still pending and must be resumed after this defect is closed. Partial live observations must not be relabeled as a full v0.1.19 live PASS.
+Synthetic QA does not prove facts that require the operator's real logged-in browser/profile or real credentials.
 
-## Major roadmap
+## Standing invariants
 
-The active provider-side target pipeline is:
+Unless explicitly changed by a reviewed feature:
 
-`clicked batch -> strict validation -> 0/1 Seller capability probe -> entitlement planning -> query planner/coalescer -> cache/prefetch -> provider quota scheduler -> Ozon -> response verifier -> safe error normalization -> logical result projection -> existing delivery engine`
-
-Implemented/development layers include:
-
-- **Step 1:** Contract + Capability;
-- **Step 2:** query planner + safe coalescing;
-- **Step 3:** global provider quota scheduler + response verifier + safe errors;
-- **Step 4:** cache/prefetch + semantic acquisition profile;
-- bounded live-repair work where concrete production defects are found.
-
-The roadmap is intentionally coarse. Do not create dozens of micro-gates unless a concrete defect requires a bounded repair inside the current development line.
-
-## Current provider/capability direction
-
-One Ozon button click is one logical batch.
-
-For Seller entitlement-sensitive batches:
-
-- parse the whole batch first;
-- run strict contract validation first;
-- perform **0** `/v1/seller/info` probes if capability is not required;
-- otherwise perform at most **1** internal capability probe for the whole batch;
-- never probe once per logical command;
-- never expose raw seller-info company/INN/OGRN/rating fields to AI;
-- use operation/field entitlement rules rather than one global premium boolean;
-- preserve original logical-command identity if the physical request is safely transformed;
-- do not silently remove restricted dimensions/sort/filter semantics if that changes query meaning.
-
-`/v1/analytics/data` uses the reviewed one-request-per-minute family plus the current bridge launch-safety guard recorded in the accepted development evidence. Temporal quota enforcement is global for the same Seller account/quota family across tabs/AIs and must not be reset by unrelated Manual delivery cancellation.
-
-## Standing code-block / AI invariants
-
-- native Copy structurally anchors the exact code block;
-- the extension Ozon button appears for supported code blocks according to the current binding architecture regardless of command validity; parser/worker decides command validity;
-- block identity is never content/text-fingerprint based where structural identity is available;
+- native Copy structurally anchors the correct code block;
 - one extension-owned top-level Shadow DOM overlay;
-- many tabs/conversations must remain independently owned; no global current conversation;
-- ChatGPT and Alice adapters stay separable;
-- provider/planner work must not casually rewrite proven delivery semantics;
-- delivery fixes must not casually rewrite provider quota/cache/planner semantics.
-
-## Provider/security invariants
-
-Unless explicitly changed by an accepted future step:
-
-- read-only allowlist only;
-- fixed Seller/Performance provider hosts;
+- fail-closed conversation/binding ownership;
+- independent tabs/conversations and ChatGPT/Alice ownership isolation;
+- fixed provider hosts and operation registries;
 - no assistant-controlled arbitrary URL/host/method/headers/auth;
-- credentials isolated from content/page output;
-- `posting_fbs_get` remains blocked because of customer PII;
+- credentials isolated from page/content output;
+- read-only Ozon operation surface unless mutations are explicitly designed later;
 - no hidden provider retry/pagination/fan-out/report polling;
-- no invented generic request/result caps or silent truncation reintroduced;
-- wrong conversation/binding/security failures fail closed.
+- provider quota/cache state is not reset by unrelated UI/delivery cleanup;
+- delivery recovery does not replay provider work.
 
-## Historical research/provenance
+## Historical documentation
 
-Research-era state/contract artifacts remain provenance and contract-discovery evidence, but old lifecycle/status wording must not override current implementation/roadmap/workflow documents or immutable release snapshots.
-
-The historical append-only log remains append-only. If older entries are stale or incomplete, correct current authority through new documents/entries rather than rewriting historical text.
+Historical commits and append-only evidence may describe the retired 2026-08-17 through 2026-08-20 test-gate experiment. They are historical evidence only and do not override the active incremental workflow above.
