@@ -4,7 +4,9 @@ import vm from 'node:vm';
 import { webcrypto, createHash } from 'node:crypto';
 
 // Restored from historical executable blob 0da73bdd1bb1608074781bb0c594c7875a4fe3ce.
-// Only exact current-candidate SHA pins were updated; behavioral assertions are unchanged.
+// Exact current-candidate SHA pins were updated. The guarded-wait fixture keeps the
+// same 60000/5000/65000 semantics but uses a wider pre-deadline window so the test
+// does not race machine speed before observing quota_waiting.
 const EXPECTED_WORKER = 'dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac';
 const EXPECTED_CONTENT = 'ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda';
 const candidateDir = path.resolve(process.argv[2] || '');
@@ -155,7 +157,7 @@ const command='OZON_API_V1\n{"operation":"analytics_data","params":{"date_from":
 await reset(); fetchMode='429-no-retry-after';
 const id3='33333333-3333-4333-8333-333333333333'; const key3=await seedManual(id3,3);
 const qIdentity=await vm.runInContext(`sellerQuotaIdentity({clientId:${JSON.stringify(sellerClient)},apiKey:${JSON.stringify(sellerKey)}})`,context);
-const now=Date.now(); const last=now-64800; const due=last+65000;
+const now=Date.now(); const last=now-60000; const due=last+65000;
 await chrome.storage.local.set({
   [KEYS.PROVIDER_RESULT_CACHE]:{schema_version:1,accounts:{}},
   [KEYS.PROVIDER_QUOTA_STATE]:{schema_version:1,accounts:{[qIdentity.account_hash]:{credential_revision:qIdentity.credential_revision,families:{'seller.analytics_data.v1':{min_interval_ms:60000,last_provider_request_at:last,next_allowed_at:last+60000,credential_revision:qIdentity.credential_revision,updated_at:new Date(last).toISOString()}}}}}
