@@ -21,10 +21,18 @@ jobs:
       - name: Checkout exact commit
         uses: actions/checkout@v4
 
+      - name: Use accepted Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+
       - name: Reconstruct current candidate and run regressions
         shell: bash
         run: |
           set -euo pipefail
+
+          node --version
+          test "$(node --version)" = 'v24.12.0'
 
           ROOT="$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller"
           ARTIFACT="$ROOT/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip"
