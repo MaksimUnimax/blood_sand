@@ -13,7 +13,8 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 7.5 | `posting_fbo_list` | valid request with no matching order | PASS | `validation/live-results/7.5-posting-fbo-empty-result-2026-08-20.md` |
 | 7.6 | `posting_fbo_list` | pagination page 1 with `limit=1`; real continuation cursor captured | PASS | `validation/live-results/7.6-posting-fbo-pagination-page1-2026-08-20.md` |
 | 7.7 | `posting_fbo_list` | pagination page 2 from exact 7.6 cursor; forward movement/no duplicate | PASS | `validation/live-results/7.7-posting-fbo-pagination-page2-2026-08-20.md` |
+| 7.8 | `posting_fbo_list` | pagination page 3 from exact 7.7 cursor; third distinct posting and fresh cursor | PASS | `validation/live-results/7.8-posting-fbo-pagination-page3-2026-08-20.md` |
 
 ## Next planned live test
 
-7.8 — continue `posting_fbo_list` from the exact provider cursor returned by 7.7, preserving the same filter window and `limit=1`; verify another forward page, no duplicate of either page-1 or page-2 posting, and a fresh continuation cursor or clean terminal `has_next=false`.
+7.9 — continue `posting_fbo_list` from the exact provider cursor returned by 7.8 with the same window and `limit=1`; verify page 4 is distinct from pages 1–3 and cursor progression remains valid.
