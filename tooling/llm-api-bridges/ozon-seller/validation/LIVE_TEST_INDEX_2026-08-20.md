@@ -121,3 +121,4 @@ Test 11.4 establishes a Work-mode UI-compatibility gap in the downstream deliver
 
 This observation is append-only and intentionally left unfixed during the current live-test pass. The deferred repair must add focused Work-mode composer/control-state coverage without weakening exactly-once delivery or treating the persistent dictation microphone as delivery completion.
 
+The earlier next-planned `analytics_data.metrics` probe was not executed. This appended Work-mode blocker takes the final 11.4 position; the metrics probe is deferred until after the Work-mode readiness repair and must receive a new test ID when resumed.
