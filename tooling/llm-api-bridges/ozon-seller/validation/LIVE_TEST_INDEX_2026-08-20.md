@@ -20,6 +20,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 8.2 | `supply_order_get` | syntactically valid synthetic `order_ids`; real provider request | PARTIAL PASS / provider-negative | `validation/live-results/8.2-supply-order-get-provider-negative-2026-08-20.md` |
 | 8.3 | `supply_order_details` | required `order_id` pre-execution contract guard | PASS (negative guard) | `validation/live-results/8.3-supply-order-details-required-order-id-guard-2026-08-20.md` |
 | 8.4 | `supply_order_details` | syntactically valid synthetic `order_id`; real provider request | PARTIAL PASS / provider-negative | `validation/live-results/8.4-supply-order-details-provider-negative-2026-08-20.md` |
+| 8.5 | `supply_order_get` | 51 `order_ids` exceeds documented maximum 50 | PASS (negative guard) | `validation/live-results/8.5-supply-order-get-max-50-order-ids-guard-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -33,6 +34,8 @@ Test 8.3 proves `supply_order_details` requires `params.order_id` and rejects om
 
 Test 8.4 proves the bridge accepts a syntactically valid `order_id` for `supply_order_details` and reaches Ozon exactly once without capability probing or retry. It is not a positive business-data PASS because the id was synthetic and Ozon returned HTTP 400 / code 9.
 
+Test 8.5 proves `supply_order_get` enforces the documented maximum of 50 `order_ids` locally: 51 IDs produce `OZON_LIMIT_VIOLATION` with zero physical business requests and no external Ozon request.
+
 ## Next planned live test
 
-8.5 — verify the documented local max-items guard for `supply_order_get`: 51 `order_ids` must be rejected before any external Ozon request because the contract limit is 50.
+9.1 — verify the documented local upper-bound guard for `posting_fbo_list.limit`: `limit=101` must be rejected before any external Ozon request because the supported range is 1..100.
