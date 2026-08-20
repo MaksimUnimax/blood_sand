@@ -19,6 +19,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 8.1 | `supply_order_get` | required `order_ids` pre-execution contract guard | PASS (negative guard) | `validation/live-results/8.1-supply-order-get-required-order-ids-guard-2026-08-20.md` |
 | 8.2 | `supply_order_get` | syntactically valid synthetic `order_ids`; real provider request | PARTIAL PASS / provider-negative | `validation/live-results/8.2-supply-order-get-provider-negative-2026-08-20.md` |
 | 8.3 | `supply_order_details` | required `order_id` pre-execution contract guard | PASS (negative guard) | `validation/live-results/8.3-supply-order-details-required-order-id-guard-2026-08-20.md` |
+| 8.4 | `supply_order_details` | syntactically valid synthetic `order_id`; real provider request | PARTIAL PASS / provider-negative | `validation/live-results/8.4-supply-order-details-provider-negative-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -30,6 +31,8 @@ Test 8.2 proves the bridge accepts the `order_ids` array and reaches Ozon exactl
 
 Test 8.3 proves `supply_order_details` requires `params.order_id` and rejects omission locally with zero physical business requests.
 
+Test 8.4 proves the bridge accepts a syntactically valid `order_id` for `supply_order_details` and reaches Ozon exactly once without capability probing or retry. It is not a positive business-data PASS because the id was synthetic and Ozon returned HTTP 400 / code 9.
+
 ## Next planned live test
 
-8.4 — execute `supply_order_details` with a syntactically valid synthetic int64-shaped `order_id` to verify that the command crosses the bridge validation boundary and reaches Ozon exactly once. This is a provider-boundary check only; it cannot be a positive business-data PASS without a real supply-order id.
+8.5 — verify the documented local max-items guard for `supply_order_get`: 51 `order_ids` must be rejected before any external Ozon request because the contract limit is 50.
