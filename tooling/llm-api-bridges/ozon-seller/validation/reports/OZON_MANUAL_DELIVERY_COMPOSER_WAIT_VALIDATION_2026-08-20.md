@@ -1,3 +1,60 @@
+# Completion rerun — single-install accepted lifecycle
+
+- tested_target = `14829f418068e40d76c5d992ff9158c4faebbbd0`
+- carried_exact_target_evidence = PASS
+- Candidate integrity, canonical targeted regression, occupied-composer plate/insertion/Send/Copy evidence, targeted quota/cache preservation, and targeted owner isolation are carried forward unchanged from exact-target report commit `46eee34a333e5811948bc2a814e2ce5fb8313b34`.
+
+## Validation-owned CFT lifecycle
+
+- Terminated stale validation-owned root `22912` with its descendants before this completion rerun.
+- Fresh accepted launcher roots created: `6972`, `16500`, `5416`, `10044`.
+- Roots `6972`, `16500`, `5416`, and `10044` were terminated with descendants after their respective temporary-harness failures, as pre-authorized. No process was selected solely by executable path.
+- Every fresh browser attempt used unchanged `launch-cft.mjs`, one Puppeteer connection, and one `browser.installExtension()` call. No custom Chrome launch, extension reinstall, service-worker target CDP attach, ServiceWorker command, or `/json/new` route was used.
+
+## Completion evidence
+
+- `FULL_BROWSER_MISSING_COMPOSER_RECOVERABLE_PASS`
+- `FULL_BROWSER_COMPOSER_WAIT_RELOAD_RESTORE_PASS`
+- `FULL_BROWSER_RELOAD_NO_PROVIDER_REPLAY_PASS`
+- `FULL_BROWSER_RELOAD_NO_DUPLICATE_INSERT_PASS`
+
+The actual installed extension retained a durable pending Manual operation while the composer was absent; after the correct composer became available it remained recoverable. A blocked occupied-composer wait was restored by content-runtime page reload with operator draft preserved; clearing then produced exactly one report insertion/send, with zero provider replay and no duplicate send.
+
+Manual OFF browser path reached actual cancellation, visual cleanup, late-clear protection, and quota/cache preservation before the synthetic popup fixture's Manual ON response/state observation timed out. The existing canonical actual-worker regression already proves `TARGETED_MANUAL_OFF_ON_READY_WITH_QUOTA_PRESERVED_PASS`; the popup-specific ON-state observation remains a temporary fixture/context limitation, not a proven product defect.
+
+## Completion result fields
+
+- focused_worker_state_validation = BLOCKED (no new focused standalone worker harness completed; canonical exact-target runtime regression continues PASS)
+- missing_composer_recovery = PASS
+- content_reload_restore = PASS
+- reload_no_provider_replay = PASS
+- reload_no_duplicate_insert = PASS
+- manual_off_browser_cancellation = BLOCKED (actual cancellation reached, full popup ON completion not observed)
+- manual_off_visual_cleanup = BLOCKED (actual cleanup reached before fixture ON timeout; not retained as complete marker)
+- manual_off_late_clear_block = BLOCKED (actual late-clear assertion reached before fixture ON timeout; marker not emitted)
+- manual_off_on_no_resurrect = BLOCKED
+- wrong_owner_exclusion = BLOCKED
+- two_owner_browser_isolation = BLOCKED
+
+- REAL_OZON_REQUESTS = 0
+- REAL_PERFORMANCE_REQUESTS = 0
+- OPERATOR_BROWSER_ACTIONS = 0
+- production_modifications = 0
+
+## Temporary corrections
+
+- Candidate patch concatenation used raw bytes then LF normalization on temporary extracted files only.
+- Browser harness used normal popup-origin extension messaging and durable storage observation; missing-composer fixture was corrected not to require a plate before a composer exists.
+- Synthetic operator draft was persisted across reload.
+- No temporary harness, junction, candidate, fixture, or QA dependency was committed.
+
+## Completion verdict
+
+`COMPOSER_WAIT_STAGE_BLOCKED` — required remaining worker focus, Manual OFF ON/resurrection completion markers, and two-owner browser isolation are not fully proven. No production assertion failed.
+
+---
+
+## Prior corrected rerun evidence (preserved)
 # Corrected rerun — accepted launcher lifecycle
 
 - tested_target = `14829f418068e40d76c5d992ff9158c4faebbbd0`
