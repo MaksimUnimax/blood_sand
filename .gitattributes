@@ -1,2 +1,5 @@
 tooling/llm-api-bridges/ozon-seller/validation/environment/session-launcher/OZON_GENERIC_SESSION_LAUNCHER.mjs text eol=lf
 tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/targeted-test-parts/*.mjs.part text eol=lf
+tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/patch-parts/*.patch.part text eol=lf
+tooling/llm-api-bridges/ozon-seller/validation/full-gate/composer-wait-browser-parts/*.mjs.part text eol=lf
+tooling/llm-api-bridges/ozon-seller/validation/regression/*.mjs text eol=lf
