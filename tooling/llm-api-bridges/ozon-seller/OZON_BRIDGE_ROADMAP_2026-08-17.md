@@ -1,13 +1,13 @@
 # Ozon Bridge — current engineering roadmap
 
-Date: 2026-08-17
-Status: active roadmap/specification; Step 3 frozen for independent validation.
+Date: 2026-08-20
+Status: active roadmap; Step 0 through Step 4, V3 quota/countdown repair, and Manual delivery composer-wait repair are independently accepted. Controlled logged-in/live acceptance is the current next milestone.
 
 ## Target architecture
 
 `marketplace adapters -> common bridge protocol -> AI adapters`
 
-Current AI adapters are ChatGPT and Alice. Tabs/conversations/models are independent; there is no global “current conversation”.
+Current AI adapters are ChatGPT and Alice. Tabs/conversations/models remain independent; there is no global current conversation.
 
 Provider pipeline:
 
@@ -15,13 +15,29 @@ Provider pipeline:
 
 Logical commands are data requirements. Physical provider requests are transport actions. Optimization/scheduling must preserve query semantics, logical identity, provenance and delivery ownership.
 
-## Accepted Step 1 — Contract + Capability
+## Milestone status
+
+### Step 0 — Windows/Puppeteer QA harness — ACCEPTED
+
+Accepted launcher evidence commit:
+
+`a5539c8663bb6b48dce197f59e0abfe2d388af93`
+
+Accepted route:
+
+`Node child_process.spawn -> CFT 151.0.7922.47 -> --remote-debugging-port=0 -> DevToolsActivePort -> Puppeteer 25.4.0 connect -> browser.installExtension() -> assertions`
+
+The accepted launcher remains:
+
+`D:\codex\Test\qa-harness\puppeteer-extension-qa\launch-cft.mjs`
+
+### Step 1 — Contract + Capability — ACCEPTED
 
 Accepted production logic SHA:
 
 `370e45a1803976f43d27d5a9d4b5613e09a91623`
 
-Accepted reconstruction-v2 validation target:
+Accepted reconstruction-v2 target:
 
 `298a4d618c69e8ffd33735ff96a153d42d160143`
 
@@ -33,173 +49,184 @@ Verdict:
 
 `STEP1_ACCEPTED_FOR_STEP2`
 
-Retained invariants:
-
-- strict contract validation before provider execution;
-- at most one internal `POST /v1/seller/info` capability probe per relevant clicked batch;
-- zero Seller capability probes for universal/performance-only work;
-- seller-info is infrastructure, not AI-callable, and raw seller identity/company/rating fields never reach AI;
-- `UNKNOWN` capability is never treated as no subscription;
-- partial entitlement can remove unavailable analytics metrics only when query semantics remain valid;
-- restricted dimension/sort/filter semantics are never silently removed;
-- previous-worker unknown in-flight capability outcome is not blindly re-probed.
-
-## Accepted Step 2 — Query planner + safe coalescing
+### Step 2 — Query planner + safe coalescing — ACCEPTED
 
 Frozen implementation target:
 
 `93c1eae13f518d92d53bbf1af4793b35d26bc5d3`
 
-Step-2 patch SHA-256:
-
-`93e40b59c9128f58b794f2f736377f10777054f51a5de20b25524077c430128b`
-
-Independent validation branch:
-
-`validation/ozon-step2-query-planner-coalescing-2026-08-17`
-
-Independent report ref supplied by Codex and independently readable in GitHub:
+Independent report ref:
 
 `be7be62`
+
+Acceptance decision:
+
+`51a0b16c51a60b2dc8e656b7fd41eb6d60c446ad`
 
 Verdict:
 
 `STEP2_ACCEPTED_FOR_STEP3`
 
-Accepted Step-2 behavior:
+### Step 3 — Global analytics quota scheduler + response verifier + safe errors — ACCEPTED
 
-- only contiguous compatible `analytics_data` commands coalesce;
-- compatibility preserves all normalized executable physical parameters except metrics, including dates, ordered dimensions, filters, sort, offset and limit/window semantics;
-- different limits are not coalesced;
-- metric union is deterministic and maximum 14;
-- no cross-dimension/filter/window/date derivation or unsafe local aggregation;
-- one physical result is projected into separate logical results with original identities and shared physical provenance;
-- ambiguous metric cardinality fails closed rather than guessing;
-- all coalesced members are durably `requesting` before physical execution;
-- a previous-worker `requesting` group is never replayed blindly.
-
-## Step 3 — Global analytics quota scheduler + response verifier + safe errors
-
-Development branch:
-
-`dev/ozon-v0.1.19-step3-quota-verifier-errors-2026-08-17`
-
-Branch base / Step-2 acceptance decision:
-
-`51a0b16c51a60b2dc8e656b7fd41eb6d60c446ad`
-
-**Frozen implementation target:**
+Frozen implementation target:
 
 `eae8988f5baf8c7ead5a82371c9b1057295c906d`
 
-Step-3 patch:
+Independent report ref:
 
-- size `42730` bytes
-- SHA-256 `9eee85d648a212e96658514dea8f031223d255cf93c7c73a14107c50817919f5`
+`21b004b`
 
-Exactly six production files differ from accepted Step 2:
+Acceptance decision:
 
-- `manifest.json` `6e314da445166d390a32f3f3afdfdf86a97e2af6eeed0c3cd4a47d34d60550da`
-- `service_worker.js` `bfe2aa15b09f48dffb2dd7ff913f6b527c07fca09e462759dffb30d9dd72c514`
-- `shared/ozon_contract.js` `e303b74b266c685f1ae20b9e3b726211f7b65c56490a3ed09693b84489e58b45`
-- `shared/ozon_provider.js` `16e8f85303e7a6a57d0fc76a6ea0e2e9dd8537341fa57397b38b0c0d52dda97b`
-- `shared/provider_transport_core.js` `7c346ad77dce1bbac73a2170f2f07fe6845f52a10a5b30f448afef2b80c5abb8`
-- `shared/runtime_names.js` `f66a4fc004a59981c59f715ba335c4b2b4b8f750789befb17b045894bb55ac24`
+`6a644e57ee36ac4aa48c0a93464438c6595adc0e`
 
-The other eleven production files are byte-identical to accepted Step 2. AI DOM/composer files remain protected. Manifest host permissions are unchanged; only the `alarms` permission is added for MV3 quota wake.
+Verdict:
 
-### Step-3 quota contract
+`STEP3_ACCEPTED_FOR_STEP4`
 
-The new explicit temporal quota family is deliberately narrow:
+Accepted behavior includes the account-scoped `seller.analytics_data.v1` quota family, persistent `next_allowed_at`, MV3 alarm/startup recovery, no automatic provider retry, analytics response-cardinality verification, safe error normalization, and preservation of Step-1/Step-2 security and planner invariants.
 
-`seller.analytics_data.v1`
+### Step 4 — Cache/prefetch + semantic acquisition + integrated acceptance — ACCEPTED
 
-Reviewed interval:
+Independently validated target:
 
-`60000 ms`
+`4ce190c8bbdc438dcdf407abbe4dbecd846736df`
 
-Rules:
+Step 4 is closed. Do not restart Step 1 through Step 4 merely because later delivery-layer repair work occurred.
 
-- the bucket is global inside the extension for the same Seller account across ChatGPT, Alice, tabs and conversations;
-- Seller account identity and credential revision are internal SHA-256 values; raw Client-Id/Api-Key are not persisted in quota state or exposed to AI;
-- same Seller Client-Id after API-key rotation keeps the same account bucket while credential revision changes;
-- different Seller accounts have independent buckets;
-- one Step-2 coalesced physical analytics request consumes one quota slot;
-- unrelated Seller operations, Performance operations and internal `/v1/seller/info` capability probes do not receive an invented analytics 60-second delay;
-- persistent state carries `last_provider_request_at` / `next_allowed_at` and credential revision;
-- blocked work is durably `quota_waiting` before provider execution;
-- `chrome.alarms` plus startup recovery resumes due Manual/Autorun waits after MV3 suspension/restart;
-- concurrent acquisition uses serialized persistent read-modify-write so one quota window cannot grant multiple permits.
+### V3 live-repair quota/countdown — INDEPENDENTLY ACCEPTED
 
-### Retry-After
+Frozen target:
 
-A provider Retry-After may extend the effective next-allowed timestamp but cannot shorten it. Retry-After never triggers automatic provider retry.
+`66bc4ac712b345d499b10982e7f5124279265b88`
 
-### Response verification / safe errors
+Exact V3 candidate:
 
-For successful `analytics_data`, Step 3 verifies physical metric cardinality before logical projection. Invalid body/result or incompatible `data[].metrics` / `totals` cardinality fails `PROVIDER_RESPONSE_CONTRACT_MISMATCH` after the one already-attempted provider request, with no retry.
+`88a20984c55da1f813ca1184bd90089823f51883`
 
-Non-analytics successful operations remain sanitization-only in this bounded step; no undocumented broad schema is invented.
+Latest independent acceptance verdict:
 
-Provider/bridge errors expose sanitized source/category/status/safe code/message/provenance only. Raw provider bodies, credentials and secret-bearing headers are not AI output. Fetch/network failure is correctly marked as an attempted external request; missing credentials, pre-execution validation and quota-state failure remain external=false/zero-provider.
+`INDEPENDENT_ACCEPTANCE_PASS`
 
-### Step-3 local evidence
+Accepted browser evidence includes visible quota/countdown state, decreasing seconds, absolute due clock, duplicate-click blocking, restart restoration, due/sending transition, owner isolation, ChatGPT/Alice binding isolation, native Copy independence, and zero real provider requests in synthetic QA.
 
-All provider behavior was mocked. `REAL_OZON_REQUESTS = 0`.
+A later controlled logged-in run then proved the quota scheduler resumed correctly: the second Seller analytics provider request started automatically and completed HTTP 200.
 
-Local PASS includes global concurrent quota acquisition, key rotation/account independence, durable wait/restart/alarm resume, one coalesced permit, Retry-After extension-only behavior, quota-state fail-closed, missing-credential zero-provider, response-verifier valid/fail-closed paths, sanitized 429, transport attempt provenance, Step-1 capability regression, Step-2 coalescing regression, Performance regression, JS syntax/manifest/diff checks, and fresh 17/17 patch reconstruction.
+### Manual delivery composer-wait repair — INDEPENDENTLY ACCEPTED
 
-Local evidence is not independent acceptance.
+Exact production target under validation:
 
-Standalone validation plan:
+`14829f418068e40d76c5d992ff9158c4faebbbd0`
 
-`validation/plans/OZON_STEP3_QUOTA_VERIFIER_ERRORS_CODEX_VALIDATION_2026-08-17.md`
+Frozen starting ZIP:
 
-Plan commit:
+`artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip`
 
-`2adf85e78cf21fbe8828be7c3dfdc4f000635450`
+ZIP SHA-256:
 
-Expected validation branch:
+`d794e9fe8550dcf20d76d63abf7832d9b28853ad6d7c8e94faa22a3c08a46a2c`
 
-`validation/ozon-step3-quota-verifier-errors-2026-08-17`
+Composer-wait patch SHA-256:
 
-Step 4 remains blocked until the full Step-3 GitHub report is independently reviewed and accepted.
+`bd0119212a21c63fbbc2a6d0067c0c19abcf31896007e8f8d3e19efa8255019d`
 
-## Step 4 — Cache/prefetch + semantic acquisition + integrated acceptance — BLOCKED
+Expected repaired production hashes:
 
-Only after Step 3 acceptance:
+- `service_worker.js` — `dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac`
+- `content_script.js` — `ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda`
 
-- verified reusable cache/prefetch;
-- safe provider supersets and freshness/provenance;
-- reviewed deterministic semantic acquisition profiles;
-- integrated multi-tab/multi-AI regression;
-- controlled final live acceptance.
+Validation branch:
 
-## Delivery / security protection
+`validation/ozon-manual-delivery-composer-wait-2026-08-20`
 
-Standing invariants remain:
+Accepted report commit:
 
-- native Copy structurally anchors the exact code block;
+`3c779f20520a8c2e1dca4a7af5cb65b031d85324`
+
+Report:
+
+`validation/reports/OZON_MANUAL_DELIVERY_COMPOSER_WAIT_VALIDATION_2026-08-20.md`
+
+Verdict:
+
+`COMPOSER_WAIT_STAGE_ACCEPTED`
+
+Accepted cumulative exact-target evidence proves:
+
+- occupied composer preserves unrelated operator text;
+- exact persistent wait plate: `Очистите поле ввода, чтобы получить отчёт.`;
+- no insertion while occupied;
+- clearing the correct composer inserts/sends exactly once;
+- missing composer remains recoverable;
+- content-runtime reload restores worker-owned pending wait without provider replay or duplicate insertion;
+- Manual OFF cancels only the pending pre-insert Manual delivery, preserves quota/cache/other owners, blocks stale insert with `MANUAL_MODE_DISABLED`, and OFF -> ON does not resurrect the cancelled report;
+- insert-committed/inserted deliveries are not incorrectly cancelled;
+- wrong-owner/two-owner browser isolation passes;
+- native Copy remains independent;
+- `REAL_OZON_REQUESTS = 0`, `REAL_PERFORMANCE_REQUESTS = 0`, `OPERATOR_BROWSER_ACTIONS = 0`, `production_modifications = 0` during independent validation.
+
+## Why the composer-wait repair existed
+
+The controlled logged-in run had already reached a successful Seller provider response (HTTP 200). The failure occurred afterwards in report delivery because the ChatGPT composer contained unrelated operator text. The old delivery path returned `COMPOSER_CONTAINS_OTHER_TEXT` and preserved the report but did not maintain a durable composer-clear wait.
+
+The independently accepted composer-wait repair closes that delivery-layer defect. It does not invalidate or reopen the already accepted provider/planner/quota/cache milestones.
+
+## Current next milestone — controlled logged-in/live acceptance
+
+Do not rerun the historical synthetic roadmap from Step 1.
+
+Next engineering/release sequence:
+
+1. reconstruct/build the exact installable v0.1.19 candidate using the accepted composer-wait repair and verify package inventory/hashes;
+2. install that exact candidate for the controlled operator/live run;
+3. resume the live sequence from the point already reached after the real provider HTTP 200;
+4. validate repaired report delivery when the composer is occupied, including durable wait and insertion after operator clear;
+5. complete the remaining profile/login-dependent ChatGPT/Alice/live-provider checks that synthetic QA cannot prove;
+6. only after that live acceptance, finalize release/package evidence.
+
+The already observed provider HTTP 200 does not need to be erased from history or treated as unproven merely because the subsequent delivery layer was repaired. The live rerun should prove the repaired downstream sequence on the accepted candidate.
+
+## Standing protected invariants
+
+- native Copy structurally anchors the exact code block/conversation surface;
 - Ozon button exists independent of command contents; parser alone decides API validity;
 - no content fingerprint is block identity;
 - one extension-owned top-level Shadow DOM overlay;
 - no global current conversation;
-- proven ChatGPT delivery FSM is not rewritten;
-- persistent “Начало диктовки” is not delivery completion;
-- Alice lifecycle remains separate;
+- ChatGPT/Alice and tab/conversation ownership remain isolated;
 - AI cannot inject arbitrary provider URL/host/method/headers/auth/credentials;
-- mutations remain blocked and `posting_fbs_get` remains blocked for customer PII;
-- no hidden provider retry/pagination/report polling;
-- no arbitrary generic bridge caps or silent result truncation.
+- credentials remain isolated from page/content output;
+- read-only Ozon operation surface remains enforced unless a later reviewed feature explicitly changes it;
+- no hidden provider retry/pagination/fan-out/report polling;
+- provider quota/cache state is not reset by unrelated UI/delivery cleanup;
+- delivery recovery does not replay provider work;
+- persistent `Начало диктовки` is not delivery completion.
 
-## Current gate
+## Working-method authority
+
+`OZON_BRIDGE_DEVELOPMENT_WORKFLOW_2026-08-17.md`
+
+Development continues incrementally:
+
+`development stage -> targeted engineering checks -> independent Codex validation of that stage -> fix/revalidate if needed -> next stage`
+
+There is no retired one-shot final B01-B15/full-gate requirement.
+
+## Current state
 
 `STEP0 = ACCEPTED`
 
 `STEP1 = ACCEPTED`
 
-`STEP2 = ACCEPTED_FOR_STEP3`
+`STEP2 = ACCEPTED`
 
-`STEP3 = FROZEN_WAITING_FOR_CODEX_VALIDATION`
+`STEP3 = ACCEPTED`
 
-`STEP4 = BLOCKED`
+`STEP4 = ACCEPTED`
+
+`V3_QUOTA_COUNTDOWN = INDEPENDENT_ACCEPTANCE_PASS`
+
+`COMPOSER_WAIT = COMPOSER_WAIT_STAGE_ACCEPTED`
+
+`CONTROLLED_LIVE_ACCEPTANCE = NEXT`
