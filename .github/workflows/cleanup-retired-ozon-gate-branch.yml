@@ -1,0 +1,28 @@
+name: Cleanup retired Ozon gate branch
+
+on:
+  push:
+    branches:
+      - dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete remaining retired remote branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${REPOSITORY}.git"
+          branch="validation/ozon-resolved-pre-operator-full-gate-2026-08-19"
+          if git ls-remote --exit-code --heads "$remote" "refs/heads/$branch" >/dev/null 2>&1; then
+            git push "$remote" --delete "$branch"
+          else
+            echo "already absent: $branch"
+          fi
