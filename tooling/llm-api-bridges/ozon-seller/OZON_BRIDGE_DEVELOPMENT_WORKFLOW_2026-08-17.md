@@ -75,6 +75,34 @@ A Codex task should:
 - avoid real Seller/Performance credentials unless the operator explicitly authorizes a live test;
 - record concrete PASS/FAIL/BLOCKED evidence.
 
+### 5a. Mandatory Codex prompt preparation rules
+
+Before sending any Codex validation or rerun prompt, ChatGPT engineering/review must prepare an executable validation route rather than merely describe the desired result.
+
+The following rules are mandatory:
+
+1. **Verify the already-working route before writing the prompt.** Search the live GitHub history and current project evidence for the latest relevant successful validation path. Identify and verify the exact target SHA/candidate, commands, launcher, harness, dependencies, environment assumptions and previous PASS evidence. Do not make Codex rediscover or redesign infrastructure that has already been proven to work.
+
+2. **Limit the prompt to the current milestone and its direct dependencies.** Do not import unrelated historical fixtures, gates, quota scenarios, browser experiments or validation layers merely because they exist. A completed stage should be validated by the smallest independent route that proves that stage and its relevant regressions.
+
+3. **If no proven route exists, resolve the validation infrastructure first.** ChatGPT engineering/review must investigate the environment and repository evidence until there is a concrete executable route, or until a genuine external boundary is identified. Do not hand Codex an underspecified infrastructure problem and call it a validation prompt.
+
+4. **Do not automatically issue another prompt after `BLOCKED` or `HARNESS_ERROR`.** First inspect the exact blocker, determine whether it is production, harness, fixture or environment related, and search existing project history for an already-known solution. Only then prepare a corrected rerun for the same stage when appropriate.
+
+5. **Pre-authorize foreseeable validation-owned test operations narrowly.** Before sending the prompt, identify safe local operations that the proven route may require and that Codex could otherwise stop to request authorization for. Include explicit authorization in the original prompt when appropriate, including:
+   - create, edit and delete temporary validation harness/fixture files outside production;
+   - restart the accepted test launcher;
+   - clean stale validation-owned QA session state;
+   - terminate a validation-owned Chrome for Testing process tree when required for a clean rerun.
+
+6. **Process termination authorization must be ownership-scoped, never executable-scoped.** If cleanup is required, Codex may identify the root process created by the current validation session, record that root PID, and terminate only that root process and its descendants. It must not kill processes merely because they share the same `chrome.exe`/CFT executable path, and must not touch unrelated QA sessions, operator/user browsers or other process trees.
+
+7. **Do not require a second authorization for a foreseeable validation-owned cleanup action.** If the exact PID is not known before the run, the prompt should authorize Codex to determine the validation-owned root PID from the current launcher/session evidence and, if necessary, terminate only that owned process tree before rerunning the same accepted launcher.
+
+8. **Permit repair of the test layer, not silent repair of production.** Codex may correct temporary local harness, fixture, module-resolution, synthetic-page, browser-connection or timing problems needed to reach the product assertions, provided those changes are not committed as production. A product failure may be declared only when an actual product assertion executes and fails. Production must not be modified during independent validation unless a later engineering stage explicitly begins after the failure has been analyzed.
+
+9. **Validate the prompt itself as an executable command.** Before sending it, verify that it unambiguously states the target, branch/report destination when relevant, exact launcher/harness or proven route, permitted temporary operations, required authorization boundaries, prohibited actions, PASS/FAIL/BLOCKED classification and required output. A logically plausible prompt is not sufficient if its execution path has not been checked against known project evidence.
+
 ### 6. Handle failures and continue the same stage
 
 If Codex finds a production defect:
