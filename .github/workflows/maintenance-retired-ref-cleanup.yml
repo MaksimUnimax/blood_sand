@@ -1,0 +1,31 @@
+name: Maintenance retired ref cleanup
+
+on:
+  workflow_run:
+    workflows:
+      - Ozon composer-wait regression
+    types:
+      - completed
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.event.workflow_run.head_sha == 'bb65fc18b2c8ae6dbfb99e536c29b35717ee66de'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete retired validation branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${REPOSITORY}.git"
+          branch="validation/ozon-resolved-pre-operator-full-gate-2026-08-19"
+          if git ls-remote --exit-code --heads "$remote" "refs/heads/$branch" >/dev/null 2>&1; then
+            git push "$remote" --delete "$branch"
+          else
+            echo "already absent: $branch"
+          fi
