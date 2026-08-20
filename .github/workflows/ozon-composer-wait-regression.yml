@@ -6,7 +6,9 @@ on:
       - dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
     paths:
       - '.github/workflows/ozon-composer-wait-regression.yml'
+      - '.gitattributes'
       - 'tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/**'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/environment/session-launcher/OZON_GENERIC_SESSION_LAUNCHER.mjs'
 
 permissions:
   contents: write
