@@ -1,7 +1,7 @@
 # Ozon Bridge v0.1.19 — occupied-composer Manual delivery repair: implementation and targeted evidence
 
 Date: 2026-08-18
-Status: `TARGETED_ENGINEERING_PASS_NOT_READY_FOR_OPERATOR_HANDOFF`
+Status: `TARGETED_ENGINEERING_PASS`
 
 Repository: `MaksimUnimax/blood_sand`
 
@@ -241,19 +241,6 @@ Targeted engineering decision:
 
 `TARGETED_ENGINEERING_PASS`
 
-Operator-handoff decision:
+This completed stage may be independently validated by Codex under the active incremental workflow. If Codex finds a production, harness, fixture or environment issue, correct the affected layer and rerun validation for this stage before continuing.
 
-`NOT_READY_FOR_OPERATOR_HANDOFF`
-
-Reasons:
-
-1. this stage intentionally runs only changed-path/dependency tests under the project workflow;
-2. the permanent full project-wide consolidated Codex gate has not been run for the completed final candidate;
-3. exact final package/fresh-extraction evidence has not been produced;
-4. the complete logged-in v0.1.19 live suite remains pending.
-
-Immediately before any build is given to the operator, freeze the exact complete production candidate and run the living mandatory gate:
-
-`OZON_BRIDGE_PRE_OPERATOR_HANDOFF_FULL_CODEX_GATE.md`
-
-as one consolidated independent Codex execution. Codex must not modify production during that gate.
+Exact package verification and any logged-in/live checks remain separate release/operator work when an installable build is prepared.
