@@ -18,6 +18,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 7.10 | `posting_fbo_list` | pagination page 5 from exact 7.9 cursor; fifth distinct posting and fresh cursor | PASS | `validation/live-results/7.10-posting-fbo-pagination-page5-2026-08-20.md` |
 | 8.1 | `supply_order_get` | required `order_ids` pre-execution contract guard | PASS (negative guard) | `validation/live-results/8.1-supply-order-get-required-order-ids-guard-2026-08-20.md` |
 | 8.2 | `supply_order_get` | syntactically valid synthetic `order_ids`; real provider request | PARTIAL PASS / provider-negative | `validation/live-results/8.2-supply-order-get-provider-negative-2026-08-20.md` |
+| 8.3 | `supply_order_details` | required `order_id` pre-execution contract guard | PASS (negative guard) | `validation/live-results/8.3-supply-order-details-required-order-id-guard-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -27,6 +28,8 @@ Tests 7.6–7.10 establish five consecutive live pages with distinct postings, f
 
 Test 8.2 proves the bridge accepts the `order_ids` array and reaches Ozon exactly once without capability probing or retry. It is not a positive business-data PASS because the id was synthetic and Ozon returned HTTP 400 / code 9. The current bridge allowlist has no supply-order list alias from which to discover a real supply-order id automatically.
 
+Test 8.3 proves `supply_order_details` requires `params.order_id` and rejects omission locally with zero physical business requests.
+
 ## Next planned live test
 
-8.3 — inspect the remaining allowlisted `supply_order_details` operation through a zero-request contract guard to learn its exact required parameter(s) without inventing a schema or sending a malformed provider request.
+8.4 — execute `supply_order_details` with a syntactically valid synthetic int64-shaped `order_id` to verify that the command crosses the bridge validation boundary and reaches Ozon exactly once. This is a provider-boundary check only; it cannot be a positive business-data PASS without a real supply-order id.
