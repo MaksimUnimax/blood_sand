@@ -1,0 +1,58 @@
+name: Ozon composer-wait regression
+
+on:
+  push:
+    branches:
+      - dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18
+    paths:
+      - '.github/workflows/ozon-composer-wait-regression.yml'
+      - 'tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/**'
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+
+      - name: Reconstruct current candidate and run targeted regression
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ROOT="$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller"
+          ARTIFACT="$ROOT/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip"
+          REPAIR="$ROOT/development/manual-delivery-composer-wait"
+          WORK="$RUNNER_TEMP/ozon-composer-wait-regression"
+          CANDIDATE="$WORK/candidate"
+          PATCH="$WORK/MANUAL_DELIVERY_COMPOSER_WAIT.patch"
+
+          rm -rf "$WORK"
+          mkdir -p "$CANDIDATE"
+
+          echo 'd794e9fe8550dcf20d76d63abf7832d9b28853ad6d7c8e94faa22a3c08a46a2c  '"$ARTIFACT" | sha256sum -c -
+          unzip -q "$ARTIFACT" -d "$CANDIDATE"
+
+          echo '34a84f66284f5aa5f77b9b7cda23d5ddb2431c7b30114cd5fe927798c31e957a  '"$CANDIDATE/service_worker.js" | sha256sum -c -
+          echo 'd95d2ca040c37f688d33c2caac8a78d95389b8e7acd41fcf11f8e0b4dc59e001  '"$CANDIDATE/content_script.js" | sha256sum -c -
+
+          cat "$REPAIR/patch-parts/00.patch.part" "$REPAIR/patch-parts/01.patch.part" > "$PATCH"
+          test "$(wc -c < "$PATCH")" -eq 13648
+          echo 'bd0119212a21c63fbbc2a6d0067c0c19abcf31896007e8f8d3e19efa8255019d  '"$PATCH" | sha256sum -c -
+
+          git -C "$CANDIDATE" init -q
+          git -C "$CANDIDATE" -c core.autocrlf=false apply --check "$PATCH"
+          git -C "$CANDIDATE" -c core.autocrlf=false apply "$PATCH"
+
+          echo 'dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac  '"$CANDIDATE/service_worker.js" | sha256sum -c -
+          echo 'ab3408a2637153fa324f0b679ac5452b9b7ae0182f5ccf4f0397ccd960857dda  '"$CANDIDATE/content_script.js" | sha256sum -c -
+
+          node --check "$CANDIDATE/service_worker.js"
+          node --check "$CANDIDATE/content_script.js"
+          node --check "$REPAIR/RUN_TARGETED_COMPOSER_WAIT_REGRESSION.mjs"
+          node "$REPAIR/RUN_TARGETED_COMPOSER_WAIT_REGRESSION.mjs" "$CANDIDATE"
+
+          echo 'OZON_COMPOSER_WAIT_REGRESSION_PASS'
