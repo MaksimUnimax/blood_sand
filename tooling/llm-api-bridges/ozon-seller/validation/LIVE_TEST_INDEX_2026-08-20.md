@@ -22,6 +22,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 8.4 | `supply_order_details` | syntactically valid synthetic `order_id`; real provider request | PARTIAL PASS / provider-negative | `validation/live-results/8.4-supply-order-details-provider-negative-2026-08-20.md` |
 | 8.5 | `supply_order_get` | 51 `order_ids` exceeds documented maximum 50 | PASS (negative guard) | `validation/live-results/8.5-supply-order-get-max-50-order-ids-guard-2026-08-20.md` |
 | 9.1 | `posting_fbo_list` | `limit=101` exceeds maximum 100 | PASS (negative guard) | `validation/live-results/9.1-posting-fbo-limit-max-guard-2026-08-20.md` |
+| 9.2 | `posting_fbo_list` | request period exceeds one year | PASS (negative guard) | `validation/live-results/9.2-posting-fbo-period-over-one-year-guard-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -41,6 +42,8 @@ Test 8.5 proves `supply_order_get` enforces the documented maximum of 50 `order_
 
 Test 9.1 proves `posting_fbo_list` enforces `limit <= 100` locally: `limit=101` produces `OZON_LIMIT_VIOLATION` with zero physical business requests and no external Ozon request.
 
+Test 9.2 proves `posting_fbo_list` rejects a filter period longer than one year locally with `OZON_LIMIT_VIOLATION`, zero physical business requests and no external Ozon request.
+
 ## Next planned live test
 
-9.2 — verify the documented maximum request period for `posting_fbo_list`: a filter window clearly longer than one year must be rejected before any external Ozon request.
+9.3 — verify the documented upper bound for `stocks_current.limit`: `limit=1001` must be rejected locally before any external Ozon request because the supported range is 1..1000.
