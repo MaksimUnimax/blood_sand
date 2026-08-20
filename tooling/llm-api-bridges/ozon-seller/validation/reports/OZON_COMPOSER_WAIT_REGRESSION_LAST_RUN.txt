@@ -1,6 +1,6 @@
-status=failure
-tested_commit=28234b75eeddb0f540a3c2917c6d7f23c8d61ac2
-run_id=32333261796
+status=success
+tested_commit=3da987e71375fde10b78114a04987d388460007d
+run_id=32333391574
 --- output ---
 /home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip: OK
 /home/runner/work/_temp/ozon-composer-wait-regression/candidate/service_worker.js: OK
@@ -11,6 +11,7 @@ run_id=32333261796
 /home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/validation/full-gate/composer-wait-browser-parts/00.mjs.part: OK
 /home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/validation/full-gate/composer-wait-browser-parts/01.mjs.part: OK
 /home/runner/work/_temp/ozon-composer-wait-regression/OZON_COMPOSER_WAIT_BROWSER_HARNESS.mjs: OK
+/home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/validation/regression/OZON_COMPOSER_WAIT_BROWSER_HARNESS.mjs: OK
 OZON_GENERIC_SESSION_LAUNCHER_SHA256=475e4c2b2f99b0813a35fb93b29a1bf106d789461a53dd2dc30979be500724e6
 OZON_WINDOWS_AUTHORITY_BYTES_PRECHECK_PASS
 TARGETED_MANUAL_OFF_ON_READY_WITH_QUOTA_PRESERVED_PASS
@@ -29,15 +30,3 @@ TARGETED_COMPOSER_WAIT_REGRESSION_PASS
 TARGETED_MISSING_COMPOSER_ENTERS_WAIT_PASS
 TARGETED_COMPOSER_WAIT_REGRESSION_PASS
 OZON_COMPOSER_WAIT_REGRESSION_PASS
-V3B_ACTUAL_MANUAL_PUBLIC_STATE_PASS
-V3B_ACTUAL_AUTORUN_PUBLIC_STATE_PASS
-V3B_ACTUAL_PUBLIC_STATE_PRIVACY_PASS
-file:///home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/validation/regression/V3_WORKER_ACTUAL_PATH_HARNESS_CURRENT.mjs:105
-  throw new Error('waitFor timeout');
-        ^
-
-Error: waitFor timeout
-    at waitFor (file:///home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/validation/regression/V3_WORKER_ACTUAL_PATH_HARNESS_CURRENT.mjs:105:9)
-    at async file:///home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/validation/regression/V3_WORKER_ACTUAL_PATH_HARNESS_CURRENT.mjs:167:15
-
-Node.js v24.12.0
