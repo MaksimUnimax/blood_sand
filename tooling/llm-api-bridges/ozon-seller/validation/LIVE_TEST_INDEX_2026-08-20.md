@@ -108,3 +108,16 @@ Test 10.5 shows the same missing local array-shape validation for `filter.produc
 ## Next planned live test
 
 11.4 — probe type validation for `analytics_data.metrics` by supplying a scalar string instead of the documented array shape. A strict bridge should reject it locally before capability probing and before any external Ozon request. Record whether it produces a field-level error or repeats the generic `NO_OZON_COMMANDS` diagnostic gap.
+
+---
+
+## Append-only final observation — 11.4
+
+| ID | Operation/surface | Scenario | Status | Evidence file |
+|---|---|---|---|---|
+| 11.4 | ChatGPT Work mode / Manual delivery readiness | after the first delivery, expected completion Voice/Microphone control is absent; composer remains at dictation microphone + disabled Send, Manual operation stays busy and all Ozon buttons remain disabled | BUG / DEFERRED REPAIR | `validation/live-results/11.4-work-mode-manual-ready-recovery-bug-2026-08-20.md` |
+
+Test 11.4 establishes a Work-mode UI-compatibility gap in the downstream delivery completion classifier. Initial state synchronization enables the first Ozon action because no Manual operation is active. Manual batch admission then sets the bridge busy. Work mode does not return the terminal Voice/Microphone-ready control expected by the current classifier, so the completed delivery is not acknowledged back to `ready=true`; the global Manual bridge remains busy and every Ozon block action stays disabled.
+
+This observation is append-only and intentionally left unfixed during the current live-test pass. The deferred repair must add focused Work-mode composer/control-state coverage without weakening exactly-once delivery or treating the persistent dictation microphone as delivery completion.
+
