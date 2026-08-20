@@ -15,7 +15,12 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 7.7 | `posting_fbo_list` | pagination page 2 from exact 7.6 cursor; forward movement/no duplicate | PASS | `validation/live-results/7.7-posting-fbo-pagination-page2-2026-08-20.md` |
 | 7.8 | `posting_fbo_list` | pagination page 3 from exact 7.7 cursor; third distinct posting and fresh cursor | PASS | `validation/live-results/7.8-posting-fbo-pagination-page3-2026-08-20.md` |
 | 7.9 | `posting_fbo_list` | pagination page 4 from exact 7.8 cursor; fourth distinct posting and fresh cursor | PASS | `validation/live-results/7.9-posting-fbo-pagination-page4-2026-08-20.md` |
+| 7.10 | `posting_fbo_list` | pagination page 5 from exact 7.9 cursor; fifth distinct posting and fresh cursor | PASS | `validation/live-results/7.10-posting-fbo-pagination-page5-2026-08-20.md` |
+
+## Bounded FBO pagination conclusion
+
+Tests 7.6–7.10 establish five consecutive live pages with distinct postings, forward provider-cursor movement, HTTP 200 and one physical business request per page. No duplicate posting appeared in the tested five-page chain.
 
 ## Next planned live test
 
-7.10 — continue `posting_fbo_list` from the exact provider cursor returned by 7.9 with the same window and `limit=1`; verify page 5 is distinct from pages 1–4. Five consecutive distinct live pages will complete the bounded FBO cursor-chain check.
+Move away from FBO repetition. Inspect the exact implemented contract for another allowlisted ordinary-account read operation, then execute one valid live request using only its verified parameter schema.
