@@ -29,6 +29,19 @@ const PROVIDER_FETCH_PATTERNS = [
   { urlPattern: 'https://api-performance.ozon.ru/*', requestStage: 'Request' },
 ];
 
+let ownedChromePid = null;
+let sessionReady = false;
+process.on('exit', () => {
+  if (sessionReady || !ownedChromePid || process.platform !== 'win32') return;
+  try {
+    spawnSync('taskkill', ['/PID', String(ownedChromePid), '/T', '/F'], {
+      shell: false,
+      windowsHide: true,
+      stdio: 'ignore',
+    });
+  } catch {}
+});
+
 function fail(message) {
   throw new Error(message);
 }
@@ -340,6 +353,7 @@ const child = spawn(chromeExe, chromeArgs, {
   shell: false,
   stdio: ['ignore', stdoutFd, stderrFd],
 });
+ownedChromePid = child.pid;
 closeSync(stdoutFd);
 closeSync(stderrFd);
 child.unref();
@@ -463,6 +477,7 @@ const metadata = {
 
 const metadataPath = path.join(sessionRoot, 'session.json');
 writeFileSync(metadataPath, JSON.stringify(metadata, null, 2) + '\n', 'utf8');
+sessionReady = true;
 console.log(JSON.stringify({
   marker: 'OZON_GENERIC_SESSION_READY',
   metadataPath,
