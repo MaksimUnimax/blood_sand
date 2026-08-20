@@ -1,3 +1,61 @@
+# Final missing-evidence completion
+
+- tested_target = `14829f418068e40d76c5d992ff9158c4faebbbd0`
+- carried_exact_target_evidence = PASS
+- manual_off_actual_cancellation_carried = PASS
+- manual_off_visual_cleanup_carried = PASS
+- manual_off_late_clear_protection_carried = PASS
+- focused_worker_state_validation = PASS
+- wrong_owner_exclusion = PASS
+- two_owner_browser_isolation = PASS
+- REAL_OZON_REQUESTS = 0
+- REAL_PERFORMANCE_REQUESTS = 0
+- OPERATOR_BROWSER_ACTIONS = 0
+- production_modifications = 0
+
+## Carried exact-target product evidence
+
+The unchanged exact target carries forward candidate integrity, canonical targeted regression, the installed-extension occupied-composer plate/insert-once/Send-Microphone/native-Copy evidence, missing-composer recovery, reload restore/no-provider-replay/no-duplicate-insert evidence, and targeted quota/cache and owner-isolation preservation. The prior installed-extension Manual OFF path already reached actual pending-operation cancellation, visual wait cleanup, late-clear protection, and quota/cache preservation. Those successful product assertions are retained; the later unrelated synthetic popup ON observation timeout is not reclassified as a product failure.
+
+## Focused worker/state completion
+
+A new temporary independent VM harness loaded the reconstructed repaired `service_worker.js` with SHA-256 `dfc101f6d1840af89b7dc48b6082f43b26c8143ed96086bc19ab0dfd36c21fac`. It used the actual runtime listener and `OZ_SET_MANUAL_MODE` / `OZ_GET_MANUAL_STATE` paths, plus the actual `commitManualBatchDeliveryInsert(...)` function. It created Manual owner A (claimed pre-insert delivery), independent Manual owner B, independent Autorun owner C, a real quota `next_allowed_at`, and result-cache state.
+
+- `FOCUSED_WORKER_MANUAL_OFF_CANCEL_PASS`
+- `FOCUSED_WORKER_QUOTA_CACHE_PRESERVED_PASS`
+- `FOCUSED_WORKER_OTHER_MANUAL_OWNER_PRESERVED_PASS`
+- `FOCUSED_WORKER_AUTORUN_OWNER_PRESERVED_PASS`
+- `FOCUSED_WORKER_OFF_ON_READY_PASS`
+- `FOCUSED_WORKER_OFF_ON_NO_RESURRECT_PASS`
+- `FOCUSED_WORKER_NONCANCELLABLE_STATES_PRESERVED_PASS`
+- `FOCUSED_WORKER_STALE_INSERT_BLOCKED_PASS` — stale insert returned `insert_allowed=false`, `code=MANUAL_MODE_DISABLED`.
+- `FOCUSED_WORKER_ZERO_PROVIDER_CALLS_PASS`
+- `FOCUSED_COMPOSER_WAIT_WORKER_STATE_PASS`
+
+Manual OFF removed only A's claimed pending operation, preserved B's Manual operation and C's Autorun business state, preserved quota/cache values including `next_allowed_at`, and made zero provider calls. Re-enabling A reported `enabled=true`, `ready=true`, `manual_operation_active=false` and did not resurrect the cancelled operation. `insert_committed` and `inserted` operations were independently preserved by OFF.
+
+## Wrong-owner / two-owner browser completion
+
+A fresh validation-owned CFT root `22384` was produced by the unchanged accepted `D:\\codex\\Test\\qa-harness\\puppeteer-extension-qa\\launch-cft.mjs` launcher. One Puppeteer connection installed the exact reconstructed candidate once, then executed only the two synthetic ChatGPT-tab isolation case. No service-worker target acquisition/attachment, ServiceWorker command, custom Chrome spawn, `/json/new`, extension reinstall, or popup Manual OFF/ON action was used. The root and only its descendants were terminated after completion.
+
+- `FULL_BROWSER_OWNER_A_AUTHORITY_PASS`
+- `FULL_BROWSER_WRONG_OWNER_B_REJECTED_PASS`
+- `FULL_BROWSER_WRONG_OWNER_CLEAR_IGNORED_PASS`
+- `FULL_BROWSER_OWNER_A_STILL_PENDING_PASS`
+- `FULL_BROWSER_OWNER_A_INSERT_ONCE_PASS`
+- `FULL_BROWSER_NO_CROSS_OWNER_INSERT_PASS`
+- `FULL_BROWSER_TWO_OWNER_ISOLATION_PASS`
+
+Owner A was the sole persisted pending-delivery owner. Changing, clearing, and mutating valid ChatGPT-shaped composer B neither displayed nor sent A's report and did not consume/cancel A's claimed delivery. A then cleared its own composer and received exactly one `OWNER_A_REPORT` insertion; B still had no report. Provider interception observed zero Ozon/Performance requests. No operator browser action was performed.
+
+## Final verdict
+
+`COMPOSER_WAIT_STAGE_ACCEPTED`
+
+No actual product assertion failed. Temporary worker/browser harnesses and the reconstructed candidate were local validation artifacts only and were not committed. This update commits only this existing report.
+
+---
+
 # Completion rerun — single-install accepted lifecycle
 
 - tested_target = `14829f418068e40d76c5d992ff9158c4faebbbd0`
