@@ -1,6 +1,6 @@
 status=failure
-tested_commit=d1dc48ead34fa75abf83cdc783ac99b741f3f5c6
-run_id=32332856574
+tested_commit=f710f06f86df73a70b27429abcad31e67a1420ff
+run_id=32332931320
 --- output ---
 /home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_TESTED_FROZEN_REPAIR_66bc4ac.zip: OK
 /home/runner/work/_temp/ozon-composer-wait-regression/candidate/service_worker.js: OK
@@ -35,4 +35,4 @@ Error: waitFor timeout
     at waitFor (file:///home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/validation/regression/V3_WORKER_ACTUAL_PATH_HARNESS_CURRENT.mjs:103:9)
     at async file:///home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/validation/regression/V3_WORKER_ACTUAL_PATH_HARNESS_CURRENT.mjs:165:15
 
-Node.js v22.23.2
+Node.js v24.12.0
