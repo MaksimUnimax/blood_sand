@@ -33,6 +33,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 9.10 | `product_queries_details` | `page=-1` is below minimum 0 | PASS (negative guard) | `validation/live-results/9.10-product-queries-details-page-min-guard-2026-08-20.md` |
 | 9.11 | `stocks_current` | `limit=0` is below minimum 1 | PASS (negative guard) | `validation/live-results/9.11-stocks-current-limit-min-guard-2026-08-20.md` |
 | 9.12 | `analytics_data` | `limit=0` is below minimum 1 | PASS (negative guard) | `validation/live-results/9.12-analytics-data-limit-min-guard-2026-08-20.md` |
+| 9.13 | `posting_fbo_list` | `limit=0` is below minimum 1 | PASS (negative guard) | `validation/live-results/9.13-posting-fbo-limit-min-guard-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -53,6 +54,8 @@ Test 8.5 proves `supply_order_get` enforces the documented maximum of 50 `order_
 Test 9.1 proves `posting_fbo_list` enforces `limit <= 100` locally: `limit=101` produces `OZON_LIMIT_VIOLATION` with zero physical business requests and no external Ozon request.
 
 Test 9.2 proves `posting_fbo_list` rejects a filter period longer than one year locally with `OZON_LIMIT_VIOLATION`, zero physical business requests and no external Ozon request.
+
+Test 9.13 proves `posting_fbo_list` enforces `limit >= 1` locally: `limit=0` produces `OZON_LIMIT_VIOLATION`, zero physical business requests and no external Ozon request.
 
 ## Other local limit guards
 
@@ -78,4 +81,4 @@ Test 9.12 proves `analytics_data` enforces `limit >= 1` locally: `limit=0` with 
 
 ## Next planned live test
 
-9.13 — verify the documented lower bound for `posting_fbo_list.limit`. Submit `limit=0` with an otherwise valid recent filter; it must fail during command discovery before any external Ozon request.
+10.1 — investigate the unresolved `stocks_current` filter-schema boundary with an unmistakably unknown filter key. The documented bridge/provider contract only establishes `filter.offer_id` and `filter.product_id`; a made-up field should be rejected locally if the bridge strictly enforces the filter schema. If it is accepted and reaches Ozon, record that behavior as a contract-boundary validation gap rather than claiming filter semantics.
