@@ -38,6 +38,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 10.2 | `stocks_current` | valid documented `filter.offer_id` with a known live offer | PASS | `validation/live-results/10.2-stocks-current-offer-id-filter-pass-2026-08-20.md` |
 | 10.3 | `stocks_current` | valid documented `filter.product_id` with a known live product | PASS | `validation/live-results/10.3-stocks-current-filter-product-id-pass-2026-08-20.md` |
 | 10.4 | `stocks_current` | scalar `filter.offer_id` instead of array; local type boundary | VALIDATION GAP | `validation/live-results/10.4-stocks-current-offer-id-type-validation-gap-2026-08-20.md` |
+| 10.5 | `stocks_current` | scalar `filter.product_id` instead of array; local type boundary | VALIDATION GAP | `validation/live-results/10.5-stocks-current-product-id-scalar-validation-gap-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -93,6 +94,8 @@ Test 10.3 confirms the documented `filter.product_id` path works live: the bridg
 
 Test 10.4 shows that `stocks_current` also does not enforce the documented array shape for `filter.offer_id` locally. A scalar string was accepted unchanged and sent as one physical business request; Ozon rejected the request with HTTP 400 / code `3`. This is a bridge-side type-validation gap, not a provider success.
 
+Test 10.5 shows the same missing local array-shape validation for `filter.product_id`: a scalar string was accepted unchanged and sent as one physical business request; Ozon rejected it with HTTP 400 / code `3`. Together, 10.1, 10.4 and 10.5 establish that the current `stocks_current.filter` boundary is not strict for unknown keys or the documented array shape.
+
 ## Next planned live test
 
-10.5 — probe type validation for `stocks_current.filter.product_id` by supplying a scalar string instead of the documented array shape. A strict bridge should reject it locally; if it reaches Ozon, record the exact provider behavior without assuming semantics.
+11.1 — verify the documented lower bound `analytics_data.offset >= 0`. Submit `offset=-1` with otherwise valid recent universal analytics parameters. It should be rejected locally before capability probing and before any external Ozon request.
