@@ -27,6 +27,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 9.4 | `analytics_data` | `limit=1001` exceeds maximum 1000 | PASS (negative guard) | `validation/live-results/9.4-analytics-data-limit-max-guard-2026-08-20.md` |
 | 9.5 | `analytics_data` | 15 metrics exceeds maximum 14 | PASS (negative guard) | `validation/live-results/9.5-analytics-data-max-14-metrics-guard-2026-08-20.md` |
 | 9.6 | `product_queries` | `page_size=1001` exceeds maximum 1000 | PASS (negative guard) | `validation/live-results/9.6-product-queries-page-size-max-guard-2026-08-20.md` |
+| 9.7 | `product_queries_details` | `page_size=101` exceeds maximum 100 | PASS (negative guard) | `validation/live-results/9.7-product-queries-details-page-size-max-guard-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -58,6 +59,8 @@ Test 9.5 proves `analytics_data` enforces a maximum of 14 metrics locally: 15 me
 
 Test 9.6 proves `product_queries` enforces `page_size <= 1000` locally: `page_size=1001` with a real known SKU produces `OZON_LIMIT_VIOLATION`, zero physical business requests, no capability probe and no external Ozon request. The Premium-dependent provider endpoint is not exercised by this guard test.
 
+Test 9.7 proves `product_queries_details` enforces `page_size <= 100` locally: `page_size=101` with a real known SKU and otherwise syntactically valid recent params produces `OZON_LIMIT_VIOLATION`, zero physical business requests, no capability probe and no external Ozon request.
+
 ## Next planned live test
 
-9.7 — verify the documented `product_queries_details.page_size <= 100` guard using the same real known SKU and otherwise syntactically valid recent params. `page_size=101` must fail during command discovery before capability probing or any external Ozon request.
+9.8 — verify the documented `product_queries_details.limit_by_sku <= 15` guard using the same real known SKU and otherwise valid recent params. `limit_by_sku=16` must fail during command discovery before capability probing or any external Ozon request.
