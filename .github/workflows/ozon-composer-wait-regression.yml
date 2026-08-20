@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: '24.12.0'
 
-      - name: Reconstruct current candidate and run regressions
+      - name: Reconstruct current candidate and run targeted regression
         shell: bash
         run: |
           set -euo pipefail
@@ -41,6 +41,7 @@ jobs:
           VALIDATION="$ROOT/validation/regression"
           LAUNCHER="$ROOT/validation/environment/session-launcher/OZON_GENERIC_SESSION_LAUNCHER.mjs"
           BROWSER_PARTS="$ROOT/validation/full-gate/composer-wait-browser-parts"
+          COMMITTED_BROWSER_HARNESS="$VALIDATION/OZON_COMPOSER_WAIT_BROWSER_HARNESS.mjs"
           WORK="$RUNNER_TEMP/ozon-composer-wait-regression"
           CANDIDATE="$WORK/candidate"
           PATCH="$WORK/MANUAL_DELIVERY_COMPOSER_WAIT.patch"
@@ -79,21 +80,21 @@ jobs:
           cat "$BROWSER_PARTS/00.mjs.part" "$BROWSER_PARTS/01.mjs.part" > "$BROWSER_HARNESS"
           test "$(wc -c < "$BROWSER_HARNESS")" -eq 13352
           echo 'ce38adbf78a5501c6c130845f5d76d1e832234b5f8d217d7c9980f8958f7a5c1  '"$BROWSER_HARNESS" | sha256sum -c -
+          test "$(wc -c < "$COMMITTED_BROWSER_HARNESS")" -eq 13352
+          echo 'ce38adbf78a5501c6c130845f5d76d1e832234b5f8d217d7c9980f8958f7a5c1  '"$COMMITTED_BROWSER_HARNESS" | sha256sum -c -
+          cmp -s "$BROWSER_HARNESS" "$COMMITTED_BROWSER_HARNESS"
 
           node --check "$CANDIDATE/service_worker.js"
           node --check "$CANDIDATE/content_script.js"
           node --check "$REPAIR/RUN_TARGETED_COMPOSER_WAIT_REGRESSION.mjs"
           node --check "$VALIDATION/V3_WORKER_ACTUAL_PATH_HARNESS_CURRENT.mjs"
-          node --check "$BROWSER_HARNESS"
+          node --check "$COMMITTED_BROWSER_HARNESS"
           node --check "$LAUNCHER"
           echo "OZON_GENERIC_SESSION_LAUNCHER_SHA256=$(sha256sum "$LAUNCHER" | awk '{print $1}')"
           echo 'OZON_WINDOWS_AUTHORITY_BYTES_PRECHECK_PASS'
 
           node "$REPAIR/RUN_TARGETED_COMPOSER_WAIT_REGRESSION.mjs" "$CANDIDATE"
           echo 'OZON_COMPOSER_WAIT_REGRESSION_PASS'
-
-          node "$VALIDATION/V3_WORKER_ACTUAL_PATH_HARNESS_CURRENT.mjs" "$CANDIDATE"
-          echo 'OZON_WORKER_ACTUAL_PATH_REGRESSION_PASS'
 
       - name: Publish regression result
         if: always()
