@@ -1,0 +1,17 @@
+# Ozon Bridge v0.1.19 — live test index, 2026-08-20
+
+Account boundary: ordinary Seller account; positive Premium-only scenarios are not claimed.
+
+This index is maintained alongside the main ledger and individual per-result evidence files.
+
+| ID | Operation/surface | Scenario | Status | Evidence file |
+|---|---|---|---|---|
+| 7.1 | `roles` | ordinary-account live role list | PASS | `validation/live-results/2026-08-20-step-7.1-roles.md` |
+| 7.2 | `posting_fbo_list` | basic real FBO postings over 2026-08-18..2026-08-20 | PASS | `validation/live-results/07-02-posting-fbo-list-basic-pass-2026-08-20.md` |
+| 7.3 | `posting_fbo_list` | filter by exact `posting_numbers` | PASS | `validation/live-results/TEST_7_3_POSTING_FBO_FILTER_POSTING_NUMBER_2026-08-20.md` |
+| 7.4 | `posting_fbo_list` | filter by exact `order_numbers` | PASS | `validation/live-tests/7.4-posting-fbo-order-numbers-pass.md` |
+| 7.5 | `posting_fbo_list` | valid request with no matching order | PASS | `validation/live-results/7.5-posting-fbo-empty-result-2026-08-20.md` |
+
+## Next planned live test
+
+7.6 — `posting_fbo_list` with the same known-good date window and `limit=1`, to force a real first pagination page and capture the provider cursor before attempting continuation.
