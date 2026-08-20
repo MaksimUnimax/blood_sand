@@ -20,7 +20,7 @@ import { createRequire } from 'node:module';
 const REQUIRED_NODE = 'v24.12.0';
 const REQUIRED_PUPPETEER = '25.4.0';
 const REQUIRED_CFT_FILES = 308;
-const REQUIRED_CFT_DIGEST = 'd7b8a2b0c29abcbfba85ea3296097af3bef45c0b2b60c98055d523b9c';
+const REQUIRED_CFT_DIGEST = 'd7b8a2b0c29abcbfba6a0ebfa85ea3296097af3bef45c0b2b60c98055d523b9c';
 const DEFAULT_QA_ROOT = 'D:\\codex\\Test\\qa-harness\\puppeteer-extension-qa';
 const DEFAULT_CFT_RELATIVE = path.join('chrome', 'win64-151.0.7922.47', 'chrome-win64');
 const SYNTHETIC_CHATGPT_URL = 'https://chatgpt.com/c/00000000-0000-4000-8000-000000000019';
