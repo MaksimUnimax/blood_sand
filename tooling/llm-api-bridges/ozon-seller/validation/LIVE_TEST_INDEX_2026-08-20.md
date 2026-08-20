@@ -32,6 +32,7 @@ This index is maintained alongside the main ledger and individual per-result evi
 | 9.9 | `product_queries` | `page=-1` is below minimum 0 | PASS (negative guard) | `validation/live-results/9.9-product-queries-page-min-guard-2026-08-20.md` |
 | 9.10 | `product_queries_details` | `page=-1` is below minimum 0 | PASS (negative guard) | `validation/live-results/9.10-product-queries-details-page-min-guard-2026-08-20.md` |
 | 9.11 | `stocks_current` | `limit=0` is below minimum 1 | PASS (negative guard) | `validation/live-results/9.11-stocks-current-limit-min-guard-2026-08-20.md` |
+| 9.12 | `analytics_data` | `limit=0` is below minimum 1 | PASS (negative guard) | `validation/live-results/9.12-analytics-data-limit-min-guard-2026-08-20.md` |
 
 ## Bounded FBO pagination conclusion
 
@@ -73,6 +74,8 @@ Test 9.10 proves `product_queries_details` enforces `page >= 0` locally: `page=-
 
 Test 9.11 proves `stocks_current` enforces `limit >= 1` locally: `limit=0` produces `OZON_LIMIT_VIOLATION`, zero physical business requests, no capability probe and no external Ozon request.
 
+Test 9.12 proves `analytics_data` enforces `limit >= 1` locally: `limit=0` with otherwise valid recent universal analytics params produces `OZON_LIMIT_VIOLATION`, zero physical business requests, no capability probe and no external Ozon request.
+
 ## Next planned live test
 
-9.12 — verify the documented lower bound for `analytics_data.limit`. Submit `limit=0` with otherwise valid recent universal analytics params; it must fail during command discovery before capability probing or any external Ozon request.
+9.13 — verify the documented lower bound for `posting_fbo_list.limit`. Submit `limit=0` with an otherwise valid recent filter; it must fail during command discovery before any external Ozon request.
