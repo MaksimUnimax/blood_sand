@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   cleanup:
-    if: github.event.pull_request.head.ref == 'validation/ozon-resolved-pre-operator-full-gate-2026-08-19'
+    if: github.event.pull_request.head.ref == 'dev/ozon-v0.1.19-manual-delivery-composer-wait-2026-08-18'
     runs-on: ubuntu-latest
     steps:
       - name: Delete retired validation ref via GitHub API
