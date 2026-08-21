@@ -1,0 +1,18 @@
+Ozon Bridge v0.1.19 Work composer control lifecycle correction
+
+Base artifact commit: 2c94ef1f29d874eab065cfd6819d1eed3f1089db
+Base artifact: OZON_BRIDGE_v0.1.19_WORK_COMPOSER_CONTROL_FIX_2026-08-21.zip
+Correction scope: content_script.js only
+Production inventory: 17 files
+content_script.js SHA-256: 193d16562ed89580b2fa34b030390b727828055d0e15beb4dcbef35da052a64e
+service_worker.js SHA-256: 47dcdd04b8a795e5bda5af77fe3ba62748cbde991395b7f1a2253f872249c8ba
+Archive SHA-256: 232389f1bfbe2a78c5ea41d78d0942b0b7d6bb872cdea296f75326c72c0da901
+
+Validation:
+- Targeted composer-wait regression PASS.
+- Synthetic ChatGPT Work fixture PASS: persistent dictation mic ignored; Work submit selected through aria-disabled transition; three consecutive Manual deliveries complete without DELIVERY_ABORTED/manual_ui_disabled.
+- Manual OFF/ON rebuilds content-script UI only. The original service-worker target, quota state, cache state, provider history, autorun state, and alarms remain unchanged.
+- Fresh extraction byte verification PASS for all 17 files.
+- REAL_OZON_REQUESTS=0
+- REAL_PERFORMANCE_REQUESTS=0
+- REAL_CHATGPT_REQUESTS=0
