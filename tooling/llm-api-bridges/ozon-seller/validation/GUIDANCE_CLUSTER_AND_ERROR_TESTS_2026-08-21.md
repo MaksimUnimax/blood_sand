@@ -156,3 +156,4 @@ The new functionality passes only when:
 
 | UTC time | Test ID | Result | `external_request_executed` / physical requests | Exact observed result / evidence | Next action |
 |---|---|---|---|---|---|
+| 2026-08-21 (time not recorded) | A1 | PASS | false / 0 | `UNKNOWN_TOP_LEVEL_FIELD` preserved; `OZON_GUIDANCE_RESULT_V1`; `cluster_identified`; `sales_analytics`; only `analytics_data`; `capability_probe.performed=false`; no Ozon business data. | Continue with A2. |
