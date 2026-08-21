@@ -122,3 +122,74 @@ Test 11.4 establishes a Work-mode UI-compatibility gap in the downstream deliver
 This observation is append-only and intentionally left unfixed during the current live-test pass. The deferred repair must add focused Work-mode composer/control-state coverage without weakening exactly-once delivery or treating the persistent dictation microphone as delivery completion.
 
 The earlier next-planned `analytics_data.metrics` probe was not executed. This appended Work-mode blocker takes the final 11.4 position; the metrics probe is deferred until after the Work-mode readiness repair and must receive a new test ID when resumed.
+
+
+---
+
+## Append-only checkpoint — 2026-08-21 Work repair and analytics continuation
+
+Work-mode delivery blocker 11.4 was repaired by production artifact `OZON_BRIDGE_v0.1.19_WORK_COMPOSER_CONTROL_LIFECYCLE_FIX_2026-08-21.zip` (SHA-256 `232389f1bfbe2a78c5ea41d78d0942b0b7d6bb872cdea296f75326c72c0da901`; commit `4d8856175141c00caf638d5b8311d7d4deff1abb`). Live Work verification completed three consecutive `stocks_current` deliveries with HTTP 200, one physical request each, and restored clickable Ozon buttons after each delivery. No worker/scheduler reset was used.
+
+| ID | Operation/surface | Scenario | Status | Evidence file |
+|---|---|---|---|---|
+| 11.5 | `analytics_data` | metrics scalar | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.6 | `analytics_data` | filters scalar | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.7 | `analytics_data` | filters scalar element | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.8 | `analytics_data` | invalid date_from format | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.9 | `analytics_data` | invalid date_to format | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.10 | `analytics_data` | date_from later than date_to | VALIDATION GAP / provider rate-limit | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.11 | `analytics_data` | missing date_from | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.12 | `analytics_data` | missing date_to | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.13 | `analytics_data` | missing metrics | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.14 | `analytics_data` | missing dimension | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.15 | `analytics_data` | empty metrics array | VALIDATION GAP / provider-negative | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.16 | `analytics_data` | limit scalar string | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.17 | `analytics_data` | offset scalar string | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.18 | `analytics_data` | metrics numeric element | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.19 | `analytics_data` | dimension numeric element | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.20 | `analytics_data` | filters null element | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.21 | `analytics_data` | limit fractional number | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.22 | `analytics_data` | offset fractional number | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.23 | `analytics_data` | date_from null | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.24 | `analytics_data` | date_to null | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.25 | `analytics_data` | date_from empty string | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.26 | `analytics_data` | date_to empty string | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.27 | `analytics_data` | filters object instead of array | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.28 | `analytics_data` | metrics object instead of array | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.29 | `analytics_data` | dimension object instead of array | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.30 | `analytics_data` | empty dimension array | VALIDATION GAP / provider-negative | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.31 | `analytics_data` | date_from array | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.32 | `analytics_data` | date_to array | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.33 | `analytics_data` | sort scalar | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.34 | `analytics_data` | sort scalar element | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.35 | `analytics_data` | empty sort object | INCONCLUSIVE / provider rate-limit | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.36 | `analytics_data` | sort null element | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.37 | `analytics_data` | limit null | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.38 | `analytics_data` | offset null | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.39 | `analytics_data` | filters array element | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.40a | `analytics_data` | sort array element | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.40b | `analytics_data` | valid baseline retry | INCONCLUSIVE / provider rate-limit | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.41 | `analytics_data` | limit boolean | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.42 | `analytics_data` | offset boolean | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.43 | `analytics_data` | sort null | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.44 | `analytics_data` | sort boolean element | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.45 | `analytics_data` | sort key numeric | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.46 | `analytics_data` | sort order numeric | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.47 | `analytics_data` | sort order-only object | PASS / live HTTP 200 | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.48 | `analytics_data` | sort key null | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.49 | `analytics_data` | sort order null | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.50 | `analytics_data` | sort order empty string | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.51 | `analytics_data` | sort key empty string | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.52 | `analytics_data` | sort key-only object | INCONCLUSIVE / provider rate-limit | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.53 | `analytics_data` | sort key boolean | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.54 | `analytics_data` | sort order boolean | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.55 | `analytics_data` | sort order array | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.56 | `analytics_data` | sort key array | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.57 | `analytics_data` | sort unsupported order enum | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.58 | `analytics_data` | sort unknown key enum | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.59 | `analytics_data` | unknown metric enum | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.60 | `analytics_data` | unknown dimension enum | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.61 | `analytics_data` | empty dimension element | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+| 11.62 | `analytics_data` | empty metric element | PASS | `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md` |
+
+The detailed commands, raw outcome classification, provider request IDs, analytics rate-limit observations, positive HTTP 200 response, artifact identity and the `11.40a/11.40b` numbering clarification are in `validation/live-results/11.5-11.62-analytics-data-validation-continuation-2026-08-21.md`. These entries are append-only. The next test must allocate a new unambiguous ID after 11.62.
