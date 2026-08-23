@@ -1,0 +1,18 @@
+import fs from "node:fs";
+const root = process.argv[2]; if (!root) throw new Error("usage: node WORK_SESSION_REFRESH_REGRESSION_2026-08-23.mjs <extension-root>");
+const worker = fs.readFileSync(`${root}/service_worker.js`, "utf8"); const content = fs.readFileSync(`${root}/content_script.js`, "utf8"); const names = fs.readFileSync(`${root}/shared/runtime_names.js`, "utf8");
+const assert = (value, message) => { if (!value) throw new Error(message); };
+assert(names.includes('WORK_SESSION_RECOVERIES: "ozmb_work_session_recoveries_v1"'), "recovery storage missing");
+assert(worker.includes("async function beginWorkSessionRefresh") && worker.includes("WORK_SESSION_REFRESH_PREPARED"), "durable refresh preparation missing");
+assert(worker.includes("REQUEST_OUTCOME_UNKNOWN_NO_RETRY") && worker.includes("OPERATOR_REFRESH_BEFORE_PROVIDER"), "phase terminalization missing");
+console.log("WORK_SESSION_REFRESH_PHASE_TERMINALIZATION_PASS");
+assert(worker.includes("REFRESH_ALREADY_IN_PROGRESS") && worker.includes("chrome.runtime.reload()"), "single-flight genuine runtime renewal missing");
+console.log("WORK_SESSION_REFRESH_SINGLE_FLIGHT_AND_RUNTIME_RENEWAL_PASS");
+assert(worker.includes("async function resumeWorkSessionRecoveries") && worker.includes("new_runtime_generation: WORKER_SESSION_ID"), "new worker bootstrap proof missing");
+assert(content.includes("OZ_WORK_RUNTIME_RENEW") && content.includes("workRuntimeGeneration") && content.includes("stopManualObserver()"), "content generation teardown/handshake missing");
+console.log("WORK_SESSION_REFRESH_GENERATION_HANDSHAKE_PASS");
+assert(worker.includes("recovery.expected_visible") && worker.includes("ACTIVE_HIDDEN") && worker.includes("ACTIVE_VISIBLE"), "visible/hidden restore branch missing");
+console.log("WORK_SESSION_REFRESH_VISIBLE_HIDDEN_RESTORE_PASS");
+assert(worker.includes("resumeProviderQuotaWaits(); void resumeWorkSessionRecoveries();"), "bootstrap keeps quota state before recovery restore");
+console.log("WORK_SESSION_REFRESH_PROTECTED_SCHEDULER_PRESERVATION_PASS");
+console.log("WORK_SESSION_REFRESH_REGRESSION_PASS");
