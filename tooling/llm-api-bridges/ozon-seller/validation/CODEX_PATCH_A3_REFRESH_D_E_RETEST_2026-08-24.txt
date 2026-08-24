@@ -1,0 +1,198 @@
+You are the independent TESTER for Ozon Bridge Patch A.3 Refresh response-boundary recovery.
+
+Repository:
+MaksimUnimax/blood_sand
+
+Exact branch:
+fix/ozon-work-session-refresh-response-boundary-2026-08-24
+
+ROLE / SAFETY
+- Do NOT modify production code.
+- Do NOT author a fix.
+- Do NOT rebuild/repackage a release ZIP.
+- Temporary Puppeteer/CDP harness files and intercepted synthetic ChatGPT pages are allowed outside the candidate tree.
+- Real Ozon Seller/Performance requests must remain exactly 0.
+- Alice unavailable is environment-only and MUST NOT reject an otherwise passing candidate.
+
+READ FIRST
+1. tooling/llm-api-bridges/ozon-seller/validation/PATCH_A3_REFRESH_RESPONSE_BOUNDARY_CANDIDATE_MANIFEST_2026-08-24.md
+2. tooling/llm-api-bridges/ozon-seller/validation/PATCH_A3_REFRESH_RESPONSE_BOUNDARY_2026-08-24.patch
+3. tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_a3_refresh_response_boundary_candidate.py
+4. tooling/llm-api-bridges/ozon-seller/validation/WORK_SESSION_REFRESH_RESPONSE_BOUNDARY_REGRESSION_2026-08-24.mjs
+5. prior A.2 rejection: tooling/llm-api-bridges/ozon-seller/validation/PATCH_A2_REFRESH_WAKE_CODEX_RESULT_2026-08-24.md
+6. prior A.1 completion result: tooling/llm-api-bridges/ozon-seller/validation/PATCH_A1_COMPLETION_ONLY_CODEX_RESULT_2026-08-24.md
+
+CARRY FORWARD ACCEPTED EVIDENCE
+Use prior commits/results as accepted evidence for unchanged behavior:
+- A PASS
+- B PASS
+- C PASS
+- F PASS
+- G-control PASS
+- G3 PASS — three consecutive local `OZON_HELP_V1` deliveries
+- H PASS
+- provider requests = 0
+
+Do NOT repeat G3 or other accepted sections. Patch A.3 changes only Refresh lifecycle in `service_worker.js`.
+
+MANDATORY CANDIDATE MATERIALIZATION
+1. Record actual branch HEAD before testing.
+2. Materialize into a fresh temporary directory outside repository production tree:
+   python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_a3_refresh_response_boundary_candidate.py <repo-root> <fresh-output-dir>
+3. Require all inherited A1/A2 markers plus A3 markers:
+   PATCH_A3_A2_BASE_IDENTITY_PASS
+   PATCH_A3_RESPONSE_BOUNDARY_RELOAD_PASS
+   PATCH_A3_NO_TIMER_RUNTIME_RELOAD_PASS
+   PATCH_A3_POST_RUNTIME_TAB_RELOAD_PASS
+   PATCH_A3_SERVICE_WORKER_SHA256_PASS
+   PATCH_A3_PRODUCTION_FILE_COUNT_19_PASS
+   PATCH_A3_TREE_MANIFEST_SHA256_PASS
+4. Independently verify:
+   - production files = 19
+   - service_worker.js SHA-256 = `d882e393bf3d1e6b89b8a3bec47f858cdf3e523cdf11a2819e30c1e5b3efe770`
+   - tree-manifest SHA-256 = `ddb3cc38586191dd4d015e189847472157ff4ed00c54856f4a11ea4c1b249a21`
+5. `node --check` every production `.js` file.
+6. Run existing work-session model/refresh/finish regressions available on the branch and run:
+   node tooling/llm-api-bridges/ozon-seller/validation/WORK_SESSION_REFRESH_RESPONSE_BOUNDARY_REGRESSION_2026-08-24.mjs <candidate>
+7. Load ONLY the fresh A.3 candidate as unpacked extension.
+
+THIS RUN HAS ONLY TWO PRODUCT GATES: D AND E.
+
+COMMON SYNTHETIC CHATGPT WORK FIXTURE
+Use the same accepted Windows Chrome-for-Testing/Puppeteer substrate at a stable intercepted supported conversation URL, e.g.:
+`https://chatgpt.com/c/patch-a3-refresh-test`
+
+After every normal document load the intercepted page must reconstruct the same recognized ChatGPT Work DOM and conversation identity:
+- assistant `section[data-turn="assistant"]` with recognized Copy/code-block surface;
+- `#prompt-textarea` or `[data-testid="prompt-textarea"]`;
+- `button#composer-submit-button[data-testid="send-button"]`;
+- separate persistent dictation button.
+
+HARNESS BOUNDARY
+- The harness MUST NOT call `page.reload()`, navigate the page, reload the extension, toggle extension enablement, or manually wake the worker during D/E.
+- All extension runtime replacement and page reloads must originate from Patch A.3 production behavior.
+- Record CDP target lifecycle events and page document navigation/load events with timestamps/order.
+- Same browser tab ID and same conversation URL/identity must survive.
+
+A.3 EXPECTED ORDER
+For each Refresh:
+1. old runtime exists with old service-worker target ID and old `WORKER_SESSION_ID`;
+2. production `OZ_WORK_REFRESH` response is received successfully;
+3. response contains `ok=true`, recovery/recovery_id, `runtime_reload_scheduled=true`, `page_reload_deferred_to_new_runtime=true`, and wake-alarm status;
+4. diagnostic `WORK_SESSION_REFRESH_RUNTIME_RELOAD_ARMED` exists for that recovery before old runtime disappears;
+5. old worker target closes/becomes inactive;
+6. a new worker target for the same extension ID is observed OR a clearly distinct new worker execution context is proven, and new `WORKER_SESSION_ID` differs from old generation;
+7. only from the new generation, diagnostic `WORK_SESSION_REFRESH_POST_RUNTIME_TAB_RELOAD_SCHEDULED` appears;
+8. the SAME owner AI tab then performs its product-initiated document reload;
+9. fresh manifest content script from the renewed runtime appears;
+10. durable recovery reaches `WORK_SESSION_REFRESH_RESUMED`.
+
+A new runtime generation is mandatory. A page reload alone without new runtime generation is FAIL.
+A new runtime generation that cannot reconnect/restore the same page is also FAIL.
+
+============================================================
+D — EXPLICIT REFRESH, ACTIVE_VISIBLE
+============================================================
+
+SETUP
+1. Establish production work-session `active_visible` with command acceptance true and at least one functional extension-owned Ozon button.
+2. Record before-state:
+   - browser tab ID;
+   - URL / conversation identity / conversation key;
+   - work-session revision/state;
+   - command acceptance;
+   - Ozon button count;
+   - old service-worker target ID;
+   - old `WORKER_SESSION_ID` / runtime generation;
+   - diagnostics tail;
+   - protected quota/cache/history/no-replay snapshots.
+
+ACTION
+3. Invoke real `OZ_WORK_REFRESH` exactly once.
+4. Require the public response to arrive before/at runtime teardown and contain:
+   - `ok=true`
+   - recovery_id
+   - `runtime_reload_scheduled=true`
+   - `page_reload_deferred_to_new_runtime=true`
+   - wake-alarm status.
+5. Observe the A.3 expected order above without harness intervention.
+
+RECOVERY PROOF
+6. Require old target to cease being the active worker and new runtime generation to differ from old.
+7. Require `WORK_SESSION_REFRESH_POST_RUNTIME_TAB_RELOAD_SCHEDULED` from the new runtime generation for exact recovery_id/tab/key.
+8. Require same owner tab ID reloads only after new runtime exists; URL and conversation identity/key remain the same.
+9. Require matching `WORK_SESSION_REFRESH_RESUMED` with:
+   - old_runtime_generation = recorded old generation;
+   - new_runtime_generation = renewed generation;
+   - old != new;
+   - restored_state = `active_visible`.
+10. Require recovery removed from `ozmb_work_session_recoveries_v1`.
+11. Require final state `active_visible`, command acceptance true.
+12. Require fresh content runtime and fresh functional Ozon button(s).
+13. Require no initial prompt resend, no command replay, provider request count 0.
+14. Require protected quota/cache/history/no-replay values preserved.
+
+D is FAIL on any executed product failure above. Record exact target/runtime/diagnostic/recovery/state evidence. Do not repair.
+
+============================================================
+E — REFRESH WHILE ACTIVE_HIDDEN
+============================================================
+
+SETUP
+1. Establish fresh `active_visible` session with functional Ozon button(s).
+2. Invoke production Hide.
+3. Require `active_hidden`, command acceptance false, Ozon buttons = 0.
+4. Record same target/generation/identity/protected snapshots as D.
+
+ACTION
+5. Invoke real `OZ_WORK_REFRESH` exactly once while hidden.
+6. Require successful public response with runtime reload scheduled and page reload deferred to new runtime.
+7. Observe the exact A.3 expected order without harness intervention.
+
+RECOVERY PROOF
+8. Require new runtime generation differs from old.
+9. Require new runtime schedules same-tab document reload via `WORK_SESSION_REFRESH_POST_RUNTIME_TAB_RELOAD_SCHEDULED`.
+10. Require same tab ID and same conversation identity/key after reload.
+11. Require matching `WORK_SESSION_REFRESH_RESUMED` with restored_state = `active_hidden` and old/new generation different.
+12. Require recovery record cleared.
+13. Require final state remains `active_hidden`, command acceptance false, Ozon buttons = 0.
+14. Invoke production Show.
+15. Require `active_visible`, command acceptance true, fresh functional Ozon button(s).
+16. No prompt resend, no provider request, no quota/cache/history/no-replay reset.
+
+E is FAIL on executed product failure. Record exact evidence; do not repair.
+
+ALICE
+`NOT_EXECUTED_ENVIRONMENT_ONLY` if no established installed Alice test environment exists.
+Alice unavailability is not a rejection condition.
+
+DECISION
+If D PASS and E PASS, with carried-forward A/B/C/F/G-control/G3/H evidence and no new product failure:
+`PATCH_A3_BROWSER_CANDIDATE_ACCEPTED`
+
+If D or E executes and fails:
+`PATCH_A3_BROWSER_CANDIDATE_REJECTED`
+
+WRITE NEW RESULT ONLY
+`tooling/llm-api-bridges/ozon-seller/validation/PATCH_A3_REFRESH_RESPONSE_BOUNDARY_CODEX_RESULT_2026-08-24.md`
+
+Result must include:
+- branch and starting HEAD;
+- exact candidate hashes/materialization markers;
+- browser/Puppeteer/Node versions;
+- carried-forward evidence commits;
+- D full ordered event evidence: response timestamp, old target/generation teardown, new target/generation, new-runtime page-reload diagnostic, same-tab reload, resumed diagnostic/state;
+- E same evidence plus hidden restore/Show;
+- provider counters = 0;
+- production code modified by tester = 0;
+- Alice environment-only status;
+- final decision.
+
+Commit only that new result/evidence file to the same branch.
+
+Return only:
+1. result file path
+2. result commit SHA
+3. final decision
+4. failed PRODUCT scenarios if rejected
+5. Alice environment-only status
