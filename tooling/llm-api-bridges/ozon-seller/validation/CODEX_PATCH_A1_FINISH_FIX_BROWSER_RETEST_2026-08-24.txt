@@ -1,0 +1,192 @@
+You are the independent TESTER for Ozon Bridge Patch A.1 Finish fix.
+
+ROLE BOUNDARY
+- Do NOT modify production code.
+- Do NOT author a different fix.
+- Do NOT rebuild or repackage a release ZIP.
+- Temporary test harnesses, intercepted synthetic pages, DOM fixtures, logs and screenshots are allowed outside the production candidate tree.
+- Materializing the exact candidate tree with the repository-provided deterministic materializer is transport reconstruction, not production editing.
+- Real Ozon Seller/Performance requests must remain exactly 0.
+
+Repository:
+MaksimUnimax/blood_sand
+
+Exact branch:
+fix/ozon-work-session-finish-no-autorun-2026-08-24
+
+Read first:
+1. tooling/llm-api-bridges/ozon-seller/validation/PATCH_A1_FINISH_FIX_CANDIDATE_MANIFEST_2026-08-24.md
+2. tooling/llm-api-bridges/ozon-seller/validation/PATCH_A1_FINISH_NO_AUTORUN_2026-08-24.patch
+3. tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_a1_finish_fix_candidate.py
+4. tooling/llm-api-bridges/ozon-seller/validation/WORK_SESSION_FINISH_NO_AUTORUN_REGRESSION_2026-08-24.mjs
+5. historical R2 result: tooling/llm-api-bridges/ozon-seller/validation/PATCH_A_BROWSER_CANDIDATE_CODEX_RESULT_R2_2026-08-24.md
+
+Do not overwrite or delete any historical result.
+
+MANDATORY CANDIDATE MATERIALIZATION
+1. Fetch/checkout the exact fix branch and record HEAD.
+2. Run the repository materializer into a fresh temporary directory outside the repository production tree:
+   python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_a1_finish_fix_candidate.py <repo-root> <fresh-output-dir>
+3. Require all markers:
+   PATCH_A1_R2_BASE_IDENTITY_PASS
+   PATCH_A1_ONLY_SERVICE_WORKER_OVERLAY_PASS
+   PATCH_A1_SERVICE_WORKER_SHA256_PASS
+   PATCH_A1_PRODUCTION_FILE_COUNT_19_PASS
+   PATCH_A1_TREE_MANIFEST_SHA256_PASS
+4. Independently verify:
+   - production files = 19
+   - patched service_worker.js SHA-256 = f9cb0720f411b479a22f00cb0ba7a3553de8ae8fba62de5a27a904b6d27a287c
+   - candidate tree-manifest SHA-256 = bb3cd062be3b5839c7dc11b029ba3d661caaa78e298669742884b920c1d5df33
+5. Run `node --check` on every production .js file.
+6. Run:
+   node tooling/llm-api-bridges/ozon-seller/validation/WORK_SESSION_MODEL_REGRESSION_2026-08-21.mjs <candidate>/shared/work_session_model.js
+   node tooling/llm-api-bridges/ozon-seller/validation/WORK_SESSION_REFRESH_REGRESSION_2026-08-23.mjs <candidate>
+   node tooling/llm-api-bridges/ozon-seller/validation/WORK_SESSION_FINISH_NO_AUTORUN_REGRESSION_2026-08-24.mjs <candidate>
+7. Load ONLY the fresh materialized candidate tree as an unpacked extension.
+
+PRIMARY DEFECT RETEST — F MUST RUN FIRST
+Use an active visible ChatGPT work-session for which Autorun is absent/null. This is the exact R2 defect condition.
+
+F1. Before Finish prove:
+- work_session.state = active_visible
+- current conversation binding exists
+- Autorun for this conversation does NOT exist
+- real Ozon provider request count = 0
+
+F2. Send `OZ_WORK_FINISH` through the real production worker route.
+Require:
+- response ok=true
+- no AUTO_RUN_NOT_FOUND
+- work_session.state becomes inactive
+- current conversation binding is retired/removed
+- command acceptance is false
+- old Ozon UI/handlers are inert/removed
+- no quota/timer/cache/history/credentials reset
+- real Ozon provider request count remains 0
+
+F3. Then click/start `OZ_WORK_START` again in the same supported conversation.
+Require:
+- exactly one initial prompt is submitted
+- a fresh work-session becomes active_visible
+- no Autorun is started automatically
+
+Any failure in F1-F3 is a confirmed product REJECTED result. Do not fix it.
+
+FULL CHATGPT MATRIX AFTER F PASSES
+Do not repeat the previous incomplete synthetic substrate. The production ChatGPT adapter recognizes code blocks by an assistant message containing a Copy button and a raw code surface. Your synthetic ChatGPT page MUST expose a faithful minimal DOM fixture with:
+
+- assistant message: `section[data-turn="assistant"]` with a stable `data-turn-id`
+- inside it, one code-block container containing exactly one `button[aria-label="Copy"]`
+- in the same container, `pre > code` containing the raw command block
+- composer: `#prompt-textarea` or `[data-testid="prompt-textarea"]` inside a form
+- real Work send control: `button#composer-submit-button[data-testid="send-button"]`
+- send button visible and `aria-disabled="false"`
+- a separate persistent dictation/voice control, for example `button[data-testid="composer-speech-button"]`, so send-vs-dictation discrimination is actually testable
+
+The harness may intercept `https://chatgpt.com` network/navigation and emulate ChatGPT message insertion, but it must not alter extension production files.
+
+For safe/local Ozon-button deliveries use ONLY local guidance blocks, never a provider operation. Example raw assistant code block:
+
+OZON_HELP_V1
+{"cluster":"stock_inventory"}
+
+`OZON_HELP_V1` is local guidance and must have `external_request_executed=false`.
+
+For composer-send emulation, the synthetic page must make the real send-button click observable: when the extension clicks the send button, capture current composer text, append a new user turn with that exact text, then clear the composer. This is test substrate behavior, not extension modification.
+
+A — EXISTING CHAT START
+- Start in an existing confirmed ChatGPT conversation.
+- initial prompt exactly once
+- state active_visible
+- Autorun remains absent
+- recognized code-block fixture receives a functional extension-owned Ozon button
+- second Start sends only one additional prompt and does not create/reset session/provider state
+
+B — NEW EMPTY CHAT START
+- new chat without stable ID
+- Start once
+- duplicate Start suppressed with WORK_START_ALREADY_PENDING
+- no fake conversation ID
+- simulate same-origin navigation to a new real conversation ID and append first completed assistant response
+- bind only after real identity + completed response
+- final state active_visible and functional Ozon button present
+
+C — HIDE / SHOW
+- begin with a recognized code block and functional Ozon button
+- Hide => active_hidden, command acceptance false, extension-owned Ozon controls removed
+- clicking/reference to old removed handler must not execute
+- Show => active_visible, fresh DOM discovery, new functional Ozon button
+- no prompt resend and no provider/quota/cache/timer reset
+
+D — EXPLICIT REFRESH
+- active_visible with recognized Ozon button
+- invoke `OZ_WORK_REFRESH`
+- no manual page reload
+- observe actual extension service-worker runtime renewal/replacement
+- same already-open page reconnects through the production recovery mechanism
+- old UI generation becomes inert
+- fresh functional Ozon button appears on same page
+- no replay and provider request count remains 0
+
+E — REFRESH WHILE HIDDEN
+- Hide first
+- Refresh
+- restored state must be active_hidden
+- no Ozon button until Show
+- Show creates fresh functional Ozon button
+
+G — CHATGPT WORK / SEND VS DICTATION / THREE LOCAL DELIVERIES
+- both exact send selector and separate dictation control must be present at the same time
+- prove production classifier selects `button#composer-submit-button[data-testid="send-button"]`, never dictation
+- execute THREE consecutive local-only `OZON_HELP_V1` Ozon-button deliveries
+- each delivery must complete through the real production delivery/composer path
+- after each delivery the bridge must return ready
+- after three, bridge must be ready for a fourth
+- external_request_executed=false for all three
+- real Ozon request count=0
+
+H — CORRELATION FAIL-CLOSED
+Execute independent wrong/stale cases for:
+- tab
+- origin
+- adapter
+- conversation
+- revision/generation
+Each must fail closed and must not complete pending Start/Refresh.
+
+I — ALICE
+If an established installed Alice browser environment is genuinely available, run the same non-provider lifecycle checks there.
+If it is not available, record `NOT_EXECUTED` with exact environment blocker. Do not synthesize an Alice PASS. Alice unavailability by itself is not a product failure and must not be used as the sole reason to reject an otherwise passing Patch A.1 candidate.
+
+RESULT DISCIPLINE
+- Distinguish product FAIL from environment/test-substrate NOT_EXECUTED.
+- Do not call a section FAIL merely because the test harness omitted a DOM element that the adapter explicitly requires.
+- If the required ChatGPT fixture can be constructed in the accepted browser harness, construct it and execute the test instead of reporting NOT_EXECUTED.
+- Real Ozon business requests = 0 throughout.
+- Production code changed by tester = 0.
+
+Write only a new result file:
+
+tooling/llm-api-bridges/ozon-seller/validation/PATCH_A1_FINISH_FIX_CODEX_RESULT_2026-08-24.md
+
+It must include:
+- tested branch and starting HEAD
+- candidate materialization markers/hashes
+- browser versions/environment
+- F1/F2/F3 exact evidence
+- PASS/FAIL/NOT_EXECUTED A-I
+- for G, evidence for each of the 3 local deliveries and send-vs-dictation selection
+- real Ozon request count
+- production-code-change count
+- final decision exactly one of:
+  PATCH_A1_BROWSER_CANDIDATE_ACCEPTED
+  PATCH_A1_BROWSER_CANDIDATE_REJECTED
+
+Commit only that result/evidence file to the same fix branch.
+
+Return to operator only:
+1. result file path
+2. result commit SHA
+3. final decision
+4. failed product scenarios if rejected
+5. environment-only NOT_EXECUTED scenarios separately
