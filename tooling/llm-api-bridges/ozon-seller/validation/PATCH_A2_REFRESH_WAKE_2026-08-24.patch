@@ -1,28 +1,89 @@
---- service_worker.js	Patch A.1
-+++ service_worker.js	Patch A.2 Refresh wake
-@@ -4632,8 +4632,28 @@
-       case "OZ_WORK_REFRESH": {
-         const tab = normalizeTabId(message.tab_id);
-         const key = normalizeConversationKey(message.conversation_key);
-         const begun = await beginWorkSessionRefresh(tab, key);
-         if (begun.already_in_progress) return { ok: true, code: "REFRESH_ALREADY_IN_PROGRESS", recovery: begun.recovery };
-+        try {
-+          await chrome.tabs.reload(tab);
-+        } catch (error) {
-+          const session = await workSessionFor(key);
-+          if (session.state === OzonWorkSessionModel.STATES.RECOVERING && Number(session.revision) === Number(begun.recovery.revision)) {
-+            await mutateWorkSession(key, session.revision, OzonWorkSessionModel.STATES.ERROR, { error: { code: "WORK_REFRESH_TAB_RELOAD_FAILED" } });
-+          }
-+          const recoveries = await getWorkRecoveries();
-+          if (recoveries[key]?.recovery_id === begun.recovery.recovery_id) {
-+            delete recoveries[key];
-+            await storageSet({ [KEYS.WORK_SESSION_RECOVERIES]: recoveries });
-+          }
-+          await diagnostic("WORK_SESSION_REFRESH_TAB_RELOAD_FAILED", { recovery_id: begun.recovery.recovery_id, tab_id: tab, error: error?.message || String(error) }, { level: "error" });
-+          return { ok: false, code: "WORK_REFRESH_TAB_RELOAD_FAILED", error: error?.message || String(error), recovery: begun.recovery };
-+        }
-+        await diagnostic("WORK_SESSION_REFRESH_TAB_RELOAD_SCHEDULED", { recovery_id: begun.recovery.recovery_id, tab_id: tab, conversation_key: key });
-         setTimeout(() => chrome.runtime.reload(), 0);
--        return { ok: true, recovery: begun.recovery, runtime_reload_scheduled: true };
-+        return { ok: true, recovery: begun.recovery, page_reload_scheduled: true, runtime_reload_scheduled: true };
-       }
+PATCH_A2_REFRESH_WAKE_OVERLAY_SPEC_V2
+
+Base production identity:
+- Patch A.1 service_worker.js SHA-256: f9cb0720f411b479a22f00cb0ba7a3553de8ae8fba62de5a27a904b6d27a287c
+
+Final Patch A.2 production identity:
+- service_worker.js SHA-256: 1c9bca51298ee215e8b8c29af8be44763eabd76ad1b357b709a996e87f2b0ce6
+- 19-file tree-manifest SHA-256: ce4ab71244a4ffe7bad680cb99f10360ceec5f55e76410eb8b83d8b686234b3f
+
+This file is an audit-readable overlay specification. The exact deterministic executable authority is:
+`tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_a2_refresh_wake_candidate.py`
+
+The materializer requires every source anchor exactly once and verifies the final service_worker.js and full-tree hashes above.
+
+Production changes, all in service_worker.js only:
+
+1. Add durable runtime-wake alarm name next to the existing provider alarm:
+
+const WORK_SESSION_REFRESH_WAKE_ALARM = "ozon-work-session-refresh-wake-v1";
+
+2. Replace one-shot post-reload identity lookup with a bounded fresh-content-runtime wait:
+
+async function waitForRefreshTabIdentity(recovery, timeoutMs = 15000) {
+  const deadline = Date.now() + Math.max(1000, Number(timeoutMs || 15000));
+  let lastCode = "IDENTITY_UNAVAILABLE";
+  let lastError = "Content runtime is not ready after extension reload.";
+  while (Date.now() < deadline) {
+    const response = await tabMessage(Number(recovery.tab_id), { type: "OZ_GET_IDENTITY" });
+    if (response?.ok && response.identity) {
+      const identity = normalizeIdentity(response.identity);
+      const matches = identity.origin === recovery.origin && identity.ai_id === recovery.ai_id && identity.conversation_id === recovery.conversation_id;
+      if (!matches) return { ok: false, code: "WORK_REFRESH_CONTEXT_INVALID", identity };
+      return { ok: true, identity };
+    }
+    lastCode = response?.code || "IDENTITY_UNAVAILABLE";
+    lastError = response?.error || lastError;
+    await sleep(250);
+  }
+  return { ok: false, code: "WORK_REFRESH_CONTENT_RECONNECT_TIMEOUT", error: lastError, last_code: lastCode };
+}
+
+A valid but wrong tab/origin/adapter/conversation still fails closed immediately. Only missing/not-yet-ready content runtime is retried.
+
+3. Make `resumeWorkSessionRecoveries()` single-flight because service-worker startup and the wake alarm may race:
+
+let workSessionRecoveryResumeInFlight = null;
+async function resumeWorkSessionRecoveries() {
+  if (workSessionRecoveryResumeInFlight) return workSessionRecoveryResumeInFlight;
+  workSessionRecoveryResumeInFlight = resumeWorkSessionRecoveriesOnce().finally(() => { workSessionRecoveryResumeInFlight = null; });
+  return workSessionRecoveryResumeInFlight;
+}
+
+The previous function body becomes `resumeWorkSessionRecoveriesOnce()` and uses `waitForRefreshTabIdentity(recovery)` before the existing runtime-generation handshake.
+
+4. When all durable recoveries are terminalized/resumed, clear the fallback wake alarm:
+
+if (Object.keys(recoveries).length === 0) {
+  try { await chrome.alarms.clear(WORK_SESSION_REFRESH_WAKE_ALARM); } catch (_) {}
+}
+
+5. Extend the existing alarm listener:
+
+const name = String(alarm?.name || "");
+if (name === WORK_SESSION_REFRESH_WAKE_ALARM) { void resumeWorkSessionRecoveries(); return; }
+if (name === PROVIDER_QUOTA_ALARM) void resumeProviderQuotaWaits();
+
+6. In the real `OZ_WORK_REFRESH` route, after durable `beginWorkSessionRefresh()` succeeds:
+
+- schedule a one-shot `WORK_SESSION_REFRESH_WAKE_ALARM` for the post-runtime generation;
+- use `persistAcrossSessions: true` when supported, with a compatibility fallback alarm create;
+- initiate `chrome.tabs.reload(tab)` on the exact owner AI tab;
+- if tab reload fails: clear the alarm, move matching `recovering` session to `error`, remove the matching recovery record, emit `WORK_SESSION_REFRESH_TAB_RELOAD_FAILED`, and DO NOT call runtime.reload;
+- after owner-tab reload is accepted, emit `WORK_SESSION_REFRESH_TAB_RELOAD_SCHEDULED`;
+- only then schedule `chrome.runtime.reload()`;
+- successful route response includes:
+  `page_reload_scheduled: true`,
+  `runtime_reload_scheduled: true`,
+  and `wake_alarm_scheduled`.
+
+7. Existing durable recovery semantics remain unchanged after content reconnect:
+
+- exact tab/origin/adapter/conversation correlation;
+- old/new runtime generation handshake;
+- `active_visible` versus `active_hidden` restore;
+- command-acceptance restore only for visible state;
+- `WORK_SESSION_REFRESH_RESUMED` diagnostic;
+- provider/no-replay/quota/cache/history protections.
+
+No other production file changes.
