@@ -1,0 +1,215 @@
+You are the independent TESTER for the completion-only Patch A.1 browser retest.
+
+Repository:
+MaksimUnimax/blood_sand
+
+Exact branch:
+fix/ozon-work-session-finish-no-autorun-2026-08-24
+
+Read first:
+- tooling/llm-api-bridges/ozon-seller/validation/PATCH_A1_COMPLETION_RETEST_CLASSIFICATION_2026-08-24.md
+- tooling/llm-api-bridges/ozon-seller/validation/PATCH_A1_FINISH_FIX_CANDIDATE_MANIFEST_2026-08-24.md
+- tooling/llm-api-bridges/ozon-seller/validation/PATCH_A1_FINISH_FIX_CODEX_RESULT_2026-08-24.md
+
+ROLE / SAFETY
+- Do NOT modify production code.
+- Do NOT author a fix.
+- Do NOT rebuild/repackage a release candidate.
+- Temporary Puppeteer harness code, intercepted pages and synthetic ChatGPT DOM are allowed outside the candidate tree.
+- Real Ozon Seller/Performance requests must remain exactly 0.
+- Reuse the exact deterministic candidate identity only:
+  production files = 19
+  service_worker.js SHA-256 = f9cb0720f411b479a22f00cb0ba7a3553de8ae8fba62de5a27a904b6d27a287c
+  tree-manifest SHA-256 = bb3cd062be3b5839c7dc11b029ba3d661caaa78e298669742884b920c1d5df33
+- Prior PASS evidence A/B/C/F/G-control/H remains valid because production bytes did not change. Do not spend the run redoing those sections unless needed to establish state for D/E/G-delivery.
+- Alice unavailable is environment-only NOT_EXECUTED and by itself MUST NOT cause rejection.
+
+THIS RUN HAS ONLY THREE REQUIRED CHATGPT COMPLETION GATES:
+D, E, and G3 (three consecutive local deliveries).
+
+COMMON CHATGPT WORK FIXTURE
+Use a stable intercepted page under a real supported URL such as:
+https://chatgpt.com/c/patch-a1-completion-test
+
+The DOM must contain:
+- `section[data-turn="assistant"]` with stable `data-turn-id` values;
+- a code-block container in an assistant section containing exactly one `button[aria-label="Copy"]` and one `pre > code`;
+- a composer form containing `#prompt-textarea` or `[data-testid="prompt-textarea"]`;
+- `button#composer-submit-button[data-testid="send-button"]`;
+- a separate visible persistent `button[data-testid="composer-speech-button"]`;
+- counters for `sendClicks` and `dictationClicks` in the synthetic page.
+
+Keep the Work submit button in the DOM at all times. The production classifier checks the exact Work submit selector before microphone.
+
+============================================================
+D — EXPLICIT REFRESH, ACTIVE VISIBLE
+============================================================
+
+SETUP
+1. Establish the same production work-session in `active_visible` with a recognized assistant code block and at least one functional extension-owned Ozon button.
+2. Record:
+   - current conversation key;
+   - current work-session revision/state;
+   - current Ozon button count;
+   - current service-worker CDP target ID for `chrome-extension://<extension-id>/service_worker.js`;
+   - current runtime generation if accessible from the worker context;
+   - current tail sequence of `ozmb_diagnostics`;
+   - provider quota/cache/history snapshots needed to prove no reset.
+
+ACTION
+3. Invoke the real worker route `OZ_WORK_REFRESH` once.
+4. Require immediate response `ok=true`, `runtime_reload_scheduled=true`, and a recovery object.
+5. Do NOT reload the ChatGPT page manually and do NOT navigate it.
+
+RUNTIME RENEWAL PROOF
+6. Observe CDP/Target events, not just DOM repaint:
+   - the old extension service-worker target must be detached/destroyed OR cease to be the active worker;
+   - a new service-worker target for the SAME extension ID must appear;
+   - the new target ID must differ from the old target ID.
+7. Wait for the new worker bootstrap/recovery to finish. Read `chrome.storage.local` from the new worker or through the same QA helper.
+8. In `ozmb_diagnostics` require a new `WORK_SESSION_REFRESH_RESUMED` record whose:
+   - recovery_id matches the prepared recovery;
+   - old_runtime_generation is present;
+   - new_runtime_generation is present;
+   - old_runtime_generation != new_runtime_generation;
+   - restored_state = `active_visible`.
+9. Require `ozmb_work_session_recoveries_v1` no longer contains this conversation after recovery completes.
+10. Require work-session state = `active_visible` and command acceptance = true.
+11. The SAME already-open page must have a fresh functional Ozon button. Prove stale generation is inert by retaining a JS reference to a pre-refresh Ozon button/record if possible and showing it cannot cause a new manual operation after refresh, while the fresh button can.
+12. No initial prompt resend and no provider replay.
+13. Provider request count remains 0 and protected quota/cache/history values remain unchanged.
+
+If the new runtime starts but `WORK_SESSION_REFRESH_RESUMED` never occurs, or the same open page cannot reconnect without manual reload/navigation, that is an EXECUTED PRODUCT FAIL for D. Record exact target/diagnostic/state evidence. Do not repair it.
+
+============================================================
+E — REFRESH WHILE HIDDEN
+============================================================
+
+SETUP
+1. Start from a fresh `active_visible` work-session with functional Ozon button(s).
+2. Invoke Hide through production route.
+3. Require `active_hidden`, command acceptance false, and Ozon button count = 0.
+
+ACTION
+4. Capture old service-worker target ID/runtime generation and current diagnostics tail.
+5. Invoke `OZ_WORK_REFRESH` once while hidden.
+6. Do not reload or navigate the page manually.
+
+PROOF
+7. Require a real service-worker target replacement/new runtime generation exactly as in D.
+8. Require a matching `WORK_SESSION_REFRESH_RESUMED` diagnostic with `restored_state = active_hidden` and different old/new runtime generations.
+9. Require recovery record cleared.
+10. Require work-session state remains `active_hidden`, command acceptance false, Ozon button count = 0.
+11. Invoke Show through the production route.
+12. Require `active_visible`, command acceptance true, and a fresh functional Ozon button appears.
+13. No prompt resend, no provider request, no quota/cache/history reset.
+
+Failure after actual runtime renewal/restore is a product FAIL. Do not downgrade an executed failure to NOT_EXECUTED.
+
+============================================================
+G3 — THREE CONSECUTIVE LOCAL OZON_HELP_V1 DELIVERIES
+============================================================
+
+Use ONLY local guidance. NEVER use `OZON_API_V1` in this gate.
+
+Assistant raw code block for all three attempts may be:
+
+OZON_HELP_V1
+{"cluster":"stock_inventory"}
+
+This path must have `external_request_executed=false`.
+
+CRITICAL SYNTHETIC SEND LIFECYCLE
+The synthetic page must emulate the exact completion signal expected by production Work delivery watcher.
+
+Before each delivery:
+- Work send button exists, visible, and `aria-disabled="false"`;
+- dictation button exists and is visible;
+- composer is initially empty;
+- bridge is ready and extension Ozon button is enabled.
+
+Install the synthetic page's Work send click handler BEFORE clicking the Ozon button. When production content script clicks `#composer-submit-button`:
+1. increment `sendClicks`;
+2. capture the exact current composer text into `sentTexts[]`;
+3. synchronously set the SAME Work send button to `aria-disabled="true"` (and `disabled=true` if useful);
+4. append a synthetic user turn containing exactly the captured composer text;
+5. clear the composer;
+6. leave the Work submit disabled until the production manual operation reaches `completed` / diagnostics contain `DELIVERY_SUCCESS` for that delivery.
+
+Why: production `runBatchDeliveryWatch()` treats `work_send_disabled` as success ONLY after its own one-shot send click was committed. The Work submit selector has priority over the persistent microphone, so microphone must remain present but never clicked.
+
+For EACH of delivery #1, #2, #3:
+A. Ensure bridge ready, Work send active, dictation present.
+B. Click the extension-owned Ozon button on the `OZON_HELP_V1` code block.
+C. Require new `MANUAL_BATCH_ACCEPTED` with a new operation_id/manual_request_id.
+D. Require guidance diagnostic (`GUIDANCE_CLUSTER_SELECTED`) and `external_request_executed=false`.
+E. Require `BATCH_COLLECTION_COMPLETED` and a delivery_id.
+F. Require production insertion/delivery path evidence:
+   - `DELIVERY_INSERT_COMMITTED`
+   - `DELIVERY_INSERTED`
+   - content-side `SEND_CLICKED`
+   - exactly one increment of `sendClicks`
+   - zero increment of `dictationClicks`
+   - Work submit transitions active -> disabled after that production click
+   - `DELIVERY_CONFIRMATION_RECEIVED` with accepted Work completion basis
+   - `DELIVERY_SUCCESS`
+G. Require manual operation status = `completed`, delivery_confirmed=true, and bridge returns ready.
+H. Only then re-enable the Work send button (`aria-disabled=false`, `disabled=false`) for the NEXT delivery.
+
+After delivery #3:
+- three distinct manual operation IDs;
+- three distinct delivery IDs;
+- exactly 3 production send clicks total;
+- dictationClicks = 0;
+- all three `external_request_executed=false`;
+- REAL_OZON_SELLER_REQUESTS=0;
+- REAL_PERFORMANCE_REQUESTS=0;
+- bridge ready for a fourth operation;
+- Ozon button enabled for a fourth operation.
+
+If any of these three operations actually enters the production path and then fails/stalls, record the exact operation state, delivery phase and diagnostic tail. That is a product FAIL, not an environment omission.
+
+============================================================
+DECISION
+============================================================
+
+Use the prior result commit `735029a09e93a54cd68d9fe66484bbef26e6b12b` as accepted evidence for A/B/C/F/G-control/H.
+
+If D PASS + E PASS + G3 PASS, and no new executed product failure appears:
+final_decision = `PATCH_A1_BROWSER_CANDIDATE_ACCEPTED`
+
+Alice remains:
+I = `NOT_EXECUTED_ENVIRONMENT_ONLY`
+reason = no established installed Alice environment
+
+Do NOT reject solely because Alice is unavailable.
+
+If D, E or G3 produces an executed product failure:
+final_decision = `PATCH_A1_BROWSER_CANDIDATE_REJECTED`
+and provide exact evidence. Do not modify production code.
+
+Do not return another completion run with D/E/G3 merely marked NOT_EXECUTED if the accepted Puppeteer synthetic substrate can construct the explicit fixture/lifecycle above. Construct it and execute it.
+
+WRITE NEW RESULT ONLY:
+tooling/llm-api-bridges/ozon-seller/validation/PATCH_A1_COMPLETION_ONLY_CODEX_RESULT_2026-08-24.md
+
+The result must contain:
+- tested branch + starting HEAD;
+- exact candidate hashes;
+- prior result commit used for A/B/C/F/G-control/H;
+- D detailed runtime target/generation/diagnostic evidence;
+- E detailed hidden restore evidence;
+- G3 per-delivery operation_id, delivery_id, sendClicks/dictationClicks, completion basis and external_request_executed;
+- provider request counters;
+- Alice environment-only status;
+- production code modified by tester = 0;
+- final decision.
+
+Commit only this new result/evidence file to the same branch.
+
+Return only:
+1. result file path
+2. result commit SHA
+3. final decision
+4. failed PRODUCT scenarios if rejected
+5. Alice environment-only status
