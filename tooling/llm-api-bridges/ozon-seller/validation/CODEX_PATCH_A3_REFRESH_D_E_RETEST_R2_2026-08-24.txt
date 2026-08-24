@@ -1,0 +1,135 @@
+You are the independent TESTER for Patch A.3 Refresh response-boundary recovery — R2 after validation-materializer anchor correction.
+
+Repository:
+MaksimUnimax/blood_sand
+
+Exact branch:
+fix/ozon-work-session-refresh-response-boundary-2026-08-24
+
+ROLE / SAFETY
+- Do NOT modify production code.
+- Do NOT author a fix.
+- Do NOT rebuild or replace the candidate.
+- Temporary Puppeteer/CDP harness files and intercepted synthetic ChatGPT pages are allowed outside the candidate tree.
+- Real Ozon Seller/Performance requests must remain exactly 0.
+- Alice unavailable is environment-only and MUST NOT reject an otherwise passing candidate.
+
+READ FIRST
+1. tooling/llm-api-bridges/ozon-seller/validation/PATCH_A3_MATERIALIZER_ANCHOR_FIX_2026-08-24.md
+2. tooling/llm-api-bridges/ozon-seller/validation/PATCH_A3_REFRESH_RESPONSE_BOUNDARY_CANDIDATE_MANIFEST_2026-08-24.md
+3. tooling/llm-api-bridges/ozon-seller/validation/PATCH_A3_REFRESH_RESPONSE_BOUNDARY_2026-08-24.patch
+4. tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_a3_refresh_response_boundary_candidate.py
+5. tooling/llm-api-bridges/ozon-seller/validation/WORK_SESSION_REFRESH_RESPONSE_BOUNDARY_REGRESSION_2026-08-24.mjs
+6. historical validation-blocked result: tooling/llm-api-bridges/ozon-seller/validation/PATCH_A3_REFRESH_RESPONSE_BOUNDARY_CODEX_RESULT_2026-08-24.md
+7. prior A.2 browser rejection: tooling/llm-api-bridges/ozon-seller/validation/PATCH_A2_REFRESH_WAKE_CODEX_RESULT_2026-08-24.md
+8. prior A.1 completion result: tooling/llm-api-bridges/ozon-seller/validation/PATCH_A1_COMPLETION_ONLY_CODEX_RESULT_2026-08-24.md
+
+HISTORICAL RESULT RULE
+- Do not overwrite, edit or delete the first A.3 result.
+- It is validation-blocked evidence, not a D/E product failure.
+- This R2 run writes only the new R2 result path below.
+
+CARRY FORWARD ACCEPTED PRODUCT EVIDENCE
+- A PASS
+- B PASS
+- C PASS
+- F PASS
+- G-control PASS
+- G3 PASS — three consecutive local `OZON_HELP_V1` deliveries
+- H PASS
+- real Ozon Seller/Performance requests = 0
+
+Do not repeat those sections. Only D and E require browser execution.
+
+MANDATORY MATERIALIZATION
+1. Record actual branch HEAD before testing.
+2. Run the corrected repository materializer into a fresh output directory outside the repository production tree:
+   python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_a3_refresh_response_boundary_candidate.py <repo-root> <fresh-output-dir>
+3. Require inherited A1/A2 markers and all A3 markers:
+   PATCH_A3_A2_BASE_IDENTITY_PASS
+   PATCH_A3_RESPONSE_BOUNDARY_RELOAD_PASS
+   PATCH_A3_NO_TIMER_RUNTIME_RELOAD_PASS
+   PATCH_A3_POST_RUNTIME_TAB_RELOAD_PASS
+   PATCH_A3_SERVICE_WORKER_SHA256_PASS
+   PATCH_A3_PRODUCTION_FILE_COUNT_19_PASS
+   PATCH_A3_TREE_MANIFEST_SHA256_PASS
+4. Independently verify exact candidate identity:
+   production files = 19
+   service_worker.js SHA-256 = d882e393bf3d1e6b89b8a3bec47f858cdf3e523cdf11a2819e30c1e5b3efe770
+   tree-manifest SHA-256 = ddb3cc38586191dd4d015e189847472157ff4ed00c54856f4a11ea4c1b249a21
+5. If materialization still fails, stop before browser testing and report the exact validation error. Do not call D/E product FAIL.
+6. Run node --check on every production JS file and the existing work-session model/refresh/finish regressions plus:
+   node tooling/llm-api-bridges/ozon-seller/validation/WORK_SESSION_REFRESH_RESPONSE_BOUNDARY_REGRESSION_2026-08-24.mjs <candidate>
+7. Load only the fresh materialized A.3 candidate as unpacked extension.
+
+BROWSER HARNESS BOUNDARY
+Use the same accepted Windows Chrome-for-Testing/Puppeteer substrate and stable intercepted ChatGPT Work conversation URL.
+The page must reconstruct the same recognized ChatGPT Work DOM after normal document reload.
+The harness MUST NOT manually reload the page, navigate it, reload/toggle the extension, or manually wake the worker during D/E.
+Record CDP service-worker target lifecycle and document load/navigation events with timestamps.
+
+EXPECTED A.3 ORDER FOR EACH REFRESH
+1. Old worker target and old WORKER_SESSION_ID exist.
+2. Invoke real OZ_WORK_REFRESH exactly once.
+3. Public response arrives with ok=true, recovery_id, runtime_reload_scheduled=true, page_reload_deferred_to_new_runtime=true and wake-alarm status.
+4. WORK_SESSION_REFRESH_RUNTIME_RELOAD_ARMED is persisted for that recovery.
+5. Old worker target ceases being active.
+6. New worker execution begins for the same extension; new WORKER_SESSION_ID differs from old. Prefer a new target ID; if CDP reuses a target object, prove a distinct execution context plus different WORKER_SESSION_ID and teardown/restart ordering.
+7. From the new runtime only, WORK_SESSION_REFRESH_POST_RUNTIME_TAB_RELOAD_SCHEDULED appears for the exact recovery/tab/key.
+8. The same owner AI tab performs product-initiated document reload after new runtime exists.
+9. Fresh manifest content runtime appears on the same tab and same conversation URL/identity.
+10. WORK_SESSION_REFRESH_RESUMED appears with matching recovery_id, old_runtime_generation, new_runtime_generation, old != new, and correct restored state.
+11. Durable recovery record is removed.
+
+D — ACTIVE_VISIBLE
+- Establish active_visible, command acceptance true, functional Ozon button.
+- Record tab ID, conversation identity/key, revision/state, button count, old target/generation, protected quota/cache/history/no-replay snapshot.
+- Execute the expected A.3 order.
+- Final requirements: active_visible, command acceptance true, same tab ID and conversation identity, fresh functional Ozon button, no prompt resend/replay, provider requests 0, protected state unchanged.
+- D FAIL only on an executed product assertion failure after successful exact candidate materialization.
+
+E — ACTIVE_HIDDEN
+- Establish a fresh active_visible session, then Hide.
+- Require active_hidden, command acceptance false, Ozon button count 0.
+- Record same identity/target/protected state.
+- Invoke OZ_WORK_REFRESH once and execute expected A.3 order.
+- WORK_SESSION_REFRESH_RESUMED must restore active_hidden.
+- Final hidden state: active_hidden, command acceptance false, Ozon buttons 0, same tab and conversation identity.
+- Invoke Show and require active_visible, command acceptance true, fresh functional Ozon button.
+- No prompt resend/replay/provider request/protected-state reset.
+- E FAIL only on an executed product assertion failure after successful exact candidate materialization.
+
+ALICE
+If no established installed Alice environment is available:
+Alice = NOT_EXECUTED_ENVIRONMENT_ONLY
+This is not a rejection condition.
+
+DECISION
+- If exact materialization passes and D PASS + E PASS with no new product failure: PATCH_A3_BROWSER_CANDIDATE_ACCEPTED
+- If exact materialization passes and D or E executes and fails: PATCH_A3_BROWSER_CANDIDATE_REJECTED
+- If materialization itself fails again: report validation-blocked rejection separately and do not classify D/E as product FAIL.
+
+WRITE NEW R2 RESULT ONLY
+`tooling/llm-api-bridges/ozon-seller/validation/PATCH_A3_REFRESH_RESPONSE_BOUNDARY_CODEX_RESULT_R2_2026-08-24.md`
+
+Include:
+- branch and starting HEAD
+- materialization markers and exact hashes
+- browser/Puppeteer/Node versions if browser phase reached
+- historical result preserved confirmation
+- D ordered response/target/generation/new-runtime-tab-reload/resume evidence
+- E ordered hidden restore/Show evidence
+- provider counters
+- production code modified by tester = 0
+- Alice environment-only status
+- final decision
+
+Commit only the new R2 result/evidence file to the same branch.
+
+Return only:
+1. R2 result file path
+2. result commit SHA
+3. final decision
+4. failed PRODUCT scenarios if rejected
+5. validation blocker separately if browser phase was not reached
+6. Alice environment-only status
