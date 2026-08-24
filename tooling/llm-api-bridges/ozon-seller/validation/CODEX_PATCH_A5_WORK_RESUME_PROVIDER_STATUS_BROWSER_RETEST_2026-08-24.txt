@@ -1,0 +1,120 @@
+You are the independent TESTER for Ozon Bridge Patch A.5 — Work Resume without prompt + provider-status separation.
+
+Repository:
+MaksimUnimax/blood_sand
+
+Exact branch:
+fix/ozon-work-resume-provider-status-separation-2026-08-24
+
+ROLE BOUNDARY
+- TEST ONLY.
+- Do NOT modify production code.
+- Do NOT author a fix.
+- Do NOT rebuild/replace the candidate except by the repository materializer.
+- Temporary Puppeteer/CDP/synthetic ChatGPT harness files are allowed outside the candidate tree.
+- Real Ozon Seller/Performance requests must remain exactly 0.
+- AUTORUN IS OUT OF SCOPE for this retest. Do not use Autorun behavior as an acceptance/rejection gate.
+
+READ FIRST
+1. tooling/llm-api-bridges/ozon-seller/validation/PATCH_A5_WORK_RESUME_PROVIDER_STATUS_CANDIDATE_MANIFEST_2026-08-24.md
+2. tooling/llm-api-bridges/ozon-seller/validation/PATCH_A5_WORK_RESUME_PROVIDER_STATUS_2026-08-24.patch
+3. tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_a5_work_resume_provider_status_candidate.py
+4. tooling/llm-api-bridges/ozon-seller/validation/WORK_SESSION_RESUME_PROVIDER_STATUS_REGRESSION_2026-08-24.mjs
+5. accepted A.4 result: tooling/llm-api-bridges/ozon-seller/validation/PATCH_A4_REFRESH_INPROCESS_REINIT_CODEX_RESULT_2026-08-24.md
+
+MANDATORY MATERIALIZATION
+1. Record actual branch HEAD.
+2. Materialize exact A.5 candidate into a fresh temporary directory:
+   python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_a5_work_resume_provider_status_candidate.py <repo-root> <fresh-output-dir>
+3. Require all inherited A4 markers plus all A5 markers.
+4. Independently verify exactly:
+   production files = 19
+   popup.js SHA-256 = e77beb6eb5e23aebada2ded9a834e7095f14e74ee9f1e9b54503377a7d87b5e7
+   service_worker.js SHA-256 = dd67b793d7c28595b5e795f918f702d4fd472c9f43f2bec467e56b85587d29b9
+   tree-manifest SHA-256 = 4b77ed8500e3caacefff43a82002dc6ef5bfd562511bf10ef57a5392069c22a0
+5. Run node --check on all production JS.
+6. Run the existing model, Finish/no-Autorun and A.4 Refresh regressions plus WORK_SESSION_RESUME_PROVIDER_STATUS_REGRESSION_2026-08-24.mjs.
+7. Load ONLY the fresh materialized candidate as unpacked extension.
+
+BROWSER MATRIX
+Use the established synthetic/intercepted supported ChatGPT conversation substrate. Do not make real ChatGPT or Ozon requests.
+
+S — PROVIDER STATUS SEPARATION / RED BANNER
+S1. On a confirmed supported conversation, establish a normal explicit binding.
+S2. Seed a LEGACY unscoped storage value equivalent to the observed contamination:
+    KEYS.LAST_STATUS = {ok:false, code:"CONVERSATION_NOT_CONFIRMED", message:"NaN", at:<timestamp>}
+    This is validation setup only; do not alter candidate code.
+S3. Open/reload popup on the confirmed bound conversation.
+S4. Require the top popup status NOT to display `CONVERSATION_NOT_CONFIRMED` and NOT to display `NaN`.
+S5. Require binding/session banner remains authoritative and correctly shows bound/inactive or bound/current session state.
+S6. Open a fresh supported new ChatGPT surface with no conversation_id and open popup so `OZ_RESOLVE_POPUP_CONTEXT` executes and returns fail-closed new-chat context handling.
+S7. Inspect storage afterward: the generic runtime failure must NOT overwrite provider LAST_STATUS with `CONVERSATION_NOT_CONFIRMED`; an `EXTENSION_MESSAGE_FAILED` diagnostic for the failed context message is allowed/expected.
+S8. Return to the confirmed bound conversation and reopen popup. Require no stale red `CONVERSATION_NOT_CONFIRMED` banner.
+
+R1 — INACTIVE + BOUND RESUME WITHOUT PROMPT
+R1. Establish a confirmed explicit binding while Work-session is `inactive`; do NOT click Start.
+R2. Require popup `Показать кнопку` is enabled.
+R3. Snapshot composer text, send-click count, current assistant/user message count and diagnostics.
+R4. Click `Показать кнопку` once.
+R5. Require production route is `OZ_WORK_RESUME`, response `ok=true`, `resumed_without_prompt=true`.
+R6. Require state sequence logically reaches `inactive -> binding -> active_visible` and final session is `active_visible`.
+R7. Require command acceptance true and fresh Ozon controls lifecycle active.
+R8. Require diagnostic `WORK_SESSION_RESUMED_WITHOUT_PROMPT` for exact conversation/binding with `external_request_executed=false`.
+R9. CRITICAL: no `OZ_WORK_SEND_INITIAL_PROMPT`, no composer insertion, no Work Send click, no new AI message caused by Resume.
+R10. Provider request counters remain 0.
+
+R2 — EXISTING HIDE/SHOW SEMANTICS UNCHANGED
+R2.1 From the resumed `active_visible`, click `Убрать кнопку`.
+R2.2 Require `active_hidden`, command acceptance false and Ozon controls hidden.
+R2.3 Click `Показать кнопку`.
+R2.4 Require this uses existing `OZ_WORK_SHOW` semantics, returns `active_visible`, command acceptance true and fresh controls.
+R2.5 No initial prompt/send/provider request.
+
+R3 — FINISH PRESERVES BINDING, THEN RESUME
+R3.1 From `active_visible`, record binding_id/revision and conversation identity.
+R3.2 Click production `Завершить работу`.
+R3.3 Require final Work-session `inactive`.
+R3.4 Require exact explicit binding still exists with same binding_id and same conversation identity. Binding must NOT be deleted.
+R3.5 Require diagnostic `WORK_SESSION_FINISHED_BINDING_PRESERVED` and response `binding_preserved=true`.
+R3.6 Require popup still shows `Диалог привязан` and `Показать кнопку` enabled.
+R3.7 Snapshot composer/send/message counters again and click `Показать кнопку`.
+R3.8 Require a second `OZ_WORK_RESUME` to `active_visible`, no initial prompt, no send click and no provider request.
+
+R4 — START REMAINS A DISTINCT EXPLICIT PROMPT ACTION
+Static/source or controlled browser proof is sufficient: `OZ_WORK_START` retains its initial-prompt send behavior and `OZ_WORK_RESUME` contains no initial-prompt send path. Do not actually send a real ChatGPT request merely to satisfy this gate.
+
+A4 REFRESH NON-REGRESSION
+Run the designated A.4 in-process Refresh regression. If browser substrate is already established and inexpensive, optionally verify visible Refresh once, but do not reject A.5 solely because an extra optional browser Refresh run is not executed. The source/regression gate is mandatory.
+
+PROTECTED STATE
+- No real Ozon Seller requests.
+- No real Performance requests.
+- No real ChatGPT requests.
+- No mutation/write operations.
+- Provider quota/timers/cache/history/credentials must not be reset.
+- Tester production modifications = 0.
+
+ALICE
+If installed Alice browser environment is unavailable: `NOT_EXECUTED_ENVIRONMENT_ONLY`. This is not a rejection condition.
+
+DECISION
+If exact materialization + S PASS + R1 PASS + R2 PASS + R3 PASS + R4 PASS and mandatory regressions PASS:
+`PATCH_A5_BROWSER_CANDIDATE_ACCEPTED`
+
+If an executed product assertion fails:
+`PATCH_A5_BROWSER_CANDIDATE_REJECTED`
+
+If browser substrate/materialization prevents execution, report validation blocker separately; do not misclassify as product failure.
+
+WRITE RESULT ONLY
+`tooling/llm-api-bridges/ozon-seller/validation/PATCH_A5_WORK_RESUME_PROVIDER_STATUS_CODEX_RESULT_2026-08-24.md`
+
+Commit only that result/evidence file to the same branch.
+
+Return only:
+1. result file path
+2. result commit SHA
+3. final decision
+4. failed PRODUCT scenarios if rejected
+5. validation blocker separately if any
+6. Alice environment-only status
