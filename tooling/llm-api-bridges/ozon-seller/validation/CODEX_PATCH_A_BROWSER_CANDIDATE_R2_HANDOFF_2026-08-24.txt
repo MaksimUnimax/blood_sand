@@ -1,0 +1,132 @@
+Работаем ТОЛЬКО через GitHub.
+
+Ты — независимый ТЕСТИРОВЩИК Ozon Bridge Patch A, transport R2 rerun.
+
+ВАЖНО:
+- НЕ изменяй production code.
+- НЕ исправляй найденные баги.
+- НЕ пересобирай расширение.
+- НЕ создавай свою модифицированную версию candidate.
+- НЕ начинай Patch B.
+- Никаких реальных Ozon business requests для lifecycle-тестов.
+- Real Ozon business request count должен остаться 0.
+
+Repository:
+MaksimUnimax/blood_sand
+
+Test branch:
+test/ozon-work-session-lifecycle-patch-a-browser-candidate-2026-08-24
+
+КРИТИЧЕСКИ ВАЖНО:
+НЕ ИСПОЛЬЗУЙ бинарный ZIP по пути:
+tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_WORK_SESSION_LIFECYCLE_PATCH_A_BROWSER_CANDIDATE_2026-08-24.zip
+
+Этот файл — известный испорченный первый handoff размером 10818 байт. Он сохранён как evidence предыдущего transport failure и НЕ является входом для R2.
+
+Канонический candidate для этого rerun должен быть восстановлен ТОЛЬКО из R2 chunks:
+tooling/llm-api-bridges/ozon-seller/validation/transport-r2/part-000.b64
+...
+tooling/llm-api-bridges/ozon-seller/validation/transport-r2/part-020.b64
+
+Сначала полностью прочитай:
+1. tooling/llm-api-bridges/ozon-seller/validation/CANDIDATE_TRANSPORT_R2_REASON_2026-08-24.md
+2. tooling/llm-api-bridges/ozon-seller/validation/TRANSPORT_R2_MANIFEST_2026-08-24.md
+3. tooling/llm-api-bridges/ozon-seller/validation/CODEX_PATCH_A_BROWSER_CANDIDATE_TEST_2026-08-24.txt
+
+R2 PRE-FLIGHT — ОБЯЗАТЕЛЕН ДО ЛЮБОГО BROWSER TEST:
+
+1. Возьми ветку:
+   test/ozon-work-session-lifecycle-patch-a-browser-candidate-2026-08-24
+
+2. Возьми ровно 21 chunk: part-000.b64 ... part-020.b64.
+
+3. Проверь inventory chunks:
+   - part-000 ... part-019 = 9000 bytes каждый;
+   - part-020 = 2008 bytes;
+   - всего = 21 part.
+
+4. Склей chunks в lexical order БЕЗ разделителей и без добавления байтов.
+
+5. Base64-decode результат в новый локальный ZIP только для тестирования.
+   Это transport reconstruction, НЕ rebuild production code.
+
+6. Восстановленный ZIP обязан иметь:
+   size = 136504 bytes
+   SHA-256 = d5e25219c7010495328c8310e0932d468b305921fd1349177fda49ffcb7439b4
+   Git blob SHA-1 = 7292fbbc4133ddad046da050c11d67adf9419183
+
+7. Проверь ZIP integrity.
+
+8. Распакуй в чистый каталог.
+
+9. Подтверди fresh extraction inventory = ровно 19 production files.
+
+Если ЛЮБОЙ R2 preflight пункт не совпал — остановись до browser testing, ничего не исправляй и верни REJECTED с точным evidence.
+
+Если R2 preflight PASS — выполни ПОЛНОСТЬЮ исходное тестовое задание:
+tooling/llm-api-bridges/ozon-seller/validation/CODEX_PATCH_A_BROWSER_CANDIDATE_TEST_2026-08-24.txt
+
+Включая без сокращений:
+- Start существующего чата;
+- Start совершенно нового пустого чата без conversation ID;
+- duplicate Start;
+- повторный Start активной работы;
+- Hide;
+- Show;
+- старые кнопки после Hide;
+- explicit Refresh;
+- Refresh без ручного reload страницы;
+- Refresh hidden session;
+- Finish;
+- Start after Finish;
+- ChatGPT Work;
+- настоящий Work Send button;
+- dictation должен игнорироваться;
+- три последовательные доставки;
+- stale/wrong tab/origin/adapter/conversation/revision fail-closed;
+- Alice, если установленное тестовое окружение доступно.
+
+НЕ ИСПРАВЛЯЙ НИ ОДИН БАГ.
+
+Результат запиши в ЭТУ ЖЕ test-ветку, обновив файл:
+tooling/llm-api-bridges/ozon-seller/validation/PATCH_A_BROWSER_CANDIDATE_CODEX_RESULT_2026-08-24.md
+
+Предыдущий REJECTED в этом файле был только результатом первого повреждённого binary handoff. Для R2 rerun замени содержимое result-файла новым полным результатом и явно укажи, что это R2 rerun.
+
+В новом result-файле обязательно укажи:
+- tested branch;
+- transport = R2 chunks;
+- verified chunk count and sizes;
+- reconstructed ZIP size;
+- verified SHA-256;
+- verified Git blob SHA-1;
+- fresh extraction file count;
+- browser/environment;
+- PASS/FAIL каждого тестового раздела;
+- точные доказательства каждого FAIL;
+- production code unchanged;
+- real Ozon business requests = 0.
+
+Финальное решение должно быть РОВНО одним из:
+
+PATCH_A_BROWSER_CANDIDATE_ACCEPTED
+
+или
+
+PATCH_A_BROWSER_CANDIDATE_REJECTED
+
+Если REJECTED:
+- ничего не исправляй;
+- candidate не пересобирай;
+- закоммить только result/evidence.
+
+Если ACCEPTED:
+- final/release ZIP не делай;
+- production code не меняй;
+- закоммить только result/evidence.
+
+После коммита ответь только:
+1. GitHub result file path
+2. result commit SHA
+3. PATCH_A_BROWSER_CANDIDATE_ACCEPTED или PATCH_A_BROWSER_CANDIDATE_REJECTED
+4. если REJECTED — короткий список проваленных сценариев
