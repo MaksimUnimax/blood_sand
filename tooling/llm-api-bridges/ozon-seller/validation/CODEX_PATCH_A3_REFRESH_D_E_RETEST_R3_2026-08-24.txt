@@ -1,0 +1,189 @@
+You are the independent TESTER for Patch A.3 Refresh response-boundary recovery — R3 browser-level target-observer retest.
+
+Repository:
+MaksimUnimax/blood_sand
+
+Exact branch:
+fix/ozon-work-session-refresh-response-boundary-2026-08-24
+
+ROLE BOUNDARY
+- TEST ONLY.
+- Do NOT modify production code.
+- Do NOT author a fix.
+- Do NOT rebuild or replace the candidate.
+- Temporary Puppeteer/CDP harness files are allowed outside the candidate tree.
+- Real Ozon Seller/Performance requests must remain exactly 0.
+- Do not manually reload/toggle the extension or manually wake its service worker during D/E.
+
+READ FIRST
+1. tooling/llm-api-bridges/ozon-seller/validation/PATCH_A3_R2_TARGET_CLOSE_CLASSIFICATION_2026-08-24.md
+2. tooling/llm-api-bridges/ozon-seller/validation/PATCH_A3_REFRESH_RESPONSE_BOUNDARY_CANDIDATE_MANIFEST_2026-08-24.md
+3. tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_a3_refresh_response_boundary_candidate.py
+4. tooling/llm-api-bridges/ozon-seller/validation/WORK_SESSION_REFRESH_RESPONSE_BOUNDARY_REGRESSION_2026-08-24.mjs
+5. historical R2 result: tooling/llm-api-bridges/ozon-seller/validation/PATCH_A3_REFRESH_RESPONSE_BOUNDARY_CODEX_RESULT_R2_2026-08-24.md
+
+HISTORICAL RESULT RULE
+- Preserve all previous A.3 results unchanged.
+- R2 is inconclusive after expected old-target teardown; do not overwrite it.
+- Write only the R3 result path defined below.
+
+CARRY FORWARD ACCEPTED PRODUCT EVIDENCE
+- A PASS
+- B PASS
+- C PASS
+- F PASS
+- G-control PASS
+- G3 PASS
+- H PASS
+- provider requests = 0
+Only D and E require browser execution.
+
+MANDATORY CANDIDATE MATERIALIZATION
+1. Record actual branch HEAD before testing.
+2. Materialize exact candidate with:
+   python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_a3_refresh_response_boundary_candidate.py <repo-root> <fresh-output-dir>
+3. Require all A1/A2/A3 PASS markers.
+4. Independently verify exactly:
+   production files = 19
+   service_worker.js SHA-256 = d882e393bf3d1e6b89b8a3bec47f858cdf3e523cdf11a2819e30c1e5b3efe770
+   tree-manifest SHA-256 = ddb3cc38586191dd4d015e189847472157ff4ed00c54856f4a11ea4c1b249a21
+5. Run node --check on all production JS and the existing work-session regressions including WORK_SESSION_REFRESH_RESPONSE_BOUNDARY_REGRESSION_2026-08-24.mjs.
+6. Load ONLY that fresh materialized candidate unpacked.
+
+CRITICAL R3 HARNESS REQUIREMENT — OBSERVER MUST SURVIVE OLD WORKER DEATH
+
+Before Start/Refresh setup, create a ROOT/BROWSER-LEVEL CDP session, not a session attached only to the extension service worker.
+
+Enable target discovery before invoking Refresh:
+- Target.setDiscoverTargets({discover:true})
+- record Target.targetCreated
+- record Target.targetDestroyed
+- record Target.targetInfoChanged
+- record timestamp, targetId, type, URL for every relevant event
+
+Also create a page-level CDP observer for the owner ChatGPT tab before Refresh and record document navigation/load lifecycle timestamps. That page observer must remain independent of the service-worker target.
+
+Identify the extension service-worker URL by the loaded extension ID, e.g.:
+chrome-extension://<extension-id>/service_worker.js
+
+Do not use continued Runtime.evaluate calls against the OLD service-worker target as the post-reload observation mechanism.
+
+EXPECTED OLD TARGET BEHAVIOR
+- After the successful OZ_WORK_REFRESH response, the old worker is expected to close.
+- Target.targetDestroyed for old worker is expected.
+- TargetCloseError / Session closed / Execution context destroyed from a CDP session attached to the OLD worker is expected teardown, not D/E failure.
+- Catch/log that error and continue monitoring from the ROOT target observer.
+- The harness must not terminate, reject a promise chain, close Chrome, or stop D/E merely because the old worker target died.
+
+RENEWED RUNTIME PROOF
+After old target teardown, wait from the ROOT observer for up to 45 seconds for renewed extension worker execution without any harness wake action.
+
+Preferred proof:
+- Target.targetCreated with type=service_worker and the same extension service-worker URL, with targetId different from old targetId.
+
+If Chrome/CDP reuses target representation, alternate proof is allowed only if all are shown:
+- old execution context was destroyed;
+- a later distinct service-worker execution context exists for same extension URL;
+- new WORKER_SESSION_ID differs from the recorded old WORKER_SESSION_ID;
+- event timestamps prove old teardown happened before new execution.
+
+If no renewed worker execution of either valid form appears within 45 seconds AFTER old target destruction, classify exact product failure:
+WORK_REFRESH_NEW_RUNTIME_NOT_WOKEN_AFTER_RELOAD
+and record the complete root target event log. Do not fix it.
+
+Once renewed worker exists, attach a NEW CDP session to the renewed worker. Never reuse the dead old-worker session.
+
+PRODUCT-OWNED RECOVERY ORDER AFTER NEW WORKER
+Require, without harness reload/navigation/wake:
+1. new runtime generation differs from old;
+2. matching WORK_SESSION_REFRESH_POST_RUNTIME_TAB_RELOAD_SCHEDULED is emitted by the new generation;
+3. the SAME owner AI tab performs a document reload after new runtime exists;
+4. page URL/conversation identity/key remain the same;
+5. fresh manifest content runtime reconnects;
+6. matching WORK_SESSION_REFRESH_RESUMED is emitted;
+7. recovery record is removed.
+
+If new runtime exists but any later recovery stage fails, record exact diagnostics/storage/session/button state and classify the actual later product failure. Do not collapse it into NEW_WORKER_NOT_OBSERVED.
+
+D — ACTIVE_VISIBLE
+1. Establish active_visible work-session with command acceptance true and at least one functional Ozon button.
+2. Record before Refresh:
+   tab ID, URL, conversation identity/key, revision/state, command acceptance, button count, old worker target ID, old WORKER_SESSION_ID, diagnostics tail and protected quota/cache/history/no-replay snapshots.
+3. Invoke real OZ_WORK_REFRESH exactly once.
+4. Require public response:
+   ok=true
+   recovery_id present
+   runtime_reload_scheduled=true
+   page_reload_deferred_to_new_runtime=true
+   wake_alarm_scheduled=true
+5. Before old target disappears, if possible record that WORK_SESSION_REFRESH_RUNTIME_RELOAD_ARMED exists. Do not delay runtime teardown just to inspect it.
+6. Execute the browser-level target survival procedure above.
+7. After recovery require:
+   state=active_visible
+   command acceptance=true
+   same tab ID and conversation identity/key
+   fresh functional Ozon button present
+   no initial prompt resend
+   no command replay
+   provider requests=0
+   protected quota/cache/history/no-replay state preserved.
+8. Prove the fresh Ozon button is functional with LOCAL-ONLY OZON_HELP_V1 if needed for functional-path proof; external_request_executed must remain false and real provider requests remain 0.
+
+E — ACTIVE_HIDDEN
+1. Establish a fresh active_visible work-session then invoke Hide.
+2. Require active_hidden, command acceptance=false, Ozon buttons=0.
+3. Record old target/generation/identity/protected state.
+4. Invoke real OZ_WORK_REFRESH once and require the same A.3 public response fields.
+5. Execute browser-level target survival procedure.
+6. Require WORK_SESSION_REFRESH_RESUMED restores active_hidden.
+7. Require recovery cleared, same tab/conversation, command acceptance=false, Ozon buttons=0.
+8. Invoke production Show.
+9. Require active_visible, command acceptance=true, fresh functional Ozon button.
+10. No prompt resend/replay/provider request/protected-state reset.
+
+TEST-SUBSTRATE DISCIPLINE
+- If the ROOT browser-level target observer itself fails or is not installed before Refresh, mark VALIDATION_BLOCKED; do not call D/E product FAIL.
+- If old-target TargetCloseError escapes and aborts the harness, mark VALIDATION_BLOCKED; do not call D/E product FAIL.
+- Product FAIL requires an executed assertion observed from a harness that survived expected old-worker teardown.
+
+ALICE
+Alice = NOT_EXECUTED_ENVIRONMENT_ONLY if no established installed Alice environment is available. Not a rejection condition.
+
+DECISION
+- Exact materialization + D PASS + E PASS => PATCH_A3_BROWSER_CANDIDATE_ACCEPTED
+- Exact materialization + valid root observer + executed D/E product failure => PATCH_A3_BROWSER_CANDIDATE_REJECTED
+- Harness cannot survive/observe target teardown => validation-blocked/inconclusive; do not misclassify as product failure.
+
+WRITE NEW R3 RESULT ONLY
+
+tooling/llm-api-bridges/ozon-seller/validation/PATCH_A3_REFRESH_RESPONSE_BOUNDARY_CODEX_RESULT_R3_2026-08-24.md
+
+Result must include:
+- tested branch and starting HEAD
+- candidate hashes/markers
+- Node/Puppeteer/Chrome versions
+- extension ID and service-worker URL
+- root CDP observer setup proof BEFORE Refresh
+- complete relevant Target.targetCreated/targetDestroyed/targetInfoChanged timeline for D and E
+- old target ID and old WORKER_SESSION_ID
+- TargetCloseError classification if observed
+- new target/execution-context ID and new WORKER_SESSION_ID, or exact 45-second timeout evidence
+- page reload lifecycle timeline
+- WORK_SESSION_REFRESH_POST_RUNTIME_TAB_RELOAD_SCHEDULED evidence
+- WORK_SESSION_REFRESH_RESUMED evidence
+- recovery/session/command-acceptance/button final state
+- provider counters=0
+- production code modified by tester=0
+- validation blocker, if any, separately
+- Alice environment-only status
+- final decision
+
+Commit only this R3 result/evidence file to the same branch.
+
+Return only:
+1. R3 result file path
+2. result commit SHA
+3. final decision
+4. failed PRODUCT scenarios if rejected
+5. validation blocker separately, if any
+6. Alice environment-only status
