@@ -1,0 +1,28 @@
+--- service_worker.js	Patch A.1
++++ service_worker.js	Patch A.2 Refresh wake
+@@ -4632,8 +4632,28 @@
+       case "OZ_WORK_REFRESH": {
+         const tab = normalizeTabId(message.tab_id);
+         const key = normalizeConversationKey(message.conversation_key);
+         const begun = await beginWorkSessionRefresh(tab, key);
+         if (begun.already_in_progress) return { ok: true, code: "REFRESH_ALREADY_IN_PROGRESS", recovery: begun.recovery };
++        try {
++          await chrome.tabs.reload(tab);
++        } catch (error) {
++          const session = await workSessionFor(key);
++          if (session.state === OzonWorkSessionModel.STATES.RECOVERING && Number(session.revision) === Number(begun.recovery.revision)) {
++            await mutateWorkSession(key, session.revision, OzonWorkSessionModel.STATES.ERROR, { error: { code: "WORK_REFRESH_TAB_RELOAD_FAILED" } });
++          }
++          const recoveries = await getWorkRecoveries();
++          if (recoveries[key]?.recovery_id === begun.recovery.recovery_id) {
++            delete recoveries[key];
++            await storageSet({ [KEYS.WORK_SESSION_RECOVERIES]: recoveries });
++          }
++          await diagnostic("WORK_SESSION_REFRESH_TAB_RELOAD_FAILED", { recovery_id: begun.recovery.recovery_id, tab_id: tab, error: error?.message || String(error) }, { level: "error" });
++          return { ok: false, code: "WORK_REFRESH_TAB_RELOAD_FAILED", error: error?.message || String(error), recovery: begun.recovery };
++        }
++        await diagnostic("WORK_SESSION_REFRESH_TAB_RELOAD_SCHEDULED", { recovery_id: begun.recovery.recovery_id, tab_id: tab, conversation_key: key });
+         setTimeout(() => chrome.runtime.reload(), 0);
+-        return { ok: true, recovery: begun.recovery, runtime_reload_scheduled: true };
++        return { ok: true, recovery: begun.recovery, page_reload_scheduled: true, runtime_reload_scheduled: true };
+       }
