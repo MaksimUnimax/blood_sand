@@ -64,7 +64,7 @@ def main() -> None:
     text = before.decode("utf-8")
     if text.count(OLD) != 1:
         raise RuntimeError("Patch A.1 source anchor is missing or ambiguous")
-    worker.write_text(text.replace(OLD, NEW, 1), encoding="utf-8")
+    worker.write_bytes(text.replace(OLD, NEW, 1).encode("utf-8"))
     after = worker.read_bytes()
     if sha256(after) != PATCHED_SERVICE_WORKER_SHA256:
         raise RuntimeError("patched service_worker.js identity mismatch")
