@@ -1,0 +1,6 @@
+Classification: non-release Patch A browser-test candidate
+Artifact: OZON_BRIDGE_v0.1.19_WORK_SESSION_LIFECYCLE_PATCH_A_BROWSER_CANDIDATE_2026-08-24.zip
+SHA-256: d5e25219c7010495328c8310e0932d468b305921fd1349177fda49ffcb7439b4
+Production inventory: 19 files
+Fresh extraction verification: FRESH_EXTRACT_PATCH_A_BROWSER_CANDIDATE_VERIFY_PASS files=19
+Status: awaiting independent Codex browser validation; NOT FINAL; NOT ACCEPTED
