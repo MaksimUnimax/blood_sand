@@ -1,0 +1,204 @@
+You are the independent TESTER for Ozon Bridge Patch A.
+
+IMPORTANT ROLE BOUNDARY
+- Do NOT modify production code.
+- Do NOT patch, rebuild, repackage, or “fix” the extension.
+- Do NOT create an alternative candidate.
+- The R2 base64 reconstruction described below is transport decoding of the already-built candidate, NOT a rebuild or repack.
+- If you find a functional defect, stop the affected scenario and report REJECTED with exact evidence.
+- All persistent evidence/results go back through GitHub only.
+
+Repository:
+MaksimUnimax/blood_sand
+
+Test branch:
+test/ozon-work-session-lifecycle-patch-a-browser-candidate-2026-08-24
+
+CANONICAL CANDIDATE IDENTITY
+Filename:
+OZON_BRIDGE_v0.1.19_WORK_SESSION_LIFECYCLE_PATCH_A_BROWSER_CANDIDATE_2026-08-24.zip
+
+Required byte size:
+136504
+
+Required SHA-256:
+d5e25219c7010495328c8310e0932d468b305921fd1349177fda49ffcb7439b4
+
+Required Git blob SHA of canonical ZIP bytes:
+7292fbbc4133ddad046da050c11d67adf9419183
+
+IMPORTANT: DO NOT USE THE HISTORICAL BINARY FILE AT:
+tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_WORK_SESSION_LIFECYCLE_PATCH_A_BROWSER_CANDIDATE_2026-08-24.zip
+
+That GitHub binary handoff is known to be truncated to 10818 bytes and exists only as audit evidence of the first failed transport. The previous Codex rejection was caused by that transport corruption before browser testing began; it was not a functional Patch A rejection.
+
+THE ONLY VALID CANDIDATE SOURCE FOR THIS R2 RUN IS:
+tooling/llm-api-bridges/ozon-seller/validation/transport-r2/
+
+Integrity record:
+tooling/llm-api-bridges/ozon-seller/validation/CANDIDATE_TRANSPORT_R2_INTEGRITY_PASS_2026-08-24.md
+
+The R2 directory must contain exactly these candidate transport files:
+part-000.b64 through part-020.b64
+
+Expected transport shape:
+- part-000 through part-019: exactly 9000 bytes each
+- part-020: exactly 2008 bytes
+- concatenated base64 length: exactly 182008 bytes/characters
+
+FIRST — MANDATORY R2 RECONSTRUCTION PREFLIGHT
+1. Fetch/checkout the exact test branch and record its HEAD commit SHA before testing.
+2. Read the R2 integrity record above.
+3. Enumerate part-000.b64 through part-020.b64 in lexical order.
+4. Verify there are exactly 21 parts and no part is missing or duplicated.
+5. Verify each part size against the integrity record.
+6. Verify each part Git blob SHA against the integrity record.
+7. Concatenate the exact raw ASCII contents in lexical order with NO inserted newline, separator, BOM, whitespace, or normalization.
+8. Base64-decode the concatenated payload to a temporary ZIP outside the repository production tree. This is transport decoding only.
+9. Verify reconstructed ZIP byte size is exactly 136504.
+10. Verify reconstructed ZIP SHA-256 is exactly:
+   d5e25219c7010495328c8310e0932d468b305921fd1349177fda49ffcb7439b4
+11. Verify reconstructed ZIP Git blob SHA is exactly:
+   7292fbbc4133ddad046da050c11d67adf9419183
+12. If ANY identity check fails: STOP. Do not run browser tests. Record R2_TRANSPORT_REJECTED with exact evidence.
+13. If all identity checks pass: fresh-extract the reconstructed ZIP into a clean directory.
+14. Verify exactly 19 production files in the extracted candidate.
+15. Load ONLY that fresh-extracted reconstructed candidate into the browser test environment.
+
+Canonical lifecycle spec:
+tooling/llm-api-bridges/ozon-seller/OZON_BRIDGE_SESSION_LIFECYCLE_AND_PERSONAL_DATA_POLICY_SPEC_2026-08-21.md
+on branch:
+design/ozon-session-lifecycle-and-personal-data-policy-2026-08-21
+
+This is Patch A only.
+Do NOT test or implement Patch B.
+Do NOT send real Ozon business requests during lifecycle validation.
+
+TEST FUNCTIONAL BEHAVIOR, NOT VISUAL POLISH.
+
+A. EXISTING CHAT START
+- Open an existing supported ChatGPT conversation with a stable real conversation ID.
+- Click “Начать работу”.
+- Verify the initial prompt is sent exactly once.
+- Verify the session becomes active and the Ozon button is functional.
+- Verify Autorun is not enabled automatically.
+- Click Start again while active.
+- Verify only one additional initial prompt is sent.
+- Verify no new session/binding/provider reset occurs.
+
+B. NEW EMPTY CHAT START
+- Open a genuinely new empty ChatGPT chat before a stable conversation ID exists.
+- Click Start without manually sending a message first.
+- Verify initial prompt is sent exactly once.
+- Verify duplicate Start while pending is suppressed.
+- Verify no fake conversation ID is created.
+- Verify binding occurs only after a real conversation ID exists AND the first new assistant response has completed.
+- Verify the final Ozon button is functional.
+
+C. HIDE / SHOW
+- On an active session click “Убрать кнопку”.
+- Verify new manual Ozon commands cannot execute while hidden.
+- Verify no start prompt is resent.
+- Verify binding/provider timing/quota/cache/history are preserved.
+- Click “Показать кнопку”.
+- Verify a fresh functional button appears.
+- Verify old removed button/handler cannot execute.
+
+D. REFRESH — EXPLICIT ONLY
+- On an active visible session click “Обновить”.
+- Do not manually reload the ChatGPT page.
+- Verify genuine extension runtime renewal occurs.
+- Verify the already-open page reconnects.
+- Verify old UI generation is inert.
+- Verify a fresh functional Ozon button appears.
+- Verify no old Ozon business request is replayed.
+- Verify provider timing/quota/cache/history/no-replay state is preserved.
+
+E. REFRESH WHILE HIDDEN
+- Hide first.
+- Click Refresh.
+- Verify the session returns hidden.
+- Verify no Ozon button appears until Show is clicked.
+- Click Show and verify a fresh functional button appears.
+
+F. FINISH
+- Click “Завершить работу”.
+- Verify the current chat is no longer active for Ozon manual work.
+- Verify Show cannot reactivate the finished session.
+- Click Start afterward.
+- Verify a new session starts and the initial prompt is sent exactly once.
+
+G. CHATGPT WORK
+- Use ChatGPT Work.
+- Verify the real submit control is used:
+  button#composer-submit-button[data-testid="send-button"]
+- Verify persistent dictation control is not selected.
+- Complete 3 consecutive safe/local deliveries.
+- Verify all 3 complete and the bridge remains ready for a fourth.
+
+H. CORRELATION / FAIL-CLOSED
+Verify stale/wrong:
+- tab
+- origin
+- adapter
+- conversation
+- revision/generation
+cannot complete a pending Start or Refresh recovery.
+
+I. ALICE
+If the established Alice browser environment is available, run the same non-provider lifecycle checks.
+If unavailable, report NOT_EXECUTED with the exact environment blocker.
+Do not fabricate PASS.
+
+PROVIDER SAFETY
+- Real Ozon business request count for this lifecycle matrix must remain 0.
+- Do not change credentials.
+- Do not reset quota/timers.
+- Do not use personal/customer data.
+
+AUDIT PRESERVATION
+Do NOT overwrite or delete the historical first-run result:
+tooling/llm-api-bridges/ozon-seller/validation/PATCH_A_BROWSER_CANDIDATE_CODEX_RESULT_2026-08-24.md
+
+That file documents the first binary-transport failure and must remain unchanged.
+
+REQUIRED R2 RESULT
+Write the new test result into the SAME GitHub test branch as:
+
+tooling/llm-api-bridges/ozon-seller/validation/PATCH_A_BROWSER_CANDIDATE_CODEX_RESULT_R2_2026-08-24.md
+
+The R2 result file must contain:
+- exact tested branch
+- exact branch HEAD commit SHA fetched before testing
+- transport source = transport-r2
+- exact part count
+- each part size/blob verification summary
+- concatenated base64 length
+- reconstructed ZIP byte size
+- reconstructed ZIP SHA-256
+- reconstructed ZIP Git blob SHA
+- fresh extraction production file count
+- browser/environment actually used
+- PASS/FAIL/NOT_EXECUTED for each section A–I
+- exact evidence for every FAIL
+- explicit confirmation that no production code was changed
+- explicit confirmation that no candidate rebuild/repack occurred
+- explicit confirmation real Ozon business requests = 0
+- final decision exactly one of:
+  PATCH_A_BROWSER_CANDIDATE_ACCEPTED
+  PATCH_A_BROWSER_CANDIDATE_REJECTED
+
+If REJECTED:
+- do not fix anything
+- do not rebuild
+- commit only the R2 result/evidence file to the test branch
+
+If ACCEPTED:
+- do not create a final release artifact
+- commit only the R2 result/evidence file to the test branch
+
+Return to the operator only:
+1. R2 result file path
+2. result commit SHA
+3. final decision
+4. short list of failed scenarios if rejected
