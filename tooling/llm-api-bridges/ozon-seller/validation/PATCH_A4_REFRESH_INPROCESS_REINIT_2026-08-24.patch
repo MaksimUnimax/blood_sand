@@ -1,0 +1,198 @@
+--- service_worker.js	Patch A.3
++++ service_worker.js	Patch A.4
+@@ -9,6 +9,7 @@
+ const KEYS = OzonRuntime.STORAGE_KEYS;
+ const MAX_DIAGNOSTICS = 1500;
+ const WORKER_SESSION_ID = `worker-${crypto.randomUUID()}`;
++let workSessionRuntimeGeneration = `work-runtime-${crypto.randomUUID()}`;
+ const DEFAULT_AUTO_START_TEXT = OzonRuntime.DEFAULT_AUTO_START_TEXT;
+ const AI_MODES = new Set(["auto", "chatgpt", "alice"]);
+ function normalizeAIMode(value) {
+@@ -934,7 +935,9 @@
+     version: 1,
+     recovery_id: `work-recovery-${crypto.randomUUID()}`,
+     revision: recovering.revision,
+-    old_runtime_generation: WORKER_SESSION_ID,
++    old_runtime_generation: workSessionRuntimeGeneration,
++    new_runtime_generation: `work-runtime-${crypto.randomUUID()}`,
++    worker_session_id: WORKER_SESSION_ID,
+     tab_id: tab,
+     origin: live.origin,
+     ai_id: live.ai_id,
+@@ -948,7 +951,7 @@
+   };
+   recoveries[key] = recovery;
+   await storageSet({ [KEYS.WORK_SESSION_RECOVERIES]: recoveries });
+-  await diagnostic("WORK_SESSION_REFRESH_PREPARED", { recovery_id: recovery.recovery_id, old_runtime_generation: WORKER_SESSION_ID, operation_phase: operation.phase, provider_dispatched: operation.provider_dispatched, delivery_preserved: operation.delivery_preserved === true });
++  await diagnostic("WORK_SESSION_REFRESH_PREPARED", { recovery_id: recovery.recovery_id, old_runtime_generation: recovery.old_runtime_generation, new_runtime_generation: recovery.new_runtime_generation, worker_session_id: WORKER_SESSION_ID, operation_phase: operation.phase, provider_dispatched: operation.provider_dispatched, delivery_preserved: operation.delivery_preserved === true });
+   return { already_in_progress: false, recovery };
+ }
+ 
+@@ -971,21 +974,39 @@
+   return { ok: false, code: "WORK_REFRESH_CONTENT_RECONNECT_TIMEOUT", error: lastError, last_code: lastCode };
+ }
+ 
+-async function reloadRefreshOwnerTabAfterRuntimeRenewal(recovery) {
++async function reloadRefreshOwnerTabInProcess(recovery, timeoutMs = 15000) {
+   const tabId = Number(recovery?.tab_id || 0);
+   if (!Number.isInteger(tabId) || tabId <= 0) {
+     return { ok: false, code: "WORK_REFRESH_TAB_RELOAD_FAILED", error: "Recovery owner tab is missing." };
+   }
+-  try {
+-    await chrome.tabs.reload(tabId);
+-  } catch (error) {
+-    return { ok: false, code: "WORK_REFRESH_TAB_RELOAD_FAILED", error: error?.message || String(error) };
+-  }
+-  await diagnostic("WORK_SESSION_REFRESH_POST_RUNTIME_TAB_RELOAD_SCHEDULED", {
++  const loaded = await new Promise((resolve) => {
++    let settled = false;
++    let sawLoading = false;
++    const finish = (result) => {
++      if (settled) return;
++      settled = true;
++      clearTimeout(timer);
++      try { chrome.tabs.onUpdated.removeListener(listener); } catch (_) {}
++      resolve(result);
++    };
++    const listener = (updatedTabId, changeInfo, tab) => {
++      if (Number(updatedTabId) !== tabId) return;
++      if (changeInfo?.status === "loading") sawLoading = true;
++      if (changeInfo?.status === "complete" && sawLoading) finish({ ok: true, tab });
++    };
++    const timer = setTimeout(() => finish({ ok: false, code: "WORK_REFRESH_TAB_RELOAD_TIMEOUT", error: "AI tab reload did not complete in time." }), Math.max(1000, Number(timeoutMs || 15000)));
++    chrome.tabs.onUpdated.addListener(listener);
++    Promise.resolve(chrome.tabs.reload(tabId)).catch((error) => {
++      finish({ ok: false, code: "WORK_REFRESH_TAB_RELOAD_FAILED", error: error?.message || String(error) });
++    });
++  });
++  if (!loaded?.ok) return loaded;
++  await diagnostic("WORK_SESSION_REFRESH_TAB_RELOAD_COMPLETED", {
+     recovery_id: recovery.recovery_id,
+     tab_id: tabId,
+     conversation_key: recovery.conversation_key,
+-    runtime_generation: WORKER_SESSION_ID
++    worker_session_id: WORKER_SESSION_ID,
++    runtime_generation: recovery.new_runtime_generation
+   });
+   return { ok: true, tab_id: tabId };
+ }
+@@ -1006,14 +1027,6 @@
+     }
+     const session = await workSessionFor(key);
+     if (session.state !== OzonWorkSessionModel.STATES.RECOVERING || Number(session.revision) !== Number(recovery.revision)) continue;
+-    const pageReload = await reloadRefreshOwnerTabAfterRuntimeRenewal(recovery);
+-    if (!pageReload.ok) {
+-      await setWorkSessionCommandAcceptance(key, false);
+-      await mutateWorkSession(key, session.revision, OzonWorkSessionModel.STATES.ERROR, { error: { code: pageReload.code || "WORK_REFRESH_TAB_RELOAD_FAILED" } });
+-      await diagnostic(pageReload.code || "WORK_REFRESH_TAB_RELOAD_FAILED", { recovery_id: recovery.recovery_id, tab_id: recovery.tab_id, runtime_generation: WORKER_SESSION_ID, error: pageReload.error || null }, { level: "error" });
+-      delete recoveries[key];
+-      continue;
+-    }
+     const identityCheck = await waitForRefreshTabIdentity(recovery);
+     if (!identityCheck.ok) {
+       await setWorkSessionCommandAcceptance(key, false);
+@@ -1025,8 +1038,9 @@
+ 
+     // Runtime/content renewal is a handshake while the session is still RECOVERING and command acceptance is closed.
+     // Only after the new generation confirms the exact tab/conversation do we restore active_visible/active_hidden.
+-    const handshake = await tabMessage(Number(recovery.tab_id), { type: "OZ_WORK_RUNTIME_RENEW", runtime_generation: WORKER_SESSION_ID, conversation_key: key, visible: false });
+-    if (!handshake?.ok || handshake.runtime_generation !== WORKER_SESSION_ID || handshake.applied !== true) {
++    const runtimeGeneration = String(recovery.new_runtime_generation || workSessionRuntimeGeneration);
++    const handshake = await tabMessage(Number(recovery.tab_id), { type: "OZ_WORK_RUNTIME_RENEW", runtime_generation: runtimeGeneration, conversation_key: key, visible: false });
++    if (!handshake?.ok || handshake.runtime_generation !== runtimeGeneration || handshake.applied !== true) {
+       await setWorkSessionCommandAcceptance(key, false);
+       await mutateWorkSession(key, session.revision, OzonWorkSessionModel.STATES.ERROR, { error: { code: handshake?.code || "WORK_REFRESH_CONTENT_RECONNECT_FAILED" } });
+       delete recoveries[key];
+@@ -1046,7 +1060,7 @@
+       }
+     }
+     delete recoveries[key];
+-    await diagnostic("WORK_SESSION_REFRESH_RESUMED", { recovery_id: recovery.recovery_id, old_runtime_generation: recovery.old_runtime_generation, new_runtime_generation: WORKER_SESSION_ID, restored_state: target, delivery_preserved: recovery.operation?.delivery_preserved === true, ui_record_generation: handshake.ui_record_generation || null });
++    await diagnostic("WORK_SESSION_REFRESH_RESUMED", { recovery_id: recovery.recovery_id, old_runtime_generation: recovery.old_runtime_generation, new_runtime_generation: runtimeGeneration, worker_session_id: WORKER_SESSION_ID, restored_state: target, delivery_preserved: recovery.operation?.delivery_preserved === true, ui_record_generation: handshake.ui_record_generation || null });
+   }
+   await storageSet({ [KEYS.WORK_SESSION_RECOVERIES]: recoveries });
+   if (Object.keys(recoveries).length === 0) {
+@@ -4692,29 +4706,48 @@
+         const key = normalizeConversationKey(message.conversation_key);
+         const begun = await beginWorkSessionRefresh(tab, key);
+         if (begun.already_in_progress) return { ok: true, code: "REFRESH_ALREADY_IN_PROGRESS", recovery: begun.recovery };
+-        let wakeAlarmScheduled = false;
+-        try {
+-          await chrome.alarms.create(WORK_SESSION_REFRESH_WAKE_ALARM, { when: Date.now() + 1000, persistAcrossSessions: true });
+-          wakeAlarmScheduled = true;
+-        } catch (_) {
+-          try {
+-            await chrome.alarms.create(WORK_SESSION_REFRESH_WAKE_ALARM, { when: Date.now() + 1000 });
+-            wakeAlarmScheduled = true;
+-          } catch (_) {}
+-        }
+-        await diagnostic("WORK_SESSION_REFRESH_RUNTIME_RELOAD_ARMED", {
++        const oldRuntimeGeneration = String(begun.recovery.old_runtime_generation || workSessionRuntimeGeneration);
++        const newRuntimeGeneration = String(begun.recovery.new_runtime_generation || `work-runtime-${crypto.randomUUID()}`);
++        workSessionRuntimeGeneration = newRuntimeGeneration;
++        await diagnostic("WORK_SESSION_REFRESH_RUNTIME_REINITIALIZED", {
+           recovery_id: begun.recovery.recovery_id,
+           tab_id: tab,
+           conversation_key: key,
+-          wake_alarm_scheduled: wakeAlarmScheduled
++          worker_session_id: WORKER_SESSION_ID,
++          old_runtime_generation: oldRuntimeGeneration,
++          new_runtime_generation: newRuntimeGeneration
+         });
++        const pageReload = await reloadRefreshOwnerTabInProcess(begun.recovery);
++        if (!pageReload.ok) {
++          const session = await workSessionFor(key);
++          await setWorkSessionCommandAcceptance(key, false);
++          if (session.state === OzonWorkSessionModel.STATES.RECOVERING && Number(session.revision) === Number(begun.recovery.revision)) {
++            await mutateWorkSession(key, session.revision, OzonWorkSessionModel.STATES.ERROR, { error: { code: pageReload.code || "WORK_REFRESH_TAB_RELOAD_FAILED" } });
++          }
++          const recoveries = await getWorkRecoveries();
++          if (recoveries[key]?.recovery_id === begun.recovery.recovery_id) {
++            delete recoveries[key];
++            await storageSet({ [KEYS.WORK_SESSION_RECOVERIES]: recoveries });
++          }
++          await diagnostic(pageReload.code || "WORK_REFRESH_TAB_RELOAD_FAILED", { recovery_id: begun.recovery.recovery_id, tab_id: tab, worker_session_id: WORKER_SESSION_ID, runtime_generation: newRuntimeGeneration, error: pageReload.error || null }, { level: "error" });
++          return { ok: false, code: pageReload.code || "WORK_REFRESH_TAB_RELOAD_FAILED", error: pageReload.error || "AI tab reload failed.", recovery: begun.recovery };
++        }
++        await resumeWorkSessionRecoveries();
++        const restored = await workSessionFor(key);
++        const restoredOk = [OzonWorkSessionModel.STATES.ACTIVE_VISIBLE, OzonWorkSessionModel.STATES.ACTIVE_HIDDEN].includes(restored.state);
++        if (!restoredOk) {
++          return { ok: false, code: restored.error?.code || "WORK_REFRESH_RECOVERY_FAILED", error: "Work-session recovery did not restore an active state.", recovery: begun.recovery, session: restored };
++        }
+         return {
+           ok: true,
+           recovery: begun.recovery,
+-          runtime_reload_scheduled: true,
+-          page_reload_deferred_to_new_runtime: true,
+-          wake_alarm_scheduled: wakeAlarmScheduled,
+-          runtime_reload_after_response: true
++          runtime_reinitialized: true,
++          physical_worker_reloaded: false,
++          worker_session_id: WORKER_SESSION_ID,
++          old_runtime_generation: oldRuntimeGeneration,
++          new_runtime_generation: newRuntimeGeneration,
++          page_reload_completed: true,
++          restored_state: restored.state
+         };
+       }
+ 
+@@ -5119,17 +5152,7 @@
+       default:
+         return { ok: false, code: "UNKNOWN_MESSAGE", error: "Неизвестная команда расширения." };
+     }
+-  })().then((response) => {
+-    const runtimeReloadAfterResponse = response?.runtime_reload_after_response === true;
+-    if (!runtimeReloadAfterResponse) {
+-      sendResponse(response);
+-      return;
+-    }
+-    const publicResponse = { ...response };
+-    delete publicResponse.runtime_reload_after_response;
+-    sendResponse(publicResponse);
+-    try { chrome.runtime.reload(); } catch (_) {}
+-  }).catch(async (error) => {
++  })().then(sendResponse).catch(async (error) => {
+     const code = String(error?.code || (error?.name === "AbortError" ? "REQUEST_TIMEOUT" : "EXTENSION_ERROR"));
+     const text = String(error?.message || error || "Unknown error");
+     await setStatus({ ok: false, code, message: text }).catch(() => null);
