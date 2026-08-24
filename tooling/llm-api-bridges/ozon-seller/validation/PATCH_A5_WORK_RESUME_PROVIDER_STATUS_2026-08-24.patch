@@ -1,0 +1,137 @@
+diff --git a/popup.js b/popup.js
+index c752cee..5ac9c8c 100644
+--- a/popup.js
++++ b/popup.js
+@@ -124,7 +124,11 @@ function renderState(state) {
+   if ($("workSessionMeta")) $("workSessionMeta").textContent = `Work-session: ${session.state || "inactive"}${session.revision ? ` · rev ${session.revision}` : ""}`;
+   if ($("workStart")) $("workStart").disabled = state.work_start_available !== true;
+   if ($("workRefresh")) $("workRefresh").disabled = !["active_visible", "active_hidden", "recovering"].includes(session.state);
+-  if ($("workShowHide")) { $("workShowHide").textContent = session.state === "active_visible" ? "Убрать кнопку" : "Показать кнопку"; $("workShowHide").disabled = !["active_visible", "active_hidden"].includes(session.state); }
++  if ($("workShowHide")) {
++    $("workShowHide").textContent = session.state === "active_visible" ? "Убрать кнопку" : "Показать кнопку";
++    const resumableInactive = session.state === "inactive" && bound;
++    $("workShowHide").disabled = !(["active_visible", "active_hidden"].includes(session.state) || resumableInactive);
++  }
+   if ($("workFinish")) $("workFinish").disabled = !["active_visible", "active_hidden", "error"].includes(session.state);
+   $("versionBadge").textContent = `v${state.version || "0.1.19"}`;
+   const selectedAIMode = ["auto", "chatgpt", "alice"].includes(String(state.ai_mode || "")) ? String(state.ai_mode) : "auto";
+@@ -206,11 +210,19 @@ $("workRefresh")?.addEventListener("click", () => busy($("workRefresh"), async (
+   status(response.code === "REFRESH_ALREADY_IN_PROGRESS" ? "Refresh уже выполняется." : "Refresh подготовлен: extension runtime перезапускается, старые handlers retired.", "ok");
+ }));
+ $("workShowHide")?.addEventListener("click", () => busy($("workShowHide"), async () => {
+-  const context = await resolvePopupContext(); const hide = lastState?.work_session?.state === "active_visible";
+-  const response = await send(hide ? "OZ_WORK_HIDE" : "OZ_WORK_SHOW", { tab_id: context.tab_id, conversation_key: context.conversation_key });
+-  if (!response.ok) return status(response.error || "Не удалось изменить видимость кнопки.", "error"); await refresh(); status(hide ? "Кнопки скрыты; worker и provider state сохранены." : "Созданы свежие Ozon controls без отправки prompt.", "ok");
++  const context = await resolvePopupContext();
++  const sessionState = String(lastState?.work_session?.state || "inactive");
++  const messageType = sessionState === "active_visible"
++    ? "OZ_WORK_HIDE"
++    : (sessionState === "active_hidden" ? "OZ_WORK_SHOW" : "OZ_WORK_RESUME");
++  const response = await send(messageType, { tab_id: context.tab_id, conversation_key: context.conversation_key });
++  if (!response.ok) return status(response.error || "Не удалось изменить состояние work-session.", "error");
++  await refresh();
++  if (messageType === "OZ_WORK_HIDE") status("Кнопки скрыты; worker и provider state сохранены.", "ok");
++  else if (messageType === "OZ_WORK_SHOW") status("Созданы свежие Ozon controls без отправки prompt.", "ok");
++  else status("Work-session продолжена без стартового prompt; Ozon controls включены.", "ok");
+ }));
+-$("workFinish")?.addEventListener("click", () => busy($("workFinish"), async () => { const context = await resolvePopupContext(); const response = await send("OZ_WORK_FINISH", { tab_id: context.tab_id, conversation_key: context.conversation_key }); if (!response.ok) return status(response.error || "Не удалось завершить work-session.", "error"); await refresh(); status("Work-session завершена; привязка retired.", "ok"); }));
++$("workFinish")?.addEventListener("click", () => busy($("workFinish"), async () => { const context = await resolvePopupContext(); const response = await send("OZ_WORK_FINISH", { tab_id: context.tab_id, conversation_key: context.conversation_key }); if (!response.ok) return status(response.error || "Не удалось завершить work-session.", "error"); await refresh(); status("Work-session завершена; диалог остаётся привязан. Для продолжения нажмите «Показать кнопку».", "ok"); }));
+ 
+ async function refresh() {
+   const context = await resolvePopupContext({ required: false });
+diff --git a/service_worker.js b/service_worker.js
+index ad84bc4..d5e6e88 100644
+--- a/service_worker.js
++++ b/service_worker.js
+@@ -1638,7 +1638,7 @@ async function commonPublicSettingsFields() {
+     copy_button_profiles: copyProfiles,
+     copy_button_profile_count: copyProfiles.profiles.length,
+     copy_button_builtin_adapter_count: BB2ManualControls.BUILTIN_MANUAL_COPY_ADAPTER_COUNT,
+-    last_status: settings.lastStatus?.code === "SAFE_PROBE_NOT_CONFIGURED" ? null : settings.lastStatus
++    last_status: settings.lastStatus?.scope === "provider" && settings.lastStatus?.code !== "SAFE_PROBE_NOT_CONFIGURED" ? settings.lastStatus : null
+   };
+ }
+ 
+@@ -1694,6 +1694,7 @@ async function publicGlobalSettingsState(pageContextError = null) {
+ 
+ async function setStatus(status) {
+   const clean = {
++    scope: "provider",
+     ok: Boolean(status.ok),
+     code: String(status.code || "").slice(0, 120),
+     message: String(status.message || "").slice(0, 800),
+@@ -4682,6 +4683,47 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+         await resetAutoStartPrompt(key);
+         return { ok: true, state: await publicSettingsState(key) };
+       }
++      case "OZ_WORK_RESUME": {
++        const tab = normalizeTabId(message.tab_id);
++        const key = normalizeConversationKey(message.conversation_key);
++        const session = await workSessionFor(key);
++        if (session.state !== OzonWorkSessionModel.STATES.INACTIVE) {
++          return { ok: false, code: "WORK_SESSION_NOT_INACTIVE", error: "Продолжить работу без prompt можно только из inactive work-session." };
++        }
++        const live = await assertTabConversation(tab, key);
++        const binding = await strictBindingForIdentity(live);
++        const manualOperation = await getManualOperation(key);
++        if (manualOperationActive(manualOperation)) {
++          return { ok: false, code: "WORK_RESUME_OPERATION_ACTIVE", error: "Нельзя продолжить inactive work-session: обнаружена незавершённая manual operation." };
++        }
++        const bindingSession = await mutateWorkSession(key, session.revision, OzonWorkSessionModel.STATES.BINDING, {
++          tab_id: tab,
++          origin: live.origin,
++          ai_id: live.ai_id,
++          conversation_id: live.conversation_id,
++          start_intent_id: null,
++          error: null
++        });
++        const visible = await mutateWorkSession(key, bindingSession.revision, OzonWorkSessionModel.STATES.ACTIVE_VISIBLE, { error: null });
++        try {
++          await setWorkSessionCommandAcceptance(key, true);
++          const applied = await tabMessage(tab, { type: "OZ_WORK_APPLY_VISIBILITY", visible: true, conversation_key: key });
++          if (!applied?.ok || applied.applied !== true) throw Object.assign(new Error(applied?.error || "Content script не подтвердил Resume."), { code: applied?.code || "WORK_RESUME_CONTENT_REJECTED" });
++        } catch (error) {
++          await setWorkSessionCommandAcceptance(key, false);
++          await mutateWorkSession(key, visible.revision, OzonWorkSessionModel.STATES.ERROR, { error: { code: error.code || "WORK_RESUME_FAILED" } });
++          return { ok: false, code: error.code || "WORK_RESUME_FAILED", error: error.message || String(error) };
++        }
++        await diagnostic("WORK_SESSION_RESUMED_WITHOUT_PROMPT", {
++          tab_id: tab,
++          conversation_key: key,
++          binding_id: binding.binding_id,
++          binding_revision: binding.revision,
++          session_revision: visible.revision,
++          external_request_executed: false
++        });
++        return { ok: true, resumed_without_prompt: true, binding, session: visible, state: await publicSettingsState(key) };
++      }
+       case "OZ_WORK_SHOW": {
+         const tab = normalizeTabId(message.tab_id);
+         const key = normalizeConversationKey(message.conversation_key);
+@@ -4897,14 +4939,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+         }
+         await withBindingWrite(async () => {
+           const sessions = await getWorkSessions();
+-          const bindings = await getConversationBindings();
+-          delete bindings[key];
+           const current = OzonWorkSessionModel.normalize(sessions[key], key);
+           if (current.state !== OzonWorkSessionModel.STATES.FINISHING || current.revision !== finishing.revision) throw Object.assign(new Error("Work-session изменилась во время Finish."), { code: "WORK_FINISH_STALE_SESSION" });
+           transitionWorkSessionRecord(sessions, key, current.revision, OzonWorkSessionModel.STATES.INACTIVE, { tab_id: null, origin: null, ai_id: null, conversation_id: null, start_intent_id: null, error: null });
+-          await storageSet({ [KEYS.CONVERSATION_BINDINGS]: bindings, [KEYS.WORK_SESSIONS]: sessions });
++          await storageSet({ [KEYS.WORK_SESSIONS]: sessions });
+         });
+-        return { ok: true, terminalized_operation: terminalized, state: await publicSettingsState(key) };
++        await diagnostic("WORK_SESSION_FINISHED_BINDING_PRESERVED", { conversation_key: key, tab_id: tab, external_request_executed: false });
++        return { ok: true, terminalized_operation: terminalized, binding_preserved: true, state: await publicSettingsState(key) };
+       }
+       case "OZ_SET_MANUAL_MODE": {
+         const key = normalizeConversationKey(message.conversation_key);
+@@ -5155,7 +5196,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+   })().then(sendResponse).catch(async (error) => {
+     const code = String(error?.code || (error?.name === "AbortError" ? "REQUEST_TIMEOUT" : "EXTENSION_ERROR"));
+     const text = String(error?.message || error || "Unknown error");
+-    await setStatus({ ok: false, code, message: text }).catch(() => null);
++    await diagnostic("EXTENSION_MESSAGE_FAILED", { message_type: String(message?.type || ""), code, error: text, tab_id: sender?.tab?.id || null }, { level: "error" }).catch(() => null);
+     sendResponse({ ok: false, code, error: text });
+   });
+   return true;
