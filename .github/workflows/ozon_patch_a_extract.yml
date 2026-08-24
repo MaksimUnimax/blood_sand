@@ -17,19 +17,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Extract checkpoint into reviewable source tree
+      - name: Extract checkpoint and baseline into reviewable source trees
         shell: bash
         run: |
           set -euo pipefail
-          ZIP='tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_WORK_SESSION_LIFECYCLE_M3_REFRESH_CHECKPOINT_2026-08-23.zip'
-          DEST='tooling/llm-api-bridges/ozon-seller/patch-a-repair/source'
-          test "$(sha256sum "$ZIP" | awk '{print $1}')" = 'c62b54b4500e7efc4bf507ce9143a929d9a5fcd489da679e14b6d2d3ae55d650'
-          rm -rf "$DEST"
-          mkdir -p "$DEST"
-          unzip -q "$ZIP" -d "$DEST"
-          test "$(find "$DEST" -type f | wc -l | tr -d ' ')" = '19'
+          M3_ZIP='tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_WORK_SESSION_LIFECYCLE_M3_REFRESH_CHECKPOINT_2026-08-23.zip'
+          BASE_ZIP='tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_GUIDED_COMMAND_DISCOVERY_2026-08-21.zip'
+          ROOT='tooling/llm-api-bridges/ozon-seller/patch-a-repair'
+          test "$(sha256sum "$M3_ZIP" | awk '{print $1}')" = 'c62b54b4500e7efc4bf507ce9143a929d9a5fcd489da679e14b6d2d3ae55d650'
+          test "$(sha256sum "$BASE_ZIP" | awk '{print $1}')" = '8886a8e4b3170095ea6eadae331bcc0494fce0442591c60bcef06d05de848b44'
+          rm -rf "$ROOT/source" "$ROOT/baseline"
+          mkdir -p "$ROOT/source" "$ROOT/baseline"
+          unzip -q "$M3_ZIP" -d "$ROOT/source"
+          unzip -q "$BASE_ZIP" -d "$ROOT/baseline"
+          test "$(find "$ROOT/source" -type f | wc -l | tr -d ' ')" = '19'
+          test "$(find "$ROOT/baseline" -type f | wc -l | tr -d ' ')" = '18'
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add "$DEST"
-          git commit -m 'chore(ozon): materialize Patch A M3 sources for repair'
+          git add "$ROOT/source" "$ROOT/baseline"
+          git commit -m 'chore(ozon): materialize Patch A baseline for repair'
           git push origin HEAD:${GITHUB_REF_NAME}
