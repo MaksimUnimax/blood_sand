@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Ozon Bridge — Multi-AI ↔ Ozon Seller + Performance API",
+  "version": "0.1.19",
+  "description": "Контролируемый read-only мост ChatGPT/Alice ↔ Ozon Seller + Performance API: multi-AI adapters, batch collection, recovery и локальные credentials.",
+  "permissions": [
+    "storage",
+    "alarms",
+    "tabs",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://alice.yandex.ru/*",
+    "https://api-seller.ozon.ru/*",
+    "https://api-performance.ozon.ru/*"
+  ],
+  "background": {
+    "service_worker": "service_worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://alice.yandex.ru/*"
+      ],
+      "js": [
+        "shared/conversation_identity.js",
+        "shared/runtime_names.js",
+        "shared/ai_adapters.js",
+        "shared/ozon_contract.js",
+        "shared/ozon_guidance.js",
+        "shared/bridge_autorun_model.js",
+        "shared/manual_controls.js",
+        "shared/composer_send.js",
+        "shared/proven_writing_block_capture.js",
+        "content_script.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Ozon Bridge",
+    "default_popup": "popup.html"
+  }
+}
