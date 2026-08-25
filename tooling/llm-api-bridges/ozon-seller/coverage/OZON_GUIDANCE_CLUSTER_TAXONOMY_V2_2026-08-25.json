@@ -1,0 +1,133 @@
+{
+  "schema": "OZON_GUIDANCE_CLUSTER_TAXONOMY_V2",
+  "as_of": "2026-08-25",
+  "guidance_protocol": "OZON_HELP_V1 remains; guidance_version becomes 2",
+  "compatibility": {
+    "existing_cluster_ids_preserved": [
+      "account_access",
+      "stock_inventory",
+      "sales_analytics",
+      "search_visibility",
+      "fulfillment_supply",
+      "advertising_performance"
+    ],
+    "posting_fbo_list_migration": "primary cluster becomes orders_fbo; fulfillment_supply may expose it as a temporary compatibility choice for one guidance version",
+    "advertising_performance": "unchanged"
+  },
+  "clusters": [
+    {
+      "id": "account_access",
+      "title_ru": "Доступ аккаунта",
+      "description_ru": "Роли API-ключа и безопасные признаки кабинета/подписки.",
+      "existing_id_preserved": true
+    },
+    {
+      "id": "catalog_products",
+      "title_ru": "Товары и карточки",
+      "description_ru": "Список товаров, карточки, описания, изображения, рейтинги контента, кванты и служебная информация о товарах.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "catalog_reference",
+      "title_ru": "Категории и справочники",
+      "description_ru": "Категории, атрибуты, сертификаты, бренды и справочные данные.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "stock_inventory",
+      "title_ru": "Остатки",
+      "description_ru": "Текущие остатки, остатки по складам, аналитика и оборачиваемость остатков.",
+      "existing_id_preserved": true
+    },
+    {
+      "id": "warehouses_logistics",
+      "title_ru": "Склады и логистика",
+      "description_ru": "Склады Ozon/продавца, кластеры, способы доставки и складские справочники.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "sales_analytics",
+      "title_ru": "Продажи и аналитика",
+      "description_ru": "Продажи, выручка, заказанные единицы и другие разрешённые аналитические показатели.",
+      "existing_id_preserved": true
+    },
+    {
+      "id": "search_visibility",
+      "title_ru": "Поиск и видимость",
+      "description_ru": "Поисковые запросы покупателей, видимость товаров и поисковая аналитика.",
+      "existing_id_preserved": true
+    },
+    {
+      "id": "orders_fbo",
+      "title_ru": "Заказы FBO",
+      "description_ru": "FBO-отправления, статусы и причины отмены.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "orders_fbs",
+      "title_ru": "Заказы FBS/rFBS",
+      "description_ru": "FBS/rFBS-отправления, документы, статусы и безопасные данные заказов.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "fulfillment_supply",
+      "title_ru": "Поставки и отгрузки",
+      "description_ru": "Заявки на поставку, грузоместа, таймслоты, акты и связанные read-only статусы.",
+      "existing_id_preserved": true
+    },
+    {
+      "id": "fbp_fulfillment",
+      "title_ru": "FBP-поставки",
+      "description_ru": "Read-only данные черновиков, поставок, складов и документов FBP.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "returns_cancellations",
+      "title_ru": "Возвраты и отмены",
+      "description_ru": "Возвраты FBO/FBS/rFBS, возвратные отгрузки и заявки на отмену.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "finance_accounting",
+      "title_ru": "Финансы",
+      "description_ru": "Начисления, транзакции, реализации, взаиморасчёты, счета и чеки.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "reports_exports",
+      "title_ru": "Отчёты и выгрузки",
+      "description_ru": "Список отчётов, состояние отчётов, формирование read-only выгрузок и отчёты по остаткам/размещению.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "pricing_promotions",
+      "title_ru": "Цены и акции",
+      "description_ru": "Только чтение цен, стратегий ценообразования, акций и кандидатов; любые изменения остаются запрещены.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "customer_feedback",
+      "title_ru": "Отзывы и вопросы",
+      "description_ru": "Отзывы, комментарии, вопросы и ответы только на чтение.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "communications",
+      "title_ru": "Чаты и уведомления",
+      "description_ru": "Чаты и уведомления; персональные данные только после явного разрешения.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "seller_rating",
+      "title_ru": "Рейтинг продавца",
+      "description_ru": "Рейтинги, история рейтингов и FBS-индекс ошибок.",
+      "existing_id_preserved": false
+    },
+    {
+      "id": "advertising_performance",
+      "title_ru": "Реклама",
+      "description_ru": "Существующие read-only операции Ozon Performance API; этот Seller-coverage этап их не меняет.",
+      "existing_id_preserved": true
+    }
+  ]
+}
