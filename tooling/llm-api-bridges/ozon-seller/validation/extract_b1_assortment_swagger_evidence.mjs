@@ -9,10 +9,28 @@ const TARGET_PATHS = [
   '/v4/product/info/attributes'
 ];
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']);
+const ALLOWED_BROWSER_ACQUISITIONS = new Set(['chrome_cdp_response_body', 'chrome_browser_download']);
 
-const outputPath = process.argv[2] || '';
+const args = process.argv.slice(2);
+const outputPath = args.shift() || '';
 if (!outputPath) {
-  throw new Error('usage: node extract_b1_assortment_swagger_evidence.mjs <output-md>');
+  throw new Error('usage: node extract_b1_assortment_swagger_evidence.mjs <output-md> [--input <swagger.json> --proof <browser-proof.json>]');
+}
+
+let inputPath = '';
+let proofPath = '';
+while (args.length) {
+  const flag = args.shift();
+  if (flag === '--input') {
+    inputPath = args.shift() || '';
+  } else if (flag === '--proof') {
+    proofPath = args.shift() || '';
+  } else {
+    throw new Error(`unknown argument: ${flag}`);
+  }
+}
+if (Boolean(inputPath) !== Boolean(proofPath)) {
+  throw new Error('--input and --proof must be provided together');
 }
 
 const sha256 = data => crypto.createHash('sha256').update(data).digest('hex');
@@ -62,37 +80,80 @@ function referencedClosure(document, operation) {
   return { schemas, unresolved };
 }
 
+function assertAllowedSourceUrl(value, label) {
+  const parsed = new URL(value);
+  if (parsed.protocol !== 'https:' || parsed.hostname !== 'docs.ozon.ru' || parsed.pathname !== '/api/seller/swagger.json') {
+    throw new Error(`${label} is not the fixed Ozon Seller Swagger source: ${value}`);
+  }
+}
+
 function assertSwagger(document, finalUrl) {
   if (!document || typeof document !== 'object' || Array.isArray(document)) throw new Error('Seller Swagger root is not an object');
   if (!(typeof document.openapi === 'string' || typeof document.swagger === 'string')) throw new Error('Seller Swagger has no openapi/swagger marker');
   if (!document.paths || typeof document.paths !== 'object' || Array.isArray(document.paths)) throw new Error('Seller Swagger paths is missing/invalid');
   if (Object.keys(document.paths).length < 100) throw new Error(`Seller Swagger path inventory too small: ${Object.keys(document.paths).length}`);
-  const final = new URL(finalUrl);
-  if (final.protocol !== 'https:' || final.hostname !== 'docs.ozon.ru') throw new Error(`Seller Swagger final host is not allowed: ${finalUrl}`);
+  assertAllowedSourceUrl(finalUrl, 'Seller Swagger final URL');
 }
 
-const response = await fetch(SOURCE_URL, {
-  method: 'GET',
-  redirect: 'follow',
-  headers: { accept: 'application/json' }
-});
-if (!response.ok) throw new Error(`Seller Swagger HTTP ${response.status}`);
-const bytes = Buffer.from(await response.arrayBuffer());
+function readBrowserProof(path) {
+  let proof;
+  try {
+    proof = JSON.parse(fs.readFileSync(path, 'utf8'));
+  } catch (error) {
+    throw new Error(`Browser proof parse failed: ${error.message}`);
+  }
+  if (!proof || typeof proof !== 'object' || Array.isArray(proof)) throw new Error('Browser proof root is not an object');
+  if (proof.requested_url !== SOURCE_URL) throw new Error(`Browser proof requested_url mismatch: ${proof.requested_url}`);
+  assertAllowedSourceUrl(proof.final_url, 'Browser proof final_url');
+  if (Number(proof.status) !== 200) throw new Error(`Browser proof HTTP status is not 200: ${proof.status}`);
+  if (!ALLOWED_BROWSER_ACQUISITIONS.has(proof.acquisition)) throw new Error(`Browser proof acquisition is not allowed: ${proof.acquisition}`);
+  const timestamp = Date.parse(proof.retrieved_at_utc);
+  if (!Number.isFinite(timestamp)) throw new Error(`Browser proof retrieved_at_utc is invalid: ${proof.retrieved_at_utc}`);
+  return proof;
+}
+
+let bytes;
+let finalUrl = SOURCE_URL;
+let retrievedAtUtc = new Date().toISOString();
+let acquisition = 'node_fetch';
+let browserProof = null;
+
+if (inputPath) {
+  browserProof = readBrowserProof(proofPath);
+  bytes = fs.readFileSync(inputPath);
+  if (!bytes.length) throw new Error('Browser-acquired Seller Swagger file is empty');
+  finalUrl = browserProof.final_url;
+  retrievedAtUtc = browserProof.retrieved_at_utc;
+  acquisition = browserProof.acquisition;
+  console.log('B1_SWAGGER_BROWSER_ACQUISITION_PROOF_PASS');
+} else {
+  const response = await fetch(SOURCE_URL, {
+    method: 'GET',
+    redirect: 'follow',
+    headers: { accept: 'application/json' }
+  });
+  if (!response.ok) throw new Error(`Seller Swagger HTTP ${response.status}`);
+  bytes = Buffer.from(await response.arrayBuffer());
+  finalUrl = response.url || SOURCE_URL;
+  retrievedAtUtc = new Date().toISOString();
+}
+
 let document;
 try {
   document = JSON.parse(bytes.toString('utf8'));
 } catch (error) {
   throw new Error(`Seller Swagger JSON parse failed: ${error.message}`);
 }
-assertSwagger(document, response.url || SOURCE_URL);
+assertSwagger(document, finalUrl);
 
 const missing = TARGET_PATHS.filter(target => !(target in document.paths));
 if (missing.length) throw new Error(`Seller Swagger missing target paths: ${missing.join(', ')}`);
 
 const snapshot = {
   requested_url: SOURCE_URL,
-  final_url: response.url || SOURCE_URL,
-  retrieved_at_utc: new Date().toISOString(),
+  final_url: finalUrl,
+  retrieved_at_utc: retrievedAtUtc,
+  acquisition,
   byte_length: bytes.length,
   sha256: sha256(bytes),
   openapi: document.openapi || null,
@@ -127,7 +188,7 @@ for (const target of TARGET_PATHS) {
 const lines = [];
 lines.push('# Patch B1 — Assortment Master Swagger evidence');
 lines.push('');
-lines.push('Generated deterministically from the fixed Ozon-owned Seller API Swagger source.');
+lines.push('Generated deterministically from bytes acquired from the fixed Ozon-owned Seller API Swagger source.');
 lines.push('');
 lines.push('## Snapshot metadata');
 lines.push('');
