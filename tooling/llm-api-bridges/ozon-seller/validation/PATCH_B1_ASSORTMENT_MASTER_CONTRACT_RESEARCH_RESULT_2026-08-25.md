@@ -1,77 +1,115 @@
-# Patch B1 — Assortment Master contract research result: persistent-Chrome retest
+# Patch B1 — Assortment Master contract research result
 
-## Authority and execution
+Date: 2026-08-25
+Final status: `PATCH_B1_ASSORTMENT_MASTER_CONTRACTS_CONFIRMED`
 
-- Researched branch: `feature/ozon-b1-assortment-master-contracts-2026-08-25`
-- Exact researched HEAD before this result commit: `edce9f9437e282dfd26c679a2274f7a0617b98bd`
-- Previous research result: `7552ee9722e5bac1e6cd5e72b31b23c44d38cbde`.
-- Production extension modifications by researcher: `0`.
-- Real Ozon Seller business requests: `0`.
-- Real Performance requests: `0`.
+## Authority and provenance
 
-## Extractor gate
+- Branch: `feature/ozon-b1-assortment-master-contracts-2026-08-25`
+- Previous environment-only result commit: `8053ddfddca115badc8857e1e49c873cb40e0ba2`
+- Operator evidence record commit: `0bf15febc68c9478a3a8d49e0f93dcbe9b428e39`
+- Fixed official source requested from operator browser: `https://docs.ozon.ru/api/seller/swagger.json`
+- Production modifications during contract research: `0`
+- Real Seller business requests during contract research: `0`
+- Real Performance requests during contract research: `0`
 
-The mandated extractor syntax check passed:
+The prior Node redirect-loop and missing persistent-Chrome failures were environment-only and are superseded by an operator-supplied official Swagger artifact.
 
-```text
-node --check tooling/llm-api-bridges/ozon-seller/validation/extract_b1_assortment_swagger_evidence.mjs
-```
+## Swagger validation
 
-The prior Node/Undici acquisition failure is superseded for this retest by the authority to use the real persistent Chrome environment. The required Chrome browser binding was requested through the supported browser control surface. Exact result:
+Operator-supplied `swagger.json`:
 
-```text
-Browser is not available: chrome
-```
+- byte length: `3933043`
+- SHA-256: `39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40`
+- OpenAPI: `3.0.0`
+- Ozon Seller API document version: `2.1`
+- server: `//api-seller.ozon.ru`
+- path count: `463`
+- all three target paths present
+- recursive local `$ref` closure complete for all three target operations
+- unresolved local refs: `0`
 
-The task explicitly requires real persistent Chrome and forbids substituting another browser or another Swagger source. Therefore no browser navigation, CDP Network event, download, response body, proof JSON, Swagger file, or contract extraction was possible.
+The browser final redirect chain and raw HTTP status were not separately captured; no values are invented for them. Contract confirmation is based on the supplied Ozon Seller OpenAPI artifact, its byte identity, document validation, target presence, and closed local reference graph.
 
-The fixed sole source remains:
+Detailed bounded evidence:
 
-```text
-https://docs.ozon.ru/api/seller/swagger.json
-```
+`tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_OPERATOR_SWAGGER_EVIDENCE_2026-08-25.md`
 
-No alternate URL, mirror, cached schema, SDK, blog, model knowledge, Seller credential, or Seller business endpoint was used.
+## Confirmed target operations
 
-## Required extractor markers
+1. `/v3/product/list`
+   - method: `POST`
+   - operationId: `ProductAPI_GetProductList`
+   - request body required
+   - pagination: explicit `last_id` + `limit`; no automatic continuation is authorized
+   - limit evidence: 1..1000
+   - identifier filters: `offer_id`, `product_id`, `skus`; one identifier group at a time, maximum 1000 products
+   - response continuation: `result.last_id`
+   - response total: `result.total`
 
-- `B1_SWAGGER_FETCH_PASS`: NOT_EMITTED
-- `B1_SWAGGER_DOCUMENT_VALIDATION_PASS`: NOT_EMITTED
-- `B1_ASSORTMENT_TARGET_PATHS_PRESENT_PASS`: NOT_EMITTED
-- `B1_ASSORTMENT_REFERENCED_SCHEMA_CLOSURE_PASS`: NOT_EMITTED
+2. `/v3/product/info/list`
+   - method: `POST`
+   - operationId: `ProductAPI_GetProductInfoList`
+   - request body required
+   - identifier arrays: `offer_id`, `product_id`, `sku`
+   - maximum 1000 products across the identifier parameters in one request
+   - no pagination/continuation field in the contract
+   - response: `items[]`
 
-Swagger byte SHA-256: NOT_AVAILABLE
+3. `/v4/product/info/attributes`
+   - method: `POST`
+   - operationId: `ProductAPI_GetProductAttributesV4`
+   - request body required
+   - filters: `offer_id`, `product_id`, `sku`, `visibility`
+   - pagination: explicit `last_id` + `limit`
+   - limit: 1..1000
+   - documented sort fields: `sku`, `offer_id`, `id`, `title`
+   - `sort_dir` official evidence is internally inconsistent: description says `asc`/`desc`, example uses `ASC`; implementation must preserve that uncertainty rather than inventing an extra interpretation
+   - response continuation: `last_id`
+   - response total: `total`
 
-Browser acquisition mode: NOT_AVAILABLE
+All three operations require `Client-Id` and `Api-Key` header parameters and are not marked deprecated.
 
-Requested URL: `https://docs.ozon.ru/api/seller/swagger.json`
+Documented error responses for all three: `400`, `403`, `404`, `409`, `500` using `rpcStatus`.
 
-Final URL: NOT_AVAILABLE
+## Current-contract corrections
 
-HTTP status: NOT_AVAILABLE
+- `/v3/product/list` current operationId is `ProductAPI_GetProductList`; the older repository locator value `ProductAPI_GetProductListv3` is stale and must not be treated as current authority.
+- `/v3/product/info/list.items[].showcases_visibility` is absent from this exact current Swagger.
+- `/v3/product/info/list.items[].images360` is absent from this exact current Swagger.
+- `/v3/product/info/list.items[].is_kgt` is present.
+- `/v3/product/info/list.items[].is_prepayment_allowed` is individually marked deprecated; this does not deprecate the operation.
 
-`B1_SWAGGER_BROWSER_ACQUISITION_PROOF_PASS`: NOT_EMITTED
+## Historical claim re-check
 
-## Target contracts and historical claims
+1. `/v3/product/list` supports `filter.skus`: `CURRENT_SWAGGER_PRESENT`
+2. `/v3/product/list` exposes `result.items[].sku`: `CURRENT_SWAGGER_PRESENT`
+3. `/v3/product/list` supports visibility filtering: `CURRENT_SWAGGER_PRESENT`
+4. `/v3/product/info/list` exposes `items[].showcases_visibility`: `CURRENT_SWAGGER_ABSENT`
+5. `/v3/product/info/list` exposes `items[].is_kgt`: `CURRENT_SWAGGER_PRESENT`
+6. `/v3/product/info/list` does not expose legacy `items[].images360`: `CURRENT_SWAGGER_PRESENT`
+7. `/v4/product/info/attributes` supports visibility filtering: `CURRENT_SWAGGER_PRESENT`
+8. `sku` remains a usable list/info join: `CURRENT_SWAGGER_PRESENT`
 
-No official Swagger snapshot was retrieved or validated in this run. Therefore no contract detail, method, operationId, schema, component closure, error response, deprecation, subscription, pagination, or historical claim is asserted from any other source.
+## Rate / entitlement evidence
 
-- `/v3/product/list`: NOT_DETERMINABLE
-- `/v3/product/info/list`: NOT_DETERMINABLE
-- `/v4/product/info/attributes`: NOT_DETERMINABLE
-- unresolved refs: NOT_DETERMINABLE
+No target-local Premium/subscription restriction appears in the three operation definitions or their required schema closures.
 
-Historical claim re-check:
+The same official Swagger's general Seller API process documentation states a provider-wide limit of no more than 50 requests per second across all methods for one Client ID. This does not authorize hidden retry, fanout, automatic pagination, or quota guessing.
 
-1. `/v3/product/list` supports `filter.skus`: NOT_DETERMINABLE
-2. `/v3/product/list` exposes `result.items[].sku`: NOT_DETERMINABLE
-3. `/v3/product/list` supports visibility filtering: NOT_DETERMINABLE
-4. `/v3/product/info/list` exposes `items[].showcases_visibility`: NOT_DETERMINABLE
-5. `/v3/product/info/list` exposes `items[].is_kgt`: NOT_DETERMINABLE
-6. `/v3/product/info/list` does not expose legacy `items[].images360`: NOT_DETERMINABLE
-7. `/v4/product/info/attributes` supports visibility filtering: NOT_DETERMINABLE
-8. `sku` remains a usable cross-method join: NOT_DETERMINABLE
+## Gate decision
 
-Rate/quota semantics: NOT_PRESENT_IN_SWAGGER cannot be asserted because the Swagger itself was unavailable.
+The B1 core Product Master contract gap is closed without guessing transport or schema.
 
-Final decision: `B1_CONTRACT_RESEARCH_NOT_EXECUTED_ENVIRONMENT_ONLY`
+Production implementation is now authorized for these three fixed read operations, subject to all accepted B0 invariants:
+
+- fixed Seller API host/method/path;
+- strict allowlisted request fields;
+- one explicit command = one physical Seller business request;
+- no hidden pagination/fanout/retry;
+- exact command preserved through entitlement planning;
+- no changes to Autorun, Work-session lifecycle, Manual button timing/state, provider quota/cache/history/no-replay semantics, credentials or transport ownership unless explicitly required and separately evidenced.
+
+Final decision:
+
+`PATCH_B1_ASSORTMENT_MASTER_CONTRACTS_CONFIRMED`
