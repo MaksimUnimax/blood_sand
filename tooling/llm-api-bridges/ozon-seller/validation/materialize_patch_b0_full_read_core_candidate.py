@@ -47,12 +47,12 @@ def main() -> None:
     validation = repo / "tooling/llm-api-bridges/ozon-seller/validation"
     a5 = validation / "materialize_patch_a5_work_resume_provider_status_candidate.py"
     transport = validation / "transport-b0-full-read-core-2026-08-25"
-    parts = [transport / f"part-{i:03d}.b64" for i in range(5)]
+    parts = [transport / f"part-{i:03d}.b64" for i in range(8)]
     if not a5.is_file():
         raise RuntimeError(f"missing exact A.5 materializer: {a5}")
     if any(not p.is_file() for p in parts):
         raise RuntimeError(f"missing B0 transport part(s): {[str(p) for p in parts if not p.is_file()]}")
-    expected_sizes = [8000, 8000, 8000, 8000, 7584]
+    expected_sizes = [8000, 8000, 8000, 8000, 2000, 2000, 2000, 1584]
     for part, expected in zip(parts, expected_sizes):
         if part.stat().st_size != expected:
             raise RuntimeError(f"{part.name} size {part.stat().st_size} != {expected}")
@@ -99,7 +99,7 @@ def main() -> None:
             raise RuntimeError(f"B0 identity mismatch {rel}: {actual} != {expected}")
     actual_tree = tree_digest(out)
     if actual_tree != B0_TREE_MANIFEST_SHA256:
-        raise RuntimeError(f"B0 tree identity {actual_tree} != {B0_TREE_MANIFEST_SHA256}")
+        raise RuntimeError(f"B0 tree identity {actual_tree} != {B0_TREE_MANIFEST_SHA256")
 
     print("PATCH_B0_A5_BASE_IDENTITY_PASS")
     print("PATCH_B0_PATCH_TRANSPORT_IDENTITY_PASS")
