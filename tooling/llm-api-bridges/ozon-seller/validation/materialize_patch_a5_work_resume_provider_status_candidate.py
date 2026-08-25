@@ -76,7 +76,7 @@ def main() -> None:
         '$("workFinish")?.addEventListener("click", () => busy($("workFinish"), async () => { const context = await resolvePopupContext(); const response = await send("OZ_WORK_FINISH", { tab_id: context.tab_id, conversation_key: context.conversation_key }); if (!response.ok) return status(response.error || "Не удалось завершить work-session.", "error"); await refresh(); status("Work-session завершена; диалог остаётся привязан. Для продолжения нажмите «Показать кнопку».", "ok"); }));',
         "popup_finish_message"
     )
-    popup.write_text(p, encoding="utf-8")
+    popup.write_bytes(p.encode("utf-8"))
 
     w = worker.read_text(encoding="utf-8")
     w = replace_once(
@@ -106,7 +106,7 @@ def main() -> None:
         '''  })().then(sendResponse).catch(async (error) => {\n    const code = String(error?.code || (error?.name === "AbortError" ? "REQUEST_TIMEOUT" : "EXTENSION_ERROR"));\n    const text = String(error?.message || error || "Unknown error");\n    await diagnostic("EXTENSION_MESSAGE_FAILED", { message_type: String(message?.type || ""), code, error: text, tab_id: sender?.tab?.id || null }, { level: "error" }).catch(() => null);\n    sendResponse({ ok: false, code, error: text });\n  });''',
         "runtime_error_status_separation"
     )
-    worker.write_text(w, encoding="utf-8")
+    worker.write_bytes(w.encode("utf-8"))
 
     if sha256(popup.read_bytes()) != A5_POPUP_SHA256:
         raise RuntimeError(f"Patch A.5 popup.js identity mismatch: {sha256(popup.read_bytes())}")
