@@ -1,50 +1,100 @@
-# Patch B0 Full Read Core — independent retest after LF materializer repair
+# Patch B0 Full Read Core — independent retest after Git-apply LF repair
 
-## Tested authority
+## Authority tested
 
 - Branch: `feature/ozon-full-read-core-b0-2026-08-25`
-- Exact tested HEAD before this result commit: `f4cc32ed2e190a3367290b35559870bb923b2419`
-- Previous validation-only rejection: `e41d0853a21b59fbe235940e9c23192f3c3d15e9`
-- A.5 LF repair commit: `e53fab9d239457dd91a3aac2941651f3482dbbbd`
-- Accepted A.5 authority: popup `e77beb6eb5e23aebada2ded9a834e7095f14e74ee9f1e9b54503377a7d87b5e7`, worker `dd67b793d7c28595b5e795f918f702d4fd472c9f43f2bec467e56b85587d29b9`, 19-file tree `4b77ed8500e3caacefff43a82002dc6ef5bfd562511bf10ef57a5392069c22a0`.
-- Transport-repair anchor `e806f0eb947844678a21f59f00e6ec416f1a8545` is an ancestor of the tested HEAD.
-- Post-anchor changes are validation/handoff-only, including the LF-stable materializer repair; no production candidate source was edited by the tester.
+- Exact tested HEAD before this result commit: `d6789436902995ffba924d568fee186f10c2b6f7`
+- Transport-repair anchor: `e806f0eb947844678a21f59f00e6ec416f1a8545` (confirmed ancestor).
+- Git-apply LF repair: `6344deabf0070987f7dc66ed430e89e9dcafe698`.
+- The commits after the transport anchor were reviewed as validation/handoff-only; no production candidate file was changed by this tester.
 
-## Mandatory materializer gate: FAIL
+## Exact materialization: PASS
 
-The exact B0 materializer was run into a completely fresh output directory. The LF repair succeeded through every inherited A.5 identity marker, including `PATCH_A5_POPUP_SHA256_PASS`, `PATCH_A5_SERVICE_WORKER_SHA256_PASS`, and `PATCH_A5_TREE_MANIFEST_SHA256_PASS`.
+The required materializer was run once into a new directory. The resulting 21-file production tree SHA-256 was exactly:
 
-The B0 stage then stopped fail-closed on this exact changed-file identity check:
+`d313bcfdb7597e8ffc9593120f807c64ed9bd4952f6c07a69368361c3435ccfe`
+
+Inherited A.5 markers:
+
+- `PATCH_A5_A4_BASE_IDENTITY_PASS`
+- `PATCH_A5_PROVIDER_STATUS_SCOPE_PASS`
+- `PATCH_A5_RUNTIME_ERRORS_DIAGNOSTIC_ONLY_PASS`
+- `PATCH_A5_RESUME_WITHOUT_PROMPT_PASS`
+- `PATCH_A5_FINISH_BINDING_PRESERVED_PASS`
+- `PATCH_A5_POPUP_INACTIVE_BOUND_RESUME_PASS`
+- `PATCH_A5_POPUP_SHA256_PASS`
+- `PATCH_A5_SERVICE_WORKER_SHA256_PASS`
+- `PATCH_A5_PRODUCTION_FILE_COUNT_19_PASS`
+- `PATCH_A5_TREE_MANIFEST_SHA256_PASS`
+
+Required B0 markers:
+
+- `PATCH_B0_A5_BASE_IDENTITY_PASS`
+- `PATCH_B0_PATCH_TRANSPORT_IDENTITY_PASS`
+- `PATCH_B0_PATCH_APPLY_PASS`
+- `PATCH_B0_PRODUCTION_FILE_COUNT_21_PASS`
+- `PATCH_B0_CHANGED_FILE_IDENTITIES_PASS`
+- `PATCH_B0_TREE_MANIFEST_SHA256_PASS`
+
+All were observed.
+
+## Deterministic regression: FAIL
+
+The mandated command was run exactly once against the materialized candidate:
 
 ```text
-RuntimeError: B0 identity mismatch manifest.json: 5ce0b3634ce8db8349054252ece5c6df2367843f7b705ac3a686cdc68d71cdf2 != f170949e9f972ecbc8c685a3cb753151c3363afa7664a3df76e67f413a396fc1
+node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B0_FULL_READ_CORE_REGRESSION_2026-08-25.mjs D:\codex\Test\ozon-b0-retest2-candidate-20260825
 ```
 
-The partial output contained 21 files but was not accepted: its tree SHA-256 was `ebf737451f9f78182c15745195d57901c60bc8ef9da9895e3cc569c4adcb6752`, not required B0 authority `d313bcfdb7597e8ffc9593120f807c64ed9bd4952f6c07a69368361c3435ccfe`.
+Node `v24.12.0` stopped before any assertion with this exact validation-program error:
 
-Required B0 materializer markers:
+```text
+file:///D:/codex/Test/ozon-b0-retest2-20260825/tooling/llm-api-bridges/ozon-seller/validation/PATCH_B0_FULL_READ_CORE_REGRESSION_2026-08-25.mjs:106
+};
+^
+SyntaxError: Unexpected token '}'
+```
 
-- `PATCH_B0_A5_BASE_IDENTITY_PASS`: NOT_EMITTED
-- `PATCH_B0_PATCH_TRANSPORT_IDENTITY_PASS`: NOT_EMITTED
-- `PATCH_B0_PATCH_APPLY_PASS`: NOT_EMITTED
-- `PATCH_B0_PRODUCTION_FILE_COUNT_21_PASS`: NOT_EMITTED
-- `PATCH_B0_CHANGED_FILE_IDENTITIES_PASS`: NOT_EMITTED
-- `PATCH_B0_TREE_MANIFEST_SHA256_PASS`: NOT_EMITTED
+Therefore none of the required deterministic markers was emitted:
 
-## Tests not run
+- `B0_REGISTRY_GUIDANCE_PASS`: NOT_EMITTED
+- `B0_PERSONAL_DATA_CONTRACT_PASS`: NOT_EMITTED
+- `B0_ENTITLEMENT_EXACT_REQUEST_PASS`: NOT_EMITTED
+- `B0_DYNAMIC_SWAGGER_COMPILER_PASS`: NOT_EMITTED
+- `B0_COMPATIBILITY_CLUSTER_ALIASES_PASS`: NOT_EMITTED
+- `B0_PROTECTED_A5_RUNTIME_IDENTITIES_PASS`: NOT_EMITTED
+- `B0_POLICY_BEFORE_CAPABILITY_PASS`: NOT_EMITTED
 
-The mandatory first gate did not produce an exact B0 candidate. Therefore deterministic regression, `node --check`, every browser acceptance case, personal-data OFF/ON request execution, premium preservation, and metadata refresh were not run.
+This is a validation-test-program syntax failure. It is not evidence of a B0 production assertion failure; the tester did not repair the program.
 
-- Deterministic markers: NOT_RUN
-- Browser cases: NOT_RUN
-- OFF provider request count: NOT_RUN
-- ON provider request count: NOT_RUN
-- Automatic replay observed: NOT_RUN
-- Metadata refresh: NOT_RUN
-- Real Ozon Seller requests: `0`
-- Real Performance requests: `0`
-- Production code modified by tester: `0`
-- Validation blocker: B0 changed-file identity mismatch for `manifest.json` before candidate acceptance.
+## Syntax checks: PASS
+
+`node --check` was run for every materialized production `.js` file: `ALL_PRODUCTION_JS_SYNTAX_PASS`.
+
+## Browser attempt — synthetic, isolated environment
+
+Environment: temporary Chrome profile; Chrome for Testing `151.0.7922.47`; Puppeteer `25.4.0`; exact unpacked materialized candidate; synthetic ChatGPT Work DOM; extension-worker `Fetch` interception. No operator profile, credentials, or real Ozon business request was used.
+
+- A.5 Start/Hide/Show button-surface proof: FAIL in the synthetic fixture. The fixture did not receive an extension-owned button despite a successful Start route; this is not classified as a production failure.
+- A.5 Finish → inactive bound → Resume without prompt: PASS (`active_visible`).
+- A.5 stale `CONVERSATION_NOT_CONFIRMED` diagnostic / Autorun surface: PASS (12 diagnostics; no stale status).
+- Work submit and dictation proof: NOT_EXECUTED_ENVIRONMENT_ONLY after the synthetic fixture entered the incomplete button-surface state.
+- Guidance V1/V2: BLOCKED_BY synthetic fixture delivery remained `delivering`; later commands correctly returned `MANUAL_OPERATION_ACTIVE`.
+- Personal OFF, Personal ON explicit request, and invalid-parameter browser flows: BLOCKED_BY the same incomplete synthetic delivery; no provider assertion was executed.
+- Premium exact subscription condition: NOT_EXECUTED_ENVIRONMENT_ONLY — no authenticated test account with a known insufficient subscription condition was available.
+- Seller API metadata failure preservation: PASS. Intercepted official metadata fetch failed safely with `SELLER_METADATA_FETCH_FAILED`; the previous last-known-good snapshot was preserved.
+
+The synthetic attempt recorded `REAL_OZON_SELLER_REQUESTS=0`, `REAL_PERFORMANCE_REQUESTS=0`, synthetic Seller requests `0`, and automatic replay `no`. It cannot substitute for the mandatory deterministic gate or the complete required browser matrix.
+
+## Integrity and decision
+
+- OFF provider request count: `0` (no personal OFF request reached provider; full OFF assertion was blocked by fixture delivery state).
+- ON provider request count: `0` (explicit ON request did not reach provider because its prerequisite delivery was blocked).
+- Automatic replay observed: `no`.
+- Metadata refresh evidence: safe intercepted failure, `SELLER_METADATA_FETCH_FAILED`, previous snapshot preserved.
+- Production code modifications by tester: `0`.
+- Candidate rebuild/repackage: `0`.
 
 Final decision: `PATCH_B0_BROWSER_CANDIDATE_REJECTED`
 
+Reason: the required deterministic regression cannot parse, so all mandatory deterministic markers are absent. Browser evidence above is retained without attributing its fixture-dependent blocked cases to production.
