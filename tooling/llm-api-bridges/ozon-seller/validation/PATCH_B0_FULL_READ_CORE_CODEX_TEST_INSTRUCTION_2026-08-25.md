@@ -5,6 +5,9 @@ Role: **TESTER ONLY**. Do not edit production code, do not redesign, do not fix 
 Repository: `MaksimUnimax/blood_sand`
 Branch to test: `feature/ozon-full-read-core-b0-2026-08-25`
 Expected baseline lineage: exact A.5 production tree from commit `9ebc673c2e0dd9dc24f6cbab90455396328f0aad`.
+Transport-repair anchor: `e806f0eb947844678a21f59f00e6ec416f1a8545` (`fix(ozon): restore exact B0 transport chunk 005`).
+
+Before testing, fetch the branch and record the actual branch HEAD. The tested HEAD must contain the transport-repair anchor in its history. Any commits after that anchor must remain validation/handoff-only; do not accept any unreviewed production-file mutation as part of this B0 browser test.
 
 ## 1. Materialize exact candidate
 
@@ -14,10 +17,11 @@ Run:
 python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b0_full_read_core_candidate.py <repo-root> <fresh-output-dir>
 ```
 
-Require these markers:
+Require **all** of these markers:
 
 ```text
 PATCH_B0_A5_BASE_IDENTITY_PASS
+PATCH_B0_PATCH_TRANSPORT_IDENTITY_PASS
 PATCH_B0_PATCH_APPLY_PASS
 PATCH_B0_PRODUCTION_FILE_COUNT_21_PASS
 PATCH_B0_CHANGED_FILE_IDENTITIES_PASS
@@ -28,7 +32,9 @@ Expected production tree SHA-256:
 
 `d313bcfdb7597e8ffc9593120f807c64ed9bd4952f6c07a69368361c3435ccfe`
 
-Do not test if materialization identity differs.
+The materializer is fail-closed and checks the encoded transport length, compressed patch SHA-256, decompressed patch SHA-256, exact A.5 base identity, changed production-file identities, final file count and final production tree SHA-256.
+
+**Do not run deterministic or browser tests if any materialization identity marker is missing or if materialization fails.** A materialization failure is validation/transport evidence; do not edit production code.
 
 ## 2. Deterministic regression
 
@@ -205,8 +211,10 @@ Write:
 
 Include:
 
-- exact branch HEAD tested;
+- exact branch HEAD **before writing the result commit**;
+- confirmation that the tested HEAD descends from transport-repair anchor `e806f0eb947844678a21f59f00e6ec416f1a8545`;
 - materialized tree SHA-256;
+- all six materializer markers, including `PATCH_B0_PATCH_TRANSPORT_IDENTITY_PASS`;
 - all deterministic markers;
 - browser/environment identity;
 - each test case PASS / FAIL / NOT_EXECUTED_ENVIRONMENT_ONLY;
@@ -217,4 +225,4 @@ Include:
   - `PATCH_B0_BROWSER_CANDIDATE_ACCEPTED`
   - `PATCH_B0_BROWSER_CANDIDATE_REJECTED`
 
-If rejected, report evidence only. Do not modify code.
+If rejected, report evidence only. Do not modify production code.
