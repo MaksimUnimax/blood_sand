@@ -1,7 +1,27 @@
 # Ozon Bridge — current engineering roadmap
 
-Date: 2026-08-20
-Status: active roadmap; Step 0 through Step 4, V3 quota/countdown repair, and Manual delivery composer-wait repair are independently accepted. Controlled logged-in/live acceptance is the current next milestone.
+Date: 2026-08-25
+Status: active roadmap; Step 0 through Step 4, V3 quota/countdown repair, Manual delivery composer-wait repair, Patch A/A.5, and B0 Full Read Core are independently accepted. B1 Assortment Master is the current development line.
+
+## Mandatory evidence-first / no-guessing rule
+
+This rule applies to every current and future Ozon Bridge development stage, including research, implementation, debugging, validation and live testing.
+
+**Never invent, infer from habit, or silently guess missing Ozon API facts.** This includes HTTP methods, paths/versions, request fields, required/optional status, enums, limits, pagination/cursors, response fields, identifiers, joins, quotas/rate behavior, access/subscription rules, deprecation/replacement status, side effects, provider behavior and metadata semantics.
+
+Required evidence order:
+
+1. use already accepted repository authority, exact materialized candidates, bundled last-known-good metadata/snapshots and previously captured Ozon-owned evidence first;
+2. if the required fact is not present there, obtain current Ozon-owned documentation/metadata without substituting third-party descriptions as implementation authority;
+3. when a safe read-only fact can be established through the installed bridge/Ozon API, use an exact minimally scoped real request; the assistant must provide the operator with the exact `OZON_API_V1` command needed to obtain the evidence;
+4. when browser/network/operator evidence is required, give the operator exact extraction instructions describing what screen/request/response/header/body fragment to capture;
+5. if evidence still cannot be obtained, record the fact as `UNKNOWN`, `NOT_DETERMINABLE`, or `NOT_EXECUTED_ENVIRONMENT_ONLY` as appropriate and stop implementation of the affected behavior until evidence exists.
+
+Absence of evidence is not permission to complete a contract from model memory, common API patterns, third-party SDKs/mirrors, historical versions, or assumptions about Ozon behavior.
+
+Real Ozon evidence requests must be narrowly scoped to the missing fact, read-only unless a separately reviewed feature explicitly requires otherwise, and must not be multiplied merely for convenience. Existing provider quota/timer/cache/history/no-replay and ownership invariants remain in force during evidence collection.
+
+Codex remains independent tester/researcher only. Codex must not fill unknown contract fields or author production fixes from assumptions. Production implementation is authored only after the required evidence is available.
 
 ## Target architecture
 
@@ -172,20 +192,35 @@ The controlled logged-in run had already reached a successful Seller provider re
 
 The independently accepted composer-wait repair closes that delivery-layer defect. It does not invalidate or reopen the already accepted provider/planner/quota/cache milestones.
 
-## Current next milestone — controlled logged-in/live acceptance
+## B-series continuation
 
-Do not rerun the historical synthetic roadmap from Step 1.
+### Patch B0 — Full Read Core — ACCEPTED
 
-Next engineering/release sequence:
+Official B0 acceptance commit:
 
-1. reconstruct/build the exact installable v0.1.19 candidate using the accepted composer-wait repair and verify package inventory/hashes;
-2. install that exact candidate for the controlled operator/live run;
-3. resume the live sequence from the point already reached after the real provider HTTP 200;
-4. validate repaired report delivery when the composer is occupied, including durable wait and insertion after operator clear;
-5. complete the remaining profile/login-dependent ChatGPT/Alice/live-provider checks that synthetic QA cannot prove;
-6. only after that live acceptance, finalize release/package evidence.
+`3795359959c965fc5cd1837b9a1c978493ae2ac5`
 
-The already observed provider HTTP 200 does not need to be erased from history or treated as unproven merely because the subsequent delivery layer was repaired. The live rerun should prove the repaired downstream sequence on the accepted candidate.
+Accepted tester result:
+
+`cc6413d25dd794a12fd61b71728aaac9702bc6de`
+
+Accepted exact production tree SHA-256:
+
+`d313bcfdb7597e8ffc9593120f807c64ed9bd4952f6c07a69368361c3435ccfe`
+
+B0 is the authority for the registry/guidance/entitlement/Swagger-metadata architecture, Personal Data policy and protected A.5 behavior.
+
+### Patch B1 — Assortment Master — ACTIVE
+
+B1 starts from accepted B0 and closes/implements the Product Master read contour incrementally. Existing Ozon-owned Product Master research must be reused before seeking new evidence. New evidence collection must target only facts that are actually absent under the mandatory evidence-first rule above.
+
+Current core targets:
+
+- `/v3/product/list`
+- `/v3/product/info/list`
+- `/v4/product/info/attributes`
+
+Do not restart broad Ozon API discovery merely because a full public Swagger fetch is unavailable. First inspect accepted B0 bundled metadata/snapshot and prior Product Master authority. If a remaining fact still cannot be established, obtain only that fact through an exact safe real Ozon request or exact operator evidence workflow.
 
 ## Standing protected invariants
 
@@ -201,7 +236,8 @@ The already observed provider HTTP 200 does not need to be erased from history o
 - no hidden provider retry/pagination/fan-out/report polling;
 - provider quota/cache state is not reset by unrelated UI/delivery cleanup;
 - delivery recovery does not replay provider work;
-- persistent `Начало диктовки` is not delivery completion.
+- persistent `Начало диктовки` is not delivery completion;
+- no missing Ozon contract fact may be guessed or silently inferred; unknowns remain explicit until evidence is obtained.
 
 ## Working-method authority
 
@@ -210,6 +246,8 @@ The already observed provider HTTP 200 does not need to be erased from history o
 Development continues incrementally:
 
 `development stage -> targeted engineering checks -> independent Codex validation of that stage -> fix/revalidate if needed -> next stage`
+
+Evidence acquisition precedes implementation whenever a required contract fact is missing. The assistant must request or generate the exact evidence needed rather than completing gaps from assumptions.
 
 There is no retired one-shot final B01-B15/full-gate requirement.
 
@@ -229,4 +267,6 @@ There is no retired one-shot final B01-B15/full-gate requirement.
 
 `COMPOSER_WAIT = COMPOSER_WAIT_STAGE_ACCEPTED`
 
-`CONTROLLED_LIVE_ACCEPTANCE = NEXT`
+`PATCH_B0_FULL_READ_CORE = ACCEPTED`
+
+`PATCH_B1_ASSORTMENT_MASTER = ACTIVE`
