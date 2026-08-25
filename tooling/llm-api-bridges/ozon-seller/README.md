@@ -15,6 +15,34 @@ For current work, use these documents in this order:
 5. `OZON_BRIDGE_APPEND_ONLY_DOCUMENTATION.md` — release/incident log.
 6. matching immutable `reference-*` snapshot for release-specific evidence.
 
+## Seller API coverage freeze — 2026-08-25
+
+The Seller read-surface backlog is now explicitly frozen before production implementation. This closes the historical ambiguity between “method exists/is permitted by Ozon” and “method is currently exposed by Bridge”.
+
+The 2026-08-25 snapshot uses:
+
+- live `/v1/roles` from the configured Seller credentials: **303 unique permitted paths**;
+- current Ozon Seller OpenAPI (`docs.ozon.ru/api/seller/swagger.json`) pinned through the 2026-08-19 snapshot with **463 operations / 57 sections**;
+- exact Bridge A.5 production baseline `9ebc673c2e0dd9dc24f6cbab90455396328f0aad`.
+
+Frozen result:
+
+- target AI-callable Seller read surface: **231 methods**;
+- already enabled: **8**;
+- new read methods/workflows to implement: **223**;
+- not directly exposed to AI: **72** (`62` old/deprecated/removed paths, `8` state-changing methods, `1` external-side-effect method, `1` internal-only capability method).
+
+Authoritative implementation/coverage documents:
+
+1. `OZON_BRIDGE_COMPLETE_READ_SURFACE_IMPLEMENTATION_PLAN_2026-08-25.md` — phased implementation, Premium/capability handling, privacy, files/reports, pagination/retry and validation.
+2. `coverage/README.md` — coverage index and frozen counts.
+3. `coverage/OZON_KEY_PERMITTED_PATHS_2026-08-25.txt` — all 303 key-permitted paths.
+4. `coverage/OZON_TARGET_AI_CALLABLE_READ_SURFACE_2026-08-25.md` — all 231 planned AI-callable read paths, grouped by cluster and fixed alias.
+5. `coverage/OZON_METHODS_NOT_EXPOSED_TO_AI_2026-08-25.md` — every excluded/directly-unavailable method with a plain-language reason.
+6. `coverage/OZON_GUIDANCE_CLUSTER_TAXONOMY_V2_2026-08-25.json` — Guidance v2 cluster taxonomy and backward-compatibility rules.
+
+Implementation of this snapshot must consume these documents as its filter/source of truth rather than repeatedly deciding endpoint safety ad hoc. A later Ozon API or key-role change is handled as a new dated coverage delta.
+
 ## Source of truth
 
 Repository: `MaksimUnimax/blood_sand`.
