@@ -47,7 +47,7 @@ const lines = files
     const rel = path.relative(root, file).split(path.sep).join('/');
     return { rel, line: `${rel}\0${sha256(fs.readFileSync(file))}\n` };
   })
-  .sort((a, b) => a.rel.localeCompare(b.rel, 'en'))
+  .sort((a, b) => (a.rel < b.rel ? -1 : a.rel > b.rel ? 1 : 0))
   .map(x => x.line)
   .join('');
 const tree = sha256(Buffer.from(lines, 'utf8'));
