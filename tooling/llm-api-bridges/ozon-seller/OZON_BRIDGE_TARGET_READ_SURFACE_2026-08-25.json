@@ -1,63 +1,114 @@
 {
-  "schema": "OZON_BRIDGE_TARGET_READ_SURFACE_V1",
+  "schema": "OZON_BRIDGE_TARGET_READ_SURFACE_V2",
   "as_of": "2026-08-25",
-  "classification_authority": "OZON_API_303_ROLE_METHOD_CLASSIFICATION_2026-08-25.json",
-  "derivation": {
-    "target_classes": ["READ_SAFE", "READ_CONDITIONAL"],
-    "excluded_classes": ["READ_PII_BLOCKED", "MUTATION_BLOCKED", "LEGACY_AUTHORIZED_NOT_TARGET"],
-    "target_method_count": 163,
-    "normal_safe_read_count": 98,
-    "conditional_read_count": 65,
-    "seller_bridge_enabled_now": 8,
-    "seller_safe_expansion_candidates": 90,
-    "seller_conditional_expansion_candidates": 65
+  "implementation_authority": "OZON_BRIDGE_FULL_READ_DYNAMIC_ENTITLEMENTS_AND_CLUSTERS_SPEC_2026-08-25.md",
+  "inventory": {
+    "global_source": "current official Ozon Seller Swagger/OpenAPI",
+    "canonical_url": "https://docs.ozon.ru/api/seller/swagger.json",
+    "audited_mirror": "MissiaL/ozon-api/references/ozon-seller-openapi.json",
+    "captured_operation_count": 463,
+    "account_roles_are_global_inventory": false,
+    "account_303_role_snapshot": "OZON_API_303_ROLE_METHOD_CLASSIFICATION_2026-08-25.json",
+    "account_303_role_snapshot_purpose": "current-key capability evidence only"
   },
-  "capability_gate_order": [
-    "exact current method+path contract is available or separately revalidated",
-    "exact method+path is granted by current account /v1/roles",
-    "classification permits read-only exposure",
-    "fixed request validator is implemented",
-    "safe response projection/privacy gate is implemented",
-    "subscription-specific restrictions are handled from provider result without guessed substitution"
+  "terminal_coverage_classes": [
+    "READ_SAFE",
+    "READ_WORKFLOW",
+    "READ_PII_PROJECTION_REQUIRED",
+    "MUTATION_BLOCKED",
+    "DEPRECATED_REPLACED",
+    "CONTRACT_UNRESOLVED"
   ],
-  "invariants": [
-    "one explicit Bridge command = at most one external business request",
-    "no hidden retries",
-    "no hidden pagination",
-    "no hidden fanout",
-    "no arbitrary URL, host, method, headers or credentials",
-    "no credentials in LLM-visible payloads",
-    "no customer PII in LLM results or logs",
-    "generated report create/status/retrieve are separate explicit operations",
-    "no provider quota/timer/cache/history reset as an implementation mechanism",
-    "no Autorun changes in this coverage milestone"
-  ],
-  "clusters": {
-    "account_access": "Roles and account capability reads.",
-    "catalog_products": "Product list/info, attributes, descriptions, pictures, rich content and read-only product diagnostics.",
-    "stocks_inventory": "Aggregate stock, stock analytics and warehouse-level FBO/FBS stock reads.",
-    "warehouse_cluster_logistics": "Warehouses, clusters and seller logistics reference/configuration reads.",
-    "sales_analytics": "Seller analytics other than stock and search.",
-    "search_visibility": "Product-query and marketplace search-query analytics.",
-    "prices_promotions": "Product prices and read-only promotion/action information.",
-    "orders_postings": "FBO/FBS/FBP posting and assembly reads; privacy-sensitive rows remain blocked/gated.",
-    "supplies_fbo": "Supply orders, supply status and read-only FBO supply/draft/cargo reference data.",
-    "returns_cancellations": "Cancel reasons, cancellation status and safe/gated return reads.",
-    "finance_settlement": "Accruals, balance, realization and seller financial reads.",
-    "reports_exports": "Report create/list/info workflows with explicit multi-step semantics.",
-    "delivery_fbs_diagnostics": "Delivery methods, carriage reads, FBS error index and operational diagnostics.",
-    "reviews_questions": "Aggregate/safe review and question data; content-bearing records are privacy blocked.",
-    "certification_reference": "Certificate types, statuses, lists and certification reference reads.",
-    "seller_settings_reference": "Read-only seller/FBS settings and management information.",
-    "customer_communications": "Customer communication surfaces; content remains privacy blocked by default.",
-    "reference_data": "Neutral reference/status reads not naturally owned by another cluster.",
-    "advertising_performance": "Separate Performance API provider; not part of Seller /v1/roles accounting."
+  "release_requirement": {
+    "every_current_swagger_operation_terminally_classified": true,
+    "pending_allowed": false,
+    "unclassified_allowed": false
   },
-  "compatibility_aliases": {
+  "premium_mechanism": {
+    "seller_subscription_source": "internal fixed POST /v1/seller/info",
+    "entitlement_rule_source": "refreshable validated metadata compiled from current Seller Swagger",
+    "roles_source": "POST /v1/roles",
+    "roles_purpose": "current API-key capability metadata, not subscription-tier mapping",
+    "use_numeric_tier_hierarchy": false,
+    "rule_shape": "explicit allowed_subscription_types per endpoint or feature",
+    "unknown_rule_behavior": "do not guess; allow otherwise-safe exact request to reach Ozon",
+    "silent_semantic_rewrite_allowed": false,
+    "provider_403_always_means_premium": false,
+    "metadata_update": {
+      "action": "OZ_REFRESH_SELLER_API_METADATA",
+      "source_url_is_fixed": true,
+      "atomic_last_known_good": true,
+      "keep_old_snapshot_on_failure": true,
+      "operator_visible_refresh": true,
+      "hidden_refresh_before_each_business_request": false
+    }
+  },
+  "operation_registry": {
+    "single_authority": true,
+    "required_fields": [
+      "alias",
+      "provider",
+      "http_method",
+      "fixed_path",
+      "currentness",
+      "safety_class",
+      "pii_policy",
+      "cluster",
+      "section",
+      "guidance_visibility",
+      "purpose",
+      "template",
+      "request_validator",
+      "response_projection",
+      "pagination_model",
+      "workflow_role",
+      "entitlement_key",
+      "quota_class",
+      "cache_policy",
+      "source_openapi_operation",
+      "source_hash"
+    ],
+    "guidance_catalog_is_separate_authority": false
+  },
+  "seller_business_clusters": {
+    "account_access": ["roles_access", "seller_capability", "seller_settings"],
+    "catalog_products": ["product_list_info", "attributes_categories", "description_content", "pictures", "certification", "limits_diagnostics"],
+    "stocks_inventory": ["current_aggregate", "warehouse_fbo", "warehouse_fbs", "stock_analytics", "stock_movement_turnover"],
+    "sales_analytics": ["sales_revenue_units", "delivery_returns_cancellations_metrics", "period_product_category", "turnover_delivery_time"],
+    "search_visibility": ["product_queries", "query_details", "marketplace_search_queries"],
+    "prices_promotions": ["prices", "pricing_strategy", "actions_promotions"],
+    "orders_postings": ["fbo_postings", "fbs_postings", "fbp_postings", "assembly_carriage", "labels_documents"],
+    "supplies_fbo": ["supply_orders", "supply_items_status", "drafts_timeslots", "cargoes"],
+    "warehouse_logistics": ["clusters", "ozon_warehouses", "seller_warehouses", "delivery_methods", "warehouse_diagnostics"],
+    "returns_cancellations": ["cancel_reasons", "conditional_cancellations", "fbo_returns", "fbs_rfbs_returns", "return_status_inventory"],
+    "finance": ["accruals", "balance_settlement", "realization", "transactions", "finance_reports"],
+    "reviews_questions": ["review_aggregate", "question_aggregate", "review_content", "question_content"]
+  },
+  "separate_provider_cluster": {
+    "advertising_performance": "existing Performance API provider; outside Seller Swagger/roles accounting"
+  },
+  "technical_workflow_namespace": {
+    "cluster": "_workflow",
+    "user_selectable": false,
+    "purpose": "generic report/status/retrieval helpers surfaced only as explicit next steps"
+  },
+  "compatibility_cluster_aliases": {
     "stock_inventory": "stocks_inventory",
-    "fulfillment_supply": "supplies_fbo"
+    "fulfillment_supply": "supplies_fbo",
+    "sales_analytics": "sales_analytics",
+    "search_visibility": "search_visibility",
+    "account_access": "account_access",
+    "advertising_performance": "advertising_performance"
   },
-  "existing_seller_aliases": {
+  "guidance": {
+    "generated_from_operation_registry": true,
+    "v1_supported_during_migration": true,
+    "v2_supports_section": true,
+    "large_cluster_returns_sections_first": true,
+    "premium_is_cluster": false,
+    "report_is_user_cluster": false
+  },
+  "existing_enabled_seller_aliases": {
     "analytics_data": "POST /v1/analytics/data",
     "product_queries": "POST /v1/analytics/product-queries",
     "product_queries_details": "POST /v1/analytics/product-queries/details",
@@ -67,50 +118,20 @@
     "supply_order_details": "POST /v1/supply-order/details",
     "roles": "POST /v1/roles"
   },
-  "existing_performance_aliases": [
-    "performance_campaigns",
-    "performance_expense",
-    "performance_daily",
-    "performance_campaign_product"
-  ],
-  "premium_policy": {
-    "account_snapshot": "Free",
-    "premium_tagged_live_role_count": 10,
-    "rule": "Do not suppress an exact role-granted endpoint solely because its OpenAPI section is Premium. /v1/roles is the account-specific reachability signal; concrete metrics, dimensions, history periods or fields may still be subscription-limited at runtime.",
-    "no_hidden_fallback": true
+  "existing_blocked_aliases": {
+    "posting_fbs_get": "blocked because raw response can expose customer personal data"
   },
-  "stock_inventory_priority": {
-    "enabled_now": [
-      "POST /v4/product/info/stocks"
-    ],
-    "first_safe_expansion": [
-      "POST /v1/analytics/stocks",
-      "POST /v1/product/info/stocks-by-warehouse/fbo",
-      "POST /v2/product/info/stocks-by-warehouse/fbs",
-      "POST /v2/warehouse/list",
-      "POST /v1/warehouse/fbo/seller/list",
-      "POST /v2/cluster/list"
-    ],
-    "current_openapi_but_not_live_role_granted": [
-      "POST /v1/report/warehouse/stock"
-    ],
-    "history_contract": "NOT_ESTABLISHED_BY_PROVEN_STOCK_METHODS",
-    "history_rule": "Bridge guidance absence is not evidence of upstream impossibility. Search current report, finance, supply and movement contracts before concluding that exact historical stock-at-date is unavailable."
-  },
-  "terminal_guidance_capability_states": [
-    "BRIDGE_SUPPORTED",
-    "BRIDGE_NOT_YET_SUPPORTED",
-    "ACCOUNT_NOT_AUTHORIZED",
-    "BLOCKED_MUTATION",
-    "BLOCKED_PII",
-    "LEGACY_CONTRACT_NOT_TARGET"
-  ],
-  "completion_states": [
-    "ENABLED_ACCEPTED",
-    "GATED_ACCEPTED",
-    "BLOCKED_BY_ACCOUNT",
-    "BLOCKED_BY_POLICY",
-    "REPLACED_CURRENT_METHOD",
-    "RETIRED_NOT_TARGET"
+  "invariants": [
+    "one explicit Bridge command = at most one external business request",
+    "no hidden retry",
+    "no hidden pagination",
+    "no hidden fanout",
+    "no hidden report polling",
+    "no arbitrary provider or metadata URL supplied by AI/user command text",
+    "no credentials in model-visible payloads",
+    "no raw customer PII in model-visible results/logs",
+    "no hidden removal of requested metrics/dimensions/sorts/history",
+    "no provider quota/timer/cache/history reset for metadata/guidance work",
+    "no Autorun production changes in this coverage milestone"
   ]
 }
