@@ -31,7 +31,6 @@ assert(workerText.includes('physical_business_request_count: 0') || workerText.i
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));
 assert(manifest.host_permissions.includes('https://docs.ozon.ru/*'));
 
-
 // Unified registry / guidance invariants.
 const validation=G.catalogValidation(C);
 assert.equal(validation.ok,true, JSON.stringify(validation.errors));
@@ -102,8 +101,7 @@ const swagger={
     AnalyticsReq:{type:'object',properties:{dimension:{description:'Доступны только продавцам с подпиской Premium Plus'},metrics:{description:'Доступны только продавцам с подпиской Premium Plus'}}},
     PQReq:{type:'object',properties:{sort_by:{$ref:'#/components/schemas/PQSort'}}},
     PQSort:{type:'string',description:'BY_VIEWS BY_POSITION BY_CONVERSION доступна только с подпиской Premium или Premium Plus'}
-  }},paths:{}}
-};
+  }},paths:{}};
 for(let i=0;i<398;i++) swagger.paths[`/v1/test/${i}`]={post:{summary:'Read',operationId:`Test${i}`,description:'',responses:{}}};
 swagger.paths['/v1/roles']={post:{summary:'Roles',operationId:'Roles',description:'',responses:{}}};
 swagger.paths['/v1/premium-only']={post:{summary:'Premium',operationId:'PremiumOnly',description:'Доступно для продавцов с подпиской Premium Pro.',responses:{}}};
