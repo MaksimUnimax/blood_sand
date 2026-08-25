@@ -1,29 +1,26 @@
-# Patch B0 Full Read Core — independent tester result
+# Patch B0 Full Read Core — independent retest after LF materializer repair
 
 ## Tested authority
 
 - Branch: `feature/ozon-full-read-core-b0-2026-08-25`
-- Exact tested HEAD before this result commit: `cb6ef0e3cbc4affb76832c4c2d78555c434c20f3`
-- Accepted production baseline authority: `9ebc673c2e0dd9dc24f6cbab90455396328f0aad`
-- Required transport-repair anchor: `e806f0eb947844678a21f59f00e6ec416f1a8545`
-- Lineage: PASS — tested HEAD descends from the transport-repair anchor.
-- Commits after the anchor: `f830ff65fca1f0ba74b9d5c1004126e1c55e315c` and `cb6ef0e3cbc4affb76832c4c2d78555c434c20f3`; their changed paths are validation/handoff-only.
+- Exact tested HEAD before this result commit: `f4cc32ed2e190a3367290b35559870bb923b2419`
+- Previous validation-only rejection: `e41d0853a21b59fbe235940e9c23192f3c3d15e9`
+- A.5 LF repair commit: `e53fab9d239457dd91a3aac2941651f3482dbbbd`
+- Accepted A.5 authority: popup `e77beb6eb5e23aebada2ded9a834e7095f14e74ee9f1e9b54503377a7d87b5e7`, worker `dd67b793d7c28595b5e795f918f702d4fd472c9f43f2bec467e56b85587d29b9`, 19-file tree `4b77ed8500e3caacefff43a82002dc6ef5bfd562511bf10ef57a5392069c22a0`.
+- Transport-repair anchor `e806f0eb947844678a21f59f00e6ec416f1a8545` is an ancestor of the tested HEAD.
+- Post-anchor changes are validation/handoff-only, including the LF-stable materializer repair; no production candidate source was edited by the tester.
 
 ## Mandatory materializer gate: FAIL
 
-The exact B0 materializer was invoked against a fresh output directory. It did not reach any B0 PASS marker because its inherited A.5 materializer stopped fail-closed with this exact error:
+The exact B0 materializer was run into a completely fresh output directory. The LF repair succeeded through every inherited A.5 identity marker, including `PATCH_A5_POPUP_SHA256_PASS`, `PATCH_A5_SERVICE_WORKER_SHA256_PASS`, and `PATCH_A5_TREE_MANIFEST_SHA256_PASS`.
+
+The B0 stage then stopped fail-closed on this exact changed-file identity check:
 
 ```text
-RuntimeError: Patch A.5 popup.js identity mismatch: b051187f786abb30d0dcb1a7eec3bbb3b7a4f258e91055d26129586e3a200c4e
+RuntimeError: B0 identity mismatch manifest.json: 5ce0b3634ce8db8349054252ece5c6df2367843f7b705ac3a686cdc68d71cdf2 != f170949e9f972ecbc8c685a3cb753151c3363afa7664a3df76e67f413a396fc1
 ```
 
-The B0 materializer consequently exited with:
-
-```text
-subprocess.CalledProcessError: ... materialize_patch_a5_work_resume_provider_status_candidate.py ... returned non-zero exit status 1
-```
-
-The partial output was not accepted as a B0 candidate: it contained 19 files and partial tree SHA-256 `c92c7d9d7430ccea5cbfd6b48a6de1c761a3ee42beebb5795c4718c16d1559c1`, not the required 21-file B0 tree with SHA-256 `d313bcfdb7597e8ffc9593120f807c64ed9bd4952f6c07a69368361c3435ccfe`.
+The partial output contained 21 files but was not accepted: its tree SHA-256 was `ebf737451f9f78182c15745195d57901c60bc8ef9da9895e3cc569c4adcb6752`, not required B0 authority `d313bcfdb7597e8ffc9593120f807c64ed9bd4952f6c07a69368361c3435ccfe`.
 
 Required B0 materializer markers:
 
@@ -36,14 +33,18 @@ Required B0 materializer markers:
 
 ## Tests not run
 
-Per the mandatory first gate, deterministic regression, `node --check`, browser acceptance, personal-data OFF/ON cases, premium preservation, and metadata update were not run. No candidate identity satisfying the required B0 materialization authority existed.
+The mandatory first gate did not produce an exact B0 candidate. Therefore deterministic regression, `node --check`, every browser acceptance case, personal-data OFF/ON request execution, premium preservation, and metadata refresh were not run.
 
 - Deterministic markers: NOT_RUN
 - Browser cases: NOT_RUN
+- OFF provider request count: NOT_RUN
+- ON provider request count: NOT_RUN
+- Automatic replay observed: NOT_RUN
+- Metadata refresh: NOT_RUN
 - Real Ozon Seller requests: `0`
 - Real Performance requests: `0`
 - Production code modified by tester: `0`
-- Validation blocker: materialization/transport-chain identity failure before candidate creation.
+- Validation blocker: B0 changed-file identity mismatch for `manifest.json` before candidate acceptance.
 
 Final decision: `PATCH_B0_BROWSER_CANDIDATE_REJECTED`
 
