@@ -78,7 +78,7 @@ def main() -> None:
         raise RuntimeError(f"A.5 tree identity {actual_base_tree} != {A5_TREE_MANIFEST_SHA256}")
 
     applied = subprocess.run(
-        ["git", "apply", "--no-index", "-"],
+        ["git", "-c", "core.autocrlf=false", "-c", "core.eol=lf", "apply", "--no-index", "-"],
         cwd=out,
         input=patch_bytes,
         stdout=subprocess.PIPE,
