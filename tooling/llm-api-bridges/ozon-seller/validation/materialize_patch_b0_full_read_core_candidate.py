@@ -99,7 +99,7 @@ def main() -> None:
             raise RuntimeError(f"B0 identity mismatch {rel}: {actual} != {expected}")
     actual_tree = tree_digest(out)
     if actual_tree != B0_TREE_MANIFEST_SHA256:
-        raise RuntimeError(f"B0 tree identity {actual_tree} != {B0_TREE_MANIFEST_SHA256")
+        raise RuntimeError(f"B0 tree identity {actual_tree} != {B0_TREE_MANIFEST_SHA256}")
 
     print("PATCH_B0_A5_BASE_IDENTITY_PASS")
     print("PATCH_B0_PATCH_TRANSPORT_IDENTITY_PASS")
