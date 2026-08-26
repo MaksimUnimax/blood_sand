@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Materialize exact B8 candidate
         run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b8_supply_replenishment_candidate.py --repo-root . --work-root /tmp/ozon-b8-work --out /tmp/ozon-b8-exact
-      - name: Verify accepted B1-B7 regressions
+      - name: Verify B1-B6 carry-forward and exact B7 base
         run: |
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_REGRESSION_2026-08-26.mjs /tmp/ozon-b8-exact
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B2_PRICES_LISTING_STATE_REGRESSION_2026-08-26.mjs /tmp/ozon-b8-exact
@@ -29,7 +29,7 @@ jobs:
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B4_ORDERS_RETURNS_CANCELLATIONS_REGRESSION_2026-08-26.mjs /tmp/ozon-b8-exact
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B5_FINANCE_REALIZATION_REGRESSION_2026-08-26.mjs /tmp/ozon-b8-exact
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B6_PERFORMANCE_READ_CORE_REGRESSION_2026-08-26.mjs /tmp/ozon-b8-exact
-          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B7_ANALYTICS_SEARCH_REGRESSION_2026-08-26.mjs /tmp/ozon-b8-exact
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B7_ANALYTICS_SEARCH_REGRESSION_2026-08-26.mjs /tmp/ozon-b8-work/b7-base
       - name: Verify B8 regression and syntax
         run: |
           node --check tooling/llm-api-bridges/ozon-seller/validation/PATCH_B8_SUPPLY_REPLENISHMENT_REGRESSION_2026-08-26.mjs
@@ -65,16 +65,18 @@ jobs:
           $work = Join-Path $env:RUNNER_TEMP "ozon-b8-work"
           $out = Join-Path $env:RUNNER_TEMP "ozon-b8-exact"
           python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b8_supply_replenishment_candidate.py --repo-root . --work-root $work --out $out
-      - name: Verify B1-B8 deterministic gates on Windows
+      - name: Verify B1-B6 on B8, exact B7 base, and B8 gates on Windows
         shell: pwsh
         run: |
           $out = Join-Path $env:RUNNER_TEMP "ozon-b8-exact"
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b8-work"
+          $b7 = Join-Path $work "b7-base"
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B2_PRICES_LISTING_STATE_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B3_WAREHOUSE_STOCK_GEOGRAPHY_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B4_ORDERS_RETURNS_CANCELLATIONS_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B5_FINANCE_REALIZATION_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B6_PERFORMANCE_READ_CORE_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B7_ANALYTICS_SEARCH_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B7_ANALYTICS_SEARCH_REGRESSION_2026-08-26.mjs $b7; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B8_SUPPLY_REPLENISHMENT_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }

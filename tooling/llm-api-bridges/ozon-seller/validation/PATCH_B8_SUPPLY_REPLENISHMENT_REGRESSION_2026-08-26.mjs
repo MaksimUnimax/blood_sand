@@ -60,6 +60,26 @@ rejects({operation:'supply_order_details',params:{order_id:Number.MAX_SAFE_INTEG
 rejects({operation:'supply_order_get',params:{order_ids:['1'],url:'https://evil.example'}},'TRANSPORT_INJECTION_REJECTED');
 console.log('B8_SUPPLY_REPLENISHMENT_CONTRACTS_PASS');
 
+// B7 analytics/search semantics must survive B8 even though B8 legitimately changes
+// registry/contract/entitlements file identities.
+const b7AnalyticsOps={
+ analytics_data:['POST','/v1/analytics/data'],
+ product_queries:['POST','/v1/analytics/product-queries'],
+ product_queries_details:['POST','/v1/analytics/product-queries/details']
+};
+for(const [alias,[method,p]] of Object.entries(b7AnalyticsOps)){
+ const m=R.OPERATIONS[alias]; assert(m,alias); assert.equal(m.provider,'seller_api'); assert.equal(m.method,method); assert.equal(m.path,p); assert.equal(m.effect,'READ'); assert.equal(m.execution_enabled,true); assert.equal(m.workflow_role,'single_read');
+}
+let b7cmd=C.normalizeCommand({operation:'analytics_data',params:{date_from:'2026-08-01',date_to:'2026-08-02',dimension:['day'],metrics:['revenue'],limit:100}});
+let b7req=C.buildRequest(b7cmd,{}); assert.equal(b7req.url,'https://api-seller.ozon.ru/v1/analytics/data'); assert.deepEqual(JSON.parse(b7req.body),b7cmd.params);
+b7cmd=C.normalizeCommand({operation:'product_queries',params:{date_from:'2026-08-01T00:00:00Z',page_size:10,skus:['1']}});
+b7req=C.buildRequest(b7cmd,{}); assert.equal(b7req.url,'https://api-seller.ozon.ru/v1/analytics/product-queries'); assert.deepEqual(JSON.parse(b7req.body),b7cmd.params);
+b7cmd=C.normalizeCommand({operation:'product_queries_details',params:{date_from:'2026-08-01T00:00:00Z',page_size:10,skus:['1'],limit_by_sku:10}});
+b7req=C.buildRequest(b7cmd,{}); assert.equal(b7req.url,'https://api-seller.ozon.ru/v1/analytics/product-queries/details'); assert.deepEqual(JSON.parse(b7req.body),b7cmd.params);
+assert.deepEqual(E.subscriptionTypesFromText('доступно с [Premium](https://seller-edu.ozon.ru/seller-rating/about-rating/premium-program)'),['PREMIUM']);
+assert.deepEqual(E.subscriptionTypesFromText('доступно с [Premium Pro](https://seller-edu.ozon.ru/seller-rating/about-rating/podpiska-premium-pro)'),['PREMIUM_PRO']);
+console.log('B8_B7_ANALYTICS_SEMANTICS_CARRY_FORWARD_PASS');
+
 const detailsCommand=C.normalizeCommand({operation:'supply_order_details',params:{order_id:1}});
 const detailsSafe=C.sanitizeResult(detailsCommand,{supplies:[{storage_warehouse:{address:'Operational warehouse',name:'WH'}}],vehicle:{value:{driver_name:'Ivan',driver_phone:'+79990000000',vehicle_number:'A001AA',vehicle_model:'Truck'}}});
 assert.equal(detailsSafe.supplies[0].storage_warehouse.address,'Operational warehouse');
@@ -89,6 +109,8 @@ if(swaggerPath&&fs.existsSync(swaggerPath)){
  const bundle=sw.components.schemas.v1GetSupplyOrderBundleRequest; assert.deepEqual(bundle.required,['bundle_ids','limit']); assert.equal(bundle.properties.bundle_ids.minItems,1); assert.equal(bundle.properties.bundle_ids.maxItems,100); assert.equal(bundle.properties.limit.minimum,1); assert.equal(bundle.properties.limit.maximum,100); assert.match(sw.components.schemas.GetSupplyOrderBundleRequestItemTagsCalculation.properties.storage_warehouse_ids.description,/25/); assert.deepEqual(sw.components.schemas.v1ItemSortField.enum,['SKU','NAME','QUANTITY','TOTAL_VOLUME_IN_LITRES']);
  const timeslot=sw.components.schemas['supply_order.v2.SupplyOrderTimeslotListRequest']; assert.deepEqual(timeslot.required,['order_id']); assert.equal(timeslot.properties.order_id.type,'integer'); assert.equal(timeslot.properties.order_id.format,'int64');
  const snap=E.compileSnapshot(sw,{sourceHash:'39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40',capturedAt:'2026-08-26T00:00:00.000Z'}); assert.equal(snap.unresolved_rule_count,0);
+ const b7Rule=snap.operations['POST /v1/analytics/product-queries/details']; assert(b7Rule); const b7Restricted=b7Rule.feature_rules.find(x=>x.id==='product_queries_details_restricted_sort'); assert(b7Restricted); assert.deepEqual(b7Restricted.allowed_subscription_types,['PREMIUM','PREMIUM_PLUS']);
+ const b7AnalyticsRequirement=E.requirementFor(C.normalizeCommand({operation:'analytics_data',params:{date_from:'2026-08-20',date_to:'2026-08-21',dimension:['day'],metrics:['hits_view'],limit:10}}),snap,Date.parse('2026-08-26T12:00:00Z')); assert.equal(b7AnalyticsRequirement.required,true); assert.deepEqual(b7AnalyticsRequirement.allowed_subscription_types,['PREMIUM_PLUS','PREMIUM_PRO']);
  for(const [alias,[method,p]] of Object.entries(ops)){const rule=snap.operations[`${method} ${p}`]; assert(rule,alias); assert.equal(rule.default_access,'ALL_ACCOUNTS'); assert.equal(rule.endpoint_allowed_subscription_types,null); assert.deepEqual(rule.feature_rules,[]); const requirement=E.requirementFor(C.normalizeCommand({operation:alias,params:R.OPERATIONS[alias].template.params}),snap); assert.equal(requirement.known,true); assert.equal(requirement.required,false);}
  console.log('B8_SUPPLY_REPLENISHMENT_EXACT_SWAGGER_PASS');
  console.log('B8_SUPPLY_REPLENISHMENT_ENTITLEMENTS_EXACT_PASS');
@@ -110,4 +132,5 @@ const protectedB7={
  'shared/manual_controls.js':'81f302487da7b5ff7c1b746298353438b2cfec100a5bb8f7fa2c80d1e033c81e'
 };
 for(const [rel,sha] of Object.entries(protectedB7)) assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root,rel))).digest('hex'),sha,rel);
+const worker=fs.readFileSync(path.join(root,'service_worker.js'),'utf8'); assert.match(worker,/const ANALYTICS_MIN_INTERVAL_MS = 60_000;/); assert.match(worker,/const ANALYTICS_QUOTA_LAUNCH_SAFETY_MS = 5_000;/);
 console.log('B8_SUPPLY_REPLENISHMENT_PROTECTED_RUNTIME_IDENTITIES_PASS');
