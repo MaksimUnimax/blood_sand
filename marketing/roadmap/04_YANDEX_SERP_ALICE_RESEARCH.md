@@ -50,14 +50,14 @@
 
 ## [x] 04.1 — Зафиксировать protocol, scope и acceptance rules
 
-Результат:
+Принято:
 
-- принято разделение Search provider evidence / browser SERP / consumer Alice;
+- разделение Search provider evidence / browser SERP / consumer Alice;
 - primary query set зафиксирован;
-- region для текущего первичного съёма Search API: Russia `225`;
-- browser UI region/localization хранится отдельно и не наследуется от Search API;
-- результаты должны хранить request/query provenance;
-- ограничения device/UI не заменяются предположениями.
+- region для первичного Search API съёма: Russia `225`;
+- browser UI localization хранится отдельно и не наследуется от Search API;
+- request/query provenance обязателен;
+- отсутствие UI/device evidence не заменяется предположениями.
 
 ## [x] 04.2 — Снять и нормализовать direct Yandex Search evidence по primary queries
 
@@ -76,13 +76,13 @@
 9. `подарок мужчине в машину`;
 10. `подарок автомобилисту`.
 
-Для всех 10 запросов:
+Для всех 10:
 
-- status: `OK`;
-- HTTP: `200`;
-- request actually executed: `true`;
-- automatic retry: `false`;
-- region: `225`;
+- status `OK`;
+- HTTP `200`;
+- request executed `true`;
+- automatic retry `false`;
+- region `225`;
 - Top-10 returned.
 
 Артефакты:
@@ -107,29 +107,26 @@
 
 ### Прямое brand evidence
 
-По `алатырь оберег` в snippet результата #1 Wildberries непосредственно наблюдался товар:
+По `алатырь оберег` в Search-provider snippet Wildberries непосредственно наблюдался товар:
 
 `Кровь и Песок / Славянский оберег в машину "Алатырь (Крест Сварога)"`, `593 оценки`.
 
-Это фиксируется как **marketplace visibility**, не как organic visibility будущего собственного сайта.
+Это **marketplace visibility**, не organic visibility будущего собственного сайта.
 
 ## [~] 04.3 — Проверить browser SERP/UI признаки только там, где они decision-useful
 
 План representative desktop roots: 5.  
-Фактически снято: **2/5**.
+Фактически закрыто по фиксированному representative set: **2/5**.
 
 ### 1. `славянские обереги` — desktop browser capture OBSERVED
 
 В верхнем viewport непосредственно наблюдалось:
 
-- consumer Alice answer над обычной выдачей: **ABSENT**;
-- три последовательных `Промо`-результата до первого organic result;
-- отдельный product carousel/rich shopping block в видимом viewport: **NOT OBSERVED**;
-- первый видимый organic result после Promo — `slavyanskieoberegi.ru`;
-- следующий видимый organic result — `simvolroda.ru`;
-- browser UI заметно более коммерчески занят, чем это видно из Search provider Top-10 alone.
-
-Region в browser UI отдельно не подтверждён, поэтому не повышается до `225` на основании Search API.
+- embedded/consumer Alice answer над обычной выдачей: `ABSENT`;
+- три последовательных `Промо` до первого organic result;
+- отдельный product carousel/rich shopping block в видимом viewport: `NOT_OBSERVED`;
+- первый видимый organic: `slavyanskieoberegi.ru`;
+- следующий: `simvolroda.ru`.
 
 Артефакт:
 
@@ -137,68 +134,82 @@ Region в browser UI отдельно не подтверждён, поэтом�
 
 ### 2. `печать велеса` — desktop browser capture OBSERVED
 
-В верхнем viewport непосредственно наблюдалось:
+Непосредственно наблюдалось:
 
-- один `Промо` result `logovo-volka.ru`;
-- большой embedded `Быстрый ответ Алисы AI` до первых organic results;
-- Alice answer содержит image thumbnails;
-- справа отдельный крупный блок `Картинки`;
+- `Промо` `logovo-volka.ru`;
+- большой embedded `Быстрый ответ Алисы AI`;
+- image thumbnails в Alice;
+- крупный `Картинки` block;
 - первый видимый результат под Alice: `slavyanskieoberegi.ru`;
-- далее видны Wildberries и Yandex Market;
-- page copy показывает browser localization parameter `lr=11202`; его human-readable geography не разрешена и не подменяется API region `225`.
+- далее Wildberries и Yandex Market;
+- copied URLs содержат `lr=11202`; human-readable geography не разрешена и не подменяется `225`.
 
-Из полного page copy дополнительно получен direct UI блок `Люди ищут` с 10 related queries, включая `печать велеса значение`, `печать велеса тату`, `печать велеса фото`, `печать велеса серебро купить`, `печать велеса медвежья лапа значение`.
-
-Это прямое доказательство многослойного intent: paid commerce + AI meaning + visual discovery + shopping + informational expansion.
+`Люди ищут` прямо подтверждает ветки `значение`, `тату`, `фото`, `серебро купить`, `медвежья лапа значение`.
 
 Артефакт:
 
 - `marketing/data/raw/browser_serp/20260826T0734Z__pechat_velesa__desktop.md`.
 
-Осталось по representative desktop:
+### Дополнительные opportunistic browser captures — не заменяют фиксированный representative set
+
+#### `вегвизир`
+
+Full-page browser copy непосредственно показывает:
+
+- `Промо` `logovo-volka.ru`;
+- `Картинки` block;
+- Ozon / Yandex Market / Wildberries / Livemaster;
+- Wikipedia и specialist informational results;
+- embedded `Быстрый ответ Алисы AI`;
+- `Люди ищут`: `вегвизир это`, `вегвизир значение`, `вегвизир значение символа`, `вегвизир что это`, `вегвизир тату`, а также gaming-contamination branch `Valheim`.
+
+Артефакт:
+
+- `marketing/data/raw/browser_serp/20260826__vegvizir__desktop.md`.
+
+#### `алатырь оберег`
+
+Full-page browser copy непосредственно показывает:
+
+- embedded `Быстрый ответ Алисы AI`;
+- Wildberries / Ozon / Livemaster / Yandex Market;
+- specialist commerce/content results (`slavyanskieoberegi.ru`, `ruyan-master.ru`, `master-run.ru`, `simvolroda.ru`, `veseliyviking.ru` и др.);
+- `Видео` carousel;
+- `Картинки` block;
+- `Люди ищут`: meaning, male/female meaning, photo/images, `что значит`, `купить серебро мужской`, embroidery.
+
+Артефакт:
+
+- `marketing/data/raw/browser_serp/20260826__alatyr_obereg__desktop.md`.
+
+Осталось по фиксированному representative desktop set:
 
 - `оберег в машину`;
 - `подвеска на зеркало в машину`;
 - `талисман знак зодиака`.
 
-Mobile comparison пока `NOT_OBSERVED`; плановый representative mobile set: `славянские обереги`, `оберег в машину`.
+Mobile comparison пока `NOT_OBSERVED`; плановый set: `славянские обереги`, `оберег в машину`.
 
 ## [~] 04.4 — Снять consumer Alice evidence по primary query set
 
 Primary Alice plan: 10 roots.  
-Фактически завершено: **2/10**.
+Фактически завершено: **4/10**.
 
 ### 1. `славянские обереги` — COMPLETE PRIMARY ALICE ROOT
 
 Direct observation:
 
-- exact input: `славянские обереги`;
-- answer present: `YES`;
-- ответ — длинный informational/explanatory guide: виды оберегов, назначение, значения символов, применение/традиция, советы;
-- внутри ответа Алиса самостоятельно выделяет `Печать Велеса` и `Алатырь`;
-- присутствуют image thumbnails и video card;
-- Sources panel открыт и прокручен до конца;
-- 7 source rows читаются уверенно и нормализованы в display order;
-- нечитаемые/неуверенные строки не реконструируются и не выдумываются;
-- exact source URLs из panel не захвачены, поэтому остаются незаполненными;
-- fan-out / suggested follow-up отдельным измерением пока `NOT_OBSERVED`.
+- exact input `славянские обереги`;
+- answer present `YES`;
+- длинный informational/explanatory guide: виды, назначение, значения, применение/традиция, советы;
+- Alice самостоятельно выделяет `Печать Велеса` и `Алатырь`;
+- image thumbnails + video card;
+- Sources panel прокручен до конца;
+- 7 source rows уверенно нормализованы;
+- exact source URLs не захвачены и не реконструируются;
+- fan-out `NOT_OBSERVED`.
 
-Уверенно прочитанные source domains:
-
-1. `blog.arcanum.ru`;
-2. `livemaster.ru`;
-3. `amorem.ru`;
-4. `ruyan-master.ru`;
-5. `славяне.сайт`;
-6. `blog.mann-ivanov-ferber.ru`;
-7. `dzen.ru`.
-
-Ключевое сравнительное наблюдение:
-
-- browser SERP above-the-fold = heavily commercial (`3 × Промо` before organic);
-- consumer Alice for exact same query = informational/meaning-first answer with editorial/content sources.
-
-Артефакты:
+Artifacts:
 
 - `marketing/data/raw/alice/20260826T0723Z__slavyanskie_oberegi.md`;
 - `marketing/data/raw/alice/20260826T0723Z__slavyanskie_oberegi_sources_visible_01.md`;
@@ -206,100 +217,166 @@ Direct observation:
 
 ### 2. `печать велеса` — COMPLETE PRIMARY ALICE ROOT
 
-Surface: embedded `Быстрый ответ Алисы AI` directly in ordinary Search SERP.
+Surface: embedded `Быстрый ответ Алисы AI`.
 
 Direct observation:
 
-- exact input/query: `печать велеса`;
-- answer present: `YES`;
 - answer job = meaning/explanation despite strongly transactional Search evidence;
 - structure: `Как выглядит` → `Что символизирует` → `Как использовали` → `Несколько нюансов`;
-- answer explains bear-paw vs wolf-paw forms, meanings, use, wearing/activation beliefs and modern jewelry/tattoo use;
-- explicit caveat states this belongs to folk belief/esotericism rather than evidence-based history/science;
-- image thumbnails present;
-- source count explicitly displayed by Alice: **17**;
-- all 17 exact source URLs captured;
-- three Alice follow-up prompts captured.
+- explicit folk-belief/esotericism caveat;
+- 17 displayed sources, all exact URLs captured;
+- 3 fan-out prompts captured;
+- `slavyanskieoberegi.ru` is Alice source #2 and also prominent in ordinary Search.
 
-Source mix includes:
-
-- informational/editorial: `blog.arcanum.ru`, `славяне.сайт`, `nlo-mir.ru`, `mistymag.ru`, `domoracula.com`;
-- independent commerce/content: `slavyanskieoberegi.ru`, `logovo-volka.ru`, `dommagii.com`, `ruyan-master.ru`, `silverbeard.ru`;
-- marketplace/platform: `avito.ru`;
-- community/social/media: `vk.ru`, `dzen.ru`, `shambala.mirtesen.ru`.
-
-Important direct observation: `slavyanskieoberegi.ru` is displayed as Alice source #2 while also ranking prominently in ordinary Search UI. This demonstrates that a specialized commercial site with explanatory content can participate in both surfaces.
-
-Observed Alice fan-out:
-
-1. `Как использовали печать Велеса в славянской культуре?`
-2. `Какие ещё символы связаны с Велесом?`
-3. `Какие легенды связаны с печатью Велеса?`
-
-Артефакты:
+Artifacts:
 
 - `marketing/data/raw/alice/20260826T0734Z__pechat_velesa__embedded.md`;
 - `marketing/data/normalized/alice/20260826T0734Z__pechat_velesa.csv`.
 
-Следующий primary Alice root: `оберег в машину`.
+### 3. `вегвизир` — COMPLETE PRIMARY ALICE ROOT
+
+Two direct consumer surfaces captured for the same exact input.
+
+#### Embedded SERP Alice
+
+- answer job = entity/history/meaning;
+- definition and Icelandic etymology;
+- Huld manuscript, 1860;
+- explicit correction: no Viking-age source confirmation;
+- purpose as path-finding symbol in storm/bad weather;
+- explicit note that it does not indicate cardinal directions;
+- modern jewelry/tattoo use;
+- scientific caveat for magical-property claims;
+- **11 displayed sources, all 11 exact URLs captured**;
+- fan-out `NOT_OBSERVED`.
+
+Source mix includes social/reference plus many independent commerce/content sources: `veseliyviking.ru`, `zevira.ru`, `vesta-peterburg.ru`, `ruyan-master.ru`, `bikerringshop.com`, `zevira.net`, `elarus.ru`.
+
+#### Standalone consumer Alice chat
+
+A separate Alice chat independently converges on the same job:
+
+- what Vegvísir is;
+- Huld manuscript / 1860;
+- no Viking-age archaeological/source evidence;
+- difference from `Шлем ужаса / эгисхьяльм`;
+- literal manuscript use vs later metaphorical `жизненный путь` use.
+
+Visible Sources panel screenshot contains 7 confidently readable rows (`zevira.ru`, VK, Wikipedia, BikerRingShop, Pikabu, m.vk.ru, Pikabu), but panel completeness is `NOT_CONFIRMED`; exact URLs are not reconstructed from screenshot.
+
+Artifacts:
+
+- `marketing/data/raw/alice/20260826__vegvizir__embedded.md`;
+- `marketing/data/raw/alice/20260826__vegvizir__consumer_chat.md`;
+- `marketing/data/normalized/alice/20260826__vegvizir.csv`.
+
+Key comparison:
+
+- ordinary Search = mixed entity + commerce;
+- Alice = strongly entity/history/meaning-first;
+- historical qualification / myth correction is a prominent direct answer requirement.
+
+### 4. `алатырь оберег` — COMPLETE PRIMARY ALICE ROOT
+
+Surface: embedded `Быстрый ответ Алисы AI`.
+
+Direct observation:
+
+- answer job = mythology + symbolism + meaning + suitability/use;
+- captured sections: opening definition, `Мифологическое происхождение`, `Символика и значение`, `Значение оберега`, `Для кого подходит`, start of `Как использовали оберег`;
+- answer text is `PARTIAL` because copied block truncates in the final captured section;
+- multiple image thumbnails present;
+- Alice explicitly displays **18 sources**, and all 18 exact URLs are captured;
+- source mix includes informational/social/media, specialist commerce/content and Wildberries;
+- `slavyanskieoberegi.ru` again appears in both Alice source set and ordinary Search;
+- fan-out `NOT_OBSERVED`.
+
+Direct browser `Люди ищут` independently exposes:
+
+- `алатырь оберег значение`;
+- male/female meaning branches;
+- photo/image branches;
+- `что значит`;
+- specific purchase branch `купить серебро мужской`.
+
+Artifacts:
+
+- `marketing/data/raw/alice/20260826__alatyr_obereg__embedded.md`;
+- `marketing/data/normalized/alice/20260826__alatyr_obereg.csv`.
+
+### Cross-root observation after 4/10 Alice roots
+
+Current direct pattern:
+
+- ordinary Search frequently carries strong commerce/marketplace pressure;
+- Alice repeatedly performs **meaning / explanation / history / suitability** jobs instead of simply mirroring shopping intent;
+- specialist independent commerce sites with useful explanatory content can be selected as Alice sources;
+- `slavyanskieoberegi.ru` is now directly observed participating in both Search and Alice for more than one symbol root;
+- this is evidence for a hybrid content-commerce opportunity, but it remains `PROVISIONAL` until Roadmap 05.
+
+Next primary Alice root to close the canonical gap: **`оберег в машину`**.
 
 ## [ ] 04.5 — Выполнить evidence-driven secondary expansion
 
 Secondary query не запускается только потому, что формулировка логична.
 
-Кандидаты:
+Current evidence-driven candidates:
 
-- `оберег по знаку зодиака` — возник из Wordstat/Search divergence;
-- `шлем ужаса оберег` — кандидат для проверки Norse cluster после `вегвизир`;
-- `печать велеса значение` — теперь **сильно подтверждён прямым browser evidence**: присутствует в `Люди ищут`, а Alice по базовому query выполняет meaning/explanation job;
-- дополнительные queries добавляются только из последующих primary Alice/fan-out evidence.
+- `оберег по знаку зодиака` — Wordstat/Search divergence;
+- `шлем ужаса оберег` — Norse cluster candidate, now strengthened by standalone Alice directly contrasting Ægishjálmur with Vegvísir;
+- `печать велеса значение` — strongly confirmed by `Люди ищут` + Alice meaning job;
+- `вегвизир значение` / `вегвизир значение символа` — directly observed in `Люди ищут`, but not executed yet;
+- `алатырь оберег значение` — directly observed in `Люди ищут` and aligned with Alice answer job, but not executed yet;
+- further candidates only from later primary Alice/fan-out evidence.
 
-Окончательный secondary set выбирается после сопоставления primary Wordstat + Search + Alice.
+Final secondary set is chosen only after primary Wordstat + Search + Alice comparison.
 
 ## [~] 04.6 — Нормализовать evidence и обновить Query Evidence Ledger
 
 Уже выполнено:
 
-- URL-level normalized Search dataset для 10 primary measurements;
-- аналитический R2 Search report;
-- canonical measurement manifest для 10 measurements;
-- derived composition summaries для 10 measurements;
+- URL-level normalized Search dataset for 10 primary measurements;
+- R2 Search report;
+- canonical Search measurement manifest;
+- derived composition summaries;
 - Search→Ledger staging patch;
-- canonical measurement IDs отделены от provider `request_id`;
-- structural merge-проход проверен: целевой результат 19 Ledger rows, 10 `serp_status=MEASURED`, 0 extra/missing CSV columns после repair;
-- consumer Alice roots `2/10` нормализованы отдельными measurement/observation sets;
-- second Alice root contains exact 17 source URLs + 3 fan-out rows.
+- canonical measurement IDs separated from provider `request_id`;
+- structural merge check: target 19 Ledger rows, 10 `serp_status=MEASURED`, 0 extra/missing columns after repair;
+- consumer Alice roots **4/10** normalized as separate measurement/observation sets;
+- `печать велеса`: exact 17 source URLs + 3 fan-out rows;
+- `вегвизир`: embedded exact 11 source URLs + separate standalone-chat corroboration with partial source panel;
+- `алатырь оберег`: exact 18 source URLs, answer explicitly marked partial.
 
-Обнаружен legacy-дефект:
+Legacy defect remains:
 
-- существующая строка `подвеска на зеркало в машину` в canonical Ledger имеет старый сдвиг хвостовых CSV-полей;
-- точный repair-state и merge-state сохранены в `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_SERP_MERGE_STATUS_2026-08-26.md`;
-- исходный canonical Ledger не заменяется повреждающей «слепой» записью.
+- existing `подвеска на зеркало в машину` row in canonical Ledger has shifted tail CSV columns from old unescaped commas;
+- exact repair/merge state is saved in `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_SERP_MERGE_STATUS_2026-08-26.md`;
+- canonical Ledger is not overwritten blindly.
 
 Осталось:
 
-- выполнить безопасный canonical rewrite `marketing/data/ledger/query_evidence_ledger.csv` после repair legacy row;
-- применить Search patch и measurement IDs;
-- backfill Alice linkage по мере завершения 10 primary roots;
-- отдельно backfill Wordstat measurement linkage для новых Search rows только из существующих R1 raw/normalized artifacts — не придумывать IDs;
-- browser-only `serp_product_block` заполнять только по direct browser UI evidence.
+- safe canonical rewrite `marketing/data/ledger/query_evidence_ledger.csv` after repair;
+- apply Search patch + measurement IDs;
+- backfill Alice linkage as primary roots complete;
+- backfill Wordstat linkage only from existing R1 artifacts, never invent IDs;
+- browser-only `serp_product_block` only from direct browser UI evidence.
 
-Артефакты continuity:
+Continuity artifacts:
 
 - `marketing/data/ledger/query_evidence_serp_patch_2026-08-26.csv`;
 - `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_SERP_MERGE_STATUS_2026-08-26.md`.
 
 ## [ ] 04.7 — Выпустить финальный R2 report и передать evidence в следующий decision stage
 
-Финальный отчёт должен свести:
+Final report must combine:
 
 - Wordstat human demand;
 - direct Search provider evidence;
-- browser/UI evidence, где реально получено;
+- browser/UI evidence where actually captured;
 - consumer Alice evidence;
 - marketplace/independent/informational competition;
 - gaps/limitations;
-- evidence-driven candidates для дальнейшей opportunity/Page Job оценки.
+- evidence-driven candidates for opportunity/Page Job evaluation.
 
 До закрытия 04.7 запрещено превращать provisional intent observations в окончательную архитектуру сайта.
 
@@ -312,16 +389,16 @@ Secondary query не запускается только потому, что ф
 Текущее состояние:
 
 - Search provider primary: `10/10`;
-- representative desktop browser UI: `2/5`;
+- representative desktop browser UI: `2/5` fixed-set complete, plus opportunistic direct captures for `вегвизир` and `алатырь оберег`;
 - representative mobile browser UI: `0/2`;
-- consumer Alice primary: `2/10`.
+- consumer Alice primary: **`4/10`**.
 
 Следующий исследовательский root: **`оберег в машину`**.
 
 Порядок:
 
-1. direct desktop browser SERP top viewport;
-2. если Alice embedded в SERP — раскрыть и сохранить именно этот consumer surface; если нет — использовать отдельную вкладку `Алиса AI` с exact input `оберег в машину`;
-3. сохранить полный Alice answer, Sources до конца и fan-out;
-4. немедленно сохранить observation в GitHub;
-5. перейти к следующему primary root.
+1. direct desktop browser SERP top viewport if not already captured in current evidence session;
+2. if Alice is embedded in SERP, capture/expand that exact consumer surface; otherwise use a clean standalone `Алиса AI` chat with exact input `оберег в машину`;
+3. save answer, sources to the end where observable, and fan-out if present;
+4. immediately commit the completed observation/normalization pass to GitHub;
+5. only then move to the next primary root.
