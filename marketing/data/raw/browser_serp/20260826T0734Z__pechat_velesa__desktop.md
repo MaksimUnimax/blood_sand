@@ -1,45 +1,80 @@
-# Browser SERP observation — `печать велеса`
+# Direct browser SERP observation — `печать велеса`
 
-Observed at: 2026-08-26T07:34Z (approx., user local session)
+Observed: 2026-08-26 ~07:34Z  
+Surface: Yandex Search desktop browser UI  
+Evidence mode: direct user-provided browser screenshot + copied SERP text  
+Exact query: `печать велеса`
 Device: DESKTOP
-Region: NOT_CONFIRMED in browser UI
-Evidence mode: direct user-provided browser screenshot
-Source file id: `file_00000000de88820c8e34536abdcb3dec`
 
-## Directly observed above-the-fold composition
+## Provenance / localization
 
-1. One `Промо` result at the top:
-   - domain: `logovo-volka.ru`
-   - title: `Печать Велеса`
-2. A large embedded `Быстрый ответ Алисы AI` block appears directly inside the ordinary Search SERP.
-3. Embedded Alice answer opening text is visible:
-   - `Печать Велеса — это древний славянский символ, который связывают с культом бога Велеса. Я подобрала главное об этом знаке: как он выглядит, что означает и как его использовали наши предки.`
-4. Visible inline source domains inside/around the answer include:
-   - `blog.arcanum.ru`
-   - `dzen.ru`
-5. Visible source chips under the Alice/image block include at least:
-   - `blog.arcanum.ru`
-   - `slavyanskieoberegi.ru`
-   - `славяне.сайт`
-   - `avito...` (chip truncated in screenshot; do not infer exact domain beyond visible text)
-6. Alice block contains an image gallery/thumbnail strip.
-7. A separate right-side `Картинки` panel is visible with multiple depictions/products of the paw-symbol form.
-8. First visible organic results below the Alice block:
-   - `slavyanskieoberegi.ru` — `Печать велеса`
-   - `wildberries.ru` — `Печать велеса - Купить в интернет магазине WildBerries.ru`
-   - `market.yandex.ru` — `Печать Велеса - купить по низкой цене на Яндекс Маркете`
+The copied SERP URLs contain `lr=11202`. This numeric browser localization parameter is directly observed, but its human-readable geography is not resolved here. It must not be silently relabeled as Search API region `225`.
+
+## Above-the-fold composition
+
+Directly observed in screenshot:
+
+1. Promo result: `logovo-volka.ru` — `Печать Велеса` / silver and brass offer.
+2. Large embedded `Быстрый ответ Алисы AI` immediately below the Promo result.
+3. Alice block includes multiple image thumbnails.
+4. Large right-column `Картинки` visual block.
+5. First visible result below Alice: `slavyanskieoberegi.ru` — `Печать велеса`.
+6. Then visible commercial/platform results: Wildberries and Yandex Market.
+
+This browser layout mixes paid commerce, AI explanation, image discovery and shopping/organic results in the same top viewport.
+
+## Additional directly observed SERP results / blocks from copied page
+
+Visible/returned result domains include:
+
+- `slavyanskieoberegi.ru`
+- `wildberries.ru`
+- `market.yandex.ru`
+- `ozon.ru`
+- `livemaster.ru`
+- `blog.arcanum.ru`
+- `avito.ru`
+- `славяне.сайт`
+- `logovo-volka.ru`
+- `simvolroda.ru`
+- `ru.pinterest.com`
+- `beregy.ru`
+- `veseliyviking.ru`
+- `pod-znakom-sim-pobedish.clients.site`
+- `magazin-zoloto.ru`
+
+Additional `Промо` results are present farther down the page; they are not mixed with organic ranking.
+
+## `Люди ищут` — direct UI observation
+
+1. `печать велеса значение`
+2. `печать велеса тату`
+3. `печать велеса фото`
+4. `печать велеса серебро купить`
+5. `печать велеса из золота`
+6. `печать велеса медвежья лапа значение`
+7. `печать велеса это`
+8. `печать велеса значение для мужчин`
+9. `печать велеса что это значит`
+10. `печать велеса медвежья`
+
+This materially strengthens `печать велеса значение` as an evidence-driven secondary candidate. It is not executed before the primary Alice set is completed.
+
+## Image block
+
+A dedicated `Картинки` block is directly present. The copied page contains 13 image entries plus `Все картинки`. Image URLs visibly include marketplace/product and user-generated source origins such as Ozon image CDN, Wildberries basket image CDN, Livemaster and Pinterest/Pikabu-origin images.
+
+This is recorded as a visual discovery surface, not as organic ranking.
+
+## Embedded Alice
+
+The full embedded Alice answer, exact 17-source list and three follow-up prompts are stored in:
+
+`marketing/data/raw/alice/20260826T0734Z__pechat_velesa__embedded.md`
 
 ## Evidence-safe interpretation
 
-- This query differs materially from `славянские обереги`: consumer Alice is surfaced directly in the ordinary SERP above the first organic results.
-- Above-the-fold composition mixes commercial promotion, AI explanation, image discovery and transactional organic results.
-- Direct Search API XML evidence did not expose this UI composition, so browser observation is decision-useful.
-- Presence of image-heavy surfaces supports treating the symbol's visual identity/form as part of the search task, but this is not yet a Page Job/IA decision.
-
-## Not observed / not inferred
-
-- exact browser region is not confirmed;
-- full Alice answer is not yet captured;
-- full Alice Sources panel is not yet captured;
-- product carousel as a distinct shopping carousel is not clearly observed; the visible right-side panel is labelled `Картинки`;
-- source URLs are not inferred from domain chips.
+- This query differs materially from `славянские обереги`: Alice is surfaced directly in the ordinary SERP above the first organic results.
+- The top viewport combines commercial promotion, AI explanation, image discovery and transactional results.
+- Search API XML did not expose this UI composition, so the browser observation is decision-useful.
+- Visual identity/form is clearly part of the search task, but this is not yet a Page Job/IA decision.
