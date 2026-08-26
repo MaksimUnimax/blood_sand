@@ -1,0 +1,83 @@
+name: Ozon B5 exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b5-finance-realization-contracts-2026-08-26
+    paths:
+      - .github/workflows/ozon-b5-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B5_FINANCE_REALIZATION_2026-08-26.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b5_finance_realization_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B5_FINANCE_REALIZATION_REGRESSION_2026-08-26.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B5_FINANCE_REALIZATION_*_2026-08-26.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Materialize exact B5 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b5_finance_realization_candidate.py . /tmp/ozon-b5-exact
+      - name: Verify accepted B1-B4 regressions
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_REGRESSION_2026-08-26.mjs /tmp/ozon-b5-exact
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B2_PRICES_LISTING_STATE_REGRESSION_2026-08-26.mjs /tmp/ozon-b5-exact
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B3_WAREHOUSE_STOCK_GEOGRAPHY_REGRESSION_2026-08-26.mjs /tmp/ozon-b5-exact
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B4_ORDERS_RETURNS_CANCELLATIONS_REGRESSION_2026-08-26.mjs /tmp/ozon-b5-exact
+      - name: Verify B5 regression and syntax
+        run: |
+          node --check tooling/llm-api-bridges/ozon-seller/validation/PATCH_B5_FINANCE_REALIZATION_REGRESSION_2026-08-26.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B5_FINANCE_REALIZATION_REGRESSION_2026-08-26.mjs /tmp/ozon-b5-exact
+          find /tmp/ozon-b5-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b5-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b5-exact-files.sha256
+          sha256sum shared/ozon_operation_registry.js shared/ozon_contract.js shared/ozon_entitlements.js service_worker.js content_script.js shared/bridge_autorun_model.js shared/work_session_model.js > /tmp/ozon-b5-core.sha256
+      - name: Upload exact B5 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b5-finance-realization-candidate
+          path: |
+            /tmp/ozon-b5-exact
+            /tmp/ozon-b5-exact-files.sha256
+            /tmp/ozon-b5-core.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify B5 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B5_FINANCE_REALIZATION_2026-08-26.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='c564134bfc330930d8f23f805424d897a68ef97ca421d81d5f3e2b7394b2b6a5'; b=gzip.decompress(c); assert hashlib.sha256(b).hexdigest()=='eb8d3fa8b8347ab58b363460e99b17fe2c0c014ac46158a5d58377fe561afce5'"
+      - name: Materialize exact B5 candidate on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b5-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b5_finance_realization_candidate.py . $out
+      - name: Verify B1-B5 deterministic gates on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b5-exact"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_REGRESSION_2026-08-26.mjs $out
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B2_PRICES_LISTING_STATE_REGRESSION_2026-08-26.mjs $out
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B3_WAREHOUSE_STOCK_GEOGRAPHY_REGRESSION_2026-08-26.mjs $out
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B4_ORDERS_RETURNS_CANCELLATIONS_REGRESSION_2026-08-26.mjs $out
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B5_FINANCE_REALIZATION_REGRESSION_2026-08-26.mjs $out
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object {
+            node --check $_.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
