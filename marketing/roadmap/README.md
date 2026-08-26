@@ -1,6 +1,6 @@
 # Roadmap — от стратегии до релиза
 
-Версия: **1.7**  
+Версия: **1.8**  
 Дата: **2026-08-26**  
 Статус: **рабочий управляющий roadmap проекта**
 
@@ -25,8 +25,6 @@ Roadmap имеет ровно два уровня:
 1. **Пункт** — крупный этап проекта.
 2. **Шаг** — непосредственно выполняемая часть этого пункта.
 
-Глубже дерево не дробится.
-
 До начала нового пункта обязательно:
 
 - записать конечный список его шагов;
@@ -42,13 +40,11 @@ Roadmap имеет ровно два уровня:
 - `[x]` — выполнено;
 - `[!]` — заблокировано/обязательная пауза.
 
-После завершения шага его статус меняется в детальном файле пункта.
-
 Обсуждение в чате **не считается завершением**. Нужен зафиксированный результат/артефакт/измерение в GitHub.
 
-Дополнительное правило continuity с 2026-08-26:
+Continuity rule:
 
-> каждый завершённый исследовательский проход и каждый decision-grade набор результатов должен быть сохранён в репозитории до перехода к следующему шагу, чтобы обрыв сессии/сети не приводил к потере состояния.
+> каждый завершённый исследовательский проход и каждый decision-grade набор результатов сохраняется в репозитории до перехода к следующему шагу.
 
 ---
 
@@ -56,13 +52,13 @@ Roadmap имеет ровно два уровня:
 
 ## Исследование и стратегия
 
-- [x] **01. Зафиксировать стратегию и правила принятия решений** — детализация: [`01_STRATEGY_AND_DECISION_RULES.md`](01_STRATEGY_AND_DECISION_RULES.md).
-- [x] **02. Завершить архитектуру исследовательских данных** — детализация: [`02_RESEARCH_DATA_ARCHITECTURE.md`](02_RESEARCH_DATA_ARCHITECTURE.md).
-- [x] **03. Полностью измерить поисковый спрос / Wordstat** — финальный R1 закрыт; детализация: [`03_WORDSTAT_DEMAND_MEASUREMENT.md`](03_WORDSTAT_DEMAND_MEASUREMENT.md); итог: `marketing/research/R1_WORDSTAT_FINAL_REPORT_2026-08-12.md`.
-- [~] **03A. Marketplace/API tooling и assortment master** — параллельная инфраструктурная ветка проекта. **Не является текущей SEO-работой этого диалога и не используется как замена Search/Alice evidence.** Детализация: [`03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md`](03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md).
-- [x] **04. Исследовать реальный Yandex Search/SERP и Alice AI** — R2 закрыт; детализация: [`04_YANDEX_SERP_ALICE_RESEARCH.md`](04_YANDEX_SERP_ALICE_RESEARCH.md); итог: `marketing/research/R2_YANDEX_SERP_ALICE_FINAL_REPORT_2026-08-26.md`.
-- [~] **05. Свести Wordstat + Search/SERP + Alice в единую карту возможностей** — активный SEO/research stage; детализация: [`05_OPPORTUNITY_MAP.md`](05_OPPORTUNITY_MAP.md); ожидаемо 4–6 ранов.
-- [ ] **06. Завершить исследование покупателей и полный паспорт SKU** — scope уточняется по реальному ассортименту.
+- [x] **01. Зафиксировать стратегию и правила принятия решений** — [`01_STRATEGY_AND_DECISION_RULES.md`](01_STRATEGY_AND_DECISION_RULES.md).
+- [x] **02. Завершить архитектуру исследовательских данных** — [`02_RESEARCH_DATA_ARCHITECTURE.md`](02_RESEARCH_DATA_ARCHITECTURE.md).
+- [x] **03. Полностью измерить поисковый спрос / Wordstat** — [`03_WORDSTAT_DEMAND_MEASUREMENT.md`](03_WORDSTAT_DEMAND_MEASUREMENT.md); final R1: `marketing/research/R1_WORDSTAT_FINAL_REPORT_2026-08-12.md`.
+- [~] **03A. Marketplace/API tooling и assortment master** — параллельная инфраструктурная ветка; не является текущей SEO-задачей. [`03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md`](03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md).
+- [x] **04. Исследовать реальный Yandex Search/SERP и Alice AI** — [`04_YANDEX_SERP_ALICE_RESEARCH.md`](04_YANDEX_SERP_ALICE_RESEARCH.md); final R2: `marketing/research/R2_YANDEX_SERP_ALICE_FINAL_REPORT_2026-08-26.md`.
+- [x] **05. Свести Wordstat + Search/SERP + Alice в единую карту возможностей** — [`05_OPPORTUNITY_MAP.md`](05_OPPORTUNITY_MAP.md); final R3: `marketing/research/R3_OPPORTUNITY_MAP_FINAL_2026-08-26.md`.
+- [ ] **06. Завершить исследование покупателей и полный паспорт SKU** — **NEXT; detailed step plan must be written before work starts**.
 - [ ] **07. Завершить конкурентную разведку и определить реальные конкурентные преимущества** — предварительно 3–6 ранов.
 - [ ] **08. Посчитать экономику каналов и direct-commerce** — предварительно 3–6 ранов.
 - [ ] **09. Принять окончательную коммерческую модель сайта** — предварительно 2–4 рана.
@@ -96,9 +92,7 @@ Roadmap имеет ровно два уровня:
 
 # Главная последовательность SEO/site track
 
-`Стратегия → исследовательская data architecture → Wordstat human demand → Yandex Search/SERP → Alice AI → opportunity map → customer/product evidence → competitors → economics → commercial model → IA → Page Jobs/content → ТЗ → UX/UI → разработка → SEO/AI layer → analytics → QA → limited launch → measurement → correction → full release`
-
-Infrastructure/tooling может развиваться параллельно, но не подменяет эту последовательность и не считается текущей SEO-задачей.
+`Стратегия → research data architecture → Wordstat → Yandex Search/SERP → Alice → opportunity map → customer/product evidence → competitors → economics → commercial model → IA → Page Jobs/content → ТЗ → UX/UI → разработка → SEO/AI → analytics → QA → launch → measurement → correction → release`
 
 ---
 
@@ -106,39 +100,53 @@ Infrastructure/tooling может развиваться параллельно,
 
 Закрыто:
 
-- **01 — стратегия**;
+- **01 — strategy**;
 - **02 — research data architecture**;
 - **03 — Wordstat R1**;
-- **04 — Yandex Search/SERP + Alice R2**.
+- **04 — Yandex Search/SERP + Alice R2**;
+- **05 — opportunity map R3**.
 
-## Что закрыто в 04
+## 04 final state
 
-- Search provider primary: **10/10**;
-- desktop browser fixed representative set: **5/5**;
-- additional desktop captures: `вегвизир`, `алатырь оберег`, `подарок автомобилисту`;
-- Yandex touch / emulated-mobile representative set: **2/2**;
-- accepted consumer Alice primary: **10/10**;
-- evidence-driven secondary Search: **5/5**;
-- paid secondary Search expansion: **STOPPED**;
-- canonical Query Evidence Ledger: **23 rows / 72 columns / validated**;
-- final R2 handoff: **COMPLETE**.
+- Search primary 10/10;
+- desktop representative 5/5 + additional captures;
+- Yandex touch/emulated-mobile 2/2;
+- accepted Alice 10/10;
+- secondary Search 5/5;
+- paid secondary expansion stopped;
+- 23-row canonical Ledger repaired/validated.
 
-Canonical R2:
-- `marketing/research/R2_YANDEX_SERP_ALICE_FINAL_REPORT_2026-08-26.md`;
+## 05 final state
+
+Canonical opportunity tiers:
+
+### KEEP
+- Печать Велеса family;
+- Slavic category;
+- Automotive protection;
+- Алатырь;
+- Vegvisir.
+
+### INVESTIGATE
+- broader Veles family;
+- Шлем Ужаса / Агисхьяльм;
+- mirror-pendant form factor.
+
+### REJECT_AS_PRIMARY
+- broad zodiac;
+- generic automotive gift.
+
+Overlap/job boundaries resolved provisionally without assigning URLs.
+
+Canonical Stage 05 artifacts:
+- `marketing/research/R3_OPPORTUNITY_MAP_FINAL_2026-08-26.md`;
+- `marketing/data/normalized/opportunity_map/20260826__opportunity_units_scored_v2.csv`;
+- `marketing/data/normalized/opportunity_map/20260826__opportunity_overlap_v3.csv`;
 - `marketing/data/ledger/query_evidence_ledger.csv`;
-- `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_R2_FINAL_VALIDATION_2026-08-26.md`.
+- `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_STAGE05_VALIDATION_2026-08-26.md`.
 
-Активный пункт:
+## Next stage
 
-> **05 — opportunity map.**
+> **06 — buyer evidence + complete SKU passport.**
 
-Детализация:
-- `marketing/roadmap/05_OPPORTUNITY_MAP.md`.
-
-## Следующий точный шаг
-
-> **05.1 — определить canonical opportunity units и scoring rubric H/A/C/O на основе уже завершённых R1/R2 evidence.**
-
-На старте 05.1 не требуется новый браузерный capture или платный Search API запрос.
-
-Не переходить к финальной IA или разработке сайта до завершения последующих research/decision stages.
+Before any 06 measurement/work, create the detailed `06` plan according to the roadmap rule above. Do not jump to final IA, Page Jobs or site development.
