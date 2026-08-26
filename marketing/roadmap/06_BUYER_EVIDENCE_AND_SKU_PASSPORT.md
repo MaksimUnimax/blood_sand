@@ -1,49 +1,38 @@
 # 06 — Buyer evidence + полный паспорт SKU
 
-Статус: **[~] IN PROGRESS — 06.1 COMPLETE; NEXT 06.2**  
+Статус: **[~] IN PROGRESS — 06.1 COMPLETE; 06.2 NEXT**  
 Дата старта: **2026-08-26**
 
 ## Цель
 
-Связать opportunity map R3 с **реальным ассортиментом Blood & Sand**, seller-side marketplace facts и покупательским evidence, чтобы перед конкурентами/экономикой понимать:
-
-- какие реальные SKU закрывают OU01–OU08;
-- какие product families действительно существуют в ассортименте;
-- чем отличаются близкие SKU/варианты;
-- что покупателю важно при выборе и использовании;
-- какие товарные факты уже доказаны, а какие ещё отсутствуют;
-- какие seller/platform facts можно использовать дальше без подмены их гипотезами.
-
-Пункт 06 **не назначает финальную IA/Page Jobs** и **не считает экономику канала**.
+Связать R3 opportunity map с реальным ассортиментом Blood & Sand, seller-side marketplace facts и buyer/customer evidence. Stage 06 не назначает финальную IA/Page Jobs и не считает финальную экономику.
 
 ## Canonical inputs
 
 - `marketing/research/R3_OPPORTUNITY_MAP_FINAL_2026-08-26.md`
+- `marketing/research/R4_STAGE06_EVIDENCE_INVENTORY_2026-08-26.md`
+- `marketing/data/PRODUCT_SKU_PASSPORT_SCHEMA.md`
 - `marketing/data/ledger/query_evidence_ledger.csv`
-- `marketing/research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`
 - `marketing/data/registry/marketplace_measurements.csv`
 - `marketing/data/raw/marketplace/ozon/`
-- `marketing/data/DATA_SCHEMA_CONTRACT.md`
-- `marketing/data/PRODUCT_SKU_PASSPORT_SCHEMA.md`
+- `marketing/data/normalized/marketplace/ozon/`
+- `marketing/research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`
 
-## Evidence discipline
+## Evidence rules
 
-1. Product identity, listing identity, marketplace SKU and seller offer/article are separate fields.
-2. Dynamic facts (price, stock, orders, revenue, rating) are dated/period-scoped.
-3. Revenue is not margin/profit.
-4. Sales/performance do not prove buyer motivation.
-5. Product title can support identity/form-factor facts, but not unobserved material/quality/meaning claims.
-6. Customer reasons require customer/review/question evidence; they are not inferred from order counts.
-7. Missing physical/product facts remain `NOT_MEASURED` / `NOT_AVAILABLE`.
-8. Ozon facts do not imply Wildberries facts.
-9. No personal data beyond aggregate research need.
-10. Extension/bridge engineering is not Stage 06 work.
-11. Every completed evidence pass is committed before moving on.
-12. No final IA/Page Job is frozen in Stage 06.
+- Product / listing / SKU / seller offer identities remain separate.
+- Dynamic marketplace facts are dated/period-scoped.
+- Revenue is not margin/profit.
+- Sales do not prove buyer motivation.
+- Missing product facts remain explicit missing statuses.
+- Ozon evidence does not imply WB evidence.
+- Extension engineering is not Stage 06 work.
+- Every completed pass is committed before proceeding.
+- No final IA/Page Jobs in Stage 06.
 
 ---
 
-# 06.1 — Existing evidence inventory + passport schema
+## 06.1 — Existing evidence inventory + passport schema
 
 Status: **[x] COMPLETE**
 
@@ -51,91 +40,91 @@ Artifacts:
 - `marketing/research/R4_STAGE06_EVIDENCE_INVENTORY_2026-08-26.md`
 - `marketing/data/PRODUCT_SKU_PASSPORT_SCHEMA.md`
 - `marketing/data/normalized/products/20260826__provisional_priority_sku_opportunity_map.csv`
+- `marketing/data/raw/marketplace/ozon/20260812T0148Z__ozon__stocks-current__terminal.json`
+- `marketing/data/normalized/marketplace/ozon/20260812__ozon__product-master__current76.csv`
+- `marketing/data/normalized/marketplace/ozon/OZON_PRODUCT_FAMILY_BASELINE_2026-08-12.md`
 
-Direct reusable evidence confirmed:
-- historical Ozon stocks snapshot 2026-08-11, provider-reported total 76 but completeness/pagination not accepted as final master;
-- multiple successful Ozon SKU analytics periods with `ordered_units` and `revenue`;
-- direct priority identities for Печать Велеса, separate Велес, Алатырь, Vegvisir, Шлем Ужаса and zodiac listings;
-- historical category-level customer evidence for auto pendants / Печать Велеса-like products.
+Correct historical baseline:
+- initial stocks page total: 76;
+- terminal continuation: 0 new items + empty cursor;
+- historical 2026-08-11/12 product-level snapshot completeness: **76/76 PROVEN**;
+- 90d ordered units across those 76 current-snapshot identities: **1519**.
 
-Direct one-week seller evidence 2026-08-04..2026-08-10 includes:
-- Печать Велеса 35 ordered units / 56,644 ₽ revenue;
-- Алатырь 16 / 26,843 ₽;
-- Колядник 10 / 16,643 ₽;
-- Vegvisir 6 / 9,843 ₽;
-- Шлем Ужаса 1 / 1,700 ₽;
-- response total 153 ordered units / 250,798 ₽ revenue.
+Historical research-family composition:
+- Slavic symbols: 25 / 928 ordered units;
+- zodiac classic + symbols + antique: 37 / 356;
+- Norse/runic: 4 / 128;
+- remaining families: 10 / 107.
 
-These are dated marketplace facts, not margin/profit or buyer-motive evidence.
+R3 priority seller identities directly present historically:
+- Печать Велеса;
+- separate Велес;
+- Алатырь;
+- Vegvisir;
+- Шлем Ужаса.
 
-Completion criterion: **PASS** — reusable evidence and missing fields are now explicit; no blind recollection required.
+Zodiac has three real seller variant families, so Stage 06 keeps a narrow product-level reopen test while preserving R3's broad-search contamination conclusion.
 
-# 06.2 — Fresh Ozon assortment/listing baseline
+06.1 completion: **PASS**.
 
-Status: **[ ] NEXT**  
-Estimated: **1–3 runs depending on explicit pagination/operations**
+---
 
-Work:
-- verify exact current v0.1.19 bridge command contract from repository before execution;
-- obtain fresh explicit seller-side enumeration/current listing identity snapshot;
-- obtain only additional facts required by passport and supported by current bridge;
-- preserve explicit pagination/request provenance;
-- normalize Product ↔ Listing ↔ SKU ↔ offer/article identity.
+## 06.2 — Fresh Ozon assortment/listing baseline
 
-Expected result:
-- current Ozon assortment baseline;
-- historical Aug-11 stock/analytics evidence retained rather than overwritten.
+Status: **[ ] NEXT**
+
+Purpose is now **currentness/change detection**, not reconstruction of historical completeness.
+
+First gate:
+- verify v0.1.19 live contract before execution — COMPLETE;
+- `stocks_current` supports `filter:{}` and `limit` 1..1000;
+- each explicit command remains bounded to one physical provider request;
+- no hidden pagination is assumed.
+
+Execution sequence:
+1. one fresh `stocks_current` request with `filter:{}`, `limit:1000`;
+2. inspect returned `items`, `total`, `cursor`;
+3. only if cursor is non-empty, issue an explicit continuation after verifying its exact request shape;
+4. compare fresh identity set with historical 76;
+5. collect detail/attribute/price/status facts only where current bridge operations support them and only where needed for passport.
 
 Completion criterion:
-- every listing returned by the canonical fresh enumeration has stable identity or explicit unresolved status.
+- fresh enumeration has explicit terminal/completeness evidence;
+- every returned listing identity is normalized or marked unresolved.
 
-# 06.3 — Map real assortment to opportunities / product families
+---
 
-Status: **[ ] WAIT**  
-Estimated: **1–2 runs**
-
-Work:
-- map current SKUs to OU01–OU08;
-- resolve real Veles hierarchy;
-- separate automotive protection vs mirror-pendant form at product level;
-- confirm current Алатырь, Vegvisir and Шлем Ужаса variants;
-- evaluate coherent zodiac SKU family;
-- mark unmapped products explicitly.
-
-# 06.4 — Buyer/customer evidence + seller performance linkage
-
-Status: **[ ] WAIT**  
-Estimated: **1–3 runs**
-
-Work:
-- normalize existing customer themes;
-- add owned seller-side customer evidence only via supported read surfaces;
-- normalize Ozon ordered_units/revenue by period and SKU;
-- keep performance separate from motivation.
-
-# 06.5 — Cross-platform status / Wildberries gap
+## 06.3 — Map current assortment to opportunities / product families
 
 Status: **[ ] WAIT**
 
-Current known state:
-- WB official API research exists;
-- accepted seller-side WB bridge/channel is not available in `main`;
-- public snippets do not substitute for seller data;
-- no WB extension development inside this stage.
+Must resolve:
+- OU02 specific Печать Велеса vs OU06 broader Veles family;
+- OU03 protection/use-case vs OU04 mirror form at SKU level;
+- current Алатырь / Vegvisir / Шлем Ужаса variants;
+- zodiac product-family reopen test;
+- unmapped current products.
 
-# 06.6 — Final SKU passports + Stage 07 handoff
+## 06.4 — Buyer/customer evidence + seller performance linkage
 
 Status: **[ ] WAIT**
 
-Completion remains:
-- every current Ozon listing in chosen baseline gets a passport row;
-- OU01–OU08 have real assortment mapping or explicit gap;
-- technical/customer/performance facts have provenance/status;
-- WB coverage status explicit;
-- no final IA/Page Jobs assigned.
+Normalize customer themes and seller performance while keeping motivation separate from sales.
+
+## 06.5 — Cross-platform / WB status
+
+Status: **[ ] WAIT**
+
+WB seller-side evidence must be measured through an accepted channel or explicitly marked `BLOCKED/NOT_AVAILABLE`. Public snippets do not substitute. No extension development inside Stage 06.
+
+## 06.6 — Final passports + Stage 07 handoff
+
+Status: **[ ] WAIT**
+
+Close only when current Ozon baseline, opportunity mapping, technical-fact gaps, buyer evidence and WB coverage status are explicit and provenance-safe.
 
 ---
 
 # Current continuation point
 
-**NEXT: verify current Ozon v0.1.19 enumeration contract and execute exactly one fresh assortment/listing measurement before any fan-out.**
+**06.2: execute one fresh v0.1.19 `stocks_current` request with empty filter and `limit=1000`; inspect cursor before doing anything else.**
