@@ -43,6 +43,7 @@
 8. Secondary expansion — только evidence-driven.
 9. Любые Page Job / IA выводы на этом этапе остаются `PROVISIONAL` до объединения с Wordstat, Alice и commercial/customer evidence.
 10. Каждый завершённый measurement/аналитический проход должен быть сохранён в GitHub, а не оставаться только в диалоге.
+11. Alice measurement с явным carry-over из предыдущего диалога помечается `CONTEXT_CONTAMINATED` и не засчитывается в primary set; для canonical evidence требуется clean rerun.
 
 ---
 
@@ -113,103 +114,102 @@
 
 Это **marketplace visibility**, не organic visibility будущего собственного сайта.
 
-## [~] 04.3 — Проверить browser SERP/UI признаки только там, где они decision-useful
+## [x] 04.3 — Проверить representative desktop browser SERP/UI признаки
 
 План representative desktop roots: 5.  
-Фактически закрыто по фиксированному representative set: **3/5**.
+Фактически закрыто по фиксированному representative set: **5/5**.
 
-### 1. `славянские обереги` — desktop browser capture OBSERVED
+Browser URLs в нескольких прямых captures содержат `lr=11202`; это сохраняется как numeric localization parameter. Human-readable geography не разрешена и не подменяется Search API region `225`.
 
-В верхнем viewport непосредственно наблюдалось:
+### 1. `славянские обереги` — OBSERVED
 
-- embedded/consumer Alice answer над обычной выдачей: `ABSENT`;
+- embedded Alice above results: `ABSENT`;
 - три последовательных `Промо` до первого organic result;
-- отдельный product carousel/rich shopping block в видимом viewport: `NOT_OBSERVED`;
-- первый видимый organic: `slavyanskieoberegi.ru`;
-- следующий: `simvolroda.ru`.
+- product carousel/rich shopping block в видимом top viewport: `NOT_OBSERVED`;
+- first visible organic: `slavyanskieoberegi.ru`;
+- next visible organic: `simvolroda.ru`.
 
-Артефакт:
-
+Artifact:
 - `marketing/data/raw/browser_serp/20260826T0723Z__slavyanskie_oberegi__desktop.md`.
 
-### 2. `печать велеса` — desktop browser capture OBSERVED
+### 2. `печать велеса` — OBSERVED
 
-Непосредственно наблюдалось:
+- top `Промо` `logovo-volka.ru`;
+- large embedded `Быстрый ответ Алисы AI`;
+- image thumbnails in Alice + `Картинки` block;
+- first visible result below Alice: `slavyanskieoberegi.ru`, далее Wildberries и Yandex Market;
+- `Люди ищут` directly exposes `значение`, `тату`, `фото`, `серебро купить`, `медвежья лапа значение` branches.
 
-- `Промо` `logovo-volka.ru`;
-- большой embedded `Быстрый ответ Алисы AI`;
-- image thumbnails в Alice;
-- крупный `Картинки` block;
-- первый видимый результат под Alice: `slavyanskieoberegi.ru`;
-- далее Wildberries и Yandex Market;
-- copied URLs содержат `lr=11202`; human-readable geography не разрешена и не подменяется `225`.
-
-`Люди ищут` прямо подтверждает ветки `значение`, `тату`, `фото`, `серебро купить`, `медвежья лапа значение`.
-
-Артефакт:
-
+Artifact:
 - `marketing/data/raw/browser_serp/20260826T0734Z__pechat_velesa__desktop.md`.
 
-### 3. `оберег в машину` — desktop browser capture OBSERVED
+### 3. `оберег в машину` — OBSERVED
 
-Direct full-page copy + screenshots показывают:
+- top `Промо` commerce result;
+- `Картинки`;
+- large rich/shopping block `Популярные товары по запросу «оберег в машину»`;
+- product cards from Yandex Market and Ozon;
+- direct product-level card for `Славянский оберег - Подвеска на зеркало в машину "Печать Велеса"`;
+- marketplace pressure: Wildberries / Ozon / Yandex Market;
+- independent/specialist commerce also present;
+- embedded Alice: `NOT_OBSERVED` in this full-page capture.
 
-- top `Промо` result `Оберег в машину «Чур»`;
-- `Картинки` block;
-- большой rich/shopping block `Популярные товары по запросу «оберег в машину»`;
-- product cards из Yandex Market и Ozon;
-- среди product-level cards прямо присутствует `Славянский оберег - Подвеска на зеркало в машину "Печать Велеса"`;
-- prominent marketplace results: Wildberries, Ozon, Yandex Market;
-- independent/specialist commerce: `happywitch.ru`, `slavyarmarka.ru`, `veles.bz`, `radugakamnya.ru`;
-- embedded `Быстрый ответ Алисы AI`: `NOT_OBSERVED` в данном полном copied SERP capture;
-- `Видео`: `NOT_OBSERVED`;
-- `Люди ищут`: `NOT_OBSERVED`;
-- browser URLs содержат `lr=11202`; human-readable geography не разрешена.
-
-Важно: accessibility label `Быстрый ответ` в начале page copy относится к `Популярные товары`, а не к Alice.
-
-Артефакт:
-
+Artifacts:
+- `marketing/data/raw/browser_serp/20260826T0743Z__obereg_v_mashinu__desktop.md`;
 - `marketing/data/raw/browser_serp/20260826__obereg_v_mashinu__desktop.md`.
 
-### Дополнительные opportunistic browser captures — не заменяют фиксированный representative set
+### 4. `подвеска на зеркало в машину` — OBSERVED
+
+- top `Промо` Ozon result;
+- ordinary Ozon result/category;
+- `Картинки`;
+- large `Популярные товары` rich shopping block;
+- product cards dominated by Ozon with Yandex Market participation;
+- direct product-level variants include generic decor, fandom, Slavic amulets and zodiac talismans;
+- directly observed relevant products include `Знич`, `Печать Велеса`, zodiac pendants (`Овен`, `Дева`, `Телец`);
+- `Видео` observed;
+- embedded Alice: `NOT_OBSERVED` in this capture.
+
+Artifact:
+- `marketing/data/raw/browser_serp/20260826__podveska_na_zerkalo_v_mashinu__desktop.md`.
+
+### 5. `талисман знак зодиака` — OBSERVED
+
+- large embedded `Быстрый ответ Алисы AI` before ordinary results;
+- Yandex Market + Wildberries immediately below, then informational/retail sources;
+- `Картинки`;
+- ordinary marketplace/retail results from Ozon, Sunlight, 585 and others;
+- lower-page `Промо`, including off-topic ad noise preserved separately from intent evidence;
+- `Люди ищут`: 10/10 observed related queries are strongly stone/zodiac-oriented;
+- large `Популярные товары` product-card block: `NOT_OBSERVED`.
+
+Artifact:
+- `marketing/data/raw/browser_serp/20260826__talisman_znak_zodiaka__desktop.md`.
+
+### Opportunistic desktop captures — additional evidence, not fixed-set substitutes
 
 #### `вегвизир`
 
-Full-page browser copy непосредственно показывает:
+- `Промо`, `Картинки`, Ozon / Yandex Market / Wildberries / Livemaster;
+- Wikipedia + specialist informational results;
+- embedded Alice;
+- `Люди ищут`: `вегвизир это`, `вегвизир значение`, `вегвизир значение символа`, `вегвизир что это`, `вегвизир тату`, gaming-contamination `Valheim` branch.
 
-- `Промо` `logovo-volka.ru`;
-- `Картинки` block;
-- Ozon / Yandex Market / Wildberries / Livemaster;
-- Wikipedia и specialist informational results;
-- embedded `Быстрый ответ Алисы AI`;
-- `Люди ищут`: `вегвизир это`, `вегвизир значение`, `вегвизир значение символа`, `вегвизир что это`, `вегвизир тату`, а также gaming-contamination branch `Valheim`.
-
-Артефакт:
-
+Artifact:
 - `marketing/data/raw/browser_serp/20260826__vegvizir__desktop.md`.
 
 #### `алатырь оберег`
 
-Full-page browser copy непосредственно показывает:
-
-- embedded `Быстрый ответ Алисы AI`;
+- embedded Alice;
 - Wildberries / Ozon / Livemaster / Yandex Market;
-- specialist commerce/content results (`slavyanskieoberegi.ru`, `ruyan-master.ru`, `master-run.ru`, `simvolroda.ru`, `veseliyviking.ru` и др.);
-- `Видео` carousel;
-- `Картинки` block;
-- `Люди ищут`: meaning, male/female meaning, photo/images, `что значит`, `купить серебро мужской`, embroidery.
+- specialist commerce/content;
+- `Видео` + `Картинки`;
+- `Люди ищут`: meaning, male/female meaning, imagery, `что значит`, `купить серебро мужской`, embroidery.
 
-Артефакт:
-
+Artifact:
 - `marketing/data/raw/browser_serp/20260826__alatyr_obereg__desktop.md`.
 
-Осталось по фиксированному representative desktop set:
-
-- `подвеска на зеркало в машину`;
-- `талисман знак зодиака`.
-
-Mobile comparison пока `NOT_OBSERVED`; плановый set:
+Mobile comparison remains `NOT_OBSERVED`; planned set:
 
 - `славянские обереги`;
 - `оберег в машину`.
@@ -217,148 +217,172 @@ Mobile comparison пока `NOT_OBSERVED`; плановый set:
 ## [~] 04.4 — Снять consumer Alice evidence по primary query set
 
 Primary Alice plan: 10 roots.  
-Фактически завершено: **5/10**.
+**Фактически завершено и принято: 9/10.**
 
-### 1. `славянские обереги` — COMPLETE PRIMARY ALICE ROOT
+### 1. `славянские обереги` — COMPLETE
 
-Direct observation:
-
-- exact input `славянские обереги`;
-- answer present `YES`;
-- длинный informational/explanatory guide: виды, назначение, значения, применение/традиция, советы;
-- Alice самостоятельно выделяет `Печать Велеса` и `Алатырь`;
-- image thumbnails + video card;
-- Sources panel прокручен до конца;
-- 7 source rows уверенно нормализованы;
-- exact source URLs не захвачены и не реконструируются;
+- answer job: informational/explanatory guide;
+- Alice explicitly discusses `Печать Велеса` and `Алатырь`;
+- images + video card;
+- Sources panel scrolled to end;
+- 7 confidently normalized source rows;
+- exact URLs not captured;
 - fan-out `NOT_OBSERVED`.
 
 Artifacts:
-
 - `marketing/data/raw/alice/20260826T0723Z__slavyanskie_oberegi.md`;
 - `marketing/data/raw/alice/20260826T0723Z__slavyanskie_oberegi_sources_visible_01.md`;
 - `marketing/data/normalized/alice/20260826T0723Z__slavyanskie_oberegi.csv`.
 
-### 2. `печать велеса` — COMPLETE PRIMARY ALICE ROOT
+### 2. `печать велеса` — COMPLETE
 
-Surface: embedded `Быстрый ответ Алисы AI`.
-
-Direct observation:
+Surface: embedded SERP Alice.
 
 - answer job = meaning/explanation despite strongly transactional Search evidence;
-- structure: `Как выглядит` → `Что символизирует` → `Как использовали` → `Несколько нюансов`;
-- explicit folk-belief/esotericism caveat;
 - 17 displayed sources, all exact URLs captured;
 - 3 fan-out prompts captured;
 - `slavyanskieoberegi.ru` is Alice source #2 and also prominent in ordinary Search.
 
 Artifacts:
-
 - `marketing/data/raw/alice/20260826T0734Z__pechat_velesa__embedded.md`;
 - `marketing/data/normalized/alice/20260826T0734Z__pechat_velesa.csv`.
 
-### 3. `вегвизир` — COMPLETE PRIMARY ALICE ROOT
+### 3. `вегвизир` — COMPLETE
 
-Two direct consumer surfaces captured for the same exact input.
+Two direct consumer surfaces captured.
 
-#### Embedded SERP Alice
-
-- answer job = entity/history/meaning;
-- definition and Icelandic etymology;
-- Huld manuscript, 1860;
-- explicit correction: no Viking-age source confirmation;
-- purpose as path-finding symbol in storm/bad weather;
-- explicit note that it does not indicate cardinal directions;
-- modern jewelry/tattoo use;
-- scientific caveat for magical-property claims;
-- **11 displayed sources, all 11 exact URLs captured**;
-- fan-out `NOT_OBSERVED`.
-
-Source mix includes social/reference plus many independent commerce/content sources: `veseliyviking.ru`, `zevira.ru`, `vesta-peterburg.ru`, `ruyan-master.ru`, `bikerringshop.com`, `zevira.net`, `elarus.ru`.
-
-#### Standalone consumer Alice chat
-
-A separate Alice chat independently converges on the same job:
-
-- what Vegvísir is;
+Embedded Alice:
+- entity/history/meaning job;
 - Huld manuscript / 1860;
-- no Viking-age archaeological/source evidence;
-- difference from `Шлем ужаса / эгисхьяльм`;
-- literal manuscript use vs later metaphorical `жизненный путь` use.
+- explicit no-Viking-age-source correction;
+- 11 displayed sources, all exact URLs captured.
 
-Visible Sources panel screenshot contains 7 confidently readable rows (`zevira.ru`, VK, Wikipedia, BikerRingShop, Pikabu, m.vk.ru, Pikabu), but panel completeness is `NOT_CONFIRMED`; exact URLs are not reconstructed from screenshot.
+Standalone Alice independently converges on the same job; 7 visible source rows were readable, panel completeness `NOT_CONFIRMED`.
 
 Artifacts:
-
 - `marketing/data/raw/alice/20260826__vegvizir__embedded.md`;
 - `marketing/data/raw/alice/20260826__vegvizir__consumer_chat.md`;
 - `marketing/data/normalized/alice/20260826__vegvizir.csv`.
 
-### 4. `алатырь оберег` — COMPLETE PRIMARY ALICE ROOT
+### 4. `алатырь оберег` — COMPLETE
 
-Surface: embedded `Быстрый ответ Алисы AI`.
-
-Direct observation:
+Surface: embedded SERP Alice.
 
 - answer job = mythology + symbolism + meaning + suitability/use;
-- captured sections: opening definition, `Мифологическое происхождение`, `Символика и значение`, `Значение оберега`, `Для кого подходит`, start of `Как использовали оберег`;
-- answer text is `PARTIAL` because copied block truncates in the final captured section;
-- multiple image thumbnails present;
-- Alice explicitly displays **18 sources**, and all 18 exact URLs are captured;
-- source mix includes informational/social/media, specialist commerce/content and Wildberries;
-- `slavyanskieoberegi.ru` again appears in both Alice source set and ordinary Search;
+- answer text captured `PARTIAL` in final section;
+- Alice explicitly displays 18 sources, all 18 exact URLs captured;
+- source mix spans information/social/media, specialist commerce/content and Wildberries;
 - fan-out `NOT_OBSERVED`.
 
-Direct browser `Люди ищут` independently exposes meaning, male/female meaning, imagery and specific purchase branches.
-
 Artifacts:
-
 - `marketing/data/raw/alice/20260826__alatyr_obereg__embedded.md`;
 - `marketing/data/normalized/alice/20260826__alatyr_obereg.csv`.
 
-### 5. `оберег в машину` — COMPLETE PRIMARY ALICE ROOT
+### 5. `оберег в машину` — COMPLETE
 
-Surface: standalone consumer Alice chat after embedded Alice was `NOT_OBSERVED` in the supplied browser SERP capture.
+Surface: standalone consumer Alice.
 
-Direct observation:
-
-- answer job = **choice/use-case + shopping**, not only meaning/explanation;
-- Alice explains several families: horseshoe, clover, dreamcatcher, Slavic symbols, Christian icons, runes/esoteric signs, symbols from other cultures, personal objects and engraved pendants;
-- Slavic examples explicitly include `коловрат` and `Путник`;
-- practical placement/safety guidance is present;
-- Alice inserts `Примеры товаров` with **7 directly orderable products**;
-- visible commerce destinations inside the answer: Yandex Market, Ozon, Wildberries;
-- visible Sources panel across two screenshots gives **13 confidently readable rows**, but panel completeness is `NOT_CONFIRMED`;
-- source mix includes `happywitch.ru`, `slavyarmarka.ru`, VK, Yandex Market, Wildberries, AliExpress, Ozon, `гибддбрянск.рф`, `master-shin.vercel.app`, `pravda.ru`, `zr.ru`;
-- exact source URLs are not reconstructed from screenshot;
+- answer job = choice/use-case + shopping;
+- multiple symbol families and practical placement/safety guidance;
+- 7 directly orderable product examples;
+- answer commerce destinations: Yandex Market / Ozon / Wildberries;
+- 13 confidently readable source rows across screenshots; completeness `NOT_CONFIRMED`;
+- exact source URLs not reconstructed;
 - fan-out `NOT_OBSERVED`.
 
-Directly observed product examples:
-
-1. `Лекарь` — Yandex Market;
-2. `Святой Христофор` — Ozon;
-3. `Скарабей` — Wildberries;
-4. `Страж` — Yandex Market;
-5. `Хамса` — Ozon;
-6. `Автодомовой` — Ozon;
-7. `Удача в пути` — Yandex Market.
-
 Artifacts:
-
 - `marketing/data/raw/alice/20260826__obereg_v_mashinu__consumer_chat.md`;
 - `marketing/data/normalized/alice/20260826__obereg_v_mashinu.csv`.
 
-### Cross-root observation after 5/10 Alice roots
+### 6. `подвеска на зеркало в машину` — COMPLETE
 
-Current direct pattern is now **not uniform across intents**:
+Surface: standalone consumer Alice after embedded Alice was not observed in browser SERP.
 
-- symbol/entity roots (`печать велеса`, `вегвизир`, `алатырь`) make Alice strongly meaning/history/suitability-first even when Search is commercial;
-- broad automotive use-case root `оберег в машину` makes Alice a **selection assistant with direct shopping integration**;
-- specialist independent commerce sites with useful explanatory content can be selected as Alice sources;
-- marketplace sources/products become much more prominent when the query itself is use-case shopping-oriented;
-- this strengthens the hybrid content-commerce opportunity, but remains `PROVISIONAL` until Roadmap 05.
+- answer job = decor/form-factor selection + shopping;
+- figurines, thematic/symbolic, personalized and multi-material variants;
+- safety/use guidance;
+- 6 directly orderable product examples;
+- shopping destinations explicitly include Ozon, Wildberries, Yandex Market and Livemaster;
+- 10 confidently readable source rows; panel completeness `NOT_CONFIRMED`;
+- source mix heavily platform/commerce-oriented;
+- amulets are one branch among generic decor/fandom/personalization rather than the dominant intent.
 
-Next primary Alice root to close the canonical gap: **`подвеска на зеркало в машину`**.
+Artifacts:
+- `marketing/data/raw/alice/20260826__podveska_na_zerkalo_v_mashinu__consumer_chat.md`;
+- `marketing/data/normalized/alice/20260826__podveska_na_zerkalo_v_mashinu.csv`.
+
+### 7. `талисман знак зодиака` — COMPLETE
+
+Surface: embedded SERP Alice.
+
+- answer job = informational zodiac selection guide;
+- explicit scientific-evidence caveat;
+- stones/jewelry are central, not incidental;
+- 30 displayed sources, all 30 exact URLs captured;
+- 3 fan-out prompts captured (`Рыбы`, `Лев`, `Стрелец` branches);
+- no direct orderable product-card section observed.
+
+Artifacts:
+- `marketing/data/raw/alice/20260826__talisman_znak_zodiaka__embedded.md`;
+- `marketing/data/normalized/alice/20260826__talisman_znak_zodiaka.csv`.
+
+### 8. `оберег велес` — COMPLETE
+
+Surface: standalone consumer Alice.
+
+- answer job = symbol-family explanation + suitability/selection with light shopping integration;
+- differentiates bull-head/Velес symbol, bear paw, wolf paw and other forms;
+- 3 visible orderable product cards: two Ozon + one `slavyanskieoberegi.ru`;
+- 8 unique source rows confidently readable, with strong specialist independent Slavic commerce/content representation;
+- source-panel completeness `NOT_CONFIRMED`;
+- fan-out `NOT_OBSERVED`.
+
+Artifacts:
+- `marketing/data/raw/alice/20260826__obereg_veles__consumer_chat.md`;
+- `marketing/data/normalized/alice/20260826__obereg_veles.csv`.
+
+### 9. `подарок мужчине в машину` — COMPLETE CLEAN PRIMARY RERUN
+
+Canonical accepted surface: standalone consumer Alice **clean rerun**.
+
+Direct observation:
+
+- answer job = broad gift selection for a driver/car owner;
+- sections focus on practical items, comfort, electronics, car care/style and emotional gifts;
+- no direct product-card block observed;
+- amulet / pendant / talisman category: `NOT_OBSERVED`;
+- Slavic/Norse symbol suggestions: `NOT_OBSERVED`;
+- five source rows confidently readable: `mvideo.ru`, `kp.ru`, `100suvenirov.ru`, `journal.citilink.ru`, `wildberries.ru`;
+- exact URLs not captured; panel completeness `NOT_CONFIRMED`;
+- fan-out `NOT_OBSERVED`.
+
+This clean result independently reinforces the Search-provider interpretation: the root is a **broad gift-idea query with weak default fit to the pendant category**.
+
+Artifacts:
+- `marketing/data/raw/alice/20260826__podarok_muzhchine_v_mashinu__consumer_chat_CLEAN.md`;
+- `marketing/data/normalized/alice/20260826__podarok_muzhchine_v_mashinu.csv`.
+
+#### Excluded contaminated run for the same root
+
+A prior standalone Alice answer explicitly said `с учётом твоих прошлых запросов про обереги` and injected `вегвизир`, `печать Велеса`, `оберег Велеса` from conversation history. It is preserved for audit but **excluded from primary evidence**.
+
+Artifacts:
+- `marketing/data/raw/alice/20260826__podarok_muzhchine_v_mashinu__consumer_chat_CONTEXT_CONTAMINATED.md`;
+- `marketing/data/normalized/alice/20260826__podarok_muzhchine_v_mashinu__CONTEXT_CONTAMINATED.csv`.
+
+### Cross-root observation after 9/10 accepted Alice roots
+
+Direct pattern is strongly intent-dependent:
+
+- symbol/entity roots (`печать велеса`, `вегвизир`, `алатырь`, `оберег велес`) are meaning/history/suitability-first, with specialist independent sites repeatedly eligible as Alice sources;
+- automotive symbolic/use-case root `оберег в машину` becomes a selection assistant with direct shopping integration;
+- generic form-factor root `подвеска на зеркало в машину` becomes a broad decor/accessory shopping assistant in which symbolic products are only one branch;
+- `талисман знак зодиака` becomes an informational zodiac/stone selection guide with heavy jewelry contamination;
+- clean `подарок мужчине в машину` does **not** naturally pull the pendant/amulet category into the answer, proving that the earlier symbolic gift suggestions were context contamination rather than query-native evidence;
+- this strengthens the hybrid content-commerce opportunity for symbol/use-case roots while weakening the broad generic gift root as a default acquisition target;
+- all Page Job / IA implications remain `PROVISIONAL` until Roadmap 05.
+
+**Remaining primary Alice root: `подарок автомобилисту`.**
 
 ## [ ] 04.5 — Выполнить evidence-driven secondary expansion
 
@@ -366,15 +390,16 @@ Secondary query не запускается только потому, что ф
 
 Current evidence-driven candidates:
 
-- `оберег по знаку зодиака` — Wordstat/Search divergence;
+- `оберег по знаку зодиака` — Wordstat/Search divergence, strengthened by Alice's heavy stone/jewelry contamination on the broad zodiac root;
 - `шлем ужаса оберег` — Norse cluster candidate, strengthened by standalone Alice directly contrasting Ægishjálmur with Vegvísir;
 - `печать велеса значение` — strongly confirmed by `Люди ищут` + Alice meaning job;
-- `вегвизир значение` / `вегвизир значение символа` — directly observed in `Люди ищут`, but not executed yet;
-- `алатырь оберег значение` — directly observed in `Люди ищут` and aligned with Alice answer job, but not executed yet;
-- automotive secondary expansion is **not** inferred from the broad product list alone; wait for `подвеска на зеркало в машину` and remaining primary Alice evidence;
-- further candidates only from later primary Alice/fan-out evidence.
+- `вегвизир значение` / `вегвизир значение символа` — directly observed in `Люди ищут`;
+- `алатырь оберег значение` — directly observed in `Люди ищут` and aligned with Alice answer job;
+- generic mirror-pendant secondary branches must be selected carefully because both Search and Alice show broad commodity/decor contamination;
+- broad gift-root expansion is not justified by the contaminated run; use only clean query-native evidence;
+- further candidates only after the final primary Alice root `подарок автомобилисту` is closed.
 
-Final secondary set is chosen only after primary Wordstat + Search + Alice comparison.
+**Do not start secondary Search before primary Alice reaches 10/10 and the primary comparison is reviewed.**
 
 ## [~] 04.6 — Нормализовать evidence и обновить Query Evidence Ledger
 
@@ -387,11 +412,16 @@ Final secondary set is chosen only after primary Wordstat + Search + Alice compa
 - Search→Ledger staging patch;
 - canonical measurement IDs separated from provider `request_id`;
 - structural merge check: target 19 Ledger rows, 10 `serp_status=MEASURED`, 0 extra/missing columns after repair;
-- consumer Alice roots **5/10** normalized as separate measurement/observation sets;
+- accepted consumer Alice roots **9/10** normalized as separate measurement/observation sets;
 - `печать велеса`: exact 17 source URLs + 3 fan-out rows;
-- `вегвизир`: embedded exact 11 source URLs + separate standalone-chat corroboration with partial source panel;
+- `вегвизир`: embedded exact 11 source URLs + standalone corroboration;
 - `алатырь оберег`: exact 18 source URLs, answer explicitly marked partial;
-- `оберег в машину`: standalone Alice normalized with 13 readable source rows, source-panel completeness `NOT_CONFIRMED`, 7 direct product examples preserved in raw evidence.
+- `оберег в машину`: 13 readable source rows + 7 direct products;
+- `подвеска на зеркало в машину`: 10 readable source rows + 6 direct products;
+- `талисман знак зодиака`: exact 30 source URLs + 3 fan-out rows;
+- `оберег велес`: 8 readable source rows + 3 direct products;
+- `подарок мужчине в машину`: clean canonical rerun normalized; five readable source rows; no pendant/amulet category observed;
+- contaminated gift run retained separately with `CONTEXT_CONTAMINATED` and excluded from primary completion count.
 
 Legacy defect remains:
 
@@ -401,9 +431,10 @@ Legacy defect remains:
 
 Осталось:
 
+- close primary Alice 10/10 with `подарок автомобилисту`;
 - safe canonical rewrite `marketing/data/ledger/query_evidence_ledger.csv` after repair;
 - apply Search patch + measurement IDs;
-- backfill Alice linkage as primary roots complete;
+- backfill Alice linkage after primary roots complete;
 - backfill Wordstat linkage only from existing R1 artifacts, never invent IDs;
 - browser-only `serp_product_block` only from direct browser UI evidence.
 
@@ -434,17 +465,21 @@ Final report must combine:
 
 Текущее состояние:
 
-- Search provider primary: `10/10`;
-- representative desktop browser UI: **`3/5`** fixed-set complete, plus opportunistic direct captures for `вегвизир` and `алатырь оберег`;
-- representative mobile browser UI: `0/2`;
-- consumer Alice primary: **`5/10`**.
+- Search provider primary: **`10/10`**;
+- representative desktop browser UI fixed set: **`5/5`**;
+- additional opportunistic desktop captures: `вегвизир`, `алатырь оберег`;
+- representative mobile browser UI: **`0/2`**;
+- consumer Alice primary accepted: **`9/10`**;
+- excluded context-contaminated Alice run: `подарок мужчине в машину` old run, preserved but not counted.
 
-Следующий исследовательский root: **`подвеска на зеркало в машину`**.
+Следующий и последний primary Alice root: **`подарок автомобилисту`**.
 
 Порядок:
 
-1. direct desktop browser SERP top viewport / copied page for exact query `подвеска на зеркало в машину`;
-2. if Alice is embedded in SERP, capture/expand that exact consumer surface; otherwise use a clean standalone `Алиса AI` chat with the same exact input;
-3. save answer, sources to the end where observable, product integration and fan-out if present;
-4. immediately commit the completed observation/normalization pass to GitHub;
-5. only then move to the next primary root.
+1. use a **new/clean Alice conversation** to avoid cross-query contamination;
+2. exact input: `подарок автомобилисту`;
+3. capture the full answer;
+4. open `Источники` and capture to the end where observable;
+5. capture direct product integration and fan-out if present;
+6. immediately save raw + normalized evidence to GitHub;
+7. after Alice primary reaches 10/10, review the primary comparison before choosing any secondary Search queries.
