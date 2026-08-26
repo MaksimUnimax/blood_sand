@@ -1,6 +1,6 @@
 # 04 — Исследовать реальный Yandex Search / SERP и Alice AI
 
-Статус: **[~] В РАБОТЕ — PRIMARY COMPLETE; SECONDARY A 3/3 + B1 COMPLETE; NEXT B2**  
+Статус: **[~] В РАБОТЕ — PRIMARY COMPLETE; SECONDARY COMPLETE; NEXT MOBILE SERP + LEDGER**  
 Дата активного этапа: **2026-08-26**
 
 ## Цель
@@ -47,7 +47,6 @@ Roadmap 04 **не назначает финальную IA/Page Jobs**. Фина
 **[x] COMPLETE — 10/10**
 
 Primary roots:
-
 1. `славянские обереги`
 2. `печать велеса`
 3. `оберег в машину`
@@ -62,14 +61,12 @@ Primary roots:
 Все 10: HTTP 200, executed=true, retry=false, region 225, Top-10 returned.
 
 Artifacts:
-
 - `marketing/research/R2_YANDEX_SEARCH_PRIMARY_SERP_2026-08-26.md`
 - `marketing/data/normalized/yandex_search/20260826__search__primary10__225.tsv`
 - `marketing/data/normalized/yandex_search/20260826__search__primary10__measurements.csv`
 - `marketing/data/normalized/yandex_search/20260826__search__primary10__summaries.csv`
 
 Primary Search intent map:
-
 - `славянские обереги` — commercial/category-first; independent specialist sites competitive;
 - `печать велеса` — strong transactional/product; marketplace-heavy;
 - `оберег в машину` — mixed commercial + choice/use-case;
@@ -82,7 +79,6 @@ Primary Search intent map:
 - `подарок автомобилисту` — shopping + gift ideas, pendant one possible option.
 
 Direct brand evidence:
-
 - `алатырь оберег`: Wildberries snippet directly exposed `Кровь и Песок / Славянский оберег в машину "Алатырь (Крест Сварога)"`, 593 оценки.
 - This is marketplace visibility, not own-site organic visibility.
 
@@ -110,7 +106,6 @@ Artifacts: `marketing/data/raw/browser_serp/`
 ## Mobile
 
 Representative mobile browser UI remains **0/2**:
-
 - `славянские обереги`
 - `оберег в машину`
 
@@ -123,7 +118,6 @@ Wordstat PHONE counts do not substitute for mobile SERP evidence.
 **[x] COMPLETE — accepted canonical primary 10/10**
 
 Cross-root result:
-
 - symbol/entity roots are meaning/history/suitability-first in Alice even when Search is commercial;
 - `оберег в машину` is query-native selection + commerce;
 - `подвеска на зеркало в машину` is broad form-factor/decor commerce;
@@ -132,7 +126,6 @@ Cross-root result:
 - specialist independent sites repeatedly qualify as Search and Alice sources for symbolic roots.
 
 Canonical comparison:
-
 - `marketing/research/R2_PRIMARY_SEARCH_ALICE_COMPARISON_2026-08-26.md`
 
 Alice artifacts:
@@ -143,110 +136,71 @@ Alice artifacts:
 
 # 04.5 — Evidence-driven secondary expansion
 
-**[~] A1+A2+A3+B1 COMPLETE; NEXT B2; STOP PAID EXPANSION AFTER B2**
+**[x] COMPLETE — A1+A2+A3+B1+B2; PAID SECONDARY EXPANSION STOPPED**
 
-Detailed canonical checkpoint:
-
+Canonical detailed review:
+- `marketing/research/R2_SECONDARY_SEARCH_FINAL_REVIEW_2026-08-26.md`
 - `marketing/research/R2_SECONDARY_SEARCH_ASET_STATUS_2026-08-26.md`
 
-## Priority A — **3/3 COMPLETE**
+## Completed measurements
 
 ### A1 `оберег по знаку зодиака`
-
-Result:
-
 **Lexical narrowing did not create a clean Slavic/symbolic commercial branch.** Search remains marketplace + zodiac-selection + stones/jewelry contaminated.
 
 ### A2 `печать велеса значение`
-
-Result:
-
 **Explicit `значение` creates a distinct informational / meaning-first Search job.** Base `печать велеса` is transactional/product and marketplace-heavy; the meaning modifier shifts the Top-10 toward explanation plus specialist commerce.
 
 ### A3 `амулет в машину`
-
-Result:
-
 **No separate Search job.** Yandex largely folds the lexical variant into the existing `оберег в машину` automotive-protection cluster, with a stronger marketplace tilt.
 
-## Joint A-set rule
+### B1 `вегвизир значение`
+**Distinct meaning-first Search job confirmed in a second named-symbol family.** This independently reproduces the A2 modifier split and confirms that the `значение` layer is repeatable Search behavior.
 
-Secondary queries are worth paying for only when they test a real semantic/job hypothesis, not merely another wording variant.
-
-## Priority B
-
-### B1 `вегвизир значение` — **[x] COMPLETE**
-
+### B2 `шлем ужаса оберег`
 Direct Search:
-- request `search-9739861a-3871-47de-a904-0a9049c1a663`;
+- request `search-f7b9d7c0-8a86-4b81-bfad-dc87e066582f`;
 - HTTP 200;
-- elapsed 1627 ms;
+- elapsed 1493 ms;
 - region 225;
 - Top-10;
 - FORMAT_XML.
 
 Observed:
-- Top-10 overwhelmingly meaning/history/origin/explanation-led;
-- no Ozon, Wildberries or Yandex Market;
-- #1 `ruyan-master.ru` article explicitly answers meaning;
-- translated Wikipedia #2;
-- specialist/editorial surfaces dominate;
-- Pikabu #5 and VK #7 provide community interpretation;
-- YouTube explanation #10;
-- commerce-connected domains, where present, appear through article/editorial URLs rather than product/catalog surfaces.
+- Wildberries #1;
+- Ozon #2;
+- `slavyanskieoberegi.ru` #3;
+- Yandex Market #4/#7/#8/#10;
+- Livemaster catalog #5;
+- Livemaster explanatory/history article #6;
+- `swargas.ru` specialist/history #9.
 
 Result:
 
-**YES — `вегвизир значение` creates a distinct informational / meaning-first Search job relative to mixed base `вегвизир`.**
-
-This independently reproduces A2's modifier split in a second named-symbol family.
-
-Cross-family evidence is now strong enough to say that the `значение` layer is a **repeatable Search behavior**, not a one-query anomaly:
-
-- `печать велеса` → transactional/product; `печать велеса значение` → meaning-first;
-- `вегвизир` → mixed entity + commercial; `вегвизир значение` → meaning/history-first.
-
-This strengthens a later PROVISIONAL hypothesis that named symbols may need separate commercial and explanatory jobs. Final decision belongs to Roadmap 05.
+**YES — `шлем ужаса оберег` forms a coherent named-symbol Search lane with strong commercial intent and supporting meaning/history content.** The result set stays tightly centered on `Шлем Ужаса` / `Агисхьяльм` rather than diffusing into unrelated Norse topics.
 
 Artifacts:
-- `marketing/data/raw/yandex_search/20260826__search__secondary_B1__vegvizir_znachenie__225.md`
-- `marketing/data/normalized/yandex_search/20260826__search__secondary_B1__vegvizir_znachenie__225.csv`
+- `marketing/data/raw/yandex_search/20260826__search__secondary_B2__shlem_uzhasa_obereg__225.md`
+- `marketing/data/normalized/yandex_search/20260826__search__secondary_B2__shlem_uzhasa_obereg__225.csv`
 
 Canonical IDs:
-- query `q_99eac125dfed`
-- measurement `m_search_20260826_99eac125`
+- query `q_136048babfad`
+- measurement `m_search_20260826_136048ba`
 
-### B2 `шлем ужаса оберег` — **[ ] NEXT / FINAL PAID SECONDARY**
+## Final secondary conclusions
 
-B1 does not make B2 redundant:
+1. lexical narrowing is not automatically a new job;
+2. explicit meaning intent is structurally real for named symbols, independently confirmed for `Печать Велеса` and `Вегвизир`;
+3. close lexical synonyms may collapse into an existing job (`амулет в машину`);
+4. adjacent named symbols can form coherent commercial lanes (`Шлем Ужаса`).
 
-- B1 tested meaning-layer separation for an existing high-demand named symbol;
-- B2 tests whether an **adjacent named symbol** forms a coherent specialist/commercial lane of its own.
+**Stop rule:** no further paid Search secondary requests without a new explicit decision question generated by later analysis.
 
-Evidence:
-- Wordstat broad demand: 474;
-- not a synonym of Vegvisir;
-- Alice/Vegvisir evidence directly raised Ægishjálmur / `Шлем ужаса` as a comparison branch.
-
-Decision question:
-
-**Does `шлем ужаса оберег` produce a coherent specialist symbolic/commercial Search job, or is it too informational/contaminated to matter commercially?**
-
-Execution rule:
-
-1. fresh-verify official Yandex pricing;
-2. run B2 once;
-3. save raw + normalized immediately;
-4. stop paid secondary expansion;
-5. perform complete secondary review and proceed to normalization / R2 handoff.
-
-## Deferred / no longer worth immediate paid measurement
-
-- `вегвизир значение символа` — B1 already proves the meaning layer;
-- `алатырь оберег значение` — cross-family meaning behavior now independently proven twice;
-- gift expansions — clean evidence shows weak default pendant fit;
-- generic mirror/decor expansions — primary evidence already proves commodity contamination;
-- additional automotive `амулет/оберег` synonyms — A3 shows low marginal value.
+Deferred / no longer worth immediate paid measurement:
+- `вегвизир значение символа`;
+- `алатырь оберег значение`;
+- gift expansions;
+- generic mirror/decor expansions;
+- additional automotive `амулет/оберег` synonyms.
 
 ---
 
@@ -255,27 +209,21 @@ Execution rule:
 **[~] IN PROGRESS**
 
 Completed:
-
 - primary Search 10/10 normalized;
 - Search→Ledger staging patch exists;
 - canonical measurement IDs separated from provider request IDs;
 - structural merge check done;
 - accepted Alice primary 10/10 normalized;
 - contaminated gift run retained separately and excluded from canonical count;
-- secondary Search A1/A2/A3/B1 raw + normalized saved;
-- A-set joint review committed;
-- B1 cross-family meaning-split result committed.
+- secondary Search A1/A2/A3/B1/B2 raw + normalized saved;
+- final secondary review committed.
 
 Legacy defect:
-
 - old `подвеска на зеркало в машину` Ledger row has shifted tail CSV fields due unescaped commas;
 - repair/merge state stored in `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_SERP_MERGE_STATUS_2026-08-26.md`;
 - do not blindly overwrite canonical Ledger.
 
 Remaining:
-
-- execute/save B2;
-- complete secondary review;
 - safe canonical rewrite `marketing/data/ledger/query_evidence_ledger.csv`;
 - apply Search patch + measurement IDs;
 - backfill Alice linkage for 10/10;
@@ -283,10 +231,9 @@ Remaining:
 - browser-only product-block fields only from direct UI evidence.
 
 Continuity artifacts:
-
 - `marketing/data/ledger/query_evidence_serp_patch_2026-08-26.csv`
 - `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_SERP_MERGE_STATUS_2026-08-26.md`
-- `marketing/research/R2_SECONDARY_SEARCH_ASET_STATUS_2026-08-26.md`
+- `marketing/research/R2_SECONDARY_SEARCH_FINAL_REVIEW_2026-08-26.md`
 
 ---
 
@@ -295,7 +242,6 @@ Continuity artifacts:
 **[ ] NOT STARTED**
 
 Final report must combine:
-
 - Wordstat human demand;
 - Search provider;
 - browser/UI evidence;
@@ -312,23 +258,20 @@ No final IA/Page Job before 04.7 handoff.
 # Current continuation point — 2026-08-26
 
 Current state:
-
 - Search provider primary: **10/10**;
 - desktop browser fixed set: **5/5**;
-- additional direct desktop captures: `вегвизир`, `алатырь оберег`, `подарок автомобилисту`;
 - mobile browser representative set: **0/2**;
 - consumer Alice accepted primary: **10/10**;
 - primary cross-surface comparison: **COMPLETE**;
-- secondary Priority A: **3/3 COMPLETE**;
-- B1 `вегвизир значение`: **COMPLETE**;
-- cross-family meaning-layer replication: **CONFIRMED**;
-- B2 `шлем ужаса оберег`: **NEXT / FINAL PAID SECONDARY**.
+- secondary Search: **COMPLETE — 5/5 secondary measurements executed**;
+- paid secondary expansion: **STOPPED**;
+- Query Evidence Ledger: **repair/merge still open**;
+- Final R2 report: **not started**.
 
 ## Next action
 
-1. Fresh-verify official Yandex synchronous Search pricing.
-2. Execute only B2: **`шлем ужаса оберег`**.
-3. Save raw + normalized immediately.
-4. Stop paid secondary expansion and perform final secondary review.
+1. Repair/merge the canonical Query Evidence Ledger using existing committed artifacts; no user action required for this part.
+2. Capture representative **mobile** Yandex browser SERP for `славянские обереги` and `оберег в машину` (one at a time) because mobile UI evidence is still 0/2 and Wordstat showed strongly mobile-skewed demand.
+3. Complete final R2 report / handoff only after the remaining evidence and ledger work are closed.
 
-Do not add further `значение` or lexical-synonym requests unless new evidence creates a genuinely new decision question.
+Do not add further paid secondary Search requests unless a new decision question appears.
