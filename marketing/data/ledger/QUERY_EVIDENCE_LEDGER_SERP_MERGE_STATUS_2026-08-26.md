@@ -1,46 +1,46 @@
-# Query Evidence Ledger — Search merge status — 2026-08-26
+# Query Evidence Ledger — merge status — 2026-08-26
 
-Статус: **SEARCH EVIDENCE PERSISTED; CANONICAL LEDGER MERGE VALIDATED, NOT YET REPLACED**
+Статус: **MERGE VALIDATED; CANONICAL REWRITE DEFERRED UNTIL MOBILE 2/2 FOR ONE ATOMIC FINAL WRITE**
 
 ## Зачем этот файл
 
-Зафиксировать точную точку продолжения синхронизации `marketing/data/ledger/query_evidence_ledger.csv` после primary Yandex Search capture. Этот файл нужен, чтобы при обрыве диалога не потерять ни результаты, ни обнаруженный дефект старого Ledger.
+Зафиксировать точную точку продолжения синхронизации `marketing/data/ledger/query_evidence_ledger.csv` и не допустить использования старого canonical CSV как будто он уже содержит весь R2 evidence.
 
-## Уже сохранённые Search-артефакты
+## Уже сохранено отдельно от canonical Ledger
 
-- `marketing/research/R2_YANDEX_SEARCH_PRIMARY_SERP_2026-08-26.md` — аналитический capture 10/10 primary queries;
-- `marketing/data/normalized/yandex_search/20260826__search__primary10__225.tsv` — URL-level Top-10 dataset (100 results);
-- `marketing/data/normalized/yandex_search/20260826__search__primary10__measurements.csv` — canonical measurement manifest;
-- `marketing/data/normalized/yandex_search/20260826__search__primary10__summaries.csv` — derived composition summaries;
-- `marketing/data/ledger/query_evidence_serp_patch_2026-08-26.csv` — Search→Ledger staging patch.
+### Primary Search
+- `marketing/research/R2_YANDEX_SEARCH_PRIMARY_SERP_2026-08-26.md`
+- `marketing/data/normalized/yandex_search/20260826__search__primary10__225.tsv`
+- `marketing/data/normalized/yandex_search/20260826__search__primary10__measurements.csv`
+- `marketing/data/normalized/yandex_search/20260826__search__primary10__summaries.csv`
+- `marketing/data/ledger/query_evidence_serp_patch_2026-08-26.csv`
 
-## Canonical measurement IDs
+### Consumer Alice
+Accepted primary: **10/10**, normalized under:
+- `marketing/data/normalized/alice/`
 
-| query | measurement_id | provider request_id |
-|---|---|---|
-| славянские обереги | `m_yandex_serp_20260826_a794a881` | `search-09aa3f63-f501-4dd7-903d-62223aff930a` |
-| печать велеса | `m_yandex_serp_20260826_49ab5424` | `search-12a4010f-75a2-4748-8a39-27561f73ffbc` |
-| оберег в машину | `m_yandex_serp_20260826_6f75b1dc` | `search-7236a7d2-9cb5-462d-aa90-49668e4b6c69` |
-| подвеска на зеркало в машину | `m_yandex_serp_20260826_4a7c4eb2` | `search-f667a06f-56ba-4ba3-8c7b-c353ee83fccc` |
-| вегвизир | `m_yandex_serp_20260826_3fb74d56` | `search-ab2de857-7959-4968-a9f3-8b5d75cc51b2` |
-| талисман знак зодиака | `m_yandex_serp_20260826_af98649b` | `search-a59d7e42-69d4-4e10-9fcf-ff7108e6d415` |
-| алатырь оберег | `m_yandex_serp_20260826_cedfa61b` | `search-bd9baea9-119c-4ec2-93db-5302893f8996` |
-| оберег велес | `m_yandex_serp_20260826_333632c7` | `search-de6f1c2c-d7c3-406a-84ad-a2a43a3bbe1d` |
-| подарок мужчине в машину | `m_yandex_serp_20260826_bf569343` | `search-2e6f5d82-da75-4421-add8-8ffa0b880b20` |
-| подарок автомобилисту | `m_yandex_serp_20260826_04b66634` | `search-70e6be3e-d119-41d3-9657-ec6f48d993be` |
+A context-contaminated gift run is retained separately and excluded from canonical primary count.
 
-`request_id` не используется как `measurement_id`; он хранится как provider/source reference.
+### Secondary Search
+Completed and normalized:
+- A1 `оберег по знаку зодиака`
+- A2 `печать велеса значение`
+- A3 `амулет в машину`
+- B1 `вегвизир значение`
+- B2 `шлем ужаса оберег`
 
-## Найденный legacy-дефект Ledger
+Canonical secondary review:
+- `marketing/research/R2_SECONDARY_SEARCH_FINAL_REVIEW_2026-08-26.md`
 
-Существующая строка `подвеска на зеркало в машину` в `query_evidence_ledger.csv` имеет неполное/сдвинутое хвостовое заполнение CSV-полей. Стандартный `csv.DictReader` показывает недостающие trailing fields и сдвиг значений в области Alice/Webmaster/commerce/decision columns.
+Paid secondary expansion is stopped.
 
-Это дефект существующего файла до Search merge, а не новых Search observations.
+## Legacy defect still confirmed
 
-Для исправления строки подтверждён ожидаемый канонический state:
+Existing canonical row `подвеска на зеркало в машину` has incomplete/shifted trailing CSV fields in the pre-R2 Ledger. This predates the Search merge.
 
-- `alice_status=NOT_MEASURED`;
-- `alice_fanout_observed=NOT_MEASURED`;
+Expected repaired trailing state before applying newer evidence:
+- `alice_status=NOT_MEASURED` in the legacy baseline before Alice backfill;
+- `alice_fanout_observed=NOT_MEASURED` in the legacy baseline before Alice backfill;
 - `webmaster_search_status=NOT_APPLICABLE`;
 - `webmaster_alice_status=NOT_APPLICABLE`;
 - `customer_evidence_status=NOT_MEASURED`;
@@ -51,34 +51,43 @@
 - `owned_asset_value_O=NOT_ASSESSED`;
 - `commerce_status=NOT_APPLICABLE`;
 - `decision_status=PENDING_MORE_EVIDENCE`;
-- исходные Wordstat reason/notes сохраняются;
-- Search summary добавляется отдельно.
+- original Wordstat reason/notes must be preserved.
 
-## Проверенный merge-result
+## Previously validated primary Search merge
 
-В аналитическом merge-проходе получено:
-
-- исходных Ledger rows: 13;
-- после добавления отсутствующих primary Search queries: 19;
+Analytical merge validation already established:
+- legacy Ledger rows: 13;
+- after adding missing primary Search roots: 19;
 - `serp_status=MEASURED`: 10 rows;
-- CSV structural validation: **PASS**;
-- rows with extra columns: 0;
-- rows with missing columns: 0;
-- Wordstat evidence существующих строк не удаляется;
-- Alice поля не повышаются до measured;
-- `serp_product_block` остаётся `NOT_MEASURED`;
-- `serp_device` остаётся пустым/неутверждённым, потому что provider measurement не был device-specific.
+- extra columns: 0;
+- missing columns: 0;
+- Wordstat evidence retained;
+- provider request IDs are not used as canonical measurement IDs;
+- `serp_product_block` is not inferred from Search API;
+- `serp_device` is not inferred from Search API.
 
-## Важная оговорка по новым Ledger rows
+## Why canonical rewrite is intentionally not performed yet
 
-Часть новых Search queries также присутствует в финальном R1 Wordstat report. Однако старый canonical Ledger не содержит для них связанных Wordstat `measurement_id`/observation IDs. Поэтому нельзя придумывать linkage.
+Roadmap 04 still has **mobile browser evidence 0/2**:
+- `славянские обереги`
+- `оберег в машину`
 
-До отдельного backfill новые rows должны получать Search evidence честно, а Wordstat linkage либо добавляется из существующих raw/normalized R1 artifacts, либо остаётся явно незаполненным. `NOT_MEASURED` в таком transitional row не означает нулевой спрос.
+Those measurements are browser/UI evidence and may affect browser-specific fields/notes. Rewriting the canonical Ledger now and again immediately after mobile would create two high-risk whole-file rewrites around a known legacy CSV defect.
 
-## Точка продолжения
+Decision: **perform one atomic canonical rewrite after mobile reaches 2/2**, combining:
+1. legacy-row repair;
+2. primary Search patch + canonical measurement IDs;
+3. accepted Alice 10/10 linkage from real normalized artifacts;
+4. existing Wordstat linkage only where real IDs/artifacts exist;
+5. secondary A1/A2/A3/B1/B2 Search measurements where appropriate;
+6. direct browser/mobile evidence only in browser-supported fields/notes;
+7. no invented Webmaster/customer/commerce evidence.
 
-1. Не выполнять новый Search query.
-2. Считать 10 primary Search measurements сохранёнными и нормализованными.
-3. При следующем canonical Ledger rewrite сначала исправить legacy row `подвеска на зеркало в машину`, затем применить `query_evidence_serp_patch_2026-08-26.csv` и canonical measurement IDs.
-4. Не заполнять Alice/browser-only fields из Search API.
-5. Следующий исследовательский переход определяется roadmap 04: decision-useful browser/UI gaps → consumer Alice primary observations → evidence-driven secondary.
+This is a risk-control sequencing decision, not an unresolved data question.
+
+## Current continuation point
+
+1. Do **not** run more paid secondary Search requests.
+2. Capture representative mobile browser SERP 2/2, one root at a time.
+3. After mobile 2/2, perform one atomic `query_evidence_ledger.csv` rewrite and structural validation.
+4. Then complete final R2 report / Roadmap 05 handoff.
