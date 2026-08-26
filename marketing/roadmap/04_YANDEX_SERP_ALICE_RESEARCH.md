@@ -58,9 +58,9 @@
 - результаты должны хранить request/query provenance;
 - ограничения device/UI не заменяются предположениями.
 
-## [~] 04.2 — Снять и нормализовать direct Yandex Search evidence по primary queries
+## [x] 04.2 — Снять и нормализовать direct Yandex Search evidence по primary queries
 
-**Primary query set: 10/10 direct Search measurements выполнены.**
+**Primary query set: 10/10 direct Search measurements выполнены и сохранены.**
 
 Измерено:
 
@@ -87,7 +87,9 @@
 Артефакты:
 
 - `marketing/research/R2_YANDEX_SEARCH_PRIMARY_SERP_2026-08-26.md`;
-- `marketing/data/normalized/yandex_search/20260826__search__primary10__225.tsv`.
+- `marketing/data/normalized/yandex_search/20260826__search__primary10__225.tsv`;
+- `marketing/data/normalized/yandex_search/20260826__search__primary10__measurements.csv`;
+- `marketing/data/normalized/yandex_search/20260826__search__primary10__summaries.csv`.
 
 ### Наблюдаемая intent-карта primary set
 
@@ -109,10 +111,6 @@
 `Кровь и Песок / Славянский оберег в машину "Алатырь (Крест Сварога)"`, `593 оценки`.
 
 Это фиксируется как **marketplace visibility**, не как organic visibility будущего собственного сайта.
-
-### Что по 04.2 ещё не закрыто
-
-URL-level normalization создана, но Query Evidence Ledger ещё не синхронизирован с новым primary Search set. Поэтому шаг остаётся `[~]`, а не `[x]`.
 
 ## [ ] 04.3 — Проверить browser SERP/UI признаки только там, где они decision-useful
 
@@ -160,16 +158,32 @@ Secondary query не запускается только потому, что ф
 
 Уже выполнено:
 
-- создан URL-level normalized Search dataset для 10 primary measurements;
-- создан аналитический R2 Search report.
+- URL-level normalized Search dataset для 10 primary measurements;
+- аналитический R2 Search report;
+- canonical measurement manifest для 10 measurements;
+- derived composition summaries для 10 measurements;
+- Search→Ledger staging patch;
+- canonical measurement IDs отделены от provider `request_id`;
+- structural merge-проход проверен: целевой результат 19 Ledger rows, 10 `serp_status=MEASURED`, 0 extra/missing CSV columns после repair.
+
+Обнаружен legacy-дефект:
+
+- существующая строка `подвеска на зеркало в машину` в canonical Ledger имеет старый сдвиг хвостовых CSV-полей;
+- точный repair-state и merge-state сохранены в `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_SERP_MERGE_STATUS_2026-08-26.md`;
+- исходный canonical Ledger не заменяется повреждающей «слепой» записью.
 
 Осталось:
 
-- обновить `marketing/data/ledger/query_evidence_ledger.csv` по его канонической схеме;
-- добавить/обновить `SERP_QUERY` provenance;
-- заполнить `serp_status`, `serp_region`, `serp_top10_status`, marketplace/independent/info presence;
-- browser-only `serp_product_block` не повышать выше `NOT_OBSERVED` без прямого UI evidence;
+- выполнить безопасный canonical rewrite `marketing/data/ledger/query_evidence_ledger.csv` после repair legacy row;
+- применить Search patch и measurement IDs;
+- отдельно backfill Wordstat measurement linkage для новых Search rows только из существующих R1 raw/normalized artifacts — не придумывать IDs;
+- browser-only `serp_product_block` держать `NOT_MEASURED` без direct UI evidence;
 - Alice поля оставить `NOT_MEASURED` до 04.4.
+
+Артефакты continuity:
+
+- `marketing/data/ledger/query_evidence_serp_patch_2026-08-26.csv`;
+- `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_SERP_MERGE_STATUS_2026-08-26.md`.
 
 ## [ ] 04.7 — Выпустить финальный R2 report и передать evidence в следующий decision stage
 
@@ -191,8 +205,11 @@ Secondary query не запускается только потому, что ф
 
 **Не запускать следующий secondary Search query автоматически.**
 
-Текущий правильный порядок:
+Search primary capture и normalization завершены. Ledger merge-state полностью сохранён и воспроизводим; canonical rewrite остаётся техническим data-hygiene действием и не должен менять исследовательские выводы.
 
-`10 primary Search captured → normalize/Ledger → determine decision-useful browser/UI gaps → primary Alice → evidence-driven secondary → final R2`.
+Следующий исследовательский проход:
 
-Ближайшая операция внутри текущего пункта: **синхронизировать Query Evidence Ledger с уже сохранёнными 10 primary Search measurements**, после чего перейти к плану direct Alice observation.
+1. определить минимальный набор decision-useful browser/UI observations;
+2. зафиксировать primary consumer Alice observation plan;
+3. выполнить Alice observations с немедленным сохранением каждого результата;
+4. только после Search + Alice выбирать secondary queries.
