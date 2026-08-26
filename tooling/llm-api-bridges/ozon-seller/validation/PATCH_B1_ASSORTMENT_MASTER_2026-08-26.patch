@@ -1,0 +1,128 @@
+--- a/shared/ozon_operation_registry.js
++++ b/shared/ozon_operation_registry.js
+@@ -167,6 +167,24 @@
+       cluster: "stocks_inventory", section: "current_aggregate", guidance_visibility: "user", entitlement_key: "POST /v4/product/info/stocks", workflow_role: "single_read",
+       purpose: "Получить текущие остатки товаров.", template: { operation: "stocks_current", params: { filter: {}, limit: 100 } }
+     },
++    seller_product_list: {
++      provider: "seller_api", method: "POST", path: "/v3/product/list", effect: "READ", request_style: "json_body",
++      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
++      cluster: "catalog_products", section: "product_list_info", guidance_visibility: "user", entitlement_key: "POST /v3/product/list", workflow_role: "single_read",
++      purpose: "Получить список товаров Seller API без скрытой автопагинации.", template: { operation: "seller_product_list", params: { filter: {}, limit: 100 } }
++    },
++    seller_product_info_list: {
++      provider: "seller_api", method: "POST", path: "/v3/product/info/list", effect: "READ", request_style: "json_body",
++      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
++      cluster: "catalog_products", section: "product_list_info", guidance_visibility: "user", entitlement_key: "POST /v3/product/info/list", workflow_role: "single_read",
++      purpose: "Получить информацию о товарах по одной группе идентификаторов.", template: { operation: "seller_product_info_list", params: { product_id: ["1"] } }
++    },
++    seller_product_attributes: {
++      provider: "seller_api", method: "POST", path: "/v4/product/info/attributes", effect: "READ", request_style: "json_body",
++      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
++      cluster: "catalog_products", section: "attributes_categories", guidance_visibility: "user", entitlement_key: "POST /v4/product/info/attributes", workflow_role: "single_read",
++      purpose: "Получить характеристики товаров по идентификаторам и видимости без скрытой автопагинации.", template: { operation: "seller_product_attributes", params: { filter: {}, limit: 100 } }
++    },
+     analytics_data: {
+       provider: "seller_api", method: "POST", path: "/v1/analytics/data", effect: "READ", request_style: "json_body",
+       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
+--- a/shared/ozon_contract.js
++++ b/shared/ozon_contract.js
+@@ -30,6 +30,12 @@
+   const ANALYTICS_DIMENSIONS = deepFreeze([...ANALYTICS_UNIVERSAL_DIMENSIONS, ...ANALYTICS_RESTRICTED_DIMENSIONS]);
+   const PRODUCT_QUERY_SORT_BY = deepFreeze(["BY_SEARCHES", "BY_VIEWS", "BY_POSITION", "BY_CONVERSION", "BY_GMV"]);
+   const PRODUCT_QUERY_SORT_DIR = deepFreeze(["DESCENDING", "ASCENDING"]);
++  const PRODUCT_VISIBILITY = deepFreeze([
++    "ALL", "VISIBLE", "INVISIBLE", "EMPTY_STOCK", "NOT_MODERATED", "MODERATED", "DISABLED", "STATE_FAILED",
++    "READY_TO_SUPPLY", "VALIDATION_STATE_PENDING", "VALIDATION_STATE_FAIL", "VALIDATION_STATE_SUCCESS", "TO_SUPPLY", "IN_SALE",
++    "REMOVED_FROM_SALE", "OVERPRICED", "CRITICALLY_OVERPRICED", "EMPTY_BARCODE", "BARCODE_EXISTS", "QUARANTINE", "ARCHIVED",
++    "OVERPRICED_WITH_STOCK", "PARTIAL_APPROVED", "AUTO_ARCHIVED", "MANUAL_ARCHIVED", "SEASONAL_AUTO_ARCHIVED", "VISIBLE_WITH_FBO_STOCK"
++  ]);
+   const FILTER_OPS = deepFreeze(["EQ", "GT", "GTE", "LT", "LTE"]);
+ 
+   function fail(code, message) {
+@@ -264,6 +270,63 @@
+     return array;
+   }
+ 
++  function validateIdentifierArray(value, path, { minimum = null, maximum = null, int64 = false } = {}) {
++    const array = requireArray(value, path);
++    if (minimum !== null && array.length < minimum) fail("OZON_LIMIT_VIOLATION", `${path}: минимум ${minimum} элементов по контракту Ozon.`);
++    if (maximum !== null && array.length > maximum) fail("OZON_LIMIT_VIOLATION", `${path}: максимум ${maximum} элементов по контракту Ozon.`);
++    for (let index = 0; index < array.length; index += 1) {
++      if (int64) requireInt64String(array[index], `${path}[${index}]`);
++      else requireString(array[index], `${path}[${index}]`);
++    }
++    return array;
++  }
++
++  function normalizeSellerProductListParams(params) {
++    const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["filter", "last_id", "limit"]);
++    if (Object.prototype.hasOwnProperty.call(normalized, "filter")) {
++      const filter = requirePlainObject(normalized.filter, "params.filter");
++      assertAllowedFields(filter, ["offer_id", "product_id", "skus", "visibility"], "params.filter");
++      const identifierFields = ["offer_id", "product_id", "skus"].filter((field) => Object.prototype.hasOwnProperty.call(filter, field));
++      if (identifierFields.length > 1) fail("INVALID_OPERATION_PARAMS", "params.filter: для seller_product_list разрешена только одна группа идентификаторов: offer_id, product_id или skus.");
++      if (Object.prototype.hasOwnProperty.call(filter, "offer_id")) validateIdentifierArray(filter.offer_id, "params.filter.offer_id", { minimum: 1, maximum: 1000 });
++      if (Object.prototype.hasOwnProperty.call(filter, "product_id")) validateIdentifierArray(filter.product_id, "params.filter.product_id", { minimum: 1, maximum: 1000, int64: true });
++      if (Object.prototype.hasOwnProperty.call(filter, "skus")) validateIdentifierArray(filter.skus, "params.filter.skus", { minimum: 1, maximum: 1000, int64: true });
++      if (Object.prototype.hasOwnProperty.call(filter, "visibility")) filter.visibility = requireEnum(filter.visibility, "params.filter.visibility", PRODUCT_VISIBILITY);
++    }
++    if (Object.prototype.hasOwnProperty.call(normalized, "last_id")) requireString(normalized.last_id, "params.last_id", { nonEmpty: false });
++    if (Object.prototype.hasOwnProperty.call(normalized, "limit")) requireInteger(normalized.limit, "params.limit", { minimum: 1, maximum: 1000 });
++    return normalized;
++  }
++
++  function normalizeSellerProductInfoListParams(params) {
++    const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["offer_id", "product_id", "sku"]);
++    const identifierFields = ["offer_id", "product_id", "sku"].filter((field) => Object.prototype.hasOwnProperty.call(normalized, field));
++    if (identifierFields.length !== 1) fail("INVALID_OPERATION_PARAMS", "params должен содержать ровно одну однотипную группу идентификаторов: offer_id, product_id или sku.");
++    const field = identifierFields[0];
++    validateIdentifierArray(normalized[field], `params.${field}`, { minimum: 1, maximum: 1000, int64: field !== "offer_id" });
++    return normalized;
++  }
++
++  function normalizeSellerProductAttributesParams(params) {
++    const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["filter", "last_id", "limit", "sort_by", "sort_dir"]);
++    if (Object.prototype.hasOwnProperty.call(normalized, "filter")) {
++      const filter = requirePlainObject(normalized.filter, "params.filter");
++      assertAllowedFields(filter, ["offer_id", "product_id", "sku", "visibility"], "params.filter");
++      if (Object.prototype.hasOwnProperty.call(filter, "offer_id")) validateIdentifierArray(filter.offer_id, "params.filter.offer_id");
++      if (Object.prototype.hasOwnProperty.call(filter, "product_id")) validateIdentifierArray(filter.product_id, "params.filter.product_id", { maximum: 1000, int64: true });
++      if (Object.prototype.hasOwnProperty.call(filter, "sku")) validateIdentifierArray(filter.sku, "params.filter.sku", { int64: true });
++      if (Object.prototype.hasOwnProperty.call(filter, "visibility")) filter.visibility = requireEnum(filter.visibility, "params.filter.visibility", PRODUCT_VISIBILITY);
++    }
++    if (Object.prototype.hasOwnProperty.call(normalized, "last_id")) requireString(normalized.last_id, "params.last_id", { nonEmpty: false });
++    if (Object.prototype.hasOwnProperty.call(normalized, "limit")) requireInteger(normalized.limit, "params.limit", { minimum: 1, maximum: 1000 });
++    if (Object.prototype.hasOwnProperty.call(normalized, "sort_by")) requireString(normalized.sort_by, "params.sort_by");
++    if (Object.prototype.hasOwnProperty.call(normalized, "sort_dir")) requireString(normalized.sort_dir, "params.sort_dir");
++    return normalized;
++  }
++
+   function normalizeStocksCurrentParams(params) {
+     const normalized = requirePlainObject(params, "params");
+     requirePlainObject(requireField(normalized, "filter"), "params.filter");
+@@ -579,6 +642,9 @@
+   const IMPLEMENTATION_BINDINGS = Object.freeze({
+     roles: { normalizeParams: normalizeEmptyParams, sanitizeResult: safeReadResult, contract_state: "current_key_info" },
+     stocks_current: { normalizeParams: normalizeStocksCurrentParams, sanitizeResult: safeReadResult, contract_state: "official_limits_v2_1" },
++    seller_product_list: { normalizeParams: normalizeSellerProductListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b1" },
++    seller_product_info_list: { normalizeParams: normalizeSellerProductInfoListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b1" },
++    seller_product_attributes: { normalizeParams: normalizeSellerProductAttributesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b1" },
+     analytics_data: { normalizeParams: normalizeAnalyticsDataParams, sanitizeResult: safeReadResult, contract_state: "official_limits_v2_1" },
+     product_queries: { normalizeParams: normalizeProductQueriesParams, sanitizeResult: safeReadResult, contract_state: "official_limits_v2_1" },
+     product_queries_details: { normalizeParams: normalizeProductQueriesDetailsParams, sanitizeResult: safeReadResult, contract_state: "official_limits_v2_1" },
+--- a/shared/ozon_entitlements.js
++++ b/shared/ozon_entitlements.js
+@@ -47,6 +47,9 @@
+     operations: {
+       "POST /v1/roles": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+       "POST /v4/product/info/stocks": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
++      "POST /v3/product/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
++      "POST /v3/product/info/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
++      "POST /v4/product/info/attributes": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+       "POST /v3/posting/fbo/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+       "POST /v3/posting/fbs/get": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+       "POST /v3/supply-order/get": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
