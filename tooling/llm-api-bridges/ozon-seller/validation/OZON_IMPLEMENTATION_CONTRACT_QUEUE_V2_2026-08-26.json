@@ -1,0 +1,96 @@
+{
+  "schema": "OZON_IMPLEMENTATION_CONTRACT_QUEUE_V2",
+  "as_of": "2026-08-26",
+  "accepted_base_commit": "9996667c1213990c64ae6dc2bfca3cf030d089bc",
+  "accepted_base_production_tree_sha256": "d955dbfd1a667e40ea0cb04374b31e0cfe95bbf75b3b355d11c50d10f748a6d5",
+  "seller_swagger": {
+    "byte_length": 3933043,
+    "sha256": "39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40",
+    "openapi": "3.0.0",
+    "path_count": 463
+  },
+  "purpose": "Fresh post-B9 evidence-backed queue for additional read-only Seller API coverage.",
+  "implementation_allowed": false,
+  "rules": {
+    "exact_currentness_required": true,
+    "exact_request_contract_required": true,
+    "read_only_required": true,
+    "one_command_one_physical_business_request": true,
+    "automatic_pagination_forbidden": true,
+    "retry_fanout_chaining_forbidden": true,
+    "personal_data_requires_existing_operator_gate": true,
+    "unrepresentable_entitlement_must_not_be_guessed": true,
+    "mutations_and_async_report_creation_excluded": true
+  },
+  "priority_order": [
+    "P0_seller_health_ratings",
+    "P0_catalog_diagnostics_content",
+    "P0_finance_transactions",
+    "P1_promotions_market_reads",
+    "P1_reviews_questions_extended",
+    "P2_account_delivery_notifications"
+  ],
+  "priorities": {
+    "P0_seller_health_ratings": {
+      "recommended_patch": "B10",
+      "reason": "Direct seller health signals for recommendations: seller ratings, threshold history and FBS/rFBS error index.",
+      "operations": [
+        {"path":"/v1/rating/summary","method":"POST","operation_id":"RatingAPI_RatingSummaryV1"},
+        {"path":"/v1/rating/history","method":"POST","operation_id":"RatingAPI_RatingHistoryV1"},
+        {"path":"/v1/rating/index/fbs/info","method":"POST","operation_id":"RatingAPI_GetFBSRatingIndexInfoV1"},
+        {"path":"/v1/rating/index/fbs/posting/list","method":"POST","operation_id":"RatingAPI_ListFBSRatingIndexPostingsV1"}
+      ],
+      "must_extract": ["required fields", "date formats and ordering", "documented rating identifiers", "cursor and limit", "entitlement", "PII", "currentness"]
+    },
+    "P0_catalog_diagnostics_content": {
+      "operations": [
+        {"path":"/v1/product/rating-by-sku","method":"POST","operation_id":"ProductAPI_GetProductRatingBySku"},
+        {"path":"/v1/product/info/description","method":"POST","operation_id":"ProductAPI_GetProductInfoDescription"},
+        {"path":"/v4/product/info/limit","method":"POST","operation_id":"ProductAPI_GetUploadQuota"},
+        {"path":"/v1/product/info/subscription","method":"POST","operation_id":"ProductAPI_GetProductInfoSubscription"},
+        {"path":"/v1/product/related-sku/get","method":"POST","operation_id":"ProductAPI_ProductGetRelatedSKU"},
+        {"path":"/v2/product/pictures/info","method":"POST","operation_id":"ProductAPI_ProductInfoPicturesV2"},
+        {"path":"/v1/product/info/wrong-volume","method":"POST","operation_id":"ProductAPI_ProductInfoWrongVolume"},
+        {"path":"/v1/product/info/discounted","method":"POST","operation_id":"ProductAPI_GetProductInfoDiscounted"}
+      ],
+      "must_extract": ["identifier types", "batch limits", "pagination", "result URLs/media safety", "entitlement", "currentness"]
+    },
+    "P0_finance_transactions": {
+      "operations": [
+        {"path":"/v3/finance/transaction/list","method":"POST","operation_id":"FinanceAPI_FinanceTransactionListV3"},
+        {"path":"/v3/finance/transaction/totals","method":"POST","operation_id":"FinanceAPI_FinanceTransactionTotalV3"}
+      ],
+      "must_extract": ["period limits", "filters", "pagination", "financial fields", "entitlement", "PII"]
+    },
+    "P1_promotions_market_reads": {
+      "operations": [
+        {"path":"/v1/actions","method":"GET","operation_id":"Promos"},
+        {"path":"/v1/actions/candidates","method":"POST","operation_id":"PromosCandidates"},
+        {"path":"/v1/actions/products","method":"POST","operation_id":"PromosProducts"},
+        {"path":"/v1/actions/auto-add/products/list","method":"POST","operation_id":"ActionsAutoAddProductsList"},
+        {"path":"/v1/actions/auto-add/products/candidates","method":"POST","operation_id":"ActionsAutoAddProductsCandidates"}
+      ],
+      "must_extract": ["action identifiers", "pagination", "product identifiers", "beta/currentness", "entitlement"]
+    },
+    "P1_reviews_questions_extended": {
+      "operations": [
+        {"path":"/v2/review/count","method":"POST","operation_id":"ReviewCountV2"},
+        {"path":"/v1/review/comment/list","method":"POST","operation_id":"ReviewAPI_CommentList"},
+        {"path":"/v1/question/answer/list","method":"POST","operation_id":"QuestionAnswer_List"},
+        {"path":"/v1/question/count","method":"POST","operation_id":"Question_Count"},
+        {"path":"/v1/question/info","method":"POST","operation_id":"Question_Info"},
+        {"path":"/v1/question/top-sku","method":"POST","operation_id":"Question_TopSku"}
+      ],
+      "must_extract": ["personal data and free text", "existing operator gate", "subscription alternatives", "pagination", "currentness"]
+    },
+    "P2_account_delivery_notifications": {
+      "operations": [
+        {"path":"/v1/seller/info","method":"POST","operation_id":"SellerAPI_SellerInfo"},
+        {"path":"/v1/seller/ozon-logistics/info","method":"POST","operation_id":"SellerAPI_SellerOzonLogisticsInfo"},
+        {"path":"/v1/notification/list","method":"POST","operation_id":"NotificationList"},
+        {"path":"/v1/notification/push-type/list","method":"POST","operation_id":"GetNotificationPushTypeList"}
+      ],
+      "must_extract": ["security-sensitive configuration fields", "safe projection", "request body", "entitlement", "currentness"]
+    }
+  }
+}
