@@ -1,0 +1,45 @@
+name: Ozon B1 exact B0 materialize
+
+on:
+  push:
+    branches:
+      - feature/ozon-b1-assortment-master-contracts-2026-08-25
+    paths:
+      - .github/workflows/ozon-b1-exact-b0-materialize.yml
+
+permissions:
+  contents: read
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Materialize exact accepted B0
+        run: |
+          python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b0_full_read_core_candidate.py . /tmp/ozon-b0-exact
+
+      - name: Verify B0 deterministic gate
+        run: |
+          node --check tooling/llm-api-bridges/ozon-seller/validation/PATCH_B0_FULL_READ_CORE_REGRESSION_2026-08-25.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B0_FULL_READ_CORE_REGRESSION_2026-08-25.mjs /tmp/ozon-b0-exact
+          find /tmp/ozon-b0-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b0-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b0-exact-files.sha256
+          sha256sum shared/ozon_operation_registry.js shared/ozon_contract.js shared/ozon_guidance.js shared/ozon_entitlements.js service_worker.js > /tmp/ozon-b0-core.sha256
+
+      - name: Upload exact B0 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b0-exact-for-b1
+          path: |
+            /tmp/ozon-b0-exact
+            /tmp/ozon-b0-exact-files.sha256
+            /tmp/ozon-b0-core.sha256
+          if-no-files-found: error
+          retention-days: 3
