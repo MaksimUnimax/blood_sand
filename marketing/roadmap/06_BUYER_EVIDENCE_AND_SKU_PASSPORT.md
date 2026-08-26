@@ -1,6 +1,6 @@
 # 06 — Buyer evidence + полный паспорт SKU
 
-Статус: **[~] IN PROGRESS — 06.1 COMPLETE; 06.2 COMPLETE; 06.3 COMPLETE; targeted enrichment NEXT**  
+Статус: **[~] IN PROGRESS — 06.1 COMPLETE; 06.2 COMPLETE; 06.3 COMPLETE; Tier A enrichment RUN 1 NEXT**  
 Дата старта: **2026-08-26**
 
 ## Цель
@@ -132,6 +132,21 @@ Targeted enrichment queue selected from decision need:
 
 ---
 
+## Tier A product-passport enrichment gate
+
+Status: **[x] CONTRACT VERIFIED; [ ] RUN 1 PENDING**
+
+Contract artifact:
+- `marketing/research/R4_STAGE06_OZON_TIER_A_ENRICHMENT_CONTRACT_2026-08-26.md`
+
+Current accepted B8 v0.1.19 carries forward B1 Assortment Master. Exact supported read operations include:
+- `seller_product_info_list` -> `POST /v3/product/info/list`;
+- `seller_product_attributes` -> `POST /v4/product/info/attributes`.
+
+First request is intentionally one `seller_product_info_list` command over the five homogeneous Tier A SKU identifiers. This is one physical Seller request, no hidden fanout and no pagination. Save/normalize its direct result before deciding whether an attributes request is necessary.
+
+---
+
 ## 06.4 — Buyer/customer evidence + seller performance linkage
 
 Status: **[ ] NEXT, after minimum targeted passport enrichment**
@@ -156,4 +171,4 @@ Close only when current Ozon baseline, opportunity mapping, technical-fact gaps,
 
 # Current continuation point
 
-**Verify the exact current v0.1.19 read-only product-detail / attribute operation contract, then run the smallest supported Tier A enrichment request. Do not guess operation names or fan out across all 76 SKUs. Save and normalize every completed pass before proceeding to buyer/performance linkage.**
+**Run exactly one Tier A `seller_product_info_list` request for SKUs `1636048691`, `1636041142`, `1640251697`, `1602722942`, `1602717077`; then save and normalize the direct result before any separate attributes call.**
