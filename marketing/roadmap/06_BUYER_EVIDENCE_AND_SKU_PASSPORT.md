@@ -1,6 +1,6 @@
 # 06 — Buyer evidence + полный паспорт SKU
 
-Статус: **[~] IN PROGRESS — 06.1 COMPLETE; 06.2 NEXT**  
+Статус: **[~] IN PROGRESS — 06.1 COMPLETE; 06.2 COMPLETE; 06.3 NEXT**  
 Дата старта: **2026-08-26**
 
 ## Цель
@@ -71,32 +71,39 @@ Zodiac has three real seller variant families, so Stage 06 keeps a narrow produc
 
 ## 06.2 — Fresh Ozon assortment/listing baseline
 
-Status: **[ ] NEXT**
+Status: **[x] COMPLETE**
 
-Purpose is now **currentness/change detection**, not reconstruction of historical completeness.
+Purpose: **currentness/change detection**, not reconstruction of historical completeness.
 
-First gate:
-- verify v0.1.19 live contract before execution — COMPLETE;
-- `stocks_current` supports `filter:{}` and `limit` 1..1000;
-- each explicit command remains bounded to one physical provider request;
-- no hidden pagination is assumed.
+Fresh sequence:
+1. page 1 — request `7c5e5bc9-4208-44e4-8651-296eb4ce6a7f`, HTTP 200, 76 items, `total=76`, non-empty cursor;
+2. explicit continuation — request `91bbb10d-3ad3-4f39-bda7-b838637e05ac`, HTTP 200, `items=[]`, `total=76`, empty cursor;
+3. terminal status: **TERMINAL_76_OF_76_PROVEN**;
+4. fresh-vs-historical `product_id + SKU` identity comparison: **76/76 exact matches**;
+5. additions: **0**; removals: **0**; unresolved returned identities: **0**.
 
-Execution sequence:
-1. one fresh `stocks_current` request with `filter:{}`, `limit:1000`;
-2. inspect returned `items`, `total`, `cursor`;
-3. only if cursor is non-empty, issue an explicit continuation after verifying its exact request shape;
-4. compare fresh identity set with historical 76;
-5. collect detail/attribute/price/status facts only where current bridge operations support them and only where needed for passport.
+Artifacts:
+- `marketing/data/raw/marketplace/ozon/20260826T1102Z__ozon__stocks-current__fresh-page1.md`
+- `marketing/data/raw/marketplace/ozon/20260826__ozon__stocks-current__fresh-terminal.md`
+- `marketing/data/normalized/marketplace/ozon/20260826__ozon__product-master__fresh-current76.csv`
+- `marketing/research/R4_OZON_FRESH_BASELINE_RESULT_2026-08-26.md`
 
-Completion criterion:
-- fresh enumeration has explicit terminal/completeness evidence;
-- every returned listing identity is normalized or marked unresolved.
+Interpretation:
+- no Ozon assortment identity churn detected versus the proven 2026-08-11/12 baseline at the `product_id + SKU` level;
+- this does **not** imply unchanged price, attributes, listing state, stock quantities, media or performance;
+- targeted detail/attribute/price/status enrichment remains a passport obligation, but is selected after 06.3 mapping so calls are decision-driven rather than indiscriminate across all 76 listings.
+
+06.2 completion criterion:
+- explicit terminal/completeness evidence — **PASS**;
+- every returned listing identity normalized or unresolved — **76 normalized / 0 unresolved**.
+
+06.2 completion: **PASS**.
 
 ---
 
 ## 06.3 — Map current assortment to opportunities / product families
 
-Status: **[ ] WAIT**
+Status: **[ ] NEXT**
 
 Must resolve:
 - OU02 specific Печать Велеса vs OU06 broader Veles family;
@@ -104,6 +111,8 @@ Must resolve:
 - current Алатырь / Vegvisir / Шлем Ужаса variants;
 - zodiac product-family reopen test;
 - unmapped current products.
+
+Because fresh identities are unchanged 76/76, historical research-family labels may be carried forward as **DERIVED classification lineage** for the same stable marketplace identities; opportunity relations still need explicit Stage 06 mapping and must not be inferred beyond accepted R3 taxonomy plus observed seller naming.
 
 ## 06.4 — Buyer/customer evidence + seller performance linkage
 
@@ -127,4 +136,4 @@ Close only when current Ozon baseline, opportunity mapping, technical-fact gaps,
 
 # Current continuation point
 
-**06.2: execute one fresh v0.1.19 `stocks_current` request with empty filter and `limit=1000`; inspect cursor before doing anything else.**
+**06.3: map the unchanged fresh 76-item Ozon identity set to R3 opportunities/product families; resolve Veles split, car use-case/form-factor relations, priority named symbols, zodiac reopen test and unmapped products before choosing targeted passport-enrichment calls.**
