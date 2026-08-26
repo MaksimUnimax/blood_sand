@@ -1,97 +1,140 @@
 # 03 — Полностью измерить поисковый спрос / Wordstat
 
-Статус: **[~] В РАБОТЕ**  
+Статус: **[x] ВЫПОЛНЕНО**  
 Дата начала: 2026-08-04  
-Оценка: **примерно 37–54 рана**  
-Фактически выполнено: **03.1 закрыт; в 03.2 выполнены 12 новых API measurement, валидных root GetTop вместе с historical baseline — 13/14**
+Дата закрытия: **2026-08-12**  
+Финальный артефакт: `marketing/research/R1_WORDSTAT_FINAL_REPORT_2026-08-12.md`
 
 ## Цель пункта
 
-Получить decision-grade картину человеческого поискового спроса в Яндексе по России для товарного, автомобильного, информационного/сравнительного и подарочного слоёв, сохранить raw/normalized evidence и обновить Query Evidence Ledger без смешивания Wordstat с Search/Alice/commerce evidence.
+Получить decision-grade картину человеческого поискового спроса в Яндексе по России для товарного, символического, автомобильного, informational/comparison, zodiac, Norse/runic и gift слоёв; не смешивать Wordstat с Search/Alice/commerce evidence и подготовить подтверждённый входной query set для следующего этапа.
 
 ## Критерий завершения пункта
 
-Пункт закрывается, когда основные root-кластеры измерены через GetTop, для high-value запросов сняты operator variants, для репрезентативных лидеров проверена сезонность, device/region измерены там, где это влияет на решение, Tier 2 расширен только по evidence, все measurements имеют raw/normalized, Ledger обновлён и выпущен итоговый R1 report.
+Пункт закрывается, когда:
+
+- основные root/query families измерены;
+- для high-value roots проверена precision broad → quoted/operator логика;
+- representative seasonality/dynamics снята;
+- representative device split снят;
+- evidence-driven Tier 2 expansion выполнен;
+- принятые значения и ограничения сведены в итоговый R1 report;
+- есть достаточная human-demand map для перехода к direct Yandex Search/Alice research.
+
+Критерий выполнен.
+
+---
 
 # Шаги
 
-## [x] 03.1 — Зафиксировать decision-grade scope и план измерений
+## [x] 03.1 — Зафиксировать scope и план измерений
 
-**Оценка:** 1 ран.  
-**Статус:** выполнено 2026-08-04.
+Результат:
 
-Артефакт: `marketing/research/R1_WORDSTAT_EXECUTION_PLAN_2026-08-04.md`.
+- определены товарные, automotive, meaning/comparison и gift roots;
+- позже scope расширен Slavic, zodiac и Norse/runic families;
+- Russia `225` принята базовым регионом;
+- counts разных overlapping child phrases не суммируются как уникальный спрос.
 
-## [~] 03.2 — Снять GetTop по root-кластерам и сформировать фактическую карту формулировок
+## [x] 03.2 — Снять root demand и сформировать фактическую карту формулировок
 
-**Оценка:** примерно 13–17 API-ранов + 1 аналитический проход.  
-**Текущий прогресс:** **13/14 root GetTop**, из них **12** новых API measurement выполнены внутри roadmap 03.
+Финальный рабочий dataset включает **44 unique root/query rows**.
 
-Измерено:
+Ключевые accepted broad signals:
 
-- `печать велеса` — `3350` (historical baseline);
-- `оберег печать велеса` — `198`;
-- `подвеска печать велеса` — `80`;
-- `печать велеса медвежья лапа` — `343`;
-- `печать велеса волчья лапа` — `129`;
+- `славянские обереги` — `25,737`;
+- `печать велеса` — `3,330`;
+- `оберег в машину` — `1,405`;
+- `подвеска на зеркало в машину` — `1,074`;
+- `вегвизир` — `5,938`;
+- `талисман знак зодиака` — `3,422`;
+- `алатырь оберег` — `1,878`;
+- `оберег велес` — `1,507`;
+- `подарок мужчине в машину` — `1,070`;
+- `подарок автомобилисту` — historical signal `1,192`.
+
+Automotive evidence:
+
 - `печать велеса в машину` — `5`;
-- `оберег в машину` — `1388`;
-- `славянский оберег в машину` — `72`;
-- `подвеска на зеркало в машину` — `973`;
-- `печать велеса значение` — `617`;
-- `медвежья и волчья печать велеса отличие` — `1`;
-- `какой оберег выбрать в машину` — `12`;
-- `подарок автомобилисту` — `1192`.
+- broader use-case/form roots существенно сильнее exact symbol+car wording.
 
-Для каждого measurement сохранены raw/normalized evidence и обновлён Ledger. Running log: `marketing/research/R1_WORDSTAT_ROOT_GETTOP_LOG_2026-08-04.md`.
+## [x] 03.3 — Измерить precision/operator variants для high-value roots
 
-Текущий automotive вывод: прямая связка `печать велеса в машину` очень мала (`5`), но широкий use-case `оберег в машину` крупный (`1388`), а близкий к фактической форме товара root `подвеска на зеркало в машину` также крупный (`973`) и содержит explicit purchase (`65`), DIY (`33`) и конструктивно/визуально релевантные ветки `с гравировкой` (`15`), `из бусин` (`5`), `с кисточкой` (`5`). `славянский оберег в машину` подтверждён на `72`, но остаётся нишевым subcluster. Counts пересекаются и не суммируются.
+Accepted broad → quoted examples:
 
-Meaning-layer подтверждён отдельным root `печать велеса значение = 617`. Внутри него сильны `печать велеса лапа значение = 219`, медвежья ветка (`156/147`), мужская формулировка (`137`), волчья (`58`) и женская (`57`). Это самостоятельный informational human-demand слой; финальное Page Job решение остаётся pending operator + SERP/Alice evidence.
+- `славянские обереги`: `25,737 → 2,987`;
+- `печать велеса`: `3,330 → 802`;
+- `оберег в машину`: `1,405 → 96`;
+- `подвеска на зеркало в машину`: `1,074 → 266`;
+- `вегвизир`: `5,938 → 1,541`;
+- `талисман знак зодиака`: `3,422 → 21`.
 
-Exact comparison wording `медвежья и волчья печать велеса отличие` дал только `totalCount=1`; HTTP 200 payload содержал только `totalCount`, без `results`/`associations`, поэтому дочерние comparison formulations не выводятся. Это слабый broad signal именно для данной формулировки и не отменяет отдельный спрос на bear/wolf variant roots.
+Результат:
 
-Automotive-choice root `какой оберег выбрать в машину` дал `totalCount=12` и один релевантный `RESULT`: `обереги в машину какой лучше выбрать = 12`. Пятнадцать `ASSOCIATION` в основном относятся к общему автоподбору, надёжности автомобилей и подбору комплектующих, поэтому не трактуются как demand evidence для оберега. Choice intent существует, но остаётся узким по текущему GetTop.
+Broad volume не трактуется как точный target demand. Zodiac root особенно сильно загрязнён соседними informational/stones formulations.
 
-Gift-root `подарок автомобилисту` дал крупный broad signal `totalCount=1192`. Сильные observed RESULT: `подарок автомобилисту мужчине=429`, `подарок день автомобилиста=257`, `подарок автомобилисту на день рождения=240`, `подарок автомобилисту мужчине на день рождения=187`, `подарки для автомобилистов в машину=41`, `что купить автомобилисту в подарок=25`. Counts пересекаются и не суммируются. ASSOCIATION в основном относится к общему gift-intent и не повышается автоматически до спроса на наш товар.
+## [x] 03.4 — Снять representative seasonality / Dynamics
 
-Три последовательных measurement ранее прошли в controlled autorun live-test без ручного Copy. Дополнительные controlled manual live-tests на `подвеска на зеркало в машину` и comparison-root дали по одному HTTP 200 request и вернули результат в ChatGPT. В текущем Autorun `какой оберег выбрать в машину` и затем `подарок автомобилисту` выполнены по одному Yandex request каждый с HTTP 200 и сохранены в raw/normalized/Ledger. После фиксации `подарок автомобилисту` Autorun остановлен по прямому указанию оператора; следующий API-вызов не выполняется.
+Принятые наблюдения:
 
-Следующий **плановый, но не запущенный** root: **`подарок мужчине в машину` / GetTop / Россия / все устройства**.
+- Slavic demand высокий и устойчивый в наблюдаемом окне; Jul 2026 — максимум representative series;
+- zodiac cluster имеет заметный winter/gift peak;
+- Vegvisir остаётся крупным, но ниже уровня Aug 2025;
+- automotive `оберег в машину` показывает рост к summer 2026.
 
-## [ ] 03.3 — Измерить operator variants для high-value запросов
+Точные representative значения сохранены в финальном R1 report.
 
-**Оценка:** примерно 12–18 ранов.  
-Ожидаемый результат: broad и более узкие operator-values не смешиваются.
+## [x] 03.5 — Проверить representative device differences
 
-## [ ] 03.4 — Снять сезонность по репрезентативным cluster leaders
+Russia device evidence:
 
-**Оценка:** примерно 4–6 ранов.  
-Ожидаемый результат: пики/просадки и проверка устойчивости 30-day snapshot.
+- `славянские обереги`: PHONE `22,563` vs DESKTOP `2,869`;
+- `оберег в машину`: PHONE `1,297` vs DESKTOP `100`.
 
-## [ ] 03.5 — Проверить device и region differences там, где они decision-useful
+Вывод:
 
-**Оценка:** примерно 4–7 ранов.  
-Ожидаемый результат: понять, влияет ли device/geo специфика на приоритизацию.
+Human demand strongly mobile-first.
 
-## [ ] 03.6 — Расширить Tier 2 и закрыть пробелы по evidence
+Важно: Wordstat device evidence не превращает будущий Search API measurement без device selector в mobile SERP observation.
 
-**Оценка:** примерно 3–7 ранов.  
-Ожидаемый результат: измерить только существенные новые формулировки, а не весь возможный хвост.
+## [x] 03.6 — Выполнить evidence-driven Tier 2 expansion
 
-## [ ] 03.7 — Нормализовать полный R1 dataset, обновить Ledger и закрыть Wordstat-этап
+Добавлены и проверены, в частности:
 
-**Оценка:** 2–3 аналитических рана.  
-Ожидаемый результат: полный normalized dataset, обновлённый Ledger, итоговый R1 report и список запросов для roadmap 04.
+- Slavic symbol subclusters;
+- zodiac formulations;
+- Norse/runic symbols;
+- gift variants;
+- automotive form/use-case queries.
 
-# Текущее состояние
+Expansion остановлен после получения достаточной карты спроса; длинный хвост не измеряется механически.
 
-- [x] 03.1 — scope/execution plan;
-- [~] 03.2 — GetTop root discovery: **13/14**;
-- [ ] 03.3 — operator precision;
-- [ ] 03.4 — dynamics/seasonality;
-- [ ] 03.5 — device/region samples;
-- [ ] 03.6 — Tier 2/gap closure;
-- [ ] 03.7 — normalized dataset/Ledger/final R1.
+## [x] 03.7 — Свести R1 и закрыть Wordstat stage
 
-Текущий следующий плановый measurement, **не запущенный из-за остановки Autorun оператором**: **`подарок мужчине в машину` / GetTop / Россия / DEVICE_ALL**.
+Финальный артефакт:
+
+- `marketing/research/R1_WORDSTAT_FINAL_REPORT_2026-08-12.md`.
+
+Главные выводы R1:
+
+1. вокруг product families существует значимый внешний небрендовый human demand;
+2. exact symbol+car wording часто намного меньше broad use-case/form demand;
+3. meaning/informational layer существует самостоятельно;
+4. broad roots требуют precision checks;
+5. form-factor, symbol meaning, use-case и gift intent нельзя автоматически назначать одной странице;
+6. representative demand mobile-first;
+7. финальные IA/Page Jobs должны ждать direct Search + Alice evidence.
+
+---
+
+# Итог пункта
+
+**Пункт 03 закрыт.**
+
+Следующий SEO/research stage:
+
+> **04 — direct Yandex Search / SERP и Alice AI research.**
+
+Каноническая текущая детализация:
+
+- `marketing/roadmap/04_YANDEX_SERP_ALICE_RESEARCH.md`.
