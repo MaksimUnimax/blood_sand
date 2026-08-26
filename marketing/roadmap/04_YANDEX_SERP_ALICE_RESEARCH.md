@@ -112,34 +112,81 @@
 
 Это фиксируется как **marketplace visibility**, не как organic visibility будущего собственного сайта.
 
-## [ ] 04.3 — Проверить browser SERP/UI признаки только там, где они decision-useful
+## [~] 04.3 — Проверить browser SERP/UI признаки только там, где они decision-useful
 
-Текущий статус:
+План representative desktop roots: 5.  
+Фактически снято: **1/5**.
 
-- browser SERP composition: `NOT_OBSERVED`;
-- ads: `NOT_OBSERVED`;
-- visual product/rich blocks: `NOT_OBSERVED`;
-- mobile vs desktop SERP composition: `NOT_OBSERVED`.
+### `славянские обереги` — desktop browser capture OBSERVED
 
-Важно:
+В верхнем viewport непосредственно наблюдалось:
 
-Текущий Search API measurement не имеет подтверждённого device selector, поэтому его результаты нельзя маркировать как mobile SERP или desktop SERP.
+- consumer Alice answer над обычной выдачей: **ABSENT**;
+- три последовательных `Промо`-результата до первого organic result;
+- отдельный product carousel/rich shopping block в видимом viewport: **NOT OBSERVED**;
+- первый видимый organic result после Promo — `slavyanskieoberegi.ru`;
+- следующий видимый organic result — `simvolroda.ru`;
+- browser UI заметно более коммерчески занят, чем это видно из Search provider Top-10 alone.
 
-Этот шаг не требует механически повторять все запросы в UI. UI observation проводится только там, где отсутствие UI-композиции реально мешает decision-making.
+Region в browser UI отдельно не подтверждён, поэтому не повышается до `225` на основании Search API.
 
-## [ ] 04.4 — Снять consumer Alice evidence по primary query set
+Артефакт:
 
-Для тех же decision-useful roots фиксировать:
+- `marketing/data/raw/browser_serp/20260826T0723Z__slavyanskie_oberegi__desktop.md`.
 
-- exact Alice input;
-- answer present / absent;
-- direct answer snapshot;
-- source domains/URLs;
-- source page type;
-- observed fan-out — только если он непосредственно видим;
-- отсутствие источников/ответа как валидный `NOT_OBSERVED`/`NO_ANSWER` result.
+Осталось по representative desktop:
 
-Search provider results не подменяют этот шаг.
+- `печать велеса`;
+- `оберег в машину`;
+- `подвеска на зеркало в машину`;
+- `талисман знак зодиака`.
+
+Mobile comparison пока `NOT_OBSERVED`; плановый representative mobile set: `славянские обереги`, `оберег в машину`.
+
+## [~] 04.4 — Снять consumer Alice evidence по primary query set
+
+Primary Alice plan: 10 roots.  
+Фактически завершено: **1/10**.
+
+### 1. `славянские обереги` — COMPLETE PRIMARY ALICE ROOT
+
+Direct observation:
+
+- exact input: `славянские обереги`;
+- answer present: `YES`;
+- ответ — длинный informational/explanatory guide: виды оберегов, назначение, значения символов, применение/традиция, советы;
+- внутри ответа Алиса самостоятельно выделяет `Печать Велеса` и `Алатырь`;
+- присутствуют image thumbnails и video card;
+- Sources panel открыт и прокручен до конца;
+- 7 source rows читаются уверенно и нормализованы в display order;
+- нечитаемые/неуверенные нижние строки **не реконструируются и не выдумываются**;
+- exact source URLs из panel не захвачены, поэтому остаются незаполненными;
+- fan-out / suggested follow-up отдельным измерением пока `NOT_OBSERVED`.
+
+Уверенно прочитанные source domains:
+
+1. `blog.arcanum.ru`;
+2. `livemaster.ru`;
+3. `amorem.ru`;
+4. `ruyan-master.ru`;
+5. `славяне.сайт`;
+6. `blog.mann-ivanov-ferber.ru`;
+7. `dzen.ru`.
+
+Ключевое сравнительное наблюдение:
+
+- browser SERP above-the-fold = heavily commercial (`3 × Промо` before organic);
+- consumer Alice for the exact same query = informational/meaning-first answer with editorial/content sources.
+
+Это прямое доказательство, что Search UI и Alice surface по одному query выполняют разные задачи и должны анализироваться раздельно.
+
+Артефакты:
+
+- `marketing/data/raw/alice/20260826T0723Z__slavyanskie_oberegi.md`;
+- `marketing/data/raw/alice/20260826T0723Z__slavyanskie_oberegi_sources_visible_01.md`;
+- `marketing/data/normalized/alice/20260826T0723Z__slavyanskie_oberegi.csv`.
+
+Следующий primary Alice root: `печать велеса`.
 
 ## [ ] 04.5 — Выполнить evidence-driven secondary expansion
 
@@ -164,7 +211,8 @@ Secondary query не запускается только потому, что ф
 - derived composition summaries для 10 measurements;
 - Search→Ledger staging patch;
 - canonical measurement IDs отделены от provider `request_id`;
-- structural merge-проход проверен: целевой результат 19 Ledger rows, 10 `serp_status=MEASURED`, 0 extra/missing CSV columns после repair.
+- structural merge-проход проверен: целевой результат 19 Ledger rows, 10 `serp_status=MEASURED`, 0 extra/missing CSV columns после repair;
+- первый consumer Alice root нормализован отдельным measurement/observation set.
 
 Обнаружен legacy-дефект:
 
@@ -176,9 +224,9 @@ Secondary query не запускается только потому, что ф
 
 - выполнить безопасный canonical rewrite `marketing/data/ledger/query_evidence_ledger.csv` после repair legacy row;
 - применить Search patch и measurement IDs;
+- backfill Alice linkage по мере завершения 10 primary roots;
 - отдельно backfill Wordstat measurement linkage для новых Search rows только из существующих R1 raw/normalized artifacts — не придумывать IDs;
-- browser-only `serp_product_block` держать `NOT_MEASURED` без direct UI evidence;
-- Alice поля оставить `NOT_MEASURED` до 04.4.
+- browser-only `serp_product_block` заполнять только по direct browser UI evidence.
 
 Артефакты continuity:
 
@@ -203,13 +251,21 @@ Secondary query не запускается только потому, что ф
 
 # Текущая точка продолжения — 2026-08-26
 
-**Не запускать следующий secondary Search query автоматически.**
+**Не запускать secondary Search query автоматически.**
 
-Search primary capture и normalization завершены. Ledger merge-state полностью сохранён и воспроизводим; canonical rewrite остаётся техническим data-hygiene действием и не должен менять исследовательские выводы.
+Текущее состояние:
 
-Следующий исследовательский проход:
+- Search provider primary: `10/10`;
+- representative desktop browser UI: `1/5`;
+- representative mobile browser UI: `0/2`;
+- consumer Alice primary: `1/10`.
 
-1. определить минимальный набор decision-useful browser/UI observations;
-2. зафиксировать primary consumer Alice observation plan;
-3. выполнить Alice observations с немедленным сохранением каждого результата;
-4. только после Search + Alice выбирать secondary queries.
+Следующий исследовательский root: **`печать велеса`**.
+
+Порядок:
+
+1. direct desktop browser SERP top viewport;
+2. consumer Alice exact input `печать велеса` в чистом/new context;
+3. Sources panel до конца;
+4. сохранить observation в GitHub;
+5. перейти к следующему primary root.
