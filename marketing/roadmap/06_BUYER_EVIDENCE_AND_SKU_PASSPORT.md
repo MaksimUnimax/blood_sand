@@ -1,6 +1,6 @@
 # 06 — Buyer evidence + полный паспорт SKU
 
-Статус: **[~] IN PROGRESS — 06.1 COMPLETE; 06.2 COMPLETE; 06.3 COMPLETE; Tier A enrichment RUN 1 NEXT**  
+Статус: **[~] IN PROGRESS — 06.1 COMPLETE; 06.2 COMPLETE; 06.3 COMPLETE; Tier A enrichment BLOCKED BY RUNTIME DEPLOYMENT MISMATCH**  
 Дата старта: **2026-08-26**
 
 ## Цель
@@ -134,16 +134,37 @@ Targeted enrichment queue selected from decision need:
 
 ## Tier A product-passport enrichment gate
 
-Status: **[x] CONTRACT VERIFIED; [ ] RUN 1 PENDING**
+Status: **[x] CONTRACT VERIFIED; [!] RUNNING RUNTIME MISMATCH; [ ] RUN 1 PENDING AFTER B8 RELOAD**
 
 Contract artifact:
 - `marketing/research/R4_STAGE06_OZON_TIER_A_ENRICHMENT_CONTRACT_2026-08-26.md`
+
+Runtime mismatch checkpoint:
+- `marketing/research/R4_OZON_RUNTIME_B8_MISMATCH_2026-08-26.md`
+- raw direct result: `marketing/data/raw/marketplace/ozon/20260826T1139Z__ozon__seller-product-info-list__runtime-unsupported.md`
 
 Current accepted B8 v0.1.19 carries forward B1 Assortment Master. Exact supported read operations include:
 - `seller_product_info_list` -> `POST /v3/product/info/list`;
 - `seller_product_attributes` -> `POST /v4/product/info/attributes`.
 
-First request is intentionally one `seller_product_info_list` command over the five homogeneous Tier A SKU identifiers. This is one physical Seller request, no hidden fanout and no pagination. Save/normalize its direct result before deciding whether an attributes request is necessary.
+The first five-SKU request was attempted once but was rejected locally before provider execution:
+- observed running guidance protocol: `OZON_GUIDANCE_RESULT_V1`, `guidance_version=1`;
+- `UNSUPPORTED_OPERATION` for `seller_product_info_list`;
+- only the six legacy guidance clusters were exposed;
+- `external_request_executed=false`;
+- `physical_business_request_count=0`;
+- no Seller HTTP request occurred.
+
+Classification: **LOCAL_RUNTIME_OPERATION_REGISTRY_MISMATCH**. The running extension shares version string `0.1.19` but is not the accepted B8 production tree.
+
+Accepted B8 deployment authority:
+- workflow run `32956210474`;
+- head `d40d213de9c6d753f21525a4797671401d585218`;
+- Actions artifact `9602060227` / `ozon-b8-supply-replenishment-candidate`;
+- GitHub digest `sha256:1b2b7bef857f705c1fe4b960c8d32f3cd205dca89eb16736b576bb1a77c61db9`;
+- accepted production tree SHA-256 `c96f993566ff0e715cd7959182ef787639d20accfb578de2e8495b85a79d6d84`.
+
+Do not retry any B1+ operation against the current runtime. Reload the accepted B8 exact extension tree first, then retry the same one-request five-SKU command.
 
 ---
 
@@ -171,4 +192,4 @@ Close only when current Ozon baseline, opportunity mapping, technical-fact gaps,
 
 # Current continuation point
 
-**Run exactly one Tier A `seller_product_info_list` request for SKUs `1636048691`, `1636041142`, `1640251697`, `1602722942`, `1602717077`; then save and normalize the direct result before any separate attributes call.**
+**Replace/reload the running extension with the accepted B8 Actions artifact (`ozon-b8-exact/` tree), then retry exactly one Tier A `seller_product_info_list` request for SKUs `1636048691`, `1636041142`, `1640251697`, `1602722942`, `1602717077`. Save and normalize the direct result before any separate attributes call.**
