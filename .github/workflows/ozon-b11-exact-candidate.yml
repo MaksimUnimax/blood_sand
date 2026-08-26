@@ -1,0 +1,92 @@
+name: Ozon B11 Catalog Diagnostics Content exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b11-catalog-diagnostics-content-2026-08-26
+    paths:
+      - .github/workflows/ozon-b11-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B11_CATALOG_DIAGNOSTICS_CONTENT_2026-08-26.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b11_catalog_diagnostics_content_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B11_CATALOG_DIAGNOSTICS_CONTENT_REGRESSION_2026-08-26.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B11_CATALOG_DIAGNOSTICS_*_2026-08-26.md
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_POST_B10_CATALOG_DIAGNOSTICS_AUDIT_2026-08-26.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact B11 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b11_catalog_diagnostics_content_candidate.py --repo-root . --work-root /tmp/ozon-b11-work --out /tmp/ozon-b11-exact
+      - name: Verify B1-B6 carry-forward and exact B7-B10 bases
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_REGRESSION_2026-08-26.mjs /tmp/ozon-b11-exact
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B2_PRICES_LISTING_STATE_REGRESSION_2026-08-26.mjs /tmp/ozon-b11-exact
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B3_WAREHOUSE_STOCK_GEOGRAPHY_REGRESSION_2026-08-26.mjs /tmp/ozon-b11-exact
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B4_ORDERS_RETURNS_CANCELLATIONS_REGRESSION_2026-08-26.mjs /tmp/ozon-b11-exact
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B5_FINANCE_REALIZATION_REGRESSION_2026-08-26.mjs /tmp/ozon-b11-exact
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B6_PERFORMANCE_READ_CORE_REGRESSION_2026-08-26.mjs /tmp/ozon-b11-exact
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B7_ANALYTICS_SEARCH_REGRESSION_2026-08-26.mjs /tmp/ozon-b11-work/b10-work/b9-work/b8-work/b7-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B8_SUPPLY_REPLENISHMENT_REGRESSION_2026-08-26.mjs /tmp/ozon-b11-work/b10-work/b9-work/b8-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B9_REVIEWS_QUESTIONS_REGRESSION_2026-08-26.mjs /tmp/ozon-b11-work/b10-work/b9-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B10_SELLER_HEALTH_RATINGS_REGRESSION_2026-08-26.mjs /tmp/ozon-b11-work/b10-base
+      - name: Verify B11 regression and syntax
+        run: |
+          node --check tooling/llm-api-bridges/ozon-seller/validation/PATCH_B11_CATALOG_DIAGNOSTICS_CONTENT_REGRESSION_2026-08-26.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B11_CATALOG_DIAGNOSTICS_CONTENT_REGRESSION_2026-08-26.mjs /tmp/ozon-b11-exact
+          find /tmp/ozon-b11-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b11-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b11-exact-files.sha256
+          sha256sum shared/ozon_operation_registry.js shared/ozon_contract.js shared/ozon_entitlements.js service_worker.js content_script.js shared/bridge_autorun_model.js shared/work_session_model.js > /tmp/ozon-b11-core.sha256
+      - name: Upload exact B11 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b11-catalog-diagnostics-content-candidate
+          path: |
+            /tmp/ozon-b11-exact
+            /tmp/ozon-b11-exact-files.sha256
+            /tmp/ozon-b11-core.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B11 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B11_CATALOG_DIAGNOSTICS_CONTENT_2026-08-26.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='1f402a1974a61b329faca98ee1e9e807f9088c370aed433dfdb56d03de44094b'; b=gzip.decompress(c); assert hashlib.sha256(b).hexdigest()=='6128fe139a43f9008c5f13483ae47b8ced1b8ef01628379f7ef3748c624cc180'"
+      - name: Materialize exact B11 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b11-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b11-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b11_catalog_diagnostics_content_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B1-B6 on B11, exact B7-B10 bases, and B11 gates on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b11-exact"
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b11-work"
+          $b7 = Join-Path $work "b10-work/b9-work/b8-work/b7-base"
+          $b8 = Join-Path $work "b10-work/b9-work/b8-base"
+          $b9 = Join-Path $work "b10-work/b9-base"
+          $b10 = Join-Path $work "b10-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B2_PRICES_LISTING_STATE_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B3_WAREHOUSE_STOCK_GEOGRAPHY_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B4_ORDERS_RETURNS_CANCELLATIONS_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B5_FINANCE_REALIZATION_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B6_PERFORMANCE_READ_CORE_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B7_ANALYTICS_SEARCH_REGRESSION_2026-08-26.mjs $b7; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B8_SUPPLY_REPLENISHMENT_REGRESSION_2026-08-26.mjs $b8; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B9_REVIEWS_QUESTIONS_REGRESSION_2026-08-26.mjs $b9; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B10_SELLER_HEALTH_RATINGS_REGRESSION_2026-08-26.mjs $b10; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B11_CATALOG_DIAGNOSTICS_CONTENT_REGRESSION_2026-08-26.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
