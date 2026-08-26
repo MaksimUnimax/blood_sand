@@ -1,0 +1,9 @@
+schema_version,source_opportunity_id,target_opportunity_id,relation_type,decision,evidence_basis,next_stage_dependency
+1.0,OU01,OU02,CATEGORY_TO_NAMED_SYMBOL,KEEP_BOTH,Slavic category exploration differs from specific Печать Велеса meaning/purchase,Stage 06 assortment depth + Stage 07 category organization
+1.0,OU01,OU05,CATEGORY_TO_NAMED_SYMBOL,KEEP_BOTH,Алатырь has independent named-symbol demand and meaning/commercial evidence,Stage 06 SKU fit
+1.0,OU01,OU06,CATEGORY_TO_SYMBOL_FAMILY,KEEP_BOTH,Broad Slavic category differs from Veles-specific family chooser,Stage 06 assortment depth
+1.0,OU06,OU02,FAMILY_TO_SPECIFIC_FORM,KEEP_BOTH_PROVISIONALLY,Alice treats Veles as family while Печать Велеса has its own strong demand and meaning split,Stage 06 SKU hierarchy + Stage 07 competitor organization
+1.0,OU03,OU04,CROSS_CUTTING_DISTINCT_JOBS,KEEP_SEPARATE,Protection/use-case vs object/form-factor directly differ in Search/Alice,Stage 06 SKU messaging + Stage 07 differentiation
+1.0,OU07,OU08,SIBLING_NAMED_SYMBOLS,KEEP_SEPARATE,Distinct symbols; B2 proves Шлем Ужаса coherent beyond Vegvisir,Stage 06 SKU fit + Stage 07 source quality
+1.0,OU09,,CONTAMINATED_BROAD_BRANCH,REJECT_AS_PRIMARY,Quoted collapse + stones/jewelry dominance + A1 fails to clean intent,Reopen only if Stage 06 shows coherent zodiac SKU lane
+1.0,OU10,,BROAD_WEAK_PRODUCT_FIT,REJECT_AS_PRIMARY_SUPPORTING_ONLY,Clean Alice generic gifts do not naturally center amulet/pendant,Reopen only with later buyer/economics evidence
