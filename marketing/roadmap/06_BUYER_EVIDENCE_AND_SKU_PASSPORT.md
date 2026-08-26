@@ -1,6 +1,6 @@
 # 06 — Buyer evidence + полный паспорт SKU
 
-Статус: **[~] IN PROGRESS — 06.1 COMPLETE; 06.2 COMPLETE; 06.3 NEXT**  
+Статус: **[~] IN PROGRESS — 06.1 COMPLETE; 06.2 COMPLETE; 06.3 COMPLETE; targeted enrichment NEXT**  
 Дата старта: **2026-08-26**
 
 ## Цель
@@ -103,22 +103,42 @@ Interpretation:
 
 ## 06.3 — Map current assortment to opportunities / product families
 
-Status: **[ ] NEXT**
+Status: **[x] COMPLETE**
 
-Must resolve:
-- OU02 specific Печать Велеса vs OU06 broader Veles family;
-- OU03 protection/use-case vs OU04 mirror form at SKU level;
-- current Алатырь / Vegvisir / Шлем Ужаса variants;
-- zodiac product-family reopen test;
-- unmapped current products.
+Canonical artifacts:
+- `marketing/data/normalized/products/product_opportunity_map.csv`
+- `marketing/research/R4_STAGE06_ASSORTMENT_OPPORTUNITY_MAPPING_2026-08-26.md`
 
-Because fresh identities are unchanged 76/76, historical research-family labels may be carried forward as **DERIVED classification lineage** for the same stable marketplace identities; opportunity relations still need explicit Stage 06 mapping and must not be inferred beyond accepted R3 taxonomy plus observed seller naming.
+Coverage:
+- fresh current identities represented: **76/76**;
+- relation/unmapped rows: **93**;
+- identities with at least one accepted/reopen relation: **67**;
+- identities with no accepted R3 relation: **9**;
+- unresolved joins: **0**.
+
+Resolved boundaries:
+- OU02 specific `Печать Велеса` and OU06 broader `Велес` remain separate current seller identities; both are also OU01 category members;
+- OU03 remains a function/use-case relation and OU04 remains a mirror-pendant form relation; historical explicit listing-title evidence is carried only with provenance `MAPPED_HISTORICAL_LISTING_TITLE`, not silently upgraded to a fresh physical-product observation;
+- current named priority identities for Печать Велеса, Алатырь, Велес, Vegvisir and Шлем Ужаса are present;
+- all 37 zodiac identities remain current across classic/symbols/antique seller families, so OU09 meets the **assortment-side reopen trigger** but remains a product/buyer investigation rather than a primary broad acquisition lane;
+- 9 real current products have no accepted R3 relation and remain explicitly unmapped rather than retroactively forced into an opportunity.
+
+Targeted enrichment queue selected from decision need:
+- Tier A: Печать Велеса, Велес, Алатырь, Vegvisir, Шлем Ужаса;
+- Tier B contrast: Бусидо / current `Талисман в машину` offer;
+- Tier C zodiac representatives: classic Овен, antique Лев, symbols Близнецы.
+
+06.3 completion: **PASS**.
+
+---
 
 ## 06.4 — Buyer/customer evidence + seller performance linkage
 
-Status: **[ ] WAIT**
+Status: **[ ] NEXT, after minimum targeted passport enrichment**
 
 Normalize customer themes and seller performance while keeping motivation separate from sales.
+
+Before broad buyer/performance linkage, collect only the minimum current product detail/attribute evidence needed to resolve Tier A product passport gaps and the OU03/OU04 / OU02/OU06 boundary questions. Expand to Tier B/C only if the Tier A result shows it is decision-relevant.
 
 ## 06.5 — Cross-platform / WB status
 
@@ -136,4 +156,4 @@ Close only when current Ozon baseline, opportunity mapping, technical-fact gaps,
 
 # Current continuation point
 
-**06.3: map the unchanged fresh 76-item Ozon identity set to R3 opportunities/product families; resolve Veles split, car use-case/form-factor relations, priority named symbols, zodiac reopen test and unmapped products before choosing targeted passport-enrichment calls.**
+**Verify the exact current v0.1.19 read-only product-detail / attribute operation contract, then run the smallest supported Tier A enrichment request. Do not guess operation names or fan out across all 76 SKUs. Save and normalize every completed pass before proceeding to buyer/performance linkage.**
