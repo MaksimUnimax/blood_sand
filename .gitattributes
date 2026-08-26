@@ -3,3 +3,4 @@ tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/pa
 tooling/llm-api-bridges/ozon-seller/validation/regression/*.mjs text eol=lf
 tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_2026-08-26.patch text eol=lf
 tooling/llm-api-bridges/ozon-seller/validation/PATCH_B2_PRICES_LISTING_STATE_2026-08-26.patch text eol=lf
+tooling/llm-api-bridges/ozon-seller/validation/PATCH_B3_WAREHOUSE_STOCK_GEOGRAPHY_2026-08-26.patch text eol=lf

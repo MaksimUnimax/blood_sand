@@ -1,0 +1,205 @@
+diff --git a/shared/ozon_contract.js b/shared/ozon_contract.js
+index 95e4ea0176ea360867cecd8f1158f5078d1c9466..0216b97359a1438fe1ecfa1ab153dba42f309b97 100644
+--- a/shared/ozon_contract.js
++++ b/shared/ozon_contract.js
+@@ -41,6 +41,13 @@
+     "INDIVIDUAL_DISCOUNT_BY_PRODUCTS", "OZON_ACCOUNT_DISCOUNT", "MULTI_LEVEL_DISCOUNT_ON_AMOUNT"
+   ]);
+   const SELLER_ACTION_STATUSES = deepFreeze(["ACTIVE", "ENDED", "PLANNED", "PAUSED"]);
++  const OZON_WAREHOUSE_TYPES = deepFreeze([
++    "FULL_FILLMENT", "FULL_FILLMENT_RETURNS", "FULL_FILLMENT_DEFECT", "EXPRESS_DARK_STORE", "CROSS_DOCK", "SORTING_CENTER",
++    "PHARMACY", "DISTRIBUTION_CENTER", "ORDERS_RECEIVING_POINT", "OUTSOURCE_FF", "B2B", "EXTERNAL_FF"
++  ]);
++  const STOCK_ITEM_TAGS = deepFreeze(["ITEM_ATTRIBUTE_NONE", "ECONOM", "NOVEL", "DISCOUNT", "FBS_RETURN", "SUPER", "MARKABLE"]);
++  const STOCK_PLACEMENT_ZONES = deepFreeze(["PLACEMENT_ZONE_NONE", "CLOSED_ZONE", "DANGEROUS_GOOD", "PRODUCTS_PLUS_17", "SORT", "NON_SORT_MEZ", "OVERSIZE", "JEWELRY", "UNRESOLVED"]);
++  const STOCK_TURNOVER_GRADES = deepFreeze(["TURNOVER_GRADE_NONE", "DEFICIT", "POPULAR", "ACTUAL", "SURPLUS", "NO_SALES", "WAS_NO_SALES", "RESTRICTED_NO_SALES", "COLLECTING_DATA", "WAITING_FOR_SUPPLY", "WAS_DEFICIT", "WAS_POPULAR", "WAS_ACTUAL", "WAS_SURPLUS"]);
+   const FILTER_OPS = deepFreeze(["EQ", "GT", "GTE", "LT", "LTE"]);
+ 
+   function fail(code, message) {
+@@ -126,6 +133,8 @@
+       return fieldPath === "orders[].dropoff_warehouse.address" || fieldPath === "orders[].supplies[].storage_warehouse.address";
+     }
+     if (operation === "supply_order_details") return fieldPath === "supplies[].storage_warehouse.address";
++    if (operation === "seller_warehouse_list") return fieldPath === "warehouses[].address_info" || fieldPath === "warehouses[].address_info.address";
++    if (operation === "ozon_warehouse_list" || operation === "fbo_seller_warehouse_list") return fieldPath === "warehouses[].address";
+     return false;
+   }
+ 
+@@ -401,6 +410,61 @@
+     return normalized;
+   }
+ 
++  function normalizeSellerWarehouseListParams(params) {
++    const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["limit", "cursor", "warehouse_ids"]);
++    requireInteger(requireField(normalized, "limit"), "params.limit", { maximum: 200 });
++    if (Object.prototype.hasOwnProperty.call(normalized, "cursor")) requireString(normalized.cursor, "params.cursor", { nonEmpty: false });
++    if (Object.prototype.hasOwnProperty.call(normalized, "warehouse_ids")) validateIdentifierArray(normalized.warehouse_ids, "params.warehouse_ids", { maximum: 200, int64: true });
++    return normalized;
++  }
++
++  function normalizeOzonWarehouseListParams(params) {
++    const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["warehouse_types"]);
++    if (Object.prototype.hasOwnProperty.call(normalized, "warehouse_types")) validateEnumArray(normalized.warehouse_types, "params.warehouse_types", OZON_WAREHOUSE_TYPES);
++    return normalized;
++  }
++
++  function normalizeFbsStockByWarehouseParams(params) {
++    const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["cursor", "limit", "offer_id", "sku"]);
++    requireInteger(requireField(normalized, "limit"), "params.limit", { maximum: 1000 });
++    if (Object.prototype.hasOwnProperty.call(normalized, "cursor")) requireString(normalized.cursor, "params.cursor", { nonEmpty: false });
++    if (Object.prototype.hasOwnProperty.call(normalized, "offer_id")) validateIdentifierArray(normalized.offer_id, "params.offer_id", { maximum: 1000 });
++    if (Object.prototype.hasOwnProperty.call(normalized, "sku")) validateIdentifierArray(normalized.sku, "params.sku", { maximum: 1000, int64: true });
++    return normalized;
++  }
++
++  function normalizeFboStockByWarehouseParams(params) {
++    const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["cursor", "limit", "offer_ids", "skus"]);
++    requireInteger(requireField(normalized, "limit"), "params.limit", { maximum: 1000 });
++    const identifiers = ["offer_ids", "skus"].filter((field) => Object.prototype.hasOwnProperty.call(normalized, field));
++    if (identifiers.length === 0) fail("INVALID_OPERATION_PARAMS", "params должен содержать offer_ids или skus по контракту Ozon.");
++    if (Object.prototype.hasOwnProperty.call(normalized, "cursor")) requireString(normalized.cursor, "params.cursor", { nonEmpty: false });
++    if (Object.prototype.hasOwnProperty.call(normalized, "offer_ids")) validateIdentifierArray(normalized.offer_ids, "params.offer_ids", { maximum: 1000 });
++    if (Object.prototype.hasOwnProperty.call(normalized, "skus")) validateIdentifierArray(normalized.skus, "params.skus", { maximum: 1000, int64: true });
++    return normalized;
++  }
++
++  function normalizeStockAnalyticsParams(params) {
++    const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["cluster_ids", "item_tags", "macrolocal_cluster_ids", "placement_zone", "skus", "turnover_grades", "unmarked_stocks_only", "warehouse_ids"]);
++    validateIdentifierArray(requireField(normalized, "skus"), "params.skus", { maximum: 100, int64: true });
++    if (Object.prototype.hasOwnProperty.call(normalized, "cluster_ids") && Object.prototype.hasOwnProperty.call(normalized, "macrolocal_cluster_ids")) {
++      fail("INVALID_OPERATION_PARAMS", "params: cluster_ids и macrolocal_cluster_ids нельзя использовать одновременно по контракту Ozon.");
++    }
++    if (Object.prototype.hasOwnProperty.call(normalized, "cluster_ids")) validateIdentifierArray(normalized.cluster_ids, "params.cluster_ids", { int64: true });
++    if (Object.prototype.hasOwnProperty.call(normalized, "macrolocal_cluster_ids")) validateIdentifierArray(normalized.macrolocal_cluster_ids, "params.macrolocal_cluster_ids", { int64: true });
++    if (Object.prototype.hasOwnProperty.call(normalized, "warehouse_ids")) validateIdentifierArray(normalized.warehouse_ids, "params.warehouse_ids", { int64: true });
++    if (Object.prototype.hasOwnProperty.call(normalized, "item_tags")) validateEnumArray(normalized.item_tags, "params.item_tags", STOCK_ITEM_TAGS);
++    if (Object.prototype.hasOwnProperty.call(normalized, "placement_zone")) validateEnumArray(normalized.placement_zone, "params.placement_zone", STOCK_PLACEMENT_ZONES);
++    if (Object.prototype.hasOwnProperty.call(normalized, "turnover_grades")) validateEnumArray(normalized.turnover_grades, "params.turnover_grades", STOCK_TURNOVER_GRADES);
++    if (Object.prototype.hasOwnProperty.call(normalized, "unmarked_stocks_only") && typeof normalized.unmarked_stocks_only !== "boolean") fail("INVALID_OPERATION_PARAMS", "params.unmarked_stocks_only должен быть boolean.");
++    return normalized;
++  }
++
+   function normalizeStocksCurrentParams(params) {
+     const normalized = requirePlainObject(params, "params");
+     requirePlainObject(requireField(normalized, "filter"), "params.filter");
+@@ -520,6 +584,12 @@
+     return {};
+   }
+ 
++  function normalizeNoBodyParams(params) {
++    const normalized = normalizePassthroughParams(params);
++    if (Object.keys(normalized).length !== 0) fail("INVALID_OPERATION_PARAMS", "Эта операция не принимает request body/params по контракту Ozon.");
++    return {};
++  }
++
+   function normalizePostingFbsGetParams(params) {
+     const normalized = requirePlainObject(params, "params");
+     assertAllowedFields(normalized, ["posting_number", "with"]);
+@@ -709,7 +779,7 @@
+       if (typeof meta.normalizeParams !== "function") fail("PARAM_SCHEMA_NOT_READY", `${name}: нет request normalizer.`);
+       if (typeof meta.sanitizeResult !== "function") fail("RESULT_POLICY_NOT_READY", `${name}: нет result/PII policy.`);
+       if (meta.method === "GET" && meta.request_style !== "query") fail("REQUEST_STYLE_NOT_READY", `${name}: GET требует query builder.`);
+-      if (meta.method === "POST" && meta.request_style !== "json_body") fail("REQUEST_STYLE_NOT_READY", `${name}: POST требует JSON-body.`);
++      if (meta.method === "POST" && !["json_body", "no_body"].includes(meta.request_style)) fail("REQUEST_STYLE_NOT_READY", `${name}: POST требует fixed json_body/no_body builder.`);
+     }
+   }
+ 
+@@ -723,6 +793,13 @@
+     product_price_details: { normalizeParams: normalizeProductPriceDetailsParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b2" },
+     seller_actions_list: { normalizeParams: normalizeSellerActionsListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b2" },
+     seller_action_products: { normalizeParams: normalizeSellerActionProductsParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b2" },
++    seller_warehouse_list: { normalizeParams: normalizeSellerWarehouseListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b3" },
++    ozon_warehouse_list: { normalizeParams: normalizeOzonWarehouseListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b3" },
++    fbo_seller_warehouse_list: { normalizeParams: normalizeNoBodyParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b3_no_body" },
++    cluster_list: { normalizeParams: normalizeNoBodyParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b3_no_body" },
++    fbs_stock_by_warehouse: { normalizeParams: normalizeFbsStockByWarehouseParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b3" },
++    fbo_stock_by_warehouse: { normalizeParams: normalizeFboStockByWarehouseParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b3" },
++    stock_analytics: { normalizeParams: normalizeStockAnalyticsParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b3" },
+     analytics_data: { normalizeParams: normalizeAnalyticsDataParams, sanitizeResult: safeReadResult, contract_state: "official_limits_v2_1" },
+     product_queries: { normalizeParams: normalizeProductQueriesParams, sanitizeResult: safeReadResult, contract_state: "official_limits_v2_1" },
+     product_queries_details: { normalizeParams: normalizeProductQueriesDetailsParams, sanitizeResult: safeReadResult, contract_state: "official_limits_v2_1" },
+@@ -1033,7 +1110,7 @@
+         url: `${sellerApiBase}${meta.path}`,
+         method: meta.method,
+         headers: { ...headers },
+-        body: meta.method === "POST" ? JSON.stringify(preflight.command.params) : undefined,
++        body: meta.method === "POST" && meta.request_style === "json_body" ? JSON.stringify(preflight.command.params) : undefined,
+         operation: preflight.command.operation,
+         path: meta.path,
+         host_alias: "seller_api"
+diff --git a/shared/ozon_entitlements.js b/shared/ozon_entitlements.js
+index d50ace2589c21722ab849bed6ee1b4d78a992654..b2224463c2b22aa098519129d3295571ed17a824 100644
+--- a/shared/ozon_entitlements.js
++++ b/shared/ozon_entitlements.js
+@@ -54,6 +54,13 @@
+       "POST /v1/product/prices/details": { default_access: "SUBSCRIPTION_RESTRICTED", endpoint_allowed_subscription_types: ["PREMIUM_PRO"], feature_rules: [] },
+       "POST /v1/seller-actions/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+       "POST /v1/seller-actions/products/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
++      "POST /v2/warehouse/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
++      "POST /v1/warehouse/ozon/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
++      "POST /v1/warehouse/fbo/seller/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
++      "POST /v2/cluster/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
++      "POST /v2/product/info/stocks-by-warehouse/fbs": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
++      "POST /v1/product/info/stocks-by-warehouse/fbo": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
++      "POST /v1/analytics/stocks": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+       "POST /v3/posting/fbo/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+       "POST /v3/posting/fbs/get": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+       "POST /v3/supply-order/get": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+diff --git a/shared/ozon_operation_registry.js b/shared/ozon_operation_registry.js
+index 4fab0b2d2b0e4460f3d312e38442beeecd1df682..b7c643901c2952d3b07d86b8d4095369c4a143b1 100644
+--- a/shared/ozon_operation_registry.js
++++ b/shared/ozon_operation_registry.js
+@@ -209,6 +209,48 @@
+       cluster: "prices_promotions", section: "actions_promotions", guidance_visibility: "user", entitlement_key: "POST /v1/seller-actions/products/list", workflow_role: "single_read",
+       purpose: "Получить товары, участвующие в выбранной акции, без скрытого продолжения cursor.", template: { operation: "seller_action_products", params: { action_id: 1, limit: 100 } }
+     },
++    seller_warehouse_list: {
++      provider: "seller_api", method: "POST", path: "/v2/warehouse/list", effect: "READ", request_style: "json_body",
++      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
++      cluster: "warehouse_logistics", section: "warehouses", guidance_visibility: "user", entitlement_key: "POST /v2/warehouse/list", workflow_role: "single_read",
++      purpose: "Получить список складов FBS/rFBS с явным cursor/limit без скрытой автопагинации.", template: { operation: "seller_warehouse_list", params: { limit: 100 } }
++    },
++    ozon_warehouse_list: {
++      provider: "seller_api", method: "POST", path: "/v1/warehouse/ozon/list", effect: "READ", request_style: "json_body",
++      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
++      cluster: "warehouse_logistics", section: "warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/ozon/list", workflow_role: "single_read",
++      purpose: "Получить список складов Ozon и их географические/типовые данные.", template: { operation: "ozon_warehouse_list", params: {} }
++    },
++    fbo_seller_warehouse_list: {
++      provider: "seller_api", method: "POST", path: "/v1/warehouse/fbo/seller/list", effect: "READ", request_style: "no_body",
++      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
++      cluster: "warehouse_logistics", section: "warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbo/seller/list", workflow_role: "single_read",
++      purpose: "Получить список FBO-складов продавца без request body.", template: { operation: "fbo_seller_warehouse_list", params: {} }
++    },
++    cluster_list: {
++      provider: "seller_api", method: "POST", path: "/v2/cluster/list", effect: "READ", request_style: "no_body",
++      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
++      cluster: "warehouse_logistics", section: "clusters", guidance_visibility: "user", entitlement_key: "POST /v2/cluster/list", workflow_role: "single_read",
++      purpose: "Получить макролокальные кластеры Ozon без request body.", template: { operation: "cluster_list", params: {} }
++    },
++    fbs_stock_by_warehouse: {
++      provider: "seller_api", method: "POST", path: "/v2/product/info/stocks-by-warehouse/fbs", effect: "READ", request_style: "json_body",
++      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
++      cluster: "stocks_inventory", section: "warehouse_fbs", guidance_visibility: "user", entitlement_key: "POST /v2/product/info/stocks-by-warehouse/fbs", workflow_role: "single_read",
++      purpose: "Получить остатки FBS/rFBS по складам без скрытого продолжения cursor.", template: { operation: "fbs_stock_by_warehouse", params: { limit: 100 } }
++    },
++    fbo_stock_by_warehouse: {
++      provider: "seller_api", method: "POST", path: "/v1/product/info/stocks-by-warehouse/fbo", effect: "READ", request_style: "json_body",
++      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
++      cluster: "stocks_inventory", section: "warehouse_fbo", guidance_visibility: "user", entitlement_key: "POST /v1/product/info/stocks-by-warehouse/fbo", workflow_role: "single_read",
++      purpose: "Получить остатки FBO по складам для явно указанных offer_ids/skus без скрытой автопагинации.", template: { operation: "fbo_stock_by_warehouse", params: { skus: ["1"], limit: 100 } }
++    },
++    stock_analytics: {
++      provider: "seller_api", method: "POST", path: "/v1/analytics/stocks", effect: "READ", request_style: "json_body",
++      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
++      cluster: "stocks_inventory", section: "stock_analytics", guidance_visibility: "user", entitlement_key: "POST /v1/analytics/stocks", workflow_role: "single_read",
++      purpose: "Получить текущую аналитику остатков по SKU и фильтрам складов/кластеров.", template: { operation: "stock_analytics", params: { skus: ["1"] } }
++    },
+     analytics_data: {
+       provider: "seller_api", method: "POST", path: "/v1/analytics/data", effect: "READ", request_style: "json_body",
+       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
