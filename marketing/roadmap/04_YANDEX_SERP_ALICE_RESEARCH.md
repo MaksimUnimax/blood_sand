@@ -1,6 +1,6 @@
 # 04 — Исследовать реальный Yandex Search / SERP и Alice AI
 
-Статус: **[~] В РАБОТЕ — PRIMARY COMPLETE; SECONDARY A1 COMPLETE; NEXT A2**  
+Статус: **[~] В РАБОТЕ — PRIMARY COMPLETE; SECONDARY A-SET 3/3 COMPLETE; NEXT B1**  
 Дата активного этапа: **2026-08-26**
 
 ## Цель
@@ -13,7 +13,7 @@
 - marketplace / independent commerce / informational sources;
 - разные intent-классы.
 
-Roadmap 04 **не назначает финальную IA/Page Jobs**. Это делается только после объединения evidence на следующем decision stage.
+Roadmap 04 **не назначает финальную IA/Page Jobs**. Финальные решения делаются после объединения evidence на Roadmap 05.
 
 ## Жёсткие правила evidence
 
@@ -94,72 +94,20 @@ Direct brand evidence:
 
 **[x] COMPLETE — 5/5**
 
-### `славянские обереги`
-- 3 `Промо` before first organic;
-- embedded Alice above results absent;
-- first visible organic `slavyanskieoberegi.ru`, then `simvolroda.ru`.
-- Artifact: `marketing/data/raw/browser_serp/20260826T0723Z__slavyanskie_oberegi__desktop.md`
+- `славянские обереги`: 3 Promo before organic; no embedded Alice above results; first visible organic `slavyanskieoberegi.ru`.
+- `печать велеса`: promo + embedded Alice + images; `slavyanskieoberegi.ru` prominent; `Люди ищут` exposes meaning/tattoo/photo/buy branches.
+- `оберег в машину`: promo + images + large shopping block; Yandex Market/Ozon; direct `Печать Велеса` mirror-pendant product; embedded Alice not observed in supplied browser capture.
+- `подвеска на зеркало в машину`: promo + Ozon + images + shopping; generic decor/fandom/personalization strong alongside symbolic products; video observed; embedded Alice not observed.
+- `талисман знак зодиака`: embedded Alice before ordinary results; marketplaces/jewelry retailers; images; `Люди ищут` heavily stone/zodiac-oriented.
 
-### `печать велеса`
-- top promo;
-- embedded Alice;
-- images;
-- `slavyanskieoberegi.ru` prominent;
-- `Люди ищут` directly exposes meaning/tattoo/photo/buy branches.
-- Artifact: `marketing/data/raw/browser_serp/20260826T0734Z__pechat_velesa__desktop.md`
-
-### `оберег в машину`
-- promo + images;
-- large rich shopping block;
-- Yandex Market/Ozon product cards;
-- direct `Печать Велеса` mirror-pendant product;
-- embedded Alice not observed in supplied browser capture.
-- Artifacts:
-  - `marketing/data/raw/browser_serp/20260826T0743Z__obereg_v_mashinu__desktop.md`
-  - `marketing/data/raw/browser_serp/20260826__obereg_v_mashinu__desktop.md`
-
-### `подвеска на зеркало в машину`
-- promo + Ozon;
-- images + rich shopping block;
-- Ozon/Yandex Market dominant;
-- relevant products include `Знич`, `Печать Велеса`, zodiac pendants;
-- generic decor/fandom/personalization also strong;
-- video observed;
-- embedded Alice not observed.
-- Artifact: `marketing/data/raw/browser_serp/20260826__podveska_na_zerkalo_v_mashinu__desktop.md`
-
-### `талисман знак зодиака`
-- embedded Alice before ordinary results;
-- Yandex Market/Wildberries/Ozon/jewelry retailers;
-- `Картинки`;
-- `Люди ищут` 10/10 strongly stone/zodiac-oriented;
-- large product-card block not observed.
-- Artifact: `marketing/data/raw/browser_serp/20260826__talisman_znak_zodiaka__desktop.md`
+Artifacts are stored under:
+- `marketing/data/raw/browser_serp/`
 
 ## Additional opportunistic desktop captures
 
-### `вегвизир`
-- promo, images, marketplaces + specialist info;
-- embedded Alice;
-- `Люди ищут`: `вегвизир это`, `вегвизир значение`, `вегвизир значение символа`, `вегвизир что это`, `вегвизир тату`, Valheim contamination.
-- Artifact: `marketing/data/raw/browser_serp/20260826__vegvizir__desktop.md`
-
-### `алатырь оберег`
-- embedded Alice;
-- marketplaces + specialist commerce/content;
-- video + images;
-- related meaning / gender / buy branches.
-- Artifact: `marketing/data/raw/browser_serp/20260826__alatyr_obereg__desktop.md`
-
-### `подарок автомобилисту`
-- ordinary Ozon result first;
-- embedded Alice immediately high in SERP;
-- Wildberries / Poryadok / KP / gift retailers;
-- WB snippet directly contains `Подвеска автомобилисту Волк, подарок близкому`;
-- multiple lower-page promos, including off-topic ad noise;
-- rich product block / images / video / `Люди ищут` not observed in supplied full-page copy;
-- copied URLs expose `lr=10466`, human-readable geography unresolved.
-- Artifact: `marketing/data/raw/browser_serp/20260826__podarok_avtomobilistu__desktop.md`
+- `вегвизир`: promo, images, marketplaces + specialist info; embedded Alice; `Люди ищут` exposes `вегвизир значение`, `вегвизир значение символа`, etc.
+- `алатырь оберег`: embedded Alice; marketplaces + specialist commerce/content; video + images; meaning/gender/buy branches.
+- `подарок автомобилисту`: Ozon first; embedded Alice high in SERP; WB/Poryadok/KP/gift retailers; WB snippet contains wolf pendant as one possible gift; `lr=10466` directly observed, human-readable geography unresolved.
 
 ## Mobile
 
@@ -176,115 +124,23 @@ Wordstat PHONE counts do not substitute for mobile SERP evidence.
 
 **[x] COMPLETE — accepted canonical primary 10/10**
 
-### 1. `славянские обереги`
-- informational/explanatory guide;
-- highlights `Печать Велеса`, `Алатырь`;
-- 7 confidently normalized source rows;
-- exact source URLs not captured.
-- Artifacts:
-  - `marketing/data/raw/alice/20260826T0723Z__slavyanskie_oberegi.md`
-  - `marketing/data/raw/alice/20260826T0723Z__slavyanskie_oberegi_sources_visible_01.md`
-  - `marketing/data/normalized/alice/20260826T0723Z__slavyanskie_oberegi.csv`
+Canonical results:
 
-### 2. `печать велеса`
-- embedded Alice;
-- meaning/history/use-first despite transactional Search;
-- exact 17 sources;
-- 3 fan-outs.
-- Artifacts:
-  - `marketing/data/raw/alice/20260826T0734Z__pechat_velesa__embedded.md`
-  - `marketing/data/normalized/alice/20260826T0734Z__pechat_velesa.csv`
+1. `славянские обереги` — informational/explanatory; highlights `Печать Велеса`, `Алатырь`; 7 confidently normalized sources.
+2. `печать велеса` — meaning/history/use-first despite transactional Search; exact 17 sources; 3 fan-outs.
+3. `вегвизир` — entity/history/meaning-first; embedded + standalone corroboration; exact 11 embedded sources.
+4. `алатырь оберег` — mythology/meaning/suitability; exact 18 sources.
+5. `оберег в машину` — choice/use-case + shopping; 7 direct product examples; 13 readable sources.
+6. `подвеска на зеркало в машину` — decor/form-factor selection + shopping; 6 direct products; symbolic products only one branch.
+7. `талисман знак зодиака` — informational zodiac selection; stones/jewelry central; exact 30 sources; 3 fan-outs.
+8. `оберег велес` — symbol-family explanation + suitability + light shopping; specialist Slavic sources strong.
+9. `подарок мужчине в машину` — clean rerun: broad practical gift selection; no pendant/amulet/talisman default category; contaminated prior run excluded.
+10. `подарок автомобилисту` — broad gift guide; practical/general auto gifts dominate; no amulet/Slavic category in Alice answer; exact 11 sources.
 
-### 3. `вегвизир`
-- embedded + standalone corroboration;
-- entity/history/meaning-first;
-- embedded exact 11 sources;
-- no-Viking-age-source correction preserved.
-- Artifacts:
-  - `marketing/data/raw/alice/20260826__vegvizir__embedded.md`
-  - `marketing/data/raw/alice/20260826__vegvizir__consumer_chat.md`
-  - `marketing/data/normalized/alice/20260826__vegvizir.csv`
-
-### 4. `алатырь оберег`
-- embedded Alice;
-- mythology/meaning/suitability;
-- exact 18 sources;
-- final answer section partial.
-- Artifacts:
-  - `marketing/data/raw/alice/20260826__alatyr_obereg__embedded.md`
-  - `marketing/data/normalized/alice/20260826__alatyr_obereg.csv`
-
-### 5. `оберег в машину`
-- standalone Alice;
-- choice/use-case + shopping;
-- 7 direct product examples;
-- 13 readable sources, panel completeness not confirmed.
-- Artifacts:
-  - `marketing/data/raw/alice/20260826__obereg_v_mashinu__consumer_chat.md`
-  - `marketing/data/normalized/alice/20260826__obereg_v_mashinu.csv`
-
-### 6. `подвеска на зеркало в машину`
-- standalone Alice;
-- decor/form-factor selection + shopping;
-- 6 direct products;
-- 10 readable sources;
-- symbolic products only one branch of broad decor universe.
-- Artifacts:
-  - `marketing/data/raw/alice/20260826__podveska_na_zerkalo_v_mashinu__consumer_chat.md`
-  - `marketing/data/normalized/alice/20260826__podveska_na_zerkalo_v_mashinu.csv`
-
-### 7. `талисман знак зодиака`
-- embedded Alice;
-- informational zodiac selection;
-- stones/jewelry central;
-- exact 30 sources;
-- 3 fan-outs.
-- Artifacts:
-  - `marketing/data/raw/alice/20260826__talisman_znak_zodiaka__embedded.md`
-  - `marketing/data/normalized/alice/20260826__talisman_znak_zodiaka.csv`
-
-### 8. `оберег велес`
-- standalone Alice;
-- symbol-family explanation + suitability + light shopping;
-- 3 products;
-- 8 readable source rows;
-- strong specialist Slavic source representation.
-- Artifacts:
-  - `marketing/data/raw/alice/20260826__obereg_veles__consumer_chat.md`
-  - `marketing/data/normalized/alice/20260826__obereg_veles.csv`
-
-### 9. `подарок мужчине в машину`
-Canonical clean rerun:
-- broad practical gift selection;
-- no pendant/amulet/talisman category;
-- no Slavic/Norse symbols;
-- 5 readable sources;
-- no direct product-card block.
-- Artifacts:
-  - `marketing/data/raw/alice/20260826__podarok_muzhchine_v_mashinu__consumer_chat_CLEAN.md`
-  - `marketing/data/normalized/alice/20260826__podarok_muzhchine_v_mashinu.csv`
-
-Excluded audit-only contaminated run:
-- `marketing/data/raw/alice/20260826__podarok_muzhchine_v_mashinu__consumer_chat_CONTEXT_CONTAMINATED.md`
-- `marketing/data/normalized/alice/20260826__podarok_muzhchine_v_mashinu__CONTEXT_CONTAMINATED.csv`
-
-### 10. `подарок автомобилисту`
-- embedded Alice;
-- broad gift recommendation guide;
-- practical/general auto gifts dominate;
-- no amulet/talisman/Slavic-symbol category in Alice answer;
-- no direct product-card block;
-- exact 11/11 source URLs captured;
-- 3 fan-outs;
-- no specialist Slavic source in the 11-source set.
-- Artifacts:
-  - `marketing/data/raw/alice/20260826__podarok_avtomobilistu__embedded.md`
-  - `marketing/data/normalized/alice/20260826__podarok_avtomobilistu.csv`
-
-## Cross-root result after 10/10
+Cross-root result:
 
 - symbol/entity roots are meaning/history/suitability-first in Alice even when Search is commercial;
-- `оберег в машину` is a query-native selection + commerce job;
+- `оберег в машину` is query-native selection + commerce;
 - `подвеска на зеркало в машину` is broad form-factor/decor commerce;
 - broad zodiac root is strongly stone/jewelry contaminated;
 - both clean gift roots are broad gift-selection jobs with weak default pendant fit;
@@ -294,103 +150,162 @@ Canonical comparison:
 
 - `marketing/research/R2_PRIMARY_SEARCH_ALICE_COMPARISON_2026-08-26.md`
 
+Alice raw/normalized artifacts:
+- `marketing/data/raw/alice/`
+- `marketing/data/normalized/alice/`
+
 ---
 
 # 04.5 — Evidence-driven secondary expansion
 
-**[~] A1 COMPLETE — 1/3 PRIORITY A; NEXT A2**
+**[~] PRIORITY A 3/3 COMPLETE; JOINT REVIEW COMPLETE; NEXT B1**
+
+Detailed canonical checkpoint:
+
+- `marketing/research/R2_SECONDARY_SEARCH_ASET_STATUS_2026-08-26.md`
 
 ## Priority A
 
 ### A1 `оберег по знаку зодиака` — **[x] COMPLETE**
 
-Pre-run evidence:
-- Wordstat 710 broad;
-- narrower/product-adjacent than contaminated `талисман знак зодиака`;
-- contamination independently proven by Wordstat + Search + browser + Alice.
+Direct Search:
+- request `search-ae0b8945-90f4-44da-b508-927267242aa2`;
+- HTTP 200;
+- region 225;
+- Top-10.
 
-Decision question: does `оберег` shift results toward symbolic/specialist commerce or do stones remain dominant?
+Result:
 
-Direct Search measurement:
-- request ID `search-ae0b8945-90f4-44da-b508-927267242aa2`;
-- HTTP `200`;
-- elapsed `1417 ms`;
-- region `225`;
-- Top-10 returned;
-- executed=true;
-- retry=false;
-- response `FORMAT_XML`.
+**The `оберег` modifier does not cleanly shift Search toward symbolic/Slavic specialist commerce.**
 
-Observed Top-10 composition:
-- marketplace / commerce: Yandex Market ranks `1` and `8`, Ozon rank `7`, Wildberries rank `9`;
-- zodiac-selection/editorial: AllTime rank `2`, Chronos rank `4`, Halva media rank `6`, Arcanum rank `10`;
-- explicit stones/jewelry contamination remains visible: Violet rank `3`, Dzen rank `5`, Halva rank `6`, Ozon stone-set category rank `7`;
-- **no Slavic-symbol specialist merchant/site in returned Top-10**.
-
-A1 answer:
-
-**The `оберег` modifier does not cleanly shift Search toward symbolic/Slavic specialist commerce. The query remains a mixed zodiac-selection + stones/jewelry + marketplace job.**
-
-This is direct Search-provider evidence only; no browser/Alice inference is attached to A1.
+Observed mix remains marketplace + zodiac-selection/editorial + stones/jewelry; no Slavic-symbol specialist site in returned Top-10.
 
 Artifacts:
 - `marketing/data/raw/yandex_search/20260826__search__secondary_A1__obereg_po_znaku_zodiaka__225.md`
 - `marketing/data/normalized/yandex_search/20260826__search__secondary_A1__obereg_po_znaku_zodiaka__225.csv`
 
 Canonical IDs:
-- query: `q_f31b17922a59`
-- measurement: `m_search_20260826_f31b1792`
+- query `q_f31b17922a59`
+- measurement `m_search_20260826_f31b1792`
 
-### A2 `печать велеса значение` — **[ ] NEXT**
+### A2 `печать велеса значение` — **[x] COMPLETE**
+
+Direct Search:
+- request `search-4d5ed645-c23c-45bc-b9b5-bea712eb54ae`;
+- HTTP 200;
+- elapsed 1326 ms;
+- region 225;
+- Top-10.
+
+Observed:
+- ranks 1–6 are meaning/explanation-led;
+- ranks 7–10 are specialist commerce/product pages with meaning-rich snippets;
+- `slavyanskieoberegi.ru` occupies #1, #7, #9, #10;
+- no Yandex Market, Ozon or Wildberries in Top-10.
+
+Result:
+
+**YES — explicit `значение` creates a distinct informational / meaning-first Search job.**
+
+Commercial intent survives via specialist pages, materially different from base `печать велеса`, which was transactional/product and marketplace-heavy.
+
+Artifacts:
+- `marketing/data/raw/yandex_search/20260826__search__secondary_A2__pechat_velesa_znachenie__225.md`
+- `marketing/data/normalized/yandex_search/20260826__search__secondary_A2__pechat_velesa_znachenie__225.csv`
+
+Canonical IDs:
+- query `q_ddc00bf51857`
+- measurement `m_search_20260826_ddc00bf5`
+
+### A3 `амулет в машину` — **[x] COMPLETE**
+
+Direct Search:
+- request `search-aee9a6d6-fa5c-4bd3-ac72-dd682acf08c7`;
+- HTTP 200;
+- elapsed 1234 ms;
+- region 225;
+- Top-10.
+
+Observed:
+- Ozon #1, Wildberries #2, Yandex Market #4/#5, Livemaster #6/#7, Avito #8;
+- Happy Witch #3 gives commerce + explanatory choice content;
+- VK #9 is informational/community;
+- Amber Land #10 is specialist religious commerce;
+- Livemaster #7 explicitly exposes `Славянский оберег в машину`;
+- Avito #8 snippet explicitly exposes `скандинавский амулет руна Феху`;
+- most titles/URLs use `оберег`, not `амулет`.
+
+Result:
+
+**`амулет в машину` does not form a clearly separate Search job. Yandex largely folds it into the same semantic cluster as `оберег в машину`, with a stronger marketplace/transactional tilt in this measurement.**
+
+Comparison:
+- `оберег в машину`: mixed commercial + choice/use-case; 4 marketplace/platform, 3 independent commerce, 3 informational;
+- `подвеска на зеркало в машину`: transactional form-factor; all Top-10 commerce/platform;
+- `амулет в машину`: semantic synonym of automotive-protection cluster, not a separate form-factor branch.
+
+Artifacts:
+- `marketing/data/raw/yandex_search/20260826__search__secondary_A3__amulet_v_mashinu__225.md`
+- `marketing/data/normalized/yandex_search/20260826__search__secondary_A3__amulet_v_mashinu__225.csv`
+
+Canonical IDs:
+- query `q_aa4ac349a92c`
+- measurement `m_search_20260826_aa4ac349`
+
+## Joint A-set result
+
+Three uncertainty classes are now separated:
+
+1. lexical narrowing is not automatically useful (`оберег по знаку зодиака` still contaminated);
+2. explicit meaning intent can create a real separate Search job (`печать велеса значение`);
+3. close synonym variation may collapse into the same job (`амулет в машину` → `оберег в машину` cluster).
+
+**Rule going forward:** pay for secondary Search only when it tests a real semantic/job hypothesis, not merely another wording variant.
+
+## Priority B
+
+### B1 `вегвизир значение` — **[ ] NEXT / KEEP**
 
 Evidence:
-- meaning layer in Wordstat;
-- exact phrase directly observed in browser `Люди ищут`;
-- base Search transactional, Alice meaning-first.
+- directly observed in browser `Люди ищут`;
+- base Wordstat `вегвизир`: 5,938 broad / 1,541 quoted;
+- base Search mixed entity + commercial;
+- Alice meaning/history-first;
+- A2 proves explicit `значение` can materially change Search composition for a symbolic root.
 
-Decision question: does explicit meaning modifier produce a distinct informational Search job?
+Decision question:
 
-### A3 `амулет в машину` — **[ ] WAIT**
+**Does the meaning-modifier split observed for `Печать Велеса` generalize to the Norse/European symbol cluster, or does `вегвизир` remain mixed even with explicit meaning intent?**
+
+This is decision-useful because it tests repeatability across symbol families, not a synonym.
+
+### B2 `шлем ужаса оберег` — **[ ] KEEP, REASSESS AFTER B1**
 
 Evidence:
-- Wordstat 404 broad;
-- close human lexical variant of core automotive use-case;
-- primary roots split between mixed `оберег в машину` and transactional form-factor `подвеска на зеркало`.
-
-Decision question: which job does `амулет в машину` actually map to?
-
-## Priority B — only after A-set review
-
-### B1 `вегвизир значение`
-- directly observed in `Люди ищут`;
-- base demand 5,938 broad / 1,541 quoted;
-- base Search mixed, Alice meaning/history-first.
-
-### B2 `шлем ужаса оберег`
 - Wordstat 474 broad;
-- directly supported by Alice contrast with Ægishjálmur / Шлем ужаса;
-- tests adjacent Norse symbol opportunity.
+- adjacent named-symbol opportunity, not a synonym;
+- direct Alice/Vegvisir evidence raises Ægishjálmur / `Шлем ужаса` as comparison branch.
 
-## Deferred
+Decision question:
 
-- `вегвизир значение символа` — initially redundant with B1;
-- `алатырь оберег значение` — defer until A2 shows marginal value of explicit meaning modifiers;
-- gift expansions — rejected now because clean evidence shows weak default product fit;
-- generic mirror/decor expansions — deferred because primary evidence already proves commodity contamination.
+**Does `шлем ужаса оберег` produce a coherent specialist symbolic/commercial Search job, or is it too informational/contaminated to matter commercially?**
 
 Execution rule:
 
-1. ~~run A1~~ **DONE**;
-2. ~~save/normalize/commit~~ **DONE**;
-3. run A2;
-4. save/normalize/commit;
-5. run A3;
-6. review A-set jointly;
-7. run B-set only if still decision-useful.
-
-**Do not auto-run all secondaries blindly.**
+1. run B1 only;
+2. save raw + normalized immediately;
+3. reassess B2 after B1;
+4. do not auto-batch Priority B.
 
 Before each paid Search API secondary request, fresh-verify official Yandex pricing.
+
+## Deferred
+
+- `вегвизир значение символа` — redundant until B1 proves otherwise;
+- `алатырь оберег значение` — explicit meaning behavior already proven on Велес; marginal value currently lower than B1;
+- gift expansions — rejected now because clean evidence shows weak default product fit;
+- generic mirror/decor expansions — deferred because primary evidence already proves commodity contamination;
+- additional `амулет/оберег` automotive synonyms — low value unless new evidence shows a distinct job.
 
 ---
 
@@ -400,16 +315,16 @@ Before each paid Search API secondary request, fresh-verify official Yandex pric
 
 Completed:
 
-- 10/10 primary Search-provider measurements normalized;
+- primary Search 10/10 normalized;
 - Search→Ledger staging patch exists;
 - canonical measurement IDs separated from provider request IDs;
 - structural merge check done;
-- accepted Alice primary **10/10** normalized;
-- all exact-source sets preserved where captured;
+- accepted Alice primary 10/10 normalized;
 - contaminated gift run retained separately and excluded from canonical count;
-- secondary Search A1 raw + normalized saved.
+- secondary Search A1/A2/A3 raw + normalized saved;
+- A-set joint review committed.
 
-Legacy defect still requires safe repair:
+Legacy defect:
 
 - old `подвеска на зеркало в машину` Ledger row has shifted tail CSV fields due unescaped commas;
 - repair/merge state stored in `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_SERP_MERGE_STATUS_2026-08-26.md`;
@@ -422,12 +337,13 @@ Remaining:
 - backfill Alice linkage for 10/10;
 - Wordstat linkage only from real R1 artifacts;
 - browser-only product-block fields only from direct UI evidence;
-- add secondary A2/A3 measurements as executed.
+- add B1/B2 only if executed.
 
 Continuity artifacts:
 
 - `marketing/data/ledger/query_evidence_serp_patch_2026-08-26.csv`
 - `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_SERP_MERGE_STATUS_2026-08-26.md`
+- `marketing/research/R2_SECONDARY_SEARCH_ASET_STATUS_2026-08-26.md`
 
 ---
 
@@ -460,16 +376,16 @@ Current state:
 - mobile browser representative set: **0/2**;
 - consumer Alice accepted primary: **10/10**;
 - primary cross-surface comparison: **COMPLETE**;
-- secondary Priority A: **1/3 executed**;
-- A1 `оберег по знаку зодиака`: **COMPLETE**;
-- A2 `печать велеса значение`: **NEXT**;
-- A3 `амулет в машину`: **WAIT**.
+- secondary Priority A: **3/3 COMPLETE**;
+- A-set joint review: **COMPLETE**;
+- B1 `вегвизир значение`: **NEXT**;
+- B2 `шлем ужаса оберег`: **WAIT / reassess after B1**.
 
 ## Next action
 
-1. Fresh-verify official Yandex synchronous Search pricing immediately before paid A2.
-2. Execute only A2: **`печать велеса значение`**.
-3. Save raw + normalized result immediately.
-4. Reassess before A3.
+1. Fresh-verify official Yandex synchronous Search pricing immediately before paid B1.
+2. Execute only B1: **`вегвизир значение`**.
+3. Save raw + normalized immediately.
+4. Reassess whether B2 still adds decision value.
 
-Do not jump directly to Roadmap 05 and do not auto-run the full secondary set.
+Do not jump directly to Roadmap 05 and do not auto-run B1+B2 together.
