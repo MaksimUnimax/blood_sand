@@ -1,6 +1,6 @@
-# R2 — Secondary Search A-set status — 2026-08-26
+# R2 — Secondary Search status — 2026-08-26
 
-Status: **A-SET COMPLETE — JOINT REVIEW COMPLETE; PRIORITY B DECISION READY**
+Status: **A-SET COMPLETE; B1 COMPLETE; B2 NEXT**
 
 This checkpoint is the authoritative continuation marker for the active secondary Search pass. It does not assign final Page Jobs / IA.
 
@@ -46,7 +46,7 @@ Decision result:
 
 **YES — explicit `значение` creates a distinct informational / meaning-first Search job.**
 
-Commercial intent is not absent; it survives through specialist product pages rather than generic marketplace-heavy results. This is materially different from the base `печать велеса` measurement, which was transactional/product and marketplace-heavy.
+Commercial intent survives through specialist product pages rather than generic marketplace-heavy results. This materially differs from base `печать велеса`, which was transactional/product and marketplace-heavy.
 
 Artifacts:
 - `marketing/data/raw/yandex_search/20260826__search__secondary_A2__pechat_velesa_znachenie__225.md`
@@ -73,20 +73,13 @@ Observed result composition:
 - Happy Witch #3 provides commerce + explanatory choice content;
 - VK #9 provides informational/community material;
 - Amber Land #10 provides specialist religious commerce;
-- Livemaster #7 directly exposes a `Славянский оберег в машину` branch;
-- Avito #8 snippet directly exposes a `скандинавский амулет руна Феху` product example;
 - most returned titles/URLs use `оберег`, not `амулет`.
 
 Decision result:
 
 **`амулет в машину` is not a clearly separate Search job. Yandex largely folds it into the same semantic cluster as `оберег в машину`, but this measurement is more marketplace/transactional in composition.**
 
-Comparison with primary roots:
-- primary `оберег в машину`: mixed commercial + choice/use-case; normalized composition 4 marketplace/platform, 3 independent commerce, 3 informational;
-- primary `подвеска на зеркало в машину`: transactional form-factor; all Top-10 commerce/platform;
-- A3 `амулет в машину`: semantic synonym of protection/amulet cluster, not a form-factor query; marketplace-heavy but still includes explanatory and symbolic branches.
-
-Therefore A3 is best treated as a lexical/supporting query of the automotive-protection cluster, not as a provisional independent Page Job.
+Therefore A3 is a lexical/supporting query of the automotive-protection cluster, not a provisional independent Page Job.
 
 Artifacts:
 - `marketing/data/raw/yandex_search/20260826__search__secondary_A3__amulet_v_mashinu__225.md`
@@ -98,39 +91,72 @@ Canonical IDs:
 
 # Joint A-set review
 
-Priority A progress: **3/3 COMPLETE**
+Priority A: **3/3 COMPLETE**
 
-The three tests answer three different uncertainty classes:
+1. Lexical narrowing is not automatically useful: `оберег по знаку зодиака` still inherits the broad zodiac/stone/marketplace universe.
+2. Explicit meaning intent can be genuinely distinct: `печать велеса значение` flips the base transactional query into a meaning-first result set.
+3. Close synonym variation may not create a new job: `амулет в машину` is normalized back to the `оберег в машину` semantic cluster.
 
-1. **Lexical narrowing is not automatically useful.** `оберег по знаку зодиака` still inherits the broad zodiac/stone/marketplace universe.
-2. **Explicit meaning intent can be genuinely distinct.** `печать велеса значение` flips the base transactional query into a meaning-first result set while retaining specialist commercial pages.
-3. **Close synonym variation may not create a new job.** `амулет в машину` is largely normalized back to the `оберег в машину` semantic cluster.
+The A-set rule is therefore: **pay for secondaries only when they test a real semantic/job hypothesis, not merely a wording variant.**
 
-## Implication for secondary expansion
+# Priority B
 
-The A-set shows that secondary queries are worth paying for only when they test a real semantic/job hypothesis, not merely a wording variant.
+## B1 — `вегвизир значение` — COMPLETE
 
-### B1 `вегвизир значение` — KEEP / DECISION-USEFUL
+Direct Search result:
+- request `search-9739861a-3871-47de-a904-0a9049c1a663`;
+- region 225;
+- HTTP 200;
+- elapsed 1627 ms;
+- Top-10;
+- executed=true;
+- retry=false;
+- FORMAT_XML.
 
-Reason:
-- base `вегвизир` Search is mixed entity + commercial;
-- browser `Люди ищут` directly exposed `вегвизир значение` and `вегвизир значение символа`;
-- Alice is meaning/history-first;
-- A2 proves that an explicit `значение` modifier can materially change Search composition for a symbolic root.
+Observed result composition:
+- Top-10 is overwhelmingly meaning/history/origin/explanation-led;
+- no Ozon, Wildberries or Yandex Market in returned Top-10;
+- #1 `ruyan-master.ru` article explicitly answers symbol meaning;
+- translated Wikipedia #2;
+- specialist/editorial results at #1, #3, #4, #6, #8, #9;
+- community sources Pikabu #5 and VK #7;
+- YouTube explanation #10;
+- commerce-linked domains appear, where present, through editorial/article surfaces rather than product/catalog pages.
 
-Decision question:
+B1 answer:
 
-**Does the meaning-modifier split observed for `Печать Велеса` generalize to the Norse/European symbol cluster, or does `вегвизир` remain mixed even with explicit meaning intent?**
+**YES — `вегвизир значение` creates a distinct informational / meaning-first Search job relative to the mixed base query `вегвизир`.**
 
-This measurement is decision-useful because it tests whether meaning-layer behavior is repeatable across symbol families rather than a one-query anomaly.
+This is the second independent named-symbol family showing the same modifier split already observed for `печать велеса` → `печать велеса значение`.
 
-### B2 `шлем ужаса оберег` — KEEP / DECISION-USEFUL
+### Cross-family implication
 
-Reason:
+The `значение` layer is now a **repeatable Search behavior**, not a one-query anomaly:
+- Slavic named symbol: `печать велеса` → transactional/product, while `печать велеса значение` → meaning-first;
+- Icelandic/Norse-associated named symbol: `вегвизир` → mixed entity + commercial, while `вегвизир значение` → meaning/history-first.
+
+This materially strengthens the evidence that named-symbol demand may require separate commercial and explanatory jobs at the later Page Job decision stage. This remains PROVISIONAL until Roadmap 05.
+
+Artifacts:
+- `marketing/data/raw/yandex_search/20260826__search__secondary_B1__vegvizir_znachenie__225.md`
+- `marketing/data/normalized/yandex_search/20260826__search__secondary_B1__vegvizir_znachenie__225.csv`
+
+Canonical IDs:
+- query `q_99eac125dfed`
+- measurement `m_search_20260826_99eac125`
+
+## B2 — `шлем ужаса оберег` — NEXT / STILL DECISION-USEFUL
+
+B1 does **not** make B2 redundant. They test different questions:
+- B1 tests meaning-layer separation for an existing high-demand named symbol;
+- B2 tests whether there is a second coherent named-symbol opportunity inside the adjacent Norse/Icelandic symbolic cluster.
+
+Existing evidence for B2:
 - Wordstat broad demand: 474;
-- it is an adjacent named-symbol opportunity, not a simple synonym;
-- existing Vegvisir/Alice evidence directly raises Ægishjálmur / `Шлем ужаса` as a comparison branch;
-- it tests whether the Norse cluster contains another commercially viable named-symbol lane beyond Vegvisir.
+- it is not a lexical synonym of Vegvisir;
+- Alice/Vegvisir evidence directly raised Ægishjálmur / `Шлем ужаса` as a comparison branch;
+- if Search is coherent specialist symbolic/commercial, it may represent a real adjacent opportunity;
+- if Search is mostly diffuse information/noise, it should be deprioritized.
 
 Decision question:
 
@@ -138,8 +164,8 @@ Decision question:
 
 ## Execution decision
 
-**Run B1 first, save it, then reassess B2. Do not batch B1+B2 automatically.**
+**Run B2 once, save/normalize it immediately, then stop paid secondary expansion and perform the complete R2 secondary review.**
 
-Rationale: B1 validates whether A2's important meaning-layer finding generalizes. That result can change the interpretation and marginal value of B2.
+Reason: B1 has already answered the general meaning-modifier question. Additional `значение` variants such as `вегвизир значение символа` or `алатырь оберег значение` now have low marginal value. B2 is the remaining distinct structural hypothesis.
 
-Before the next paid Search API request, fresh-verify official Yandex Search pricing.
+Before B2, fresh-verify official Yandex Search API pricing.
