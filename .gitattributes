@@ -1,3 +1,4 @@
 tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/targeted-test-parts/*.mjs.part text eol=lf
 tooling/llm-api-bridges/ozon-seller/development/manual-delivery-composer-wait/patch-parts/*.patch.part text eol=lf
 tooling/llm-api-bridges/ozon-seller/validation/regression/*.mjs text eol=lf
+tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_2026-08-26.patch text eol=lf
