@@ -5,6 +5,7 @@ on:
     branches:
       - feature/ozon-b1-assortment-master-contracts-2026-08-25
     paths:
+      - .gitattributes
       - .github/workflows/ozon-b1-exact-b0-materialize.yml
       - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_2026-08-26.patch
       - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b1_assortment_master_candidate.py
@@ -48,3 +49,34 @@ jobs:
             /tmp/ozon-b1-core.sha256
           if-no-files-found: error
           retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Record B1 patch identity
+        shell: pwsh
+        run: |
+          $patch = "tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_2026-08-26.patch"
+          (Get-FileHash -Algorithm SHA256 $patch).Hash.ToLower()
+
+      - name: Materialize exact B1 candidate on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b1-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b1_assortment_master_candidate.py . $out
+
+      - name: Verify B1 deterministic gate on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b1-exact"
+          node --check tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_REGRESSION_2026-08-26.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_REGRESSION_2026-08-26.mjs $out
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object {
+            node --check $_.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
