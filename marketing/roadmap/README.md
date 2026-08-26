@@ -1,6 +1,6 @@
 # Roadmap — от стратегии до релиза
 
-Версия: **1.6**  
+Версия: **1.7**  
 Дата: **2026-08-26**  
 Статус: **рабочий управляющий roadmap проекта**
 
@@ -14,7 +14,7 @@
 
 Текущая рабочая линия:
 
-`цель сайта → human demand → Yandex Search/SERP → Alice → opportunity map → Page Jobs/IA → коммерческая модель → контент/ТЗ → разработка → измерение`.
+`цель сайта → human demand → Yandex Search/SERP → Alice → opportunity map → customer/product evidence → competitors → economics → commercial model → IA → Page Jobs/content → ТЗ → UX/UI → разработка → измерение`
 
 ---
 
@@ -60,8 +60,8 @@ Roadmap имеет ровно два уровня:
 - [x] **02. Завершить архитектуру исследовательских данных** — детализация: [`02_RESEARCH_DATA_ARCHITECTURE.md`](02_RESEARCH_DATA_ARCHITECTURE.md).
 - [x] **03. Полностью измерить поисковый спрос / Wordstat** — финальный R1 закрыт; детализация: [`03_WORDSTAT_DEMAND_MEASUREMENT.md`](03_WORDSTAT_DEMAND_MEASUREMENT.md); итог: `marketing/research/R1_WORDSTAT_FINAL_REPORT_2026-08-12.md`.
 - [~] **03A. Marketplace/API tooling и assortment master** — параллельная инфраструктурная ветка проекта. **Не является текущей SEO-работой этого диалога и не используется как замена Search/Alice evidence.** Детализация: [`03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md`](03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md).
-- [~] **04. Исследовать реальный Yandex Search/SERP и Alice AI** — активный SEO/research stage. Детализация: [`04_YANDEX_SERP_ALICE_RESEARCH.md`](04_YANDEX_SERP_ALICE_RESEARCH.md).
-- [ ] **05. Свести Wordstat + Search/SERP + Alice в единую карту возможностей** — предварительно 3–6 ранов.
+- [x] **04. Исследовать реальный Yandex Search/SERP и Alice AI** — R2 закрыт; детализация: [`04_YANDEX_SERP_ALICE_RESEARCH.md`](04_YANDEX_SERP_ALICE_RESEARCH.md); итог: `marketing/research/R2_YANDEX_SERP_ALICE_FINAL_REPORT_2026-08-26.md`.
+- [~] **05. Свести Wordstat + Search/SERP + Alice в единую карту возможностей** — активный SEO/research stage; детализация: [`05_OPPORTUNITY_MAP.md`](05_OPPORTUNITY_MAP.md); ожидаемо 4–6 ранов.
 - [ ] **06. Завершить исследование покупателей и полный паспорт SKU** — scope уточняется по реальному ассортименту.
 - [ ] **07. Завершить конкурентную разведку и определить реальные конкурентные преимущества** — предварительно 3–6 ранов.
 - [ ] **08. Посчитать экономику каналов и direct-commerce** — предварительно 3–6 ранов.
@@ -108,45 +108,37 @@ Infrastructure/tooling может развиваться параллельно,
 
 - **01 — стратегия**;
 - **02 — research data architecture**;
-- **03 — Wordstat R1**.
+- **03 — Wordstat R1**;
+- **04 — Yandex Search/SERP + Alice R2**.
+
+## Что закрыто в 04
+
+- Search provider primary: **10/10**;
+- desktop browser fixed representative set: **5/5**;
+- additional desktop captures: `вегвизир`, `алатырь оберег`, `подарок автомобилисту`;
+- Yandex touch / emulated-mobile representative set: **2/2**;
+- accepted consumer Alice primary: **10/10**;
+- evidence-driven secondary Search: **5/5**;
+- paid secondary Search expansion: **STOPPED**;
+- canonical Query Evidence Ledger: **23 rows / 72 columns / validated**;
+- final R2 handoff: **COMPLETE**.
+
+Canonical R2:
+- `marketing/research/R2_YANDEX_SERP_ALICE_FINAL_REPORT_2026-08-26.md`;
+- `marketing/data/ledger/query_evidence_ledger.csv`;
+- `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_R2_FINAL_VALIDATION_2026-08-26.md`.
 
 Активный пункт:
 
-> **04 — Yandex Search/SERP + Alice AI research.**
+> **05 — opportunity map.**
 
-## Что уже выполнено в 04
+Детализация:
+- `marketing/roadmap/05_OPPORTUNITY_MAP.md`.
 
-Primary direct Yandex Search set: **10/10 queries captured**:
+## Следующий точный шаг
 
-1. `славянские обереги`;
-2. `печать велеса`;
-3. `оберег в машину`;
-4. `подвеска на зеркало в машину`;
-5. `вегвизир`;
-6. `талисман знак зодиака`;
-7. `алатырь оберег`;
-8. `оберег велес`;
-9. `подарок мужчине в машину`;
-10. `подарок автомобилисту`.
+> **05.1 — определить canonical opportunity units и scoring rubric H/A/C/O на основе уже завершённых R1/R2 evidence.**
 
-Сохранено в GitHub:
+На старте 05.1 не требуется новый браузерный capture или платный Search API запрос.
 
-- `marketing/research/R2_YANDEX_SEARCH_PRIMARY_SERP_2026-08-26.md`;
-- `marketing/data/normalized/yandex_search/20260826__search__primary10__225.tsv`;
-- `marketing/roadmap/04_YANDEX_SERP_ALICE_RESEARCH.md`.
-
-Текущий evidence status:
-
-- direct Search provider Top-10: **OBSERVED 10/10**;
-- marketplace / independent / informational composition: **OBSERVED / normalized**;
-- browser SERP layout: **NOT_OBSERVED**;
-- ads/rich/product UI blocks: **NOT_OBSERVED**;
-- mobile vs desktop Search SERP composition: **NOT_OBSERVED**;
-- consumer Alice primary set: **NOT_MEASURED**;
-- Query Evidence Ledger Search sync: **IN PROGRESS**.
-
-## Следующий порядок
-
-`Search primary saved → Ledger sync → определить decision-useful browser/UI gaps → primary Alice → evidence-driven secondary expansion → final R2 → пункт 05`.
-
-Secondary Search **не запускается автоматически** до сопоставления primary Search с Alice evidence.
+Не переходить к финальной IA или разработке сайта до завершения последующих research/decision stages.
