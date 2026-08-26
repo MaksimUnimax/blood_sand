@@ -1,32 +1,32 @@
 # 04 — Исследовать реальный Yandex Search / SERP и Alice AI
 
-Статус: **[~] В РАБОТЕ — PRIMARY COMPLETE; SECONDARY COMPLETE; NEXT MOBILE SERP + LEDGER**  
-Дата активного этапа: **2026-08-26**
+Статус: **[x] COMPLETE — R2 FINAL / READY FOR ROADMAP 05**  
+Дата закрытия: **2026-08-26**
 
 ## Цель
 
-Получить decision-grade evidence о том, какие страницы и источники Yandex реально выбирает по приоритетным запросам бренда, разделяя:
+Получить decision-grade evidence о том, какие страницы и источники Yandex реально выбирает по приоритетным запросам Blood & Sand, разделяя:
 
+- Wordstat human demand;
 - Search provider organic evidence;
 - browser SERP/UI composition;
 - consumer Alice AI;
-- marketplace / independent commerce / informational sources;
+- marketplace / independent commerce / informational competition;
 - разные intent-классы.
 
-Roadmap 04 **не назначает финальную IA/Page Jobs**. Финальные решения делаются после объединения evidence на Roadmap 05.
+Roadmap 04 **не назначает финальную IA/Page Jobs**. Решения переходят в Roadmap 05.
 
-## Жёсткие правила evidence
+## Evidence rules retained
 
 1. Public web search не подменяет direct Yandex evidence.
-2. Search API/WebSearch = Search-provider evidence, но не browser/UI snapshot.
-3. Ads, product/rich blocks, Alice и organic не смешиваются в одну позицию.
-4. Consumer Alice считается измеренной только по фактически полученному consumer answer.
-5. `NOT_OBSERVED` / `BLOCKED` — валидные результаты; отсутствие не дорисовывается выводом.
-6. Browser localization хранится отдельно от Search API region.
-7. Secondary expansion — только evidence-driven.
-8. Page Job / IA выводы до Roadmap 05 остаются `PROVISIONAL`.
-9. Каждый завершённый measurement/analysis pass немедленно сохраняется в GitHub.
-10. Alice run с явным carry-over из прошлого диалога = `CONTEXT_CONTAMINATED`, не считается canonical primary evidence; нужен clean rerun.
+2. Search API evidence не считается browser/UI snapshot.
+3. Ads, product/rich blocks, organic и Alice хранятся раздельно.
+4. `NOT_OBSERVED` / `BLOCKED` не превращаются в inferred absence.
+5. Search API region и browser localization не смешиваются.
+6. `lr=10466` / `lr=11202` сохраняются как numeric evidence без выдуманной географии.
+7. Context-contaminated Alice run исключается из canonical evidence.
+8. Secondary Search запускается только под отдельный decision question.
+9. Page Jobs / IA до Roadmap 05 остаются unassigned.
 
 ---
 
@@ -34,11 +34,10 @@ Roadmap 04 **не назначает финальную IA/Page Jobs**. Фина
 
 **[x] COMPLETE**
 
-- primary set зафиксирован;
-- Search API region: Russia `225`;
-- browser localization не наследует `225`;
-- provenance обязателен;
-- Search / browser / Alice разделены.
+- Search API canonical region: Russia `225`;
+- provenance обязательный;
+- Search / browser / Alice разделены;
+- primary and secondary measurement rules fixed.
 
 ---
 
@@ -58,220 +57,166 @@ Primary roots:
 9. `подарок мужчине в машину`
 10. `подарок автомобилисту`
 
-Все 10: HTTP 200, executed=true, retry=false, region 225, Top-10 returned.
+All 10 returned HTTP 200 / Top-10 / executed=true / retry=false.
 
-Artifacts:
+Canonical artifacts:
 - `marketing/research/R2_YANDEX_SEARCH_PRIMARY_SERP_2026-08-26.md`
 - `marketing/data/normalized/yandex_search/20260826__search__primary10__225.tsv`
 - `marketing/data/normalized/yandex_search/20260826__search__primary10__measurements.csv`
 - `marketing/data/normalized/yandex_search/20260826__search__primary10__summaries.csv`
 
-Primary Search intent map:
-- `славянские обереги` — commercial/category-first; independent specialist sites competitive;
-- `печать велеса` — strong transactional/product; marketplace-heavy;
-- `оберег в машину` — mixed commercial + choice/use-case;
-- `подвеска на зеркало в машину` — near-pure transactional form factor;
-- `вегвизир` — mixed entity + commercial;
-- `талисман знак зодиака` — guide/selection-first, strong stone contamination;
-- `алатырь оберег` — commercial-first + meaning;
-- `оберег велес` — commercial-first, strong niche independents;
-- `подарок мужчине в машину` — broad gift-shopping, weak default pendant fit;
-- `подарок автомобилисту` — shopping + gift ideas, pendant one possible option.
-
-Direct brand evidence:
-- `алатырь оберег`: Wildberries snippet directly exposed `Кровь и Песок / Славянский оберег в машину "Алатырь (Крест Сварога)"`, 593 оценки.
-- This is marketplace visibility, not own-site organic visibility.
-
 ---
 
 # 04.3 — Browser SERP/UI
 
-## Fixed representative desktop set
+## Desktop
 
-**[x] COMPLETE — 5/5**
+**[x] COMPLETE — fixed representative set 5/5**
 
-- `славянские обереги`: 3 Promo before organic; no embedded Alice above results; first visible organic `slavyanskieoberegi.ru`.
-- `печать велеса`: promo + embedded Alice + images; `slavyanskieoberegi.ru` prominent; `Люди ищут` exposes meaning/tattoo/photo/buy branches.
-- `оберег в машину`: promo + images + large shopping block; Yandex Market/Ozon; direct `Печать Велеса` mirror-pendant product; embedded Alice not observed in supplied browser capture.
-- `подвеска на зеркало в машину`: promo + Ozon + images + shopping; generic decor/fandom/personalization strong alongside symbolic products; video observed; embedded Alice not observed.
-- `талисман знак зодиака`: embedded Alice before ordinary results; marketplaces/jewelry retailers; images; `Люди ищут` heavily stone/zodiac-oriented.
+Measured:
+- `славянские обереги`
+- `печать велеса`
+- `оберег в машину`
+- `подвеска на зеркало в машину`
+- `талисман знак зодиака`
 
 Additional direct desktop captures:
-- `вегвизир`;
-- `алатырь оберег`;
-- `подарок автомобилисту`.
+- `вегвизир`
+- `алатырь оберег`
+- `подарок автомобилисту`
 
-Artifacts: `marketing/data/raw/browser_serp/`
+## Mobile / touch
 
-## Mobile
+**[x] COMPLETE — representative set 2/2**
 
-Representative mobile browser UI remains **0/2**:
-- `славянские обереги`
-- `оберег в машину`
+Physical phone was unavailable, therefore both are explicitly classified as:
+`YANDEX_TOUCH / EMULATED_MOBILE`
 
-Wordstat PHONE counts do not substitute for mobile SERP evidence.
+### `славянские обереги`
+- no top Promo before first organic;
+- `simvolroda.ru` #1;
+- `Картинки` immediately after #1;
+- `slavyanskieoberegi.ru` #2;
+- specialist commerce dominates first ten organic results;
+- embedded Alice / rich Popular-products / People-search not observed.
+
+Artifact:
+- `marketing/data/raw/browser_serp/20260826__slavyanskie_oberegi__emulated_mobile_touch.md`
+
+### `оберег в машину`
+- no top ad before first organic;
+- first five organic: Livemaster → m.Avito → Happy Witch → Slavyarmarka → Wildberries;
+- first visible ad block only after those five;
+- Ozon and multiple specialist merchants later;
+- embedded Alice / rich Popular-products / People-search not observed.
+
+Artifact:
+- `marketing/data/raw/browser_serp/20260826__obereg_v_mashinu__emulated_mobile_touch.md`
+
+Mobile UI differs materially from desktop composition, but both measured roots preserve their underlying commercial job.
 
 ---
 
 # 04.4 — Consumer Alice primary
 
-**[x] COMPLETE — accepted canonical primary 10/10**
+**[x] COMPLETE — accepted canonical 10/10**
 
-Cross-root result:
-- symbol/entity roots are meaning/history/suitability-first in Alice even when Search is commercial;
-- `оберег в машину` is query-native selection + commerce;
-- `подвеска на зеркало в машину` is broad form-factor/decor commerce;
-- broad zodiac root is strongly stone/jewelry contaminated;
-- both clean gift roots are broad gift-selection jobs with weak default pendant fit;
-- specialist independent sites repeatedly qualify as Search and Alice sources for symbolic roots.
+Key cross-root pattern:
+- named-symbol roots are meaning/history/suitability-first in Alice even when Search is commercial;
+- `оберег в машину` is query-native selection + shopping;
+- `подвеска на зеркало в машину` is form-factor/decor shopping;
+- broad zodiac is strongly stones/jewelry contaminated;
+- clean gift roots are broad gift-selection jobs with weak default pendant fit;
+- specialist independent sites repeatedly qualify as Search/Alice sources.
+
+One context-contaminated `подарок мужчине в машину` run is retained only for audit and excluded from canonical count; clean rerun is canonical.
 
 Canonical comparison:
 - `marketing/research/R2_PRIMARY_SEARCH_ALICE_COMPARISON_2026-08-26.md`
 
-Alice artifacts:
-- `marketing/data/raw/alice/`
-- `marketing/data/normalized/alice/`
-
 ---
 
-# 04.5 — Evidence-driven secondary expansion
+# 04.5 — Evidence-driven secondary Search
 
-**[x] COMPLETE — A1+A2+A3+B1+B2; PAID SECONDARY EXPANSION STOPPED**
+**[x] COMPLETE — 5/5; PAID EXPANSION STOPPED**
 
-Canonical detailed review:
+A1 `оберег по знаку зодиака`:
+- lexical narrowing did not clean zodiac intent;
+- stones/jewelry + marketplace contamination remains.
+
+A2 `печать велеса значение`:
+- distinct meaning-first Search job confirmed;
+- specialist commerce remains competitive;
+- generic marketplaces disappear from Top-10.
+
+A3 `амулет в машину`:
+- no separate Search job;
+- Yandex folds it into `оберег в машину` cluster.
+
+B1 `вегвизир значение`:
+- second independent named-symbol family confirms the meaning-first split.
+
+B2 `шлем ужаса оберег`:
+- coherent adjacent named-symbol commercial lane confirmed;
+- WB #1, Ozon #2, `slavyanskieoberegi.ru` #3, Yandex Market #4/#7/#8/#10.
+
+Canonical final review:
 - `marketing/research/R2_SECONDARY_SEARCH_FINAL_REVIEW_2026-08-26.md`
-- `marketing/research/R2_SECONDARY_SEARCH_ASET_STATUS_2026-08-26.md`
 
-## Completed measurements
-
-### A1 `оберег по знаку зодиака`
-**Lexical narrowing did not create a clean Slavic/symbolic commercial branch.** Search remains marketplace + zodiac-selection + stones/jewelry contaminated.
-
-### A2 `печать велеса значение`
-**Explicit `значение` creates a distinct informational / meaning-first Search job.** Base `печать велеса` is transactional/product and marketplace-heavy; the meaning modifier shifts the Top-10 toward explanation plus specialist commerce.
-
-### A3 `амулет в машину`
-**No separate Search job.** Yandex largely folds the lexical variant into the existing `оберег в машину` automotive-protection cluster, with a stronger marketplace tilt.
-
-### B1 `вегвизир значение`
-**Distinct meaning-first Search job confirmed in a second named-symbol family.** This independently reproduces the A2 modifier split and confirms that the `значение` layer is repeatable Search behavior.
-
-### B2 `шлем ужаса оберег`
-Direct Search:
-- request `search-f7b9d7c0-8a86-4b81-bfad-dc87e066582f`;
-- HTTP 200;
-- elapsed 1493 ms;
-- region 225;
-- Top-10;
-- FORMAT_XML.
-
-Observed:
-- Wildberries #1;
-- Ozon #2;
-- `slavyanskieoberegi.ru` #3;
-- Yandex Market #4/#7/#8/#10;
-- Livemaster catalog #5;
-- Livemaster explanatory/history article #6;
-- `swargas.ru` specialist/history #9.
-
-Result:
-
-**YES — `шлем ужаса оберег` forms a coherent named-symbol Search lane with strong commercial intent and supporting meaning/history content.** The result set stays tightly centered on `Шлем Ужаса` / `Агисхьяльм` rather than diffusing into unrelated Norse topics.
-
-Artifacts:
-- `marketing/data/raw/yandex_search/20260826__search__secondary_B2__shlem_uzhasa_obereg__225.md`
-- `marketing/data/normalized/yandex_search/20260826__search__secondary_B2__shlem_uzhasa_obereg__225.csv`
-
-Canonical IDs:
-- query `q_136048babfad`
-- measurement `m_search_20260826_136048ba`
-
-## Final secondary conclusions
-
-1. lexical narrowing is not automatically a new job;
-2. explicit meaning intent is structurally real for named symbols, independently confirmed for `Печать Велеса` and `Вегвизир`;
-3. close lexical synonyms may collapse into an existing job (`амулет в машину`);
-4. adjacent named symbols can form coherent commercial lanes (`Шлем Ужаса`).
-
-**Stop rule:** no further paid Search secondary requests without a new explicit decision question generated by later analysis.
-
-Deferred / no longer worth immediate paid measurement:
-- `вегвизир значение символа`;
-- `алатырь оберег значение`;
-- gift expansions;
-- generic mirror/decor expansions;
-- additional automotive `амулет/оберег` synonyms.
+**Stop rule:** no more paid secondary Search by default. New paid request requires a new explicit decision question from later analysis.
 
 ---
 
 # 04.6 — Normalize evidence / Query Evidence Ledger
 
-**[~] IN PROGRESS**
+**[x] COMPLETE**
 
-Completed:
-- primary Search 10/10 normalized;
-- Search→Ledger staging patch exists;
-- canonical measurement IDs separated from provider request IDs;
-- structural merge check done;
-- accepted Alice primary 10/10 normalized;
-- contaminated gift run retained separately and excluded from canonical count;
-- secondary Search A1/A2/A3/B1/B2 raw + normalized saved;
-- final secondary review committed.
+Canonical Ledger:
+- `marketing/data/ledger/query_evidence_ledger.csv`
 
-Legacy defect:
-- old `подвеска на зеркало в машину` Ledger row has shifted tail CSV fields due unescaped commas;
-- repair/merge state stored in `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_SERP_MERGE_STATUS_2026-08-26.md`;
-- do not blindly overwrite canonical Ledger.
+Atomic rewrite commit:
+- `c26ce1ab555ad49fc585c6d85b70cd82c4f67ede`
 
-Remaining:
-- safe canonical rewrite `marketing/data/ledger/query_evidence_ledger.csv`;
-- apply Search patch + measurement IDs;
-- backfill Alice linkage for 10/10;
-- Wordstat linkage only from real R1 artifacts;
-- browser-only product-block fields only from direct UI evidence.
+Validation:
+- rows: 23
+- columns: 72
+- unique query IDs: 23
+- Search measured: 15
+- Alice measured: 10
+- duplicate query IDs: 0
+- extra/missing CSV columns: 0
+- validated local Git blob SHA exactly matches GitHub content SHA `edc56af00eded6a3d0bf7b6e7ebffa13d81a79f8`.
 
-Continuity artifacts:
-- `marketing/data/ledger/query_evidence_serp_patch_2026-08-26.csv`
-- `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_SERP_MERGE_STATUS_2026-08-26.md`
-- `marketing/research/R2_SECONDARY_SEARCH_FINAL_REVIEW_2026-08-26.md`
+Validation artifact:
+- `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_R2_FINAL_VALIDATION_2026-08-26.md`
+
+Legacy malformed `подвеска на зеркало в машину` row is repaired. No fake Wordstat IDs, Search device values, Webmaster, customer or commerce evidence were introduced.
 
 ---
 
 # 04.7 — Final R2 report / handoff
 
-**[ ] NOT STARTED**
+**[x] COMPLETE**
 
-Final report must combine:
-- Wordstat human demand;
-- Search provider;
-- browser/UI evidence;
-- Alice;
-- marketplace/independent/info competition;
-- secondary results;
-- gaps/limitations;
-- evidence-driven inputs for Roadmap 05.
+Canonical final report:
+- `marketing/research/R2_YANDEX_SERP_ALICE_FINAL_REPORT_2026-08-26.md`
 
-No final IA/Page Job before 04.7 handoff.
+Core decision-ready inputs for Roadmap 05:
 
----
+1. named symbols show recurring **commercial + explanatory/meaning** jobs;
+2. specialist content-commerce sites can rank in both layers;
+3. `оберег в машину` is a real mobile-first protection/selection commerce opportunity;
+4. `подвеска на зеркало в машину` is a distinct transactional form-factor/decor universe;
+5. broad zodiac volume is heavily contaminated and must not be treated as clean product demand;
+6. broad gift roots have weak default pendant fit;
+7. `Шлем Ужаса` is a credible adjacent named-symbol opportunity;
+8. lexical synonyms such as `амулет в машину` should be semantic coverage, not automatically separate IA.
 
-# Current continuation point — 2026-08-26
+## Final continuation point
 
-Current state:
-- Search provider primary: **10/10**;
-- desktop browser fixed set: **5/5**;
-- mobile browser representative set: **0/2**;
-- consumer Alice accepted primary: **10/10**;
-- primary cross-surface comparison: **COMPLETE**;
-- secondary Search: **COMPLETE — 5/5 secondary measurements executed**;
-- paid secondary expansion: **STOPPED**;
-- Query Evidence Ledger: **repair/merge still open**;
-- Final R2 report: **not started**.
+**Roadmap 04 is closed.**
 
-## Next action
+Next stage:
+- Roadmap 05 — combine H/A/C/O, score opportunities, assign Page Jobs / target CTA / owned-asset role, and only then make IA decisions.
 
-1. Repair/merge the canonical Query Evidence Ledger using existing committed artifacts; no user action required for this part.
-2. Capture representative **mobile** Yandex browser SERP for `славянские обереги` and `оберег в машину` (one at a time) because mobile UI evidence is still 0/2 and Wordstat showed strongly mobile-skewed demand.
-3. Complete final R2 report / handoff only after the remaining evidence and ledger work are closed.
-
-Do not add further paid secondary Search requests unless a new decision question appears.
+Do not reopen R2 evidence collection unless Roadmap 05 exposes a concrete unresolved decision question.
