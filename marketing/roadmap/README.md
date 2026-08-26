@@ -1,6 +1,6 @@
 # Roadmap — от стратегии до релиза
 
-Версия: **1.8**  
+Версия: **1.9**  
 Дата: **2026-08-26**  
 Статус: **рабочий управляющий roadmap проекта**
 
@@ -58,7 +58,7 @@ Continuity rule:
 - [~] **03A. Marketplace/API tooling и assortment master** — параллельная инфраструктурная ветка; не является текущей SEO-задачей. [`03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md`](03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md).
 - [x] **04. Исследовать реальный Yandex Search/SERP и Alice AI** — [`04_YANDEX_SERP_ALICE_RESEARCH.md`](04_YANDEX_SERP_ALICE_RESEARCH.md); final R2: `marketing/research/R2_YANDEX_SERP_ALICE_FINAL_REPORT_2026-08-26.md`.
 - [x] **05. Свести Wordstat + Search/SERP + Alice в единую карту возможностей** — [`05_OPPORTUNITY_MAP.md`](05_OPPORTUNITY_MAP.md); final R3: `marketing/research/R3_OPPORTUNITY_MAP_FINAL_2026-08-26.md`.
-- [ ] **06. Завершить исследование покупателей и полный паспорт SKU** — **NEXT; detailed step plan must be written before work starts**.
+- [~] **06. Завершить исследование покупателей и полный паспорт SKU** — **ACTIVE**; детализация: [`06_BUYER_EVIDENCE_AND_SKU_PASSPORT.md`](06_BUYER_EVIDENCE_AND_SKU_PASSPORT.md).
 - [ ] **07. Завершить конкурентную разведку и определить реальные конкурентные преимущества** — предварительно 3–6 ранов.
 - [ ] **08. Посчитать экономику каналов и direct-commerce** — предварительно 3–6 ранов.
 - [ ] **09. Принять окончательную коммерческую модель сайта** — предварительно 2–4 рана.
@@ -90,63 +90,35 @@ Continuity rule:
 
 ---
 
-# Главная последовательность SEO/site track
-
-`Стратегия → research data architecture → Wordstat → Yandex Search/SERP → Alice → opportunity map → customer/product evidence → competitors → economics → commercial model → IA → Page Jobs/content → ТЗ → UX/UI → разработка → SEO/AI → analytics → QA → launch → measurement → correction → release`
-
----
-
 # Текущая точка — 2026-08-26
 
 Закрыто:
+- 01 strategy;
+- 02 data architecture;
+- 03 Wordstat R1;
+- 04 Yandex Search/SERP + Alice R2;
+- 05 opportunity map R3.
 
-- **01 — strategy**;
-- **02 — research data architecture**;
-- **03 — Wordstat R1**;
-- **04 — Yandex Search/SERP + Alice R2**;
-- **05 — opportunity map R3**.
-
-## 04 final state
-
-- Search primary 10/10;
-- desktop representative 5/5 + additional captures;
-- Yandex touch/emulated-mobile 2/2;
-- accepted Alice 10/10;
-- secondary Search 5/5;
-- paid secondary expansion stopped;
-- 23-row canonical Ledger repaired/validated.
-
-## 05 final state
-
-Canonical opportunity tiers:
-
-### KEEP
-- Печать Велеса family;
-- Slavic category;
-- Automotive protection;
-- Алатырь;
-- Vegvisir.
-
-### INVESTIGATE
-- broader Veles family;
-- Шлем Ужаса / Агисхьяльм;
-- mirror-pendant form factor.
-
-### REJECT_AS_PRIMARY
-- broad zodiac;
-- generic automotive gift.
-
-Overlap/job boundaries resolved provisionally without assigning URLs.
-
-Canonical Stage 05 artifacts:
-- `marketing/research/R3_OPPORTUNITY_MAP_FINAL_2026-08-26.md`;
-- `marketing/data/normalized/opportunity_map/20260826__opportunity_units_scored_v2.csv`;
-- `marketing/data/normalized/opportunity_map/20260826__opportunity_overlap_v3.csv`;
-- `marketing/data/ledger/query_evidence_ledger.csv`;
-- `marketing/data/ledger/QUERY_EVIDENCE_LEDGER_STAGE05_VALIDATION_2026-08-26.md`.
-
-## Next stage
+Активно:
 
 > **06 — buyer evidence + complete SKU passport.**
 
-Before any 06 measurement/work, create the detailed `06` plan according to the roadmap rule above. Do not jump to final IA, Page Jobs or site development.
+Detailed Stage 06 plan:
+- `marketing/roadmap/06_BUYER_EVIDENCE_AND_SKU_PASSPORT.md`.
+
+Existing reusable Stage 06 evidence already confirmed in repository:
+- dated Ozon stocks snapshot (2026-08-11);
+- multiple Ozon SKU ordered_units/revenue measurement windows;
+- marketplace measurement registry;
+- existing customer evidence for auto pendants / Печать Велеса-like products;
+- R3 opportunity map.
+
+Important gap:
+- canonical normalized Product/SKU passport master does not yet exist;
+- Wildberries seller-side accepted read channel is not currently available in `main` and must be handled explicitly rather than inferred.
+
+## Next exact step
+
+> **06.1 — inventory reusable evidence, define canonical passport schema and create provisional direct SKU↔opportunity mapping.**
+
+Do not jump to final IA/Page Jobs or site development.
