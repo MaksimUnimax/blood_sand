@@ -21,7 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Materialize exact B5 candidate
-        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b5_finance_realization_candidate.py . /tmp/ozon-b5-exact
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b5_finance_realization_candidate.py --repo-root . --work-root /tmp/ozon-b5-work --out /tmp/ozon-b5-exact
       - name: Verify accepted B1-B4 regressions
         run: |
           node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B1_ASSORTMENT_MASTER_REGRESSION_2026-08-26.mjs /tmp/ozon-b5-exact
@@ -61,8 +61,9 @@ jobs:
       - name: Materialize exact B5 candidate on Windows
         shell: pwsh
         run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b5-work"
           $out = Join-Path $env:RUNNER_TEMP "ozon-b5-exact"
-          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b5_finance_realization_candidate.py . $out
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b5_finance_realization_candidate.py --repo-root . --work-root $work --out $out
       - name: Verify B1-B5 deterministic gates on Windows
         shell: pwsh
         run: |
