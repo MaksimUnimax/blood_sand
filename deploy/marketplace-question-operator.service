@@ -11,6 +11,7 @@ EnvironmentFile=/etc/marketplace-question-operator/secrets.env
 # getUpdates consumer.
 ExecStart=/usr/bin/flock -n /run/marketplace-question-operator.poller.lock /opt/marketplace-question-operator/.venv/bin/python -m app.daemon
 Restart=on-failure
+RestartPreventExitStatus=75
 RestartSec=5
 TimeoutStopSec=30
 NoNewPrivileges=true

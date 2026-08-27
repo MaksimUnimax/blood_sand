@@ -14,7 +14,7 @@ def test_live_config_accepts_complete_values_without_repr_leak():
 
 def test_polling_conflict_has_dedicated_non_restart_exit_contract():
  assert PollingConflictExit().code == POLLING_CONFLICT_EXIT_CODE == 75
- unit=open('/etc/systemd/system/marketplace-question-operator.service').read()
+ unit=open('deploy/marketplace-question-operator.service').read()
  assert 'Restart=on-failure' in unit and 'RestartPreventExitStatus=75' in unit
 
 @pytest.mark.asyncio
