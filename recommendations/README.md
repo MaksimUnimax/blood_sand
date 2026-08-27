@@ -22,6 +22,7 @@
 - `RECOMMENDATION_SYSTEM_TZ.md` — продуктово-техническое ТЗ: входы, правила, ограничения, data model, алгоритм и acceptance criteria.
 - `RECOMMENDATION_MATRIX.md` — утверждаемая матрица `Чертог × пол → рекомендация`, календарные границы и тип основания.
 - `PRODUCT_CLASSIFICATION.md` — классификация всех 25 славянских SKU: гендерная политика, роль в V1 и ограничения.
+- `OZON_PRODUCT_LINKS.md` — реестр публичных Ozon-ссылок для всех 76 текущих товаров; славянские позиции вынесены первым разделом и связаны с recommendation identity.
 
 ### Architecture/implementation design
 
