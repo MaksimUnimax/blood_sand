@@ -1,0 +1,68 @@
+name: Ozon B23 Seller Account Logistics Reads exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b23-seller-account-logistics-reads-2026-08-27
+    paths:
+      - .github/workflows/ozon-b23-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B23_SELLER_ACCOUNT_LOGISTICS_READS_2026-08-27.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b23_seller_account_logistics_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B23_SELLER_ACCOUNT_LOGISTICS_READS_REGRESSION_2026-08-27.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B23_SELLER_ACCOUNT_LOGISTICS_READS_CANDIDATE_EVIDENCE_2026-08-27.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B23_SELLER_ACCOUNT_LOGISTICS_READS_CANDIDATE_MANIFEST_2026-08-27.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact B23 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b23_seller_account_logistics_reads_candidate.py --repo-root . --work-root /tmp/ozon-b23-work --out /tmp/ozon-b23-exact
+      - name: Verify exact B22 base and B23 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B22_CANCELLATION_REASON_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b23-work/b22-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B23_SELLER_ACCOUNT_LOGISTICS_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b23-exact
+          find /tmp/ozon-b23-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b23-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b23-exact-files.sha256
+          sha256sum shared/ozon_operation_registry.js shared/ozon_contract.js shared/ozon_entitlements.js service_worker.js content_script.js > /tmp/ozon-b23-core.sha256
+      - name: Upload exact B23 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b23-seller-account-logistics-reads-candidate
+          path: |
+            /tmp/ozon-b23-exact
+            /tmp/ozon-b23-exact-files.sha256
+            /tmp/ozon-b23-core.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B23 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B23_SELLER_ACCOUNT_LOGISTICS_READS_2026-08-27.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='078eee83c34f9f97c007ac220ce5b09fa12aeffdd3723046869e7e2c906ee3e2'; b=gzip.decompress(c); assert hashlib.sha256(b).hexdigest()=='5f0aaf3047c9dbcffc1c3290e9a878c966531e19867a2e03a4baba3e17f032d0'"
+      - name: Materialize exact B23 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b23-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b23-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b23_seller_account_logistics_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify exact B22 base and B23 gates on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b23-exact"
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b23-work"
+          $b22 = Join-Path $work "b22-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B22_CANCELLATION_REASON_READS_REGRESSION_2026-08-27.mjs $b22; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B23_SELLER_ACCOUNT_LOGISTICS_READS_REGRESSION_2026-08-27.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
