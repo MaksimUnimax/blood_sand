@@ -16,7 +16,8 @@ class Runner:
  async def run(self,profile,prompt,job):
   job=Path(job)/('attempt-'+str(__import__('uuid').uuid4())); job.mkdir(parents=True,exist_ok=True)
   try: p=await asyncio.create_subprocess_exec(str(self.c.codex_executable),'exec','--json','--ephemeral','-C',str(job),'-s','workspace-write',prompt,stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE,env=child_env(self.c.profiles[profile])); o,e=await asyncio.wait_for(p.communicate(),600)
-  except asyncio.TimeoutError: raise CodexError('TIMEOUT','timeout')
+  except asyncio.TimeoutError:
+   p.kill(); await p.communicate(); raise CodexError('TIMEOUT','timeout')
   except OSError as x: raise CodexError('PROCESS_ERROR',str(x))
   if p.returncode:
    low=e.lower(); raise CodexError('LIMIT' if b'limit' in low else ('AUTH' if b'auth' in low else 'NONZERO_EXIT'),e.decode()[:500])

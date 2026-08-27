@@ -14,6 +14,7 @@ class OperatorBot:
   except ValueError: return
   if x['action']=='ignore': await self.service.ignore(x['question_id'])
   elif x['action']=='codex': await u.callback_query.message.reply_text('Codex generation will be enabled in the next integration stage.')
+  elif x['action']=='choose_codex': await self.service.repo.set_active_codex_profile(x['arg'])
  async def reply(self,u,c):
   if not self.authorized(u.effective_user.id) or not u.message.reply_to_message: return
   await self.service.reply(u.message.reply_to_message.message_id,u.message.text)
