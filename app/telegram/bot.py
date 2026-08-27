@@ -109,5 +109,13 @@ class OperatorBot:
   # Completion is deliberately after the callback returns. Exceptions leave the
   # receipt pending for startup replay.
   await self.service.repo.complete_telegram_update(getattr(update,'update_id',None))
+ async def ignored_message(self,u,c):
+  """Terminal handler for permitted, but non-actionable, message updates.
+
+  Durable receipts are completed only after this handler has deliberately made
+  the no-op decision.  Without it, arbitrary operator text would be replayed
+  forever because it does not match the reply handler.
+  """
+  return None
  def handlers(self):
-  return [CommandHandler(['questions','codex','errors','status'],lambda u,c:self._tracked(self.command,u,c)),CallbackQueryHandler(lambda u,c:self._tracked(self.callback,u,c)),MessageHandler(filters.REPLY & filters.TEXT,lambda u,c:self._tracked(self.reply,u,c))]
+  return [CommandHandler(['questions','codex','errors','status'],lambda u,c:self._tracked(self.command,u,c)),CallbackQueryHandler(lambda u,c:self._tracked(self.callback,u,c)),MessageHandler(filters.REPLY & filters.TEXT,lambda u,c:self._tracked(self.reply,u,c)),MessageHandler(filters.ALL,lambda u,c:self._tracked(self.ignored_message,u,c))]

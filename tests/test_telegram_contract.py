@@ -104,3 +104,44 @@ async def test_reply_consumption_revision_and_state_are_one_transaction(tmp_path
  assert (await repo.get_answer_revision(rid))['text']=='answer'
  with pytest.raises(StaleState): await repo.consume_reply(77,'duplicate')
  await db.close()
+
+
+@pytest.mark.asyncio
+async def test_durable_restart_scenarios_and_receipt_failure_are_fail_closed(tmp_path):
+ """T3 isolated proof using the real repository and durable queue classes."""
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); queue=DurableUpdateQueue(repo)
+ update=SimpleNamespace(update_id=1001,to_json=lambda: '{"update_id":1001}')
+ # A: crash after durable handoff, before dispatch; fresh queue replays once.
+ await queue.put(update)
+ fresh=DurableUpdateQueue(repo)
+ for row in await repo.pending_telegram_updates(): await fresh.replay_put(SimpleNamespace(update_id=row['update_id']))
+ replay=await fresh.get(); assert replay.update_id==1001
+ await repo.complete_telegram_update(1001); assert await repo.pending_telegram_updates()==[]
+ # B/C: mutation occurred before completion; replay's idempotency guard rejects it.
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'restart','question_text':'q'})
+ await repo.transition(q['id'],'NEW','MANUAL_INPUT'); await repo.create_telegram_input(7,q['id'],'manual_answer')
+ await queue.put(SimpleNamespace(update_id=1002,to_json=lambda: '{"update_id":1002}'))
+ rid=await repo.consume_reply(7,'answer')
+ with pytest.raises(StaleState): await repo.consume_reply(7,'answer')
+ assert (await repo.get_answer_revision(rid))['text']=='answer'
+ await repo.complete_telegram_update(1002)
+ # Duplicate delivery has one durable identity.
+ duplicate=SimpleNamespace(update_id=1003,to_json=lambda: '{"update_id":1003}')
+ await queue.put(duplicate); await queue.put(duplicate)
+ assert len([r for r in await repo.pending_telegram_updates() if r['update_id']==1003])==1
+ class BrokenRepo:
+  async def receipt_telegram_update(self,*args): raise RuntimeError('sqlite commit failed')
+ failing=DurableUpdateQueue(BrokenRepo())
+ with pytest.raises(RuntimeError,match='sqlite commit failed'): await failing.put(duplicate)
+ assert failing.empty()
+ await db.close()
+
+
+@pytest.mark.asyncio
+async def test_terminal_message_handler_completes_non_actionable_receipt(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ await repo.receipt_telegram_update(1004,'{"update_id":1004}')
+ await bot._tracked(bot.ignored_message,SimpleNamespace(update_id=1004),None)
+ assert await repo.pending_telegram_updates()==[]
+ await db.close()
