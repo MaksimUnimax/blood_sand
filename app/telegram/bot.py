@@ -7,16 +7,24 @@ from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler, f
 from app.state_machine import StaleState
 from app.telegram.callbacks import decode, encode
 from app.telegram import render
+from app.telegram.edge import TelegramEdge, Operation, Outcome
 
 
 class OperatorBot:
- def __init__(self,operator_user_id,service): self.operator_user_id,self.service=str(operator_user_id),service
+ def __init__(self,operator_user_id,service): self.operator_user_id,self.service=str(operator_user_id),service; self.edge=TelegramEdge()
+ async def _telegram(self, operation, call):
+  result=await self.edge.mutate(operation,call)
+  if result.outcome is not Outcome.SUCCESS:
+   await self.service.repo.record_error('telegram',result.outcome.value,str(result.error))
+  return result
+ async def _ack(self,query,*args,**kwargs): return await self._telegram(Operation.CALLBACK_ACK,lambda:query.answer(*args,**kwargs))
+ async def _reply(self,message,*args,**kwargs): return await self._telegram(Operation.MESSAGE_CREATE,lambda:message.reply_text(*args,**kwargs))
  def authorized(self,update):
   user=update.effective_user; chat=update.effective_chat
   return bool(user and chat and str(user.id)==self.operator_user_id and str(chat.id)==self.operator_user_id and getattr(chat,'type',None)=='private')
  async def _denied(self,u):
   if self.authorized(u): return False
-  if getattr(u,'callback_query',None): await u.callback_query.answer('Access denied',show_alert=True)
+  if getattr(u,'callback_query',None): await self._ack(u.callback_query,'Access denied',show_alert=True)
   # Do not reply to arbitrary chats: authorization is deliberately silent for messages.
   return True
  def buttons(self,q,state=None):
@@ -28,25 +36,29 @@ class OperatorBot:
   else: rows=[]
   return InlineKeyboardMarkup(rows) if rows else None
  async def cards(self,message,cards,markup=None):
-  for i,text in enumerate(cards): await message.reply_text(text,reply_markup=markup if i==0 else None)
+  for i,text in enumerate(cards): await self._reply(message,text,reply_markup=markup if i==0 else None)
  async def command(self,u,c):
   if await self._denied(u): return
   cmd=u.message.text.split()[0]
   if cmd=='/codex':
-   active=await self.service.repo.active_codex_profile(); keys=[[InlineKeyboardButton(f'{x}{" ✓" if x==active else ""}',callback_data=encode('choose_codex',arg=x))] for x in ('codex1','codex2','codex3')]; await u.message.reply_text(f'🤖 CODEX\nАктивен: {active}',reply_markup=InlineKeyboardMarkup(keys))
+   active=await self.service.repo.active_codex_profile(); keys=[[InlineKeyboardButton(f'{x}{" ✓" if x==active else ""}',callback_data=encode('choose_codex',arg=x))] for x in ('codex1','codex2','codex3')]; await self._reply(u.message,f'🤖 CODEX\nАктивен: {active}',reply_markup=InlineKeyboardMarkup(keys))
   elif cmd=='/questions':
-   rows=await self.service.repo.list_open_questions(); await u.message.reply_text('\n'.join(f"{q['public_id']} · {q['marketplace']} · {q['status']}" for q in rows) or 'Open questions: 0')
+   rows=await self.service.repo.list_open_questions(); await self._reply(u.message,'\n'.join(f"{q['public_id']} · {q['marketplace']} · {q['status']}" for q in rows) or 'Open questions: 0')
   elif cmd=='/errors':
-   rows=await self.service.repo.recent_errors(); await u.message.reply_text('\n'.join(f"{x['component']}: {x['error_type']} ({x['occurrence_count']})" for x in rows) or 'No recent errors')
-  else: await u.message.reply_text(f"DB available\nOpen questions: {len(await self.service.repo.list_open_questions())}\nActive Codex: {await self.service.repo.active_codex_profile()}")
+   rows=await self.service.repo.recent_errors(); await self._reply(u.message,'\n'.join(f"{x['component']}: {x['error_type']} ({x['occurrence_count']})" for x in rows) or 'No recent errors')
+  else: await self._reply(u.message,f"DB available\nOpen questions: {len(await self.service.repo.list_open_questions())}\nActive Codex: {await self.service.repo.active_codex_profile()}")
  async def prompt(self,message,q,mode,revision_id=None):
   # A replay after the state change but before sending the ForceReply must finish
   # the prompt, while a replay after its durable correlation must not duplicate it.
   if await self.service.repo.get_telegram_input_for(q['id'],mode): return
   current=await self.service.repo.get_current_answer_revision(q['id']); extra=f"\n\nТекущий ответ:\n{current['text']}" if mode=='edit_answer' and current else ''
   if mode=='edit_answer' and (not current or current['id'] != revision_id): raise StaleState('STALE_STATE')
-  sent=await message.reply_text(f"ID: {q['public_id']}\nMarketplace: {q['marketplace']}\n\nВопрос:\n{q['question_text']}{extra}\n\nОтветьте Reply на ЭТО сообщение.",reply_markup=ForceReply(selective=True))
+  outcome=await self._reply(message,f"ID: {q['public_id']}\nMarketplace: {q['marketplace']}\n\nВопрос:\n{q['question_text']}{extra}\n\nОтветьте Reply на ЭТО сообщение.",reply_markup=ForceReply(selective=True))
+  if outcome.outcome is not Outcome.SUCCESS: return False
+  sent=outcome.value
+  if not isinstance(sent.message_id,int) or sent.message_id <= 0: await self.service.repo.record_error('telegram','INVALID_MESSAGE_ID','ForceReply did not return positive message_id'); return False
   await self.service.repo.create_telegram_input(sent.message_id,q['id'],mode,revision_id if mode=='edit_answer' else None)
+  return True
  async def show_codex(self,message,qid):
   q=await self.service.repo.get_question(qid); active=await self.service.repo.active_codex_profile()
   if q['status']=='REVIEW':
@@ -58,47 +70,48 @@ class OperatorBot:
   except Exception: pass
   await self.show_codex(message,qid)
  async def _disable(self,query):
-  try: await query.message.edit_reply_markup(reply_markup=None)
-  except Exception as exc: await self.service.repo.record_error('telegram','UI_EDIT_FAILED',str(exc))
+  await self._telegram(Operation.UI_EDIT,lambda:query.message.edit_reply_markup(reply_markup=None))
  async def callback(self,u,c):
   query=u.callback_query
   if await self._denied(u): return
   try: x=decode(query.data)
-  except ValueError: await query.answer('Invalid action',show_alert=True); return
+  except ValueError: await self._ack(query,'Invalid action',show_alert=True); return
   action,qid,rid=x['action'],x['question_id'],x['revision_id']
   try:
    if action=='choose_codex':
-    await query.answer()
-    if x['arg'] in {'codex1','codex2','codex3'}: await self.service.repo.set_active_codex_profile(x['arg']); await query.message.reply_text(f"Активный Codex: {x['arg']}")
+    if x['arg'] not in {'codex1','codex2','codex3'}: raise StaleState('STALE_STATE')
+    await self.service.repo.set_active_codex_profile(x['arg']); await self._ack(query); await self._reply(query.message,f"Активный Codex: {x['arg']}")
     return
    if not qid: raise StaleState('STALE_STATE')
    q=await self.service.repo.get_question(qid)
    if not q: raise StaleState('STALE_STATE')
    if action in {'codex','regenerate','retry_codex'}:
     claim=await self.service.repo.claim_codex(qid,rid if action=='regenerate' else None)
-    await query.answer('Codex started')
+    await self._ack(query,'Codex started')
     await self._disable(query)
     asyncio.create_task(self.run_codex(query.message,qid,claim)); return
    # All non-Codex actions are short. State/revision checks happen before acknowledgement.
    if action=='manual':
     if q['status']=='NEW': await self.service.begin_manual(qid)
     elif q['status']!='MANUAL_INPUT': raise StaleState('STALE_STATE')
-    await query.answer(); await self._disable(query); await self.prompt(query.message,await self.service.repo.get_question(qid),'manual_answer')
+    await self._ack(query); created=await self.prompt(query.message,await self.service.repo.get_question(qid),'manual_answer')
+    if created: await self._disable(query)
    elif action=='edit':
     if q['status']=='REVIEW': q=await self.service.begin_edit(qid,rid)
     elif q['status']!='EDITING' or q['current_answer_revision_id']!=rid: raise StaleState('STALE_STATE')
-    await query.answer(); await self._disable(query); await self.prompt(query.message,q,'edit_answer',rid)
+    await self._ack(query); created=await self.prompt(query.message,q,'edit_answer',rid)
+    if created: await self._disable(query)
    elif action=='ignore':
     if rid is not None and (q['status']!='REVIEW' or q['current_answer_revision_id']!=rid): raise StaleState('STALE_STATE')
-    await self.service.ignore(qid); await query.answer('Ignored'); await self._disable(query)
+    await self.service.ignore(qid); await self._ack(query,'Ignored'); await self._disable(query)
    elif action=='send':
-    outcome=await self.service.send(qid,rid); await query.answer(); current=await self.service.repo.get_question(qid); rev=await self.service.repo.get_answer_revision(rid); await self.cards(query.message,render.delivery(current,rev,outcome),self.buttons(current)); await self._disable(query)
+    claim=await self.service.claim_send(qid,rid); await self._ack(query); outcome=await self.service.execute_send(qid,claim); current=await self.service.repo.get_question(qid); rev=await self.service.repo.get_answer_revision(rid); await self.cards(query.message,render.delivery(current,rev,outcome),self.buttons(current)); await self._disable(query)
    elif action=='retry_send':
-    outcome=await self.service.retry_send(qid,rid); await query.answer(); current=await self.service.repo.get_question(qid); rev=await self.service.repo.get_answer_revision(rid); await self.cards(query.message,render.delivery(current,rev,outcome),self.buttons(current)); await self._disable(query)
+    claim=await self.service.claim_retry_send(qid,rid); await self._ack(query); outcome=await self.service.execute_send(qid,claim); current=await self.service.repo.get_question(qid); rev=await self.service.repo.get_answer_revision(rid); await self.cards(query.message,render.delivery(current,rev,outcome),self.buttons(current)); await self._disable(query)
    else: raise StaleState('STALE_STATE')
-  except (StaleState,ValueError): await query.answer('This action is stale',show_alert=True)
+  except (StaleState,ValueError): await self._ack(query,'This action is stale',show_alert=True)
   except Exception as exc:
-   await self.service.repo.record_error('telegram','CALLBACK_ERROR',str(exc)); await query.answer('Action failed',show_alert=True)
+   await self.service.repo.record_error('telegram','CALLBACK_ERROR',str(exc)); await self._ack(query,'Action failed',show_alert=True)
  async def reply(self,u,c):
   if await self._denied(u) or not u.message.reply_to_message: return
   try: rid=await self.service.reply(u.message.reply_to_message.message_id,u.message.text)

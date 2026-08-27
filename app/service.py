@@ -30,18 +30,23 @@ class QuestionService:
  async def ignore(self,qid):
   q=await self.repo.get_question(qid); await self.repo.transition(qid,q['status'],'IGNORED')
  async def send(self,qid,rid):
-  rev=await self.repo.claim_send(qid,rid); q=await self.repo.get_question(qid); result=await self.adapters[q['marketplace']].send_answer(q,rev['text'])
+  return await self.execute_send(qid,await self.claim_send(qid,rid))
+ async def claim_send(self,qid,rid): return await self.repo.claim_send(qid,rid)
+ async def claim_retry_send(self,qid,rid):
+  q=await self.repo.get_question(qid)
+  if q['status']=='SEND_FAILED': await self.repo.transition(qid,'SEND_FAILED','REVIEW')
+  elif q['status']=='SEND_UNKNOWN': await self.repo.transition(qid,'SEND_UNKNOWN','REVIEW')
+  else: raise StaleState('STALE_STATE')
+  return await self.repo.claim_send(qid,rid)
+ async def execute_send(self,qid,rev):
+  q=await self.repo.get_question(qid); result=await self.adapters[q['marketplace']].send_answer(q,rev['text'])
   if result['status']=='SUCCESS': await self.repo.mark_sent(qid,result.get('answer_id')); return 'SENT'
   if result['status']=='CLEAR_FAILURE': await self.repo.mark_send_failed(qid); return 'SEND_FAILED'
   await self.repo.mark_send_unknown(qid); outcome=await self.adapters[q['marketplace']].reconcile_answer(q,rev['text'],None)
   if outcome=='MATCHED': await self.repo.transition(qid,'SEND_UNKNOWN','SENT',{'sent_at':__import__('app.db.repository',fromlist=['now']).now()}); return 'SENT'
   return 'SEND_UNKNOWN' if outcome=='UNKNOWN' else 'NOT_FOUND'
  async def retry_send(self,qid,rid):
-  q=await self.repo.get_question(qid)
-  if q['status']=='SEND_FAILED': await self.repo.transition(qid,'SEND_FAILED','REVIEW')
-  elif q['status']=='SEND_UNKNOWN': await self.repo.transition(qid,'SEND_UNKNOWN','REVIEW')
-  else: raise StaleState('STALE_STATE')
-  return await self.send(qid,rid)
+  return await self.execute_send(qid,await self.claim_retry_send(qid,rid))
  async def codex(self,qid,expected_revision_id=None,claim=None):
   aid,profile=claim or await self.repo.claim_codex(qid,expected_revision_id)
   q=await self.repo.get_question(qid)

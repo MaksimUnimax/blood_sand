@@ -10,6 +10,7 @@ from app.state_machine import StaleState
 from app.telegram.bot import OperatorBot
 from app.telegram.callbacks import decode, encode
 from app.telegram.durable_queue import DurableUpdateQueue
+from app.telegram.edge import TelegramEdge, Operation, Outcome
 
 
 @pytest.mark.asyncio
@@ -80,6 +81,43 @@ async def test_initial_card_retries_429_using_server_delay(monkeypatch):
  bot=Bot(); transport=TelegramTransport(SimpleNamespace(bot=bot),1,Repo())
  q={'id':1,'public_id':'Q-000001','marketplace':'ozon','question_text':'q'}
  assert await transport.question(q)==7 and bot.calls==2
+
+
+@pytest.mark.asyncio
+async def test_edge_has_operation_specific_retry_and_failure_contract():
+ from telegram.error import RetryAfter, BadRequest, Forbidden, TimedOut, Conflict
+ sleeps=[]
+ edge=TelegramEdge(sleep=lambda seconds: sleeps.append(seconds) or __import__('asyncio').sleep(0))
+ calls=0
+ async def limited():
+  nonlocal calls; calls+=1
+  if calls==1: raise RetryAfter(3)
+  return 'ok'
+ assert (await edge.mutate(Operation.CALLBACK_ACK,limited)).value=='ok'
+ assert sleeps==[3] and calls==2
+ async def timeout(): raise TimedOut()
+ assert (await edge.mutate(Operation.MESSAGE_CREATE,timeout)).outcome is Outcome.AMBIGUOUS_NETWORK_FAILURE
+ assert (await edge.mutate(Operation.UI_EDIT,lambda: (_ for _ in ()).throw(BadRequest('message is not modified')))).outcome is Outcome.SUCCESS
+ async def forbidden(): raise Forbidden('blocked')
+ assert (await edge.mutate(Operation.UI_EDIT,forbidden)).outcome is Outcome.PERMISSION_FAILURE
+ async def conflict(): raise Conflict('other poller')
+ assert (await edge.mutate(Operation.POLLING,conflict)).outcome is Outcome.POLLING_CONFLICT
+
+
+@pytest.mark.asyncio
+async def test_prompt_timeout_creates_no_fake_correlation_and_state_is_recoverable(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'prompt-timeout','question_text':'q'})
+ bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ await bot.service.repo.transition(q['id'],'NEW','MANUAL_INPUT')
+ class Message:
+  async def reply_text(self, *args, **kwargs):
+   from telegram.error import TimedOut
+   raise TimedOut()
+ assert not await bot.prompt(Message(),q,'manual_answer')
+ assert await repo.get_telegram_input_for(q['id'],'manual_answer') is None
+ assert (await repo.get_question(q['id']))['status']=='MANUAL_INPUT'
+ await db.close()
 
 
 @pytest.mark.asyncio
