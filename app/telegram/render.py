@@ -4,7 +4,8 @@ LIMIT = 4096
 
 
 def _header(question):
-    product = question.get("product_title") or question.get("product_article") or question.get("product_id")
+    value = getattr(question, 'get', question.__getitem__)
+    product = value("product_title") or value("product_article") or value("product_id")
     text = f"ID: {question['public_id']}\nMarketplace: {question['marketplace']}"
     if product:
         text += f"\nProduct: {product}"
