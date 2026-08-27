@@ -1,0 +1,68 @@
+name: Ozon B19 Catalog Certification Reference Reads exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b19-catalog-certification-reference-reads-2026-08-27
+    paths:
+      - .github/workflows/ozon-b19-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B19_CATALOG_CERTIFICATION_REFERENCE_READS_2026-08-27.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b19_catalog_certification_reference_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B19_CATALOG_CERTIFICATION_REFERENCE_READS_REGRESSION_2026-08-27.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B19_CATALOG_CERTIFICATION_REFERENCE_READS_CANDIDATE_EVIDENCE_2026-08-27.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B19_CATALOG_CERTIFICATION_REFERENCE_READS_CANDIDATE_MANIFEST_2026-08-27.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact B19 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b19_catalog_certification_reference_reads_candidate.py --repo-root . --work-root /tmp/ozon-b19-work --out /tmp/ozon-b19-exact
+      - name: Verify exact B18 base and B19 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B18_PRICING_STRATEGY_EXTENDED_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b19-work/b18-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B19_CATALOG_CERTIFICATION_REFERENCE_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b19-exact
+          find /tmp/ozon-b19-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b19-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b19-exact-files.sha256
+          sha256sum shared/ozon_operation_registry.js shared/ozon_contract.js shared/ozon_entitlements.js service_worker.js content_script.js > /tmp/ozon-b19-core.sha256
+      - name: Upload exact B19 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b19-catalog-certification-reference-reads-candidate
+          path: |
+            /tmp/ozon-b19-exact
+            /tmp/ozon-b19-exact-files.sha256
+            /tmp/ozon-b19-core.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B19 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B19_CATALOG_CERTIFICATION_REFERENCE_READS_2026-08-27.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='d4e87ee9f255c6c739c6801971067452cbf4230bce7f4c1a92bd06b32bddfefb'; b=gzip.decompress(c); assert hashlib.sha256(b).hexdigest()=='3cd1aecccea0ce438f8b1a9f6b7348eeabf900059d1f3324073ce8266496071d'"
+      - name: Materialize exact B19 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b19-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b19-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b19_catalog_certification_reference_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify exact B18 base and B19 gates on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b19-exact"
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b19-work"
+          $b18 = Join-Path $work "b18-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B18_PRICING_STRATEGY_EXTENDED_READS_REGRESSION_2026-08-27.mjs $b18; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B19_CATALOG_CERTIFICATION_REFERENCE_READS_REGRESSION_2026-08-27.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
