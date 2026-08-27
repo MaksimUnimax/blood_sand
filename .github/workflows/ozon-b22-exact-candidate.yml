@@ -1,0 +1,68 @@
+name: Ozon B22 Cancellation Reason Reads exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b22-cancellation-reason-reads-2026-08-27
+    paths:
+      - .github/workflows/ozon-b22-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B22_CANCELLATION_REASON_READS_2026-08-27.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b22_cancellation_reason_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B22_CANCELLATION_REASON_READS_REGRESSION_2026-08-27.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B22_CANCELLATION_REASON_READS_CANDIDATE_EVIDENCE_2026-08-27.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B22_CANCELLATION_REASON_READS_CANDIDATE_MANIFEST_2026-08-27.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact B22 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b22_cancellation_reason_reads_candidate.py --repo-root . --work-root /tmp/ozon-b22-work --out /tmp/ozon-b22-exact
+      - name: Verify exact B21 base and B22 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B21_RETURN_GIVEOUT_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b22-work/b21-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B22_CANCELLATION_REASON_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b22-exact
+          find /tmp/ozon-b22-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b22-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b22-exact-files.sha256
+          sha256sum shared/ozon_operation_registry.js shared/ozon_contract.js shared/ozon_entitlements.js service_worker.js content_script.js > /tmp/ozon-b22-core.sha256
+      - name: Upload exact B22 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b22-cancellation-reason-reads-candidate
+          path: |
+            /tmp/ozon-b22-exact
+            /tmp/ozon-b22-exact-files.sha256
+            /tmp/ozon-b22-core.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B22 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B22_CANCELLATION_REASON_READS_2026-08-27.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='48a118a029ea8ab09fd7f9445550b1e380702de6b03339edde8e8a34a4d956eb'; b=gzip.decompress(c); assert hashlib.sha256(b).hexdigest()=='af2469c523c16810b354f86cd024a2ba2691c9c3332c7d25efa56c05da3c71ed'"
+      - name: Materialize exact B22 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b22-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b22-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b22_cancellation_reason_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify exact B21 base and B22 gates on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b22-exact"
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b22-work"
+          $b21 = Join-Path $work "b21-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B21_RETURN_GIVEOUT_READS_REGRESSION_2026-08-27.mjs $b21; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B22_CANCELLATION_REASON_READS_REGRESSION_2026-08-27.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
