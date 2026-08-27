@@ -57,3 +57,13 @@ class Repository:
  async def record_error(self,component,typ,msg):
   fp='|'.join((component,typ,msg.strip().lower())); t=now(); await self.db.execute("INSERT INTO recent_errors(component,error_type,message,fingerprint,first_seen_at,last_seen_at,occurrence_count) VALUES(?,?,?,?,?,?,1) ON CONFLICT(fingerprint) DO UPDATE SET occurrence_count=occurrence_count+1,last_seen_at=excluded.last_seen_at",(component,typ,msg,fp,t,t)); await self.db.commit()
  async def recent_errors(self): return await (await self.db.execute('SELECT * FROM recent_errors ORDER BY id DESC')).fetchall()
+ async def cleanup_retention(self,days=5,at=None):
+  cutoff=(at or datetime.now(timezone.utc)).timestamp()-days*86400
+  iso=datetime.fromtimestamp(cutoff,timezone.utc).isoformat(); counts={}
+  for key,sql in {
+   'attempts':"DELETE FROM draft_attempts WHERE finished_at<? AND status IN ('SUCCESS','ERROR') AND id NOT IN (SELECT COALESCE(current_draft_attempt_id,-1) FROM questions)",
+   'revisions':"DELETE FROM answer_revisions WHERE created_at<? AND id NOT IN (SELECT COALESCE(current_answer_revision_id,-1) FROM questions)",
+   'inputs':"DELETE FROM telegram_inputs WHERE expires_at<?",
+   'errors':"DELETE FROM recent_errors WHERE last_seen_at<?"}.items():
+   c=await self.db.execute(sql,(iso,)); counts[key]=c.rowcount
+  await self.db.commit(); return counts
