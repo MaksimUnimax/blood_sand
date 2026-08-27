@@ -9,9 +9,16 @@ class QuestionService:
    for raw in await self.adapters[name].fetch_unanswered_questions():
     q,new=await self.repo.insert_question(raw)
     if new:
-     mid=await self.transport.question(q); await self.repo.persist_question_message_id(q['id'],mid)
+     mid=await self.transport.question(q)
+     if mid: await self.repo.persist_question_message_id(q['id'],mid); await self.repo.clear_delivery_failure(q['id'],'INITIAL_CARD')
    return True
   finally: self.busy.discard(name)
+ async def recover_initial_card(self,qid):
+  q=await self.repo.get_question(qid)
+  if not q or not await self.repo.get_delivery_failure(qid,'INITIAL_CARD'): raise StaleState('STALE_STATE')
+  mid=await self.transport.question(q)
+  if mid: await self.repo.persist_question_message_id(qid,mid); await self.repo.clear_delivery_failure(qid,'INITIAL_CARD')
+  return bool(mid)
  async def manual(self,qid,prompt_id):
   await self.repo.transition(qid,'NEW','MANUAL_INPUT'); await self.repo.create_telegram_input(prompt_id,qid,'manual_answer')
  async def begin_manual(self,qid):

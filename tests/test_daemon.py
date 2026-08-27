@@ -1,7 +1,7 @@
 import pytest
 from types import SimpleNamespace
 from app.config import Config
-from app.daemon import TelegramTransport, live_config
+from app.daemon import TelegramTransport, live_config, PollingConflictExit, POLLING_CONFLICT_EXIT_CODE
 from app.db.database import connect, init
 from app.db.repository import Repository
 def test_missing_config_redacts_values():
@@ -11,6 +11,11 @@ def test_missing_config_redacts_values():
 def test_live_config_accepts_complete_values_without_repr_leak():
  values={key:'value-'+key for key in ('TELEGRAM_BOT_TOKEN','TELEGRAM_OPERATOR_USER_ID','WB_API_TOKEN','OZON_CLIENT_ID','OZON_API_KEY')}
  assert live_config(values)==values and 'value-' not in repr(Config())
+
+def test_polling_conflict_has_dedicated_non_restart_exit_contract():
+ assert PollingConflictExit().code == POLLING_CONFLICT_EXIT_CODE == 75
+ unit=open('/etc/systemd/system/marketplace-question-operator.service').read()
+ assert 'Restart=on-failure' in unit and 'RestartPreventExitStatus=75' in unit
 
 @pytest.mark.asyncio
 async def test_question_transport_rejects_non_positive_message_id():

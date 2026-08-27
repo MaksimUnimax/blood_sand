@@ -46,7 +46,12 @@ class OperatorBot:
    rows=await self.service.repo.list_open_questions(); await self._reply(u.message,'\n'.join(f"{q['public_id']} · {q['marketplace']} · {q['status']}" for q in rows) or 'Open questions: 0')
   elif cmd=='/errors':
    rows=await self.service.repo.recent_errors(); await self._reply(u.message,'\n'.join(f"{x['component']}: {x['error_type']} ({x['occurrence_count']})" for x in rows) or 'No recent errors')
-  else: await self._reply(u.message,f"DB available\nOpen questions: {len(await self.service.repo.list_open_questions())}\nActive Codex: {await self.service.repo.active_codex_profile()}")
+  elif cmd=='/recover' and len(u.message.text.split())==3 and u.message.text.split()[2]=='DUPLICATE_RISK_ACKNOWLEDGED':
+   q=await self.service.repo.get_question_by_public_id(u.message.text.split()[1])
+   if not q: await self._reply(u.message,'Unknown question'); return
+   if await self.service.recover_initial_card(q['id']): await self._reply(u.message,'Initial card resent and delivery confirmed.')
+   else: await self._reply(u.message,'Initial card is not awaiting recovery or resend was not confirmed.')
+  else: await self._reply(u.message,f"DB available\nOpen questions: {len(await self.service.repo.list_open_questions())}\nActive Codex: {await self.service.repo.active_codex_profile()}\nRecover an unconfirmed initial card: /recover Q-ID DUPLICATE_RISK_ACKNOWLEDGED")
  async def prompt(self,message,q,mode,revision_id=None):
   # A replay after the state change but before sending the ForceReply must finish
   # the prompt, while a replay after its durable correlation must not duplicate it.
@@ -54,10 +59,13 @@ class OperatorBot:
   current=await self.service.repo.get_current_answer_revision(q['id']); extra=f"\n\nТекущий ответ:\n{current['text']}" if mode=='edit_answer' and current else ''
   if mode=='edit_answer' and (not current or current['id'] != revision_id): raise StaleState('STALE_STATE')
   outcome=await self._reply(message,f"ID: {q['public_id']}\nMarketplace: {q['marketplace']}\n\nВопрос:\n{q['question_text']}{extra}\n\nОтветьте Reply на ЭТО сообщение.",reply_markup=ForceReply(selective=True))
-  if outcome.outcome is not Outcome.SUCCESS: return False
+  operation='EDIT_PROMPT' if mode=='edit_answer' else 'MANUAL_PROMPT'
+  if outcome.outcome is not Outcome.SUCCESS:
+   await self.service.repo.record_delivery_failure(q['id'],operation,outcome.outcome.value,str(outcome.error)); return False
   sent=outcome.value
-  if not isinstance(sent.message_id,int) or sent.message_id <= 0: await self.service.repo.record_error('telegram','INVALID_MESSAGE_ID','ForceReply did not return positive message_id'); return False
-  await self.service.repo.create_telegram_input(sent.message_id,q['id'],mode,revision_id if mode=='edit_answer' else None)
+  if not isinstance(sent.message_id,int) or sent.message_id <= 0:
+   await self.service.repo.record_error('telegram','INVALID_MESSAGE_ID','ForceReply did not return positive message_id'); await self.service.repo.record_delivery_failure(q['id'],operation,'INVALID_MESSAGE_ID','ForceReply did not return positive message_id'); return False
+  await self.service.repo.create_telegram_input(sent.message_id,q['id'],mode,revision_id if mode=='edit_answer' else None); await self.service.repo.clear_delivery_failure(q['id'],operation)
   return True
  async def show_codex(self,message,qid):
   q=await self.service.repo.get_question(qid); active=await self.service.repo.active_codex_profile()

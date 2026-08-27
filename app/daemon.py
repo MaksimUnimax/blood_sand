@@ -23,6 +23,13 @@ from app.telegram.durable_queue import DurableUpdateQueue
 from app.telegram.edge import TelegramEdge, Operation, Outcome
 from telegram.error import Conflict
 
+POLLING_CONFLICT_EXIT_CODE = 75
+
+class PollingConflictExit(SystemExit):
+    """Dedicated ownership-fault exit; systemd must not restart this code."""
+
+    def __init__(self): super().__init__(POLLING_CONFLICT_EXIT_CODE)
+
 REQUIRED = ('TELEGRAM_BOT_TOKEN', 'TELEGRAM_OPERATOR_USER_ID', 'WB_API_TOKEN', 'OZON_CLIENT_ID', 'OZON_API_KEY')
 
 
@@ -62,7 +69,8 @@ class TelegramTransport:
             outcome = await self._send(chat_id=self.operator_id, text=text, reply_markup=buttons if first is None else None)
             if outcome.outcome is not Outcome.SUCCESS:
                 await self.repo.record_error('telegram', outcome.outcome.value, str(outcome.error))
-                raise RuntimeError('Telegram initial-card creation failed: ' + outcome.outcome.value)
+                await self.repo.record_delivery_failure(question['id'], 'INITIAL_CARD', outcome.outcome.value, str(outcome.error))
+                return None
             sent = outcome.value
             if first is None:
                 first = sent.message_id
@@ -132,7 +140,7 @@ async def main():
         await application.updater.start_polling(timeout=30, allowed_updates=['message','callback_query'], drop_pending_updates=False, error_callback=polling_error)
         await asyncio.gather(polling_loop(service, config, stop), retention_loop(repo, config, stop))
         if polling_fault['conflict']:
-            raise RuntimeError('Telegram polling conflict: another getUpdates consumer owns the bot')
+            raise PollingConflictExit()
     finally:
         if application.updater.running: await application.updater.stop()
         if application.running: await application.stop()

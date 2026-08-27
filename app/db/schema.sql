@@ -6,3 +6,4 @@ CREATE TABLE IF NOT EXISTS telegram_inputs(telegram_prompt_message_id INTEGER PR
 CREATE TABLE IF NOT EXISTS telegram_updates(update_id INTEGER PRIMARY KEY,update_json TEXT NOT NULL,received_at TEXT NOT NULL,completed_at TEXT);
 CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS recent_errors(id INTEGER PRIMARY KEY,component TEXT,error_type TEXT,message TEXT,question_id INTEGER,fingerprint TEXT UNIQUE,first_seen_at TEXT,last_seen_at TEXT,occurrence_count INTEGER,telegram_notified_at TEXT);
+CREATE TABLE IF NOT EXISTS telegram_delivery_failures(question_id INTEGER NOT NULL REFERENCES questions(id),operation TEXT NOT NULL,outcome TEXT NOT NULL,message_id INTEGER,detail TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(question_id,operation));

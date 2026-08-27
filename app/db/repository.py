@@ -28,6 +28,12 @@ class Repository:
  async def persist_question_message_id(self,qid,message_id):
   if not isinstance(message_id,int) or message_id <= 0: raise ValueError('positive Telegram message_id required')
   await self.db.execute('UPDATE questions SET telegram_question_message_id=?,telegram_current_message_id=? WHERE id=?',(message_id,message_id,qid)); await self.db.commit()
+ async def record_delivery_failure(self,qid,operation,outcome,detail):
+  if operation not in {'INITIAL_CARD','MANUAL_PROMPT','EDIT_PROMPT'}: raise ValueError('operation')
+  t=now(); await self.db.execute("INSERT INTO telegram_delivery_failures(question_id,operation,outcome,message_id,detail,created_at,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(question_id,operation) DO UPDATE SET outcome=excluded.outcome,message_id=NULL,detail=excluded.detail,updated_at=excluded.updated_at",(qid,operation,outcome,None,detail,t,t)); await self.db.commit()
+ async def clear_delivery_failure(self,qid,operation):
+  await self.db.execute('DELETE FROM telegram_delivery_failures WHERE question_id=? AND operation=?',(qid,operation)); await self.db.commit()
+ async def get_delivery_failure(self,qid,operation): return await (await self.db.execute('SELECT * FROM telegram_delivery_failures WHERE question_id=? AND operation=?',(qid,operation))).fetchone()
  async def get_current_answer_revision(self,qid):
   return await (await self.db.execute('SELECT r.* FROM answer_revisions r JOIN questions q ON q.current_answer_revision_id=r.id WHERE q.id=?',(qid,))).fetchone()
  async def claim_send(self,qid,rid):

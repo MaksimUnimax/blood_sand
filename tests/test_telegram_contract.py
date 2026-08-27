@@ -117,6 +117,47 @@ async def test_prompt_timeout_creates_no_fake_correlation_and_state_is_recoverab
  assert not await bot.prompt(Message(),q,'manual_answer')
  assert await repo.get_telegram_input_for(q['id'],'manual_answer') is None
  assert (await repo.get_question(q['id']))['status']=='MANUAL_INPUT'
+ assert (await repo.get_delivery_failure(q['id'],'MANUAL_PROMPT'))['outcome']=='AMBIGUOUS_NETWORK_FAILURE'
+ await db.close()
+
+@pytest.mark.asyncio
+async def test_initial_failure_is_durable_and_requires_explicit_recovery(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'initial-timeout','question_text':'q'})
+ class Bot:
+  def __init__(self): self.calls=0
+  async def send_message(self, **kwargs):
+   self.calls+=1
+   from telegram.error import TimedOut
+   raise TimedOut()
+ bot=Bot(); transport=TelegramTransport(SimpleNamespace(bot=bot),1,repo)
+ assert await transport.question(q) is None and bot.calls==1
+ failure=await repo.get_delivery_failure(q['id'],'INITIAL_CARD')
+ assert failure['outcome']=='AMBIGUOUS_NETWORK_FAILURE' and failure['message_id'] is None
+ # A fresh repository sees the same unresolved state; no process restart retries it.
+ await db.close(); db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ assert (await repo.get_delivery_failure(q['id'],'INITIAL_CARD'))['outcome']=='AMBIGUOUS_NETWORK_FAILURE'
+ assert bot.calls==1
+ await db.close()
+
+@pytest.mark.asyncio
+async def test_edit_prompt_failure_preserves_revision_and_has_no_correlation(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'edit-timeout','question_text':'q'})
+ rid=await repo.create_answer_revision(q['id'],'manual','original'); await repo.set_current_answer_revision(q['id'],rid)
+ await repo.transition(q['id'],'NEW','MANUAL_INPUT'); await repo.transition(q['id'],'MANUAL_INPUT','REVIEW')
+ service=QuestionService(repo,{},None); await service.begin_edit(q['id'],rid)
+ bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ class Message:
+  async def reply_text(self,*args,**kwargs):
+   from telegram.error import BadRequest
+   raise BadRequest('invalid')
+ assert not await bot.prompt(Message(),await repo.get_question(q['id']),'edit_answer',rid)
+ assert await repo.get_telegram_input_for(q['id'],'edit_answer') is None
+ current=await repo.get_question(q['id'])
+ assert current['status']=='EDITING' and current['current_answer_revision_id']==rid
+ assert (await repo.get_delivery_failure(q['id'],'EDIT_PROMPT'))['outcome']=='DETERMINISTIC_FAILURE'
+ with pytest.raises(StaleState): await service.reply(999,'unrelated')
  await db.close()
 
 
