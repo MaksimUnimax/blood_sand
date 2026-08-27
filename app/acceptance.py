@@ -3,6 +3,7 @@ import argparse
 import asyncio
 import json
 import os
+import time
 from pathlib import Path
 
 from telegram.ext import Application
@@ -60,7 +61,57 @@ def evidence(repo, db_path):
     }
 
 
-async def run(db_path, evidence_path, serve=False):
+class InteractiveAcceptanceConsumer:
+    """Keep an acceptance session alive across empty long-poll responses.
+
+    This deliberately owns the *session* deadline separately from Telegram's
+    individual long-poll timeout.  The poll function is supplied by the live
+    runner (or a test); it returns True once the requested callback is handled.
+    """
+    def __init__(self, poll_once, evidence_path, deadline_seconds=15 * 60,
+                 clock=time.monotonic, sleep=asyncio.sleep):
+        if deadline_seconds < 15 * 60:
+            raise ValueError('interactive acceptance deadline must be at least 15 minutes')
+        self.poll_once, self.evidence_path = poll_once, Path(evidence_path)
+        self.deadline_seconds, self.clock, self.sleep = deadline_seconds, clock, sleep
+        self.armed = False
+
+    def _write(self, payload):
+        self.evidence_path.write_text(json.dumps(payload, indent=2) + '\n')
+
+    async def run(self, payload):
+        payload.update({'consumer_started_at': time.time(), 'consumer_alive': True,
+                        'consumer_exit_reason': None})
+        self._write(payload)
+        # The runner is armed only after it has persisted its live state.
+        self.armed = True
+        deadline = self.clock() + self.deadline_seconds
+        try:
+            while self.clock() < deadline:
+                if await self.poll_once():
+                    payload.update({'consumer_alive': False,
+                                    'consumer_exit_reason': 'callback_received',
+                                    'callback_received_at': time.time()})
+                    self._write(payload)
+                    self.armed = False
+                    return 'callback_received'
+                # Empty Telegram getUpdates is a normal long-poll result, not
+                # the end of the interactive session.
+                await self.sleep(0)
+            payload.update({'consumer_alive': False, 'consumer_exit_reason': 'deadline_expired'})
+            self._write(payload)
+            self.armed = False
+            return 'deadline_expired'
+        except BaseException:
+            payload.update({'consumer_alive': False, 'consumer_exit_reason': 'interrupted'})
+            self._write(payload)
+            self.armed = False
+            raise
+
+
+async def run(db_path, evidence_path, serve=False, deadline_seconds=15 * 60):
+    if serve and deadline_seconds < 15 * 60:
+        raise ValueError('interactive acceptance deadline must be at least 15 minutes')
     token = os.environ['TELEGRAM_BOT_TOKEN']
     operator_id = os.environ['TELEGRAM_OPERATOR_USER_ID']
     db = await connect(db_path)
@@ -94,9 +145,16 @@ async def run(db_path, evidence_path, serve=False):
             # service.poll() above remains deduplicated, so a persisted R11B card
             # is reused instead of emitting another synthetic card.
             await application.updater.start_polling(drop_pending_updates=False)
+            payload.update({'consumer_started_at': time.time(), 'consumer_alive': True,
+                            'consumer_exit_reason': None})
+            Path(evidence_path).write_text(json.dumps(payload, indent=2) + '\n')
             print('R11D isolated Telegram polling active.', flush=True)
+            print('R11E_ARMED=yes', flush=True)
             try:
-                await asyncio.Event().wait()
+                await asyncio.wait_for(asyncio.Event().wait(), timeout=deadline_seconds)
+            except asyncio.TimeoutError:
+                payload.update({'consumer_alive': False, 'consumer_exit_reason': 'deadline_expired'})
+                Path(evidence_path).write_text(json.dumps(payload, indent=2) + '\n')
             finally:
                 await application.updater.stop()
     finally:
@@ -111,10 +169,12 @@ def main():
     parser.add_argument('--db', type=Path, required=True)
     parser.add_argument('--evidence', type=Path, required=True)
     parser.add_argument('--serve', action='store_true', help='keep isolated Telegram polling active')
+    parser.add_argument('--deadline-seconds', type=int, default=15 * 60,
+                        help='interactive window; --serve requires at least 900 seconds')
     args = parser.parse_args()
     if args.db.resolve() == Path('/var/lib/marketplace-question-operator/state.sqlite3'):
         raise SystemExit('refusing production database')
-    asyncio.run(run(args.db, args.evidence, args.serve))
+    asyncio.run(run(args.db, args.evidence, args.serve, args.deadline_seconds))
 
 
 if __name__ == '__main__':
