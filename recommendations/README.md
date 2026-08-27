@@ -33,6 +33,7 @@
 - `DATA_API_CONTRACT.md` — versioned data model, JSON-конфиги, Recommendation API, session/analytics contracts и validation gates.
 - `VK_UX_FLOW.md` — клиентские сценарии бота и Mini App, parsing, validation, handoff и unavailable UX.
 - `ROADMAP.md` — последовательность реализации от domain freeze и machine-readable core до VK-бота, Mini App и controlled launch.
+- `SERVER_CAPACITY_AUDIT_2026-08-27.md` — pre-deployment аудит текущего shared-сервера: CPU/RAM/disk/Docker, capacity targets и gate перед server-side implementation.
 
 ## Целевая схема
 
@@ -52,7 +53,19 @@ Bot и Mini App не имеют собственной независимой м
 DOMAIN_MATRIX_FREEZE_PASS
 ```
 
-Текущий следующий этап — `M1 — Machine-readable Recommendation Core`:
+Перед server-side implementation дополнительно выполняется capacity preparation для shared host. Текущий серверный аудит имеет статус:
+
+```text
+SERVER_CAPACITY_READY_WITH_WARNINGS
+```
+
+Цель перед server-side coding/deployment:
+
+```text
+SERVER_CAPACITY_PREP_PASS
+```
+
+После capacity preparation текущий следующий этап — `M1 — Machine-readable Recommendation Core`:
 
 1. создать machine-readable versioned data-файлы;
 2. реализовать schema/config validation;
