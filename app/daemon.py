@@ -5,6 +5,7 @@ import signal
 
 import httpx
 from telegram.ext import Application
+from telegram import Update
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import RetryAfter, TelegramError
 
@@ -19,6 +20,7 @@ from app.service import QuestionService
 from app.telegram.bot import OperatorBot
 from app.telegram import render
 from app.telegram.callbacks import encode
+from app.telegram.durable_queue import DurableUpdateQueue
 
 REQUIRED = ('TELEGRAM_BOT_TOKEN', 'TELEGRAM_OPERATOR_USER_ID', 'WB_API_TOKEN', 'OZON_CLIENT_ID', 'OZON_API_KEY')
 
@@ -100,7 +102,8 @@ async def main():
     repo = Repository(db)
     client = httpx.AsyncClient(timeout=httpx.Timeout(connect=10, read=20, write=20, pool=20))
     adapters = {'ozon': OzonAdapter(client, secrets['OZON_CLIENT_ID'], secrets['OZON_API_KEY']), 'wildberries': WildberriesAdapter(client, secrets['WB_API_TOKEN'])}
-    application = Application.builder().token(secrets['TELEGRAM_BOT_TOKEN']).build()
+    update_queue = DurableUpdateQueue(repo)
+    application = Application.builder().token(secrets['TELEGRAM_BOT_TOKEN']).update_queue(update_queue).build()
     service = QuestionService(repo, adapters, TelegramTransport(application, secrets['TELEGRAM_OPERATOR_USER_ID'], repo), Runner(config), PromptBuilder('prompts', config.reference_dir))
     for handler in OperatorBot(secrets['TELEGRAM_OPERATOR_USER_ID'], service).handlers(): application.add_handler(handler)
     stop = asyncio.Event(); loop = asyncio.get_running_loop()
@@ -111,6 +114,10 @@ async def main():
         # without dropping pending updates is the explicit production polling contract.
         await application.bot.delete_webhook(drop_pending_updates=False)
         await application.start()
+        # Re-run every receipt that Telegram may already have confirmed during a
+        # prior process lifetime before requesting further updates.
+        for row in await repo.pending_telegram_updates():
+            await update_queue.replay_put(Update.de_json(__import__('json').loads(row['update_json']), application.bot))
         await application.updater.start_polling(timeout=30, allowed_updates=['message','callback_query'], drop_pending_updates=False)
         await asyncio.gather(polling_loop(service, config, stop), retention_loop(repo, config, stop))
     finally:

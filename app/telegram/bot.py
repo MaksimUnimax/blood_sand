@@ -40,6 +40,9 @@ class OperatorBot:
    rows=await self.service.repo.recent_errors(); await u.message.reply_text('\n'.join(f"{x['component']}: {x['error_type']} ({x['occurrence_count']})" for x in rows) or 'No recent errors')
   else: await u.message.reply_text(f"DB available\nOpen questions: {len(await self.service.repo.list_open_questions())}\nActive Codex: {await self.service.repo.active_codex_profile()}")
  async def prompt(self,message,q,mode,revision_id=None):
+  # A replay after the state change but before sending the ForceReply must finish
+  # the prompt, while a replay after its durable correlation must not duplicate it.
+  if await self.service.repo.get_telegram_input_for(q['id'],mode): return
   current=await self.service.repo.get_current_answer_revision(q['id']); extra=f"\n\nТекущий ответ:\n{current['text']}" if mode=='edit_answer' and current else ''
   if mode=='edit_answer' and (not current or current['id'] != revision_id): raise StaleState('STALE_STATE')
   sent=await message.reply_text(f"ID: {q['public_id']}\nMarketplace: {q['marketplace']}\n\nВопрос:\n{q['question_text']}{extra}\n\nОтветьте Reply на ЭТО сообщение.",reply_markup=ForceReply(selective=True))
@@ -78,9 +81,13 @@ class OperatorBot:
     asyncio.create_task(self.run_codex(query.message,qid,claim)); return
    # All non-Codex actions are short. State/revision checks happen before acknowledgement.
    if action=='manual':
-    await self.service.begin_manual(qid); await query.answer(); await self._disable(query); await self.prompt(query.message,q,'manual_answer')
+    if q['status']=='NEW': await self.service.begin_manual(qid)
+    elif q['status']!='MANUAL_INPUT': raise StaleState('STALE_STATE')
+    await query.answer(); await self._disable(query); await self.prompt(query.message,await self.service.repo.get_question(qid),'manual_answer')
    elif action=='edit':
-    q=await self.service.begin_edit(qid,rid); await query.answer(); await self._disable(query); await self.prompt(query.message,q,'edit_answer',rid)
+    if q['status']=='REVIEW': q=await self.service.begin_edit(qid,rid)
+    elif q['status']!='EDITING' or q['current_answer_revision_id']!=rid: raise StaleState('STALE_STATE')
+    await query.answer(); await self._disable(query); await self.prompt(query.message,q,'edit_answer',rid)
    elif action=='ignore':
     if rid is not None and (q['status']!='REVIEW' or q['current_answer_revision_id']!=rid): raise StaleState('STALE_STATE')
     await self.service.ignore(qid); await query.answer('Ignored'); await self._disable(query)
@@ -97,4 +104,10 @@ class OperatorBot:
   try: rid=await self.service.reply(u.message.reply_to_message.message_id,u.message.text)
   except StaleState: return
   rev=await self.service.repo.get_answer_revision(rid); q=await self.service.repo.get_question(rev['question_id']); await self.cards(u.message,render.review(q,rev,await self.service.repo.active_codex_profile()),self.buttons(q))
- def handlers(self): return [CommandHandler(['questions','codex','errors','status'],self.command),CallbackQueryHandler(self.callback),MessageHandler(filters.REPLY & filters.TEXT,self.reply)]
+ async def _tracked(self, method, update, context):
+  await method(update,context)
+  # Completion is deliberately after the callback returns. Exceptions leave the
+  # receipt pending for startup replay.
+  await self.service.repo.complete_telegram_update(getattr(update,'update_id',None))
+ def handlers(self):
+  return [CommandHandler(['questions','codex','errors','status'],lambda u,c:self._tracked(self.command,u,c)),CallbackQueryHandler(lambda u,c:self._tracked(self.callback,u,c)),MessageHandler(filters.REPLY & filters.TEXT,lambda u,c:self._tracked(self.reply,u,c))]

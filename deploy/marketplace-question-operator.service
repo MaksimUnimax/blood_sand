@@ -7,7 +7,9 @@ User=root
 Group=root
 WorkingDirectory=/opt/marketplace-question-operator
 EnvironmentFile=/etc/marketplace-question-operator/secrets.env
-ExecStart=/opt/marketplace-question-operator/.venv/bin/python -m app.daemon
+# Hold this advisory lock across the daemon lifetime to prevent a second
+# getUpdates consumer.
+ExecStart=/usr/bin/flock -n /run/marketplace-question-operator.poller.lock /opt/marketplace-question-operator/.venv/bin/python -m app.daemon
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=30

@@ -6,22 +6,38 @@ production daemon is the one and only update consumer; it starts one PTB
 and `drop_pending_updates=False`. Before it starts polling it calls
 `deleteWebhook(drop_pending_updates=False)`. A non-empty webhook is therefore
 an operational fault, not an alternative production transport. The systemd unit
-starts only this daemon and its normal restart policy must never create an
-overlapping instance.
+starts only this daemon and holds `/run/marketplace-question-operator.poller.lock`
+through `flock` for its whole lifetime, so a second unit process cannot become
+an overlapping poller.
 
 Telegram treats an update as confirmed when a later `getUpdates` uses an offset
 higher than its `update_id` ([getUpdates](https://core.telegram.org/bots/api#getupdates)).
-PTB 22.8 starts with offset 0, enqueues returned updates, then advances its
-in-memory offset to the final update ID plus one. Its graceful shutdown performs
-one zero-timeout call at that offset. Thus a crash after enqueue/offset advance
-can replay updates; all business actions use SQLite state claims/correlation and
-must be idempotent. PTB does not durably own an offset.
+This is a material PTB 22.8 crash boundary: `Updater._start_polling` awaits
+`update_queue.put(update)` for every update, then sets `_last_update_id`, while
+`Application._update_fetcher` independently takes updates from that queue and
+runs handlers. The next poll may therefore confirm an update **before handler
+start** and **before handler commit**. PTB's offset is only in memory.
+
+MQO supplies PTB with `DurableUpdateQueue`. Its `put` transactionally inserts
+the full update JSON into `telegram_updates` before it returns to PTB. The row
+is completed only after the blocking command/callback/message handler returns.
+At daemon startup, before polling resumes, all incomplete rows are reconstructed
+with `Update.de_json` and requeued. Consequently Telegram confirmation cannot
+silently lose an operator action: the receipt is either pending for replay or
+completed. Duplicate deliveries and the crash-after-business-commit window are
+safe through SQLite claims/correlations. Prompt creation is also replay-aware:
+MANUAL_INPUT/EDITING without a persisted prompt correlation sends and stores the
+missing ForceReply; an existing correlation prevents duplicate prompts. Manual
+and edit reply consumption, revision creation and state transition share one
+SQLite transaction.
 
 Only the configured private operator is accepted: both `from_user.id` and
 private `chat.id` equal `TELEGRAM_OPERATOR_USER_ID`. Unauthorized messages have
 no effect; unauthorized callback queries receive a harmless acknowledgement.
 Every callback is parsed, authorized, state/revision guarded and answered with
-`answerCallbackQuery`; malformed, stale and duplicate callbacks mutate nothing.
+`answerCallbackQuery`; malformed, legacy-version and duplicate callbacks mutate
+nothing. Only the current `mqo1:` grammar is actionable, so cards from any
+earlier deployment fail closed.
 
 Initial NEW cards are `sendMessage` results. Their first successful returned
 positive `message_id` is persisted in `questions.telegram_question_message_id`;
@@ -51,10 +67,14 @@ No valid human Send callback means no marketplace write. UI editing failures are
 recorded and never roll back business state; later rendering can reconcile it.
 
 Outbound per-chat initial-card sends are serialized to no more than one per
-second. A 429 honours `retry_after` once; deterministic 400s are not blindly
-retried. Authentication/forbidden/chat-not-found and conflict-consumer failures
-are persistent operational errors; network/5xx failures surface normally for
-PTB's retry loop. Tokens and token URLs are never logged.
+second. That `sendMessage` boundary honours a 429 `retry_after` once; all other
+Telegram calls (callback acknowledgement, reply, and UI edit) deliberately use
+PTB's normal error reporting: a failed UI edit is recorded, while a failed
+handler leaves its ingress receipt pending for replay. Deterministic 400s are
+not blindly retried. Authentication/forbidden/chat-not-found and
+conflict-consumer failures are persistent operational errors; network/5xx
+failures surface normally for PTB's polling retry loop. Tokens and token URLs
+are never logged.
 
 Acceptance is isolated by database path and fail-closed marketplace/Codex
 adapters, but reuses the production Application, transport, handlers, renderer,

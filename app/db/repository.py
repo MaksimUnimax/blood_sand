@@ -63,9 +63,26 @@ class Repository:
   if mode not in {'manual_answer','edit_answer'}: raise ValueError('mode')
   await self.db.execute('INSERT INTO telegram_inputs VALUES(?,?,?,?,?,?)',(msg,qid,mode,based,now(),expires)); await self.db.commit()
  async def get_telegram_input(self,msg): return await (await self.db.execute('SELECT * FROM telegram_inputs WHERE telegram_prompt_message_id=?',(msg,))).fetchone()
+ async def get_telegram_input_for(self,qid,mode): return await (await self.db.execute('SELECT * FROM telegram_inputs WHERE question_id=? AND mode=?',(qid,mode))).fetchone()
  async def consume_telegram_input(self,msg):
   # DELETE ... RETURNING makes duplicate/replayed replies consume exactly once.
   c=await self.db.execute('DELETE FROM telegram_inputs WHERE telegram_prompt_message_id=? RETURNING *',(msg,)); r=await c.fetchone(); await self.db.commit(); return r
+ async def consume_reply(self,msg,text):
+  """Atomically consume a prompt and create its revision/state transition."""
+  await self.db.execute('BEGIN IMMEDIATE')
+  inp=await (await self.db.execute('DELETE FROM telegram_inputs WHERE telegram_prompt_message_id=? RETURNING *',(msg,))).fetchone()
+  if not inp: await self.db.rollback(); raise StaleState('STALE_STATE')
+  q=await self.get_question(inp['question_id']); expected='MANUAL_INPUT' if inp['mode']=='manual_answer' else 'EDITING'
+  if not q or q['status']!=expected: await self.db.rollback(); raise StaleState('STALE_STATE')
+  c=await self.db.execute('INSERT INTO answer_revisions(question_id,source,text,based_on_revision_id,created_at) VALUES(?,?,?,?,?)',(q['id'],'manual' if inp['mode']=='manual_answer' else 'edited',text,inp['based_on_revision_id'],now()))
+  rid=c.lastrowid
+  await self.db.execute('UPDATE questions SET current_answer_revision_id=?,status=?,updated_at=? WHERE id=? AND status=?',(rid,'REVIEW',now(),q['id'],expected))
+  await self.db.commit(); return rid
+ async def receipt_telegram_update(self,update_id,update_json):
+  await self.db.execute('INSERT OR IGNORE INTO telegram_updates(update_id,update_json,received_at) VALUES(?,?,?)',(update_id,update_json,now())); await self.db.commit()
+ async def complete_telegram_update(self,update_id):
+  if update_id is not None: await self.db.execute('UPDATE telegram_updates SET completed_at=? WHERE update_id=?',(now(),update_id)); await self.db.commit()
+ async def pending_telegram_updates(self): return await (await self.db.execute('SELECT * FROM telegram_updates WHERE completed_at IS NULL ORDER BY update_id')).fetchall()
  async def record_error(self,component,typ,msg):
   fp='|'.join((component,typ,msg.strip().lower())); t=now(); await self.db.execute("INSERT INTO recent_errors(component,error_type,message,fingerprint,first_seen_at,last_seen_at,occurrence_count) VALUES(?,?,?,?,?,?,1) ON CONFLICT(fingerprint) DO UPDATE SET occurrence_count=occurrence_count+1,last_seen_at=excluded.last_seen_at",(component,typ,msg,fp,t,t)); await self.db.commit()
  async def recent_errors(self): return await (await self.db.execute('SELECT * FROM recent_errors ORDER BY id DESC')).fetchall()

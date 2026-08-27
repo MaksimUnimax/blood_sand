@@ -9,6 +9,7 @@ from app.service import QuestionService
 from app.state_machine import StaleState
 from app.telegram.bot import OperatorBot
 from app.telegram.callbacks import decode, encode
+from app.telegram.durable_queue import DurableUpdateQueue
 
 
 @pytest.mark.asyncio
@@ -79,3 +80,27 @@ async def test_initial_card_retries_429_using_server_delay(monkeypatch):
  bot=Bot(); transport=TelegramTransport(SimpleNamespace(bot=bot),1,Repo())
  q={'id':1,'public_id':'Q-000001','marketplace':'ozon','question_text':'q'}
  assert await transport.question(q)==7 and bot.calls==2
+
+
+@pytest.mark.asyncio
+async def test_update_is_durably_receipted_before_queue_put_and_replayed_once(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); queue=DurableUpdateQueue(repo)
+ update=SimpleNamespace(update_id=991,to_json=lambda: '{"update_id":991}')
+ await queue.put(update)
+ assert [r['update_id'] for r in await repo.pending_telegram_updates()] == [991]
+ assert await queue.get() is update
+ await repo.complete_telegram_update(991)
+ assert await repo.pending_telegram_updates() == []
+ await db.close()
+
+
+@pytest.mark.asyncio
+async def test_reply_consumption_revision_and_state_are_one_transaction(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'atomic','question_text':'q'})
+ await repo.transition(q['id'],'NEW','MANUAL_INPUT'); await repo.create_telegram_input(77,q['id'],'manual_answer')
+ rid=await repo.consume_reply(77,'answer')
+ assert (await repo.get_question(q['id']))['status']=='REVIEW'
+ assert (await repo.get_answer_revision(rid))['text']=='answer'
+ with pytest.raises(StaleState): await repo.consume_reply(77,'duplicate')
+ await db.close()

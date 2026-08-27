@@ -26,9 +26,7 @@ class QuestionService:
   await self.repo.transition(qid,'REVIEW','EDITING')
   return q
  async def reply(self,prompt_id,text):
-  inp=await self.repo.consume_telegram_input(prompt_id)
-  if not inp: raise StaleState('STALE_STATE')
-  q=await self.repo.get_question(inp['question_id']); rid=await self.repo.create_answer_revision(q['id'],'manual' if inp['mode']=='manual_answer' else 'edited',text,based_on_revision_id=inp['based_on_revision_id']); await self.repo.set_current_answer_revision(q['id'],rid); await self.repo.transition(q['id'],'MANUAL_INPUT' if inp['mode']=='manual_answer' else 'EDITING','REVIEW'); return rid
+  return await self.repo.consume_reply(prompt_id,text)
  async def ignore(self,qid):
   q=await self.repo.get_question(qid); await self.repo.transition(qid,q['status'],'IGNORED')
  async def send(self,qid,rid):

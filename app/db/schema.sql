@@ -3,5 +3,6 @@ CREATE TABLE IF NOT EXISTS questions(id INTEGER PRIMARY KEY,public_id TEXT UNIQU
 CREATE TABLE IF NOT EXISTS answer_revisions(id INTEGER PRIMARY KEY,question_id INTEGER NOT NULL REFERENCES questions(id),source TEXT NOT NULL,text TEXT NOT NULL,draft_attempt_id INTEGER,based_on_revision_id INTEGER,created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS draft_attempts(id INTEGER PRIMARY KEY,question_id INTEGER NOT NULL REFERENCES questions(id),codex_profile TEXT NOT NULL,status TEXT NOT NULL,answer_text TEXT,error_type TEXT,error_message TEXT,started_at TEXT NOT NULL,finished_at TEXT);
 CREATE TABLE IF NOT EXISTS telegram_inputs(telegram_prompt_message_id INTEGER PRIMARY KEY,question_id INTEGER NOT NULL REFERENCES questions(id),mode TEXT NOT NULL,based_on_revision_id INTEGER,created_at TEXT NOT NULL,expires_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS telegram_updates(update_id INTEGER PRIMARY KEY,update_json TEXT NOT NULL,received_at TEXT NOT NULL,completed_at TEXT);
 CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS recent_errors(id INTEGER PRIMARY KEY,component TEXT,error_type TEXT,message TEXT,question_id INTEGER,fingerprint TEXT UNIQUE,first_seen_at TEXT,last_seen_at TEXT,occurrence_count INTEGER,telegram_notified_at TEXT);
