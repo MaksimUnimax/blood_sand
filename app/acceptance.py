@@ -3,7 +3,6 @@ import argparse
 import asyncio
 import json
 import os
-import signal
 from pathlib import Path
 
 from telegram.ext import Application
@@ -73,31 +72,24 @@ async def run(db_path, evidence_path):
     service = QuestionService(repo, {'ozon': source}, transport, CodexDisabled(), None)
     for handler in OperatorBot(operator_id, service).handlers():
         application.add_handler(handler)
-    stop = asyncio.Event()
-    loop = asyncio.get_running_loop()
-    for signum in (signal.SIGTERM, signal.SIGINT):
-        loop.add_signal_handler(signum, stop.set)
     try:
         await application.initialize()
         await application.start()
-        await application.updater.start_polling()
         # This is one normal QuestionService.poll delivery from a synthetic source.
-        # No recurring polling loop is started and no real marketplace adapter exists.
+        # No recurring polling or Telegram update loop is started, and no real
+        # marketplace adapter exists.
         await service.poll('ozon')
         question = (await repo.list_open_questions())[0]
         payload = evidence(repo, db_path) | {
             'question_id': question['id'], 'public_id': question['public_id'],
             'telegram_question_message_id': question['telegram_question_message_id'],
             'initial_state': question['status'],
+            'telegram_send': transport.last_question_send,
         }
         Path(evidence_path).write_text(json.dumps(payload, indent=2) + '\n')
-        print('R11A isolated Telegram acceptance ready.', flush=True)
+        print('R11B isolated Telegram initial delivery complete.', flush=True)
         print(f"QUESTION_ID={question['id']} PUBLIC_Q_ID={question['public_id']} TELEGRAM_MESSAGE_ID={question['telegram_question_message_id']}", flush=True)
-        print('Press Manual on the synthetic acceptance question, then reply to its prompt.', flush=True)
-        await stop.wait()
     finally:
-        if application.updater.running:
-            await application.updater.stop()
         if application.running:
             await application.stop()
         await application.shutdown()

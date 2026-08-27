@@ -35,6 +35,7 @@ class TelegramTransport:
     """Small production transport boundary used by the polling service."""
     def __init__(self, application, operator_id, repo):
         self.application, self.operator_id, self.repo = application, operator_id, repo
+        self.last_question_send = {'executed': False}
 
     async def question(self, question):
         first = None
@@ -47,6 +48,11 @@ class TelegramTransport:
             sent = await self.application.bot.send_message(chat_id=self.operator_id, text=text, reply_markup=buttons if first is None else None)
             if first is None:
                 first = sent.message_id
+                self.last_question_send = {
+                    'executed': True,
+                    'response_type': type(sent).__name__,
+                    'message_id': first,
+                }
         return first
 
 

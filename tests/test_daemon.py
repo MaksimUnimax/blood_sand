@@ -20,7 +20,9 @@ async def test_question_transport_persists_first_message_id_even_when_falsey():
   async def send_message(self, **kwargs): return SimpleNamespace(message_id=0)
  app=SimpleNamespace(bot=Bot())
  q={'id':1,'public_id':'Q-000001','marketplace':'ozon','question_text':'x'}
- assert await TelegramTransport(app, 1, Repo()).question(q)==0
+ transport=TelegramTransport(app, 1, Repo())
+ assert await transport.question(q)==0
+ assert transport.last_question_send == {'executed': True, 'response_type': 'SimpleNamespace', 'message_id': 0}
 
 @pytest.mark.asyncio
 async def test_question_transport_renders_persisted_sqlite_row(tmp_path):
