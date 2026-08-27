@@ -1,0 +1,16 @@
+[Unit]
+Description=Marketplace Question Operator
+After=network-online.target
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/marketplace-question-operator
+EnvironmentFile=/etc/marketplace-question-operator/secrets.env
+ExecStart=/opt/marketplace-question-operator/.venv/bin/python -m app.daemon
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+NoNewPrivileges=true
+[Install]
+WantedBy=multi-user.target

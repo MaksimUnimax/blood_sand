@@ -14,7 +14,7 @@ def parse_jsonl(data):
 class Runner:
  def __init__(self,c): self.c=c
  async def run(self,profile,prompt,job):
-  job=Path(job)/('attempt-'+str(__import__('uuid').uuid4())); job.mkdir(parents=True,exist_ok=True)
+  job=Path(self.c.jobs_dir)/f'attempt-{job}-{__import__("uuid").uuid4()}'; job.mkdir(parents=True,exist_ok=True)
   try: p=await asyncio.create_subprocess_exec(str(self.c.codex_executable),'exec','--json','--ephemeral','-C',str(job),'-s','workspace-write',prompt,stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE,env=child_env(self.c.profiles[profile])); o,e=await asyncio.wait_for(p.communicate(),600)
   except asyncio.TimeoutError:
    p.kill(); await p.communicate(); raise CodexError('TIMEOUT','timeout')
