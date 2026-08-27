@@ -1,6 +1,6 @@
 from app.state_machine import StaleState
 class QuestionService:
- def __init__(self,repo,adapters,transport): self.repo,self.adapters,self.transport,self.busy=repo,adapters,transport,set()
+ def __init__(self,repo,adapters,transport,runner=None,prompts=None): self.repo,self.adapters,self.transport,self.runner,self.prompts,self.busy=repo,adapters,transport,runner,prompts,set()
  async def poll(self,name):
   if name in self.busy: return False
   self.busy.add(name)
@@ -34,5 +34,9 @@ class QuestionService:
   elif q['status']=='SEND_UNKNOWN': await self.repo.transition(qid,'SEND_UNKNOWN','REVIEW')
   else: raise StaleState('STALE_STATE')
   return await self.send(qid,rid)
+ async def codex(self,qid):
+  q=await self.repo.get_question(qid); profile=await self.repo.active_codex_profile(); await self.repo.transition(qid,q['status'],'CODEX_RUNNING'); aid=await self.repo.create_draft_attempt(qid,profile)
+  try: text=await self.runner.run(profile,self.prompts.build(q),str(aid)); await self.repo.finish_draft_success(aid,text); rid=await self.repo.create_answer_revision(qid,'codex',text,draft_attempt_id=aid); await self.repo.set_current_answer_revision(qid,rid); await self.repo.transition(qid,'CODEX_RUNNING','REVIEW'); return rid
+  except Exception as e: await self.repo.finish_draft_error(aid,'PROCESS_ERROR',str(e)); await self.repo.transition(qid,'CODEX_RUNNING','CODEX_ERROR'); raise
  async def poll_all(self):
   results=await __import__('asyncio').gather(*(self.poll(n) for n in self.adapters),return_exceptions=True); return dict(zip(self.adapters,results))
