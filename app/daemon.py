@@ -24,6 +24,8 @@ from app.telegram.edge import TelegramEdge, Operation, Outcome
 from telegram.error import Conflict
 
 POLLING_CONFLICT_EXIT_CODE = 75
+POLLING_KWARGS = {'timeout': 30, 'allowed_updates': ['message', 'callback_query'],
+                  'drop_pending_updates': False}
 
 class PollingConflictExit(SystemExit):
     """Dedicated ownership-fault exit; systemd must not restart this code."""
@@ -137,7 +139,7 @@ async def main():
         # prior process lifetime before requesting further updates.
         for row in await repo.pending_telegram_updates():
             await update_queue.replay_put(Update.de_json(__import__('json').loads(row['update_json']), application.bot))
-        await application.updater.start_polling(timeout=30, allowed_updates=['message','callback_query'], drop_pending_updates=False, error_callback=polling_error)
+        await application.updater.start_polling(**POLLING_KWARGS, error_callback=polling_error)
         await asyncio.gather(polling_loop(service, config, stop), retention_loop(repo, config, stop))
         if polling_fault['conflict']:
             raise PollingConflictExit()

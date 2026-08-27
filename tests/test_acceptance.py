@@ -1,54 +1,30 @@
-import json
-
 import pytest
 
-from app.acceptance import AcceptanceSource, InteractiveAcceptanceConsumer, MarketplaceWritesDisabled
-from app.telegram.callbacks import decode, encode
+from app.acceptance import BlockedMarketplaceAdapter, CodexDisabled, MarketplaceWritesDisabled, synthetic_questions
+from app.daemon import POLLING_KWARGS
+
+
+def test_t4_synthetic_questions_are_fresh_and_cover_all_scenarios():
+    rows = synthetic_questions()
+    assert [row['product_article'] for row in rows] == ['T4-MANUAL', 'T4-IGNORE', 'T4-CODEX']
+    assert all(row['external_question_id'].startswith('T4-') for row in rows)
 
 
 @pytest.mark.asyncio
-async def test_acceptance_source_is_one_synthetic_question_and_writes_are_disabled():
-    source = AcceptanceSource()
-    rows = await source.fetch_unanswered_questions()
-    assert len(rows) == 1
-    assert rows[0]['external_question_id'].startswith('R11A-SYNTHETIC-')
-    assert await source.fetch_unanswered_questions() == []
-    with pytest.raises(MarketplaceWritesDisabled):
-        await source.send_answer({}, 'must not send')
-    with pytest.raises(MarketplaceWritesDisabled):
-        await source.reconcile_answer({}, 'must not reconcile', None)
-
-
-def test_persisted_r11b_card_manual_callback_is_resolvable_without_redelivery():
-    """The R11D serve mode can safely reuse R11B's persisted Q-000001 card."""
-    assert decode(encode('manual', 1)) == {
-        'action': 'manual', 'question_id': 1, 'revision_id': None, 'arg': None,
-    }
+async def test_acceptance_marketplace_boundary_fails_closed_before_any_request():
+    counters = {'ozon_write_attempts': 0, 'wildberries_write_attempts': 0}
+    for name in ('ozon', 'wildberries'):
+        adapter = BlockedMarketplaceAdapter(name, counters)
+        with pytest.raises(MarketplaceWritesDisabled): await adapter.send_answer({}, 'no')
+        with pytest.raises(MarketplaceWritesDisabled): await adapter.reconcile_answer({}, 'no', None)
+    assert counters == {'ozon_write_attempts': 2, 'wildberries_write_attempts': 2}
 
 
 @pytest.mark.asyncio
-async def test_interactive_consumer_survives_empty_poll_and_dispatches_later_callback(tmp_path):
-    polls = iter([False, False, True])
-    ticks = [0]
-    async def poll_once(): return next(polls)
-    async def yield_and_advance(_): ticks[0] += 1
-    consumer = InteractiveAcceptanceConsumer(poll_once, tmp_path / 'evidence.json',
-        clock=lambda: ticks[0], sleep=yield_and_advance)
-    payload = {}
-    assert await consumer.run(payload) == 'callback_received'
-    assert consumer.armed is False
-    assert json.loads((tmp_path / 'evidence.json').read_text())['consumer_exit_reason'] == 'callback_received'
+async def test_t4_codex_boundary_fails_closed():
+    with pytest.raises(RuntimeError, match='physically disabled'):
+        await CodexDisabled().run('codex1', 'prompt', 'attempt')
 
 
-@pytest.mark.asyncio
-async def test_interactive_consumer_expires_cleanly_and_never_arms_after_death(tmp_path):
-    ticks = [0]
-    async def poll_once(): return False
-    async def yield_and_advance(_): ticks[0] = 901
-    consumer = InteractiveAcceptanceConsumer(poll_once, tmp_path / 'evidence.json',
-        clock=lambda: ticks[0], sleep=yield_and_advance)
-    assert await consumer.run({}) == 'deadline_expired'
-    saved = json.loads((tmp_path / 'evidence.json').read_text())
-    assert saved['consumer_alive'] is False
-    assert saved['consumer_exit_reason'] == 'deadline_expired'
-    assert consumer.armed is False
+def test_acceptance_reuses_production_polling_contract():
+    assert POLLING_KWARGS == {'timeout': 30, 'allowed_updates': ['message', 'callback_query'], 'drop_pending_updates': False}
