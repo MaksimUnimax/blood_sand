@@ -11,6 +11,6 @@ def test_callback_and_render():
  q={'public_id':'Q-000001','marketplace':'Ozon','question_text':'?'}; assert '?' in card(q,'ok','codex2')[0]
 def test_env_and_jsonl():
  e=child_env('/root/.codex'); assert set(e)=={'PATH','HOME','CODEX_HOME','LANG'} and 'TOKEN' not in e
- assert parse_jsonl('{"type":"x"}\n')[0]['type']=='x'
+ assert parse_jsonl('{"type":"final","text":"x"}\n')=='x'
  with pytest.raises(CodexError): parse_jsonl('bad')
 def test_states(): assert allowed('REVIEW','SENDING') and not allowed('SENT','SENDING')
