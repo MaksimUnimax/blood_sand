@@ -1,0 +1,70 @@
+name: Ozon B13 Promotions Market Reads exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b13-promotions-market-reads-2026-08-27
+    paths:
+      - .github/workflows/ozon-b13-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B13_PROMOTIONS_MARKET_READS_2026-08-27.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b13_promotions_market_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B13_PROMOTIONS_MARKET_READS_REGRESSION_2026-08-27.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B13_PROMOTIONS_MARKET_READS_CANDIDATE_EVIDENCE_2026-08-27.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact B13 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b13_promotions_market_reads_candidate.py --repo-root . --work-root /tmp/ozon-b13-work --out /tmp/ozon-b13-exact
+      - name: Verify accepted bases and B13 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B11_CATALOG_DIAGNOSTICS_CONTENT_REGRESSION_2026-08-26.mjs /tmp/ozon-b13-work/b12-work/b11-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B12_FINANCE_TRANSACTIONS_SUNSET_REGRESSION_2026-08-27.mjs /tmp/ozon-b13-work/b12-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B13_PROMOTIONS_MARKET_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b13-exact
+          find /tmp/ozon-b13-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b13-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b13-exact-files.sha256
+          sha256sum shared/ozon_operation_registry.js shared/ozon_contract.js shared/ozon_entitlements.js service_worker.js content_script.js > /tmp/ozon-b13-core.sha256
+      - name: Upload exact B13 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b13-promotions-market-reads-candidate
+          path: |
+            /tmp/ozon-b13-exact
+            /tmp/ozon-b13-exact-files.sha256
+            /tmp/ozon-b13-core.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B13 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B13_PROMOTIONS_MARKET_READS_2026-08-27.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='431165f6690175aa1b788fbeabbc541a6c8595e6df8250336710a7e44524ad07'; b=gzip.decompress(c); assert hashlib.sha256(b).hexdigest()=='3ae79617e1def360f764382466477c23572db1a80d471626702dbe6351ec7ca3'"
+      - name: Materialize exact B13 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b13-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b13-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b13_promotions_market_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify accepted bases and B13 gates on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b13-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b13-exact"
+          $b11 = Join-Path $work "b12-work/b11-base"
+          $b12 = Join-Path $work "b12-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B11_CATALOG_DIAGNOSTICS_CONTENT_REGRESSION_2026-08-26.mjs $b11; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B12_FINANCE_TRANSACTIONS_SUNSET_REGRESSION_2026-08-27.mjs $b12; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B13_PROMOTIONS_MARKET_READS_REGRESSION_2026-08-27.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
