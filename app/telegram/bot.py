@@ -35,8 +35,12 @@ class OperatorBot:
   elif state=='SEND_FAILED': rows=[[InlineKeyboardButton('🔄 Повторить отправку',callback_data=encode('retry_send',qid,rid))]]
   else: rows=[]
   return InlineKeyboardMarkup(rows) if rows else None
- async def cards(self,message,cards,markup=None):
-  for i,text in enumerate(cards): await self._reply(message,text,reply_markup=markup if i==0 else None)
+ async def cards(self,message,cards,markup=None,qid=None,operation='STATUS_CARD'):
+  for i,text in enumerate(cards):
+   outcome=await self._reply(message,text,reply_markup=markup if i==0 else None)
+   if qid and outcome.outcome is not Outcome.SUCCESS: await self.service.repo.record_delivery_failure(qid,operation,outcome.outcome.value,str(outcome.error)); return False
+  if qid: await self.service.repo.clear_delivery_failure(qid,operation)
+  return True
  async def command(self,u,c):
   if await self._denied(u): return
   cmd=u.message.text.split()[0]
@@ -46,11 +50,15 @@ class OperatorBot:
    rows=await self.service.repo.list_open_questions(); await self._reply(u.message,'\n'.join(f"{q['public_id']} · {q['marketplace']} · {q['status']}" for q in rows) or 'Open questions: 0')
   elif cmd=='/errors':
    rows=await self.service.repo.recent_errors(); await self._reply(u.message,'\n'.join(f"{x['component']}: {x['error_type']} ({x['occurrence_count']})" for x in rows) or 'No recent errors')
-  elif cmd=='/recover' and len(u.message.text.split())==3 and u.message.text.split()[2]=='DUPLICATE_RISK_ACKNOWLEDGED':
+  elif cmd=='/recover' and len(u.message.text.split()) in {2,3}:
    q=await self.service.repo.get_question_by_public_id(u.message.text.split()[1])
    if not q: await self._reply(u.message,'Unknown question'); return
-   if await self.service.recover_initial_card(q['id']): await self._reply(u.message,'Initial card resent and delivery confirmed.')
-   else: await self._reply(u.message,'Initial card is not awaiting recovery or resend was not confirmed.')
+   if await self.service.repo.get_delivery_failure(q['id'],'INITIAL_CARD'):
+    if len(u.message.text.split())!=3 or u.message.text.split()[2]!='DUPLICATE_RISK_ACKNOWLEDGED': await self._reply(u.message,'Confirm duplicate risk: /recover Q-ID DUPLICATE_RISK_ACKNOWLEDGED'); return
+    if await self.service.recover_initial_card(q['id']): await self._reply(u.message,'Initial card resent and delivery confirmed.')
+    else: await self._reply(u.message,'Initial resend was not confirmed.')
+   elif q['status'] in {'REVIEW','CODEX_ERROR'}: await self.show_codex(u.message,q['id'])
+   else: await self._reply(u.message,'No recoverable card for this question state.')
   else: await self._reply(u.message,f"DB available\nOpen questions: {len(await self.service.repo.list_open_questions())}\nActive Codex: {await self.service.repo.active_codex_profile()}\nRecover an unconfirmed initial card: /recover Q-ID DUPLICATE_RISK_ACKNOWLEDGED")
  async def prompt(self,message,q,mode,revision_id=None):
   # A replay after the state change but before sending the ForceReply must finish
@@ -70,9 +78,9 @@ class OperatorBot:
  async def show_codex(self,message,qid):
   q=await self.service.repo.get_question(qid); active=await self.service.repo.active_codex_profile()
   if q['status']=='REVIEW':
-   rev=await self.service.repo.get_current_answer_revision(qid); attempt=await self.service.repo.get_draft_attempt(rev['draft_attempt_id']) if rev and rev['draft_attempt_id'] else None; await self.cards(message,render.review(q,rev,active,attempt['codex_profile'] if attempt else None),self.buttons(q))
+   rev=await self.service.repo.get_current_answer_revision(qid); attempt=await self.service.repo.get_draft_attempt(rev['draft_attempt_id']) if rev and rev['draft_attempt_id'] else None; await self.cards(message,render.review(q,rev,active,attempt['codex_profile'] if attempt else None),self.buttons(q),qid)
   elif q['status']=='CODEX_ERROR':
-   attempt=await self.service.repo.get_current_draft_attempt(qid); await self.cards(message,render.codex_error(q,attempt['codex_profile'],attempt['error_type'],attempt['error_message'],active),self.buttons(q))
+   attempt=await self.service.repo.get_current_draft_attempt(qid); await self.cards(message,render.codex_error(q,attempt['codex_profile'],attempt['error_type'],attempt['error_message'],active),self.buttons(q),qid)
  async def run_codex(self,message,qid,claim):
   try: await self.service.codex(qid,claim=claim)
   except Exception: pass

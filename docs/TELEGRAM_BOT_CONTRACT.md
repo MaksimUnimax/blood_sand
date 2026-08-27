@@ -56,6 +56,11 @@ intentional duplicate-risk acknowledgement because an ambiguous request might
 already have created a card. Only a positive returned id clears the failure and
 is persisted.
 
+Review and Codex-error cards are MESSAGE_CREATE projections. Their failure does
+not alter the canonical question or revision; `/recover Q-ID` explicitly
+renders the current canonical review/error card again. Command/status cards are
+informational only and have no future-correlation requirement.
+
 ## Manual and Edit prompt creation recovery
 
 Manual changes `NEW → MANUAL_INPUT`, and Edit changes `REVIEW → EDITING`, before
