@@ -1,0 +1,68 @@
+name: Ozon B15 Catalog Reference Reads exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b15-catalog-reference-reads-2026-08-27
+    paths:
+      - .github/workflows/ozon-b15-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B15_CATALOG_REFERENCE_READS_2026-08-27.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b15_catalog_reference_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B15_CATALOG_REFERENCE_READS_REGRESSION_2026-08-27.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B15_CATALOG_REFERENCE_READS_CANDIDATE_EVIDENCE_2026-08-27.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact B15 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b15_catalog_reference_reads_candidate.py --repo-root . --work-root /tmp/ozon-b15-work --out /tmp/ozon-b15-exact
+      - name: Verify exact B14 base and B15 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B14_PRICING_STRATEGY_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b15-work/b14-base
+          node --check tooling/llm-api-bridges/ozon-seller/validation/PATCH_B15_CATALOG_REFERENCE_READS_REGRESSION_2026-08-27.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B15_CATALOG_REFERENCE_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b15-exact
+          find /tmp/ozon-b15-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b15-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b15-exact-files.sha256
+          sha256sum shared/ozon_operation_registry.js shared/ozon_contract.js shared/ozon_entitlements.js service_worker.js content_script.js shared/bridge_autorun_model.js shared/work_session_model.js > /tmp/ozon-b15-core.sha256
+      - name: Upload exact B15 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b15-catalog-reference-reads-candidate
+          path: |
+            /tmp/ozon-b15-exact
+            /tmp/ozon-b15-exact-files.sha256
+            /tmp/ozon-b15-core.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B15 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B15_CATALOG_REFERENCE_READS_2026-08-27.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='56ec5f5714df257875cafe01a861e55281bf1332984d52a8b692870e9b4e2f82'; b=gzip.decompress(c); assert hashlib.sha256(b).hexdigest()=='02db694b62064385d830ddb1c78ff625f5a47ee61de2bd7cf5fd6d6b82907d3f'"
+      - name: Materialize exact B15 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b15-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b15-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b15_catalog_reference_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify exact B14 base and B15 gates on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b15-exact"
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b15-work"
+          $b14 = Join-Path $work "b14-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B14_PRICING_STRATEGY_READS_REGRESSION_2026-08-27.mjs $b14; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B15_CATALOG_REFERENCE_READS_REGRESSION_2026-08-27.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
