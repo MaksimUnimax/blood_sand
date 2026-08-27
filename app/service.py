@@ -13,6 +13,8 @@ class QuestionService:
   finally: self.busy.discard(name)
  async def manual(self,qid,prompt_id):
   await self.repo.transition(qid,'NEW','MANUAL_INPUT'); await self.repo.create_telegram_input(prompt_id,qid,'manual_answer')
+ async def edit(self,qid,prompt_id):
+  q=await self.repo.get_question(qid); await self.repo.transition(qid,'REVIEW','EDITING'); await self.repo.create_telegram_input(prompt_id,qid,'edit_answer',q['current_answer_revision_id'])
  async def reply(self,prompt_id,text):
   inp=await self.repo.consume_telegram_input(prompt_id)
   if not inp: raise StaleState('STALE_STATE')
