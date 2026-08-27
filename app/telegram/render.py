@@ -5,3 +5,4 @@ def card(q,answer=None,prepared=None,error=None):
  if prepared: s+=f'\n🤖 Подготовил: {prepared}'
  if error: s+=f'\n\n⚠️ CODEX ERROR\nОшибка: {error}'
  return [f'ID: {q["public_id"]}\n'+s[i:i+4050] for i in range(0,len(s),4050)]
+def initial(q,profile): return card(q)[0]+f'\n\n🟢 Сейчас активен: {profile}'

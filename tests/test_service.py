@@ -12,3 +12,11 @@ class A:
 @pytest.mark.asyncio
 async def test_manual_e2e(tmp_path):
  d=await connect(tmp_path/'x'); await init(d); r=Repository(d); t=T(); a=A([{'marketplace':'ozon','external_question_id':'x','question_text':'q'}]); s=QuestionService(r,{'ozon':a},t); await s.poll('ozon'); q=t.cards[0]; await s.manual(q['id'],10); rid=await s.reply(10,'answer'); assert await s.send(q['id'],rid)=='SENT' and a.writes==['answer']; await d.close()
+@pytest.mark.asyncio
+async def test_poll_failure_does_not_block_other(tmp_path):
+ d=await connect(tmp_path/'x'); await init(d); r=Repository(d); t=T(); bad=A()
+ async def fail(): raise RuntimeError('x')
+ bad.fetch_unanswered_questions=fail
+ good=A([{'marketplace':'wildberries','external_question_id':'x','question_text':'q'}])
+ s=QuestionService(r,{'ozon':bad,'wildberries':good},t); z=await s.poll_all()
+ assert isinstance(z['ozon'],Exception) and len(t.cards)==1; await d.close()
