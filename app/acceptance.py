@@ -144,7 +144,10 @@ async def run(db_path, evidence_path, serve=False, deadline_seconds=15 * 60):
             # This acceptance process is deliberately the only update consumer.
             # service.poll() above remains deduplicated, so a persisted R11B card
             # is reused instead of emitting another synthetic card.
-            await application.updater.start_polling(drop_pending_updates=False)
+            await application.bot.delete_webhook(drop_pending_updates=False)
+            await application.updater.start_polling(timeout=30,
+                                                    allowed_updates=['message', 'callback_query'],
+                                                    drop_pending_updates=False)
             payload.update({'consumer_started_at': time.time(), 'consumer_alive': True,
                             'consumer_exit_reason': None})
             Path(evidence_path).write_text(json.dumps(payload, indent=2) + '\n')

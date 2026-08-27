@@ -25,6 +25,9 @@ class Repository:
   r=await self.get_answer_revision(rid)
   if not r or r['question_id']!=qid: raise StaleState('STALE_STATE')
   await self.db.execute('UPDATE questions SET current_answer_revision_id=? WHERE id=?',(rid,qid)); await self.db.commit()
+ async def persist_question_message_id(self,qid,message_id):
+  if not isinstance(message_id,int) or message_id <= 0: raise ValueError('positive Telegram message_id required')
+  await self.db.execute('UPDATE questions SET telegram_question_message_id=?,telegram_current_message_id=? WHERE id=?',(message_id,message_id,qid)); await self.db.commit()
  async def get_current_answer_revision(self,qid):
   return await (await self.db.execute('SELECT r.* FROM answer_revisions r JOIN questions q ON q.current_answer_revision_id=r.id WHERE q.id=?',(qid,))).fetchone()
  async def claim_send(self,qid,rid):
@@ -44,6 +47,14 @@ class Repository:
  async def create_draft_attempt(self,qid,p):
   if p not in {'codex1','codex2','codex3'}: raise ValueError('invalid profile')
   c=await self.db.execute("INSERT INTO draft_attempts(question_id,codex_profile,status,started_at) VALUES(?,?, 'RUNNING',?)",(qid,p,now())); await self.db.execute('UPDATE questions SET current_draft_attempt_id=? WHERE id=?',(c.lastrowid,qid)); await self.db.commit(); return c.lastrowid
+ async def claim_codex(self,qid,expected_revision_id=None):
+  await self.db.execute('BEGIN IMMEDIATE'); q=await self.get_question(qid)
+  if not q or q['status'] not in {'NEW','REVIEW','CODEX_ERROR'} or (expected_revision_id is not None and (q['status']!='REVIEW' or q['current_answer_revision_id']!=expected_revision_id)):
+   await self.db.rollback(); raise StaleState('STALE_STATE')
+  profile=await self.active_codex_profile(); c=await self.db.execute("INSERT INTO draft_attempts(question_id,codex_profile,status,started_at) VALUES(?,?, 'RUNNING',?)",(qid,profile,now()))
+  changed=await self.db.execute("UPDATE questions SET status='CODEX_RUNNING',current_draft_attempt_id=?,updated_at=? WHERE id=? AND status=?",(c.lastrowid,now(),qid,q['status']))
+  if not changed.rowcount: await self.db.rollback(); raise StaleState('STALE_STATE')
+  await self.db.commit(); return c.lastrowid,profile
  async def get_draft_attempt(self,i): return await (await self.db.execute('SELECT * FROM draft_attempts WHERE id=?',(i,))).fetchone()
  async def get_current_draft_attempt(self,qid): return await (await self.db.execute('SELECT d.* FROM draft_attempts d JOIN questions q ON q.current_draft_attempt_id=d.id WHERE q.id=?',(qid,))).fetchone()
  async def finish_draft_success(self,i,text): await self.db.execute("UPDATE draft_attempts SET status='SUCCESS',answer_text=?,finished_at=? WHERE id=?",(text,now(),i)); await self.db.commit()
@@ -53,7 +64,8 @@ class Repository:
   await self.db.execute('INSERT INTO telegram_inputs VALUES(?,?,?,?,?,?)',(msg,qid,mode,based,now(),expires)); await self.db.commit()
  async def get_telegram_input(self,msg): return await (await self.db.execute('SELECT * FROM telegram_inputs WHERE telegram_prompt_message_id=?',(msg,))).fetchone()
  async def consume_telegram_input(self,msg):
-  r=await self.get_telegram_input(msg); await self.db.execute('DELETE FROM telegram_inputs WHERE telegram_prompt_message_id=?',(msg,)); await self.db.commit(); return r
+  # DELETE ... RETURNING makes duplicate/replayed replies consume exactly once.
+  c=await self.db.execute('DELETE FROM telegram_inputs WHERE telegram_prompt_message_id=? RETURNING *',(msg,)); r=await c.fetchone(); await self.db.commit(); return r
  async def record_error(self,component,typ,msg):
   fp='|'.join((component,typ,msg.strip().lower())); t=now(); await self.db.execute("INSERT INTO recent_errors(component,error_type,message,fingerprint,first_seen_at,last_seen_at,occurrence_count) VALUES(?,?,?,?,?,?,1) ON CONFLICT(fingerprint) DO UPDATE SET occurrence_count=occurrence_count+1,last_seen_at=excluded.last_seen_at",(component,typ,msg,fp,t,t)); await self.db.commit()
  async def recent_errors(self): return await (await self.db.execute('SELECT * FROM recent_errors ORDER BY id DESC')).fetchall()

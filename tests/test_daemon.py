@@ -13,7 +13,7 @@ def test_live_config_accepts_complete_values_without_repr_leak():
  assert live_config(values)==values and 'value-' not in repr(Config())
 
 @pytest.mark.asyncio
-async def test_question_transport_persists_first_message_id_even_when_falsey():
+async def test_question_transport_rejects_non_positive_message_id():
  class Repo:
   async def active_codex_profile(self): return 'codex1'
  class Bot:
@@ -21,8 +21,8 @@ async def test_question_transport_persists_first_message_id_even_when_falsey():
  app=SimpleNamespace(bot=Bot())
  q={'id':1,'public_id':'Q-000001','marketplace':'ozon','question_text':'x'}
  transport=TelegramTransport(app, 1, Repo())
- assert await transport.question(q)==0
- assert transport.last_question_send == {'executed': True, 'response_type': 'SimpleNamespace', 'message_id': 0}
+ with pytest.raises(RuntimeError, match='positive message_id'):
+  await transport.question(q)
 
 @pytest.mark.asyncio
 async def test_question_transport_renders_persisted_sqlite_row(tmp_path):

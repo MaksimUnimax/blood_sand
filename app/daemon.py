@@ -6,6 +6,7 @@ import signal
 import httpx
 from telegram.ext import Application
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.error import RetryAfter, TelegramError
 
 from app.codex.prompt_builder import PromptBuilder
 from app.codex.runner import Runner
@@ -36,6 +37,19 @@ class TelegramTransport:
     def __init__(self, application, operator_id, repo):
         self.application, self.operator_id, self.repo = application, operator_id, repo
         self.last_question_send = {'executed': False}
+        self._last_outbound_at = 0.0
+
+    async def _send(self, **kwargs):
+        # Private operator chat: serialize initial-card sends at <= 1/sec.
+        delay = self._last_outbound_at + 1.0 - asyncio.get_running_loop().time()
+        if delay > 0: await asyncio.sleep(delay)
+        try:
+            result = await self.application.bot.send_message(**kwargs)
+        except RetryAfter as exc:
+            await asyncio.sleep(float(exc.retry_after))
+            result = await self.application.bot.send_message(**kwargs)
+        self._last_outbound_at = asyncio.get_running_loop().time()
+        return result
 
     async def question(self, question):
         first = None
@@ -45,9 +59,11 @@ class TelegramTransport:
             [InlineKeyboardButton('🚫 Игнорировать', callback_data=encode('ignore', question['id']))],
         ])
         for text in render.initial(question, await self.repo.active_codex_profile()):
-            sent = await self.application.bot.send_message(chat_id=self.operator_id, text=text, reply_markup=buttons if first is None else None)
+            sent = await self._send(chat_id=self.operator_id, text=text, reply_markup=buttons if first is None else None)
             if first is None:
                 first = sent.message_id
+                if not isinstance(first, int) or first <= 0:
+                    raise RuntimeError('Telegram sendMessage did not return a positive message_id')
                 self.last_question_send = {
                     'executed': True,
                     'response_type': type(sent).__name__,
@@ -90,7 +106,12 @@ async def main():
     stop = asyncio.Event(); loop = asyncio.get_running_loop()
     for signum in (signal.SIGTERM, signal.SIGINT): loop.add_signal_handler(signum, stop.set)
     try:
-        await application.initialize(); await application.start(); await application.updater.start_polling()
+        await application.initialize()
+        # getUpdates and webhook delivery are mutually exclusive. Clearing a webhook
+        # without dropping pending updates is the explicit production polling contract.
+        await application.bot.delete_webhook(drop_pending_updates=False)
+        await application.start()
+        await application.updater.start_polling(timeout=30, allowed_updates=['message','callback_query'], drop_pending_updates=False)
         await asyncio.gather(polling_loop(service, config, stop), retention_loop(repo, config, stop))
     finally:
         if application.updater.running: await application.updater.stop()

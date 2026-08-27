@@ -9,13 +9,22 @@ class QuestionService:
    for raw in await self.adapters[name].fetch_unanswered_questions():
     q,new=await self.repo.insert_question(raw)
     if new:
-     mid=await self.transport.question(q); await self.repo.db.execute('UPDATE questions SET telegram_question_message_id=? WHERE id=?',(mid,q['id'])); await self.repo.db.commit()
+     mid=await self.transport.question(q); await self.repo.persist_question_message_id(q['id'],mid)
    return True
   finally: self.busy.discard(name)
  async def manual(self,qid,prompt_id):
   await self.repo.transition(qid,'NEW','MANUAL_INPUT'); await self.repo.create_telegram_input(prompt_id,qid,'manual_answer')
- async def edit(self,qid,prompt_id):
-  q=await self.repo.get_question(qid); await self.repo.transition(qid,'REVIEW','EDITING'); await self.repo.create_telegram_input(prompt_id,qid,'edit_answer',q['current_answer_revision_id'])
+ async def begin_manual(self,qid):
+  await self.repo.transition(qid,'NEW','MANUAL_INPUT')
+ async def edit(self,qid,prompt_id,expected_revision_id=None):
+  q=await self.repo.get_question(qid)
+  if not q or q['current_answer_revision_id']!=expected_revision_id: raise StaleState('STALE_STATE')
+  await self.repo.transition(qid,'REVIEW','EDITING'); await self.repo.create_telegram_input(prompt_id,qid,'edit_answer',expected_revision_id)
+ async def begin_edit(self,qid,expected_revision_id):
+  q=await self.repo.get_question(qid)
+  if not q or q['current_answer_revision_id']!=expected_revision_id: raise StaleState('STALE_STATE')
+  await self.repo.transition(qid,'REVIEW','EDITING')
+  return q
  async def reply(self,prompt_id,text):
   inp=await self.repo.consume_telegram_input(prompt_id)
   if not inp: raise StaleState('STALE_STATE')
@@ -35,10 +44,9 @@ class QuestionService:
   elif q['status']=='SEND_UNKNOWN': await self.repo.transition(qid,'SEND_UNKNOWN','REVIEW')
   else: raise StaleState('STALE_STATE')
   return await self.send(qid,rid)
- async def codex(self,qid):
+ async def codex(self,qid,expected_revision_id=None,claim=None):
+  aid,profile=claim or await self.repo.claim_codex(qid,expected_revision_id)
   q=await self.repo.get_question(qid)
-  if not q or q['status'] not in {'NEW','REVIEW','CODEX_ERROR'}: raise StaleState('STALE_STATE')
-  profile=await self.repo.active_codex_profile(); await self.repo.transition(qid,q['status'],'CODEX_RUNNING'); aid=await self.repo.create_draft_attempt(qid,profile)
   try:
    text=await self.runner.run(profile,self.prompts.build(q),str(aid)); current=await self.repo.get_question(qid)
    if current['current_draft_attempt_id']!=aid or current['status']!='CODEX_RUNNING': return None
