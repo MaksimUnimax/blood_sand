@@ -1,0 +1,61 @@
+name: Ozon B12 Finance Transactions Sunset exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b12-finance-transactions-sunset-2026-08-27
+    paths:
+      - .github/workflows/ozon-b12-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b12_finance_transactions_sunset_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B12_FINANCE_TRANSACTIONS_SUNSET_REGRESSION_2026-08-27.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B12_FINANCE_TRANSACTIONS_SUNSET_*_2026-08-27.md
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_POST_B11_FINANCE_TRANSACTIONS_AUDIT_2026-08-27.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact zero-delta B12 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b12_finance_transactions_sunset_candidate.py --repo-root . --work-root /tmp/ozon-b12-work --out /tmp/ozon-b12-exact
+      - name: Verify B11 accepted base and B12 sunset closure
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B11_CATALOG_DIAGNOSTICS_CONTENT_REGRESSION_2026-08-26.mjs /tmp/ozon-b12-work/b11-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B12_FINANCE_TRANSACTIONS_SUNSET_REGRESSION_2026-08-27.mjs /tmp/ozon-b12-exact
+          find /tmp/ozon-b12-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b12-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b12-exact-files.sha256
+      - name: Upload exact B12 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b12-finance-transactions-sunset-candidate
+          path: |
+            /tmp/ozon-b12-exact
+            /tmp/ozon-b12-exact-files.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact zero-delta B12 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b12-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b12-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b12_finance_transactions_sunset_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B11 accepted base and B12 sunset closure on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b12-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b12-exact"
+          $b11 = Join-Path $work "b11-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B11_CATALOG_DIAGNOSTICS_CONTENT_REGRESSION_2026-08-26.mjs $b11; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B12_FINANCE_TRANSACTIONS_SUNSET_REGRESSION_2026-08-27.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
