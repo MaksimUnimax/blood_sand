@@ -45,7 +45,8 @@ class TelegramTransport:
         ])
         for text in render.initial(question, await self.repo.active_codex_profile()):
             sent = await self.application.bot.send_message(chat_id=self.operator_id, text=text, reply_markup=buttons if first is None else None)
-            first = first or sent.message_id
+            if first is None:
+                first = sent.message_id
         return first
 
 
