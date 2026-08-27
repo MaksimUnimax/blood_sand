@@ -1,0 +1,68 @@
+name: Ozon B21 Return Giveout Reads exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b21-return-giveout-reads-2026-08-27
+    paths:
+      - .github/workflows/ozon-b21-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B21_RETURN_GIVEOUT_READS_2026-08-27.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b21_return_giveout_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B21_RETURN_GIVEOUT_READS_REGRESSION_2026-08-27.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B21_RETURN_GIVEOUT_READS_CANDIDATE_EVIDENCE_2026-08-27.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B21_RETURN_GIVEOUT_READS_CANDIDATE_MANIFEST_2026-08-27.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact B21 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b21_return_giveout_reads_candidate.py --repo-root . --work-root /tmp/ozon-b21-work --out /tmp/ozon-b21-exact
+      - name: Verify exact B20 base and B21 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B20_CATALOG_CERTIFICATE_DATA_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b21-work/b20-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B21_RETURN_GIVEOUT_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b21-exact
+          find /tmp/ozon-b21-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b21-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b21-exact-files.sha256
+          sha256sum shared/ozon_operation_registry.js shared/ozon_contract.js shared/ozon_entitlements.js service_worker.js content_script.js > /tmp/ozon-b21-core.sha256
+      - name: Upload exact B21 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b21-return-giveout-reads-candidate
+          path: |
+            /tmp/ozon-b21-exact
+            /tmp/ozon-b21-exact-files.sha256
+            /tmp/ozon-b21-core.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B21 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B21_RETURN_GIVEOUT_READS_2026-08-27.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='20ea8158edadd35445099fe9bf4431de76e4f14f3a26b6cf51e150c11ecc078f'; b=gzip.decompress(c); assert hashlib.sha256(b).hexdigest()=='b67665029fc8ae962aa390178fadc210f403e9ceac77107068f049a64f148321'"
+      - name: Materialize exact B21 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b21-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b21-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b21_return_giveout_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify exact B20 base and B21 gates on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b21-exact"
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b21-work"
+          $b20 = Join-Path $work "b20-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B20_CATALOG_CERTIFICATE_DATA_READS_REGRESSION_2026-08-27.mjs $b20; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B21_RETURN_GIVEOUT_READS_REGRESSION_2026-08-27.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
