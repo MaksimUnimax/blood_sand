@@ -1,0 +1,68 @@
+name: Ozon B16 Warehouse Delivery Diagnostics exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b16-warehouse-delivery-diagnostics-2026-08-27
+    paths:
+      - .github/workflows/ozon-b16-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B16_WAREHOUSE_DELIVERY_DIAGNOSTICS_2026-08-27.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b16_warehouse_delivery_diagnostics_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B16_WAREHOUSE_DELIVERY_DIAGNOSTICS_REGRESSION_2026-08-27.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B16_WAREHOUSE_DELIVERY_DIAGNOSTICS_CANDIDATE_EVIDENCE_2026-08-27.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact B16 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b16_warehouse_delivery_diagnostics_candidate.py --repo-root . --work-root /tmp/ozon-b16-work --out /tmp/ozon-b16-exact
+      - name: Verify exact B15 base and B16 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B15_CATALOG_REFERENCE_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b16-work/b15-base
+          node --check tooling/llm-api-bridges/ozon-seller/validation/PATCH_B16_WAREHOUSE_DELIVERY_DIAGNOSTICS_REGRESSION_2026-08-27.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B16_WAREHOUSE_DELIVERY_DIAGNOSTICS_REGRESSION_2026-08-27.mjs /tmp/ozon-b16-exact
+          find /tmp/ozon-b16-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b16-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b16-exact-files.sha256
+          sha256sum shared/ozon_operation_registry.js shared/ozon_contract.js shared/ozon_entitlements.js service_worker.js content_script.js shared/bridge_autorun_model.js shared/work_session_model.js > /tmp/ozon-b16-core.sha256
+      - name: Upload exact B16 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b16-warehouse-delivery-diagnostics-candidate
+          path: |
+            /tmp/ozon-b16-exact
+            /tmp/ozon-b16-exact-files.sha256
+            /tmp/ozon-b16-core.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B16 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B16_WAREHOUSE_DELIVERY_DIAGNOSTICS_2026-08-27.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='c67470516706c723dc4d9d4b199624cc3a354c3ef8082b10db5f3d2bceacdf5e'; b=gzip.decompress(c); assert hashlib.sha256(b).hexdigest()=='7655c1b793a40321c8b640ce6b5cc05c2df922194900eff27dcef73ace8cd756'"
+      - name: Materialize exact B16 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b16-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b16-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b16_warehouse_delivery_diagnostics_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify exact B15 base and B16 gates on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b16-exact"
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b16-work"
+          $b15 = Join-Path $work "b15-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B15_CATALOG_REFERENCE_READS_REGRESSION_2026-08-27.mjs $b15; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B16_WAREHOUSE_DELIVERY_DIAGNOSTICS_REGRESSION_2026-08-27.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
