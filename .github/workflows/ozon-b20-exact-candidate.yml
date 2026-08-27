@@ -1,0 +1,68 @@
+name: Ozon B20 Catalog Certificate Data Reads exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b20-catalog-certificate-data-reads-2026-08-27
+    paths:
+      - .github/workflows/ozon-b20-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B20_CATALOG_CERTIFICATE_DATA_READS_2026-08-27.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b20_catalog_certificate_data_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B20_CATALOG_CERTIFICATE_DATA_READS_REGRESSION_2026-08-27.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B20_CATALOG_CERTIFICATE_DATA_READS_CANDIDATE_EVIDENCE_2026-08-27.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B20_CATALOG_CERTIFICATE_DATA_READS_CANDIDATE_MANIFEST_2026-08-27.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact B20 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b20_catalog_certificate_data_reads_candidate.py --repo-root . --work-root /tmp/ozon-b20-work --out /tmp/ozon-b20-exact
+      - name: Verify exact B19 base and B20 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B19_CATALOG_CERTIFICATION_REFERENCE_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b20-work/b19-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B20_CATALOG_CERTIFICATE_DATA_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b20-exact
+          find /tmp/ozon-b20-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b20-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b20-exact-files.sha256
+          sha256sum shared/ozon_operation_registry.js shared/ozon_contract.js shared/ozon_entitlements.js service_worker.js content_script.js > /tmp/ozon-b20-core.sha256
+      - name: Upload exact B20 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b20-catalog-certificate-data-reads-candidate
+          path: |
+            /tmp/ozon-b20-exact
+            /tmp/ozon-b20-exact-files.sha256
+            /tmp/ozon-b20-core.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B20 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B20_CATALOG_CERTIFICATE_DATA_READS_2026-08-27.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='a56cfc934f42a6b4ad9f67a71fd7e230a280c84779f2a92071f773663c1ed190'; b=gzip.decompress(c); assert hashlib.sha256(b).hexdigest()=='b72ccb007d13aafd904c3ff6aee8aef1a9bcbf3085271d7e4f087539d112abb2'"
+      - name: Materialize exact B20 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b20-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b20-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b20_catalog_certificate_data_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify exact B19 base and B20 gates on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b20-exact"
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b20-work"
+          $b19 = Join-Path $work "b19-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B19_CATALOG_CERTIFICATION_REFERENCE_READS_REGRESSION_2026-08-27.mjs $b19; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B20_CATALOG_CERTIFICATE_DATA_READS_REGRESSION_2026-08-27.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
