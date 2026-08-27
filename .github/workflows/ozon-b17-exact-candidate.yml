@@ -1,0 +1,69 @@
+name: Ozon B17 Reviews Questions Extended Reads exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b17-reviews-questions-extended-reads-2026-08-27
+    paths:
+      - .github/workflows/ozon-b17-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B17_REVIEWS_QUESTIONS_EXTENDED_READS_2026-08-27.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b17_reviews_questions_extended_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B17_REVIEWS_QUESTIONS_EXTENDED_READS_REGRESSION_2026-08-27.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B17_REVIEWS_QUESTIONS_EXTENDED_READS_CANDIDATE_EVIDENCE_2026-08-27.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B17_REVIEWS_QUESTIONS_EXTENDED_READS_CANDIDATE_MANIFEST_2026-08-27.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact B17 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b17_reviews_questions_extended_reads_candidate.py --repo-root . --work-root /tmp/ozon-b17-work --out /tmp/ozon-b17-exact
+      - name: Verify exact B16 base and B17 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B16_WAREHOUSE_DELIVERY_DIAGNOSTICS_REGRESSION_2026-08-27.mjs /tmp/ozon-b17-work/b16-base
+          node --check tooling/llm-api-bridges/ozon-seller/validation/PATCH_B17_REVIEWS_QUESTIONS_EXTENDED_READS_REGRESSION_2026-08-27.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B17_REVIEWS_QUESTIONS_EXTENDED_READS_REGRESSION_2026-08-27.mjs /tmp/ozon-b17-exact
+          find /tmp/ozon-b17-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Record exact identities
+        run: |
+          cd /tmp/ozon-b17-exact
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/ozon-b17-exact-files.sha256
+          sha256sum shared/ozon_operation_registry.js shared/ozon_contract.js shared/ozon_entitlements.js service_worker.js content_script.js shared/bridge_autorun_model.js shared/work_session_model.js > /tmp/ozon-b17-core.sha256
+      - name: Upload exact B17 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b17-reviews-questions-extended-reads-candidate
+          path: |
+            /tmp/ozon-b17-exact
+            /tmp/ozon-b17-exact-files.sha256
+            /tmp/ozon-b17-core.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B17 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B17_REVIEWS_QUESTIONS_EXTENDED_READS_2026-08-27.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='4c51c31d9d7b82c513a420b253d6f0fcb149d742a5d3980eaea2d0fefa226d5d'; b=gzip.decompress(c); assert hashlib.sha256(b).hexdigest()=='0464197c4de3e2d6c66e2584b832f995d4847d225a1407cc4df0732bd841ec36'"
+      - name: Materialize exact B17 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b17-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b17-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b17_reviews_questions_extended_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify exact B16 base and B17 gates on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b17-exact"
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b17-work"
+          $b16 = Join-Path $work "b16-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B16_WAREHOUSE_DELIVERY_DIAGNOSTICS_REGRESSION_2026-08-27.mjs $b16; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B17_REVIEWS_QUESTIONS_EXTENDED_READS_REGRESSION_2026-08-27.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
