@@ -60,7 +60,7 @@ def evidence(repo, db_path):
     }
 
 
-async def run(db_path, evidence_path):
+async def run(db_path, evidence_path, serve=False):
     token = os.environ['TELEGRAM_BOT_TOKEN']
     operator_id = os.environ['TELEGRAM_OPERATOR_USER_ID']
     db = await connect(db_path)
@@ -89,6 +89,16 @@ async def run(db_path, evidence_path):
         Path(evidence_path).write_text(json.dumps(payload, indent=2) + '\n')
         print('R11B isolated Telegram initial delivery complete.', flush=True)
         print(f"QUESTION_ID={question['id']} PUBLIC_Q_ID={question['public_id']} TELEGRAM_MESSAGE_ID={question['telegram_question_message_id']}", flush=True)
+        if serve:
+            # This acceptance process is deliberately the only update consumer.
+            # service.poll() above remains deduplicated, so a persisted R11B card
+            # is reused instead of emitting another synthetic card.
+            await application.updater.start_polling(drop_pending_updates=False)
+            print('R11D isolated Telegram polling active.', flush=True)
+            try:
+                await asyncio.Event().wait()
+            finally:
+                await application.updater.stop()
     finally:
         if application.running:
             await application.stop()
@@ -100,10 +110,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--db', type=Path, required=True)
     parser.add_argument('--evidence', type=Path, required=True)
+    parser.add_argument('--serve', action='store_true', help='keep isolated Telegram polling active')
     args = parser.parse_args()
     if args.db.resolve() == Path('/var/lib/marketplace-question-operator/state.sqlite3'):
         raise SystemExit('refusing production database')
-    asyncio.run(run(args.db, args.evidence))
+    asyncio.run(run(args.db, args.evidence, args.serve))
 
 
 if __name__ == '__main__':
