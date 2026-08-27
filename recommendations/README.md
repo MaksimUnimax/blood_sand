@@ -22,6 +22,7 @@
 - `RECOMMENDATION_SYSTEM_TZ.md` — продуктово-техническое ТЗ: входы, правила, ограничения, data model, алгоритм и acceptance criteria.
 - `RECOMMENDATION_MATRIX.md` — утверждаемая матрица `Чертог × пол → рекомендация`, календарные границы и тип основания.
 - `PRODUCT_CLASSIFICATION.md` — классификация всех 25 славянских SKU: гендерная политика, роль в V1 и ограничения.
+- `M0_DOMAIN_FREEZE_AUDIT.md` — итоговый аудит всех direct/curated строк V1; фиксирует `DOMAIN_MATRIX_FREEZE_PASS` и список слабых fallback-связей для будущего пересмотра.
 - `CUSTOMER_RECOMMENDATION_COPY_GUIDE.md` — живой гайд клиентского ответа: порядок `Чертог → объяснение → оберег → ссылка`, стиль, гендерные ветки, маркетплейсы и актуальные формулировки.
 - `OZON_PRODUCT_LINKS.md` — реестр публичных Ozon-ссылок для всех 76 текущих товаров; славянские позиции вынесены первым разделом и связаны с recommendation identity.
 - `WILDBERRIES_PRODUCT_LINKS.md` — реестр публичных Wildberries-ссылок только для карточек категории `Обереги`; `Четки` и другие категории исключены.
@@ -43,13 +44,19 @@ VK Mini App ──────┘
 
 Bot и Mini App не имеют собственной независимой матрицы.
 
-## Ближайший execution milestone
+## Текущий execution milestone
 
-После утверждения архитектуры и roadmap начинается `M1`:
+`M0 — Domain freeze` закрыт с gate:
+
+```text
+DOMAIN_MATRIX_FREEZE_PASS
+```
+
+Текущий следующий этап — `M1 — Machine-readable Recommendation Core`:
 
 1. создать machine-readable versioned data-файлы;
 2. реализовать schema/config validation;
 3. реализовать `resolveChertog()`;
 4. реализовать `resolveRecommendation()`;
 5. покрыть все 32 `Чертог × пол` primary-case и граничные даты автотестами;
-6. только после `RECOMMENDATION_CORE_CONTRACT_PASS` переходить к VK API/боту.
+6. только после `RECOMMENDATION_CORE_CONTRACT_PASS` переходить к Recommendation API и VK-боту.
