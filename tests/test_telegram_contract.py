@@ -660,6 +660,55 @@ async def test_TELEGRAM_STANDALONE_SEND_PRIMITIVE_TEST_and_SWITCH_MENU_STANDALON
 
 
 @pytest.mark.asyncio
+async def test_REVIEW_SWITCH_PRESERVES_GENERATOR_PROVENANCE_TEST(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'review-switch','question_text':'q'})
+ attempt,_=await repo.claim_codex(q['id']); await repo.finish_draft_success(attempt,'T4 deterministic Codex answer')
+ rid=await repo.create_answer_revision(q['id'],'codex','T4 deterministic Codex answer',draft_attempt_id=attempt)
+ await repo.set_current_answer_revision(q['id'],rid); await repo.transition(q['id'],'CODEX_RUNNING','REVIEW')
+ class Wire:
+  def __init__(self): self.calls=[]
+  async def send_message(self,**kwargs): self.calls.append(kwargs); return SimpleNamespace(message_id=len(self.calls))
+ class Message:
+  chat_id=1
+  def __init__(self,wire): self.wire=wire
+  def get_bot(self): return self.wire
+ class Query:
+  def __init__(self): self.data=encode('choose_codex',q['id'],rid,'codex2'); self.message=message
+  async def answer(self,*args,**kwargs): pass
+ wire=Wire(); message=Message(wire); bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ await bot.callback(SimpleNamespace(callback_query=Query(),effective_user=SimpleNamespace(id=1),effective_chat=SimpleNamespace(id=1,type='private')),None)
+ current=await repo.get_question(q['id']); text=wire.calls[-1]['text']; markup=wire.calls[-1]['reply_markup']
+ assert await repo.active_codex_profile()=='codex2'
+ assert (current['status'],current['current_answer_revision_id'])==('REVIEW',rid)
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts')).fetchone())[0]==1
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM answer_revisions')).fetchone())[0]==1
+ assert all(value in text for value in ('T4 deterministic Codex answer','Источник: codex','🤖 Подготовил: codex1','🟢 Сейчас активен: codex2')) and '🤖 Подготовил: codex2' not in text
+ assert [b.text for row in markup.inline_keyboard for b in row]==['✅ Отправить','✏️ Редактировать','🚫 Игнорировать','🤖 Сменить Codex']
+ assert 'Перегенерировать' not in text and wire.calls[-1].get('reply_parameters') is None and wire.calls[-1].get('reply_to_message_id') is None and not isinstance(markup,ForceReply)
+ await db.close()
+
+
+@pytest.mark.asyncio
+async def test_SHOW_QUESTION_REVIEW_GENERATOR_PROVENANCE_TEST_and_MANUAL_REVIEW_DOES_NOT_INVENT_GENERATOR_TEST(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ class Message(StandaloneMessage):
+  def __init__(self): self.calls=[]
+  async def reply_text(self,*args,**kwargs): self.calls.append((args,kwargs)); return SimpleNamespace(message_id=len(self.calls))
+ message=Message(); bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'show-review','question_text':'q'})
+ attempt,_=await repo.claim_codex(q['id']); await repo.finish_draft_success(attempt,'answer')
+ rid=await repo.create_answer_revision(q['id'],'codex','answer',draft_attempt_id=attempt); await repo.set_current_answer_revision(q['id'],rid); await repo.transition(q['id'],'CODEX_RUNNING','REVIEW')
+ await repo.set_active_codex_profile('codex2')
+ await bot.show_question(message,q['id']); assert '🤖 Подготовил: codex1' in message.calls[-1][0][0] and '🟢 Сейчас активен: codex2' in message.calls[-1][0][0]
+ manual,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'manual-review','question_text':'q'})
+ manual_rid=await repo.create_answer_revision(manual['id'],'manual','manual answer'); await repo.set_current_answer_revision(manual['id'],manual_rid); await repo.transition(manual['id'],'NEW','MANUAL_INPUT'); await repo.transition(manual['id'],'MANUAL_INPUT','REVIEW')
+ await bot.show_question(message,manual['id']); text=message.calls[-1][0][0]
+ assert '🟢 Сейчас активен: codex2' in text and not any(f'🤖 Подготовил: {profile}' in text for profile in ('codex1','codex2','codex3'))
+ await db.close()
+
+
+@pytest.mark.asyncio
 async def test_MANUAL_PROMPT_STANDALONE_TEST_and_EDIT_PROMPT_STANDALONE_TEST(tmp_path):
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); service=QuestionService(repo,{},None)
  q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'standalone-prompts','question_text':'q'})

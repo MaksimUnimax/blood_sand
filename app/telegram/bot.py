@@ -49,6 +49,10 @@ class OperatorBot:
   return InlineKeyboardMarkup(rows) if rows else None
  def profile_buttons(self,q,active):
   return InlineKeyboardMarkup([[InlineKeyboardButton(f'{p}{" ✓" if p==active else ""}',callback_data=encode('choose_codex',q['id'],q['current_answer_revision_id'],p))] for p in ('codex1','codex2','codex3')])
+ async def review_cards(self,q):
+  rev=await self.service.repo.get_current_answer_revision(q['id'])
+  attempt=await self.service.repo.get_draft_attempt(rev['draft_attempt_id']) if rev and rev['draft_attempt_id'] else None
+  return render.review(q,rev,await self.service.repo.active_codex_profile(),attempt['codex_profile'] if attempt else None)
  async def show_question(self,message,qid):
   q=await self.service.repo.get_question(qid); active=await self.service.repo.active_codex_profile()
   if q['status']=='NEW': cards=render.initial(q,active)
@@ -57,7 +61,7 @@ class OperatorBot:
   elif q['status']=='CODEX_ERROR':
    attempt=await self.service.repo.get_current_draft_attempt(qid); cards=render.codex_error(q,attempt['codex_profile'],attempt['error_type'],attempt['error_message'],active)
   elif q['current_answer_revision_id']:
-   cards=render.delivery(q,await self.service.repo.get_current_answer_revision(qid),q['status']) if q['status'] in {'SENDING','SENT','SEND_FAILED','SEND_UNKNOWN'} else render.review(q,await self.service.repo.get_current_answer_revision(qid),active)
+   cards=render.delivery(q,await self.service.repo.get_current_answer_revision(qid),q['status']) if q['status'] in {'SENDING','SENT','SEND_FAILED','SEND_UNKNOWN'} else await self.review_cards(q)
   else: cards=render.split_card(q,f'Состояние: {q["status"]}\n🟢 Сейчас активен: {active}')
   await self.cards(message,cards,self.buttons(q),qid,operation='CODEX_RUNNING_CARD' if q['status']=='CODEX_RUNNING' else 'STATUS_CARD')
  async def cards(self,message,cards,markup=None,qid=None,operation='STATUS_CARD'):
@@ -103,9 +107,9 @@ class OperatorBot:
   await self.service.repo.create_telegram_input(sent.message_id,q['id'],mode,revision_id if mode=='edit_answer' else None); await self.service.repo.clear_delivery_failure(q['id'],operation)
   return True
  async def show_codex(self,message,qid):
-  q=await self.service.repo.get_question(qid); active=await self.service.repo.active_codex_profile()
+  q=await self.service.repo.get_question(qid)
   if q['status']=='REVIEW':
-   rev=await self.service.repo.get_current_answer_revision(qid); attempt=await self.service.repo.get_draft_attempt(rev['draft_attempt_id']) if rev and rev['draft_attempt_id'] else None; await self.cards(message,render.review(q,rev,active,attempt['codex_profile'] if attempt else None),self.buttons(q),qid)
+   await self.cards(message,await self.review_cards(q),self.buttons(q),qid)
   elif q['status']=='CODEX_ERROR':
    attempt=await self.service.repo.get_current_draft_attempt(qid); await self.cards(message,render.codex_error(q,attempt['codex_profile'],attempt['error_type'],attempt['error_message'],active),self.buttons(q),qid)
  async def run_codex(self,message,qid,claim):
