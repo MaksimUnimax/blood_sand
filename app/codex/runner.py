@@ -11,11 +11,13 @@ def parse_jsonl(data):
    text=row.get('text') or row.get('content')
    if isinstance(text,str) and text.strip(): return text
  raise CodexError('INVALID_OUTPUT','no final assistant draft')
+def exec_args(executable,job,prompt):
+ return (str(executable),'exec','--json','--ephemeral','--skip-git-repo-check','-C',str(job),'-s','workspace-write',prompt)
 class Runner:
  def __init__(self,c): self.c=c
  async def run(self,profile,prompt,job):
   job=Path(self.c.jobs_dir)/f'attempt-{job}-{__import__("uuid").uuid4()}'; job.mkdir(parents=True,exist_ok=True)
-  try: p=await asyncio.create_subprocess_exec(str(self.c.codex_executable),'exec','--json','--ephemeral','-C',str(job),'-s','workspace-write',prompt,stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE,env=child_env(self.c.profiles[profile])); o,e=await asyncio.wait_for(p.communicate(),600)
+  try: p=await asyncio.create_subprocess_exec(*exec_args(self.c.codex_executable,job,prompt),stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE,env=child_env(self.c.profiles[profile])); o,e=await asyncio.wait_for(p.communicate(),600)
   except asyncio.TimeoutError:
    p.kill(); await p.communicate(); raise CodexError('TIMEOUT','timeout')
   except OSError as x: raise CodexError('PROCESS_ERROR',str(x))
