@@ -1,1 +1,3 @@
-MANUAL_COPY_TEXT_LIMIT = 256
+"""Shared Telegram customer-answer presentation contract."""
+
+CUSTOMER_ANSWER_TEXT_LIMIT = 4096

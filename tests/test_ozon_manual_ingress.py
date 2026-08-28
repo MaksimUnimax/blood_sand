@@ -171,10 +171,7 @@ async def test_manual_copy_review_has_no_send_and_close_is_local_only(tmp_path):
     revision = await repo.get_current_answer_revision(q['id'])
     markup = OperatorBot('1', service).buttons(q, revision=revision)
     labels = [button.text for row in markup.inline_keyboard for button in row]
-    assert labels == ['📋 Скопировать ответ', '✏️ Редактировать', '✅ Закрыть', '🤖 Сменить Codex']
-    copy = markup.inline_keyboard[0][0]
-    assert copy.copy_text.text == revision['text']
-    assert copy.callback_data is None
+    assert labels == ['✏️ Редактировать', '✅ Закрыть', '🤖 Сменить Codex']
     assert '✅ Отправить' not in labels
 
     with pytest.raises(StaleState):
@@ -209,16 +206,21 @@ def test_v2_reference_snapshot_is_exact_and_contains_required_semantics():
     assert 'Печать Велеса' in text
 
 
-def test_manual_copy_prompt_and_validation_limit(tmp_path):
+def test_shared_customer_answer_prompt_and_validation_limit(tmp_path):
     builder = prompt_builder(tmp_path, 'https://www.ozon.ru/product/1630040194/')
     q = {'marketplace': 'ozon', 'publish_mode': 'MANUAL_COPY', 'question_text': 'q'}
     prompt = builder.build(q)
-    assert 'ready-to-paste customer answer' in prompt
-    assert '256 characters total' in prompt
-    assert builder.validate_output(q, 'x' * 256) == 'x' * 256
-    with pytest.raises(ValueError, match='1..256'):
-        builder.validate_output(q, 'x' * 257)
-    assert builder.validate_output({**q, 'publish_mode': 'MARKETPLACE_API'}, 'x' * 257) == 'x' * 257
+    assert 'complete customer-ready marketplace reply' in prompt
+    assert 'natural paragraph breaks' in prompt
+    assert 'male and female branches in separate paragraphs' in prompt
+    assert 'concise marketplace' not in prompt
+    assert '256 characters' not in prompt
+    for marketplace, mode in (('ozon', 'MANUAL_COPY'), ('wildberries', 'MARKETPLACE_API')):
+        question = {**q, 'marketplace': marketplace, 'publish_mode': mode}
+        assert builder.validate_output(question, 'x') == 'x'
+        assert builder.validate_output(question, 'x' * 4096) == 'x' * 4096
+        with pytest.raises(ValueError, match='1..4096'):
+            builder.validate_output(question, 'x' * 4097)
 
 
 @pytest.mark.asyncio
@@ -233,13 +235,13 @@ async def test_manual_copy_long_text_keeps_input_context_and_historical_revision
     await repo.finish_draft_error(result['claim'][0], 'TEST', 'stop')
     await repo.transition(qid, 'CODEX_RUNNING', 'CODEX_ERROR')
     await service.begin_manual(qid)
-    with pytest.raises(ValueError, match='MANUAL_COPY_TEXT_TOO_LONG'):
-        await service.operator_text('x' * 257, 8002)
+    with pytest.raises(ValueError, match='CUSTOMER_ANSWER_TEXT_TOO_LONG'):
+        await service.operator_text('x' * 4097, 8002)
     assert (await repo.get_active_text_input_context())['question_id'] == qid
     rid = (await service.operator_text('ok', 8003))['revision_id']
     q = await repo.get_question(qid)
     assert (await repo.get_answer_revision(rid))['text'] == 'ok'
-    await db.execute('UPDATE answer_revisions SET text=? WHERE id=?', ('x' * 257, rid))
+    await db.execute('UPDATE answer_revisions SET text=? WHERE id=?', ('x' * 4097, rid))
     await db.commit()
     assert '📋 Скопировать ответ' not in [b.text for row in OperatorBot('1', service).buttons(q, revision=await repo.get_answer_revision(rid)).inline_keyboard for b in row]
     await db.close()
@@ -261,6 +263,57 @@ async def test_existing_marketplace_api_rows_keep_send_behavior(tmp_path):
     rid = await repo.consume_active_text('answer')
     claimed = await repo.claim_send(q['id'], rid)
     assert claimed['text'] == 'answer'
+    await db.close()
+
+
+@pytest.mark.asyncio
+async def test_shared_review_presentation_is_clean_for_all_marketplaces_and_chunks_history(tmp_path):
+    db = await connect(tmp_path / 'state.sqlite3')
+    await init(db)
+    repo = Repository(db)
+    service = QuestionService(repo, {}, NoTransport())
+
+    class Wire:
+        def __init__(self): self.calls = []
+        async def send_message(self, **kwargs):
+            self.calls.append(kwargs)
+            return SimpleNamespace(message_id=len(self.calls))
+    class Message:
+        chat_id = 1
+        def __init__(self, wire): self.wire = wire
+        def get_bot(self): return self.wire
+
+    for marketplace, mode, expected in (
+        ('ozon', 'MANUAL_COPY', ['✏️ Редактировать', '✅ Закрыть', '🤖 Сменить Codex']),
+        ('wildberries', 'MARKETPLACE_API', ['✅ Отправить', '✏️ Редактировать', '🚫 Игнорировать', '🤖 Сменить Codex']),
+    ):
+        q, _ = await repo.insert_question({'marketplace': marketplace, 'external_question_id': f'{marketplace}-review', 'question_text': 'buyer'})
+        await db.execute('UPDATE questions SET publish_mode=? WHERE id=?', (mode, q['id']))
+        await db.commit()
+        await repo.start_manual_input(q['id'])
+        text = 'Первый абзац.\n\nВторой абзац.'
+        rid = await repo.consume_active_text(text)
+        q = await repo.get_question(q['id'])
+        wire = Wire()
+        await OperatorBot('1', service).deliver_review(Message(wire), q)
+        assert len(wire.calls) == 2
+        assert wire.calls[1]['text'] == text
+        assert wire.calls[0]['reply_markup'] is None
+        assert [b.text for row in wire.calls[1]['reply_markup'].inline_keyboard for b in row] == expected
+        assert 'ID:' not in wire.calls[1]['text'] and 'Источник:' not in wire.calls[1]['text']
+
+    q, _ = await repo.insert_question({'marketplace': 'ozon', 'external_question_id': 'historical', 'question_text': 'buyer'})
+    rid = await repo.create_answer_revision(q['id'], 'manual', 'x' * 4097)
+    await repo.set_current_answer_revision(q['id'], rid)
+    await repo.transition(q['id'], 'NEW', 'MANUAL_INPUT')
+    await repo.transition(q['id'], 'MANUAL_INPUT', 'REVIEW')
+    q = await repo.get_question(q['id'])
+    wire = Wire()
+    await OperatorBot('1', service).deliver_review(Message(wire), q)
+    chunks = wire.calls[1:]
+    assert ''.join(call['text'] for call in chunks) == 'x' * 4097
+    assert all(call['reply_markup'] is None for call in chunks[:-1])
+    assert chunks[-1]['reply_markup'] is not None
     await db.close()
 
 

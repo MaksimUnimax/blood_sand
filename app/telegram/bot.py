@@ -1,9 +1,9 @@
 """Telegram edge: authenticate, correlate and acknowledge; SQLite is authoritative."""
 import asyncio
 
-from telegram import CopyTextButton, ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 
-from app.copy_contract import MANUAL_COPY_TEXT_LIMIT
+from app.copy_contract import CUSTOMER_ANSWER_TEXT_LIMIT
 from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler, filters
 
 from app.state_machine import StaleState
@@ -88,8 +88,6 @@ class OperatorBot:
             ]
         elif state == 'REVIEW' and q['publish_mode'] == 'MANUAL_COPY':
             rows = [
-                *([[InlineKeyboardButton('📋 Скопировать ответ', copy_text=CopyTextButton(revision['text']))]]
-                   if revision is not None and len(revision['text']) <= MANUAL_COPY_TEXT_LIMIT else []),
                 [InlineKeyboardButton('✏️ Редактировать', callback_data=encode('edit', qid, rid)),
                  InlineKeyboardButton('✅ Закрыть', callback_data=encode('close', qid, rid))],
                 [switch],
@@ -123,13 +121,27 @@ class OperatorBot:
             for p in ('codex1', 'codex2', 'codex3')
         ])
 
-    async def review_cards(self, q):
+    async def review_presentation(self, q):
         rev = await self.service.repo.get_current_answer_revision(q['id'])
         attempt = await self.service.repo.get_draft_attempt(rev['draft_attempt_id']) if rev and rev['draft_attempt_id'] else None
-        return render.review(
-            q, rev, await self.service.repo.active_codex_profile(),
-            attempt['codex_profile'] if attempt else None,
+        return (
+            render.review_projection(q, rev, await self.service.repo.active_codex_profile(), attempt['codex_profile'] if attempt else None),
+            render.customer_answer(rev), rev,
         )
+
+    async def deliver_review(self, message, q):
+        projection, customer_chunks, revision = await self.review_presentation(q)
+        for text in projection:
+            outcome = await self._reply(message, text)
+            if outcome.outcome is not Outcome.SUCCESS:
+                await self.service.repo.record_error('telegram', 'REVIEW_PROJECTION_DELIVERY', str(outcome.error))
+                return False
+        for i, text in enumerate(customer_chunks):
+            outcome = await self._reply(message, text, reply_markup=self.buttons(q, revision=revision) if i == len(customer_chunks) - 1 else None)
+            if outcome.outcome is not Outcome.SUCCESS:
+                await self.service.repo.record_error('telegram', 'REVIEW_PROJECTION_DELIVERY', str(outcome.error))
+                return False
+        return True
 
     async def show_question(self, message, qid):
         q = await self.service.repo.get_question(qid)
@@ -150,14 +162,15 @@ class OperatorBot:
             cards = (
                 render.delivery(q, revision, q['status'])
                 if q['status'] in {'SENDING', 'SENT', 'SEND_FAILED', 'SEND_UNKNOWN'}
-                else await self.review_cards(q)
+                else None
             )
         else:
             cards = render.split_card(q, f'Состояние: {q["status"]}\n🟢 Сейчас активен: {active}')
-        await self.cards(
-            message, cards, self.buttons(q, revision=revision), qid,
-            operation='CODEX_RUNNING_CARD' if q['status'] == 'CODEX_RUNNING' else 'STATUS_CARD',
-        )
+        if q['status'] == 'REVIEW':
+            await self.deliver_review(message, q)
+        else:
+            await self.cards(message, cards, self.buttons(q, revision=revision), qid,
+                             operation='CODEX_RUNNING_CARD' if q['status'] == 'CODEX_RUNNING' else 'STATUS_CARD')
 
     async def cards(self, message, cards, markup=None, qid=None, operation='STATUS_CARD'):
         for i, text in enumerate(cards):
@@ -271,8 +284,7 @@ class OperatorBot:
     async def show_codex(self, message, qid):
         q = await self.service.repo.get_question(qid)
         if q['status'] == 'REVIEW':
-            revision = await self.service.repo.get_current_answer_revision(qid)
-            await self.cards(message, await self.review_cards(q), self.buttons(q, revision=revision), qid)
+            await self.deliver_review(message, q)
         elif q['status'] == 'CODEX_ERROR':
             active = await self.service.repo.active_codex_profile()
             attempt = await self.service.repo.get_current_draft_attempt(qid)
@@ -413,8 +425,8 @@ class OperatorBot:
         except StaleState:
             return
         except ValueError as exc:
-            if str(exc) == 'MANUAL_COPY_TEXT_TOO_LONG':
-                await self._reply(u.message, f'Ответ для Ozon должен быть не длиннее {MANUAL_COPY_TEXT_LIMIT} символов.')
+            if str(exc) == 'CUSTOMER_ANSWER_TEXT_TOO_LONG':
+                await self._reply(u.message, f'Ответ покупателю должен быть не длиннее {CUSTOMER_ANSWER_TEXT_LIMIT} символов.')
                 return
             raise
         if result is None:
@@ -422,11 +434,7 @@ class OperatorBot:
         if result['kind'] == 'revision':
             rev = await self.service.repo.get_answer_revision(result['revision_id'])
             q = await self.service.repo.get_question(rev['question_id'])
-            await self.cards(
-                u.message,
-                render.review(q, rev, await self.service.repo.active_codex_profile()),
-                self.buttons(q, revision=rev),
-            )
+            await self.deliver_review(u.message, q)
             return
         qid = result['question_id']
         claim = result.get('claim')

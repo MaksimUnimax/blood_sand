@@ -72,8 +72,13 @@ reply-to-message are neither sent nor required. Edit uses the same ordinary
 text mechanism with the exact prior revision as its durable base, creates an
 immutable `edited` revision and returns to REVIEW. Neither text entry publishes.
 
-Successful REVIEW (manual, Codex, and edited) exposes exactly Send, Edit,
-Ignore, and Switch Codex. It has no regenerate action or transition to Codex.
+Successful REVIEW (manual, Codex, and edited) uses the shared two-part
+[Telegram REVIEW presentation](TELEGRAM_REVIEW_PRESENTATION_CONTRACT.md): an
+operator projection followed by a clean message containing exactly
+`answer_revision.text`. REVIEW controls attach to that clean answer message,
+not the operator projection. Marketplace API REVIEW exposes Send, Edit, Ignore,
+and Switch Codex; Ozon MANUAL_COPY exposes Edit, Close, and Switch Codex only.
+It has no regenerate action or transition to Codex.
 Legacy successful-review regeneration callbacks are rejected and acknowledged
 without mutation. Send callback data binds the question and revision; the
 durable `SENDING` claim verifies the revision is current before acknowledgement

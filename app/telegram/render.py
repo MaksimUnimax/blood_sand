@@ -37,16 +37,24 @@ def initial(question, profile):
     return split_card(question, f"🟢 Сейчас активен Codex: {profile}")
 
 
-def review(question, revision, active_profile, generated_by=None):
+def review_projection(question, revision, active_profile, generated_by=None):
     source = revision['source'] if hasattr(revision, 'keys') else revision.get('source', 'manual')
-    answer = revision['text']
-    body = f"Ответ:\n{answer}\n\nИсточник: {source}"
+    body = f"Источник ревизии: {source}"
     if generated_by:
         body += f"\n🤖 Подготовил: {generated_by}"
     body += f"\n🟢 Сейчас активен: {active_profile}"
-    if _value(question, 'publish_mode', 'MARKETPLACE_API') == 'MANUAL_COPY':
-        body += '\n\n📋 Режим Ozon: ответ не отправляется через API. Скопируйте его в кабинет Ozon и нажмите «✅ Закрыть».'
     return split_card(question, body)
+
+
+def customer_answer(revision):
+    """Losslessly project the canonical customer text with no technical framing."""
+    text = revision['text']
+    return [text[offset:offset + LIMIT] for offset in range(0, len(text), LIMIT)] or ['']
+
+
+# Compatibility for early tests/importers.  New delivery uses the two projections.
+def review(question, revision, active_profile, generated_by=None):
+    return review_projection(question, revision, active_profile, generated_by)
 
 
 def running(question, profile):

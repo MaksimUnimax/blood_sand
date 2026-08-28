@@ -587,7 +587,7 @@ async def test_CODEX_RUNNING_STANDALONE_TEST_and_CODEX_REVIEW_STANDALONE_TEST(tm
  current=await repo.get_question(q['id']); revision=await repo.get_current_answer_revision(q['id'])
  assert (current['status'],current['current_answer_revision_id'])==('REVIEW',revision['id'])
  assert (revision['source'],revision['text'],revision['draft_attempt_id'])==('codex','deterministic test answer',attempt['id'])
- review=message.calls[-1]; assert '🤖 Подготовил: codex1' in review[0][0] and '🟢 Сейчас активен: codex2' in review[0][0]
+ projection,review=message.calls[-2:]; assert '🤖 Подготовил: codex1' in projection[0][0] and '🟢 Сейчас активен: codex2' in projection[0][0] and review[0][0]=='deterministic test answer'
  assert_standalone(review)
  assert [b.text for row in review[1]['reply_markup'].inline_keyboard for b in row]==['✅ Отправить','✏️ Редактировать','🚫 Игнорировать','🤖 Сменить Codex']
  assert not any(word in review[0][0] for word in ('Сгенерировать','Сгенерировать заново','Перегенерировать'))
@@ -702,12 +702,13 @@ async def test_REVIEW_SWITCH_PRESERVES_GENERATOR_PROVENANCE_TEST(tmp_path):
   async def answer(self,*args,**kwargs): pass
  wire=Wire(); message=Message(wire); bot=OperatorBot(1,SimpleNamespace(repo=repo))
  await bot.callback(SimpleNamespace(callback_query=Query(),effective_user=SimpleNamespace(id=1),effective_chat=SimpleNamespace(id=1,type='private')),None)
- current=await repo.get_question(q['id']); text=wire.calls[-1]['text']; markup=wire.calls[-1]['reply_markup']
+ current=await repo.get_question(q['id']); projection,text=wire.calls[-2:]; markup=text['reply_markup']
  assert await repo.active_codex_profile()=='codex2'
  assert (current['status'],current['current_answer_revision_id'])==('REVIEW',rid)
  assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts')).fetchone())[0]==1
  assert (await (await repo.db.execute('SELECT COUNT(*) FROM answer_revisions')).fetchone())[0]==1
- assert all(value in text for value in ('T4 deterministic Codex answer','Источник: codex','🤖 Подготовил: codex1','🟢 Сейчас активен: codex2')) and '🤖 Подготовил: codex2' not in text
+ assert text['text']=='T4 deterministic Codex answer'
+ assert all(value in projection['text'] for value in ('Источник ревизии: codex','🤖 Подготовил: codex1','🟢 Сейчас активен: codex2')) and '🤖 Подготовил: codex2' not in projection['text']
  assert [b.text for row in markup.inline_keyboard for b in row]==['✅ Отправить','✏️ Редактировать','🚫 Игнорировать','🤖 Сменить Codex']
  assert 'Перегенерировать' not in text and wire.calls[-1].get('reply_parameters') is None and wire.calls[-1].get('reply_to_message_id') is None and not isinstance(markup,ForceReply)
  await db.close()
@@ -724,11 +725,11 @@ async def test_SHOW_QUESTION_REVIEW_GENERATOR_PROVENANCE_TEST_and_MANUAL_REVIEW_
  attempt,_=await repo.claim_codex(q['id']); await repo.finish_draft_success(attempt,'answer')
  rid=await repo.create_answer_revision(q['id'],'codex','answer',draft_attempt_id=attempt); await repo.set_current_answer_revision(q['id'],rid); await repo.transition(q['id'],'CODEX_RUNNING','REVIEW')
  await repo.set_active_codex_profile('codex2')
- await bot.show_question(message,q['id']); assert '🤖 Подготовил: codex1' in message.calls[-1][0][0] and '🟢 Сейчас активен: codex2' in message.calls[-1][0][0]
+ await bot.show_question(message,q['id']); assert '🤖 Подготовил: codex1' in message.calls[-2][0][0] and '🟢 Сейчас активен: codex2' in message.calls[-2][0][0] and message.calls[-1][0][0]=='answer'
  manual,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'manual-review','question_text':'q'})
  manual_rid=await repo.create_answer_revision(manual['id'],'manual','manual answer'); await repo.set_current_answer_revision(manual['id'],manual_rid); await repo.transition(manual['id'],'NEW','MANUAL_INPUT'); await repo.transition(manual['id'],'MANUAL_INPUT','REVIEW')
- await bot.show_question(message,manual['id']); text=message.calls[-1][0][0]
- assert '🟢 Сейчас активен: codex2' in text and not any(f'🤖 Подготовил: {profile}' in text for profile in ('codex1','codex2','codex3'))
+ await bot.show_question(message,manual['id']); projection,text=message.calls[-2:]
+ assert '🟢 Сейчас активен: codex2' in projection[0][0] and not any(f'🤖 Подготовил: {profile}' in projection[0][0] for profile in ('codex1','codex2','codex3')) and text[0][0]=='manual answer'
  await db.close()
 
 

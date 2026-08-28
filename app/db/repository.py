@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from app.copy_contract import MANUAL_COPY_TEXT_LIMIT
+from app.copy_contract import CUSTOMER_ANSWER_TEXT_LIMIT
 from app.state_machine import allowed, StaleState
 
 
@@ -402,9 +402,9 @@ class Repository:
             expected = 'MANUAL_INPUT' if inp['mode'] == 'manual_answer' else 'EDITING'
             if not q or q['status'] != expected:
                 raise StaleState('STALE_STATE')
-            if q['publish_mode'] == 'MANUAL_COPY' and len(text) > MANUAL_COPY_TEXT_LIMIT:
+            if not 1 <= len(text) <= CUSTOMER_ANSWER_TEXT_LIMIT:
                 await self.db.commit()
-                raise ValueError('MANUAL_COPY_TEXT_TOO_LONG')
+                raise ValueError('CUSTOMER_ANSWER_TEXT_TOO_LONG')
             if inp['mode'] == 'edit_answer':
                 base = await self.get_answer_revision(inp['based_on_revision_id'])
                 if q['current_answer_revision_id'] != inp['based_on_revision_id'] or not base or base['question_id'] != q['id']:
@@ -445,9 +445,9 @@ class Repository:
         if not q or q['status'] != expected:
             await self.db.rollback()
             raise StaleState('STALE_STATE')
-        if q['publish_mode'] == 'MANUAL_COPY' and len(text) > MANUAL_COPY_TEXT_LIMIT:
+        if not 1 <= len(text) <= CUSTOMER_ANSWER_TEXT_LIMIT:
             await self.db.commit()
-            raise ValueError('MANUAL_COPY_TEXT_TOO_LONG')
+            raise ValueError('CUSTOMER_ANSWER_TEXT_TOO_LONG')
         await self.db.execute('DELETE FROM telegram_inputs WHERE telegram_prompt_message_id=?', (msg,))
         c = await self.db.execute(
             'INSERT INTO answer_revisions(question_id,source,text,based_on_revision_id,created_at) VALUES(?,?,?,?,?)',
