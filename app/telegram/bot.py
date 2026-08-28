@@ -1,7 +1,9 @@
 """Telegram edge: authenticate, correlate and acknowledge; SQLite is authoritative."""
 import asyncio
 
-from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram import CopyTextButton, ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+
+from app.copy_contract import MANUAL_COPY_TEXT_LIMIT
 from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler, filters
 
 from app.state_machine import StaleState
@@ -70,7 +72,7 @@ class OperatorBot:
             await self._ack(u.callback_query, 'Access denied', show_alert=True)
         return True
 
-    def buttons(self, q, state=None):
+    def buttons(self, q, state=None, revision=None):
         state = state or q['status']
         qid = q['id']
         rid = q['current_answer_revision_id']
@@ -86,6 +88,8 @@ class OperatorBot:
             ]
         elif state == 'REVIEW' and q['publish_mode'] == 'MANUAL_COPY':
             rows = [
+                *([[InlineKeyboardButton('📋 Скопировать ответ', copy_text=CopyTextButton(revision['text']))]]
+                   if revision is not None and len(revision['text']) <= MANUAL_COPY_TEXT_LIMIT else []),
                 [InlineKeyboardButton('✏️ Редактировать', callback_data=encode('edit', qid, rid)),
                  InlineKeyboardButton('✅ Закрыть', callback_data=encode('close', qid, rid))],
                 [switch],
@@ -129,6 +133,7 @@ class OperatorBot:
 
     async def show_question(self, message, qid):
         q = await self.service.repo.get_question(qid)
+        revision = None
         active = await self.service.repo.active_codex_profile()
         if q['status'] == 'NEW':
             cards = render.initial(q, active)
@@ -141,15 +146,16 @@ class OperatorBot:
         elif q['status'] == 'CLOSED':
             cards = render.closed(q)
         elif q['current_answer_revision_id']:
+            revision = await self.service.repo.get_current_answer_revision(qid)
             cards = (
-                render.delivery(q, await self.service.repo.get_current_answer_revision(qid), q['status'])
+                render.delivery(q, revision, q['status'])
                 if q['status'] in {'SENDING', 'SENT', 'SEND_FAILED', 'SEND_UNKNOWN'}
                 else await self.review_cards(q)
             )
         else:
             cards = render.split_card(q, f'Состояние: {q["status"]}\n🟢 Сейчас активен: {active}')
         await self.cards(
-            message, cards, self.buttons(q), qid,
+            message, cards, self.buttons(q, revision=revision), qid,
             operation='CODEX_RUNNING_CARD' if q['status'] == 'CODEX_RUNNING' else 'STATUS_CARD',
         )
 
@@ -265,7 +271,8 @@ class OperatorBot:
     async def show_codex(self, message, qid):
         q = await self.service.repo.get_question(qid)
         if q['status'] == 'REVIEW':
-            await self.cards(message, await self.review_cards(q), self.buttons(q), qid)
+            revision = await self.service.repo.get_current_answer_revision(qid)
+            await self.cards(message, await self.review_cards(q), self.buttons(q, revision=revision), qid)
         elif q['status'] == 'CODEX_ERROR':
             active = await self.service.repo.active_codex_profile()
             attempt = await self.service.repo.get_current_draft_attempt(qid)
@@ -405,6 +412,11 @@ class OperatorBot:
                 result = None if rid is None else {'kind': 'revision', 'revision_id': rid}
         except StaleState:
             return
+        except ValueError as exc:
+            if str(exc) == 'MANUAL_COPY_TEXT_TOO_LONG':
+                await self._reply(u.message, f'Ответ для Ozon должен быть не длиннее {MANUAL_COPY_TEXT_LIMIT} символов.')
+                return
+            raise
         if result is None:
             return
         if result['kind'] == 'revision':
@@ -413,7 +425,7 @@ class OperatorBot:
             await self.cards(
                 u.message,
                 render.review(q, rev, await self.service.repo.active_codex_profile()),
-                self.buttons(q),
+                self.buttons(q, revision=rev),
             )
             return
         qid = result['question_id']

@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 from types import SimpleNamespace
 
 import pytest
@@ -167,8 +168,13 @@ async def test_manual_copy_review_has_no_send_and_close_is_local_only(tmp_path):
     rid = await service.codex(result['question_id'], claim=result['claim'])
     q = await repo.get_question(result['question_id'])
 
-    labels = [button.text for row in OperatorBot('1', service).buttons(q).inline_keyboard for button in row]
-    assert labels == ['✏️ Редактировать', '✅ Закрыть', '🤖 Сменить Codex']
+    revision = await repo.get_current_answer_revision(q['id'])
+    markup = OperatorBot('1', service).buttons(q, revision=revision)
+    labels = [button.text for row in markup.inline_keyboard for button in row]
+    assert labels == ['📋 Скопировать ответ', '✏️ Редактировать', '✅ Закрыть', '🤖 Сменить Codex']
+    copy = markup.inline_keyboard[0][0]
+    assert copy.copy_text.text == revision['text']
+    assert copy.callback_data is None
     assert '✅ Отправить' not in labels
 
     with pytest.raises(StaleState):
@@ -178,6 +184,64 @@ async def test_manual_copy_review_has_no_send_and_close_is_local_only(tmp_path):
     q = await repo.get_question(q['id'])
     assert q['status'] == 'CLOSED'
     assert q['external_reply_id'] is None
+    await db.close()
+
+
+def test_v2_reference_snapshot_is_exact_and_contains_required_semantics():
+    root = Path(__file__).resolve().parents[1]
+    files = (
+        'CUSTOMER_RECOMMENDATION_COPY_GUIDE.md', 'MARKETPLACE_QUESTION_REPLY_GUIDE.md',
+        'PRODUCT_CLASSIFICATION.md', 'RECOMMENDATION_MATRIX.md', 'OZON_PRODUCT_LINKS.md',
+        'WILDBERRIES_PRODUCT_LINKS.md',
+    )
+    for name in files:
+        authority = subprocess.check_output(
+            ['git', 'show', f'2e1d82e7762b36477cfbc451852b02dddb3beb6e:recommendations/{name}'], cwd=root
+        )
+        assert (root / 'references' / name).read_bytes() == authority
+    text = '\n'.join((root / 'references' / name).read_text() for name in files)
+    assert 'KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED' in text
+    assert 'Лиса + мужчина → Чернобог' in text
+    assert 'Лиса + женщина → Мара' in text
+    assert 'https://www.ozon.ru/product/1630040194/' in text
+    assert 'https://www.ozon.ru/product/2184199958/' in text
+    assert 'Печать Велеса — Медвежья лапа' not in text
+    assert 'Печать Велеса' in text
+
+
+def test_manual_copy_prompt_and_validation_limit(tmp_path):
+    builder = prompt_builder(tmp_path, 'https://www.ozon.ru/product/1630040194/')
+    q = {'marketplace': 'ozon', 'publish_mode': 'MANUAL_COPY', 'question_text': 'q'}
+    prompt = builder.build(q)
+    assert 'ready-to-paste customer answer' in prompt
+    assert '256 characters total' in prompt
+    assert builder.validate_output(q, 'x' * 256) == 'x' * 256
+    with pytest.raises(ValueError, match='1..256'):
+        builder.validate_output(q, 'x' * 257)
+    assert builder.validate_output({**q, 'publish_mode': 'MARKETPLACE_API'}, 'x' * 257) == 'x' * 257
+
+
+@pytest.mark.asyncio
+async def test_manual_copy_long_text_keeps_input_context_and_historical_revision_is_safe(tmp_path):
+    db = await connect(tmp_path / 'state.sqlite3')
+    await init(db)
+    repo = Repository(db)
+    service = QuestionService(repo, {}, NoTransport())
+    await service.begin_ozon_question()
+    result = await service.operator_text('q', 8001)
+    qid = result['question_id']
+    await repo.finish_draft_error(result['claim'][0], 'TEST', 'stop')
+    await repo.transition(qid, 'CODEX_RUNNING', 'CODEX_ERROR')
+    await service.begin_manual(qid)
+    with pytest.raises(ValueError, match='MANUAL_COPY_TEXT_TOO_LONG'):
+        await service.operator_text('x' * 257, 8002)
+    assert (await repo.get_active_text_input_context())['question_id'] == qid
+    rid = (await service.operator_text('ok', 8003))['revision_id']
+    q = await repo.get_question(qid)
+    assert (await repo.get_answer_revision(rid))['text'] == 'ok'
+    await db.execute('UPDATE answer_revisions SET text=? WHERE id=?', ('x' * 257, rid))
+    await db.commit()
+    assert '📋 Скопировать ответ' not in [b.text for row in OperatorBot('1', service).buttons(q, revision=await repo.get_answer_revision(rid)).inline_keyboard for b in row]
     await db.close()
 
 

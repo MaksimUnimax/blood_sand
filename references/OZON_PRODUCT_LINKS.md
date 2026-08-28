@@ -1,6 +1,7 @@
 # Ozon product links registry
 
-Статус: рабочий реестр ссылок на текущий ассортимент Ozon для использования в рекомендациях и последующей интеграции.
+Статус: рабочий реестр ссылок на текущий ассортимент Ozon для использования в рекомендациях и последующей интеграции.  
+Current recommendation authority: `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`.
 
 ## Правило формирования ссылки
 
@@ -16,6 +17,16 @@ https://www.ozon.ru/product/{sku}/
 
 Для recommendation system приоритет имеет раздел `slavic_symbols_oberegs` ниже. Остальные семейства сохранены в том же реестре для полноты ассортимента.
 
+### Hard customer naming rule
+
+Для SKU `1636048691` customer-facing название всегда ровно:
+
+```text
+Печать Велеса
+```
+
+Никакие внутренние aliases или технические ключи к названию не добавляются.
+
 ---
 
 ## Славянские обереги — используются системой рекомендаций
@@ -25,7 +36,7 @@ https://www.ozon.ru/product/{sku}/
 | Белобог | Белобог | 1113280875 | 1630033296 | https://www.ozon.ru/product/1630033296/ |
 | Чернобог | Чернобог | 1113288401 | 1630040194 | https://www.ozon.ru/product/1630040194/ |
 | Велес | Велес | 1119957837 | 1636041142 | https://www.ozon.ru/product/1636041142/ |
-| Печать Велеса | Медвежья лапа | 1119965443 | 1636048691 | https://www.ozon.ru/product/1636048691/ |
+| Печать Велеса | Печать Велеса | 1119965443 | 1636048691 | https://www.ozon.ru/product/1636048691/ |
 | Алатырь (Крест Сварога) | Алатырь | 1124658338 | 1640251697 | https://www.ozon.ru/product/1640251697/ |
 | Триглав | Триглав | 1124673031 | 1640264403 | https://www.ozon.ru/product/1640264403/ |
 | Ратиборец | Ратиборец | 1124691132 | 1640276582 | https://www.ozon.ru/product/1640276582/ |
@@ -145,9 +156,9 @@ https://www.ozon.ru/product/{sku}/
 
 ## Recommendation usage rule
 
-Для ответа клиенту ссылка берётся только у того recommendation identity, который уже выбран `RECOMMENDATION_MATRIX.md`.
+Ссылка берётся только у recommendation identity, уже выбранного `RECOMMENDATION_MATRIX.md`. Реестр ссылок сам не выбирает товар и не меняет матрицу.
 
-Пример:
+Актуальные примеры:
 
 ```text
 13.08 + male/female
@@ -157,17 +168,38 @@ https://www.ozon.ru/product/{sku}/
 ```
 
 ```text
-13.10 + male
+30.10 + male
 → Щука
 → Родимич
 → https://www.ozon.ru/product/1842444165/
 ```
 
 ```text
-13.10 + female
+30.10 + female
 → Щука
-→ Макошь
-→ https://www.ozon.ru/product/2184133137/
+→ Звезда Лады
+→ https://www.ozon.ru/product/2184234912/
 ```
 
-Не допускается выбирать другой товар из реестра по продажам, цене или наличию без изменения утверждённой recommendation policy.
+```text
+25.03 + male
+→ Лиса
+→ Чернобог
+→ https://www.ozon.ru/product/1630040194/
+```
+
+```text
+25.03 + female
+→ Лиса
+→ Мара
+→ https://www.ozon.ru/product/2184199958/
+```
+
+```text
+16.01 + male/female
+→ Медведь
+→ Печать Велеса
+→ https://www.ozon.ru/product/1636048691/
+```
+
+Не допускается выбирать другой товар из реестра на лету по продажам, цене или наличию без изменения утверждённой recommendation policy.

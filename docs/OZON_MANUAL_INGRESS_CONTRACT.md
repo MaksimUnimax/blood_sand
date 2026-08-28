@@ -75,13 +75,24 @@ On successful generation the question enters `REVIEW` and shows the answer in Te
 
 A `publish_mode=MANUAL_COPY` review must never expose a marketplace-send button.
 
+The current recommendation reference snapshot is copied from `main` commit
+`2e1d82e7762b36477cfbc451852b02dddb3beb6e`. Its V2 matrix and customer copy
+policy are authoritative.
+
 Minimum controls:
 
 ```text
+[📋 Скопировать ответ]
 [✏️ Редактировать]
 [✅ Закрыть]
 [🤖 Сменить Codex]
 ```
+
+`📋 Скопировать ответ` uses Telegram's native copy control. Its payload is
+exactly the current customer answer revision text, never the rendered Telegram
+card or application-added technical projection. The native limit is 256
+characters: newly generated `MANUAL_COPY` answers must fit it, while historical
+long revisions remain readable without a copy control.
 
 `✅ Закрыть` is local only and moves the question to `CLOSED`.
 
