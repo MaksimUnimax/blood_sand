@@ -11,48 +11,34 @@ Marketplace override: `KIP_MARKETPLACE_OVERRIDE_V1`
 
 ## 1. Цель
 
-Построить один deterministic Recommendation Core для подбора славянского оберега по:
+Recommendation Core детерминированно выбирает один оберег по:
 
-- дню рождения;
-- месяцу рождения;
+- дню;
+- месяцу;
 - полу;
-- целевому marketplace, если он известен.
+- marketplace, если известен.
 
-Результат должен быть воспроизводимым, versioned и одинаковым для любого UI при одинаковых входах.
+Продажи используются офлайн при утверждении versioned matrix, но не являются live runtime input.
 
-V2 отличается от V1: коммерческие данные теперь используются **офлайн при утверждении конфигурации** как сильный фактор выбора среди семантически допустимых товаров. Runtime не должен сам ходить за продажами и динамически менять результат.
-
-## 2. Главная модель
+## 2. Pipeline
 
 ```text
-sales evidence + semantic review + owner decisions
-                    │
-                    ▼
-        versioned V2 configuration
-                    │
-                    ▼
-          Recommendation Core
-                    │
-       ┌────────────┴─────────────┐
-       │                          │
- marketplace/UI adapters    internal tools
-       │
- Ozon / Wildberries / VK / Telegram / other
+sales evidence + semantic review + gender fit + owner decisions
+                            │
+                            ▼
+                versioned V2 configuration
+                            │
+                            ▼
+                  Recommendation Core
+                            │
+                   marketplace override
+                            │
+                    destination/copy
 ```
-
-Ключевой принцип:
-
-> Продажи влияют на **утверждение versioned matrix**, но не являются live runtime input.
-
-Это позволяет одновременно:
-
-- использовать реальные seller sales для коммерчески жизнеспособной матрицы;
-- не делать результат случайным из-за дневных колебаний;
-- сохранять reproducibility и auditability.
 
 ## 3. Recommendation Core
 
-Core принимает нормализованный input:
+Input:
 
 ```text
 birth_day
@@ -61,291 +47,187 @@ gender
 marketplace
 ```
 
-и выполняет:
+Flow:
 
-1. `validateBirthDate()`;
-2. `resolveChertog()` по `KIP_CHERTOG_CALENDAR_V1`;
-3. `resolveBaseRecommendation()` по `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`;
-4. `applyMarketplaceOverride()` по `KIP_MARKETPLACE_OVERRIDE_V1`;
-5. `validateProductPolicy()` по `KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED`;
-6. вернуть **ровно один** effective product.
+1. validate date;
+2. resolve Chertog by `KIP_CHERTOG_CALENDAR_V1`;
+3. resolve one base row by `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`;
+4. apply explicit marketplace override;
+5. validate `KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED`;
+6. return exactly one product.
 
-Core не должен:
+Core must not:
 
-- вызывать LLM;
-- искать трактовки в интернете;
-- читать live sales;
-- читать live stock для пересчёта матрицы;
-- выбирать новый похожий SKU на лету;
-- подмешивать reserve products;
-- выдавать второй товар.
+- call LLM for selection;
+- read live sales/stock to change result;
+- invent similar SKU;
+- auto-promote reserve products;
+- return a secondary product.
 
-## 4. Sales-weighted policy
+## 4. Sales-weighted approval
 
-Коммерческая оптимизация происходит до runtime в процессе пересборки матрицы.
+Evidence baseline 2026-08-28:
 
-Evidence 2026-08-28:
-
-- Wildberries: actual bought units, `2026-01-01 — 2026-08-28`;
-- Ozon: `analytics_data`, `ordered_units`, SKU dimension, `2026-06-01 — 2026-08-28`.
-
-Полный audit: `SALES_WEIGHTED_MATRIX_V2_AUDIT_2026-08-28.md`.
+- Wildberries: bought units, 2026-01-01 — 2026-08-28;
+- Ozon: `ordered_units`, 2026-06-01 — 2026-08-28.
 
 Approval sequence:
 
 ```text
 candidate products
    ↓
-remove clearly unrelated / visually contradictory
+remove unrelated/contradictory
    ↓
-compare remaining semantic candidates
+semantic + gender-fit review
    ↓
-strongly weight actual sales
+strongly weight sales among acceptable candidates
    ↓
 owner approval
    ↓
-new versioned matrix
+versioned matrix
 ```
-
-Live popularity is therefore **not** an API parameter.
 
 ## 5. Marketplace-aware result
 
-V1 architecture treated channel/marketplace as irrelevant to semantic output. V2 allows explicit marketplace overrides because sales and practical assortment differ.
-
-Current approved override:
+Current explicit override:
 
 ```text
 Ворон + male:
-  Ozon        → Колядник
-  Wildberries → Алатырь
+Ozon        → Колядник
+Wildberries → Алатырь
 ```
 
-All other V2 rows currently produce the same product on Ozon and Wildberries.
+All other rows currently match between Ozon and Wildberries.
 
-`channel` and `marketplace` are different:
-
-- `channel` = UI/transport (`vk_bot`, `telegram`, etc.); does not change result;
-- `marketplace` = requested commerce destination (`ozon`, `wildberries`); may apply an explicit versioned override.
-
-## 6. Product policy
-
-`PRODUCT_CLASSIFICATION.md` is the human-readable authority for current product roles and gender policy.
-
-Critical V2 invariants:
+## 6. Critical product-policy invariants
 
 ```text
 Даждьбог → only Раса male + female
-Печать Велеса / Медвежья лапа → only Медведь male + female
-Печать Велеса / Медвежья лапа → Волк FORBIDDEN
+Печать Велеса → only Медведь male + female
+Печать Велеса → Волк FORBIDDEN
 Волк → Велес
-Сварог → male only in V2
+Лиса male → Чернобог
+Лиса female → Мара
+Сварог → male only
 secondary recommendation → forbidden
 ```
 
-The marketplace card `Печать Велеса` is the **bear-paw visual form**. Stable internal recommendation identity may remain `Медвежья лапа` for destination compatibility, while customer-facing label is:
+### Customer-facing naming boundary
+
+The `Печать Велеса` product may keep a legacy/internal technical key such as `bear_paw`, but **customer-facing name is always exactly**:
 
 ```text
-Печать Велеса — Медвежья лапа
+Печать Велеса
 ```
+
+Internal keys/aliases must never leak into UI, Telegram/VK text, marketplace answer drafts, templates or reason copy.
 
 ## 7. Configuration Registry
 
-Target machine-readable structure:
+Target:
 
 ```text
-recommendations/
-  data/
-    chertog_calendar.v1.json
-    product_policy.v2.json
-    recommendation_matrix.v2.json
-    marketplace_overrides.v1.json
-    reason_copy.v2.json
+recommendations/data/
+  chertog_calendar.v1.json
+  product_policy.v2.json
+  recommendation_matrix.v2.json
+  marketplace_overrides.v1.json
+  reason_copy.v2.json
 ```
 
-Required versions:
-
-```text
-calendar_version = KIP_CHERTOG_CALENDAR_V1
-product_policy_version = KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED
-matrix_version = KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED
-marketplace_override_version = KIP_MARKETPLACE_OVERRIDE_V1
-copy_version = KIP_REASON_COPY_V2_SALES_WEIGHTED
-```
-
-Markdown remains the owner-readable specification; runtime should eventually consume validated machine-readable equivalents.
-
-## 8. Configuration validation
+## 8. Validation
 
 Startup/CI must fail if:
 
-1. calendar has gaps/overlaps;
-2. any of 32 base `Chertog × gender` rows is missing;
-3. a base case returns more than one product;
-4. unknown product key is referenced;
-5. gender policy conflicts with a row;
-6. `bear_paw` appears outside `medved`;
-7. `bear_paw` appears in `volk`;
-8. Даждьбог appears outside Раса or not exactly twice in base rows;
-9. Сварог appears in a female V2 row;
-10. reserve product appears without active V2 classification;
-11. marketplace override references an unapproved marketplace/chertog/gender tuple;
-12. duplicate effective rows exist.
+1. calendar gap/overlap;
+2. one of 32 base cases missing;
+3. more than one product per case;
+4. unknown/inactive product key;
+5. gender-policy conflict;
+6. `bear_paw` outside `medved`;
+7. customer label for `bear_paw` is not exactly `Печать Велеса`;
+8. Даждьбог outside Раса or count != 2;
+9. Сварог in female row;
+10. Лиса male != Чернобог;
+11. Лиса female != Мара;
+12. Чернобог in female row;
+13. Мара in male row;
+14. unapproved marketplace override;
+15. reserve product appears automatically.
 
-## 9. Recommendation API
+## 9. API
 
-Canonical endpoint remains:
+Canonical endpoint:
 
 ```text
 POST /v1/recommendations/resolve
 ```
 
-V2 request includes marketplace:
-
-```json
-{
-  "birth_day": 8,
-  "birth_month": 11,
-  "gender": "male",
-  "marketplace": "wildberries",
-  "channel": "telegram"
-}
-```
-
-`marketplace` is a domain input because it can select a versioned override. `channel` is telemetry/UI only.
-
-The response returns one recommendation and all configuration versions used.
-
 Detailed contract: `DATA_API_CONTRACT.md`.
 
-## 10. Availability and stock
+The response returns one recommendation plus configuration versions.
 
-Availability is still an overlay and must **not** silently change the V2 result.
+## 10. Availability
+
+Availability is an overlay and never changes semantic result:
 
 ```text
-approved V2 recommendation
-          ↓
-marketplace destination lookup
-          ↓
+approved recommendation
+   ↓
+marketplace destination
+   ↓
 availability enrichment
-          ↓
+   ↓
 UI
 ```
 
-Do not do at runtime:
+No hidden replacement because of stock.
+
+## 11. Copy layer
+
+Copy receives the already selected product and produces:
 
 ```text
-recommended SKU unavailable
-→ choose another SKU because it has stock
+Чертог → темы → выбранный символ → почему подходит → marketplace link
 ```
 
-Commercial changes belong in a reviewed V3/V2.x matrix rebuild, not ad-hoc runtime fallback.
+It must not expose:
 
-Customer copy has an additional hard rule: the finished customer message must not announce absence of a product/card/link/stock. Operator handling stays internal.
+- sales;
+- ranking;
+- fallback/substitute terminology;
+- relation/selection enums;
+- internal product keys;
+- missing stock/card/link.
 
-## 11. Customer copy layer
-
-Copy is separate from matrix selection.
-
-The selection layer may know:
+Hard render rule:
 
 ```text
-selection_basis = SEMANTIC_CURATED_SALES_WEIGHTED
+product_key = bear_paw
+→ customerLabel = "Печать Велеса"
 ```
 
-but the customer must receive only the positive semantic explanation:
+## 12. Owner-approved current special cases
 
-```text
-Чертог → темы → выбранный символ → почему смысл подходит
-```
+### Медведь
 
-Never expose:
+Both genders → `Печать Велеса` only.
 
-- sales figures;
-- rank;
-- seller analytics;
-- weak sales of replaced products;
-- internal fallback/substitution language;
-- availability absence.
+### Волк
 
-Current copy authority: `CUSTOMER_RECOMMENDATION_COPY_GUIDE.md`.
+Both genders → `Велес`.
 
-## 12. Interfaces
+### Лиса
 
-Any UI — VK Bot, VK Mini App, Telegram operator, marketplace-question worker or future frontend — must call the same core or reproduce the exact same versioned contract.
+- male → `Чернобог`;
+- female → `Мара`.
 
-No adapter may maintain its own independent Chertog/product table.
+### Раса
 
-If marketplace is unknown, a product flow may either:
-
-- resolve the base matrix result and omit destination;
-- or ask for marketplace when a marketplace-specific link/result is needed.
-
-It must never guess a marketplace based on user profile or location.
-
-## 13. Analytics
-
-Runtime analytics may record:
-
-```text
-channel
-marketplace
-chertog_id
-gender
-product_key
-relation_type
-selection_basis
-calendar_version
-matrix_version
-product_policy_version
-marketplace_override_version
-```
-
-Do not log unnecessary personal data or full birth year.
-
-Analytics may inform a **future reviewed matrix version**, but cannot mutate current V2 behavior automatically.
-
-## 14. Security / determinism
-
-- no user-controlled arbitrary product key;
-- no endpoint such as `recommend_product=<anything>`;
-- marketplace must be from an allowlist;
-- matrix/product policy is immutable for one deployed version;
-- configuration mismatch must fail closed;
-- UI cannot override hard rules such as bear-paw outside Медведь.
-
-## 15. Current owner-locked matrix highlights
-
-```text
-Медведь male   → Печать Велеса — Медвежья лапа
-Медведь female → Печать Велеса — Медвежья лапа
-Волк male      → Велес
-Волк female    → Велес
-Раса male      → Даждьбог
-Раса female    → Даждьбог
-```
-
-Dazhdbog therefore has exactly two automatic gender rows.
-
-## 16. Migration from V1
-
-V1 architecture statements that are retired:
-
-- “recommendation does not change because of sales” as a product-policy rule;
-- channel-independent matrix without marketplace override;
-- two-product Медведь male exception;
-- male-only bear paw;
-- Svarog as automatic Медведь result.
-
-Replacement authority:
-
-- `RECOMMENDATION_MATRIX.md`;
-- `PRODUCT_CLASSIFICATION.md`;
-- `SALES_WEIGHTED_MATRIX_V2_AUDIT_2026-08-28.md`;
-- this architecture document.
+Both genders → `Даждьбог`; these are the only Dazhdbog base rows.
 
 Decision marker:
 
 ```text
-KIP_RECOMMENDATION_ARCHITECTURE_V2_SALES_WEIGHTED
+KIP_ARCHITECTURE_V2_SALES_WEIGHTED_APPROVED
 ```
