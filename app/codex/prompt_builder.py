@@ -3,6 +3,10 @@ from pathlib import Path
 
 
 URL_RE = re.compile(r'https?://[^\s|)>]+')
+ALLOWED_URL_RE = {
+    'ozon': re.compile(r'https://www\.ozon\.ru/product/\d+/'),
+    'wildberries': re.compile(r'https://www\.wildberries\.ru/catalog/\d+/detail\.aspx'),
+}
 COMMON_REFERENCES = (
     'MARKETPLACE_QUESTION_REPLY_GUIDE.md',
     'CUSTOMER_RECOMMENDATION_COPY_GUIDE.md',
@@ -45,15 +49,16 @@ class PromptBuilder:
     def allowed_urls(self, question):
         marketplace = str(self._value(question, 'marketplace', '')).lower()
         filename = MARKETPLACE_LINKS.get(marketplace)
-        if not filename:
+        pattern = ALLOWED_URL_RE.get(marketplace)
+        if not filename or not pattern:
             return frozenset()
         path = self.reference_dir / filename
         if not path.is_file():
             return frozenset()
-        return frozenset(url.rstrip('.,;') for url in URL_RE.findall(path.read_text(encoding='utf-8')))
+        return frozenset(pattern.findall(path.read_text(encoding='utf-8')))
 
     def validate_output(self, question, text):
-        """Reject invented or cross-marketplace URLs before a draft becomes a revision."""
+        """Reject invented, placeholder, or cross-marketplace URLs before REVIEW."""
         allowed = self.allowed_urls(question)
         observed = {url.rstrip('.,;') for url in URL_RE.findall(text or '')}
         unknown = sorted(observed - allowed)
@@ -81,8 +86,9 @@ class PromptBuilder:
             f'PRODUCT: {product}\n\n'
             'URL RULES:\n'
             '- Marketplace identity above is authoritative. Never infer it from buyer text.\n'
-            '- Use a product URL only when that exact URL exists in the matching marketplace product-links reference.\n'
+            '- Use a product URL only when that exact concrete URL exists in the matching marketplace product-links reference.\n'
             '- Never output a URL for the other marketplace.\n'
+            '- Never output URL templates containing placeholders such as {sku} or {nmID}.\n'
             '- Never invent, reconstruct, shorten, or substitute a product URL.\n'
             '- If no approved matching URL is available, omit the URL.\n'
         )
