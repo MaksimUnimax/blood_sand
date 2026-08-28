@@ -7,39 +7,41 @@ Current matrix: `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`
 
 ## Current authority
 
-The V1 domain freeze has been superseded by the owner-approved sales-weighted rebuild on 2026-08-28.
+Use:
 
-Use these files as current authority:
+1. `RECOMMENDATION_MATRIX.md`;
+2. `PRODUCT_CLASSIFICATION.md`;
+3. `SALES_WEIGHTED_MATRIX_V2_AUDIT_2026-08-28.md`;
+4. `CUSTOMER_RECOMMENDATION_COPY_GUIDE.md`;
+5. `DATA_API_CONTRACT.md`.
 
-1. `RECOMMENDATION_MATRIX.md` — effective V2 matrix;
-2. `PRODUCT_CLASSIFICATION.md` — V2 product/gender policy;
-3. `SALES_WEIGHTED_MATRIX_V2_AUDIT_2026-08-28.md` — commercial evidence, replacement audit and customer-facing rationale;
-4. `CUSTOMER_RECOMMENDATION_COPY_GUIDE.md` — current client copy rules.
+The previous V1 freeze remains historical only.
 
-The previous V1 audit remains available in Git history and must not be treated as current runtime/product authority.
+## V1 assumptions retired
 
-## V1 assumptions explicitly retired
+No longer current:
 
-The following V1 statements are no longer current:
+- sales could never influence selection;
+- Медведь male had two products;
+- Медведь female used Сварог;
+- Dazhdbog could be used outside Раса;
+- Мара was automatic for both male and female Лиса;
+- Чернобог was reserve-only;
+- old customer naming aliases for Печать Велеса were allowed.
 
-- sales/popularity could never influence semantic product choice;
-- `Медведь + мужчина` was the only two-product case;
-- Медведь male returned `Сварог + Медвежья лапа`;
-- Медведь female returned `Сварог`;
-- `Печать Велеса / Медвежья лапа` was male-only;
-- Даждьбог could be used as male curated fallback outside Раса;
-- Всеславец, Боговник, Знич and Белобог were automatic outputs in their V1 rows.
-
-## V2 invariants replacing V1
+## Current V2 invariants
 
 - one effective product per `Чертог × пол × marketplace`;
-- sales receive strong weight among semantically acceptable candidates;
-- `Даждьбог` appears exactly twice: Раса male + female;
-- `Медведь` returns only `Печать Велеса — Медвежья лапа` for both sexes;
-- bear-paw `Печать Велеса` is forbidden for Волк and all non-Медведь Chertogs;
-- `Волк` returns `Велес` for both sexes;
-- `Сварог` is male-only in V2 and is used for Дева male and Конь male;
-- marketplace-specific override is allowed only when explicitly versioned; current override is `Ворон + мужчина` (Ozon Колядник / Wildberries Алатырь).
+- sales receive strong weight among acceptable candidates;
+- Даждьбог appears exactly twice: Раса male + female;
+- Медведь returns only `Печать Велеса` for both sexes;
+- customer-facing product name is exactly `Печать Велеса`, with no second alias;
+- `Печать Велеса` is forbidden for Волк and all non-Медведь Chertogs;
+- Волк returns `Велес`;
+- Лиса male returns `Чернобог`;
+- Лиса female returns `Мара`;
+- Сварог is male-only and used for Дева male and Конь male;
+- current marketplace override: Ворон male (Ozon Колядник / Wildberries Алатырь).
 
 Current decision marker:
 
