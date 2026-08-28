@@ -29,12 +29,26 @@ class OperatorBot:
   return True
  def buttons(self,q,state=None):
   state=state or q['status']; qid=q['id']; rid=q['current_answer_revision_id']
-  if state=='NEW': rows=[[InlineKeyboardButton('✍️ Ответить самому',callback_data=encode('manual',qid)),InlineKeyboardButton('🤖 Отправить в Codex',callback_data=encode('codex',qid))],[InlineKeyboardButton('🚫 Игнорировать',callback_data=encode('ignore',qid))]]
-  elif state=='REVIEW': rows=[[InlineKeyboardButton('✅ Отправить',callback_data=encode('send',qid,rid)),InlineKeyboardButton('✏️ Редактировать',callback_data=encode('edit',qid,rid))],[InlineKeyboardButton('🔄 Сгенерировать заново',callback_data=encode('regenerate',qid,rid)),InlineKeyboardButton('🚫 Игнорировать',callback_data=encode('ignore',qid,rid))]]
-  elif state=='CODEX_ERROR': rows=[[InlineKeyboardButton('🔄 Повторить',callback_data=encode('retry_codex',qid)),InlineKeyboardButton('🤖 Сменить Codex',callback_data=encode('choose_codex',arg='menu'))],[InlineKeyboardButton('✍️ Ответить самому',callback_data=encode('manual',qid)),InlineKeyboardButton('🚫 Игнорировать',callback_data=encode('ignore',qid))]]
-  elif state=='SEND_FAILED': rows=[[InlineKeyboardButton('🔄 Повторить отправку',callback_data=encode('retry_send',qid,rid))]]
-  else: rows=[]
+  switch=InlineKeyboardButton('🤖 Сменить Codex',callback_data=encode('choose_codex',qid,rid,'menu'))
+  if state=='NEW': rows=[[InlineKeyboardButton('✍️ Ответить самому',callback_data=encode('manual',qid)),InlineKeyboardButton('🤖 Отправить в Codex',callback_data=encode('codex',qid))],[InlineKeyboardButton('🚫 Игнорировать',callback_data=encode('ignore',qid))],[switch]]
+  elif state=='REVIEW': rows=[[InlineKeyboardButton('✅ Отправить',callback_data=encode('send',qid,rid)),InlineKeyboardButton('✏️ Редактировать',callback_data=encode('edit',qid,rid))],[InlineKeyboardButton('🚫 Игнорировать',callback_data=encode('ignore',qid,rid))],[switch]]
+  elif state=='CODEX_ERROR': rows=[[InlineKeyboardButton('🔄 Повторить',callback_data=encode('retry_codex',qid))],[InlineKeyboardButton('✍️ Ответить самому',callback_data=encode('manual',qid)),InlineKeyboardButton('🚫 Игнорировать',callback_data=encode('ignore',qid))],[switch]]
+  elif state=='SEND_FAILED': rows=[[InlineKeyboardButton('🔄 Повторить отправку',callback_data=encode('retry_send',qid,rid))],[switch]]
+  else: rows=[[switch]]
   return InlineKeyboardMarkup(rows) if rows else None
+ def profile_buttons(self,q,active):
+  return InlineKeyboardMarkup([[InlineKeyboardButton(f'{p}{" ✓" if p==active else ""}',callback_data=encode('choose_codex',q['id'],q['current_answer_revision_id'],p))] for p in ('codex1','codex2','codex3')])
+ async def show_question(self,message,qid):
+  q=await self.service.repo.get_question(qid); active=await self.service.repo.active_codex_profile()
+  if q['status']=='NEW': cards=render.initial(q,active)
+  elif q['status']=='CODEX_RUNNING':
+   attempt=await self.service.repo.get_current_draft_attempt(qid); cards=render.running(q,attempt['codex_profile'])
+  elif q['status']=='CODEX_ERROR':
+   attempt=await self.service.repo.get_current_draft_attempt(qid); cards=render.codex_error(q,attempt['codex_profile'],attempt['error_type'],attempt['error_message'],active)
+  elif q['current_answer_revision_id']:
+   cards=render.delivery(q,await self.service.repo.get_current_answer_revision(qid),q['status']) if q['status'] in {'SENDING','SENT','SEND_FAILED','SEND_UNKNOWN'} else render.review(q,await self.service.repo.get_current_answer_revision(qid),active)
+  else: cards=render.split_card(q,f'Состояние: {q["status"]}\n🟢 Сейчас активен: {active}')
+  await self.cards(message,cards,self.buttons(q),qid)
  async def cards(self,message,cards,markup=None,qid=None,operation='STATUS_CARD'):
   for i,text in enumerate(cards):
    outcome=await self._reply(message,text,reply_markup=markup if i==0 else None)
@@ -45,7 +59,7 @@ class OperatorBot:
   if await self._denied(u): return
   cmd=u.message.text.split()[0]
   if cmd=='/codex':
-   active=await self.service.repo.active_codex_profile(); keys=[[InlineKeyboardButton(f'{x}{" ✓" if x==active else ""}',callback_data=encode('choose_codex',arg=x))] for x in ('codex1','codex2','codex3')]; await self._reply(u.message,f'🤖 CODEX\nАктивен: {active}',reply_markup=InlineKeyboardMarkup(keys))
+   active=await self.service.repo.active_codex_profile(); await self._reply(u.message,f'🤖 CODEX\nАктивен: {active}\nСмените профиль из меню конкретного вопроса.')
   elif cmd=='/questions':
    rows=await self.service.repo.list_open_questions(); await self._reply(u.message,'\n'.join(f"{q['public_id']} · {q['marketplace']} · {q['status']}" for q in rows) or 'Open questions: 0')
   elif cmd=='/errors':
@@ -74,6 +88,8 @@ class OperatorBot:
   if not isinstance(sent.message_id,int) or sent.message_id <= 0:
    await self.service.repo.record_error('telegram','INVALID_MESSAGE_ID','ForceReply did not return positive message_id'); await self.service.repo.record_delivery_failure(q['id'],operation,'INVALID_MESSAGE_ID','ForceReply did not return positive message_id'); return False
   await self.service.repo.create_telegram_input(sent.message_id,q['id'],mode,revision_id if mode=='edit_answer' else None); await self.service.repo.clear_delivery_failure(q['id'],operation)
+  # Keep profile switching reachable while the ForceReply is awaiting text.
+  await self._reply(message,f'Состояние: {q["status"]}',reply_markup=self.buttons(q))
   return True
  async def show_codex(self,message,qid):
   q=await self.service.repo.get_question(qid); active=await self.service.repo.active_codex_profile()
@@ -95,14 +111,24 @@ class OperatorBot:
   action,qid,rid=x['action'],x['question_id'],x['revision_id']
   try:
    if action=='choose_codex':
+    if not qid: raise StaleState('STALE_STATE')
+    q=await self.service.repo.get_question(qid)
+    if not q: raise StaleState('STALE_STATE')
+    if x['arg']=='menu':
+     active=await self.service.repo.active_codex_profile(); await self._ack(query); await self._reply(query.message,f'🤖 СМЕНИТЬ CODEX\n\nСейчас: {active}',reply_markup=self.profile_buttons(q,active)); return
     if x['arg'] not in {'codex1','codex2','codex3'}: raise StaleState('STALE_STATE')
-    await self.service.repo.set_active_codex_profile(x['arg']); await self._ack(query); await self._reply(query.message,f"Активный Codex: {x['arg']}")
+    await self.service.repo.set_active_codex_profile(x['arg']); await self._ack(query)
+    if q['status']=='CODEX_ERROR':
+     old=(await self.service.repo.get_current_draft_attempt(qid))['codex_profile']
+     markup=InlineKeyboardMarkup([[InlineKeyboardButton('🔄 Перегенерировать',callback_data=encode('confirm_regenerate',qid))],[InlineKeyboardButton('✍️ Ответить самому',callback_data=encode('manual',qid)),InlineKeyboardButton('🚫 Игнорировать',callback_data=encode('ignore',qid))],[InlineKeyboardButton('🤖 Сменить Codex',callback_data=encode('choose_codex',qid,q['current_answer_revision_id'],'menu'))]])
+     await self._reply(query.message,f'🤖 Codex изменён: {old} → {x["arg"]}',reply_markup=markup)
+    else: await self.show_question(query.message,qid)
     return
    if not qid: raise StaleState('STALE_STATE')
    q=await self.service.repo.get_question(qid)
    if not q: raise StaleState('STALE_STATE')
-   if action in {'codex','regenerate','retry_codex'}:
-    claim=await self.service.repo.claim_codex(qid,rid if action=='regenerate' else None)
+   if action in {'codex','retry_codex','confirm_regenerate'}:
+    claim=await self.service.repo.claim_codex(qid)
     await self._ack(query,'Codex started')
     await self._disable(query)
     asyncio.create_task(self.run_codex(query.message,qid,claim)); return

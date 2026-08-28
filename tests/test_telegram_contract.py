@@ -27,11 +27,27 @@ async def test_question_send_persists_only_positive_message_id(tmp_path):
 
 
 def test_callbacks_are_bounded_parseable_and_revision_bound():
- for action in ('manual','codex','ignore','send','edit','regenerate','retry_codex','retry_send'):
+ for action in ('manual','codex','ignore','send','edit','retry_codex','retry_send','confirm_regenerate'):
   value=encode(action,123456,987654)
   assert len(value.encode()) <= 64 and decode(value)['action']==action
  assert decode(encode('send',1,2))['revision_id']==2
  with pytest.raises(ValueError): decode('mqo1:not-base64')
+ with pytest.raises(ValueError): encode('regenerate',1,2)
+
+
+@pytest.mark.asyncio
+async def test_frozen_button_sets_include_switch_and_review_has_no_regeneration(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'buttons','question_text':'q'})
+ bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ labels=lambda state:[b.text for row in bot.buttons(q,state).inline_keyboard for b in row]
+ assert labels('NEW')==['✍️ Ответить самому','🤖 Отправить в Codex','🚫 Игнорировать','🤖 Сменить Codex']
+ assert labels('REVIEW')==['✅ Отправить','✏️ Редактировать','🚫 Игнорировать','🤖 Сменить Codex']
+ assert labels('CODEX_ERROR')==['🔄 Повторить','✍️ Ответить самому','🚫 Игнорировать','🤖 Сменить Codex']
+ for state in ('MANUAL_INPUT','CODEX_RUNNING','EDITING','IGNORED','SENDING','SENT','SEND_FAILED','SEND_UNKNOWN'):
+  assert '🤖 Сменить Codex' in labels(state)
+ assert not any('генерировать' in x.lower() for x in labels('REVIEW'))
+ await db.close()
 
 
 @pytest.mark.asyncio

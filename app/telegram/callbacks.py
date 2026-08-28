@@ -2,7 +2,7 @@ import base64
 """Small, versioned callback payloads. Never put customer text in callback_data."""
 import base64
 
-VALID={'manual','codex','ignore','send','edit','regenerate','retry_codex','choose_codex','cancel_input','retry_send'}
+VALID={'manual','codex','ignore','send','edit','retry_codex','choose_codex','confirm_regenerate','cancel_input','retry_send'}
 def encode(action,qid=None,rid=None,arg=None):
  if action not in VALID: raise ValueError('action')
  value='mqo1:'+base64.urlsafe_b64encode(f'{action}|{qid or ""}|{rid or ""}|{arg or ""}'.encode('utf-8')).decode().rstrip('=')

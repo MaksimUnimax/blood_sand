@@ -45,6 +45,36 @@ The common edge returns `SUCCESS`, `DETERMINISTIC_FAILURE`, `PERMISSION_FAILURE`
 | profile switch | active-profile update | then | none | confirmation reply |
 | malformed/stale/legacy/unauthorized/duplicate | none | attempted via ack policy | none | none |
 
+## Frozen operator UX
+
+Every question-state card (`NEW`, `MANUAL_INPUT`, `CODEX_RUNNING`, `CODEX_ERROR`,
+`REVIEW`, `EDITING`, `IGNORED`, `SENDING`, `SENT`, `SEND_FAILED`, and
+`SEND_UNKNOWN`) includes **🤖 Сменить Codex**. It is the normal product path;
+`/codex` remains diagnostic only. In every non-error state a selection commits
+only the global active profile and returns to the same question/state: it makes
+no attempt, starts no Codex run, and writes no marketplace answer. A running
+attempt retains the profile captured by its durable claim.
+
+NEW exposes exactly Manual, Send to Codex, Ignore, and Switch Codex. Manual
+enters `MANUAL_INPUT`, correlates only a reply to its real ForceReply prompt,
+creates an immutable manual revision, then enters REVIEW. Edit similarly
+creates an immutable `edited` revision based on the prior revision and returns
+to REVIEW. Neither text entry publishes.
+
+Successful REVIEW (manual, Codex, and edited) exposes exactly Send, Edit,
+Ignore, and Switch Codex. It has no regenerate action or transition to Codex.
+Legacy successful-review regeneration callbacks are rejected and acknowledged
+without mutation. Send callback data binds the question and revision; the
+durable `SENDING` claim verifies the revision is current before acknowledgement
+and before the marketplace call.
+
+CODEX_ERROR exposes Repeat, Manual, Ignore, and Switch Codex. Repeat captures
+the current active profile and starts one claimed attempt. Switching profile in
+this state never starts Codex: it shows a confirmation with **🔄
+Перегенерировать**, Manual, Ignore, and Switch Codex. That confirmation is the
+only V1 location of Перегенерировать; only its explicit callback claims and
+starts the next attempt.
+
 ## Initial delivery recovery
 
 SQLite creates the question before the card is attempted. A failed card creates

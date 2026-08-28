@@ -55,7 +55,8 @@ class Repository:
   c=await self.db.execute("INSERT INTO draft_attempts(question_id,codex_profile,status,started_at) VALUES(?,?, 'RUNNING',?)",(qid,p,now())); await self.db.execute('UPDATE questions SET current_draft_attempt_id=? WHERE id=?',(c.lastrowid,qid)); await self.db.commit(); return c.lastrowid
  async def claim_codex(self,qid,expected_revision_id=None):
   await self.db.execute('BEGIN IMMEDIATE'); q=await self.get_question(qid)
-  if not q or q['status'] not in {'NEW','REVIEW','CODEX_ERROR'} or (expected_revision_id is not None and (q['status']!='REVIEW' or q['current_answer_revision_id']!=expected_revision_id)):
+  # Successful review regeneration is deliberately not a product transition.
+  if not q or q['status'] not in {'NEW','CODEX_ERROR'}:
    await self.db.rollback(); raise StaleState('STALE_STATE')
   profile=await self.active_codex_profile(); c=await self.db.execute("INSERT INTO draft_attempts(question_id,codex_profile,status,started_at) VALUES(?,?, 'RUNNING',?)",(qid,profile,now()))
   changed=await self.db.execute("UPDATE questions SET status='CODEX_RUNNING',current_draft_attempt_id=?,updated_at=? WHERE id=? AND status=?",(c.lastrowid,now(),qid,q['status']))
