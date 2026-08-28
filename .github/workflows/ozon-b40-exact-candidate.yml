@@ -1,0 +1,50 @@
+name: Ozon B40 Finance Balance Realization Reads exact candidate
+on:
+  push:
+    branches: [feature/ozon-b40-finance-balance-realization-reads-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b40-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B40_FINANCE_BALANCE_REALIZATION_READS_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b40_finance_balance_realization_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B40_FINANCE_BALANCE_REALIZATION_READS_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B40_FINANCE_BALANCE_REALIZATION_READS_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B40_FINANCE_BALANCE_REALIZATION_READS_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B40 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B40_FINANCE_BALANCE_REALIZATION_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='f9e356649214571d1de17016bd5bcb6b38e8b0d859a5aab933136ed569f65c2b';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='5d6558daae4d5fa88c681677ed478c5187f5198d5b2900e8331317a9568ca87e'"
+      - name: Materialize exact B40 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b40_finance_balance_realization_reads_candidate.py --repo-root . --work-root /tmp/ozon-b40-work --out /tmp/ozon-b40-exact
+      - name: Verify B39 base and B40 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B39_FBS_PICKUP_GEOGRAPHY_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b40-work/b39-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B40_FINANCE_BALANCE_REALIZATION_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b40-exact
+          find /tmp/ozon-b40-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b40-finance-balance-realization-reads-candidate, path: /tmp/ozon-b40-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --system core.longpaths true
+      - name: Verify B40 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B40_FINANCE_BALANCE_REALIZATION_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='f9e356649214571d1de17016bd5bcb6b38e8b0d859a5aab933136ed569f65c2b';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='5d6558daae4d5fa88c681677ed478c5187f5198d5b2900e8331317a9568ca87e'"
+      - name: Materialize exact B40 candidate
+        shell: pwsh
+        run: |
+          $work='C:\b40w'; $out='C:\b40o'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b40_finance_balance_realization_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B39 base and B40 gates
+        shell: pwsh
+        run: |
+          $work='C:\b40w'; $out='C:\b40o'; $b39=Join-Path $work 'b39-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B39_FBS_PICKUP_GEOGRAPHY_READS_REGRESSION_2026-08-28.mjs $b39; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B40_FINANCE_BALANCE_REALIZATION_READS_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
