@@ -709,6 +709,49 @@ async def test_SHOW_QUESTION_REVIEW_GENERATOR_PROVENANCE_TEST_and_MANUAL_REVIEW_
 
 
 @pytest.mark.asyncio
+async def test_SHOW_CODEX_CODEX_ERROR_ACTIVE_PROFILE_TEST_and_CODEX_ERROR_PRESERVES_FAILED_PROFILE_AND_ACTIVE_PROFILE_TEST(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'codex-error-card','question_text':'q'})
+ attempt,_=await repo.claim_codex(q['id']); await repo.finish_draft_error(attempt,'PROCESS_ERROR','deterministic failure'); await repo.transition(q['id'],'CODEX_RUNNING','CODEX_ERROR')
+ await repo.set_active_codex_profile('codex2')
+ class Message(StandaloneMessage):
+  def __init__(self): self.calls=[]
+  async def reply_text(self,*args,**kwargs): self.calls.append((args,kwargs)); return SimpleNamespace(message_id=len(self.calls))
+ message=Message(); bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ await bot.show_codex(message,q['id'])
+ text,kwargs=message.calls[-1]
+ assert 'Codex: codex1' in text[0] and '🟢 Сейчас активен: codex2' in text[0]
+ assert [b.text for row in kwargs['reply_markup'].inline_keyboard for b in row]==['🔄 Повторить','✍️ Ответить самому','🚫 Игнорировать','🤖 Сменить Codex']
+ assert_standalone(message.calls[-1])
+ assert (await repo.get_question(q['id']))['status']=='CODEX_ERROR'
+ assert (await repo.get_current_draft_attempt(q['id']))['codex_profile']=='codex1'
+ await db.close()
+
+
+@pytest.mark.asyncio
+async def test_RUN_CODEX_FAILURE_RENDERS_CODEX_ERROR_TEST(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'codex-error-flow','question_text':'q'})
+ claim=await repo.claim_codex(q['id']); await repo.set_active_codex_profile('codex2')
+ class Runner:
+  async def run(self,*args): raise RuntimeError('deterministic runner failure')
+ class Prompts:
+  def build(self,question): return 'prompt'
+ class Message(StandaloneMessage):
+  def __init__(self): self.calls=[]
+  async def reply_text(self,*args,**kwargs): self.calls.append((args,kwargs)); return SimpleNamespace(message_id=len(self.calls))
+ message=Message(); bot=OperatorBot(1,QuestionService(repo,{},None,Runner(),Prompts()))
+ await bot.run_codex(message,q['id'],claim)
+ current=await repo.get_question(q['id']); attempt=await repo.get_current_draft_attempt(q['id']); text,kwargs=message.calls[-1]
+ assert current['status']=='CODEX_ERROR' and attempt['codex_profile']=='codex1' and attempt['error_type']=='PROCESS_ERROR'
+ assert 'Codex: codex1' in text[0] and '🟢 Сейчас активен: codex2' in text[0]
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts WHERE question_id=?',(q['id'],))).fetchone())[0]==1
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM answer_revisions WHERE question_id=?',(q['id'],))).fetchone())[0]==0
+ assert_standalone(message.calls[-1]) and isinstance(kwargs['reply_markup'],InlineKeyboardMarkup)
+ await db.close()
+
+
+@pytest.mark.asyncio
 async def test_MANUAL_PROMPT_STANDALONE_TEST_and_EDIT_PROMPT_STANDALONE_TEST(tmp_path):
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); service=QuestionService(repo,{},None)
  q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'standalone-prompts','question_text':'q'})

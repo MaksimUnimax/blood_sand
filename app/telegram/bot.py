@@ -111,6 +111,7 @@ class OperatorBot:
   if q['status']=='REVIEW':
    await self.cards(message,await self.review_cards(q),self.buttons(q),qid)
   elif q['status']=='CODEX_ERROR':
+   active=await self.service.repo.active_codex_profile()
    attempt=await self.service.repo.get_current_draft_attempt(qid); await self.cards(message,render.codex_error(q,attempt['codex_profile'],attempt['error_type'],attempt['error_message'],active),self.buttons(q),qid)
  async def run_codex(self,message,qid,claim):
   try: await self.service.codex(qid,claim=claim)
