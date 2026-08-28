@@ -123,7 +123,9 @@ class QuestionService:
         q = await self.repo.get_question(qid)
         try:
             text = await self.runner.run(profile, self.prompts.build(q), str(aid))
-            text = self.prompts.validate_output(q, text)
+            validator = getattr(self.prompts, 'validate_output', None)
+            if validator is not None:
+                text = validator(q, text)
             current = await self.repo.get_question(qid)
             if current['current_draft_attempt_id'] != aid or current['status'] != 'CODEX_RUNNING':
                 return None
