@@ -1,0 +1,50 @@
+name: Ozon B48 FBO Draft Timeslot Info exact candidate
+on:
+  push:
+    branches: [feature/ozon-b48-fbo-draft-timeslot-info-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b48-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B48_FBO_DRAFT_TIMESLOT_INFO_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b48_fbo_draft_timeslot_info_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B48_FBO_DRAFT_TIMESLOT_INFO_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B48_FBO_DRAFT_TIMESLOT_INFO_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B48_FBO_DRAFT_TIMESLOT_INFO_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B48 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B48_FBO_DRAFT_TIMESLOT_INFO_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='bc930ed890879d8b034e0df9fd71a439289e6ed752b2050e53e9e8f148672163';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='c769a76ca2c7641c72c0028ede2aad6e48a2304dc15ff675328fb09f890f7c59'"
+      - name: Materialize exact B48 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b48_fbo_draft_timeslot_info_candidate.py --repo-root . --work-root /tmp/ozon-b48-work --out /tmp/ozon-b48-exact
+      - name: Verify B47 base and B48 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B47_UNPAID_LEGAL_PRODUCTS_REGRESSION_2026-08-28.mjs /tmp/ozon-b48-work/b47-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B48_FBO_DRAFT_TIMESLOT_INFO_REGRESSION_2026-08-28.mjs /tmp/ozon-b48-exact
+          find /tmp/ozon-b48-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b48-fbo-draft-timeslot-info-candidate, path: /tmp/ozon-b48-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --system core.longpaths true
+      - name: Verify B48 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B48_FBO_DRAFT_TIMESLOT_INFO_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='bc930ed890879d8b034e0df9fd71a439289e6ed752b2050e53e9e8f148672163';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='c769a76ca2c7641c72c0028ede2aad6e48a2304dc15ff675328fb09f890f7c59'"
+      - name: Materialize exact B48 candidate
+        shell: pwsh
+        run: |
+          $work='C:\b48w'; $out='C:\b48o'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b48_fbo_draft_timeslot_info_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B47 base and B48 gates
+        shell: pwsh
+        run: |
+          $work='C:\b48w'; $out='C:\b48o'; $b47=Join-Path $work 'b47-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B47_UNPAID_LEGAL_PRODUCTS_REGRESSION_2026-08-28.mjs $b47; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B48_FBO_DRAFT_TIMESLOT_INFO_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
