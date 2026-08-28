@@ -1,0 +1,50 @@
+name: Ozon B42 FBS Warehouse Setup Reference Reads exact candidate
+on:
+  push:
+    branches: [feature/ozon-b42-fbs-warehouse-setup-reference-reads-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b42-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B42_FBS_WAREHOUSE_SETUP_REFERENCE_READS_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b42_fbs_warehouse_setup_reference_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B42_FBS_WAREHOUSE_SETUP_REFERENCE_READS_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B42_FBS_WAREHOUSE_SETUP_REFERENCE_READS_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B42_FBS_WAREHOUSE_SETUP_REFERENCE_READS_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B42 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B42_FBS_WAREHOUSE_SETUP_REFERENCE_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='18d36adfdc74759315ed15848857b185c92c19a058d96de9d07378cc7ba23016';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='f1b08354dafcfeffdad66fa64439a04f84c47f0dd2f8d0f58118965a66d7891e'"
+      - name: Materialize exact B42 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b42_fbs_warehouse_setup_reference_reads_candidate.py --repo-root . --work-root /tmp/ozon-b42-work --out /tmp/ozon-b42-exact
+      - name: Verify B41 base and B42 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B41_FINANCE_BUYOUT_READ_REGRESSION_2026-08-28.mjs /tmp/ozon-b42-work/b41-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B42_FBS_WAREHOUSE_SETUP_REFERENCE_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b42-exact
+          find /tmp/ozon-b42-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b42-fbs-warehouse-setup-reference-reads-candidate, path: /tmp/ozon-b42-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --system core.longpaths true
+      - name: Verify B42 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B42_FBS_WAREHOUSE_SETUP_REFERENCE_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='18d36adfdc74759315ed15848857b185c92c19a058d96de9d07378cc7ba23016';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='f1b08354dafcfeffdad66fa64439a04f84c47f0dd2f8d0f58118965a66d7891e'"
+      - name: Materialize exact B42 candidate
+        shell: pwsh
+        run: |
+          $work='C:\b42w'; $out='C:\b42o'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b42_fbs_warehouse_setup_reference_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B41 base and B42 gates
+        shell: pwsh
+        run: |
+          $work='C:\b42w'; $out='C:\b42o'; $b41=Join-Path $work 'b41-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B41_FINANCE_BUYOUT_READ_REGRESSION_2026-08-28.mjs $b41; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B42_FBS_WAREHOUSE_SETUP_REFERENCE_READS_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
