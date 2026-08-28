@@ -1,0 +1,50 @@
+name: Ozon B31 FBS Carriage Container Reads exact candidate
+on:
+  push:
+    branches: [feature/ozon-b31-fbs-carriage-container-reads-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b31-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B31_FBS_CARRIAGE_CONTAINER_READS_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b31_fbs_carriage_container_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B31_FBS_CARRIAGE_CONTAINER_READS_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B31_FBS_CARRIAGE_CONTAINER_READS_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B31_FBS_CARRIAGE_CONTAINER_READS_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B31 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B31_FBS_CARRIAGE_CONTAINER_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='b045506e3b2180204e662b1b1dbe83e3fb94b469a1ad248d1ba59d6eb8a362e9';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='2a0cb527554feb6036ab04d23ead1f2bc4e60ee623e10378066545d48b091807'"
+      - name: Materialize exact B31 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b31_fbs_carriage_container_reads_candidate.py --repo-root . --work-root /tmp/ozon-b31-work --out /tmp/ozon-b31-exact
+      - name: Verify B30 base and B31 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B30_FBS_DELIVERY_ASSEMBLY_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b31-work/b30-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B31_FBS_CARRIAGE_CONTAINER_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b31-exact
+          find /tmp/ozon-b31-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b31-fbs-carriage-container-reads-candidate, path: /tmp/ozon-b31-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --global core.longpaths true
+      - name: Verify B31 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B31_FBS_CARRIAGE_CONTAINER_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='b045506e3b2180204e662b1b1dbe83e3fb94b469a1ad248d1ba59d6eb8a362e9';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='2a0cb527554feb6036ab04d23ead1f2bc4e60ee623e10378066545d48b091807'"
+      - name: Materialize exact B31 candidate
+        shell: pwsh
+        run: |
+          $work='C:\b31w'; $out='C:\b31e'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b31_fbs_carriage_container_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B30 base and B31 gates
+        shell: pwsh
+        run: |
+          $work='C:\b31w'; $out='C:\b31e'; $b30=Join-Path $work 'b30-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B30_FBS_DELIVERY_ASSEMBLY_READS_REGRESSION_2026-08-28.mjs $b30; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B31_FBS_CARRIAGE_CONTAINER_READS_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
