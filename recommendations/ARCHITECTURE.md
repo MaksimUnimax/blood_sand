@@ -1,489 +1,351 @@
-# Архитектура системы рекомендаций во VK
+# Архитектура системы рекомендаций
 
-Версия: 0.1  
-Статус: проект архитектуры до начала реализации  
+Версия: 0.2  
+Статус: **V2 SALES-WEIGHTED architecture authority**  
 Бренд: «Кровь и Песок»
 
-## 1. Цель архитектуры
+Current matrix: `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`  
+Current product policy: `KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED`  
+Calendar: `KIP_CHERTOG_CALENDAR_V1`  
+Marketplace override: `KIP_MARKETPLACE_OVERRIDE_V1`
 
-Построить один детерминированный recommendation core для подбора славянского оберега по дню/месяцу рождения и полу, а поверх него дать клиенту два VK-интерфейса:
+## 1. Цель
 
-1. **VK Community Bot** — быстрый разговорный вход через сообщения сообщества;
-2. **VK Mini App** — основной визуальный интерфейс подбора внутри VK.
+Построить один deterministic Recommendation Core для подбора славянского оберега по:
 
-Оба интерфейса обязаны использовать одну и ту же матрицу и один и тот же backend. Никакой отдельной логики подбора в боте или Mini App быть не должно.
+- дню рождения;
+- месяцу рождения;
+- полу;
+- целевому marketplace, если он известен.
 
-Главный продуктовый принцип:
+Результат должен быть воспроизводимым, versioned и одинаковым для любого UI при одинаковых входах.
 
-> Пользователь остаётся внутри VK на всём этапе подбора. Recommendation result не зависит от канала и не меняется из-за продаж, рекламы, остатков или поведения клиента.
+V2 отличается от V1: коммерческие данные теперь используются **офлайн при утверждении конфигурации** как сильный фактор выбора среди семантически допустимых товаров. Runtime не должен сам ходить за продажами и динамически менять результат.
 
-## 2. Архитектурный вариант
-
-Выбран гибрид:
+## 2. Главная модель
 
 ```text
-                    ┌───────────────────────────┐
-                    │ Recommendation Core       │
-                    │ deterministic / versioned │
-                    └─────────────┬─────────────┘
-                                  │
-                      ┌───────────┴───────────┐
-                      │                       │
-              ┌───────▼───────┐       ┌──────▼─────────┐
-              │ VK Bot Adapter│       │ Mini App API   │
-              └───────┬───────┘       └──────┬─────────┘
-                      │                       │
-              VK Community Messages       VK Mini App
-                      │                       │
-                      └───────────┬───────────┘
-                                  │
-                            Клиент во VK
+sales evidence + semantic review + owner decisions
+                    │
+                    ▼
+        versioned V2 configuration
+                    │
+                    ▼
+          Recommendation Core
+                    │
+       ┌────────────┴─────────────┐
+       │                          │
+ marketplace/UI adapters    internal tools
+       │
+ Ozon / Wildberries / VK / Telegram / other
 ```
 
-### Почему не только бот
+Ключевой принцип:
 
-Бот хорош как быстрый MVP и естественный вход из «Написать сообщение», но хуже подходит для визуальных карточек, выбора пола и аккуратного объяснения результата.
+> Продажи влияют на **утверждение versioned matrix**, но не являются live runtime input.
 
-### Почему не только Mini App
+Это позволяет одновременно:
 
-Mini App даёт лучший UX, но сообщения сообщества всё равно нужны:
+- использовать реальные seller sales для коммерчески жизнеспособной матрицы;
+- не делать результат случайным из-за дневных колебаний;
+- сохранять reproducibility и auditability.
 
-- пользователь может написать напрямую;
-- через сообщения проще продолжить контакт;
-- возможна передача менеджеру;
-- Mini App может предлагать сохранить/получить результат в сообщениях.
+## 3. Recommendation Core
 
-### Итог
+Core принимает нормализованный input:
 
-**Bot = conversational entry + fallback + handoff.**  
-**Mini App = основной визуальный интерфейс.**  
-**Recommendation Core = единственный источник решения.**
+```text
+birth_day
+birth_month
+gender
+marketplace
+```
 
-## 3. Компоненты
+и выполняет:
 
-### 3.1. Recommendation Core
+1. `validateBirthDate()`;
+2. `resolveChertog()` по `KIP_CHERTOG_CALENDAR_V1`;
+3. `resolveBaseRecommendation()` по `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`;
+4. `applyMarketplaceOverride()` по `KIP_MARKETPLACE_OVERRIDE_V1`;
+5. `validateProductPolicy()` по `KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED`;
+6. вернуть **ровно один** effective product.
 
-Чистая детерминированная библиотека без VK-зависимостей.
+Core не должен:
 
-Ответственность:
-
-1. принять `birth_day`, `birth_month`, `gender`;
-2. валидировать дату;
-3. определить Чертог по `KIP_CHERTOG_CALENDAR_V1`;
-4. выбрать утверждённую строку `KIP_RECOMMENDATION_MATRIX_V1`;
-5. применить product policy;
-6. вернуть 1 результат, либо 2 только в разрешённом кейсе;
-7. вернуть стабильные `relation_type` и `reason_code`;
-8. вернуть версии календаря, матрицы и product policy.
-
-Core не умеет:
-
-- ходить в интернет;
 - вызывать LLM;
-- смотреть продажи;
-- выбирать «похожий» SKU;
-- менять результат по наличию;
-- генерировать маркетинговый текст.
+- искать трактовки в интернете;
+- читать live sales;
+- читать live stock для пересчёта матрицы;
+- выбирать новый похожий SKU на лету;
+- подмешивать reserve products;
+- выдавать второй товар.
 
-### 3.2. Configuration Registry
+## 4. Sales-weighted policy
 
-Runtime-источником должны стать **машиночитаемые versioned-файлы**, а Markdown остаётся документацией для человека.
+Коммерческая оптимизация происходит до runtime в процессе пересборки матрицы.
 
-Предлагаемая структура:
+Evidence 2026-08-28:
+
+- Wildberries: actual bought units, `2026-01-01 — 2026-08-28`;
+- Ozon: `analytics_data`, `ordered_units`, SKU dimension, `2026-06-01 — 2026-08-28`.
+
+Полный audit: `SALES_WEIGHTED_MATRIX_V2_AUDIT_2026-08-28.md`.
+
+Approval sequence:
+
+```text
+candidate products
+   ↓
+remove clearly unrelated / visually contradictory
+   ↓
+compare remaining semantic candidates
+   ↓
+strongly weight actual sales
+   ↓
+owner approval
+   ↓
+new versioned matrix
+```
+
+Live popularity is therefore **not** an API parameter.
+
+## 5. Marketplace-aware result
+
+V1 architecture treated channel/marketplace as irrelevant to semantic output. V2 allows explicit marketplace overrides because sales and practical assortment differ.
+
+Current approved override:
+
+```text
+Ворон + male:
+  Ozon        → Колядник
+  Wildberries → Алатырь
+```
+
+All other V2 rows currently produce the same product on Ozon and Wildberries.
+
+`channel` and `marketplace` are different:
+
+- `channel` = UI/transport (`vk_bot`, `telegram`, etc.); does not change result;
+- `marketplace` = requested commerce destination (`ozon`, `wildberries`); may apply an explicit versioned override.
+
+## 6. Product policy
+
+`PRODUCT_CLASSIFICATION.md` is the human-readable authority for current product roles and gender policy.
+
+Critical V2 invariants:
+
+```text
+Даждьбог → only Раса male + female
+Печать Велеса / Медвежья лапа → only Медведь male + female
+Печать Велеса / Медвежья лапа → Волк FORBIDDEN
+Волк → Велес
+Сварог → male only in V2
+secondary recommendation → forbidden
+```
+
+The marketplace card `Печать Велеса` is the **bear-paw visual form**. Stable internal recommendation identity may remain `Медвежья лапа` for destination compatibility, while customer-facing label is:
+
+```text
+Печать Велеса — Медвежья лапа
+```
+
+## 7. Configuration Registry
+
+Target machine-readable structure:
 
 ```text
 recommendations/
   data/
     chertog_calendar.v1.json
-    product_policy.v1.json
-    recommendation_matrix.v1.json
-    reason_copy.v1.json
+    product_policy.v2.json
+    recommendation_matrix.v2.json
+    marketplace_overrides.v1.json
+    reason_copy.v2.json
 ```
 
-Каждый файл проходит schema validation при старте приложения и в CI.
+Required versions:
 
-Если конфигурация невалидна, сервис не должен стартовать.
+```text
+calendar_version = KIP_CHERTOG_CALENDAR_V1
+product_policy_version = KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED
+matrix_version = KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED
+marketplace_override_version = KIP_MARKETPLACE_OVERRIDE_V1
+copy_version = KIP_REASON_COPY_V2_SALES_WEIGHTED
+```
 
-### 3.3. Recommendation API
+Markdown remains the owner-readable specification; runtime should eventually consume validated machine-readable equivalents.
 
-Тонкий HTTP-слой поверх Recommendation Core.
+## 8. Configuration validation
 
-Назначение:
+Startup/CI must fail if:
 
-- единый контракт для Bot Adapter и Mini App;
-- аудит версий;
-- централизованная обработка ошибок;
-- telemetry;
-- отсутствие дублирования domain logic.
+1. calendar has gaps/overlaps;
+2. any of 32 base `Chertog × gender` rows is missing;
+3. a base case returns more than one product;
+4. unknown product key is referenced;
+5. gender policy conflicts with a row;
+6. `bear_paw` appears outside `medved`;
+7. `bear_paw` appears in `volk`;
+8. Даждьбог appears outside Раса or not exactly twice in base rows;
+9. Сварог appears in a female V2 row;
+10. reserve product appears without active V2 classification;
+11. marketplace override references an unapproved marketplace/chertog/gender tuple;
+12. duplicate effective rows exist.
 
-Основной endpoint:
+## 9. Recommendation API
+
+Canonical endpoint remains:
 
 ```text
 POST /v1/recommendations/resolve
 ```
 
-Подробный контракт фиксируется в `DATA_API_CONTRACT.md`.
+V2 request includes marketplace:
 
-### 3.4. VK Bot Adapter
-
-Адаптер сообщений сообщества.
-
-Ответственность:
-
-- принять событие VK;
-- проверить подлинность/секрет события согласно выбранному VK transport;
-- разобрать пользовательский ввод;
-- хранить минимальное состояние диалога;
-- запросить пол кнопками, а не угадывать его;
-- вызвать Recommendation API;
-- отрендерить результат;
-- дать команды `Подобрать снова` и `Связаться с продавцом`;
-- передать диалог человеку при необходимости.
-
-В Bot Adapter запрещено иметь собственную таблицу Чертогов.
-
-### 3.5. VK Mini App
-
-Основной визуальный UX.
-
-Минимальные экраны:
-
-1. старт;
-2. выбор дня/месяца;
-3. выбор `Мужчине / Женщине`;
-4. результат;
-5. карточка/действие по товару;
-6. повторный подбор.
-
-Mini App не вычисляет результат локально как источник истины. Он отправляет входы API и отображает ответ.
-
-Локальный расчёт допускается только в будущем как offline-cache и обязан быть byte-for-byte эквивалентен backend core; для V1 не нужен.
-
-### 3.6. Product Destination Adapter
-
-Recommendation result и место покупки/просмотра — разные сущности.
-
-Для каждой `recommendation_identity` можно хранить несколько destination:
-
-```text
-vk_market_item_id
-vk_market_url
-community_message_action
-ozon_product_id
-ozon_url
-wb_product_id
-wb_url
+```json
+{
+  "birth_day": 8,
+  "birth_month": 11,
+  "gender": "male",
+  "marketplace": "wildberries",
+  "channel": "telegram"
+}
 ```
 
-Приоритет V1:
+`marketplace` is a domain input because it can select a versioned override. `channel` is telemetry/UI only.
 
-1. внутренняя VK-карточка/действие, если реально настроено;
-2. сообщение сообществу;
-3. внешний marketplace link — только как явное действие пользователя и не как часть самого алгоритма подбора.
+The response returns one recommendation and all configuration versions used.
 
-Это позволяет сохранить подбор внутри VK даже если checkout позднее ведёт на Ozon/WB.
+Detailed contract: `DATA_API_CONTRACT.md`.
 
-## 4. Разделение semantic result и availability
+## 10. Availability and stock
 
-Наличие товара **не меняет смысловую рекомендацию**.
-
-Core сначала возвращает semantic result:
+Availability is still an overlay and must **not** silently change the V2 result.
 
 ```text
-13.08 + female
-→ rasa
-→ Даждьбог
+approved V2 recommendation
+          ↓
+marketplace destination lookup
+          ↓
+availability enrichment
+          ↓
+UI
 ```
 
-После этого отдельный слой может приложить статус:
+Do not do at runtime:
 
 ```text
-availability = AVAILABLE | UNAVAILABLE | UNKNOWN
+recommended SKU unavailable
+→ choose another SKU because it has stock
 ```
 
-Если товар недоступен:
+Commercial changes belong in a reviewed V3/V2.x matrix rebuild, not ad-hoc runtime fallback.
 
-- исходная рекомендация сохраняется;
-- другой товар автоматически не подставляется;
-- UI показывает нейтральный unavailable state;
-- клиенту можно дать `Написать продавцу`;
-- будущий approved fallback допускается только отдельной versioned policy.
+Customer copy has an additional hard rule: the finished customer message must not announce absence of a product/card/link/stock. Operator handling stays internal.
 
-Запрещено:
+## 11. Customer copy layer
+
+Copy is separate from matrix selection.
+
+The selection layer may know:
 
 ```text
-Даждьбог отсутствует
-→ взять самый продаваемый Алатырь
+selection_basis = SEMANTIC_CURATED_SALES_WEIGHTED
 ```
 
-## 5. Bot conversation state
-
-Минимальный state machine:
+but the customer must receive only the positive semantic explanation:
 
 ```text
-NEW
-  ↓
-WAITING_DATE
-  ↓
-WAITING_GENDER
-  ↓
-RESOLVED
-  ├── START_OVER → WAITING_DATE
-  └── HUMAN_HANDOFF
+Чертог → темы → выбранный символ → почему смысл подходит
 ```
 
-### Дата
+Never expose:
 
-Бот должен понимать как минимум:
+- sales figures;
+- rank;
+- seller analytics;
+- weak sales of replaced products;
+- internal fallback/substitution language;
+- availability absence.
 
-```text
-13.10
-13.10.1976
-13/10
-13/10/1976
-13-10
-13-10-1976
-```
+Current copy authority: `CUSTOMER_RECOMMENDATION_COPY_GUIDE.md`.
 
-Если передан год, он может быть использован только для парсинга корректности полной даты и после этого **не участвует в рекомендации**.
+## 12. Interfaces
 
-Сохранять год без отдельной необходимости не следует.
+Any UI — VK Bot, VK Mini App, Telegram operator, marketplace-question worker or future frontend — must call the same core or reproduce the exact same versioned contract.
 
-### Пол
+No adapter may maintain its own independent Chertog/product table.
 
-Пол выбирается явной кнопкой:
+If marketplace is unknown, a product flow may either:
 
-```text
-Мужчине
-Женщине
-```
+- resolve the base matrix result and omit destination;
+- or ask for marketplace when a marketplace-specific link/result is needed.
 
-Нельзя определять его по имени, профилю, аватару или текстовой догадке.
+It must never guess a marketplace based on user profile or location.
 
-## 6. Session storage
+## 13. Analytics
 
-Recommendation Core stateless.
-
-Состояние требуется только Bot Adapter.
-
-Минимальная модель:
-
-```text
-vk_peer_id
-state
-birth_day
-birth_month
-gender
-last_matrix_version
-updated_at
-expires_at
-```
-
-Рекомендуемый TTL незавершённой сессии: 24 часа.
-
-После завершения подбора персональные вводы не нужны для работы алгоритма. Для аналитики лучше хранить агрегированные/псевдонимизированные события, а не полную дату рождения.
-
-## 7. Analytics
-
-Recommendation result нельзя оптимизировать по коммерческим данным, но поведение воронки измерять нужно.
-
-События V1:
-
-```text
-recommendation_flow_started
-birthdate_submitted
-gender_selected
-recommendation_resolved
-recommendation_result_shown
-product_action_clicked
-start_over_clicked
-human_handoff_requested
-validation_error
-product_unavailable_shown
-```
-
-К событию `recommendation_resolved` логируются:
+Runtime analytics may record:
 
 ```text
 channel
+marketplace
 chertog_id
 gender
-product_identity[]
-relation_type[]
+product_key
+relation_type
+selection_basis
 calendar_version
 matrix_version
 product_policy_version
+marketplace_override_version
 ```
 
-Не нужно логировать полный год рождения.
+Do not log unnecessary personal data or full birth year.
 
-## 8. Copy layer
+Analytics may inform a **future reviewed matrix version**, but cannot mutate current V2 behavior automatically.
 
-Формулировка ответа отделяется от recommendation matrix.
+## 14. Security / determinism
 
-Матрица хранит:
+- no user-controlled arbitrary product key;
+- no endpoint such as `recommend_product=<anything>`;
+- marketplace must be from an allowlist;
+- matrix/product policy is immutable for one deployed version;
+- configuration mismatch must fail closed;
+- UI cannot override hard rules such as bear-paw outside Медведь.
+
+## 15. Current owner-locked matrix highlights
 
 ```text
-reason_code = PATRON_EXACT
+Медведь male   → Печать Велеса — Медвежья лапа
+Медведь female → Печать Велеса — Медвежья лапа
+Волк male      → Велес
+Волк female    → Велес
+Раса male      → Даждьбог
+Раса female    → Даждьбог
 ```
 
-Copy layer превращает его в утверждённый текст.
+Dazhdbog therefore has exactly two automatic gender rows.
 
-Это позволяет переписать:
+## 16. Migration from V1
+
+V1 architecture statements that are retired:
+
+- “recommendation does not change because of sales” as a product-policy rule;
+- channel-independent matrix without marketplace override;
+- two-product Медведь male exception;
+- male-only bear paw;
+- Svarog as automatic Медведь result.
+
+Replacement authority:
+
+- `RECOMMENDATION_MATRIX.md`;
+- `PRODUCT_CLASSIFICATION.md`;
+- `SALES_WEIGHTED_MATRIX_V2_AUDIT_2026-08-28.md`;
+- this architecture document.
+
+Decision marker:
 
 ```text
-«Эта дата относится к Чертогу...»
+KIP_RECOMMENDATION_ARCHITECTURE_V2_SALES_WEIGHTED
 ```
-
-без изменения алгоритма и версии результата.
-
-В V1 LLM для клиентских ответов не используется: тексты должны быть шаблонными и предсказуемыми.
-
-## 9. Error model
-
-Минимальные коды:
-
-```text
-INVALID_DATE
-INVALID_GENDER
-NO_CHERTOG_MATCH
-MATRIX_ENTRY_MISSING
-PRODUCT_POLICY_MISSING
-RESULT_PRODUCT_UNAVAILABLE
-CONFIG_VERSION_MISMATCH
-INTERNAL_ERROR
-```
-
-`NO_CHERTOG_MATCH`, `MATRIX_ENTRY_MISSING` и `PRODUCT_POLICY_MISSING` считаются ошибками конфигурации и должны быть невозможны после CI validation.
-
-## 10. Security boundaries
-
-### Bot
-
-- принимать только корректные события VK;
-- секреты не хранить в репозитории;
-- idempotency/deduplication по event id;
-- rate limit на peer/user;
-- не исполнять HTML/команды из пользовательского текста.
-
-### Mini App
-
-- backend не доверяет произвольному `vk_user_id` из JSON body;
-- пользовательский контекст подтверждается launch/auth данными VK согласно актуальному выбранному механизму интеграции;
-- CORS ограничивается production origin;
-- CSP и безопасная работа с внешними ссылками.
-
-### Domain
-
-Даже полностью скомпрометированный UI не должен иметь endpoint вида `recommend_product=<любое значение>`; результат вычисляет backend по матрице.
-
-## 11. Deployment units
-
-Для V1 достаточно двух deployable units:
-
-```text
-1. recommendation-backend
-   - Recommendation Core
-   - Recommendation API
-   - VK Bot Adapter
-   - session store adapter
-
-2. vk-mini-app
-   - frontend
-```
-
-Bot и API сознательно объединены в один backend на старте: домен маленький, отдельный microservice для бота не даёт пользы.
-
-При росте нагрузки adapter можно отделить без изменения Core/API contract.
-
-## 12. Рекомендуемый стек
-
-Это reference stack, а не неизменяемое бизнес-правило:
-
-### Backend
-
-```text
-Node.js LTS
-TypeScript
-Fastify или эквивалентный минимальный HTTP framework
-Zod / JSON Schema для конфигурации и API contracts
-Vitest/Jest для domain tests
-```
-
-### Mini App
-
-```text
-TypeScript
-React
-VKUI
-VK Bridge
-Vite
-```
-
-### Session / persistence
-
-MVP:
-
-```text
-PostgreSQL либо совместимое простое persistent storage
-```
-
-Если бот запускается в одном экземпляре, возможен более простой storage adapter, но domain contract не должен зависеть от конкретной БД.
-
-## 13. Repository layout для реализации
-
-Предлагаемая структура:
-
-```text
-recommendations/
-  README.md
-  RECOMMENDATION_SYSTEM_TZ.md
-  RECOMMENDATION_MATRIX.md
-  PRODUCT_CLASSIFICATION.md
-  ARCHITECTURE.md
-  DATA_API_CONTRACT.md
-  VK_UX_FLOW.md
-  ROADMAP.md
-  data/
-    chertog_calendar.v1.json
-    product_policy.v1.json
-    recommendation_matrix.v1.json
-    reason_copy.v1.json
-
-apps/
-  vk-recommendation-backend/
-  vk-recommendation-miniapp/
-
-packages/
-  recommendation-core/
-  recommendation-contracts/
-```
-
-Если позднее будет принято решение держать весь VK-проект внутри `recommendations/`, roadmap может адаптировать layout. Важнее сохранить границу `core / adapters / UI`.
-
-## 14. Основные инварианты
-
-1. Один input при одной версии матрицы всегда даёт один и тот же semantic result.
-2. Bot и Mini App дают одинаковый результат.
-3. Клиент видит максимум два товара.
-4. Наличие не меняет semantic result.
-5. Popularity не меняет semantic result.
-6. LLM не участвует в выборе.
-7. UI не содержит независимую матрицу.
-8. Marketplace name не переопределяет recommendation identity.
-9. `Печать Велеса` в recommendation domain = `Медвежья лапа`.
-10. `Волк` никогда не получает `Медвежью лапу` в V1.
-11. Любое изменение результата требует новой версии конфигурации.
-
-## 15. Что нужно утвердить до coding milestone
-
-Перед написанием production-кода должны быть завершены:
-
-1. machine-readable JSON-конфиги V1;
-2. JSON/API schema;
-3. unavailable UX;
-4. карта destination для используемых recommendation identities;
-5. точные client copy templates;
-6. Bot transport choice (Callback API или иной актуальный VK-механизм) после технической проверки;
-7. Mini App registration/deployment details;
-8. roadmap и acceptance gates.
