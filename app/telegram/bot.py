@@ -114,6 +114,12 @@ class OperatorBot:
     if not qid: raise StaleState('STALE_STATE')
     q=await self.service.repo.get_question(qid)
     if not q: raise StaleState('STALE_STATE')
+    # The chooser is bound to the question snapshot that rendered it.  A
+    # revision-bearing menu must still name the current revision; a
+    # revisionless menu is only valid while the question has no revision.
+    # Do this before opening a menu as well as before changing the global
+    # setting, so a stale menu cannot be used to manufacture a fresh choice.
+    if (rid is None and q['current_answer_revision_id'] is not None) or (rid is not None and q['current_answer_revision_id'] != rid): raise StaleState('STALE_STATE')
     if x['arg']=='menu':
      active=await self.service.repo.active_codex_profile(); await self._ack(query); await self._reply(query.message,f'🤖 СМЕНИТЬ CODEX\n\nСейчас: {active}',reply_markup=self.profile_buttons(q,active)); return
     if x['arg'] not in {'codex1','codex2','codex3'}: raise StaleState('STALE_STATE')

@@ -60,6 +60,67 @@ async def test_invalid_callback_is_acknowledged_without_mutation(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_choose_codex_profile_selection_is_bound_to_current_question_revision(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'choose-revision','question_text':'q'})
+ r1=await repo.create_answer_revision(q['id'],'manual','one'); await repo.set_current_answer_revision(q['id'],r1)
+ class Message:
+  async def reply_text(self,*args,**kwargs): return SimpleNamespace(message_id=1)
+ class Query:
+  def __init__(self,data): self.data=data; self.message=Message(); self.acks=[]
+  async def answer(self,*args,**kwargs): self.acks.append((args,kwargs))
+ bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ async def choose(data):
+  query=Query(data); update=SimpleNamespace(callback_query=query,effective_user=SimpleNamespace(id=1),effective_chat=SimpleNamespace(id=1,type='private'))
+  await bot.callback(update,None); assert query.acks; return query
+ # A current revision changes only the global profile.
+ await choose(encode('choose_codex',q['id'],r1,'codex2'))
+ assert await repo.active_codex_profile()=='codex2'
+ # The audit payload is canonical structurally but stale semantically.
+ before=await repo.get_question(q['id']); await choose(encode('choose_codex',q['id'],999,'codex3'))
+ after=await repo.get_question(q['id'])
+ assert await repo.active_codex_profile()=='codex2'
+ assert (after['status'],after['current_answer_revision_id'],after['current_draft_attempt_id']) == (before['status'],before['current_answer_revision_id'],before['current_draft_attempt_id'])
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts')).fetchone())[0]==0
+ # A chooser becomes stale when a newer revision replaces its bound revision.
+ r2=await repo.create_answer_revision(q['id'],'edited','two'); await repo.set_current_answer_revision(q['id'],r2)
+ await choose(encode('choose_codex',q['id'],r1,'codex3'))
+ assert await repo.active_codex_profile()=='codex2' and (await repo.get_question(q['id']))['current_answer_revision_id']==r2
+ # A revision from another question never binds to this question.
+ q2,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'choose-other','question_text':'q2'})
+ other=await repo.create_answer_revision(q2['id'],'manual','other'); await repo.set_current_answer_revision(q2['id'],other)
+ await choose(encode('choose_codex',q['id'],other,'codex3'))
+ assert await repo.active_codex_profile()=='codex2'
+ # A revisionless chooser cannot be used once this question has a revision.
+ await choose(encode('choose_codex',q['id'],None,'codex3'))
+ assert await repo.active_codex_profile()=='codex2'
+ await db.close()
+
+
+@pytest.mark.asyncio
+async def test_choose_codex_nonrevision_new_and_codex_error_remain_valid(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'choose-new','question_text':'q'})
+ class Message:
+  def __init__(self): self.messages=[]
+  async def reply_text(self,*args,**kwargs): self.messages.append((args,kwargs)); return SimpleNamespace(message_id=1)
+ class Query:
+  def __init__(self,data): self.data=data; self.message=Message(); self.acks=[]
+  async def answer(self,*args,**kwargs): self.acks.append((args,kwargs))
+ bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ async def choose(question,profile):
+  query=Query(encode('choose_codex',question['id'],None,profile)); update=SimpleNamespace(callback_query=query,effective_user=SimpleNamespace(id=1),effective_chat=SimpleNamespace(id=1,type='private'))
+  await bot.callback(update,None); assert query.acks; return query
+ await choose(q,'codex2'); assert await repo.active_codex_profile()=='codex2'
+ aid,_=await repo.claim_codex(q['id']); await repo.finish_draft_error(aid,'PROCESS_ERROR','x'); await repo.transition(q['id'],'CODEX_RUNNING','CODEX_ERROR')
+ query=await choose(await repo.get_question(q['id']),'codex3')
+ assert await repo.active_codex_profile()=='codex3'
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts')).fetchone())[0]==1
+ assert any('Codex изменён' in args[0] for args,_ in query.message.messages)
+ await db.close()
+
+
+@pytest.mark.asyncio
 async def test_frozen_button_sets_include_switch_and_review_has_no_regeneration(tmp_path):
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
  q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'buttons','question_text':'q'})
