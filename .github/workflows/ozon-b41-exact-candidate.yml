@@ -1,0 +1,50 @@
+name: Ozon B41 Finance Buyout Read exact candidate
+on:
+  push:
+    branches: [feature/ozon-b41-finance-buyout-read-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b41-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B41_FINANCE_BUYOUT_READ_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b41_finance_buyout_read_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B41_FINANCE_BUYOUT_READ_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B41_FINANCE_BUYOUT_READ_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B41_FINANCE_BUYOUT_READ_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B41 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B41_FINANCE_BUYOUT_READ_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='cc37438200a2714aabea6d9aabb2863f5b4f77e18bf61d650fd715b43765d3fc';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='cf5d8d3e9194d7c2b3344a06f99acd223efc00e9ede9d10166227cb695081721'"
+      - name: Materialize exact B41 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b41_finance_buyout_read_candidate.py --repo-root . --work-root /tmp/ozon-b41-work --out /tmp/ozon-b41-exact
+      - name: Verify B40 base and B41 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B40_FINANCE_BALANCE_REALIZATION_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b41-work/b40-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B41_FINANCE_BUYOUT_READ_REGRESSION_2026-08-28.mjs /tmp/ozon-b41-exact
+          find /tmp/ozon-b41-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b41-finance-buyout-read-candidate, path: /tmp/ozon-b41-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --system core.longpaths true
+      - name: Verify B41 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B41_FINANCE_BUYOUT_READ_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='cc37438200a2714aabea6d9aabb2863f5b4f77e18bf61d650fd715b43765d3fc';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='cf5d8d3e9194d7c2b3344a06f99acd223efc00e9ede9d10166227cb695081721'"
+      - name: Materialize exact B41 candidate
+        shell: pwsh
+        run: |
+          $work='C:\b41w'; $out='C:\b41o'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b41_finance_buyout_read_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B40 base and B41 gates
+        shell: pwsh
+        run: |
+          $work='C:\b41w'; $out='C:\b41o'; $b40=Join-Path $work 'b40-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B40_FINANCE_BALANCE_REALIZATION_READS_REGRESSION_2026-08-28.mjs $b40; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B41_FINANCE_BUYOUT_READ_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
