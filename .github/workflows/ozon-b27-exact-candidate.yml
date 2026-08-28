@@ -1,0 +1,47 @@
+name: Ozon B27 FBO Draft Location Planning Reads exact candidate
+on:
+  push:
+    branches: [feature/ozon-b27-fbo-draft-location-planning-reads-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b27-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B27_FBO_DRAFT_LOCATION_PLANNING_READS_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b27_fbo_draft_location_planning_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B27_FBO_DRAFT_LOCATION_PLANNING_READS_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B27_FBO_DRAFT_LOCATION_PLANNING_READS_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B27_FBO_DRAFT_LOCATION_PLANNING_READS_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B27 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B27_FBO_DRAFT_LOCATION_PLANNING_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='158dca138cbe3501fddfaaab5be9d328b3f56c3326701bdbfc48ad04f25ffc85';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='b913dca58250889b1548511e27127b664daf2b4cb5ca0d0e7e357470940d9c39'"
+      - name: Materialize exact B27 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b27_fbo_draft_location_planning_reads_candidate.py --repo-root . --work-root /tmp/ozon-b27-work --out /tmp/ozon-b27-exact
+      - name: Verify B26 base and B27 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_DRAFT_CARGO_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b27-work/b26-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B27_FBO_DRAFT_LOCATION_PLANNING_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b27-exact
+          find /tmp/ozon-b27-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b27-fbo-draft-location-planning-reads-candidate, path: /tmp/ozon-b27-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B27 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B27_FBO_DRAFT_LOCATION_PLANNING_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='158dca138cbe3501fddfaaab5be9d328b3f56c3326701bdbfc48ad04f25ffc85';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='b913dca58250889b1548511e27127b664daf2b4cb5ca0d0e7e357470940d9c39'"
+      - name: Materialize exact B27 candidate
+        shell: pwsh
+        run: |
+          $work=Join-Path $env:RUNNER_TEMP 'ozon-b27-work'; $out=Join-Path $env:RUNNER_TEMP 'ozon-b27-exact'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b27_fbo_draft_location_planning_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B26 base and B27 gates
+        shell: pwsh
+        run: |
+          $work=Join-Path $env:RUNNER_TEMP 'ozon-b27-work'; $out=Join-Path $env:RUNNER_TEMP 'ozon-b27-exact'; $b26=Join-Path $work 'b26-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_DRAFT_CARGO_READS_REGRESSION_2026-08-28.mjs $b26; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B27_FBO_DRAFT_LOCATION_PLANNING_READS_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}

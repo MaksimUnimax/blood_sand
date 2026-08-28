@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+import argparse,gzip,hashlib,shutil,subprocess,sys
+from pathlib import Path
+B26='bad94d29fa3c34db76dbea3dc93b3aff94a4042739eb5d70312c93e35fff9852'; B27='b185ef32e587856610dbd6f811fea93dcef324b6839f14dee3a2385d1e50005a'
+RAW='b913dca58250889b1548511e27127b664daf2b4cb5ca0d0e7e357470940d9c39'; GZ='158dca138cbe3501fddfaaab5be9d328b3f56c3326701bdbfc48ad04f25ffc85'
+CH={'shared/ozon_operation_registry.js':'885ce4884fc04b89df6c78867acd5a48d9c7051df6675f5a7b48f72abeba9f4f','shared/ozon_contract.js':'eecc97c0c23d813bfdbf1261174ed2df90b1db70afb33e4d3b82c275bc177197','shared/ozon_entitlements.js':'0ab408925314942fc3f3a1bf438d8e2f05dd9b5af8a9d28c94b2286e3b44e42a'}
+PROTECTED={'content_script.js':'a95b0be6bdd92e6a2caad82c9cbbed79df72e21991eae89affc8bb5bcad824bd','service_worker.js':'b995ad6eaf6556eac31f728a3640b77b08d6354d5e7e22f5a34f030902059f87','shared/bridge_autorun_model.js':'c248915a64ea0d9e2db014d66ab27a4bc182553cc24c5d6d0c9f43729e6e20b5','shared/work_session_model.js':'11e91d850a3d69711fefdaadb6617b825350d9382b9bc55cabdbbc9b255c9855','shared/ozon_provider.js':'16e8f85303e7a6a57d0fc76a6ea0e2e9dd8537341fa57397b38b0c0d52dda97b','shared/provider_transport_core.js':'7c346ad77dce1bbac73a2170f2f07fe6845f52a10a5b30f448afef2b80c5abb8','shared/manual_controls.js':'81f302487da7b5ff7c1b746298353438b2cfec100a5bb8f7fa2c80d1e033c81e','shared/ozon_guidance.js':'8de69833524c569bed09d5799479f2a0cd8f1844a2cf5d7d460caa3b1bb74508'}
+def sha(b):return hashlib.sha256(b).hexdigest()
+def tree(r):
+ s=''.join(f'{str(f.relative_to(r)).replace(chr(92),chr(47))}\0{sha(f.read_bytes())}\n' for f in sorted((p for p in r.rglob('*') if p.is_file()),key=lambda p:str(p.relative_to(r)).replace(chr(92),chr(47))))
+ return sha(s.encode())
+def main():
+ a=argparse.ArgumentParser();a.add_argument('--repo-root',required=True);a.add_argument('--work-root',required=True);a.add_argument('--out',required=True);x=a.parse_args();repo=Path(x.repo_root).resolve();work=Path(x.work_root).resolve();out=Path(x.out).resolve();v=repo/'tooling/llm-api-bridges/ozon-seller/validation';prev=v/'materialize_patch_b26_fbo_draft_cargo_reads_candidate.py';pg=v/'PATCH_B27_FBO_DRAFT_LOCATION_PLANNING_READS_2026-08-28.patch.gz';c=pg.read_bytes();assert sha(c)==GZ;raw=gzip.decompress(c);assert sha(raw)==RAW
+ if work.exists():shutil.rmtree(work)
+ work.mkdir(parents=True);base=work/'b26-base';subprocess.run([sys.executable,str(prev),'--repo-root',str(repo),'--work-root',str(work/'b26-work'),'--out',str(base)],check=True);assert tree(base)==B26
+ if out.exists():shutil.rmtree(out)
+ shutil.copytree(base,out);r=subprocess.run(['git','-c','core.autocrlf=false','-c','core.eol=lf','apply','--no-index','-'],cwd=out,input=raw,stderr=subprocess.PIPE)
+ if r.returncode:raise RuntimeError(r.stderr.decode(errors='replace'))
+ assert sum(p.is_file() for p in out.rglob('*'))==21
+ for p,h in CH.items():assert sha((out/p).read_bytes())==h,p
+ for p,h in PROTECTED.items():assert sha((out/p).read_bytes())==h,p
+ assert tree(out)==B27
+ for m in ['PATCH_B27_B26_BASE_IDENTITY_PASS','PATCH_B27_PATCH_TRANSPORT_IDENTITY_PASS','PATCH_B27_PATCH_APPLY_PASS','PATCH_B27_PRODUCTION_FILE_COUNT_21_PASS','PATCH_B27_CHANGED_FILE_IDENTITIES_PASS','PATCH_B27_PROTECTED_B26_IDENTITIES_PASS','PATCH_B27_TREE_MANIFEST_SHA256_PASS']:print(m)
+if __name__=='__main__':main()
