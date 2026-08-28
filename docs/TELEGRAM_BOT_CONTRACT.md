@@ -2,6 +2,12 @@
 
 MQO uses `python-telegram-bot` **22.8** and long polling only. Production calls `deleteWebhook(drop_pending_updates=False)` before one Updater starts with `allowed_updates=["message", "callback_query"]`, `timeout=30`, and `drop_pending_updates=False`. The systemd lifetime `flock` remains mandatory. Inbound updates are durably inserted before PTB can advance its in-memory offset, and completed after the handler's durable business decision. Projection errors after that point are recorded and do not replay business work.
 
+## Clean T4 acceptance harness
+
+`app.acceptance` is an isolated, opt-in harness, not a production mode. A clean run uses `/var/lib/marketplace-question-operator/t4-runs/<unique-run-id>/` with an explicit database and evidence file; it rejects both the production database and the historical `t4-acceptance` database. Startup sends no cards and creates no questions. `prepare` creates exactly one explicit scenario (`A_MANUAL`, `B_CODEX_SUCCESS`, `C_CODEX_ERROR_REPEAT`, `D_CODEX_ERROR_SWITCH`, or `E_IGNORE`); a second scenario is refused until the active one is closed. `status --run-dir` is read-only and never polls or sends Telegram.
+
+The harness retains production Repository, QuestionService, renderer, callbacks, revisions, attempts and durable Telegram inbox. Its only external substitutions are deterministic scripted Codex (which cannot spawn a process) and an acceptance send sink (which records an exact would-send payload and returns a synthetic reply id without an HTTP client). Evidence contains scenario/state/attempt/revision/profile/send facts and zero-side-effect counters, never secrets. `systemd/mqo-t4-clean@.service` is the unique-run template; live T4 must first stop production before it can acquire the shared poller lock, and cleanup must restore production. `/var/lib/marketplace-question-operator/t4-acceptance/` is historical evidence only.
+
 ## PTB 22.8 error facts
 
 `RetryAfter`, `Forbidden`, and `Conflict` inherit directly from `TelegramError`. `NetworkError` inherits `TelegramError`; `TimedOut` inherits `NetworkError`; and `BadRequest` also inherits `NetworkError`. `RetryAfter.retry_after` returns installed-default `int` seconds (with PTB's v22.2 deprecation warning), or `datetime.timedelta` if `PTB_TIMEDELTA=1`; the edge handles either. PTB provides no typed individual-400 exception.
