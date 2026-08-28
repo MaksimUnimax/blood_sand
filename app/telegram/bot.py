@@ -152,7 +152,6 @@ class OperatorBot:
         for i, text in enumerate(cards):
             outcome = await self._reply(message, text, reply_markup=markup if i == 0 else None)
             if qid and outcome.outcome is not Outcome.SUCCESS:
-                # Only operations backed by telegram_delivery_failures are recorded there.
                 if operation in {'INITIAL_CARD', 'MANUAL_PROMPT', 'EDIT_PROMPT', 'CODEX_RUNNING_CARD'}:
                     await self.service.repo.record_delivery_failure(qid, operation, outcome.outcome.value, str(outcome.error))
                 return False
@@ -387,7 +386,12 @@ class OperatorBot:
         if await self._denied(u):
             return
         try:
-            result = await self.service.operator_text(u.message.text, u.update_id)
+            operator_text = getattr(self.service, 'operator_text', None)
+            if operator_text is not None:
+                result = await operator_text(u.message.text, u.update_id)
+            else:
+                rid = await self.service.ordinary_text(u.message.text)
+                result = None if rid is None else {'kind': 'revision', 'revision_id': rid}
         except StaleState:
             return
         if result is None:
