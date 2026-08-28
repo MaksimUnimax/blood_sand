@@ -8,7 +8,7 @@ from app.db.repository import Repository
 from app.service import QuestionService
 from app.state_machine import StaleState
 from app.telegram.bot import OperatorBot
-from app.telegram.callbacks import decode, encode
+from app.telegram.callbacks import MAX_CALLBACK_DATA_BYTES, decode, encode
 from app.telegram.durable_queue import DurableUpdateQueue
 from app.telegram.edge import TelegramEdge, Operation, Outcome
 
@@ -27,18 +27,43 @@ async def test_question_send_persists_only_positive_message_id(tmp_path):
 
 
 def test_callbacks_are_bounded_parseable_and_revision_bound():
- for action in ('manual','codex','ignore','send','edit','retry_codex','retry_send','confirm_regenerate'):
-  value=encode(action,123456,987654)
+ for action,qid,rid,arg in (('manual',123456,None,None),('codex',123456,None,None),('ignore',123456,None,None),('ignore',123456,987654,None),('send',123456,987654,None),('edit',123456,987654,None),('retry_codex',123456,None,None),('retry_send',123456,987654,None),('confirm_regenerate',123456,None,None),('choose_codex',123456,None,'menu'),('choose_codex',123456,987654,'codex1')):
+  value=encode(action,qid,rid,arg)
   assert len(value.encode()) <= 64 and decode(value)['action']==action
  assert decode(encode('send',1,2))['revision_id']==2
  with pytest.raises(ValueError): decode('mqo1:not-base64')
  with pytest.raises(ValueError): encode('regenerate',1,2)
+
+def test_callback_schema_is_canonical_and_full_sqlite_ids_fit():
+ maximum=9223372036854775807
+ emitted=(('manual',maximum,None,None),('codex',maximum,None,None),('ignore',maximum,None,None),('ignore',maximum,maximum,None),('send',maximum,maximum,None),('edit',maximum,maximum,None),('retry_codex',maximum,None,None),('retry_send',maximum,maximum,None),('confirm_regenerate',maximum,None,None),('choose_codex',maximum,maximum,'menu'),('choose_codex',maximum,maximum,'codex3'))
+ assert max(len(encode(*item).encode('utf-8')) for item in emitted) <= MAX_CALLBACK_DATA_BYTES
+ for item in emitted: assert decode(encode(*item)) == {'action':item[0],'question_id':item[1],'revision_id':item[2],'arg':item[3]}
+ for bad in (('manual',1,2,None),('manual',1,None,'x'),('codex',1,2,None),('ignore',1,None,'x'),('send',1,None,None),('send',1,2,'x'),('edit',1,None,None),('retry_codex',1,2,None),('retry_send',1,None,None),('confirm_regenerate',1,2,None),('choose_codex',1,None,None),('choose_codex',1,None,'bad'),('ignore',0,None,None)):
+  with pytest.raises(ValueError): encode(*bad)
+
+@pytest.mark.asyncio
+async def test_invalid_callback_is_acknowledged_without_mutation(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'bad-callback','question_text':'q'})
+ calls=[]
+ class Query:
+  data='mqo1:bWFudWFsfDF8fHVuZXhwZWN0ZWQ' # legacy noncanonical manual|1||unexpected
+  message=SimpleNamespace()
+  async def answer(self,*args,**kwargs): calls.append((args,kwargs))
+ bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ update=SimpleNamespace(callback_query=Query(),effective_user=SimpleNamespace(id=1),effective_chat=SimpleNamespace(id=1,type='private'))
+ await bot.callback(update,None)
+ assert calls and (await repo.get_question(q['id']))['status']=='NEW'
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts')).fetchone())[0]==0
+ await db.close()
 
 
 @pytest.mark.asyncio
 async def test_frozen_button_sets_include_switch_and_review_has_no_regeneration(tmp_path):
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
  q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'buttons','question_text':'q'})
+ rid=await repo.create_answer_revision(q['id'],'manual','a'); await repo.set_current_answer_revision(q['id'],rid); q=await repo.get_question(q['id'])
  bot=OperatorBot(1,SimpleNamespace(repo=repo))
  labels=lambda state:[b.text for row in bot.buttons(q,state).inline_keyboard for b in row]
  assert labels('NEW')==['✍️ Ответить самому','🤖 Отправить в Codex','🚫 Игнорировать','🤖 Сменить Codex']

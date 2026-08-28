@@ -9,6 +9,7 @@ import json
 import os
 import signal
 import tempfile
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -24,6 +25,8 @@ from app.telegram.durable_queue import DurableUpdateQueue
 
 PRODUCTION_DB = Path('/var/lib/marketplace-question-operator/state.sqlite3')
 STALE_DB = Path('/var/lib/marketplace-question-operator/t4-acceptance/state.sqlite3')
+ACCEPTANCE_ROOT = Path('/var/lib/marketplace-question-operator/t4-runs')
+RUN_ID_RE = re.compile(r'^[A-Za-z0-9_-]{1,64}$')
 SCENARIOS = ('A_MANUAL', 'B_CODEX_SUCCESS', 'C_CODEX_ERROR_REPEAT', 'D_CODEX_ERROR_SWITCH', 'E_IGNORE')
 
 def stamp(): return datetime.now(timezone.utc).isoformat()
@@ -75,14 +78,18 @@ class ScenarioController:
  def __init__(self,repo,run_id,evidence): self.repo,self.run_id,self.evidence=repo,run_id,evidence
  async def prepare(self,scenario):
   if scenario not in SCENARIOS: raise ValueError('unknown scenario')
-  open_rows=await self.repo.db.execute("SELECT * FROM acceptance_scenarios WHERE run_id=? AND status='ACTIVE'",(self.run_id,)); active=await open_rows.fetchall()
-  if active: raise RuntimeError('an acceptance scenario is already active')
-  # monotonically unique external id makes every question a new logical row.
-  n=(await (await self.repo.db.execute('SELECT COUNT(*) FROM acceptance_scenarios WHERE run_id=?',(self.run_id,))).fetchone())[0]+1
-  raw={'marketplace':'ozon' if scenario!='E_IGNORE' else 'wildberries','external_question_id':f'T4-{self.run_id}-{scenario}-{n}','product_id':'T4-SYNTHETIC','product_article':scenario,'product_title':f'T4 {scenario}','question_text':f'T4 isolated {scenario} question. Do not publish.','raw_status':'synthetic_acceptance'}
-  q,created=await self.repo.insert_question(raw)
-  if not created: raise RuntimeError('refusing reused acceptance question')
-  await self.repo.db.execute("INSERT INTO acceptance_scenarios(run_id,scenario_id,question_id,status,phase,expected_action,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)",(self.run_id,f'{scenario}-{n}',q['id'],'ACTIVE','NEW','operator action',stamp(),stamp())); await self.repo.db.commit()
+  await self.repo.db.execute('BEGIN IMMEDIATE')
+  try:
+   active=await (await self.repo.db.execute("SELECT 1 FROM acceptance_scenarios WHERE run_id=? AND status='ACTIVE'",(self.run_id,))).fetchone()
+   if active: raise RuntimeError('an acceptance scenario is already active')
+   n=(await (await self.repo.db.execute('SELECT COUNT(*) FROM acceptance_scenarios WHERE run_id=?',(self.run_id,))).fetchone())[0]+1
+   raw={'marketplace':'ozon' if scenario!='E_IGNORE' else 'wildberries','external_question_id':f'T4-{self.run_id}-{scenario}-{n}','product_id':'T4-SYNTHETIC','product_article':scenario,'product_title':f'T4 {scenario}','question_text':f'T4 isolated {scenario} question. Do not publish.','raw_status':'synthetic_acceptance'}; t=stamp()
+   c=await self.repo.db.execute("INSERT INTO questions(marketplace,external_question_id,product_id,product_article,product_title,question_text,raw_status,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",(raw['marketplace'],raw['external_question_id'],raw['product_id'],raw['product_article'],raw['product_title'],raw['question_text'],raw['raw_status'],'NEW',t,t))
+   await self.repo.db.execute('UPDATE questions SET public_id=? WHERE id=?',(f'Q-{c.lastrowid:06d}',c.lastrowid))
+   await self.repo.db.execute("INSERT INTO acceptance_scenarios(run_id,scenario_id,question_id,status,phase,expected_action,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)",(self.run_id,f'{scenario}-{n}',c.lastrowid,'ACTIVE','NEW','operator action',t,t)); await self.repo.db.commit()
+  except Exception:
+   await self.repo.db.rollback(); raise
+  q=await self.repo.get_question(c.lastrowid)
   row={'scenario_id':f'{scenario}-{n}','scenario':scenario,'question_id':q['id'],'public_id':q['public_id'],'status':'ACTIVE'}
   if self.evidence:
    self.evidence.data['counters']['SYNTHETIC_QUESTIONS_CREATED']+=1; self.evidence.add('scenarios',row)
@@ -96,15 +103,21 @@ class ScenarioController:
 class PromptStub:
  def build(self,q): return 'acceptance prompt for '+q['public_id']
 
-async def build(run_id,db_path,evidence_path):
- db_path=Path(db_path).resolve()
- if db_path in {PRODUCTION_DB,STALE_DB}: raise ValueError('acceptance requires a fresh isolated database')
- if not run_id: raise ValueError('run_id is required')
+def resolve_run_paths(run_id, root=ACCEPTANCE_ROOT):
+ if not isinstance(run_id,str) or not RUN_ID_RE.fullmatch(run_id): raise ValueError('invalid run_id')
+ root=Path(root).resolve(); run_dir=(root/run_id).resolve()
+ if run_dir.parent != root: raise ValueError('run path escapes acceptance root')
+ return run_dir,run_dir/'state.sqlite3',run_dir/'evidence.json'
+
+async def build(run_id,db_path=None,evidence_path=None,root=ACCEPTANCE_ROOT):
+ run_dir,derived_db,derived_evidence=resolve_run_paths(run_id,root)
+ db_path=derived_db if db_path is None else Path(db_path).resolve(); evidence_path=derived_evidence if evidence_path is None else Path(evidence_path).resolve()
+ if db_path != derived_db or evidence_path != derived_evidence or db_path in {PRODUCTION_DB,STALE_DB}: raise ValueError('acceptance requires canonical isolated run paths')
  db=await connect(db_path); await init(db); repo=Repository(db); ev=Evidence(evidence_path,run_id,db_path); sink=AcceptanceSendSink(ev)
  return db,repo,ev,sink,ScenarioController(repo,run_id,ev)
 
-async def run(run_id,db_path,evidence_path):
- db,repo,ev,sink,controller=await build(run_id,db_path,evidence_path)
+async def run(run_id):
+ db,repo,ev,sink,controller=await build(run_id)
  token,operator_id=os.environ['TELEGRAM_BOT_TOKEN'],os.environ['TELEGRAM_OPERATOR_USER_ID']
  queue=DurableUpdateQueue(repo); application=Application.builder().token(token).update_queue(queue).build(); transport=TelegramTransport(application,operator_id,repo)
  # A runner is intentionally not installed until a scenario is explicitly prepared.
@@ -121,8 +134,8 @@ async def run(run_id,db_path,evidence_path):
   if application.running: await application.stop()
   await application.shutdown(); await db.close()
 
-async def status(run_dir):
- run_dir=Path(run_dir); data=json.loads((run_dir/'evidence.json').read_text()); db=await connect(run_dir/'state.sqlite3'); await init(db); repo=Repository(db); controller=ScenarioController(repo,data['run_id'],None)
+async def status(run_id,root=ACCEPTANCE_ROOT):
+ run_dir,db_path,evidence_path=resolve_run_paths(run_id,root); data=json.loads(evidence_path.read_text()); db=await connect(db_path); await init(db); repo=Repository(db); controller=ScenarioController(repo,data['run_id'],None)
  try:
   result=await controller.status() or {}; result.update({'run_id':data['run_id'],'active_profile':await repo.active_codex_profile(),'would_send_count':len(data['would_send'])}); return result
  finally: await db.close()
@@ -130,7 +143,7 @@ async def status(run_dir):
 async def selftest():
  """Offline smoke test: no Application, network client, or external runner."""
  with tempfile.TemporaryDirectory(prefix='mqo-t4-selftest-') as directory:
-  root=Path(directory); db,repo,ev,sink,controller=await build('selftest',root/'state.sqlite3',root/'evidence.json')
+  root=Path(directory); db,repo,ev,sink,controller=await build('selftest',root=root)
   try:
    service=QuestionService(repo,{'ozon':sink,'wildberries':sink},None,ScenarioCodexRouter(repo,ev),PromptStub())
    q=await controller.prepare('A_MANUAL'); await repo.transition(q['id'],'NEW','MANUAL_INPUT'); await repo.create_telegram_input(1,q['id'],'manual_answer'); old=await repo.consume_reply(1,'old'); await repo.transition(q['id'],'REVIEW','EDITING'); await repo.create_telegram_input(2,q['id'],'edit_answer',old); edited=await repo.consume_reply(2,'T4 edited answer'); await service.send(q['id'],edited); await controller.close()
@@ -148,18 +161,18 @@ async def selftest():
 
 def main():
  p=argparse.ArgumentParser(description=__doc__); sub=p.add_subparsers(dest='command',required=True)
- start=sub.add_parser('run'); start.add_argument('--run-id',required=True); start.add_argument('--db',type=Path,required=True); start.add_argument('--evidence',type=Path,required=True)
- prepare=sub.add_parser('prepare'); prepare.add_argument('--run-dir',type=Path,required=True); prepare.add_argument('--scenario',choices=SCENARIOS,required=True)
- close=sub.add_parser('close'); close.add_argument('--run-dir',type=Path,required=True)
- state=sub.add_parser('status'); state.add_argument('--run-dir',type=Path,required=True)
+ start=sub.add_parser('run'); start.add_argument('--run-id',required=True)
+ prepare=sub.add_parser('prepare'); prepare.add_argument('--run-id',required=True); prepare.add_argument('--scenario',choices=SCENARIOS,required=True)
+ close=sub.add_parser('close'); close.add_argument('--run-id',required=True)
+ state=sub.add_parser('status'); state.add_argument('--run-id',required=True)
  sub.add_parser('selftest')
  a=p.parse_args()
- if a.command=='run': asyncio.run(run(a.run_id,a.db,a.evidence))
+ if a.command=='run': asyncio.run(run(a.run_id))
  elif a.command=='selftest': print('ACCEPTANCE_HARNESS_SELFTEST = PASS' if asyncio.run(selftest()) else 'ACCEPTANCE_HARNESS_SELFTEST = FAIL')
- elif a.command=='status': print(json.dumps(asyncio.run(status(a.run_dir)),sort_keys=True))
+ elif a.command=='status': print(json.dumps(asyncio.run(status(a.run_id)),sort_keys=True))
  else:
   async def go():
-   d,r,e,s,c=await build(a.run_dir.name,a.run_dir/'state.sqlite3',a.run_dir/'evidence.json')
+   d,r,e,s,c=await build(a.run_id)
    try:
     if a.command=='close': await c.close(); print('closed')
     else: print((await c.prepare(a.scenario))['public_id'])
