@@ -1,4 +1,5 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -7,7 +8,7 @@ from app.db.database import connect, init
 from app.db.repository import Repository
 from app.service import QuestionService
 from app.state_machine import StaleState
-from app.telegram.bot import OperatorBot
+from app.telegram.bot import OperatorBot, OZON_BUTTON
 from app.telegram.callbacks import decode, encode
 
 
@@ -38,6 +39,52 @@ def prompt_builder(tmp_path, answer_url=None):
             encoding='utf-8',
         )
     return PromptBuilder(prompts, refs)
+
+
+def test_primary_question_action_is_persistent_reply_keyboard_button():
+    menu = OperatorBot.main_menu()
+    assert OZON_BUTTON == '➕ Отправить вопрос'
+    assert menu.keyboard[0][0].text == OZON_BUTTON
+    assert menu.is_persistent is True
+    assert menu.one_time_keyboard is False
+
+
+@pytest.mark.asyncio
+async def test_start_is_product_facing_and_does_not_dump_debug_status(tmp_path):
+    db = await connect(tmp_path / 'state.sqlite3')
+    await init(db)
+    repo = Repository(db)
+    service = QuestionService(repo, {}, NoTransport())
+    calls = []
+
+    class Telegram:
+        async def send_message(self, **kwargs):
+            calls.append(kwargs)
+            return SimpleNamespace(message_id=1)
+
+    telegram = Telegram()
+
+    class Message:
+        text = '/start'
+        chat_id = 1
+
+        def get_bot(self):
+            return telegram
+
+    update = SimpleNamespace(
+        message=Message(),
+        effective_user=SimpleNamespace(id=1),
+        effective_chat=SimpleNamespace(id=1, type='private'),
+    )
+    await OperatorBot(1, service).command(update, None)
+    assert len(calls) == 1
+    payload = calls[0]
+    assert 'DB available' not in payload['text']
+    assert 'Open questions' not in payload['text']
+    assert 'Active Codex' not in payload['text']
+    assert '➕ Отправить вопрос' in payload['text']
+    assert payload['reply_markup'].keyboard[0][0].text == '➕ Отправить вопрос'
+    await db.close()
 
 
 @pytest.mark.asyncio
