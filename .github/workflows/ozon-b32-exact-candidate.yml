@@ -1,0 +1,50 @@
+name: Ozon B32 FBS Operational Reference Reads exact candidate
+on:
+  push:
+    branches: [feature/ozon-b32-fbs-operational-reference-reads-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b32-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B32_FBS_OPERATIONAL_REFERENCE_READS_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b32_fbs_operational_reference_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B32_FBS_OPERATIONAL_REFERENCE_READS_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B32_FBS_OPERATIONAL_REFERENCE_READS_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B32_FBS_OPERATIONAL_REFERENCE_READS_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B32 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B32_FBS_OPERATIONAL_REFERENCE_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='c36341ffde8e11aa38a67bef3d1392f4007c5c7279722eb3a3eeafa056524175';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='bc771fe4bde893d0842a16434e600eb8d41384daf58c6972853b0250acb690ce'"
+      - name: Materialize exact B32 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b32_fbs_operational_reference_reads_candidate.py --repo-root . --work-root /tmp/ozon-b32-work --out /tmp/ozon-b32-exact
+      - name: Verify B31 base and B32 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B31_FBS_CARRIAGE_CONTAINER_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b32-work/b31-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B32_FBS_OPERATIONAL_REFERENCE_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b32-exact
+          find /tmp/ozon-b32-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b32-fbs-operational-reference-reads-candidate, path: /tmp/ozon-b32-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --global core.longpaths true
+      - name: Verify B32 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B32_FBS_OPERATIONAL_REFERENCE_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='c36341ffde8e11aa38a67bef3d1392f4007c5c7279722eb3a3eeafa056524175';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='bc771fe4bde893d0842a16434e600eb8d41384daf58c6972853b0250acb690ce'"
+      - name: Materialize exact B32 candidate
+        shell: pwsh
+        run: |
+          $work='C:\b32w'; $out='C:\b32o'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b32_fbs_operational_reference_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B31 base and B32 gates
+        shell: pwsh
+        run: |
+          $work='C:\b32w'; $out='C:\b32o'; $b31=Join-Path $work 'b31-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B31_FBS_CARRIAGE_CONTAINER_READS_REGRESSION_2026-08-28.mjs $b31; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B32_FBS_OPERATIONAL_REFERENCE_READS_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
