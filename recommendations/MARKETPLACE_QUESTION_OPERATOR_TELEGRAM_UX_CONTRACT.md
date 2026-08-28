@@ -105,19 +105,32 @@ The operator selects an exact question with:
 [✍️ Ответить самому]
 ```
 
-The bot enters a deterministic manual-input context for that Q-ID and shows the original question plus an instruction to enter the answer.
+The bot must then perform all of the following user-visible steps for that exact Q-ID:
 
-The user-facing contract is:
+1. persist/enter the deterministic `MANUAL_INPUT` context for the selected question;
+2. send a separate ordinary bot message with the exact instruction:
+
+```text
+Введите ответ
+```
+
+3. wait for the operator's next ordinary text message in that manual-input context.
+
+The operator must **not** be required to use Telegram Reply, quote/reply-to-message, ForceReply, a slash command, or any other special Telegram interaction. The intended product interaction is simply:
 
 ```text
 NEW
  -> Ответить самому
- -> enter manual text for exact Q-ID
+ -> MANUAL_INPUT
+ -> bot sends: Введите ответ
+ -> operator sends ordinary text
  -> persist immutable answer revision source=manual
  -> REVIEW
 ```
 
-The input-correlation implementation must be deterministic and must never attach arbitrary text to another question. Telegram reply correlation may be used internally if implementation needs it, but **ForceReply/reply-to-message is not the product meaning of `Ответить самому` and must not distort the user flow**.
+The input-correlation implementation must be deterministic and must never attach arbitrary text to another question. Telegram reply correlation may be used internally if implementation needs it, but **ForceReply/reply-to-message is not the product meaning of `Ответить самому`, must not be required from the operator, and must not distort the user flow**.
+
+Acceptance must fail if the implementation tells the operator to “Reply”, requires `reply_to_message`, or silently ignores ordinary text after the exact question has entered `MANUAL_INPUT` and the bot has sent `Введите ответ`.
 
 During manual input the question menu still contains:
 
@@ -481,7 +494,7 @@ There is no V1 `REVIEW -> CODEX_RUNNING` successful-answer regeneration transiti
 | State/menu | Required buttons |
 |---|---|
 | NEW | `✍️ Ответить самому`, `🤖 Отправить в Codex`, `🚫 Игнорировать`, `🤖 Сменить Codex` |
-| MANUAL_INPUT | `🤖 Сменить Codex` plus the manual text-entry interaction |
+| MANUAL_INPUT | separate bot prompt `Введите ответ`, then ordinary operator text; `🤖 Сменить Codex` remains available; Telegram Reply/ForceReply must not be required |
 | CODEX_RUNNING | `🤖 Сменить Codex` |
 | CODEX_ERROR | `🔄 Повторить`, `✍️ Ответить самому`, `🚫 Игнорировать`, `🤖 Сменить Codex` |
 | CODEX_ERROR profile-change confirmation | `🔄 Перегенерировать`, `✍️ Ответить самому`, `🚫 Игнорировать`, `🤖 Сменить Codex` |
@@ -509,6 +522,8 @@ profile selection from CODEX_ERROR -> requires a second generic Повторит
 /codex as the required operator UX for profile switching
 question cards without Сменить Codex
 manual text -> immediate marketplace send without review
+manual input -> requires Telegram Reply or ForceReply from the operator
+manual input -> silently ignores ordinary text after bot prompts Введите ответ
 ```
 
 ## 19. Acceptance freeze
@@ -523,6 +538,8 @@ SWITCH_CODEX_IN_EVERY_MENU_FROZEN
 NO_SUCCESS_REGENERATION_FROZEN
 CODEX_ERROR_SWITCH_CONFIRM_REGENERATE_FROZEN
 MANUAL_REVIEW_BEFORE_SEND_FROZEN
+MANUAL_INPUT_ORDINARY_TEXT_FROZEN
+MANUAL_INPUT_PROMPT_ENTER_ANSWER_FROZEN
 REVISION_BOUND_SEND_FROZEN
 NO_SLASH_CODEX_DEPENDENCY_FROZEN
 ```
