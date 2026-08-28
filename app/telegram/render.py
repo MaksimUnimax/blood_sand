@@ -3,10 +3,18 @@
 LIMIT = 4096
 
 
+def _value(question, key, default=None):
+    try:
+        value = question[key]
+    except (KeyError, IndexError):
+        return default
+    return default if value is None else value
+
+
 def _header(question):
-    value = getattr(question, 'get', question.__getitem__)
-    product = value("product_title") or value("product_article") or value("product_id")
-    text = f"ID: {question['public_id']}\nMarketplace: {question['marketplace']}"
+    product = _value(question, 'product_title') or _value(question, 'product_article') or _value(question, 'product_id')
+    marketplace = str(_value(question, 'marketplace', '')).upper()
+    text = f"ID: {question['public_id']}\nMarketplace: {marketplace}"
     if product:
         text += f"\nProduct: {product}"
     return text + f"\n\nВопрос покупателя:\n{question['question_text']}"
@@ -14,7 +22,7 @@ def _header(question):
 
 def split_card(question, body):
     """Return deterministic plain-text continuations without dropping content."""
-    prefix = f"ID: {question['public_id']}\nMarketplace: {question['marketplace']}\n"
+    prefix = f"ID: {question['public_id']}\nMarketplace: {str(_value(question, 'marketplace', '')).upper()}\n"
     text = _header(question) + ("\n\n" + body if body else "")
     if len(text) <= LIMIT:
         return [text]
@@ -30,12 +38,14 @@ def initial(question, profile):
 
 
 def review(question, revision, active_profile, generated_by=None):
-    source = revision["source"] if hasattr(revision, "keys") else revision.get("source", "manual")
-    answer = revision["text"] if hasattr(revision, "keys") else revision["text"]
+    source = revision['source'] if hasattr(revision, 'keys') else revision.get('source', 'manual')
+    answer = revision['text']
     body = f"Ответ:\n{answer}\n\nИсточник: {source}"
     if generated_by:
         body += f"\n🤖 Подготовил: {generated_by}"
     body += f"\n🟢 Сейчас активен: {active_profile}"
+    if _value(question, 'publish_mode', 'MARKETPLACE_API') == 'MANUAL_COPY':
+        body += '\n\n📋 Режим Ozon: ответ не отправляется через API. Скопируйте его в кабинет Ozon и нажмите «✅ Закрыть».'
     return split_card(question, body)
 
 
@@ -44,18 +54,25 @@ def running(question, profile):
 
 
 def codex_error(question, profile, error_type, message, active_profile):
-    return split_card(question, f"⚠️ CODEX ERROR\nCodex: {profile}\nОшибка: {error_type}\n{message}\n\n🟢 Сейчас активен: {active_profile}")
+    return split_card(
+        question,
+        f"⚠️ CODEX ERROR\nCodex: {profile}\nОшибка: {error_type}\n{message}\n\n🟢 Сейчас активен: {active_profile}",
+    )
 
 
-def delivery(question, revision, state, detail=""):
-    answer = revision["text"] if hasattr(revision, "keys") else revision["text"]
-    return split_card(question, f"Ответ:\n{answer}\n\nДоставка: {state}" + (f"\n{detail}" if detail else ""))
+def delivery(question, revision, state, detail=''):
+    answer = revision['text']
+    return split_card(question, f"Ответ:\n{answer}\n\nДоставка: {state}" + (f"\n{detail}" if detail else ''))
+
+
+def closed(question):
+    return split_card(question, '✅ Закрыто локально. Никакой запрос на публикацию в Ozon не выполнялся.')
 
 
 # Compatibility for early tests/importers.
 def card(q, answer=None, prepared=None, error=None):
     if error:
-        return codex_error(q, prepared or "codex1", "PROCESS_ERROR", error, prepared or "codex1")
+        return codex_error(q, prepared or 'codex1', 'PROCESS_ERROR', error, prepared or 'codex1')
     if answer:
-        return review(q, {"source": "codex" if prepared else "manual", "text": answer}, prepared or "codex1", prepared)
-    return split_card(q, "")
+        return review(q, {'source': 'codex' if prepared else 'manual', 'text': answer}, prepared or 'codex1', prepared)
+    return split_card(q, '')
