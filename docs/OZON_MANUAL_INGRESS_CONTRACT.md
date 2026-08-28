@@ -14,10 +14,12 @@ The product will not scrape or bypass Ozon entitlement. Until the owner explicit
 
 ## 2. Ozon V1 flow
 
+Primary operator flow:
+
 ```text
 Ozon seller UI
   -> owner copies buyer question
-  -> Telegram: ➕ Вопрос Ozon (or /ozon)
+  -> Telegram: persistent main-menu action `➕ Отправить вопрос`
   -> owner sends ordinary text
   -> MQO creates one durable Ozon question
   -> MQO automatically starts the active Codex profile
@@ -26,6 +28,16 @@ Ozon seller UI
 ```
 
 There is no Ozon marketplace API read or write in this mode.
+
+### Permanent entry-point requirement
+
+`➕ Отправить вопрос` is the primary product entry point for manual Ozon ingress.
+
+It must be a persistent top-level action in the bot's normal Telegram menu/UI and remain available during ordinary use. The owner must not have to type `/start`, `/ozon`, or any other command before starting a new Ozon question.
+
+`/start` and `/ozon` may remain as compatibility/diagnostic commands, but they are not the normal product path and must not be required to reveal or activate the persistent question-entry action.
+
+The normal home/start UX must be operator-facing. Raw implementation/status text such as `DB available`, database counts, or active-profile diagnostics must not replace the primary question-entry UX. Technical status belongs behind explicit diagnostic/status actions.
 
 ## 3. Identity and routing
 
@@ -45,7 +57,9 @@ The Telegram update ID makes replay idempotent. Replaying the same inbound Teleg
 
 ## 4. Text-input correlation
 
-`➕ Вопрос Ozon` / `/ozon` creates a durable singleton global input context `OZON_QUESTION`.
+Activating the persistent `➕ Отправить вопрос` action creates a durable singleton global input context `OZON_QUESTION`.
+
+The compatibility `/ozon` command may create the same context, but it is not the primary UX.
 
 This context is mutually exclusive with existing question-bound `MANUAL_INPUT` and `EDITING` contexts. Ordinary text must never be guessed or attached to multiple contexts.
 
@@ -123,6 +137,9 @@ Wildberries remains a separate next phase. Current live diagnostics showed the c
 Manual Ozon phase is accepted only when all of these are proven:
 
 ```text
+OZON_PERSISTENT_QUESTION_ENTRY_PRESENT
+OZON_QUESTION_ENTRY_REQUIRES_NO_COMMAND
+OZON_HOME_UX_HAS_NO_RAW_DEBUG_STATUS
 OZON_MANUAL_INPUT_DURABLE
 OZON_MANUAL_INPUT_MUTUALLY_EXCLUSIVE
 OZON_TELEGRAM_REPLAY_IDEMPOTENT
