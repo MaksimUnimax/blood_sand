@@ -1,0 +1,62 @@
+name: Ozon B25 Safe Reference Settings No-Body Reads exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b25-safe-reference-settings-no-body-reads-2026-08-28
+    paths:
+      - .github/workflows/ozon-b25-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_SAFE_REFERENCE_SETTINGS_NO_BODY_READS_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b25_safe_reference_settings_no_body_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_SAFE_REFERENCE_SETTINGS_NO_BODY_READS_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_SAFE_REFERENCE_SETTINGS_NO_BODY_READS_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_SAFE_REFERENCE_SETTINGS_NO_BODY_READS_CANDIDATE_MANIFEST_2026-08-28.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B25 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_SAFE_REFERENCE_SETTINGS_NO_BODY_READS_2026-08-28.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='287befac90310d1e83c16c72084c88cc5d65d2cae67bca54040a2e6b42237408'; assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='f5f42b27595cf4b6a3674446ef16b9185ba77c8c96f250b8c6e966f4f1880b32'"
+      - name: Materialize exact B25 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b25_safe_reference_settings_no_body_reads_candidate.py --repo-root . --work-root /tmp/ozon-b25-work --out /tmp/ozon-b25-exact
+      - name: Verify exact B24 base and B25 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B24_FBO_SUPPLY_STATUS_ACT_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b25-work/b24-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_SAFE_REFERENCE_SETTINGS_NO_BODY_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b25-exact
+          find /tmp/ozon-b25-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Upload exact B25 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b25-safe-reference-settings-no-body-reads-candidate
+          path: /tmp/ozon-b25-exact
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B25 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_SAFE_REFERENCE_SETTINGS_NO_BODY_READS_2026-08-28.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='287befac90310d1e83c16c72084c88cc5d65d2cae67bca54040a2e6b42237408'; assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='f5f42b27595cf4b6a3674446ef16b9185ba77c8c96f250b8c6e966f4f1880b32'"
+      - name: Materialize exact B25 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b25-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b25-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b25_safe_reference_settings_no_body_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify exact B24 base and B25 gates on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b25-exact"
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b25-work"
+          $b24 = Join-Path $work "b24-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B24_FBO_SUPPLY_STATUS_ACT_READS_REGRESSION_2026-08-28.mjs $b24; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_SAFE_REFERENCE_SETTINGS_NO_BODY_READS_REGRESSION_2026-08-28.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
