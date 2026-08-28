@@ -1,0 +1,50 @@
+name: Ozon B29 Product Stock Reads exact candidate
+on:
+  push:
+    branches: [feature/ozon-b29-product-stock-reads-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b29-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B29_PRODUCT_STOCK_READS_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b29_product_stock_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B29_PRODUCT_STOCK_READS_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B29_PRODUCT_STOCK_READS_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B29_PRODUCT_STOCK_READS_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B29 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B29_PRODUCT_STOCK_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='127140ea58b78097df21174ec68d062c34c933e7498e64dc65818b87bcfa3ec1';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='31d142a3b42b25aece8dfbd0554e807cf117214cf46864f1b9aafed30cc213e8'"
+      - name: Materialize exact B29 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b29_product_stock_reads_candidate.py --repo-root . --work-root /tmp/ozon-b29-work --out /tmp/ozon-b29-exact
+      - name: Verify B28 base and B29 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B28_FBO_TRANSPORT_CARGO_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b29-work/b28-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B29_PRODUCT_STOCK_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b29-exact
+          find /tmp/ozon-b29-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b29-product-stock-reads-candidate, path: /tmp/ozon-b29-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --global core.longpaths true
+      - name: Verify B29 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B29_PRODUCT_STOCK_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='127140ea58b78097df21174ec68d062c34c933e7498e64dc65818b87bcfa3ec1';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='31d142a3b42b25aece8dfbd0554e807cf117214cf46864f1b9aafed30cc213e8'"
+      - name: Materialize exact B29 candidate
+        shell: pwsh
+        run: |
+          $work=Join-Path $env:RUNNER_TEMP 'ozon-b29-work'; $out=Join-Path $env:RUNNER_TEMP 'ozon-b29-exact'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b29_product_stock_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B28 base and B29 gates
+        shell: pwsh
+        run: |
+          $work=Join-Path $env:RUNNER_TEMP 'ozon-b29-work'; $out=Join-Path $env:RUNNER_TEMP 'ozon-b29-exact'; $b28=Join-Path $work 'b28-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B28_FBO_TRANSPORT_CARGO_READS_REGRESSION_2026-08-28.mjs $b28; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B29_PRODUCT_STOCK_READS_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
