@@ -128,7 +128,7 @@ async def test_project_ambiguous_and_crash_claim_never_blind_resend(tmp_path):
  assert len(bot.calls)==1
  db,repo,e,sink,c=await build('crash',root=tmp_path)
  try:
-  q=await c.prepare('A_MANUAL'); row,attempt,_=await c.claim_projection()
+  q=await c.prepare('A_MANUAL'); candidate=await c.projection_preflight(); row,attempt,_=await c.claim_projection(candidate['scenario_id'],candidate['question_id'],candidate['public_id'])
   # Simulate a process death after Telegram accepted the request, before correlation.
   assert row['question_id']==q['id']
  finally: await db.close()
@@ -243,6 +243,40 @@ async def test_project_initialize_failure_has_no_claim_or_send(tmp_path):
   value=BadBot(token); bot.append(value); return value
  with pytest.raises(RuntimeError,match='getMe failed'): await project('run',root=tmp_path,bot_factory=factory)
  assert bot[0].calls==[]
+
+@pytest.mark.asyncio
+async def test_project_rejects_replaced_scenario_after_payload_preparation(tmp_path,monkeypatch):
+ db,repo,e,sink,c=await build('race',root=tmp_path)
+ try:
+  a=await c.prepare('A_MANUAL')
+ finally: await db.close()
+ prepared=__import__('asyncio').Event(); release=__import__('asyncio').Event()
+ from app.daemon import TelegramTransport
+ original=TelegramTransport.prepare_question
+ async def gated_prepare(self,question):
+  value=await original(self,question)
+  prepared.set(); await release.wait()
+  return value
+ monkeypatch.setattr(TelegramTransport,'prepare_question',gated_prepare)
+ bot=FakeTelegramBot()
+ task=__import__('asyncio').create_task(project('race',bot=bot,operator_id='7',root=tmp_path))
+ await prepared.wait()
+ db,repo,e,sink,c=await build('race',root=tmp_path)
+ try:
+  await c.close(); b=await c.prepare('B_CODEX_SUCCESS')
+ finally: await db.close()
+ release.set()
+ with pytest.raises(RuntimeError,match='preflight changed'): await task
+ db,repo,e,sink,c=await build('race',root=tmp_path)
+ try:
+  projections=(await (await db.execute('SELECT COUNT(*) FROM acceptance_initial_projections')).fetchone())[0]
+  a_row=await repo.get_question(a['id']); b_row=await repo.get_question(b['id'])
+  active=await c.status()
+  b_projection=(await (await db.execute('SELECT COUNT(*) FROM acceptance_initial_projections WHERE scenario_id=?',(active['scenario_id'],))).fetchone())[0]
+  assert bot.calls==[] and projections==0
+  assert a_row['telegram_question_message_id'] is None and b_row['telegram_question_message_id'] is None
+  assert b_projection==0
+ finally: await db.close()
 
 def test_project_systemd_unit_isolated_oneshot():
  unit=(__import__('pathlib').Path(__file__).parents[1]/'systemd/mqo-t4-project@.service').read_text()

@@ -115,18 +115,20 @@ class ScenarioController:
   r=await (await self.repo.db.execute("SELECT s.*,q.public_id,q.status AS question_status,q.telegram_question_message_id,q.telegram_current_message_id,q.current_answer_revision_id,(SELECT COUNT(*) FROM draft_attempts d WHERE d.question_id=q.id) attempts,p.status AS initial_projection_status,p.telegram_message_id AS projection_telegram_message_id FROM acceptance_scenarios s JOIN questions q ON q.id=s.question_id LEFT JOIN acceptance_initial_projections p ON p.run_id=s.run_id AND p.scenario_id=s.scenario_id WHERE s.run_id=? ORDER BY s.id DESC LIMIT 1",(self.run_id,))).fetchone()
   return dict(r) if r else None
 
- async def claim_projection(self):
+ async def claim_projection(self,expected_scenario_id,expected_question_id,expected_public_id):
   await self.repo.db.execute('BEGIN IMMEDIATE')
   try:
    rows=await (await self.repo.db.execute("SELECT s.*,q.public_id,q.status AS question_status,q.telegram_question_message_id FROM acceptance_scenarios s LEFT JOIN questions q ON q.id=s.question_id WHERE s.run_id=? AND s.status='ACTIVE'",(self.run_id,))).fetchall()
-   if len(rows)!=1: raise RuntimeError('project requires exactly one ACTIVE acceptance scenario')
+   if len(rows)!=1: raise RuntimeError('projection preflight changed; refusing stale candidate')
    row=rows[0]
-   if row['question_id'] is None or row['public_id'] is None or row['question_status']!='NEW': raise RuntimeError('active scenario has no eligible NEW question')
-   if row['telegram_question_message_id']: raise RuntimeError('initial card already projected')
+   if (row['scenario_id'] != expected_scenario_id or row['question_id'] != expected_question_id
+       or row['public_id'] != expected_public_id):
+    raise RuntimeError('projection preflight changed; refusing stale candidate')
+   if (row['question_id'] is None or row['public_id'] is None or row['question_status']!='NEW'
+       or row['telegram_question_message_id'] is not None):
+    raise RuntimeError('projection preflight changed; refusing stale candidate')
    old=await (await self.repo.db.execute('SELECT * FROM acceptance_initial_projections WHERE run_id=? AND scenario_id=?',(self.run_id,row['scenario_id']))).fetchone()
-   if old:
-    if old['status']=='SUCCEEDED': raise RuntimeError('initial card already projected')
-    raise RuntimeError('initial projection unresolved; duplicate-risk recovery required')
+   if old: raise RuntimeError('projection preflight changed; refusing stale candidate')
    t=stamp(); c=await self.repo.db.execute("INSERT INTO acceptance_initial_projections(run_id,scenario_id,question_id,public_id,status,started_at) VALUES(?,?,?,?,?,?)",(self.run_id,row['scenario_id'],row['question_id'],row['public_id'],'IN_FLIGHT',t))
    await self.repo.db.commit(); return dict(row),c.lastrowid,t
   except Exception:
@@ -190,7 +192,9 @@ async def project(run_id, bot=None, operator_id=None, root=ACCEPTANCE_ROOT, bot_
   if owned_bot: await bot.initialize()
   transport=TelegramTransport(SimpleNamespace(bot=bot),operator_id,repo)
   prepared=await transport.prepare_question(question)
-  row,attempt_id,started=await controller.claim_projection()
+  row,attempt_id,started=await controller.claim_projection(
+   expected_scenario_id=row['scenario_id'], expected_question_id=row['question_id'],
+   expected_public_id=row['public_id'])
   # question() is the production renderer + MESSAGE_CREATE edge path.
   try: mid=await transport.question(question,prepared=prepared)
   except RuntimeError as exc:
