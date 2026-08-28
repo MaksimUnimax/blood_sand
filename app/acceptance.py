@@ -10,6 +10,7 @@ import os
 import signal
 import tempfile
 import re
+from types import SimpleNamespace
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from telegram import Update
 from telegram.ext import Application
 
 from app.daemon import POLLING_KWARGS, TelegramTransport
+from app.telegram.edge import Outcome, Result
 from app.db.database import connect, init
 from app.db.repository import Repository
 from app.service import QuestionService
@@ -36,7 +38,7 @@ class ScriptedCodexError(RuntimeError):
 
 class Evidence:
  def __init__(self,path,run_id,db_path):
-  self.path=Path(path); self.data={'run_id':run_id,'code_head':os.popen('git rev-parse HEAD').read().strip(),'started_at':stamp(),'db_path':str(db_path),'scenarios':[],'scripted_codex_invocations':[],'would_send':[],'profile_changes':[],'errors':[],'counters':{'SYNTHETIC_QUESTIONS_CREATED':0,'TELEGRAM_MESSAGES_CREATED':0,'REAL_CODEX_PROCESS_STARTS':0,'OZON_ANSWER_CREATE_CALLS':0,'WB_QUESTION_PATCH_CALLS':0,'MARKETPLACE_WRITES_PERFORMED':0}}
+  self.path=Path(path); self.data={'run_id':run_id,'code_head':os.popen('git rev-parse HEAD').read().strip(),'started_at':stamp(),'db_path':str(db_path),'scenarios':[],'initial_projections':[],'scripted_codex_invocations':[],'would_send':[],'profile_changes':[],'errors':[],'counters':{'SYNTHETIC_QUESTIONS_CREATED':0,'TELEGRAM_MESSAGES_CREATED':0,'REAL_CODEX_PROCESS_STARTS':0,'OZON_ANSWER_CREATE_CALLS':0,'WB_QUESTION_PATCH_CALLS':0,'MARKETPLACE_WRITES_PERFORMED':0}}
   self.flush()
  def flush(self):
   self.path.parent.mkdir(parents=True,exist_ok=True); self.path.write_text(json.dumps(self.data,indent=2,sort_keys=True)+'\n')
@@ -97,8 +99,39 @@ class ScenarioController:
  async def close(self):
   await self.repo.db.execute("UPDATE acceptance_scenarios SET status='COMPLETE',phase='COMPLETE',updated_at=? WHERE run_id=? AND status='ACTIVE'",(stamp(),self.run_id)); await self.repo.db.commit()
  async def status(self):
-  r=await (await self.repo.db.execute("SELECT s.*,q.public_id,q.status AS question_status,q.telegram_current_message_id,q.current_answer_revision_id,(SELECT COUNT(*) FROM draft_attempts d WHERE d.question_id=q.id) attempts FROM acceptance_scenarios s JOIN questions q ON q.id=s.question_id WHERE s.run_id=? ORDER BY s.id DESC LIMIT 1",(self.run_id,))).fetchone()
+  r=await (await self.repo.db.execute("SELECT s.*,q.public_id,q.status AS question_status,q.telegram_question_message_id,q.telegram_current_message_id,q.current_answer_revision_id,(SELECT COUNT(*) FROM draft_attempts d WHERE d.question_id=q.id) attempts,p.status AS initial_projection_status,p.telegram_message_id AS projection_telegram_message_id FROM acceptance_scenarios s JOIN questions q ON q.id=s.question_id LEFT JOIN acceptance_initial_projections p ON p.run_id=s.run_id AND p.scenario_id=s.scenario_id WHERE s.run_id=? ORDER BY s.id DESC LIMIT 1",(self.run_id,))).fetchone()
   return dict(r) if r else None
+
+ async def claim_projection(self):
+  await self.repo.db.execute('BEGIN IMMEDIATE')
+  try:
+   rows=await (await self.repo.db.execute("SELECT s.*,q.public_id,q.status AS question_status,q.telegram_question_message_id FROM acceptance_scenarios s LEFT JOIN questions q ON q.id=s.question_id WHERE s.run_id=? AND s.status='ACTIVE'",(self.run_id,))).fetchall()
+   if len(rows)!=1: raise RuntimeError('project requires exactly one ACTIVE acceptance scenario')
+   row=rows[0]
+   if row['question_id'] is None or row['public_id'] is None or row['question_status']!='NEW': raise RuntimeError('active scenario has no eligible NEW question')
+   if row['telegram_question_message_id']: raise RuntimeError('initial card already projected')
+   old=await (await self.repo.db.execute('SELECT * FROM acceptance_initial_projections WHERE run_id=? AND scenario_id=?',(self.run_id,row['scenario_id']))).fetchone()
+   if old:
+    if old['status']=='SUCCEEDED': raise RuntimeError('initial card already projected')
+    raise RuntimeError('initial projection unresolved; duplicate-risk recovery required')
+   t=stamp(); c=await self.repo.db.execute("INSERT INTO acceptance_initial_projections(run_id,scenario_id,question_id,public_id,status,started_at) VALUES(?,?,?,?,?,?)",(self.run_id,row['scenario_id'],row['question_id'],row['public_id'],'IN_FLIGHT',t))
+   await self.repo.db.commit(); return dict(row),c.lastrowid,t
+  except Exception:
+   await self.repo.db.rollback(); raise
+
+ async def finish_projection(self,attempt_id,question_id,result):
+  t=stamp()
+  if result.outcome is Outcome.SUCCESS:
+   mid=getattr(result.value,'message_id',None)
+   if isinstance(mid,int) and mid>0:
+    await self.repo.persist_question_message_id(question_id,mid)
+    await self.repo.db.execute("UPDATE acceptance_initial_projections SET status='SUCCEEDED',telegram_message_id=?,finished_at=?,failure_class=NULL WHERE id=?",(mid,t,attempt_id)); await self.repo.db.commit()
+    return {'status':'SUCCEEDED','telegram_message_id':mid}
+   status,failure,ambiguous='DETERMINISTIC_FAILED','INVALID_MESSAGE_ID',0
+  else:
+   ambiguous=int(result.outcome is Outcome.AMBIGUOUS_NETWORK_FAILURE); status='AMBIGUOUS' if ambiguous else 'DETERMINISTIC_FAILED'; failure=result.outcome.value
+  await self.repo.db.execute('UPDATE acceptance_initial_projections SET status=?,finished_at=?,failure_class=?,ambiguous_duplicate_risk=? WHERE id=?',(status,t,failure,ambiguous,attempt_id)); await self.repo.db.commit()
+  return {'status':status,'failure_class':failure}
 
 class PromptStub:
  def build(self,q): return 'acceptance prompt for '+q['public_id']
@@ -115,6 +148,30 @@ async def build(run_id,db_path=None,evidence_path=None,root=ACCEPTANCE_ROOT):
  if db_path != derived_db or evidence_path != derived_evidence or db_path in {PRODUCTION_DB,STALE_DB}: raise ValueError('acceptance requires canonical isolated run paths')
  db=await connect(db_path); await init(db); repo=Repository(db); ev=Evidence(evidence_path,run_id,db_path); sink=AcceptanceSendSink(ev)
  return db,repo,ev,sink,ScenarioController(repo,run_id,ev)
+
+async def project(run_id, bot=None, operator_id=None, root=ACCEPTANCE_ROOT):
+ """One outbound initial-card projection; deliberately no Application/polling."""
+ db,repo,ev,sink,controller=await build(run_id,root=root)
+ try:
+  row,attempt_id,started=await controller.claim_projection()
+  question=await repo.get_question(row['question_id'])
+  owned_bot=bot is None
+  if owned_bot:
+   from telegram import Bot
+   bot=Bot(os.environ['TELEGRAM_BOT_TOKEN'])
+  operator_id=operator_id or os.environ['TELEGRAM_OPERATOR_USER_ID']
+  if owned_bot: await bot.initialize()
+  transport=TelegramTransport(SimpleNamespace(bot=bot),operator_id,repo)
+  # question() is the production renderer + MESSAGE_CREATE edge path.
+  mid=await transport.question(question)
+  result=transport.last_question_outcome or Result(Outcome.DETERMINISTIC_FAILURE,error=RuntimeError('missing Telegram outcome'))
+  final=await controller.finish_projection(attempt_id,question['id'],result)
+  ev.add('initial_projections',{'at':stamp(),'run_id':run_id,'scenario_id':row['scenario_id'],'question_id':question['id'],'public_id':question['public_id'],'telegram_chat_id':str(operator_id),'projection_attempt_id':attempt_id,'projection_started_at':started,'projection_result':final['status'],'telegram_message_id':final.get('telegram_message_id'),'failure_class':final.get('failure_class'),'ambiguous_duplicate_risk':final['status']=='AMBIGUOUS'})
+  if final['status']=='SUCCEEDED': ev.data['counters']['TELEGRAM_MESSAGES_CREATED']+=1; ev.flush()
+  return final
+ finally:
+  if 'owned_bot' in locals() and owned_bot: await bot.shutdown()
+  await db.close()
 
 async def run(run_id):
  db,repo,ev,sink,controller=await build(run_id)
@@ -137,7 +194,9 @@ async def run(run_id):
 async def status(run_id,root=ACCEPTANCE_ROOT):
  run_dir,db_path,evidence_path=resolve_run_paths(run_id,root); data=json.loads(evidence_path.read_text()); db=await connect(db_path); await init(db); repo=Repository(db); controller=ScenarioController(repo,data['run_id'],None)
  try:
-  result=await controller.status() or {}; result.update({'run_id':data['run_id'],'active_profile':await repo.active_codex_profile(),'would_send_count':len(data['would_send'])}); return result
+  result=await controller.status() or {}
+  active=(await (await repo.db.execute("SELECT COUNT(*) FROM acceptance_scenarios WHERE run_id=? AND status='ACTIVE'",(data['run_id'],))).fetchone())[0]
+  result.update({'run_id':data['run_id'],'active_profile':await repo.active_codex_profile(),'active_scenario_count':active,'scripted_codex_invocation_count':len(data['scripted_codex_invocations']),'would_send_count':len(data['would_send'])}); return result
  finally: await db.close()
 
 async def selftest():
@@ -163,6 +222,7 @@ def main():
  p=argparse.ArgumentParser(description=__doc__); sub=p.add_subparsers(dest='command',required=True)
  start=sub.add_parser('run'); start.add_argument('--run-id',required=True)
  prepare=sub.add_parser('prepare'); prepare.add_argument('--run-id',required=True); prepare.add_argument('--scenario',choices=SCENARIOS,required=True)
+ project_cmd=sub.add_parser('project'); project_cmd.add_argument('--run-id',required=True)
  close=sub.add_parser('close'); close.add_argument('--run-id',required=True)
  state=sub.add_parser('status'); state.add_argument('--run-id',required=True)
  sub.add_parser('selftest')
@@ -170,6 +230,7 @@ def main():
  if a.command=='run': asyncio.run(run(a.run_id))
  elif a.command=='selftest': print('ACCEPTANCE_HARNESS_SELFTEST = PASS' if asyncio.run(selftest()) else 'ACCEPTANCE_HARNESS_SELFTEST = FAIL')
  elif a.command=='status': print(json.dumps(asyncio.run(status(a.run_id)),sort_keys=True))
+ elif a.command=='project': print(json.dumps(asyncio.run(project(a.run_id)),sort_keys=True))
  else:
   async def go():
    d,r,e,s,c=await build(a.run_id)

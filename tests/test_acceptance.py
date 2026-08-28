@@ -2,7 +2,7 @@ import json
 import pytest
 
 from app.acceptance import (AcceptanceSendSink, PRODUCTION_DB, STALE_DB, ScriptedCodex,
-                            ScenarioCodexRouter, ScenarioController, ScriptedCodexError, build, status, resolve_run_paths)
+                            ScenarioCodexRouter, ScenarioController, ScriptedCodexError, build, project, status, resolve_run_paths)
 from app.service import QuestionService
 from app.state_machine import StaleState
 
@@ -85,6 +85,67 @@ def test_run_id_validation_and_paths_stay_below_root(tmp_path):
   run,db,evidence=resolve_run_paths(valid,tmp_path); assert run.parent==tmp_path.resolve() and db.parent==run and evidence.parent==run
  for invalid in ('../evil','..%2Fevil','/absolute','foo/bar','foo\\bar','.','..','',' ','a\nb','x'*65,'foo%2fbar'):
   with pytest.raises(ValueError): resolve_run_paths(invalid,tmp_path)
+
+class FakeTelegramBot:
+ def __init__(self, message_id=321, failure=None): self.calls=[]; self.message_id,self.failure=message_id,failure
+ async def send_message(self, **kwargs):
+  self.calls.append(kwargs)
+  if self.failure: raise self.failure
+  return type('Message',(),{'message_id':self.message_id})()
+
+@pytest.mark.asyncio
+async def test_project_uses_production_renderer_edge_and_persists_exact_positive_id(tmp_path):
+ db,repo,e,sink,c=await build('run',root=tmp_path)
+ try: q=await c.prepare('A_MANUAL')
+ finally: await db.close()
+ bot=FakeTelegramBot(321); result=await project('run',bot=bot,operator_id='7',root=tmp_path)
+ assert result=={'status':'SUCCEEDED','telegram_message_id':321}
+ assert len(bot.calls)==1 and bot.calls[0]['chat_id']=='7'
+ rows=bot.calls[0]['reply_markup'].inline_keyboard
+ assert [[x.text for x in row] for row in rows]==[['✍️ Ответить самому','🤖 Отправить в Codex'],['🚫 Игнорировать'],['🤖 Сменить Codex']]
+ assert all(len(x.callback_data.encode())<=64 and str(q['id']) in x.callback_data for row in rows for x in row)
+ value=await status('run',root=tmp_path)
+ assert value['telegram_question_message_id']==321 and value['initial_projection_status']=='SUCCEEDED' and value['active_scenario_count']==1
+ assert (tmp_path/'run'/'evidence.json').read_text().count('"telegram_message_id": 321')==1
+ with pytest.raises(RuntimeError,match='already projected'): await project('run',bot=bot,operator_id='7',root=tmp_path)
+ assert len(bot.calls)==1
+
+@pytest.mark.asyncio
+async def test_project_ambiguous_and_crash_claim_never_blind_resend(tmp_path):
+ from telegram.error import TimedOut
+ db,repo,e,sink,c=await build('ambiguous',root=tmp_path)
+ try: await c.prepare('A_MANUAL')
+ finally: await db.close()
+ bot=FakeTelegramBot(failure=TimedOut()); result=await project('ambiguous',bot=bot,operator_id='7',root=tmp_path)
+ assert result['status']=='AMBIGUOUS' and len(bot.calls)==1
+ with pytest.raises(RuntimeError,match='unresolved'): await project('ambiguous',bot=bot,operator_id='7',root=tmp_path)
+ assert len(bot.calls)==1
+ db,repo,e,sink,c=await build('crash',root=tmp_path)
+ try:
+  q=await c.prepare('A_MANUAL'); row,attempt,_=await c.claim_projection()
+  # Simulate a process death after Telegram accepted the request, before correlation.
+  assert row['question_id']==q['id']
+ finally: await db.close()
+ bot2=FakeTelegramBot()
+ with pytest.raises(RuntimeError,match='unresolved'): await project('crash',bot=bot2,operator_id='7',root=tmp_path)
+ assert bot2.calls==[]
+
+@pytest.mark.asyncio
+async def test_project_without_active_scenario_fails_closed(tmp_path):
+ db,repo,e,sink,c=await build('empty',root=tmp_path); await db.close()
+ with pytest.raises(RuntimeError,match='exactly one ACTIVE'): await project('empty',bot=FakeTelegramBot(),operator_id='7',root=tmp_path)
+
+@pytest.mark.asyncio
+async def test_concurrent_project_has_one_message_create(tmp_path):
+ db,repo,e,sink,c=await build('race',root=tmp_path)
+ try: await c.prepare('A_MANUAL')
+ finally: await db.close()
+ class SlowBot(FakeTelegramBot):
+  async def send_message(self,**kwargs):
+   await __import__('asyncio').sleep(.03); return await super().send_message(**kwargs)
+ bot=SlowBot()
+ outcomes=await __import__('asyncio').gather(project('race',bot=bot,operator_id='7',root=tmp_path),project('race',bot=bot,operator_id='7',root=tmp_path),return_exceptions=True)
+ assert sum(not isinstance(x,Exception) for x in outcomes)==1 and len(bot.calls)==1
 
 @pytest.mark.asyncio
 async def test_concurrent_prepare_creates_exactly_one_question(tmp_path):
