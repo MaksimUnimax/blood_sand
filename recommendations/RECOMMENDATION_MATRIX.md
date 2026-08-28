@@ -1,18 +1,40 @@
-# Матрица рекомендаций: Чертог × пол → оберег
+# Матрица рекомендаций: Чертог × пол × marketplace → оберег
 
-Статус: V1, рабочая матрица для последующего утверждения и реализации.
+Статус: **V2 SALES-WEIGHTED — current authority**  
+Matrix version: `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`  
+Calendar version: `KIP_CHERTOG_CALENDAR_V1`  
+Product policy: `KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED`  
+Marketplace override: `KIP_MARKETPLACE_OVERRIDE_V1`
 
-## Главный принцип выдачи
+Подробное коммерческое обоснование и customer-copy для всех замен: `SALES_WEIGHTED_MATRIX_V2_AUDIT_2026-08-28.md`.
 
-Клиенту показывается:
+## 1. Главный принцип V2
 
-- **1 оберег по умолчанию**;
-- **не более 2 оберегов** только если у второго есть отдельное сильное основание;
-- никогда 3 и более.
+V2 сознательно даёт продажам существенно больший вес, чем V1.
 
-Продажи, популярность и остатки не могут повысить слабую смысловую связь выше прямой.
+Алгоритм принятия продуктового решения:
 
-## Календарная конвенция `KIP_CHERTOG_CALENDAR_V1`
+1. явно неподходящие по смыслу или визуально противоречивые товары отбрасываются;
+2. формируется небольшой набор вариантов, которые можно естественно объяснить клиенту через темы Чертога;
+3. **среди приемлемых вариантов продажи являются сильным фактором выбора**;
+4. сильный продаваемый товар может заменить слабый curated-товар, если клиентское объяснение остаётся естественным;
+5. direct-отношение не является абсолютным коммерческим запретом на замену, если другой вариант имеет самостоятельную сильную связь с Чертогом — пример: Медведь → Печать Велеса / медвежья лапа;
+6. нельзя разносить bestseller по семантически чужим Чертогам только ради продаж;
+7. marketplace-specific override разрешён только явно утверждённой строкой.
+
+Клиенту продажи, остатки, внутренний ranking и причина коммерческой оптимизации **не сообщаются**.
+
+## 2. Выдача
+
+В V2 каждый сценарий возвращает **ровно один оберег**.
+
+- `primary` — единственный результат;
+- `secondary` в V2 отсутствует;
+- 2 и более товара в автоматической выдаче запрещены.
+
+Это отменяет V1-исключение `Медведь + мужчина → Сварог + Медвежья лапа`.
+
+## 3. Календарная конвенция `KIP_CHERTOG_CALENDAR_V1`
 
 Граничный день принадлежит **новому** Чертогу. Например, 19.09 — Дева, 20.09 — Вепрь.
 
@@ -37,82 +59,213 @@
 
 Год рождения не используется. 29 февраля относится к Чертогу Волка.
 
-## Клиентская матрица
+## 4. Финальная клиентская матрица V2
 
-`primary` — основной и обычно единственный результат.
+| Чертог | Ozon: мужчина | Ozon: женщина | Wildberries: мужчина | Wildberries: женщина |
+|---|---|---|---|---|
+| Дева | **Сварог** | **Жива** | **Сварог** | **Жива** |
+| Вепрь | **Алатырь** | **Алатырь** | **Алатырь** | **Алатырь** |
+| Щука | **Родимич** | **Звезда Лады** | **Родимич** | **Звезда Лады** |
+| Лебедь | **Родимич** | **Макошь** | **Родимич** | **Макошь** |
+| Змей | **Семаргл** | **Семаргл** | **Семаргл** | **Семаргл** |
+| Ворон | **Колядник** | **Алатырь** | **Алатырь** | **Алатырь** |
+| Медведь | **Печать Велеса — Медвежья лапа** | **Печать Велеса — Медвежья лапа** | **Печать Велеса — Медвежья лапа** | **Печать Велеса — Медвежья лапа** |
+| Бусел | **Молвинец** | **Звезда Лады** | **Молвинец** | **Звезда Лады** |
+| Волк | **Велес** | **Велес** | **Велес** | **Велес** |
+| Лиса | **Мара** | **Мара** | **Мара** | **Мара** |
+| Тур | **Чур** | **Чур** | **Чур** | **Чур** |
+| Лось | **Родимич** | **Звезда Лады** | **Родимич** | **Звезда Лады** |
+| Финист | **Алатырь** | **Алатырь** | **Алатырь** | **Алатырь** |
+| Конь | **Сварог** | **Жива** | **Сварог** | **Жива** |
+| Орёл | **Перун** | **Перун** | **Перун** | **Перун** |
+| Раса | **Даждьбог** | **Даждьбог** | **Даждьбог** | **Даждьбог** |
 
-`secondary` — показывается только там, где указан явно. Пустое значение означает, что второй товар клиенту не предлагается.
+### Единственный marketplace override
 
-| Чертог | Мужчина: primary | Мужчина: secondary | Женщина: primary | Женщина: secondary | Основание |
-|---|---|---|---|---|---|
-| Дева | Даждьбог | — | Жива | — | Жива — прямое соответствие; Даждьбог — curated мужская замена |
-| Вепрь | Алатырь | — | Алатырь | — | Прямого Рамхата нет; нейтральный curated-заместитель порядка/устойчивости |
-| Щука | Родимич | — | Макошь | — | Родовая/семейная линия с гендерным разделением |
-| Лебедь | Всеславец | — | Макошь | — | Макошь — прямое соответствие; Всеславец — мужская curated-замена |
-| Змей | Семаргл | — | Семаргл | — | Прямое соответствие покровителю |
-| Ворон | Колядник | — | Белобог | — | Колядник — производная линии Коляды; Белобог — женский/нейтральный curated fallback |
-| Медведь | Сварог | Медвежья лапа | Сварог | — | Сварог — прямой покровитель; Медвежья лапа — отдельное прямое соответствие символу Чертога |
-| Бусел | Родимич | — | Звезда Лады | — | Родовая линия с гендерным разделением |
-| Волк | Велес | — | Велес | — | Прямое соответствие покровителю |
-| Лиса | Мара | — | Мара | — | Прямое производное соответствие Марене |
-| Тур | Чур | — | Чур | — | Прямого Крышеня нет; защитный curated fallback |
-| Лось | Всеславец | — | Звезда Лады | — | Звезда Лады — производное соответствие Ладе; мужской curated fallback |
-| Финист | Боговник | — | Боговник | — | Прямого Вышеня нет; духовный curated fallback |
-| Конь | Знич | — | Жива | — | Купалы в ассортименте нет; мужская огненная и женская жизненная линии |
-| Орёл | Перун | — | Перун | — | Прямое соответствие покровителю |
-| Раса | Даждьбог | — | Даждьбог | — | Прямое соответствие покровителю |
+В текущей V2 только одна строка меняется по marketplace:
 
-## Нормализованные типы связи
+```text
+Ворон + мужчина:
+Ozon         → Колядник
+Wildberries  → Алатырь
+```
 
-Для реализации матрица должна оперировать не свободным текстом, а одним из типов:
+Для всех остальных строк Ozon и Wildberries совпадают.
 
-- `DIRECT_PATRON` — товар совпадает с покровителем Чертога;
-- `DIRECT_DERIVED` — товар является близким производным именем/образом покровителя;
-- `DIRECT_CHERTOG_SYMBOL` — товар непосредственно соответствует символу/тотему Чертога;
-- `CURATED_GENDER_SUBSTITUTE` — curated-замена из-за гендерной политики;
-- `CURATED_MEANING_SUBSTITUTE` — curated-замена при отсутствии прямого товара.
+## 5. Owner-locked ограничения
 
-## Машинная форма матрицы
+### 5.1. Даждьбог
 
-| chertog | gender | rank | product_identity | relation_type |
-|---|---|---:|---|---|
-| deva | male | 1 | Даждьбог | CURATED_GENDER_SUBSTITUTE |
-| deva | female | 1 | Жива | DIRECT_PATRON |
-| vepr | male | 1 | Алатырь | CURATED_MEANING_SUBSTITUTE |
-| vepr | female | 1 | Алатырь | CURATED_MEANING_SUBSTITUTE |
-| shchuka | male | 1 | Родимич | CURATED_GENDER_SUBSTITUTE |
-| shchuka | female | 1 | Макошь | CURATED_GENDER_SUBSTITUTE |
-| lebed | male | 1 | Всеславец | CURATED_GENDER_SUBSTITUTE |
-| lebed | female | 1 | Макошь | DIRECT_PATRON |
-| zmei | male | 1 | Семаргл | DIRECT_PATRON |
-| zmei | female | 1 | Семаргл | DIRECT_PATRON |
-| voron | male | 1 | Колядник | DIRECT_DERIVED |
-| voron | female | 1 | Белобог | CURATED_GENDER_SUBSTITUTE |
-| medved | male | 1 | Сварог | DIRECT_PATRON |
-| medved | male | 2 | Медвежья лапа | DIRECT_CHERTOG_SYMBOL |
-| medved | female | 1 | Сварог | DIRECT_PATRON |
-| busel | male | 1 | Родимич | CURATED_GENDER_SUBSTITUTE |
-| busel | female | 1 | Звезда Лады | CURATED_GENDER_SUBSTITUTE |
-| volk | male | 1 | Велес | DIRECT_PATRON |
-| volk | female | 1 | Велес | DIRECT_PATRON |
-| lisa | male | 1 | Мара | DIRECT_DERIVED |
-| lisa | female | 1 | Мара | DIRECT_DERIVED |
-| tur | male | 1 | Чур | CURATED_MEANING_SUBSTITUTE |
-| tur | female | 1 | Чур | CURATED_MEANING_SUBSTITUTE |
-| los | male | 1 | Всеславец | CURATED_GENDER_SUBSTITUTE |
-| los | female | 1 | Звезда Лады | DIRECT_DERIVED |
-| finist | male | 1 | Боговник | CURATED_MEANING_SUBSTITUTE |
-| finist | female | 1 | Боговник | CURATED_MEANING_SUBSTITUTE |
-| kon | male | 1 | Знич | CURATED_GENDER_SUBSTITUTE |
-| kon | female | 1 | Жива | CURATED_GENDER_SUBSTITUTE |
-| orel | male | 1 | Перун | DIRECT_PATRON |
-| orel | female | 1 | Перун | DIRECT_PATRON |
-| rasa | male | 1 | Даждьбог | DIRECT_PATRON |
-| rasa | female | 1 | Даждьбог | DIRECT_PATRON |
+Даждьбог должен встречаться **ровно в двух** gender-cases:
 
-## Жёсткие исключения
+```text
+Раса + мужчина → Даждьбог
+Раса + женщина → Даждьбог
+```
 
-- `Печать Велеса` в UI называется `Медвежья лапа` и используется только как второй мужской результат для Медведя.
-- Для Волка `Медвежья лапа` запрещена; выдаётся только `Велес`.
-- Внутренняя матрица может содержать резервные связи, но UI не имеет права показывать их как дополнительные товары без отдельного утверждения.
-- Если основной товар недоступен, V1 **не должен автоматически подставлять случайный третий вариант**. Политика unavailable/fallback должна утверждаться отдельно в roadmap/implementation design.
+Никаких других автоматических строк с Даждьбогом в V2 нет.
+
+### 5.2. Медведь
+
+Для Медведя оставляется **только Печать Велеса — Медвежья лапа**:
+
+```text
+Медведь + мужчина → Печать Велеса — Медвежья лапа
+Медведь + женщина → Печать Велеса — Медвежья лапа
+```
+
+Сварог для Медведя из V2 удалён полностью.
+
+### 5.3. Волк и визуальная форма Печати Велеса
+
+Конкретный продаваемый SKU `Печать Велеса` выполнен в форме **медвежьей лапы**. Поэтому он не используется для Чертога Волка, даже несмотря на слово `Велеса` в marketplace-названии.
+
+```text
+Медведь → Печать Велеса — Медвежья лапа
+Волк    → Велес
+```
+
+`bear_paw` для `volk` и для любого другого Чертога, кроме Медведя, = `FORBIDDEN`.
+
+### 5.4. Сварог
+
+В V2 Сварог считается мужским по характеру и используется только:
+
+```text
+Дева + мужчина → Сварог
+Конь + мужчина → Сварог
+```
+
+## 6. Нормализованные типы связи
+
+Semantic relation и коммерческий selection basis — разные поля.
+
+Допустимые `relation_type`:
+
+- `DIRECT_PATRON` — совпадает с покровителем;
+- `DIRECT_DERIVED` — близкое производное покровителя;
+- `DIRECT_CHERTOG_SYMBOL` — прямой символ/тотем Чертога;
+- `CURATED_GENDER_SUBSTITUTE` — гендерно ориентированная смысловая замена;
+- `CURATED_MEANING_SUBSTITUTE` — смысловая curated-замена.
+
+Допустимые `selection_basis` V2:
+
+- `SEMANTIC_DIRECT`;
+- `SEMANTIC_DIRECT_SALES_PRIORITIZED`;
+- `SEMANTIC_CURATED_SALES_WEIGHTED`;
+- `MARKETPLACE_OVERRIDE_SALES_WEIGHTED`.
+
+Продажи никогда не меняют `relation_type`; они объясняют, почему из нескольких допустимых semantic candidates выбран именно этот.
+
+## 7. Машинная форма — base + override
+
+Base-матрица соответствует Ozon/default semantic case. Wildberries применяет один утверждённый override.
+
+| chertog | gender | product_identity | relation_type | selection_basis |
+|---|---|---|---|---|
+| deva | male | Сварог | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| deva | female | Жива | DIRECT_PATRON | SEMANTIC_DIRECT |
+| vepr | male | Алатырь | CURATED_MEANING_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| vepr | female | Алатырь | CURATED_MEANING_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| shchuka | male | Родимич | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| shchuka | female | Звезда Лады | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| lebed | male | Родимич | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| lebed | female | Макошь | DIRECT_PATRON | SEMANTIC_DIRECT |
+| zmei | male | Семаргл | DIRECT_PATRON | SEMANTIC_DIRECT |
+| zmei | female | Семаргл | DIRECT_PATRON | SEMANTIC_DIRECT |
+| voron | male | Колядник | DIRECT_DERIVED | SEMANTIC_DIRECT |
+| voron | female | Алатырь | CURATED_MEANING_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| medved | male | Медвежья лапа | DIRECT_CHERTOG_SYMBOL | SEMANTIC_DIRECT_SALES_PRIORITIZED |
+| medved | female | Медвежья лапа | DIRECT_CHERTOG_SYMBOL | SEMANTIC_DIRECT_SALES_PRIORITIZED |
+| busel | male | Молвинец | CURATED_MEANING_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| busel | female | Звезда Лады | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| volk | male | Велес | DIRECT_PATRON | SEMANTIC_DIRECT |
+| volk | female | Велес | DIRECT_PATRON | SEMANTIC_DIRECT |
+| lisa | male | Мара | DIRECT_DERIVED | SEMANTIC_DIRECT |
+| lisa | female | Мара | DIRECT_DERIVED | SEMANTIC_DIRECT |
+| tur | male | Чур | CURATED_MEANING_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| tur | female | Чур | CURATED_MEANING_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| los | male | Родимич | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| los | female | Звезда Лады | DIRECT_DERIVED | SEMANTIC_DIRECT |
+| finist | male | Алатырь | CURATED_MEANING_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| finist | female | Алатырь | CURATED_MEANING_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| kon | male | Сварог | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| kon | female | Жива | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| orel | male | Перун | DIRECT_PATRON | SEMANTIC_DIRECT |
+| orel | female | Перун | DIRECT_PATRON | SEMANTIC_DIRECT |
+| rasa | male | Даждьбог | DIRECT_PATRON | SEMANTIC_DIRECT |
+| rasa | female | Даждьбог | DIRECT_PATRON | SEMANTIC_DIRECT |
+
+Marketplace override:
+
+| marketplace | chertog | gender | base_identity | effective_identity | relation_type | selection_basis |
+|---|---|---|---|---|---|---|
+| wildberries | voron | male | Колядник | Алатырь | CURATED_MEANING_SUBSTITUTE | MARKETPLACE_OVERRIDE_SALES_WEIGHTED |
+
+## 8. V1 → V2 changed rows
+
+| Case | V1 | V2 |
+|---|---|---|
+| Дева male | Даждьбог | Сварог |
+| Щука female | Макошь | Звезда Лады |
+| Лебедь male | Всеславец | Родимич |
+| Ворон female | Белобог | Алатырь |
+| Ворон male WB | Даждьбог override | Алатырь override |
+| Медведь male | Сварог + Медвежья лапа | Печать Велеса — Медвежья лапа only |
+| Медведь female | Сварог | Печать Велеса — Медвежья лапа |
+| Бусел male | Родимич | Молвинец |
+| Лось male | Всеславец | Родимич |
+| Финист male | Боговник | Алатырь |
+| Финист female | Боговник | Алатырь |
+| Конь male | Знич | Сварог |
+
+## 9. Автоматически не используемые позиции V2
+
+Removed from automatic matrix:
+
+- Белобог;
+- Всеславец;
+- Боговник;
+- Знич.
+
+Reserve remains reserve:
+
+- Чернобог;
+- Триглав;
+- Ратиборец;
+- Громовик;
+- Стрибог;
+- Хорс.
+
+## 10. Клиентский текст
+
+Точный customer-copy для каждой изменённой строки зафиксирован в:
+
+- `CUSTOMER_RECOMMENDATION_COPY_GUIDE.md`;
+- `SALES_WEIGHTED_MATRIX_V2_AUDIT_2026-08-28.md`.
+
+Клиенту нельзя говорить:
+
+- что выбранный товар продаётся лучше;
+- что другой товар продаётся хуже;
+- что чего-то нет в ассортименте, наличии, карточках или ссылках;
+- что алгоритм сделал substitution из-за продаж;
+- внутренние термины `matrix`, `fallback`, `selection_basis`, `relation_type`.
+
+## 11. V2 invariants
+
+- 16 Чертогов × 2 пола = 32 base primary-case;
+- для каждого marketplace эффективный результат всегда один;
+- Даждьбог = ровно 2 base rows, обе Раса;
+- Печать Велеса / Медвежья лапа = только Медведь, оба пола;
+- Печать Велеса / Медвежья лапа никогда не используется для Волка;
+- Волк = Велес для обоих полов и обоих marketplaces;
+- Сварог не используется для женщин в V2;
+- marketplace override не может появиться без отдельной явной записи;
+- reserve SKU не могут попасть в automatic output без изменения product policy и audit.
+
+Decision marker:
+
+```text
+KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED_APPROVED
+```
