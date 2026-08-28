@@ -1,0 +1,50 @@
+name: Ozon B46 FBS Posting Cancel Reason exact candidate
+on:
+  push:
+    branches: [feature/ozon-b46-fbs-posting-cancel-reason-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b46-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B46_FBS_POSTING_CANCEL_REASON_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b46_fbs_posting_cancel_reason_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B46_FBS_POSTING_CANCEL_REASON_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B46_FBS_POSTING_CANCEL_REASON_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B46_FBS_POSTING_CANCEL_REASON_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B46 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B46_FBS_POSTING_CANCEL_REASON_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='ad83581fb67c9aa57e29a32d05dca88e2b376dbcb9c8aa455882377281412873';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='84a492a92852b3407ad5f109f0b3cae72305c9dda296b56ffcac74fd65df858c'"
+      - name: Materialize exact B46 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b46_fbs_posting_cancel_reason_candidate.py --repo-root . --work-root /tmp/ozon-b46-work --out /tmp/ozon-b46-exact
+      - name: Verify B45 base and B46 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B45_SELLER_ACTION_CANDIDATES_REGRESSION_2026-08-28.mjs /tmp/ozon-b46-work/b45-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B46_FBS_POSTING_CANCEL_REASON_REGRESSION_2026-08-28.mjs /tmp/ozon-b46-exact
+          find /tmp/ozon-b46-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b46-fbs-posting-cancel-reason-candidate, path: /tmp/ozon-b46-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --system core.longpaths true
+      - name: Verify B46 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B46_FBS_POSTING_CANCEL_REASON_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='ad83581fb67c9aa57e29a32d05dca88e2b376dbcb9c8aa455882377281412873';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='84a492a92852b3407ad5f109f0b3cae72305c9dda296b56ffcac74fd65df858c'"
+      - name: Materialize exact B46 candidate
+        shell: pwsh
+        run: |
+          $work='C:\b46w'; $out='C:\b46o'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b46_fbs_posting_cancel_reason_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B45 base and B46 gates
+        shell: pwsh
+        run: |
+          $work='C:\b46w'; $out='C:\b46o'; $b45=Join-Path $work 'b45-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B45_SELLER_ACTION_CANDIDATES_REGRESSION_2026-08-28.mjs $b45; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B46_FBS_POSTING_CANCEL_REASON_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
