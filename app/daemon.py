@@ -3,7 +3,14 @@ import asyncio
 import os
 import signal
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import (
+    BotCommand,
+    BotCommandScopeChat,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    MenuButtonCommands,
+    Update,
+)
 from telegram.error import Conflict
 from telegram.ext import Application
 
@@ -45,6 +52,14 @@ def live_config(env=None):
     if missing:
         raise RuntimeError('missing required production configuration: ' + ', '.join(missing))
     return {key: env[key] for key in REQUIRED}
+
+
+async def configure_operator_menu(bot, operator_id):
+    """Make manual Ozon ingress discoverable from Telegram's persistent bot menu."""
+    chat_id = int(operator_id)
+    commands = [BotCommand('ozon', '➕ Отправить вопрос')]
+    await bot.set_my_commands(commands, scope=BotCommandScopeChat(chat_id=chat_id))
+    await bot.set_chat_menu_button(chat_id=chat_id, menu_button=MenuButtonCommands())
 
 
 class TelegramTransport:
@@ -188,6 +203,13 @@ async def main():
 
     try:
         await application.initialize()
+        try:
+            await configure_operator_menu(application.bot, secrets['TELEGRAM_OPERATOR_USER_ID'])
+        except Exception as exc:
+            # Menu setup is presentation-only: preserve bot availability and make
+            # the failure observable. The persistent reply keyboard remains a
+            # second entry point once the bot sends any operator-facing message.
+            await repo.record_error('telegram', 'MENU_SETUP', str(exc))
         await application.bot.delete_webhook(drop_pending_updates=False)
         await application.start()
         for row in await repo.pending_telegram_updates():
