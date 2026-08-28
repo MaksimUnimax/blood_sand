@@ -1,4 +1,5 @@
 """Offline smoke for the Telegram protocol contract; no network is used."""
+import asyncio
 from types import SimpleNamespace
 import pytest
 
@@ -500,4 +501,105 @@ async def test_ignore_from_manual_input_clears_its_durable_focus(tmp_path):
  q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'ignore-manual-focus','question_text':'q'})
  await service.begin_manual(q['id']); await service.ignore(q['id'])
  assert (await repo.get_question(q['id']))['status']=='IGNORED' and await repo.get_active_text_input_context() is None
+ await db.close()
+
+
+@pytest.mark.asyncio
+async def test_codex_running_card_is_visible_before_runner_and_binds_profile_across_switch(tmp_path):
+ """CODEX_RUNNING is a real card, not a state that a fast runner can hide."""
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'running-card','question_text':'original question'})
+ started=asyncio.Event(); release=asyncio.Event(); reviewed=asyncio.Event()
+ class Runner:
+  async def run(self,profile,prompt,attempt_id):
+   started.set(); await release.wait(); return 'deterministic test answer'
+ class Prompts:
+  def build(self,question): return 'prompt'
+ class Message:
+  def __init__(self): self.calls=[]; self.next_id=10
+  async def reply_text(self,*args,**kwargs):
+   self.calls.append((args,kwargs)); self.next_id+=1
+   if 'deterministic test answer' in args[0]: reviewed.set()
+   return SimpleNamespace(message_id=self.next_id)
+  async def edit_reply_markup(self,**kwargs): self.calls.append((('DISABLE',),kwargs))
+ class Query:
+  def __init__(self,data,message): self.data,self.message,self.acks=data,message,[]
+  async def answer(self,*args,**kwargs): self.acks.append((args,kwargs))
+ def update(query): return SimpleNamespace(callback_query=query,effective_user=SimpleNamespace(id=1),effective_chat=SimpleNamespace(id=1,type='private'))
+ message=Message(); service=QuestionService(repo,{},None,Runner(),Prompts()); bot=OperatorBot(1,service)
+ query=Query(encode('codex',q['id']),message); await bot.callback(update(query),None)
+ running=message.calls[1]
+ assert query.acks and message.calls[0][0]==('DISABLE',)
+ assert 'Codex готовит черновик через codex1' in running[0][0]
+ assert [b.text for row in running[1]['reply_markup'].inline_keyboard for b in row]==['🤖 Сменить Codex']
+ assert not started.is_set() and (await repo.get_question(q['id']))['status']=='CODEX_RUNNING'
+ attempt=await repo.get_current_draft_attempt(q['id']); assert attempt['codex_profile']=='codex1'
+ # A replay of the stale NEW callback cannot create draft attempt #2.
+ await bot.callback(update(Query(encode('codex',q['id']),message)),None)
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts WHERE question_id=?',(q['id'],))).fetchone())[0]==1
+ # Switching during CODEX_RUNNING changes only the global future default.
+ await bot.callback(update(Query(encode('choose_codex',q['id'],None,'codex2'),message)),None)
+ assert await repo.active_codex_profile()=='codex2'
+ assert (await repo.get_current_draft_attempt(q['id']))['codex_profile']=='codex1'
+ assert (await repo.get_question(q['id']))['status']=='CODEX_RUNNING'
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts WHERE question_id=?',(q['id'],))).fetchone())[0]==1
+ release.set(); await asyncio.wait_for(reviewed.wait(),1)
+ current=await repo.get_question(q['id']); revision=await repo.get_current_answer_revision(q['id'])
+ assert (current['status'],current['current_answer_revision_id'])==('REVIEW',revision['id'])
+ assert (revision['source'],revision['text'],revision['draft_attempt_id'])==('codex','deterministic test answer',attempt['id'])
+ review=message.calls[-1]; assert '🤖 Подготовил: codex1' in review[0][0] and '🟢 Сейчас активен: codex2' in review[0][0]
+ assert [b.text for row in review[1]['reply_markup'].inline_keyboard for b in row]==['✅ Отправить','✏️ Редактировать','🚫 Игнорировать','🤖 Сменить Codex']
+ assert not any(word in review[0][0] for word in ('Сгенерировать','Сгенерировать заново','Перегенерировать'))
+ await db.close()
+
+
+@pytest.mark.asyncio
+async def test_codex_running_card_message_failure_is_durable_and_does_not_cancel_claim(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'running-failure','question_text':'q'})
+ started=asyncio.Event()
+ class Runner:
+  async def run(self,*args): started.set(); raise RuntimeError('runner failure')
+ class Prompts:
+  def build(self,question): return 'prompt'
+ class Message:
+  async def reply_text(self,*args,**kwargs):
+   from telegram.error import BadRequest
+   raise BadRequest('invalid running card')
+  async def edit_reply_markup(self,**kwargs): pass
+ class Query:
+  data=encode('codex',q['id']); message=Message()
+  async def answer(self,*args,**kwargs): pass
+ bot=OperatorBot(1,QuestionService(repo,{},None,Runner(),Prompts()))
+ update=SimpleNamespace(callback_query=Query(),effective_user=SimpleNamespace(id=1),effective_chat=SimpleNamespace(id=1,type='private'))
+ await bot.callback(update,None); await asyncio.wait_for(started.wait(),1)
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts WHERE question_id=?',(q['id'],))).fetchone())[0]==1
+ failure=await repo.get_delivery_failure(q['id'],'CODEX_RUNNING_CARD')
+ assert failure['outcome']=='DETERMINISTIC_FAILURE'
+ assert (await repo.get_question(q['id']))['status'] in {'CODEX_RUNNING','CODEX_ERROR'}
+ await db.close()
+
+
+@pytest.mark.asyncio
+async def test_fast_codex_runner_still_sends_running_card_before_review(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'fast-running-card','question_text':'q'})
+ events=[]; complete=asyncio.Event()
+ class Runner:
+  async def run(self,*args): events.append('runner'); return 'fast answer'
+ class Prompts:
+  def build(self,question): return 'prompt'
+ class Message:
+  async def reply_text(self,text,**kwargs):
+   events.append('review' if 'fast answer' in text else 'running')
+   if 'fast answer' in text: complete.set()
+   return SimpleNamespace(message_id=len(events)+1)
+  async def edit_reply_markup(self,**kwargs): events.append('disable')
+ class Query:
+  data=encode('codex',q['id']); message=Message()
+  async def answer(self,*args,**kwargs): events.append('ack')
+ bot=OperatorBot(1,QuestionService(repo,{},None,Runner(),Prompts()))
+ await bot.callback(SimpleNamespace(callback_query=Query(),effective_user=SimpleNamespace(id=1),effective_chat=SimpleNamespace(id=1,type='private')),None)
+ await asyncio.wait_for(complete.wait(),1)
+ assert events.index('running') < events.index('runner') < events.index('review')
  await db.close()

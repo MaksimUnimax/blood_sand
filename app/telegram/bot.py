@@ -48,7 +48,7 @@ class OperatorBot:
   elif q['current_answer_revision_id']:
    cards=render.delivery(q,await self.service.repo.get_current_answer_revision(qid),q['status']) if q['status'] in {'SENDING','SENT','SEND_FAILED','SEND_UNKNOWN'} else render.review(q,await self.service.repo.get_current_answer_revision(qid),active)
   else: cards=render.split_card(q,f'Состояние: {q["status"]}\n🟢 Сейчас активен: {active}')
-  await self.cards(message,cards,self.buttons(q),qid)
+  await self.cards(message,cards,self.buttons(q),qid,operation='CODEX_RUNNING_CARD' if q['status']=='CODEX_RUNNING' else 'STATUS_CARD')
  async def cards(self,message,cards,markup=None,qid=None,operation='STATUS_CARD'):
   for i,text in enumerate(cards):
    outcome=await self._reply(message,text,reply_markup=markup if i==0 else None)
@@ -137,6 +137,11 @@ class OperatorBot:
     claim=await self.service.repo.claim_codex(qid)
     await self._ack(query,'Codex started')
     await self._disable(query)
+    # The claimed attempt is now observable before its runner can possibly
+    # finish.  show_question resolves the profile from that persisted attempt,
+    # rather than consulting the mutable global profile.  Its cards() path also
+    # records MESSAGE_CREATE failures without retrying or changing the claim.
+    await self.show_question(query.message,qid)
     asyncio.create_task(self.run_codex(query.message,qid,claim)); return
    # All non-Codex actions are short. State/revision checks happen before acknowledgement.
    if action=='manual':
