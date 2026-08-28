@@ -1,0 +1,36 @@
+name: Ozon B26 FBO Posting Detail Read exact candidate
+on:
+  push:
+    branches: [feature/ozon-b26-fbo-posting-detail-read-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b26-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_POSTING_DETAIL_READ_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b26_fbo_posting_detail_read_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_POSTING_DETAIL_READ_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_POSTING_DETAIL_READ_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_POSTING_DETAIL_READ_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b26_fbo_posting_detail_read_candidate.py --repo-root . --work-root /tmp/b26-work --out /tmp/b26-exact
+      - run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_CANCELLATION_READ_COMPLETION_REGRESSION_2026-08-28.mjs /tmp/b26-work/b25-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_POSTING_DETAIL_READ_REGRESSION_2026-08-28.mjs /tmp/b26-exact
+          find /tmp/b26-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b26-fbo-posting-detail-read-candidate, path: /tmp/b26-exact, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: pwsh
+        run: |
+          $w=Join-Path $env:RUNNER_TEMP "b26-work"; $o=Join-Path $env:RUNNER_TEMP "b26-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b26_fbo_posting_detail_read_candidate.py --repo-root . --work-root $w --out $o
+          $b=Join-Path $w "b25-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_CANCELLATION_READ_COMPLETION_REGRESSION_2026-08-28.mjs $b; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_POSTING_DETAIL_READ_REGRESSION_2026-08-28.mjs $o; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $o -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
