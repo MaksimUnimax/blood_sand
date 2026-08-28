@@ -139,7 +139,9 @@ While Ozon is configured for `TELEGRAM_MANUAL` ingress:
 
 ## 10. Wildberries
 
-Wildberries remains a separate next phase. Current live diagnostics showed the configured token is a BASE token (`acc=1`). Before final WB production acceptance it must be replaced with a PERSONAL token (`acc=3`) and the adapter must implement rate-limit-safe pacing/backoff.
+Wildberries API support is implemented but disabled until explicit activation and
+acceptance. See `WILDBERRIES_API_CONTRACT.md`; Ozon remains manual ingress and
+manual copy only.
 
 ## 11. Acceptance gates for this phase
 

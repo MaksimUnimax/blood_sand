@@ -3,6 +3,8 @@ import asyncio
 import os
 import signal
 
+import httpx
+
 from telegram import (
     BotCommand,
     BotCommandScopeChat,
@@ -20,6 +22,7 @@ from app.config import Config
 from app.db.database import connect, init
 from app.db.repository import Repository
 from app.service import QuestionService
+from app.marketplaces.wildberries import WildberriesAdapter, classify_token
 from app.telegram.bot import OperatorBot
 from app.telegram import render
 from app.telegram.callbacks import encode
@@ -33,9 +36,6 @@ POLLING_KWARGS = {
     'drop_pending_updates': False,
 }
 
-# Ozon is intentionally TELEGRAM_MANUAL/MANUAL_COPY in this phase, and WB is
-# intentionally deferred until a Personal token and pacing/backoff are enabled.
-# Therefore production needs only Telegram credentials right now.
 REQUIRED = ('TELEGRAM_BOT_TOKEN', 'TELEGRAM_OPERATOR_USER_ID')
 
 
@@ -51,7 +51,24 @@ def live_config(env=None):
     missing = [key for key in REQUIRED if not env.get(key)]
     if missing:
         raise RuntimeError('missing required production configuration: ' + ', '.join(missing))
-    return {key: env[key] for key in REQUIRED}
+    values = {key: env[key] for key in REQUIRED}
+    values['WB_API_ENABLED'] = env.get('WB_API_ENABLED') == '1'
+    if values['WB_API_ENABLED']:
+        token = env.get('WB_API_TOKEN')
+        if not token:
+            raise RuntimeError('missing required production configuration: WB_API_TOKEN')
+        if classify_token(token)['production_wb_eligible'] != 'yes':
+            raise RuntimeError('Wildberries API configuration is not production eligible')
+        values['WB_API_TOKEN'] = token
+    return values
+
+
+def make_marketplace_adapters(secrets, client_factory=httpx.AsyncClient):
+    """Construct no WB client unless the explicit activation gate passed."""
+    if not secrets['WB_API_ENABLED']:
+        return {}, None
+    client = client_factory()
+    return {'wildberries': WildberriesAdapter(client, secrets['WB_API_TOKEN'])}, client
 
 
 async def configure_operator_menu(bot, operator_id):
@@ -167,9 +184,7 @@ async def main():
     await init(db)
     repo = Repository(db)
 
-    # No marketplace network adapter is enabled in this phase. Ozon is human
-    # ingress/egress; WB will be enabled only after its separate acceptance.
-    adapters = {}
+    adapters, wb_client = make_marketplace_adapters(secrets)
 
     update_queue = DurableUpdateQueue(repo)
     application = (
@@ -229,6 +244,8 @@ async def main():
         if application.running:
             await application.stop()
         await application.shutdown()
+        if wb_client is not None:
+            await wb_client.aclose()
         await db.close()
 
 
