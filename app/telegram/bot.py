@@ -1,7 +1,7 @@
 """Telegram edge: authenticate, correlate and acknowledge; SQLite is authoritative."""
 import asyncio
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler, filters
 
 from app.state_machine import StaleState
@@ -18,7 +18,18 @@ class OperatorBot:
    await self.service.repo.record_error('telegram',result.outcome.value,str(result.error))
   return result
  async def _ack(self,query,*args,**kwargs): return await self._telegram(Operation.CALLBACK_ACK,lambda:query.answer(*args,**kwargs))
- async def _reply(self,message,*args,**kwargs): return await self._telegram(Operation.MESSAGE_CREATE,lambda:message.reply_text(*args,**kwargs))
+ async def _standalone_send(self,message,text,reply_markup=None,**kwargs):
+  """Create an operator message without Telegram reply semantics.
+
+  `Message.reply_text` is deliberately not used here: it derives quote/reply
+  arguments from the inbound message.  Operator UX cards and prompts are new,
+  standalone messages in the private operator chat.
+  """
+  if isinstance(reply_markup,ForceReply): raise ValueError('ForceReply is not permitted for operator messages')
+  if kwargs.get('reply_parameters') is not None or kwargs.get('reply_to_message_id') is not None:
+   raise ValueError('reply parameters are not permitted for operator messages')
+  return await self._telegram(Operation.MESSAGE_CREATE,lambda:message.get_bot().send_message(chat_id=message.chat_id,text=text,reply_markup=reply_markup,**kwargs))
+ async def _reply(self,message,text,reply_markup=None,**kwargs): return await self._standalone_send(message,text,reply_markup=reply_markup,**kwargs)
  def authorized(self,update):
   user=update.effective_user; chat=update.effective_chat
   return bool(user and chat and str(user.id)==self.operator_user_id and str(chat.id)==self.operator_user_id and getattr(chat,'type',None)=='private')

@@ -2,6 +2,7 @@
 import asyncio
 from types import SimpleNamespace
 import pytest
+from telegram import ForceReply, InlineKeyboardMarkup
 
 from app.daemon import TelegramTransport
 from app.db.database import connect, init
@@ -12,6 +13,20 @@ from app.telegram.bot import OperatorBot
 from app.telegram.callbacks import MAX_CALLBACK_DATA_BYTES, decode, encode
 from app.telegram.durable_queue import DurableUpdateQueue
 from app.telegram.edge import TelegramEdge, Operation, Outcome
+
+
+class StandaloneMessage:
+ """Legacy test message adapter: production code uses get_bot().send_message."""
+ chat_id = 1
+ def get_bot(self): return self
+ async def send_message(self, *, chat_id, text, **kwargs): return await self.reply_text(text, **kwargs)
+
+
+def assert_standalone(call):
+ _, kwargs = call
+ assert kwargs.get('reply_parameters') is None # TELEGRAM_NO_REPLY_PARAMETERS_TEST
+ assert kwargs.get('reply_to_message_id') is None # TELEGRAM_NO_REPLY_TO_MESSAGE_ID_TEST
+ assert not isinstance(kwargs.get('reply_markup'), ForceReply) # TELEGRAM_NO_FORCE_REPLY_TEST
 
 
 @pytest.mark.asyncio
@@ -65,7 +80,7 @@ async def test_choose_codex_profile_selection_is_bound_to_current_question_revis
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
  q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'choose-revision','question_text':'q'})
  r1=await repo.create_answer_revision(q['id'],'manual','one'); await repo.set_current_answer_revision(q['id'],r1)
- class Message:
+ class Message(StandaloneMessage):
   async def reply_text(self,*args,**kwargs): return SimpleNamespace(message_id=1)
  class Query:
   def __init__(self,data): self.data=data; self.message=Message(); self.acks=[]
@@ -102,7 +117,7 @@ async def test_choose_codex_profile_selection_is_bound_to_current_question_revis
 async def test_choose_codex_nonrevision_new_and_codex_error_remain_valid(tmp_path):
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
  q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'choose-new','question_text':'q'})
- class Message:
+ class Message(StandaloneMessage):
   def __init__(self): self.messages=[]
   async def reply_text(self,*args,**kwargs): self.messages.append((args,kwargs)); return SimpleNamespace(message_id=1)
  class Query:
@@ -212,7 +227,7 @@ async def test_prompt_timeout_creates_no_fake_correlation_and_state_is_recoverab
  q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'prompt-timeout','question_text':'q'})
  bot=OperatorBot(1,SimpleNamespace(repo=repo))
  await bot.service.repo.transition(q['id'],'NEW','MANUAL_INPUT')
- class Message:
+ class Message(StandaloneMessage):
   async def reply_text(self, *args, **kwargs):
    from telegram.error import TimedOut
    raise TimedOut()
@@ -250,7 +265,7 @@ async def test_edit_prompt_failure_preserves_revision_and_durable_focus(tmp_path
  await repo.transition(q['id'],'NEW','MANUAL_INPUT'); await repo.transition(q['id'],'MANUAL_INPUT','REVIEW')
  service=QuestionService(repo,{},None); await service.begin_edit(q['id'],rid)
  bot=OperatorBot(1,SimpleNamespace(repo=repo))
- class Message:
+ class Message(StandaloneMessage):
   async def reply_text(self,*args,**kwargs):
    from telegram.error import BadRequest
    raise BadRequest('invalid')
@@ -365,7 +380,7 @@ async def test_input_focus_conflicts_fail_closed_and_duplicate_text_is_a_noop(tm
 async def test_manual_prompt_is_exact_ordinary_message_and_no_force_reply(tmp_path):
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'prompt-ordinary','question_text':'q'})
  service=QuestionService(repo,{},None); q=await service.begin_manual(q['id'])
- class Message:
+ class Message(StandaloneMessage):
   def __init__(self): self.calls=[]
   async def reply_text(self,*args,**kwargs): self.calls.append((args,kwargs)); return SimpleNamespace(message_id=33)
  message=Message(); bot=OperatorBot(1,SimpleNamespace(repo=repo))
@@ -415,7 +430,7 @@ async def test_init_migrates_previous_schema_without_losing_data(tmp_path):
 @pytest.mark.asyncio
 async def test_codex_switch_callback_preserves_manual_and_edit_input_contexts(tmp_path):
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); service=QuestionService(repo,{},None)
- class Message:
+ class Message(StandaloneMessage):
   async def reply_text(self,*args,**kwargs): return SimpleNamespace(message_id=1)
  class Query:
   def __init__(self,data): self.data=data; self.message=Message()
@@ -439,7 +454,7 @@ async def test_codex_switch_callback_preserves_manual_and_edit_input_contexts(tm
 @pytest.mark.asyncio
 async def test_codex_error_manual_callback_and_switch_then_manual_use_ordinary_text(tmp_path):
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); service=QuestionService(repo,{},None)
- class Message:
+ class Message(StandaloneMessage):
   def __init__(self): self.messages=[]; self.next_id=40
   async def reply_text(self,*args,**kwargs): self.messages.append((args,kwargs)); self.next_id+=1; return SimpleNamespace(message_id=self.next_id)
   async def edit_reply_markup(self,**kwargs): pass
@@ -473,7 +488,7 @@ async def test_repeated_edit_prompts_are_context_bound_and_same_callback_replays
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); service=QuestionService(repo,{},None)
  q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'repeated-edit','question_text':'q'})
  r1=await repo.create_answer_revision(q['id'],'manual','original'); await repo.set_current_answer_revision(q['id'],r1); await repo.transition(q['id'],'NEW','MANUAL_INPUT'); await repo.transition(q['id'],'MANUAL_INPUT','REVIEW')
- class Message:
+ class Message(StandaloneMessage):
   def __init__(self): self.messages=[]; self.next_id=90
   async def reply_text(self,*args,**kwargs): self.messages.append((args,kwargs)); self.next_id+=1; return SimpleNamespace(message_id=self.next_id)
   async def edit_reply_markup(self,**kwargs): pass
@@ -505,7 +520,7 @@ async def test_ignore_from_manual_input_clears_its_durable_focus(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_codex_running_card_is_visible_before_runner_and_binds_profile_across_switch(tmp_path):
+async def test_CODEX_RUNNING_STANDALONE_TEST_and_CODEX_REVIEW_STANDALONE_TEST(tmp_path):
  """CODEX_RUNNING is a real card, not a state that a fast runner can hide."""
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
  q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'running-card','question_text':'original question'})
@@ -515,7 +530,7 @@ async def test_codex_running_card_is_visible_before_runner_and_binds_profile_acr
    started.set(); await release.wait(); return 'deterministic test answer'
  class Prompts:
   def build(self,question): return 'prompt'
- class Message:
+ class Message(StandaloneMessage):
   def __init__(self): self.calls=[]; self.next_id=10
   async def reply_text(self,*args,**kwargs):
    self.calls.append((args,kwargs)); self.next_id+=1
@@ -531,6 +546,7 @@ async def test_codex_running_card_is_visible_before_runner_and_binds_profile_acr
  running=message.calls[1]
  assert query.acks and message.calls[0][0]==('DISABLE',)
  assert 'Codex готовит черновик через codex1' in running[0][0]
+ assert_standalone(running)
  assert [b.text for row in running[1]['reply_markup'].inline_keyboard for b in row]==['🤖 Сменить Codex']
  assert not started.is_set() and (await repo.get_question(q['id']))['status']=='CODEX_RUNNING'
  attempt=await repo.get_current_draft_attempt(q['id']); assert attempt['codex_profile']=='codex1'
@@ -548,6 +564,7 @@ async def test_codex_running_card_is_visible_before_runner_and_binds_profile_acr
  assert (current['status'],current['current_answer_revision_id'])==('REVIEW',revision['id'])
  assert (revision['source'],revision['text'],revision['draft_attempt_id'])==('codex','deterministic test answer',attempt['id'])
  review=message.calls[-1]; assert '🤖 Подготовил: codex1' in review[0][0] and '🟢 Сейчас активен: codex2' in review[0][0]
+ assert_standalone(review)
  assert [b.text for row in review[1]['reply_markup'].inline_keyboard for b in row]==['✅ Отправить','✏️ Редактировать','🚫 Игнорировать','🤖 Сменить Codex']
  assert not any(word in review[0][0] for word in ('Сгенерировать','Сгенерировать заново','Перегенерировать'))
  await db.close()
@@ -562,7 +579,7 @@ async def test_codex_running_card_message_failure_is_durable_and_does_not_cancel
   async def run(self,*args): started.set(); raise RuntimeError('runner failure')
  class Prompts:
   def build(self,question): return 'prompt'
- class Message:
+ class Message(StandaloneMessage):
   async def reply_text(self,*args,**kwargs):
    from telegram.error import BadRequest
    raise BadRequest('invalid running card')
@@ -589,7 +606,7 @@ async def test_fast_codex_runner_still_sends_running_card_before_review(tmp_path
   async def run(self,*args): events.append('runner'); return 'fast answer'
  class Prompts:
   def build(self,question): return 'prompt'
- class Message:
+ class Message(StandaloneMessage):
   async def reply_text(self,text,**kwargs):
    events.append('review' if 'fast answer' in text else 'running')
    if 'fast answer' in text: complete.set()
@@ -602,4 +619,59 @@ async def test_fast_codex_runner_still_sends_running_card_before_review(tmp_path
  await bot.callback(SimpleNamespace(callback_query=Query(),effective_user=SimpleNamespace(id=1),effective_chat=SimpleNamespace(id=1,type='private')),None)
  await asyncio.wait_for(complete.wait(),1)
  assert events.index('running') < events.index('runner') < events.index('review')
+ await db.close()
+
+
+@pytest.mark.asyncio
+async def test_TELEGRAM_STANDALONE_SEND_PRIMITIVE_TEST_and_SWITCH_MENU_STANDALONE_MESSAGE_TEST(tmp_path):
+ """The Bot boundary, not just rendered text, proves the standalone contract."""
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'standalone-switch','question_text':'q'})
+ attempt,_=await repo.claim_codex(q['id']); await repo.finish_draft_success(attempt,'T4 deterministic Codex answer')
+ rid=await repo.create_answer_revision(q['id'],'codex','T4 deterministic Codex answer',draft_attempt_id=attempt)
+ await repo.set_current_answer_revision(q['id'],rid); await repo.transition(q['id'],'CODEX_RUNNING','REVIEW')
+ class Bot:
+  def __init__(self): self.calls=[]
+  async def send_message(self,**kwargs): self.calls.append(kwargs); return SimpleNamespace(message_id=len(self.calls)+50)
+ class Message:
+  chat_id=286579139
+  def __init__(self,bot): self.bot=bot
+  def get_bot(self): return self.bot
+ class Query:
+  def __init__(self,data,message): self.data,self.message,self.acks=data,message,[]
+  async def answer(self,*args,**kwargs): self.acks.append((args,kwargs))
+ def update(query): return SimpleNamespace(callback_query=query,effective_user=SimpleNamespace(id=286579139),effective_chat=SimpleNamespace(id=286579139,type='private'))
+ transport=Bot(); message=Message(transport); bot=OperatorBot(286579139,SimpleNamespace(repo=repo))
+ await bot.callback(update(Query(encode('choose_codex',q['id'],rid,'menu'),message)),None)
+ assert len(transport.calls)==1 # SWITCH_MENU_STANDALONE_MESSAGE_TEST
+ chooser=transport.calls[0]
+ assert chooser['chat_id']==286579139 and '🤖 СМЕНИТЬ CODEX' in chooser['text'] and 'Сейчас: codex1' in chooser['text']
+ assert isinstance(chooser['reply_markup'],InlineKeyboardMarkup)
+ assert [b.text for row in chooser['reply_markup'].inline_keyboard for b in row]==['codex1 ✓','codex2','codex3'] # SWITCH_MENU_EXACT_PROFILE_BUTTONS_TEST
+ assert chooser.get('reply_parameters') is None and chooser.get('reply_to_message_id') is None and not isinstance(chooser['reply_markup'],ForceReply)
+ after=await repo.get_question(q['id'])
+ assert (after['status'],after['current_answer_revision_id'])==('REVIEW',rid) # SWITCH_MENU_STATE_PRESERVED_TEST
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts WHERE question_id=?',(q['id'],))).fetchone())[0]==1 # SWITCH_MENU_NO_CODEX_ATTEMPT_TEST
+ await bot.callback(update(Query(encode('choose_codex',q['id'],rid,'codex2'),message)),None)
+ assert await repo.active_codex_profile()=='codex2' and (await repo.get_question(q['id']))['status']=='REVIEW' # SWITCH_CHOICE_GLOBAL_PROFILE_ONLY_TEST
+ result=transport.calls[-1]
+ assert result.get('reply_parameters') is None and result.get('reply_to_message_id') is None and not isinstance(result.get('reply_markup'),ForceReply) # SWITCH_CHOICE_STANDALONE_RESULT_TEST
+ await db.close()
+
+
+@pytest.mark.asyncio
+async def test_MANUAL_PROMPT_STANDALONE_TEST_and_EDIT_PROMPT_STANDALONE_TEST(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); service=QuestionService(repo,{},None)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'standalone-prompts','question_text':'q'})
+ class Bot:
+  def __init__(self): self.calls=[]
+  async def send_message(self,**kwargs): self.calls.append(kwargs); return SimpleNamespace(message_id=len(self.calls))
+ class Message:
+  chat_id=1
+  def __init__(self,b): self.b=b
+  def get_bot(self): return self.b
+ wire=Bot(); message=Message(wire); operator=OperatorBot(1,SimpleNamespace(repo=repo))
+ await operator.prompt(message,await service.begin_manual(q['id']),'manual_answer'); assert_standalone(((),wire.calls[-1]))
+ rid=await service.ordinary_text('answer'); await service.begin_edit(q['id'],rid)
+ await operator.prompt(message,await repo.get_question(q['id']),'edit_answer',rid); assert_standalone(((),wire.calls[-1]))
  await db.close()
