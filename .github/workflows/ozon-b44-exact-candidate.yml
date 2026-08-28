@@ -1,0 +1,50 @@
+name: Ozon B44 FBO Posting Get exact candidate
+on:
+  push:
+    branches: [feature/ozon-b44-fbo-posting-get-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b44-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B44_FBO_POSTING_GET_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b44_fbo_posting_get_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B44_FBO_POSTING_GET_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B44_FBO_POSTING_GET_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B44_FBO_POSTING_GET_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B44 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B44_FBO_POSTING_GET_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='35d2aefdeef07dd6f22caf248336bb3ad764be6e6d84b57a4e33717098f0af24';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='6fc9bdba124d82c4da224d3df7fade9ecab3f1efee5aeb8af51036f63810b393'"
+      - name: Materialize exact B44 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b44_fbo_posting_get_candidate.py --repo-root . --work-root /tmp/ozon-b44-work --out /tmp/ozon-b44-exact
+      - name: Verify B43 base and B44 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B43_FBP_POSTING_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b44-work/b43-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B44_FBO_POSTING_GET_REGRESSION_2026-08-28.mjs /tmp/ozon-b44-exact
+          find /tmp/ozon-b44-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b44-fbo-posting-get-candidate, path: /tmp/ozon-b44-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --system core.longpaths true
+      - name: Verify B44 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B44_FBO_POSTING_GET_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='35d2aefdeef07dd6f22caf248336bb3ad764be6e6d84b57a4e33717098f0af24';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='6fc9bdba124d82c4da224d3df7fade9ecab3f1efee5aeb8af51036f63810b393'"
+      - name: Materialize exact B44 candidate
+        shell: pwsh
+        run: |
+          $work='C:\b44w'; $out='C:\b44o'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b44_fbo_posting_get_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B43 base and B44 gates
+        shell: pwsh
+        run: |
+          $work='C:\b44w'; $out='C:\b44o'; $b43=Join-Path $work 'b43-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B43_FBP_POSTING_READS_REGRESSION_2026-08-28.mjs $b43; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B44_FBO_POSTING_GET_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
