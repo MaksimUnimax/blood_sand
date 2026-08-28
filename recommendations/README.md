@@ -41,10 +41,13 @@
 ### Architecture/implementation design — Marketplace Question Operator
 
 - `MARKETPLACE_QUESTION_OPERATOR_BOT.md` — краткий актуальный overview Telegram-first operator workflow.
-- `MARKETPLACE_QUESTION_OPERATOR_A0_ARCHITECTURE.md` — implementation authority V1: runtime topology, Telegram-first gate, optional Codex, three-profile control, retention, secrets and development gates.
+- `MARKETPLACE_QUESTION_OPERATOR_A0_ARCHITECTURE.md` — implementation authority V1: runtime topology, Telegram-first gate, optional Codex, profile control, review/send gate, retention и security.
 - `MARKETPLACE_QUESTION_OPERATOR_A1_API_CONTRACTS.md` — точные Ozon/WB question read/write contracts, auth fields, pagination, send/reconciliation and live-credential acceptance gate.
-- `MARKETPLACE_QUESTION_OPERATOR_A2_STATE_TELEGRAM_CONTRACT.md` — SQLite schema refinement, answer revisions, Q-ID correlation, state transitions, Telegram callback/input contract and stale/double-send protection.
+- `MARKETPLACE_QUESTION_OPERATOR_A2_STATE_TELEGRAM_CONTRACT.md` — SQLite schema, answer revisions, Q-ID correlation, corrected state transitions, callback/input contract and stale/double-send protection.
+- `MARKETPLACE_QUESTION_OPERATOR_TELEGRAM_UX_CONTRACT.md` — **самый точный authority для Telegram меню и кнопок**: `Сменить Codex` в каждом меню, manual/Codex review, отсутствие successful-review regeneration и специальный CODEX_ERROR switch → confirmation → `Перегенерировать` flow.
 - `SERVER_CAPACITY_AUDIT_2026-08-27.md` — исходный pre-deployment аудит shared-сервера.
+
+Если старый MQO prompt/doc противоречит `MARKETPLACE_QUESTION_OPERATOR_TELEGRAM_UX_CONTRACT.md` по меню, кнопкам или смене Codex, **Telegram UX Contract имеет приоритет**.
 
 ## Контур 1 — deterministic VK recommendation system
 
@@ -76,15 +79,23 @@ Wildberries questions ┘                         ↓
                                       │          │             │
                                   Manual       Codex         Ignore
                                       │          │
-                                      │          ↓
-                                      │      Codex draft
+                                      ▼          ▼
+                                  input text   Codex run
                                       │          │
-                                      └──────┬───┘
-                                             ↓
-                                      Telegram review
-                                      ↓      ↓      ↓
-                                   Send    Edit   Ignore
-                                      ↓
+                                      │      ┌───┴────┐
+                                      │      │        │
+                                      │   success   error
+                                      │      │        │
+                                      ▼      ▼        ▼
+                                    REVIEW REVIEW  CODEX_ERROR
+                                      │      │        │
+                                      └──┬───┘        ├─ Repeat
+                                         │            └─ Switch Codex
+                                         ▼
+                              Send / Edit / Ignore
+                                         │
+                                  explicit Send
+                                         ↓
                               marketplace API reply
 ```
 
@@ -97,7 +108,67 @@ NO_HUMAN_SEND_ACTION -> NO_MARKETPLACE_REPLY
 
 Codex является только optional `prompt -> answer text` engine. Новый вопрос не отправляется Codex автоматически.
 
-Каждому вопросу присваивается внутренний ID вида `Q-000184`; исходный вопрос и этот ID показываются вместе с любым manual/Codex ответом или ошибкой, чтобы Telegram-сообщения нельзя было перепутать.
+Каждому вопросу присваивается внутренний ID вида `Q-000184`; исходный вопрос и этот ID показываются вместе с manual/Codex/edited ответом или ошибкой.
+
+### NEW menu
+
+```text
+[✍️ Ответить самому]
+[🤖 Отправить в Codex]
+[🚫 Игнорировать]
+[🤖 Сменить Codex]
+```
+
+### Manual
+
+```text
+Ответить самому
+ -> ввод текста для exact Q-ID
+ -> immutable manual revision
+ -> REVIEW
+ -> [✅ Отправить] [✏️ Редактировать] [🚫 Игнорировать] [🤖 Сменить Codex]
+```
+
+Ручной текст не отправляется автоматически. Marketplace write возможен только после `✅ Отправить`.
+
+### Codex success
+
+```text
+Отправить в Codex
+ -> CODEX_RUNNING
+ -> success
+ -> REVIEW
+ -> [✅ Отправить] [✏️ Редактировать] [🚫 Игнорировать] [🤖 Сменить Codex]
+```
+
+В успешном REVIEW **нет** `Сгенерировать`, `Сгенерировать заново` или `Перегенерировать`.
+
+### Codex error
+
+```text
+CODEX_ERROR
+ -> [🔄 Повторить]
+ -> [✍️ Ответить самому]
+ -> [🚫 Игнорировать]
+ -> [🤖 Сменить Codex]
+```
+
+`Повторить` запускает новый attempt того же Q-ID профилем, активным при нажатии.
+
+Если из CODEX_ERROR нажать `🤖 Сменить Codex`:
+
+```text
+выбор codex1/codex2/codex3
+ -> сохранить active profile
+ -> НЕ запускать Codex
+ -> confirmation menu:
+    [🔄 Перегенерировать]
+    [✍️ Ответить самому]
+    [🚫 Игнорировать]
+    [🤖 Сменить Codex]
+```
+
+Только `🔄 Перегенерировать` после этого запускает новый attempt выбранным профилем.
 
 ## Codex profiles for operator service
 
@@ -109,7 +180,39 @@ codex2 -> /root/.codex_second
 codex3 -> /root/.codex_third
 ```
 
-Активный профиль выбирается в Telegram. При лимите/ошибке оператор может сменить профиль и отдельной кнопкой повторить генерацию того же Q-ID. Автоматического failover нет.
+Hard UX invariant:
+
+```text
+EVERY QUESTION MENU -> [🤖 Сменить Codex]
+```
+
+Кнопка должна быть доступна в NEW, MANUAL_INPUT, CODEX_RUNNING, CODEX_ERROR, REVIEW, EDITING, IGNORED, SENDING, SENT, SEND_FAILED и SEND_UNKNOWN.
+
+В обычном состоянии выбор нового профиля меняет только `active_codex_profile` и возвращает в то же меню. Автоматического failover/генерации нет.
+
+Пользовательский UX смены профиля **не зависит от `/codex`**.
+
+## Send-state UI
+
+```text
+IGNORED:
+[🤖 Сменить Codex]
+
+SENDING:
+[🤖 Сменить Codex]
+
+SENT:
+[🤖 Сменить Codex]
+
+SEND_FAILED:
+[🔄 Повторить отправку]
+[🤖 Сменить Codex]
+
+SEND_UNKNOWN:
+[🤖 Сменить Codex]
+```
+
+`SEND_UNKNOWN` не retry-ится вслепую: сначала marketplace-specific reconciliation по A1.
 
 ## Server checkout/runtime policy
 
@@ -131,18 +234,15 @@ OpenDesign repair завершён с `OPENDESIGN_REPAIR_PASS`.
 
 ## Текущая последовательность Marketplace Question Operator
 
+Архитектурные A0/A1/A2 документы уже существуют; Telegram UX был отдельно скорректирован и заморожен 2026-08-28.
+
+Текущий gate перед продолжением live Telegram acceptance:
+
 ```text
-A0 architecture freeze                         DONE
-A1 Ozon/WB API contracts                       DONE (live credential acceptance later)
-A2 state/DB/Telegram callback contract          DONE
-A3 project scaffold + SQLite/state machine      NEXT
-A4 marketplace read adapters
-A5 Telegram-first moderation
-A6 Codex runner/profile switching/retry
-A7 marketplace write adapters
-A8 interactive secrets + live credential smoke
-A9 systemd/recovery/5-day retention
-A10 controlled real end-to-end test
+runtime implementation
+ -> align with MARKETPLACE_QUESTION_OPERATOR_TELEGRAM_UX_CONTRACT.md
+ -> offline exact-menu/state tests
+ -> only then resume T4 live acceptance
 ```
 
-Codex writes code only from the frozen implementation contracts. It is not responsible for inventing product architecture.
+Codex writes code only from the frozen implementation contracts. It is not responsible for inventing product architecture or button semantics.
