@@ -1,0 +1,52 @@
+name: Ozon B25 Cancellation Read Completion exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b25-cancellation-read-completion-2026-08-28
+    paths:
+      - .github/workflows/ozon-b25-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_CANCELLATION_READ_COMPLETION_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b25_cancellation_read_completion_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_CANCELLATION_READ_COMPLETION_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_CANCELLATION_READ_COMPLETION_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_CANCELLATION_READ_COMPLETION_CANDIDATE_MANIFEST_2026-08-28.md
+permissions:
+  contents: read
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact B25 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b25_cancellation_read_completion_candidate.py --repo-root . --work-root /tmp/ozon-b25-work --out /tmp/ozon-b25-exact
+      - name: Verify B24 base and B25 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B24_FBO_SUPPLY_STATUS_ACT_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b25-work/b24-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_CANCELLATION_READ_COMPLETION_REGRESSION_2026-08-28.mjs /tmp/ozon-b25-exact
+          find /tmp/ozon-b25-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b25-cancellation-read-completion-candidate
+          path: /tmp/ozon-b25-exact
+          if-no-files-found: error
+          retention-days: 3
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact B25 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b25-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b25-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b25_cancellation_read_completion_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B24 base and B25 gates on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b25-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b25-exact"
+          $b24 = Join-Path $work "b24-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B24_FBO_SUPPLY_STATUS_ACT_READS_REGRESSION_2026-08-28.mjs $b24; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_CANCELLATION_READ_COMPLETION_REGRESSION_2026-08-28.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
