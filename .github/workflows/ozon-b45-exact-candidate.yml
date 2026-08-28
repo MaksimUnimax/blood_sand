@@ -1,0 +1,50 @@
+name: Ozon B45 Seller Action Candidates exact candidate
+on:
+  push:
+    branches: [feature/ozon-b45-seller-action-candidates-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b45-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B45_SELLER_ACTION_CANDIDATES_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b45_seller_action_candidates_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B45_SELLER_ACTION_CANDIDATES_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B45_SELLER_ACTION_CANDIDATES_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B45_SELLER_ACTION_CANDIDATES_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B45 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B45_SELLER_ACTION_CANDIDATES_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='b9a43fb2ba6d5481cd66298539dc1ff4d9d0064b4c73a3be2bc2ae091d9da0ca';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='26525aab728a6360335e286e72a9b60c4672f93410a3acc750e4cd2543c6b94a'"
+      - name: Materialize exact B45 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b45_seller_action_candidates_candidate.py --repo-root . --work-root /tmp/ozon-b45-work --out /tmp/ozon-b45-exact
+      - name: Verify B44 base and B45 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B44_FBO_POSTING_GET_REGRESSION_2026-08-28.mjs /tmp/ozon-b45-work/b44-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B45_SELLER_ACTION_CANDIDATES_REGRESSION_2026-08-28.mjs /tmp/ozon-b45-exact
+          find /tmp/ozon-b45-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b45-seller-action-candidates-candidate, path: /tmp/ozon-b45-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --system core.longpaths true
+      - name: Verify B45 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B45_SELLER_ACTION_CANDIDATES_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='b9a43fb2ba6d5481cd66298539dc1ff4d9d0064b4c73a3be2bc2ae091d9da0ca';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='26525aab728a6360335e286e72a9b60c4672f93410a3acc750e4cd2543c6b94a'"
+      - name: Materialize exact B45 candidate
+        shell: pwsh
+        run: |
+          $work='C:\b45w'; $out='C:\b45o'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b45_seller_action_candidates_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B44 base and B45 gates
+        shell: pwsh
+        run: |
+          $work='C:\b45w'; $out='C:\b45o'; $b44=Join-Path $work 'b44-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B44_FBO_POSTING_GET_REGRESSION_2026-08-28.mjs $b44; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B45_SELLER_ACTION_CANDIDATES_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
