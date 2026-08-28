@@ -1,25 +1,13 @@
 # Wildberries product links registry
 
-Статус: рабочий реестр публичных ссылок Wildberries для оберегов, используемых при ручной выдаче рекомендаций и последующей интеграции.
+Статус: рабочий реестр публичных ссылок Wildberries для оберегов, используемых при ручной выдаче рекомендаций и последующей интеграции.  
+Current recommendation authority: `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`.
 
 ## Scope
 
-В реестр включаются **только карточки Wildberries с `subjectName = "Обереги"`**.
-
-Не включаются:
-
-- `Четки`;
-- `Украшения для автомобиля`;
-- знаки зодиака и другие карточки, находящиеся в категории `Четки`;
-- открытки и другие несвязанные товары.
+В реестр включаются только карточки Wildberries с `subjectName = "Обереги"`.
 
 Источник: `cards_list` Wildberries Content API, bridge `wildberries-llm-api-bridge v0.1.2`, выгрузка 2026-08-27.
-
-Пагинация пройдена полностью:
-
-- первая страница: 100 карточек, из них 24 с `subjectName = "Обереги"`;
-- вторая страница: 8 карточек, оберегов нет;
-- следовательно, текущий реестр оберегов содержит 24 карточки.
 
 ## Формат публичной ссылки
 
@@ -27,76 +15,121 @@
 https://www.wildberries.ru/catalog/{nmID}/detail.aspx
 ```
 
+### Hard customer naming rule
+
+Для `nmID = 267696739` customer-facing название всегда ровно:
+
+```text
+Печать Велеса
+```
+
+Никакие внутренние aliases или технические пояснения к названию не добавляются.
+
 ## Обереги
 
-| WB observed name | recommendation identity | nmID | Wildberries URL | Примечание |
+| WB observed name | recommendation identity | nmID | Wildberries URL | Current V2 note |
 |---|---|---:|---|---|
-| Макошь | Макошь | 428251291 | https://www.wildberries.ru/catalog/428251291/detail.aspx | — |
-| Родимич | Родимич | 267829272 | https://www.wildberries.ru/catalog/267829272/detail.aspx | — |
-| Хорс | Хорс | 428256332 | https://www.wildberries.ru/catalog/428256332/detail.aspx | reserve V1 |
-| Мара | Мара | 428260533 | https://www.wildberries.ru/catalog/428260533/detail.aspx | — |
-| Стрибог | Стрибог | 428247858 | https://www.wildberries.ru/catalog/428247858/detail.aspx | reserve V1 |
-| Семаргл | Семаргл | 428253224 | https://www.wildberries.ru/catalog/428253224/detail.aspx | — |
-| Всеславец | Всеславец | 267824123 | https://www.wildberries.ru/catalog/267824123/detail.aspx | — |
-| Сварог | Сварог | 428237614 | https://www.wildberries.ru/catalog/428237614/detail.aspx | — |
-| Чур | Чур | 481133505 | https://www.wildberries.ru/catalog/481133505/detail.aspx | — |
-| Чернобог | Чернобог | 267822360 | https://www.wildberries.ru/catalog/267822360/detail.aspx | reserve V1 |
-| Боговник | Боговник | 267824122 | https://www.wildberries.ru/catalog/267824122/detail.aspx | — |
-| Триглав | Триглав | 267829273 | https://www.wildberries.ru/catalog/267829273/detail.aspx | reserve V1 |
-| Звезда Лады | Звезда Лады | 428267039 | https://www.wildberries.ru/catalog/428267039/detail.aspx | — |
-| Ратиборец | Ратиборец | 267829271 | https://www.wildberries.ru/catalog/267829271/detail.aspx | reserve V1 |
-| Белобог | Белобог | 267822359 | https://www.wildberries.ru/catalog/267822359/detail.aspx | — |
-| Даждьбог | Даждьбог | 428241264 | https://www.wildberries.ru/catalog/428241264/detail.aspx | — |
-| Алатырь (Крест Сварога) | Алатырь | 267696742 | https://www.wildberries.ru/catalog/267696742/detail.aspx | — |
-| Знак Велеса | Велес | 267696740 | https://www.wildberries.ru/catalog/267696740/detail.aspx | WB display name differs from recommendation identity |
-| Жива | Жива | 428230545 | https://www.wildberries.ru/catalog/428230545/detail.aspx | — |
-| Молвинец | Молвинец | 267829270 | https://www.wildberries.ru/catalog/267829270/detail.aspx | reserve V1 |
-| Знич | Знич | 267824125 | https://www.wildberries.ru/catalog/267824125/detail.aspx | — |
-| Печать Велеса | Медвежья лапа | 267696739 | https://www.wildberries.ru/catalog/267696739/detail.aspx | В recommendation logic используется как Медвежья лапа; для Волка запрещена |
-| Перун | Перун | 428244941 | https://www.wildberries.ru/catalog/428244941/detail.aspx | — |
-| Звезда Руси | Звезда Руси | 267696741 | https://www.wildberries.ru/catalog/267696741/detail.aspx | WB-only относительно текущего Ozon master; не используется в матрице V1 |
+| Макошь | Макошь | 428251291 | https://www.wildberries.ru/catalog/428251291/detail.aspx | active Лебедь female |
+| Родимич | Родимич | 267829272 | https://www.wildberries.ru/catalog/267829272/detail.aspx | active male rows |
+| Хорс | Хорс | 428256332 | https://www.wildberries.ru/catalog/428256332/detail.aspx | reserve |
+| Мара | Мара | 428260533 | https://www.wildberries.ru/catalog/428260533/detail.aspx | active Лиса female |
+| Стрибог | Стрибог | 428247858 | https://www.wildberries.ru/catalog/428247858/detail.aspx | reserve |
+| Семаргл | Семаргл | 428253224 | https://www.wildberries.ru/catalog/428253224/detail.aspx | active Змей |
+| Всеславец | Всеславец | 267824123 | https://www.wildberries.ru/catalog/267824123/detail.aspx | inactive automatic |
+| Сварог | Сварог | 428237614 | https://www.wildberries.ru/catalog/428237614/detail.aspx | active male Дева/Конь |
+| Чур | Чур | 481133505 | https://www.wildberries.ru/catalog/481133505/detail.aspx | active Тур |
+| Чернобог | Чернобог | 267822360 | https://www.wildberries.ru/catalog/267822360/detail.aspx | **active Лиса male** |
+| Боговник | Боговник | 267824122 | https://www.wildberries.ru/catalog/267824122/detail.aspx | inactive automatic |
+| Триглав | Триглав | 267829273 | https://www.wildberries.ru/catalog/267829273/detail.aspx | reserve |
+| Звезда Лады | Звезда Лады | 428267039 | https://www.wildberries.ru/catalog/428267039/detail.aspx | active female rows |
+| Ратиборец | Ратиборец | 267829271 | https://www.wildberries.ru/catalog/267829271/detail.aspx | reserve |
+| Белобог | Белобог | 267822359 | https://www.wildberries.ru/catalog/267822359/detail.aspx | inactive automatic |
+| Даждьбог | Даждьбог | 428241264 | https://www.wildberries.ru/catalog/428241264/detail.aspx | active only Раса |
+| Алатырь (Крест Сварога) | Алатырь | 267696742 | https://www.wildberries.ru/catalog/267696742/detail.aspx | active V2 |
+| Знак Велеса | Велес | 267696740 | https://www.wildberries.ru/catalog/267696740/detail.aspx | active Волк; WB display differs |
+| Жива | Жива | 428230545 | https://www.wildberries.ru/catalog/428230545/detail.aspx | active female Дева/Конь |
+| Молвинец | Молвинец | 267829270 | https://www.wildberries.ru/catalog/267829270/detail.aspx | active Бусел male |
+| Знич | Знич | 267824125 | https://www.wildberries.ru/catalog/267824125/detail.aspx | inactive automatic |
+| Печать Велеса | Печать Велеса | 267696739 | https://www.wildberries.ru/catalog/267696739/detail.aspx | active Медведь both; Волк forbidden |
+| Перун | Перун | 428244941 | https://www.wildberries.ru/catalog/428244941/detail.aspx | active Орёл |
+| Звезда Руси | Звезда Руси | 267696741 | https://www.wildberries.ru/catalog/267696741/detail.aspx | not in automatic V2 |
 
-## Важные расхождения с текущей Ozon/recommendation номенклатурой
+## Важные расхождения
 
 ### Велес
 
-Wildberries:
+Wildberries card:
 
 ```text
 Знак Велеса
 nmID = 267696740
 ```
 
-Для recommendation system связывается с identity `Велес`.
+Recommendation identity: `Велес`.
 
 ### Печать Велеса
 
-Wildberries:
+Wildberries card:
 
 ```text
 Печать Велеса
 nmID = 267696739
 ```
 
-Для recommendation system нормализуется как:
+Recommendation identity и customer-facing label: `Печать Велеса`.
+
+Используется только для Чертога Медведя. Для Волка запрещён; Волк получает отдельный `Велес`.
+
+### Чернобог
+
+Current V2:
 
 ```text
-Медвежья лапа
+Лиса + мужчина → Чернобог
 ```
 
-и **не используется для Чертога Волка**.
+WB:
+
+```text
+https://www.wildberries.ru/catalog/267822360/detail.aspx
+```
 
 ### Звезда Руси
 
-Карточка существует в категории `Обереги` Wildberries, но отсутствует в текущем Ozon master и в `KIP_RECOMMENDATION_MATRIX_V1`. Поэтому наличие ссылки не делает её автоматически допустимой рекомендацией.
+Карточка существует, но наличие ссылки само по себе не делает её automatic recommendation.
 
 ### Нет в категории `Обереги` текущей WB-выгрузки
 
-В текущих карточках с `subjectName = "Обереги"` не найдены:
+Не найдены:
 
-- `Колядник`;
-- `Громовик`.
+- Колядник;
+- Громовик.
 
-Они не добавляются из категории `Четки`, поскольку scope этого реестра намеренно ограничен только категорией `Обереги`.
+Current matrix resolves `Ворон + мужчина + Wildberries → Алатырь`; реестр ссылок не должен сам подменять любой другой matrix result.
 
-Следствие для ручной рекомендации: если матрица выдаёт товар, отсутствующий в этом WB-реестре, использовать доступную ссылку другого маркетплейса (например Ozon), а не подменять рекомендацию другим товаром.
+## Recommendation usage rule
+
+Сначала применяется `RECOMMENDATION_MATRIX.md`, затем из этого registry берётся ссылка. Нельзя выбирать товар из registry по остатку/цене/продажам на лету.
+
+Актуальные примеры:
+
+```text
+25.03 + male
+→ Лиса
+→ Чернобог
+→ https://www.wildberries.ru/catalog/267822360/detail.aspx
+```
+
+```text
+25.03 + female
+→ Лиса
+→ Мара
+→ https://www.wildberries.ru/catalog/428260533/detail.aspx
+```
+
+```text
+16.01 + male/female
+→ Медведь
+→ Печать Велеса
+→ https://www.wildberries.ru/catalog/267696739/detail.aspx
+```
