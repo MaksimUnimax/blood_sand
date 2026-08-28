@@ -19,21 +19,17 @@ class QuestionService:
   mid=await self.transport.question(q)
   if mid: await self.repo.persist_question_message_id(qid,mid); await self.repo.clear_delivery_failure(qid,'INITIAL_CARD')
   return bool(mid)
- async def manual(self,qid,prompt_id):
-  await self.repo.transition(qid,'NEW','MANUAL_INPUT'); await self.repo.create_telegram_input(prompt_id,qid,'manual_answer')
+ async def manual(self,qid,prompt_id=None):
+  # Compatibility entry point: ordinary text focus is never a prompt-ID lookup.
+  return await self.begin_manual(qid)
  async def begin_manual(self,qid):
-  await self.repo.transition(qid,'NEW','MANUAL_INPUT')
- async def edit(self,qid,prompt_id,expected_revision_id=None):
-  q=await self.repo.get_question(qid)
-  if not q or q['current_answer_revision_id']!=expected_revision_id: raise StaleState('STALE_STATE')
-  await self.repo.transition(qid,'REVIEW','EDITING'); await self.repo.create_telegram_input(prompt_id,qid,'edit_answer',expected_revision_id)
+  return await self.repo.start_manual_input(qid)
+ async def edit(self,qid,prompt_id=None,expected_revision_id=None):
+  return await self.begin_edit(qid,expected_revision_id)
  async def begin_edit(self,qid,expected_revision_id):
-  q=await self.repo.get_question(qid)
-  if not q or q['current_answer_revision_id']!=expected_revision_id: raise StaleState('STALE_STATE')
-  await self.repo.transition(qid,'REVIEW','EDITING')
-  return q
- async def reply(self,prompt_id,text):
-  return await self.repo.consume_reply(prompt_id,text)
+  return await self.repo.start_edit_input(qid,expected_revision_id)
+ async def ordinary_text(self,text):
+  return await self.repo.consume_active_text(text)
  async def ignore(self,qid):
   q=await self.repo.get_question(qid); await self.repo.transition(qid,q['status'],'IGNORED')
  async def send(self,qid,rid):

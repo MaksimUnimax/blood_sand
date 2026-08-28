@@ -137,15 +137,14 @@ async def test_frozen_button_sets_include_switch_and_review_has_no_regeneration(
 
 
 @pytest.mark.asyncio
-async def test_manual_and_edit_are_exact_reply_correlations(tmp_path):
+async def test_manual_and_edit_use_single_durable_text_focus(tmp_path):
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'x','question_text':'q'})
  service=QuestionService(repo,{},None)
  await service.manual(q['id'],101)
- with pytest.raises(StaleState): await service.reply(999,'wrong')
- first=await service.reply(101,'manual')
- with pytest.raises(StaleState): await service.reply(101,'duplicate')
+ first=await service.ordinary_text('manual')
+ assert await service.ordinary_text('duplicate') is None
  await service.edit(q['id'],102,first)
- second=await service.reply(102,'edited')
+ second=await service.ordinary_text('edited')
  assert second != first and (await repo.get_answer_revision(first))['text']=='manual'
  assert (await repo.get_answer_revision(second))['based_on_revision_id']==first
  await db.close()
@@ -243,7 +242,7 @@ async def test_initial_failure_is_durable_and_requires_explicit_recovery(tmp_pat
  await db.close()
 
 @pytest.mark.asyncio
-async def test_edit_prompt_failure_preserves_revision_and_has_no_correlation(tmp_path):
+async def test_edit_prompt_failure_preserves_revision_and_durable_focus(tmp_path):
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
  q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'edit-timeout','question_text':'q'})
  rid=await repo.create_answer_revision(q['id'],'manual','original'); await repo.set_current_answer_revision(q['id'],rid)
@@ -259,7 +258,8 @@ async def test_edit_prompt_failure_preserves_revision_and_has_no_correlation(tmp
  current=await repo.get_question(q['id'])
  assert current['status']=='EDITING' and current['current_answer_revision_id']==rid
  assert (await repo.get_delivery_failure(q['id'],'EDIT_PROMPT'))['outcome']=='DETERMINISTIC_FAILURE'
- with pytest.raises(StaleState): await service.reply(999,'unrelated')
+ context=await repo.get_active_text_input_context()
+ assert context['question_id']==q['id'] and context['based_on_revision_id']==rid
  await db.close()
 
 
@@ -325,4 +325,111 @@ async def test_terminal_message_handler_completes_non_actionable_receipt(tmp_pat
  await repo.receipt_telegram_update(1004,'{"update_id":1004}')
  await bot._tracked(bot.ignored_message,SimpleNamespace(update_id=1004),None)
  assert await repo.pending_telegram_updates()==[]
+ await db.close()
+
+@pytest.mark.asyncio
+async def test_ordinary_manual_text_is_durably_bound_and_review_only(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); service=QuestionService(repo,{},None)
+ q1,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'ordinary-1','question_text':'one'})
+ q2,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'ordinary-2','question_text':'two'})
+ await service.begin_manual(q1['id'])
+ context=await repo.get_active_text_input_context()
+ assert context['question_id']==q1['id'] and context['mode']=='manual_answer'
+ rid=await service.ordinary_text('точный обычный текст')
+ revision=await repo.get_answer_revision(rid)
+ assert revision['source']=='manual' and revision['text']=='точный обычный текст' and revision['question_id']==q1['id']
+ assert (await repo.get_question(q1['id']))['status']=='REVIEW'
+ assert (await repo.get_question(q2['id']))['status']=='NEW'
+ assert await repo.get_active_text_input_context() is None
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts')).fetchone())[0]==0
+ bot=OperatorBot(1,SimpleNamespace(repo=repo)); labels=[b.text for row in bot.buttons(await repo.get_question(q1['id'])).inline_keyboard for b in row]
+ assert labels==['✅ Отправить','✏️ Редактировать','🚫 Игнорировать','🤖 Сменить Codex']
+ await db.close()
+
+@pytest.mark.asyncio
+async def test_input_focus_conflicts_fail_closed_and_duplicate_text_is_a_noop(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); service=QuestionService(repo,{},None)
+ q1,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'focus-1','question_text':'one'})
+ q2,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'focus-2','question_text':'two'})
+ await service.begin_manual(q1['id'])
+ with pytest.raises(StaleState): await service.begin_manual(q2['id'])
+ assert (await repo.get_active_text_input_context())['question_id']==q1['id'] and (await repo.get_question(q2['id']))['status']=='NEW'
+ rid=await service.ordinary_text('once')
+ assert await service.ordinary_text('duplicate') is None
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM answer_revisions')).fetchone())[0]==1
+ assert (await repo.get_answer_revision(rid))['text']=='once'
+ await db.close()
+
+@pytest.mark.asyncio
+async def test_manual_prompt_is_exact_ordinary_message_and_no_force_reply(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'prompt-ordinary','question_text':'q'})
+ service=QuestionService(repo,{},None); q=await service.begin_manual(q['id'])
+ class Message:
+  def __init__(self): self.calls=[]
+  async def reply_text(self,*args,**kwargs): self.calls.append((args,kwargs)); return SimpleNamespace(message_id=33)
+ message=Message(); bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ assert await bot.prompt(message,q,'manual_answer')
+ assert message.calls[0][0]==('Введите ответ',) and 'reply_markup' in message.calls[0][1]
+ assert await repo.get_telegram_input_for(q['id'],'manual_answer')
+ assert not await bot.prompt(message,q,'manual_answer') and len(message.calls)==1
+ assert 'filters.REPLY' not in __import__('inspect').getsource(OperatorBot.handlers)
+ await db.close()
+
+@pytest.mark.asyncio
+async def test_edit_ordinary_text_is_revision_bound_and_switch_preserves_focus(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); service=QuestionService(repo,{},None)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'edit-ordinary','question_text':'q'})
+ r1=await repo.create_answer_revision(q['id'],'manual','old'); await repo.set_current_answer_revision(q['id'],r1); await repo.transition(q['id'],'NEW','MANUAL_INPUT'); await repo.transition(q['id'],'MANUAL_INPUT','REVIEW')
+ await service.begin_edit(q['id'],r1); context=await repo.get_active_text_input_context()
+ assert context['mode']=='edit_answer' and context['based_on_revision_id']==r1
+ await repo.set_active_codex_profile('codex2')
+ context=await repo.get_active_text_input_context(); assert context['question_id']==q['id'] and context['based_on_revision_id']==r1
+ r2=await service.ordinary_text('replacement')
+ edited=await repo.get_answer_revision(r2); current=await repo.get_question(q['id'])
+ assert (edited['source'],edited['based_on_revision_id'],edited['text'])==('edited',r1,'replacement')
+ assert current['current_answer_revision_id']==r2 and current['status']=='REVIEW' and await repo.get_active_text_input_context() is None
+ with pytest.raises(StaleState): await service.begin_edit(q['id'],r1)
+ assert await repo.get_active_text_input_context() is None
+ await db.close()
+
+@pytest.mark.asyncio
+async def test_ordinary_text_without_context_completes_durable_update(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); bot=OperatorBot(1,SimpleNamespace(repo=repo,ordinary_text=QuestionService(repo,{},None).ordinary_text))
+ await repo.receipt_telegram_update(3001,'{}')
+ update=SimpleNamespace(update_id=3001,message=SimpleNamespace(text='unattached'),effective_user=SimpleNamespace(id=1),effective_chat=SimpleNamespace(id=1,type='private'))
+ await bot._tracked(bot.ordinary_text,update,None)
+ assert await repo.pending_telegram_updates()==[] and (await (await repo.db.execute('SELECT COUNT(*) FROM answer_revisions')).fetchone())[0]==0
+ await db.close()
+
+@pytest.mark.asyncio
+async def test_init_migrates_previous_schema_without_losing_data(tmp_path):
+ db=await connect(tmp_path/'legacy')
+ await db.executescript("CREATE TABLE questions(id INTEGER PRIMARY KEY, public_id TEXT, marketplace TEXT NOT NULL, external_question_id TEXT NOT NULL, question_text TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'NEW', created_at TEXT NOT NULL, updated_at TEXT NOT NULL); CREATE TABLE telegram_inputs(telegram_prompt_message_id INTEGER PRIMARY KEY,question_id INTEGER NOT NULL,mode TEXT NOT NULL,based_on_revision_id INTEGER,created_at TEXT NOT NULL,expires_at TEXT NOT NULL);")
+ await db.execute("INSERT INTO questions(id,public_id,marketplace,external_question_id,question_text,status,created_at,updated_at) VALUES(1,'Q-000001','ozon','legacy','q','NEW','t','t')"); await db.commit()
+ await init(db); repo=Repository(db)
+ assert (await repo.get_question(1))['external_question_id']=='legacy'
+ assert await (await db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='active_text_input_context'" )).fetchone()
+ await db.close()
+
+@pytest.mark.asyncio
+async def test_codex_switch_callback_preserves_manual_and_edit_input_contexts(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); service=QuestionService(repo,{},None)
+ class Message:
+  async def reply_text(self,*args,**kwargs): return SimpleNamespace(message_id=1)
+ class Query:
+  def __init__(self,data): self.data=data; self.message=Message()
+  async def answer(self,*args,**kwargs): pass
+ async def choose(q,rid,profile):
+  update=SimpleNamespace(callback_query=Query(encode('choose_codex',q['id'],rid,profile)),effective_user=SimpleNamespace(id=1),effective_chat=SimpleNamespace(id=1,type='private'))
+  await bot.callback(update,None)
+ bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'switch-manual','question_text':'q'})
+ await service.begin_manual(q['id']); await choose(await repo.get_question(q['id']),None,'codex2')
+ assert (await repo.get_active_text_input_context())['question_id']==q['id']
+ assert (await repo.get_answer_revision(await service.ordinary_text('manual after switch')))['source']=='manual'
+ r1=await repo.get_current_answer_revision(q['id']); await service.begin_edit(q['id'],r1['id']); await choose(await repo.get_question(q['id']),r1['id'],'codex3')
+ context=await repo.get_active_text_input_context(); assert context['mode']=='edit_answer' and context['based_on_revision_id']==r1['id']
+ r2=await service.ordinary_text('edited after switch')
+ assert (await repo.get_answer_revision(r2))['based_on_revision_id']==r1['id']
+ assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts')).fetchone())[0]==0
  await db.close()

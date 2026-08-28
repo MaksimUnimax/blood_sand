@@ -71,6 +71,49 @@ class Repository:
   await self.db.execute('INSERT INTO telegram_inputs VALUES(?,?,?,?,?,?)',(msg,qid,mode,based,now(),expires)); await self.db.commit()
  async def get_telegram_input(self,msg): return await (await self.db.execute('SELECT * FROM telegram_inputs WHERE telegram_prompt_message_id=?',(msg,))).fetchone()
  async def get_telegram_input_for(self,qid,mode): return await (await self.db.execute('SELECT * FROM telegram_inputs WHERE question_id=? AND mode=?',(qid,mode))).fetchone()
+ async def get_active_text_input_context(self):
+  return await (await self.db.execute('SELECT * FROM active_text_input_context WHERE singleton=1')).fetchone()
+ async def _start_text_input(self,qid,mode,based=None):
+  """Atomically establish the singleton ordinary-text focus and its state."""
+  expected='NEW' if mode=='manual_answer' else 'REVIEW'; target='MANUAL_INPUT' if mode=='manual_answer' else 'EDITING'
+  await self.db.execute('BEGIN IMMEDIATE')
+  try:
+   q=await self.get_question(qid); context=await self.get_active_text_input_context()
+   same=context and context['question_id']==qid and context['mode']==mode and context['based_on_revision_id']==based
+   if q and q['status']==target and same:
+    await self.db.commit(); return q
+   if not q or q['status']!=expected or context: raise StaleState('STALE_STATE')
+   if mode=='edit_answer':
+    revision=await self.get_answer_revision(based)
+    if q['current_answer_revision_id']!=based or not revision or revision['question_id']!=qid: raise StaleState('STALE_STATE')
+   changed=await self.db.execute('UPDATE questions SET status=?,updated_at=? WHERE id=? AND status=?',(target,now(),qid,expected))
+   if not changed.rowcount: raise StaleState('STALE_STATE')
+   await self.db.execute('INSERT INTO active_text_input_context(singleton,question_id,mode,based_on_revision_id,created_at) VALUES(1,?,?,?,?)',(qid,mode,based,now()))
+   await self.db.commit(); return await self.get_question(qid)
+  except Exception:
+   await self.db.rollback(); raise
+ async def start_manual_input(self,qid): return await self._start_text_input(qid,'manual_answer')
+ async def start_edit_input(self,qid,based): return await self._start_text_input(qid,'edit_answer',based)
+ async def consume_active_text(self,text):
+  """Consume the one durable focus exactly once; no focus is a deliberate no-op."""
+  await self.db.execute('BEGIN IMMEDIATE')
+  try:
+   inp=await self.get_active_text_input_context()
+   if not inp: await self.db.commit(); return None
+   q=await self.get_question(inp['question_id']); expected='MANUAL_INPUT' if inp['mode']=='manual_answer' else 'EDITING'
+   if not q or q['status']!=expected: raise StaleState('STALE_STATE')
+   if inp['mode']=='edit_answer':
+    base=await self.get_answer_revision(inp['based_on_revision_id'])
+    if q['current_answer_revision_id']!=inp['based_on_revision_id'] or not base or base['question_id']!=q['id']: raise StaleState('STALE_STATE')
+   source='manual' if inp['mode']=='manual_answer' else 'edited'
+   c=await self.db.execute('INSERT INTO answer_revisions(question_id,source,text,based_on_revision_id,created_at) VALUES(?,?,?,?,?)',(q['id'],source,text,inp['based_on_revision_id'],now()))
+   rid=c.lastrowid
+   changed=await self.db.execute("UPDATE questions SET current_answer_revision_id=?,status='REVIEW',updated_at=? WHERE id=? AND status=?",(rid,now(),q['id'],expected))
+   if not changed.rowcount: raise StaleState('STALE_STATE')
+   await self.db.execute('DELETE FROM active_text_input_context WHERE singleton=1')
+   await self.db.commit(); return rid
+  except Exception:
+   await self.db.rollback(); raise
  async def consume_telegram_input(self,msg):
   # DELETE ... RETURNING makes duplicate/replayed replies consume exactly once.
   c=await self.db.execute('DELETE FROM telegram_inputs WHERE telegram_prompt_message_id=? RETURNING *',(msg,)); r=await c.fetchone(); await self.db.commit(); return r
