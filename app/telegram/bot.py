@@ -10,7 +10,7 @@ from app.telegram import render
 from app.telegram.edge import TelegramEdge, Operation, Outcome
 
 
-OZON_BUTTON = '➕ Вопрос Ozon'
+OZON_BUTTON = '➕ Отправить вопрос'
 
 
 class OperatorBot:
@@ -46,7 +46,12 @@ class OperatorBot:
 
     @staticmethod
     def main_menu():
-        return ReplyKeyboardMarkup([[OZON_BUTTON]], resize_keyboard=True, is_persistent=True)
+        return ReplyKeyboardMarkup(
+            [[OZON_BUTTON]],
+            resize_keyboard=True,
+            is_persistent=True,
+            one_time_keyboard=False,
+        )
 
     def authorized(self, update):
         user = update.effective_user
@@ -169,7 +174,7 @@ class OperatorBot:
             return
         await self._reply(
             u.message,
-            'Ozon · вставьте следующим обычным сообщением вопрос покупателя. После этого Codex запустится автоматически.',
+            'Вставьте следующим обычным сообщением вопрос покупателя с Ozon. После отправки Codex запустится автоматически.',
             reply_markup=self.main_menu(),
         )
 
@@ -177,10 +182,16 @@ class OperatorBot:
         if await self._denied(u):
             return
         cmd = u.message.text.split()[0]
-        if cmd in {'/start', '/status'}:
+        if cmd == '/start':
             await self._reply(
                 u.message,
-                f"DB available\nOpen questions: {len(await self.service.repo.list_open_questions())}\n"
+                'Готов. Для нового вопроса используйте «➕ Отправить вопрос».',
+                reply_markup=self.main_menu(),
+            )
+        elif cmd == '/status':
+            await self._reply(
+                u.message,
+                f"Open questions: {len(await self.service.repo.list_open_questions())}\n"
                 f"Active Codex: {await self.service.repo.active_codex_profile()}",
                 reply_markup=self.main_menu(),
             )
@@ -428,7 +439,7 @@ class OperatorBot:
             ),
             CallbackQueryHandler(lambda u, c: self._tracked(self.callback, u, c)),
             MessageHandler(
-                filters.TEXT & ~filters.COMMAND & filters.Regex(r'^➕ Вопрос Ozon$'),
+                filters.TEXT & ~filters.COMMAND & filters.Regex(r'^➕ Отправить вопрос$'),
                 lambda u, c: self._tracked(self.begin_ozon, u, c),
             ),
             MessageHandler(
