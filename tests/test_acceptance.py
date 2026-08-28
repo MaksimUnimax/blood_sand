@@ -1,10 +1,16 @@
 import json
+import os
 import pytest
 
 from app.acceptance import (AcceptanceSendSink, PRODUCTION_DB, STALE_DB, ScriptedCodex,
                             ScenarioCodexRouter, ScenarioController, ScriptedCodexError, build, project, status, resolve_run_paths)
 from app.service import QuestionService
 from app.state_machine import StaleState
+
+@pytest.fixture(autouse=True)
+def project_environment(monkeypatch):
+ monkeypatch.setenv('TELEGRAM_BOT_TOKEN','offline-token')
+ monkeypatch.setenv('TELEGRAM_OPERATOR_USER_ID','7')
 
 @pytest.mark.asyncio
 async def test_clean_start_requires_fresh_db_and_sends_nothing(tmp_path):
@@ -159,3 +165,91 @@ async def test_concurrent_prepare_creates_exactly_one_question(tmp_path):
   assert (await (await repo1.db.execute('SELECT COUNT(*) FROM questions')).fetchone())[0]==1
   await c1.close(); assert (await c2.prepare('B_CODEX_SUCCESS'))['public_id']=='Q-000002'
  finally: await db1.close(); await db2.close()
+
+def test_evidence_instances_reload_before_every_mutation(tmp_path):
+ from app.acceptance import Evidence
+ path=tmp_path/'evidence.json'; db=tmp_path/'state.sqlite3'
+ first=Evidence(path,'run',db); second=Evidence(path,'run',db)
+ second.add_and_increment('scenarios',{'scenario':'B'},'SYNTHETIC_QUESTIONS_CREATED')
+ first.add('errors',{'error':'A'})
+ data=json.loads(path.read_text())
+ assert data['scenarios']==[{'scenario':'B'}] and data['errors']==[{'error':'A'}]
+ assert data['counters']['SYNTHETIC_QUESTIONS_CREATED']==1
+ with pytest.raises(ValueError): Evidence(path,'other',db)
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('token,operator',[(None,'7'),('', '7'),('x',None),('x','abc'),('x','0'),('x','-1')])
+async def test_project_local_secret_validation_precedes_claim(tmp_path,monkeypatch,token,operator):
+ db,repo,e,sink,c=await build('run',root=tmp_path)
+ try: await c.prepare('A_MANUAL')
+ finally: await db.close()
+ if token is None: monkeypatch.delenv('TELEGRAM_BOT_TOKEN')
+ else: monkeypatch.setenv('TELEGRAM_BOT_TOKEN',token)
+ if operator is None: monkeypatch.delenv('TELEGRAM_OPERATOR_USER_ID')
+ else: monkeypatch.setenv('TELEGRAM_OPERATOR_USER_ID',operator)
+ bot=FakeTelegramBot()
+ with pytest.raises(RuntimeError): await project('run',bot=bot,root=tmp_path)
+ assert bot.calls==[]
+ db,repo,e,sink,c=await build('run',root=tmp_path)
+ try: assert await c.status() is not None and (await c.status())['initial_projection_status'] is None
+ finally: await db.close()
+
+@pytest.mark.asyncio
+async def test_project_initialize_and_prepare_precede_claim(tmp_path):
+ db,repo,e,sink,c=await build('run',root=tmp_path)
+ try: await c.prepare('A_MANUAL')
+ finally: await db.close()
+ events=[]
+ class Bot(FakeTelegramBot):
+  def __init__(self,token): super().__init__(123); events.append('construct')
+  async def initialize(self): events.append('initialize')
+  async def shutdown(self): events.append('shutdown')
+  async def send_message(self,**kwargs): events.append('send'); return await super().send_message(**kwargs)
+ result=await project('run',root=tmp_path,bot_factory=Bot)
+ assert result['telegram_message_id']==123 and events.index('initialize')<events.index('send')
+
+@pytest.mark.asyncio
+async def test_project_invalid_first_message_id_never_succeeds(tmp_path):
+ db,repo,e,sink,c=await build('run',root=tmp_path)
+ try: await c.prepare('A_MANUAL')
+ finally: await db.close()
+ result=await project('run',bot=FakeTelegramBot(0),root=tmp_path)
+ assert result['status']=='DETERMINISTIC_FAILED'
+
+@pytest.mark.asyncio
+async def test_project_multicard_persists_first_message_id(tmp_path):
+ db,repo,e,sink,c=await build('run',root=tmp_path)
+ try:
+  q=await c.prepare('A_MANUAL')
+  await repo.db.execute('UPDATE questions SET question_text=? WHERE id=?',('x'*10000,q['id'])); await repo.db.commit()
+ finally: await db.close()
+ class Multi(FakeTelegramBot):
+  async def send_message(self,**kwargs):
+   self.calls.append(kwargs); return type('Message',(),{'message_id':100+len(self.calls)})()
+ result=await project('run',bot=Multi(),root=tmp_path)
+ assert result=={'status':'SUCCEEDED','telegram_message_id':101}
+
+@pytest.mark.asyncio
+async def test_project_initialize_failure_has_no_claim_or_send(tmp_path):
+ db,repo,e,sink,c=await build('run',root=tmp_path)
+ try: await c.prepare('A_MANUAL')
+ finally: await db.close()
+ class BadBot(FakeTelegramBot):
+  def __init__(self,token): super().__init__()
+  async def initialize(self): raise RuntimeError('getMe failed')
+  async def shutdown(self): pass
+ bot=[]
+ def factory(token):
+  value=BadBot(token); bot.append(value); return value
+ with pytest.raises(RuntimeError,match='getMe failed'): await project('run',root=tmp_path,bot_factory=factory)
+ assert bot[0].calls==[]
+
+def test_project_systemd_unit_isolated_oneshot():
+ unit=(__import__('pathlib').Path(__file__).parents[1]/'systemd/mqo-t4-project@.service').read_text()
+ assert 'Type=oneshot' in unit and 'User=root' in unit and 'Group=root' in unit
+ assert 'WorkingDirectory=/opt/marketplace-question-operator' in unit
+ assert 'EnvironmentFile=/etc/marketplace-question-operator/secrets.env' in unit
+ assert 'app.acceptance project --run-id %i' in unit and 'Restart=no' in unit and 'NoNewPrivileges=true' in unit
+ assert 'flock' not in unit and 'app.acceptance run' not in unit
+ clean=(__import__('pathlib').Path(__file__).parents[1]/'systemd/mqo-t4-clean@.service').read_text()
+ assert 'flock' in clean and 'app.acceptance run --run-id %i' in clean

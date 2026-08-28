@@ -1,0 +1,13 @@
+[Unit]
+Description=MQO isolated T4 initial-card projection (%i)
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/marketplace-question-operator
+EnvironmentFile=/etc/marketplace-question-operator/secrets.env
+ExecStart=/opt/marketplace-question-operator/.venv/bin/python -m app.acceptance project --run-id %i
+Restart=no
+NoNewPrivileges=true

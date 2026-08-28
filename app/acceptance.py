@@ -10,6 +10,7 @@ import os
 import signal
 import tempfile
 import re
+import fcntl
 from types import SimpleNamespace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -38,11 +39,23 @@ class ScriptedCodexError(RuntimeError):
 
 class Evidence:
  def __init__(self,path,run_id,db_path):
-  self.path=Path(path); self.data={'run_id':run_id,'code_head':os.popen('git rev-parse HEAD').read().strip(),'started_at':stamp(),'db_path':str(db_path),'scenarios':[],'initial_projections':[],'scripted_codex_invocations':[],'would_send':[],'profile_changes':[],'errors':[],'counters':{'SYNTHETIC_QUESTIONS_CREATED':0,'TELEGRAM_MESSAGES_CREATED':0,'REAL_CODEX_PROCESS_STARTS':0,'OZON_ANSWER_CREATE_CALLS':0,'WB_QUESTION_PATCH_CALLS':0,'MARKETPLACE_WRITES_PERFORMED':0}}
-  self.flush()
- def flush(self):
-  self.path.parent.mkdir(parents=True,exist_ok=True); self.path.write_text(json.dumps(self.data,indent=2,sort_keys=True)+'\n')
- def add(self,key,value): self.data[key].append(value); self.flush()
+  self.path=Path(path); self.run_id=run_id; self.db_path=str(db_path); self.lock_path=self.path.with_suffix(self.path.suffix+'.lock')
+  self.path.parent.mkdir(parents=True,exist_ok=True)
+  self.data=self._mutate(lambda data: None)
+ def _new(self): return {'run_id':self.run_id,'code_head':os.popen('git rev-parse HEAD').read().strip(),'started_at':stamp(),'db_path':self.db_path,'scenarios':[],'initial_projections':[],'scripted_codex_invocations':[],'would_send':[],'profile_changes':[],'errors':[],'counters':{'SYNTHETIC_QUESTIONS_CREATED':0,'TELEGRAM_MESSAGES_CREATED':0,'REAL_CODEX_PROCESS_STARTS':0,'OZON_ANSWER_CREATE_CALLS':0,'WB_QUESTION_PATCH_CALLS':0,'MARKETPLACE_WRITES_PERFORMED':0}}
+ def _mutate(self, change):
+  with open(self.lock_path,'a+') as lock:
+   fcntl.flock(lock,fcntl.LOCK_EX)
+   data=json.loads(self.path.read_text()) if self.path.exists() else self._new()
+   if data['run_id']!=self.run_id or data['db_path']!=self.db_path: raise ValueError('evidence identity mismatch')
+   change(data)
+   temporary=self.path.with_suffix(self.path.suffix+'.tmp'); temporary.write_text(json.dumps(data,indent=2,sort_keys=True)+'\n'); os.replace(temporary,self.path)
+   fcntl.flock(lock,fcntl.LOCK_UN)
+  self.data=data; return data
+ def flush(self): self.data=self._mutate(lambda data: None)
+ def add(self,key,value): self._mutate(lambda data: data[key].append(value))
+ def increment(self,key,amount=1): self._mutate(lambda data: data['counters'].__setitem__(key,data['counters'][key]+amount))
+ def add_and_increment(self,key,value,counter,amount=1): self._mutate(lambda data: (data[key].append(value),data['counters'].__setitem__(counter,data['counters'][counter]+amount)))
 
 class ScriptedCodex:
  """No subprocess capability; outcomes are scenario + ordinal only."""
@@ -94,7 +107,7 @@ class ScenarioController:
   q=await self.repo.get_question(c.lastrowid)
   row={'scenario_id':f'{scenario}-{n}','scenario':scenario,'question_id':q['id'],'public_id':q['public_id'],'status':'ACTIVE'}
   if self.evidence:
-   self.evidence.data['counters']['SYNTHETIC_QUESTIONS_CREATED']+=1; self.evidence.add('scenarios',row)
+   self.evidence.add_and_increment('scenarios',row,'SYNTHETIC_QUESTIONS_CREATED')
   return q
  async def close(self):
   await self.repo.db.execute("UPDATE acceptance_scenarios SET status='COMPLETE',phase='COMPLETE',updated_at=? WHERE run_id=? AND status='ACTIVE'",(stamp(),self.run_id)); await self.repo.db.commit()
@@ -118,6 +131,15 @@ class ScenarioController:
    await self.repo.db.commit(); return dict(row),c.lastrowid,t
   except Exception:
    await self.repo.db.rollback(); raise
+
+ async def projection_preflight(self):
+  rows=await (await self.repo.db.execute("SELECT s.*,q.public_id,q.status AS question_status,q.telegram_question_message_id FROM acceptance_scenarios s LEFT JOIN questions q ON q.id=s.question_id WHERE s.run_id=? AND s.status='ACTIVE'",(self.run_id,))).fetchall()
+  if len(rows)!=1: raise RuntimeError('project requires exactly one ACTIVE acceptance scenario')
+  row=rows[0]
+  old=await (await self.repo.db.execute('SELECT status FROM acceptance_initial_projections WHERE run_id=? AND scenario_id=?',(self.run_id,row['scenario_id']))).fetchone()
+  if old: raise RuntimeError('initial card already projected' if old['status']=='SUCCEEDED' else 'initial projection unresolved; duplicate-risk recovery required')
+  if row['question_id'] is None or row['public_id'] is None or row['question_status']!='NEW' or row['telegram_question_message_id']: raise RuntimeError('active scenario has no eligible NEW question')
+  return dict(row)
 
  async def finish_projection(self,attempt_id,question_id,result):
   t=stamp()
@@ -149,28 +171,37 @@ async def build(run_id,db_path=None,evidence_path=None,root=ACCEPTANCE_ROOT):
  db=await connect(db_path); await init(db); repo=Repository(db); ev=Evidence(evidence_path,run_id,db_path); sink=AcceptanceSendSink(ev)
  return db,repo,ev,sink,ScenarioController(repo,run_id,ev)
 
-async def project(run_id, bot=None, operator_id=None, root=ACCEPTANCE_ROOT):
+async def project(run_id, bot=None, operator_id=None, root=ACCEPTANCE_ROOT, bot_factory=None):
  """One outbound initial-card projection; deliberately no Application/polling."""
  db,repo,ev,sink,controller=await build(run_id,root=root)
  try:
-  row,attempt_id,started=await controller.claim_projection()
+  row=await controller.projection_preflight()
   question=await repo.get_question(row['question_id'])
+  token=os.environ.get('TELEGRAM_BOT_TOKEN')
+  if not token: raise RuntimeError('missing TELEGRAM_BOT_TOKEN')
+  operator_id=operator_id or os.environ.get('TELEGRAM_OPERATOR_USER_ID')
+  if not isinstance(operator_id,str) or not operator_id.isdecimal() or int(operator_id)<=0: raise RuntimeError('invalid TELEGRAM_OPERATOR_USER_ID')
   owned_bot=bot is None
   if owned_bot:
-   from telegram import Bot
-   bot=Bot(os.environ['TELEGRAM_BOT_TOKEN'])
-  operator_id=operator_id or os.environ['TELEGRAM_OPERATOR_USER_ID']
+   if bot_factory is None:
+    from telegram import Bot
+    bot_factory=Bot
+   bot=bot_factory(token)
   if owned_bot: await bot.initialize()
   transport=TelegramTransport(SimpleNamespace(bot=bot),operator_id,repo)
+  prepared=await transport.prepare_question(question)
+  row,attempt_id,started=await controller.claim_projection()
   # question() is the production renderer + MESSAGE_CREATE edge path.
-  mid=await transport.question(question)
+  try: mid=await transport.question(question,prepared=prepared)
+  except RuntimeError as exc:
+   mid=None; transport.last_question_outcome=Result(Outcome.DETERMINISTIC_FAILURE,error=exc)
   result=transport.last_question_outcome or Result(Outcome.DETERMINISTIC_FAILURE,error=RuntimeError('missing Telegram outcome'))
   final=await controller.finish_projection(attempt_id,question['id'],result)
   ev.add('initial_projections',{'at':stamp(),'run_id':run_id,'scenario_id':row['scenario_id'],'question_id':question['id'],'public_id':question['public_id'],'telegram_chat_id':str(operator_id),'projection_attempt_id':attempt_id,'projection_started_at':started,'projection_result':final['status'],'telegram_message_id':final.get('telegram_message_id'),'failure_class':final.get('failure_class'),'ambiguous_duplicate_risk':final['status']=='AMBIGUOUS'})
-  if final['status']=='SUCCEEDED': ev.data['counters']['TELEGRAM_MESSAGES_CREATED']+=1; ev.flush()
+  if final['status']=='SUCCEEDED': ev.increment('TELEGRAM_MESSAGES_CREATED')
   return final
  finally:
-  if 'owned_bot' in locals() and owned_bot: await bot.shutdown()
+  if 'owned_bot' in locals() and owned_bot and 'bot' in locals(): await bot.shutdown()
   await db.close()
 
 async def run(run_id):

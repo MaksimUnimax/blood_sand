@@ -20,7 +20,7 @@ from app.telegram.bot import OperatorBot
 from app.telegram import render
 from app.telegram.callbacks import encode
 from app.telegram.durable_queue import DurableUpdateQueue
-from app.telegram.edge import TelegramEdge, Operation, Outcome
+from app.telegram.edge import TelegramEdge, Operation, Outcome, Result
 from telegram.error import Conflict
 
 POLLING_CONFLICT_EXIT_CODE = 75
@@ -61,16 +61,28 @@ class TelegramTransport:
         self._last_outbound_at = asyncio.get_running_loop().time()
         return result
 
-    async def question(self, question):
-        first = None
+    async def prepare_question(self, question):
+        """Build the complete initial-card payload without touching Telegram."""
         buttons = InlineKeyboardMarkup([
             [InlineKeyboardButton('✍️ Ответить самому', callback_data=encode('manual', question['id'])),
              InlineKeyboardButton('🤖 Отправить в Codex', callback_data=encode('codex', question['id']))],
             [InlineKeyboardButton('🚫 Игнорировать', callback_data=encode('ignore', question['id']))],
             [InlineKeyboardButton('🤖 Сменить Codex', callback_data=encode('choose_codex', question['id'], None, 'menu'))],
         ])
-        for text in render.initial(question, await self.repo.active_codex_profile()):
-            outcome = await self._send(chat_id=self.operator_id, text=text, reply_markup=buttons if first is None else None)
+        payload = []
+        for index, text in enumerate(render.initial(question, await self.repo.active_codex_profile())):
+            if not isinstance(text, str) or not text:
+                raise ValueError('invalid initial-card text')
+            payload.append({'chat_id': self.operator_id, 'text': text,
+                            'reply_markup': buttons if index == 0 else None})
+        if not payload:
+            raise ValueError('initial-card payload is empty')
+        return payload
+
+    async def question(self, question, prepared=None):
+        first = None
+        for kwargs in prepared if prepared is not None else await self.prepare_question(question):
+            outcome = await self._send(**kwargs)
             if outcome.outcome is not Outcome.SUCCESS:
                 self.last_question_outcome = outcome
                 await self.repo.record_error('telegram', outcome.outcome.value, str(outcome.error))
@@ -87,6 +99,8 @@ class TelegramTransport:
                     'response_type': type(sent).__name__,
                     'message_id': first,
                 }
+        # The first message owns the NEW-card controls and is the canonical ID.
+        self.last_question_outcome = Result(Outcome.SUCCESS, type('InitialCard', (), {'message_id': first})())
         return first
 
 
