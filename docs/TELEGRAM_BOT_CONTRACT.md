@@ -32,8 +32,8 @@ owner and start the unit deliberately. No live conflict is induced for testing.
 | Operation | Telegram method | Class | RetryAfter | BadRequest | Forbidden | timeout/network | Roll back state? | Ambiguous policy |
 |---|---|---|---|---|---|---|---|---|
 | Initial card | sendMessage | MESSAGE_CREATE | server delay, one retry; 2 attempts total | fail/no retry | record/no retry | no retry; record | never | no id persisted; durable `INITIAL_CARD` failure is recoverable |
-| ForceReply | reply_text | MESSAGE_CREATE | same | fail | record | no retry; no correlation | never | durable `MANUAL_PROMPT`/`EDIT_PROMPT` failure; original button stays usable |
-| Command/review card | reply_text | MESSAGE_CREATE | same | fail | record | no retry | never | no invented correlation |
+| Manual/edit prompt | standalone `sendMessage` | MESSAGE_CREATE | same | fail | record | no retry; no invented prompt id | never | durable `MANUAL_PROMPT`/`EDIT_PROMPT` failure; active ordinary-text focus remains authoritative |
+| Command/review card | standalone `sendMessage` | MESSAGE_CREATE | same | fail | record | no retry | never | no invented correlation |
 | Callback ack | answerCallbackQuery | CALLBACK_ACK | same | fail | record | one bounded retry | never | cannot undo claim |
 | UI projection | edit_reply_markup | UI_EDIT | same | fail except exact `message is not modified` success | record | one bounded retry | never | SQLite wins; later render may reconcile |
 | Polling | getUpdates | POLLING | PTB lifecycle | error | error | PTB lifecycle | never | Conflict is ownership fault |
@@ -44,8 +44,8 @@ The common edge returns `SUCCESS`, `DETERMINISTIC_FAILURE`, `PERMISSION_FAILURE`
 
 | Action | Durable operation | Ack | Long operation | UI projection |
 |---|---|---|---|---|
-| Manual | NEW → MANUAL_INPUT | then | ForceReply | disable after prompt succeeds |
-| Edit | REVIEW → EDITING | then | ForceReply | disable after prompt succeeds |
+| Manual | NEW → MANUAL_INPUT + durable exact-Q-ID text focus | then | standalone `Введите ответ` prompt | disable after prompt succeeds |
+| Edit | REVIEW → EDITING + durable exact-Q-ID/base-revision text focus | then | standalone replacement-text prompt | disable after prompt succeeds |
 | Codex/regenerate/retry | CODEX_RUNNING claim | then | async Codex | disable/render later |
 | Ignore | → IGNORED | then | none | disable |
 | Send | SENDING claim | then | marketplace/reconciliation | render/disable |
@@ -64,10 +64,13 @@ no attempt, starts no Codex run, and writes no marketplace answer. A running
 attempt retains the profile captured by its durable claim.
 
 NEW exposes exactly Manual, Send to Codex, Ignore, and Switch Codex. Manual
-enters `MANUAL_INPUT`, correlates only a reply to its real ForceReply prompt,
-creates an immutable manual revision, then enters REVIEW. Edit similarly
-creates an immutable `edited` revision based on the prior revision and returns
-to REVIEW. Neither text entry publishes.
+enters `MANUAL_INPUT`, sends the separate standalone prompt `Введите ответ`,
+and deterministically consumes the operator's next ordinary text through the
+durable active text-input context for that exact Q-ID. It creates an immutable
+manual revision, then enters REVIEW. Telegram Reply, ForceReply, quote and
+reply-to-message are neither sent nor required. Edit uses the same ordinary
+text mechanism with the exact prior revision as its durable base, creates an
+immutable `edited` revision and returns to REVIEW. Neither text entry publishes.
 
 Successful REVIEW (manual, Codex, and edited) exposes exactly Send, Edit,
 Ignore, and Switch Codex. It has no regenerate action or transition to Codex.
@@ -102,15 +105,18 @@ informational only and have no future-correlation requirement.
 ## Manual and Edit prompt creation recovery
 
 Manual changes `NEW → MANUAL_INPUT`, and Edit changes `REVIEW → EDITING`, before
-the callback acknowledgement and ForceReply attempt. A failed or ambiguous
-ForceReply leaves a durable `MANUAL_PROMPT` or `EDIT_PROMPT` failure, no
-`telegram_inputs` row, and no invented id. The original Manual/Edit callback
-button remains enabled; clicking it is an explicit operator retry, never an
-automatic retry. It creates at most one active correlation because an existing
-`telegram_inputs` row suppresses another prompt. Unrelated text is ignored.
-For Edit, the original current revision remains unchanged; only a correlated
-reply can create the next revision. These rows survive restart and are not
-automatically resent.
+the callback acknowledgement and standalone prompt attempt. The durable
+singleton active text-input context is the business correlation authority: it
+contains the exact question and, for Edit, the exact base revision. A failed or
+ambiguous prompt delivery leaves a durable `MANUAL_PROMPT` or `EDIT_PROMPT`
+failure and no invented prompt id, but does not invalidate that ordinary-text
+context. The original Manual/Edit callback button remains enabled; clicking it
+is an explicit prompt-delivery retry, never an automatic retry. A positive
+`telegram_inputs` row may be retained as a delivery marker, not as required
+reply correlation. Unrelated ordinary text with no active context is a no-op.
+For Edit, the original current revision remains unchanged until ordinary text
+is atomically consumed against its exact base revision. These rows survive
+restart and are not automatically resent.
 
 Ack failure never undoes a durable claim. It is distinct from MESSAGE_CREATE:
 the state transition remains canonical, while recovery depends on whether a

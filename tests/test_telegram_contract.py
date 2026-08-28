@@ -167,6 +167,30 @@ async def test_manual_and_edit_use_single_durable_text_focus(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_manual_prompt_is_standalone_and_ordinary_text_uses_active_context(tmp_path):
+ db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
+ q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'ordinary-manual','question_text':'q'})
+ service=QuestionService(repo,{},None); await service.begin_manual(q['id'])
+ class Wire:
+  def __init__(self): self.calls=[]
+  async def send_message(self,**kwargs): self.calls.append(kwargs); return SimpleNamespace(message_id=91)
+ class Message:
+  chat_id=1
+  def __init__(self,wire): self.wire=wire
+  def get_bot(self): return self.wire
+ wire=Wire(); bot=OperatorBot(1,SimpleNamespace(repo=repo))
+ assert await bot.prompt(Message(wire),await repo.get_question(q['id']),'manual_answer')
+ assert wire.calls[0]['text']=='Введите ответ'
+ assert_standalone(((),wire.calls[0]))
+ assert (await repo.get_active_text_input_context())['question_id']==q['id']
+ rid=await service.ordinary_text('ordinary non-reply answer')
+ assert (await repo.get_answer_revision(rid))['source']=='manual'
+ assert (await repo.get_question(q['id']))['status']=='REVIEW'
+ assert await service.ordinary_text('no active context') is None
+ await db.close()
+
+
+@pytest.mark.asyncio
 async def test_claims_make_codex_and_send_idempotent(tmp_path):
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db); q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'x','question_text':'q'})
  aid,_=await repo.claim_codex(q['id'])
