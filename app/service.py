@@ -31,7 +31,7 @@ class QuestionService:
  async def ordinary_text(self,text):
   return await self.repo.consume_active_text(text)
  async def ignore(self,qid):
-  q=await self.repo.get_question(qid); await self.repo.transition(qid,q['status'],'IGNORED')
+  await self.repo.ignore_question(qid)
  async def send(self,qid,rid):
   return await self.execute_send(qid,await self.claim_send(qid,rid))
  async def claim_send(self,qid,rid): return await self.repo.claim_send(qid,rid)

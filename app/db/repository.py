@@ -17,6 +17,18 @@ class Repository:
   for key,value in mutation_fields.items(): sets.append(key+'=?'); values.append(value)
   c=await self.db.execute('UPDATE questions SET '+','.join(sets)+' WHERE id=? AND status=?',values+[qid,expected]); await self.db.commit()
   if not c.rowcount: raise StaleState('STALE_STATE')
+ async def ignore_question(self,qid):
+  """Ignore atomically, clearing focus if this question owns it."""
+  await self.db.execute('BEGIN IMMEDIATE')
+  try:
+   q=await self.get_question(qid)
+   if not q or not allowed(q['status'],'IGNORED'): raise StaleState('STALE_STATE')
+   changed=await self.db.execute("UPDATE questions SET status='IGNORED',updated_at=? WHERE id=? AND status=?",(now(),qid,q['status']))
+   if not changed.rowcount: raise StaleState('STALE_STATE')
+   await self.db.execute('DELETE FROM active_text_input_context WHERE singleton=1 AND question_id=?',(qid,))
+   await self.db.commit()
+  except Exception:
+   await self.db.rollback(); raise
  async def create_answer_revision(self,qid,source,text,draft_attempt_id=None,based_on_revision_id=None):
   if source not in {'manual','codex','edited'}: raise ValueError('source')
   c=await self.db.execute('INSERT INTO answer_revisions(question_id,source,text,draft_attempt_id,based_on_revision_id,created_at) VALUES(?,?,?,?,?,?)',(qid,source,text,draft_attempt_id,based_on_revision_id,now())); await self.db.commit(); return c.lastrowid
@@ -71,22 +83,26 @@ class Repository:
   await self.db.execute('INSERT INTO telegram_inputs VALUES(?,?,?,?,?,?)',(msg,qid,mode,based,now(),expires)); await self.db.commit()
  async def get_telegram_input(self,msg): return await (await self.db.execute('SELECT * FROM telegram_inputs WHERE telegram_prompt_message_id=?',(msg,))).fetchone()
  async def get_telegram_input_for(self,qid,mode): return await (await self.db.execute('SELECT * FROM telegram_inputs WHERE question_id=? AND mode=?',(qid,mode))).fetchone()
+ async def get_telegram_input_for_context(self,qid,mode,based=None):
+  """Return the positive prompt marker for this exact durable input context."""
+  return await (await self.db.execute('SELECT * FROM telegram_inputs WHERE question_id=? AND mode=? AND based_on_revision_id IS ?',(qid,mode,based))).fetchone()
  async def get_active_text_input_context(self):
   return await (await self.db.execute('SELECT * FROM active_text_input_context WHERE singleton=1')).fetchone()
  async def _start_text_input(self,qid,mode,based=None):
   """Atomically establish the singleton ordinary-text focus and its state."""
-  expected='NEW' if mode=='manual_answer' else 'REVIEW'; target='MANUAL_INPUT' if mode=='manual_answer' else 'EDITING'
+  expected={'NEW','CODEX_ERROR'} if mode=='manual_answer' else {'REVIEW'}; target='MANUAL_INPUT' if mode=='manual_answer' else 'EDITING'
   await self.db.execute('BEGIN IMMEDIATE')
   try:
    q=await self.get_question(qid); context=await self.get_active_text_input_context()
    same=context and context['question_id']==qid and context['mode']==mode and context['based_on_revision_id']==based
    if q and q['status']==target and same:
     await self.db.commit(); return q
-   if not q or q['status']!=expected or context: raise StaleState('STALE_STATE')
+   if not q or q['status'] not in expected or context: raise StaleState('STALE_STATE')
    if mode=='edit_answer':
     revision=await self.get_answer_revision(based)
     if q['current_answer_revision_id']!=based or not revision or revision['question_id']!=qid: raise StaleState('STALE_STATE')
-   changed=await self.db.execute('UPDATE questions SET status=?,updated_at=? WHERE id=? AND status=?',(target,now(),qid,expected))
+   starting_status=q['status']
+   changed=await self.db.execute('UPDATE questions SET status=?,updated_at=? WHERE id=? AND status=?',(target,now(),qid,starting_status))
    if not changed.rowcount: raise StaleState('STALE_STATE')
    await self.db.execute('INSERT INTO active_text_input_context(singleton,question_id,mode,based_on_revision_id,created_at) VALUES(1,?,?,?,?)',(qid,mode,based,now()))
    await self.db.commit(); return await self.get_question(qid)

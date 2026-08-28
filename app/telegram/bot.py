@@ -77,7 +77,8 @@ class OperatorBot:
  async def prompt(self,message,q,mode,revision_id=None):
   # State/focus is durable before delivery.  The legacy input row is retained as
   # a positive delivery marker, so callback replay cannot duplicate a prompt.
-  if await self.service.repo.get_telegram_input_for(q['id'],mode): return
+  based_on_revision_id=revision_id if mode=='edit_answer' else None
+  if await self.service.repo.get_telegram_input_for_context(q['id'],mode,based_on_revision_id): return
   current=await self.service.repo.get_current_answer_revision(q['id']); extra=f"\n\nТекущий ответ:\n{current['text']}" if mode=='edit_answer' and current else ''
   if mode=='edit_answer' and (not current or current['id'] != revision_id): raise StaleState('STALE_STATE')
   text='Введите ответ' if mode=='manual_answer' else f"ID: {q['public_id']}\nMarketplace: {q['marketplace']}\n\nВопрос:\n{q['question_text']}{extra}\n\nВведите новый ответ"
