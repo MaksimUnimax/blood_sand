@@ -1,0 +1,50 @@
+name: Ozon B30 FBS Delivery Assembly Reads exact candidate
+on:
+  push:
+    branches: [feature/ozon-b30-fbs-delivery-assembly-reads-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b30-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B30_FBS_DELIVERY_ASSEMBLY_READS_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b30_fbs_delivery_assembly_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B30_FBS_DELIVERY_ASSEMBLY_READS_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B30_FBS_DELIVERY_ASSEMBLY_READS_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B30_FBS_DELIVERY_ASSEMBLY_READS_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B30 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B30_FBS_DELIVERY_ASSEMBLY_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='ae57a35dddcbfae55cc17605441e02877b08dc6ab4acb961925a4e22995edf41';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='92b3dc4a609f41c2ecab0652818d5909671cd3c7dbdb04dc07c65a5f5b3171f1'"
+      - name: Materialize exact B30 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b30_fbs_delivery_assembly_reads_candidate.py --repo-root . --work-root /tmp/ozon-b30-work --out /tmp/ozon-b30-exact
+      - name: Verify B29 base and B30 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B29_PRODUCT_STOCK_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b30-work/b29-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B30_FBS_DELIVERY_ASSEMBLY_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b30-exact
+          find /tmp/ozon-b30-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b30-fbs-delivery-assembly-reads-candidate, path: /tmp/ozon-b30-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --global core.longpaths true
+      - name: Verify B30 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B30_FBS_DELIVERY_ASSEMBLY_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='ae57a35dddcbfae55cc17605441e02877b08dc6ab4acb961925a4e22995edf41';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='92b3dc4a609f41c2ecab0652818d5909671cd3c7dbdb04dc07c65a5f5b3171f1'"
+      - name: Materialize exact B30 candidate
+        shell: pwsh
+        run: |
+          $work=Join-Path $env:RUNNER_TEMP 'ozon-b30-work'; $out=Join-Path $env:RUNNER_TEMP 'ozon-b30-exact'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b30_fbs_delivery_assembly_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B29 base and B30 gates
+        shell: pwsh
+        run: |
+          $work=Join-Path $env:RUNNER_TEMP 'ozon-b30-work'; $out=Join-Path $env:RUNNER_TEMP 'ozon-b30-exact'; $b29=Join-Path $work 'b29-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B29_PRODUCT_STOCK_READS_REGRESSION_2026-08-28.mjs $b29; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B30_FBS_DELIVERY_ASSEMBLY_READS_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
