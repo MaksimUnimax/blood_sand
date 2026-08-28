@@ -1,0 +1,62 @@
+name: Ozon B26 FBO Draft Cargo Reads exact candidate
+
+on:
+  push:
+    branches:
+      - feature/ozon-b26-fbo-draft-cargo-reads-2026-08-28
+    paths:
+      - .github/workflows/ozon-b26-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_DRAFT_CARGO_READS_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b26_fbo_draft_cargo_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_DRAFT_CARGO_READS_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_DRAFT_CARGO_READS_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_DRAFT_CARGO_READS_CANDIDATE_MANIFEST_2026-08-28.md
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B26 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_DRAFT_CARGO_READS_2026-08-28.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='31491553b77c5796346d6519a2f101e329740d595fa4c15648964fe52fd6e868'; assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='4e0f4e6877a20e6f29552c0d520d9f973559904bb3e2905340a00986771a1d79'"
+      - name: Materialize exact B26 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b26_fbo_draft_cargo_reads_candidate.py --repo-root . --work-root /tmp/ozon-b26-work --out /tmp/ozon-b26-exact
+      - name: Verify exact B25 base and B26 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_SAFE_REFERENCE_SETTINGS_NO_BODY_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b26-work/b25-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_DRAFT_CARGO_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b26-exact
+          find /tmp/ozon-b26-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Upload exact B26 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b26-fbo-draft-cargo-reads-candidate
+          path: /tmp/ozon-b26-exact
+          if-no-files-found: error
+          retention-days: 3
+
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B26 patch transport identity
+        shell: pwsh
+        run: |
+          python -c "import gzip,hashlib,pathlib; p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_DRAFT_CARGO_READS_2026-08-28.patch.gz'); c=p.read_bytes(); assert hashlib.sha256(c).hexdigest()=='31491553b77c5796346d6519a2f101e329740d595fa4c15648964fe52fd6e868'; assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='4e0f4e6877a20e6f29552c0d520d9f973559904bb3e2905340a00986771a1d79'"
+      - name: Materialize exact B26 candidate on Windows
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b26-work"
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b26-exact"
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b26_fbo_draft_cargo_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify exact B25 base and B26 gates on Windows
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "ozon-b26-exact"
+          $work = Join-Path $env:RUNNER_TEMP "ozon-b26-work"
+          $b25 = Join-Path $work "b25-base"
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B25_SAFE_REFERENCE_SETTINGS_NO_BODY_READS_REGRESSION_2026-08-28.mjs $b25; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B26_FBO_DRAFT_CARGO_READS_REGRESSION_2026-08-28.mjs $out; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
