@@ -1,0 +1,50 @@
+name: Ozon B36 FBP Planning Reads exact candidate
+on:
+  push:
+    branches: [feature/ozon-b36-fbp-planning-reads-2026-08-28]
+    paths:
+      - .github/workflows/ozon-b36-exact-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B36_FBP_PLANNING_READS_2026-08-28.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b36_fbp_planning_reads_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B36_FBP_PLANNING_READS_REGRESSION_2026-08-28.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B36_FBP_PLANNING_READS_CANDIDATE_EVIDENCE_2026-08-28.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_B36_FBP_PLANNING_READS_CANDIDATE_MANIFEST_2026-08-28.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify B36 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B36_FBP_PLANNING_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='da0823e8cb2de28165b22e338fddde4f45c2eae1ccb932efb24706bdc6229858';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='6f1a89700f450a3e5920f5fc2288d9b8d6a6a865db8ccacd6874a2c6e0b9e258'"
+      - name: Materialize exact B36 candidate
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b36_fbp_planning_reads_candidate.py --repo-root . --work-root /tmp/ozon-b36-work --out /tmp/ozon-b36-exact
+      - name: Verify B35 base and B36 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B35_MARKETPLACE_SEARCH_QUERY_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b36-work/b35-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B36_FBP_PLANNING_READS_REGRESSION_2026-08-28.mjs /tmp/ozon-b36-exact
+          find /tmp/ozon-b36-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with: {name: ozon-b36-fbp-planning-reads-candidate, path: /tmp/ozon-b36-exact, if-no-files-found: error, retention-days: 3}
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --global core.longpaths true
+      - name: Verify B36 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_B36_FBP_PLANNING_READS_2026-08-28.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='da0823e8cb2de28165b22e338fddde4f45c2eae1ccb932efb24706bdc6229858';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='6f1a89700f450a3e5920f5fc2288d9b8d6a6a865db8ccacd6874a2c6e0b9e258'"
+      - name: Materialize exact B36 candidate
+        shell: pwsh
+        run: |
+          $work='C:\b36w'; $out='C:\b36o'
+          python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b36_fbp_planning_reads_candidate.py --repo-root . --work-root $work --out $out
+      - name: Verify B35 base and B36 gates
+        shell: pwsh
+        run: |
+          $work='C:\b36w'; $out='C:\b36o'; $b35=Join-Path $work 'b35-base'
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B35_MARKETPLACE_SEARCH_QUERY_READS_REGRESSION_2026-08-28.mjs $b35; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B36_FBP_PLANNING_READS_REGRESSION_2026-08-28.mjs $out; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem $out -Recurse -Filter *.js | ForEach-Object {node --check $_.FullName;if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}}
