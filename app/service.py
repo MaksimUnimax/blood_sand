@@ -54,7 +54,6 @@ class QuestionService:
         return await self.repo.start_ozon_question_input()
 
     async def ordinary_text(self, text):
-        """Compatibility path for existing question-bound manual/edit input."""
         return await self.repo.consume_active_text(text)
 
     async def operator_text(self, text, update_id):
@@ -66,10 +65,6 @@ class QuestionService:
         q, created = await self.repo.consume_ozon_question_input(update_id, text)
         if q is None:
             return None
-
-        # Telegram update replay is keyed by external_question_id=telegram:<update_id>.
-        # Only a still-NEW row may claim a Codex attempt; replay observes the
-        # persisted state and must not create a second attempt.
         if q['status'] == 'NEW':
             claim = await self.repo.claim_codex(q['id'])
             return {'kind': 'ozon_question', 'question_id': q['id'], 'claim': claim, 'created': created}
@@ -101,8 +96,6 @@ class QuestionService:
 
     async def execute_send(self, qid, rev):
         q = await self.repo.get_question(qid)
-        # Defense in depth: MANUAL_COPY can never reach a marketplace adapter,
-        # even if a stale/forged callback bypassed the renderer.
         if not q or q['publish_mode'] != 'MARKETPLACE_API' or q['marketplace'] not in self.adapters:
             raise StaleState('STALE_STATE')
         result = await self.adapters[q['marketplace']].send_answer(q, rev['text'])
@@ -130,6 +123,7 @@ class QuestionService:
         q = await self.repo.get_question(qid)
         try:
             text = await self.runner.run(profile, self.prompts.build(q), str(aid))
+            text = self.prompts.validate_output(q, text)
             current = await self.repo.get_question(qid)
             if current['current_draft_attempt_id'] != aid or current['status'] != 'CODEX_RUNNING':
                 return None
