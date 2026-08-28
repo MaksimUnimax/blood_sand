@@ -2,7 +2,13 @@ import pytest
 from types import SimpleNamespace
 
 from app.config import Config
-from app.daemon import TelegramTransport, live_config, PollingConflictExit, POLLING_CONFLICT_EXIT_CODE
+from app.daemon import (
+    TelegramTransport,
+    configure_operator_menu,
+    live_config,
+    PollingConflictExit,
+    POLLING_CONFLICT_EXIT_CODE,
+)
 from app.db.database import connect, init
 from app.db.repository import Repository
 
@@ -35,6 +41,29 @@ def test_polling_conflict_has_dedicated_non_restart_exit_contract():
     assert PollingConflictExit().code == POLLING_CONFLICT_EXIT_CODE == 75
     unit = open('deploy/marketplace-question-operator.service').read()
     assert 'Restart=on-failure' in unit and 'RestartPreventExitStatus=75' in unit
+
+
+@pytest.mark.asyncio
+async def test_operator_menu_registers_only_primary_question_action_for_operator_chat():
+    calls = []
+
+    class Bot:
+        async def set_my_commands(self, commands, scope=None):
+            calls.append(('commands', commands, scope))
+            return True
+
+        async def set_chat_menu_button(self, chat_id=None, menu_button=None):
+            calls.append(('menu', chat_id, menu_button))
+            return True
+
+    await configure_operator_menu(Bot(), '286579139')
+    assert len(calls) == 2
+    commands = calls[0][1]
+    scope = calls[0][2]
+    assert [(x.command, x.description) for x in commands] == [('ozon', '➕ Отправить вопрос')]
+    assert scope.chat_id == 286579139
+    assert calls[1][1] == 286579139
+    assert type(calls[1][2]).__name__ == 'MenuButtonCommands'
 
 
 @pytest.mark.asyncio
