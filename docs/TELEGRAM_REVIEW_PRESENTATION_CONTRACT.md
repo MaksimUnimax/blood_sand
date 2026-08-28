@@ -15,6 +15,25 @@ New revisions, whether Codex-generated, manual, or edited, must contain 1 to
 message. Paragraphs and newlines are preserved exactly. Controls attach to the
 clean answer message, never the operator projection.
 
+Customer-answer paragraph structure is model-owned: application validation and
+Telegram projection preserve the validated text exactly and do not insert,
+remove, or rewrite whitespace. When contextual explanation precedes product
+recommendations, the customer answer uses this generic structure:
+
+```text
+context paragraph
+
+recommendation paragraph
+marketplace URL on the next line (when an approved URL exists)
+
+next recommendation paragraph
+marketplace URL on the next line (when an approved URL exists)
+```
+
+The context paragraph does not contain a product recommendation. Each distinct
+recommendation or audience branch has its own paragraph; this applies to every
+marketplace and publish mode when those semantic blocks apply.
+
 Business actions can differ while presentation does not: Ozon `MANUAL_COPY`
 offers Edit, Close, and Switch Codex, and never gains Send. Wildberries
 `MARKETPLACE_API` retains Send, Edit, Ignore, and Switch Codex.

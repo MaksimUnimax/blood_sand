@@ -209,18 +209,31 @@ def test_v2_reference_snapshot_is_exact_and_contains_required_semantics():
 def test_shared_customer_answer_prompt_and_validation_limit(tmp_path):
     builder = prompt_builder(tmp_path, 'https://www.ozon.ru/product/1630040194/')
     q = {'marketplace': 'ozon', 'publish_mode': 'MANUAL_COPY', 'question_text': 'q'}
-    prompt = builder.build(q)
-    assert 'complete customer-ready marketplace reply' in prompt
-    assert 'natural paragraph breaks' in prompt
-    assert 'male and female branches in separate paragraphs' in prompt
-    assert 'concise marketplace' not in prompt
-    assert '256 characters' not in prompt
     for marketplace, mode in (('ozon', 'MANUAL_COPY'), ('wildberries', 'MARKETPLACE_API')):
         question = {**q, 'marketplace': marketplace, 'publish_mode': mode}
+        prompt = builder.build(question)
+        assert 'complete customer-ready marketplace reply' in prompt
+        assert 'natural paragraph breaks' in prompt
+        assert 'opening context paragraph must not contain a product recommendation' in prompt
+        assert 'Separate it from the first recommendation block with exactly one blank line' in prompt
+        assert 'each distinct recommendation or audience branch in its own paragraph' in prompt
+        assert 'male and female branches in separate paragraphs' in prompt
+        assert 'on its own line immediately after the recommendation paragraph it belongs to' in prompt
+        assert 'concise marketplace' not in prompt
+        assert '256 characters' not in prompt
+        assert 'Stay within 4096 characters total' in prompt
         assert builder.validate_output(question, 'x') == 'x'
         assert builder.validate_output(question, 'x' * 4096) == 'x' * 4096
         with pytest.raises(ValueError, match='1..4096'):
             builder.validate_output(question, 'x' * 4097)
+
+
+def test_validate_output_preserves_customer_paragraph_whitespace_exactly(tmp_path):
+    url = 'https://www.ozon.ru/product/1630040194/'
+    builder = prompt_builder(tmp_path, url)
+    question = {'marketplace': 'ozon', 'publish_mode': 'MANUAL_COPY', 'question_text': 'q'}
+    sample = f'Контекст.\n\nМужчине рекомендуем оберег: он подходит по смыслу.\n{url}\n\nЖенщине рекомендуем другой оберег: он подходит по смыслу.\n{url}'
+    assert builder.validate_output(question, sample) == sample
 
 
 @pytest.mark.asyncio

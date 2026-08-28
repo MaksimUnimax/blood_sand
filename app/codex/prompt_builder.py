@@ -108,8 +108,12 @@ class PromptBuilder:
             '- When recommending a product, include the customer-facing explanation required by CUSTOMER_RECOMMENDATION_COPY_GUIDE.md.\n'
             '- Do not reveal internal ranking, sales, or recommendation machinery.\n'
             '- Use natural paragraph breaks and separate distinct semantic blocks with a blank line.\n'
+            '- For recommendation-style answers where context precedes recommendations, the opening context paragraph contains only relevant date/result context, identified chertog/category, and a short customer-facing explanation of its qualities/themes.\n'
+            '- The opening context paragraph must not contain a product recommendation. Separate it from the first recommendation block with exactly one blank line.\n'
+            '- Put each distinct recommendation or audience branch in its own paragraph. Each recommendation paragraph includes any relevant audience qualifier, the customer-facing product name, and a meaningful customer-facing explanation of why it fits.\n'
             '- When gender is unspecified and male/female recommendations differ, put the male and female branches in separate paragraphs.\n'
-            '- Place the appropriate marketplace URL with its recommendation.\n'
+            '- When an approved marketplace URL exists, put it on its own line immediately after the recommendation paragraph it belongs to. Separate it and the next distinct recommendation block with one blank line.\n'
+            '- Do not put a different recommendation on the same paragraph or line as another recommendation or its URL. Do not repeat common context for each branch unless trusted customer-copy authority requires different context.\n'
             '- Do not use Markdown code fences or operator/source/profile/technical metadata.\n'
             f'- Stay within {CUSTOMER_ANSWER_TEXT_LIMIT} characters total, including URLs.\n'
         )
