@@ -9,7 +9,7 @@ import base64
 MAX_CALLBACK_DATA_BYTES = 64
 PROFILES = frozenset({'codex1', 'codex2', 'codex3'})
 # Append new actions so existing action codes stay wire-compatible.
-_ACTIONS = ('manual', 'codex', 'ignore', 'send', 'edit', 'retry_codex', 'choose_codex', 'confirm_regenerate', 'retry_send', 'close', 'check_publication')
+_ACTIONS = ('manual', 'codex', 'ignore', 'send', 'edit', 'retry_codex', 'choose_codex', 'confirm_regenerate', 'retry_send', 'close')
 _CODE = {action: index + 1 for index, action in enumerate(_ACTIONS)}
 _ACTION = {value: key for key, value in _CODE.items()}
 # qid, rid, arg.  ``ignore`` has two renderer-emitted contextual forms.
@@ -19,7 +19,6 @@ SCHEMA = {
  'send': ((True, True, None),), 'edit': ((True, True, None),),
  'retry_codex': ((True, False, None),), 'confirm_regenerate': ((True, False, None),),
  'retry_send': ((True, True, None),), 'close': ((True, True, None),),
- 'check_publication': ((True, True, None),),
  'choose_codex': ((True, False, 'menu'), (True, True, 'menu'), (True, False, 'profile'), (True, True, 'profile')),
 }
 _ARG_CODE = {None: 0, 'menu': 1, 'codex1': 2, 'codex2': 3, 'codex3': 4}

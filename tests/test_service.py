@@ -39,9 +39,5 @@ async def test_ambiguous_write_reads_once_never_retries(tmp_path,readback,status
  d,r,q,rid,a,s=await prepared_service(tmp_path,['ABSENT',readback],'AMBIGUOUS'); assert await s.send(q['id'],rid)==status; assert a.writes==[' exact ']; await d.close()
 
 @pytest.mark.asyncio
-async def test_send_unknown_check_is_read_only(tmp_path):
- d,r,q,rid,a,s=await prepared_service(tmp_path,['ABSENT','ABSENT','MATCHED']); assert await s.send(q['id'],rid)=='SEND_UNKNOWN'; assert await s.check_publication(q['id'])=='SENT'; assert len(a.writes)==1; await d.close()
-
-@pytest.mark.asyncio
 async def test_clear_failure_is_retryable(tmp_path):
  d,r,q,rid,a,s=await prepared_service(tmp_path,['ABSENT'],'CLEAR_FAILURE'); assert await s.send(q['id'],rid)=='SEND_FAILED'; assert await s.claim_retry_send(q['id'],rid); await d.close()

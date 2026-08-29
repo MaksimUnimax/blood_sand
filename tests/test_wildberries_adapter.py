@@ -1,5 +1,6 @@
 import base64
 import json
+from pathlib import Path
 
 import httpx
 import pytest
@@ -83,7 +84,11 @@ async def test_write_status_semantics_and_exact_payload(response, status):
     async def handler(request): seen.append(request); return response
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         result = await WildberriesAdapter(client, 'token').send_answer({'external_question_id': 'x'}, ' exact ')
-    assert result['status'] == status and json.loads(seen[0].content) == {'id': 'x', 'text': ' exact ', 'state': 'wbRu'}
+    payload = json.loads(seen[0].content)
+    assert result['status'] == status
+    assert payload == {'id': 'x', 'answer': {'text': ' exact '}, 'state': 'wbRu'}
+    assert 'text' not in payload and payload['answer']['text'] == ' exact '
+    assert payload['state'] == 'wbRu'
 
 
 @pytest.mark.asyncio
@@ -93,6 +98,15 @@ async def test_timeout_is_ambiguous_and_not_retried():
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         result = await WildberriesAdapter(client, 'token').send_answer({'external_question_id': 'x'}, 'a')
     assert result['status'] == 'AMBIGUOUS' and len(calls) == 1
+
+
+def test_public_product_card_answer_path_has_no_private_or_buyer_chat_send():
+    source = Path(__file__).parents[1].joinpath('app/marketplaces/wildberries.py').read_text()
+    assert "'PATCH', '/api/v1/questions'" in source
+    assert "'answer': {'text': text}" in source
+    assert "'state': 'wbRu'" in source
+    assert "'state': 'none'" not in source
+    assert '/seller/message' not in source
 
 
 @pytest.mark.asyncio

@@ -144,7 +144,7 @@ class WildberriesAdapter:
         try:
             response = await self._request(
                 'PATCH', '/api/v1/questions',
-                json={'id': question['external_question_id'], 'text': text, 'state': 'wbRu'},
+                json={'id': question['external_question_id'], 'answer': {'text': text}, 'state': 'wbRu'},
             )
         except (httpx.TimeoutException, httpx.TransportError):
             return {'status': 'AMBIGUOUS'}

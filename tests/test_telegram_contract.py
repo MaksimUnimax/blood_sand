@@ -43,7 +43,7 @@ async def test_question_send_persists_only_positive_message_id(tmp_path):
 
 
 def test_callbacks_are_bounded_parseable_and_revision_bound():
- for action,qid,rid,arg in (('manual',123456,None,None),('codex',123456,None,None),('ignore',123456,None,None),('ignore',123456,987654,None),('send',123456,987654,None),('edit',123456,987654,None),('retry_codex',123456,None,None),('retry_send',123456,987654,None),('check_publication',123456,987654,None),('confirm_regenerate',123456,None,None),('choose_codex',123456,None,'menu'),('choose_codex',123456,987654,'codex1')):
+ for action,qid,rid,arg in (('manual',123456,None,None),('codex',123456,None,None),('ignore',123456,None,None),('ignore',123456,987654,None),('send',123456,987654,None),('edit',123456,987654,None),('retry_codex',123456,None,None),('retry_send',123456,987654,None),('confirm_regenerate',123456,None,None),('choose_codex',123456,None,'menu'),('choose_codex',123456,987654,'codex1')):
   value=encode(action,qid,rid,arg)
   assert len(value.encode()) <= 64 and decode(value)['action']==action
  assert decode(encode('send',1,2))['revision_id']==2
@@ -52,7 +52,7 @@ def test_callbacks_are_bounded_parseable_and_revision_bound():
 
 def test_callback_schema_is_canonical_and_full_sqlite_ids_fit():
  maximum=9223372036854775807
- emitted=(('manual',maximum,None,None),('codex',maximum,None,None),('ignore',maximum,None,None),('ignore',maximum,maximum,None),('send',maximum,maximum,None),('edit',maximum,maximum,None),('retry_codex',maximum,None,None),('retry_send',maximum,maximum,None),('check_publication',maximum,maximum,None),('confirm_regenerate',maximum,None,None),('choose_codex',maximum,maximum,'menu'),('choose_codex',maximum,maximum,'codex3'))
+ emitted=(('manual',maximum,None,None),('codex',maximum,None,None),('ignore',maximum,None,None),('ignore',maximum,maximum,None),('send',maximum,maximum,None),('edit',maximum,maximum,None),('retry_codex',maximum,None,None),('retry_send',maximum,maximum,None),('confirm_regenerate',maximum,None,None),('choose_codex',maximum,maximum,'menu'),('choose_codex',maximum,maximum,'codex3'))
  assert max(len(encode(*item).encode('utf-8')) for item in emitted) <= MAX_CALLBACK_DATA_BYTES
  for item in emitted: assert decode(encode(*item)) == {'action':item[0],'question_id':item[1],'revision_id':item[2],'arg':item[3]}
  for bad in (('manual',1,2,None),('manual',1,None,'x'),('codex',1,2,None),('ignore',1,None,'x'),('send',1,None,None),('send',1,2,'x'),('edit',1,None,None),('retry_codex',1,2,None),('retry_send',1,None,None),('confirm_regenerate',1,2,None),('choose_codex',1,None,None),('choose_codex',1,None,'bad'),('ignore',0,None,None)):
@@ -148,7 +148,7 @@ async def test_frozen_button_sets_include_switch_and_review_has_no_regeneration(
  assert labels('CODEX_ERROR')==['🔄 Повторить','✍️ Ответить самому','🚫 Игнорировать','🤖 Сменить Codex']
  for state in ('MANUAL_INPUT','CODEX_RUNNING','EDITING','IGNORED','SENDING','SENT','SEND_FAILED','SEND_UNKNOWN','ANSWERED_EXTERNALLY'):
   assert '🤖 Сменить Codex' in labels(state)
- assert '🔎 Проверить публикацию' in labels('SEND_UNKNOWN')
+ assert '🔎 Проверить публикацию' not in labels('SEND_UNKNOWN')
  assert '🔄 Повторить отправку' not in labels('SEND_UNKNOWN') and '✅ Отправить' not in labels('SEND_UNKNOWN')
  assert labels('ANSWERED_EXTERNALLY') == ['🤖 Сменить Codex']
  assert not any('генерировать' in x.lower() for x in labels('REVIEW'))

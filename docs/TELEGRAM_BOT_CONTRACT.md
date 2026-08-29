@@ -50,7 +50,6 @@ The common edge returns `SUCCESS`, `DETERMINISTIC_FAILURE`, `PERMISSION_FAILURE`
 | Ignore | → IGNORED | then | none | disable |
 | Send | SENDING claim | then | marketplace/reconciliation | render/disable |
 | retry_send | SEND_FAILED retry transition + SENDING claim | then | marketplace/reconciliation | render/disable |
-| check_publication | SEND_UNKNOWN read-only inspection | then | WB GET only | render/disable |
 | profile switch | active-profile update | then | none | confirmation reply |
 | malformed/stale/legacy/unauthorized/duplicate | none | attempted via ack policy | none | none |
 

@@ -21,8 +21,17 @@ and read-only bit 30 disabled. Classification never sends the token to WB.
 ## Verified public product-card publication
 
 WB publication mode is **PUBLIC_PRODUCT_CARD_ONLY**. The sole answer write is
-`PATCH /api/v1/questions` with exactly `id`, `text`, and `state=wbRu`. The
-private `state=none` is forbidden. Buyer Chat/private-message APIs (including
+`PATCH /api/v1/questions` with exactly `id`, `answer.text`, and `state=wbRu`:
+
+```json
+{
+  "id": "...",
+  "answer": {"text": "..."},
+  "state": "wbRu"
+}
+```
+
+`TOP_LEVEL_TEXT` is **FORBIDDEN/OBSOLETE**. The private `state=none` is forbidden. Buyer Chat/private-message APIs (including
 `/api/v1/seller/message`) are forbidden in every MQO source path.
 
 WB seller answers undergo preliminary moderation/processing. Consequently an
@@ -43,12 +52,16 @@ WB may still be processing/moderating the answer. A clear 4xx failure becomes
 `SEND_FAILED`. An application JSON envelope with `error=true` is a clear
 failure even under HTTP 2xx.
 
-`SEND_UNKNOWN` never retries PATCH and has only the read-only Telegram action
-“🔎 Проверить публикацию”. That action performs GET only: it can move to `SENT`
-or `ANSWERED_EXTERNALLY`, otherwise remains `SEND_UNKNOWN`. `ANSWERED_EXTERNALLY`
-blocks all marketplace writes. `SEND_FAILED` alone retains explicit retry.
+`SEND_UNKNOWN` never retries PATCH. `ANSWERED_EXTERNALLY` blocks all marketplace
+writes. `SEND_FAILED` alone retains explicit retry.
 Actual publication remains operator-explicit: poll → review → explicit Send;
 there is no automatic WB Codex or marketplace send.
+
+## 2026-08-29 payload incident
+
+The former MQO payload (`id` + top-level `text` + `state`) received WB HTTP 200
+with `error=false`, but the write was not applied. The root cause was the current
+WB schema requiring the answer text under `answer.text`.
 
 WB uses the shared generic Telegram REVIEW presentation and API-question flow;
 it does not have a special review UI. Production WB acceptance remains pending.

@@ -139,23 +139,6 @@ class QuestionService:
     async def retry_send(self, qid, rid):
         return await self.execute_send(qid, await self.claim_retry_send(qid, rid))
 
-    async def check_publication(self, qid):
-        q = await self.repo.get_question(qid)
-        if not q or q['status'] != 'SEND_UNKNOWN' or q['marketplace'] not in self.adapters:
-            raise StaleState('STALE_STATE')
-        rev = await self.repo.get_current_answer_revision(qid)
-        inspect = getattr(self.adapters[q['marketplace']], 'inspect_answer', None)
-        if inspect is None:
-            raise StaleState('STALE_STATE')
-        outcome = await inspect(q, rev['text'])
-        if outcome == 'MATCHED':
-            await self.repo.transition(qid, 'SEND_UNKNOWN', 'SENT', {'sent_at': __import__('app.db.repository', fromlist=['now']).now()})
-            return 'SENT'
-        if outcome == 'DIFFERENT':
-            await self.repo.mark_answered_externally(qid, 'SEND_UNKNOWN')
-            return 'ANSWERED_EXTERNALLY'
-        return 'SEND_UNKNOWN'
-
     async def codex(self, qid, expected_revision_id=None, claim=None):
         aid, profile = claim or await self.repo.claim_codex(qid, expected_revision_id)
         q = await self.repo.get_question(qid)
