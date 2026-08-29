@@ -1,0 +1,147 @@
+name: Ozon V2 B1-B49 canonical salvage candidate
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-v2-b1-b49-canonical-salvage.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/build_v2_b1_b49_canonical_salvage_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/V2_B1_B49_CANONICAL_SALVAGE_REGRESSION_2026-08-29.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_B1_B49_OPERATION_SALVAGE_MANIFEST_2026-08-29.json
+
+permissions:
+  contents: read
+
+jobs:
+  linux-materialize-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair authority with all refs
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Materialize accepted corrected canonical B1
+        run: |
+          set -euo pipefail
+          validation=tooling/llm-api-bridges/ozon-seller/validation
+          python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('$validation/PATCH_V2_B1_STOCKS_WAREHOUSE_2026-08-29.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='e02d68c233067c258b3a115132296a4b25bdd1ab43ed061a030843fbbf475261';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='5485652cb41ea68d27285ba1678a23a4325037f1909426c933c60bdeabacf11f'"
+          python3 "$validation/materialize_patch_v2_b1_stocks_warehouse_candidate.py" --repo-root . --work-root /tmp/current-b1-work --out /tmp/current-b1
+          node "$validation/PATCH_V2_B1_STOCKS_WAREHOUSE_REGRESSION_2026-08-29.mjs" /tmp/current-b1
+
+      - name: Materialize accepted historical B49 and exact accepted B0
+        run: |
+          set -euo pipefail
+          B49=59ce0cedf93e409f5988b16d5b569b4a5f229b1b
+          test "$(git rev-parse "$B49")" = "$B49"
+          git worktree add --detach /tmp/old-b49-repo "$B49"
+          validation=/tmp/old-b49-repo/tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$validation/materialize_patch_b49_fbs_posting_timeslot_change_restrictions_candidate.py" \
+            --repo-root /tmp/old-b49-repo \
+            --work-root /tmp/old-b49-work \
+            --out /tmp/old-b49
+          node "$validation/PATCH_B49_FBS_POSTING_TIMESLOT_CHANGE_RESTRICTIONS_REGRESSION_2026-08-28.mjs" /tmp/old-b49
+          python3 "$validation/materialize_patch_b0_full_read_core_candidate.py" /tmp/old-b49-repo /tmp/accepted-b0
+
+      - name: Build canonical salvage candidate
+        run: |
+          set -euo pipefail
+          validation=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$validation/build_v2_b1_b49_canonical_salvage_candidate.py" \
+            --b0 /tmp/accepted-b0 \
+            --canonical-b1 /tmp/current-b1 \
+            --historical-b49 /tmp/old-b49 \
+            --out /tmp/canonical-salvage
+
+      - name: Run canonical salvage behavior gates
+        run: |
+          set -euo pipefail
+          validation=tooling/llm-api-bridges/ozon-seller/validation
+          node "$validation/V2_B1_B49_CANONICAL_SALVAGE_REGRESSION_2026-08-29.mjs" \
+            /tmp/current-b1 \
+            /tmp/old-b49 \
+            /tmp/canonical-salvage \
+            "$validation/OZON_B1_B49_OPERATION_SALVAGE_MANIFEST_2026-08-29.json"
+          find /tmp/canonical-salvage -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Emit deterministic candidate identities
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          root=Path('/tmp/canonical-salvage')
+          files=sorted((p for p in root.rglob('*') if p.is_file()), key=lambda p:p.relative_to(root).as_posix())
+          lines=[]
+          for p in files:
+              rel=p.relative_to(root).as_posix()
+              h=hashlib.sha256(p.read_bytes()).hexdigest()
+              lines.append(f'{rel}\0{h}\n')
+          tree=hashlib.sha256(''.join(lines).encode()).hexdigest()
+          changed={rel:hashlib.sha256((root/rel).read_bytes()).hexdigest() for rel in [
+              'shared/ozon_operation_registry.js','shared/ozon_contract.js','shared/ozon_entitlements.js']}
+          out={'production_files':len(files),'production_js_files':sum(p.suffix=='.js' for p in files),'production_tree_sha256':tree,'changed_core_sha256':changed}
+          print(json.dumps(out,indent=2,sort_keys=True))
+          Path('/tmp/CANONICAL_SALVAGE_CANDIDATE_IDENTITIES.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          assert len(files)==21
+          assert sum(p.suffix=='.js' for p in files)==18
+          PY
+
+      - name: Upload canonical salvage candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-v2-b1-b49-canonical-salvage-candidate
+          path: |
+            /tmp/canonical-salvage
+            /tmp/CANONICAL_SALVAGE_CANDIDATE_IDENTITIES.json
+          if-no-files-found: error
+          retention-days: 7
+
+  windows-materialize-and-validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repair authority with all refs
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --system core.longpaths true
+
+      - name: Materialize accepted corrected canonical B1
+        shell: pwsh
+        run: |
+          $v='tooling/llm-api-bridges/ozon-seller/validation'
+          python "$v/materialize_patch_v2_b1_stocks_warehouse_candidate.py" --repo-root . --work-root C:\v2b1w --out C:\v2b1
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node "$v/PATCH_V2_B1_STOCKS_WAREHOUSE_REGRESSION_2026-08-29.mjs" C:\v2b1
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+
+      - name: Materialize accepted historical B49 and exact accepted B0
+        shell: pwsh
+        run: |
+          $b49='59ce0cedf93e409f5988b16d5b569b4a5f229b1b'
+          if((git rev-parse $b49) -ne $b49){throw 'B49 identity mismatch'}
+          git worktree add --detach C:\oldb49repo $b49
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          $v='C:\oldb49repo\tooling\llm-api-bridges\ozon-seller\validation'
+          python "$v\materialize_patch_b49_fbs_posting_timeslot_change_restrictions_candidate.py" --repo-root C:\oldb49repo --work-root C:\oldb49w --out C:\oldb49
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node "$v\PATCH_B49_FBS_POSTING_TIMESLOT_CHANGE_RESTRICTIONS_REGRESSION_2026-08-28.mjs" C:\oldb49
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          python "$v\materialize_patch_b0_full_read_core_candidate.py" C:\oldb49repo C:\acceptedb0
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+
+      - name: Build and validate canonical salvage candidate
+        shell: pwsh
+        run: |
+          $v='tooling/llm-api-bridges/ozon-seller/validation'
+          python "$v/build_v2_b1_b49_canonical_salvage_candidate.py" --b0 C:\acceptedb0 --canonical-b1 C:\v2b1 --historical-b49 C:\oldb49 --out C:\salvage
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node "$v/V2_B1_B49_CANONICAL_SALVAGE_REGRESSION_2026-08-29.mjs" C:\v2b1 C:\oldb49 C:\salvage "$v/OZON_B1_B49_OPERATION_SALVAGE_MANIFEST_2026-08-29.json"
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem C:\salvage -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE} }
