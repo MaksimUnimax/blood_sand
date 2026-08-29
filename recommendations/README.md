@@ -4,7 +4,7 @@
 
 Директория `recommendations/` является общей базой знаний для двух раздельных контуров:
 
-1. deterministic recommendation system по дате рождения, полу и marketplace;
+1. deterministic recommendation system по дате рождения, полу и marketplace, включая consumer VK Bot / VK Mini App;
 2. Marketplace Question Operator: Ozon/Wildberries → Telegram operator → manual/optional Codex → review → explicit marketplace send.
 
 ## Current recommendation authority
@@ -19,6 +19,30 @@
 6. `DATA_API_CONTRACT.md` и `ARCHITECTURE.md` — current implementation contract.
 
 `RECOMMENDATION_SYSTEM_TZ.md` и `M0_DOMAIN_FREEZE_AUDIT.md` являются **superseded V1 historical records** и не должны переопределять V2.
+
+## VK implementation documents
+
+Current VK documents:
+
+- `VK_UX_FLOW.md` — consumer Bot / Mini App UX authority;
+- `ROADMAP.md` — V2 implementation sequence;
+- `prompts/M1_1_CODEX_PROMPT.md` — current first implementation prompt for V2 machine-readable configuration.
+
+Hard boundary:
+
+```text
+VK Bot / Mini App do not own a separate recommendation matrix.
+They consume the same V2 Recommendation Core/API.
+```
+
+Old VK/V1 examples or prompts that contain:
+
+- `Медведь + мужчина → Сварог + Медвежья лапа`;
+- 33 active recommendation rows;
+- any secondary/rank-2 recommendation;
+- V1 authority above current matrix
+
+are superseded and must not be used for implementation.
 
 ## Current V2 recommendation rules
 
@@ -125,6 +149,8 @@ Marketplace Question Operator — отдельный standalone runtime project:
 ```
 
 Reference documents могут синхронизироваться в runtime, но продуктовый source of truth остаётся в этой директории.
+
+VK recommendation system должен развиваться отдельно от MQO runtime: общая у них business recommendation authority, но transport/state/deployment контуры разные.
 
 Decision marker текущей recommendation policy:
 
