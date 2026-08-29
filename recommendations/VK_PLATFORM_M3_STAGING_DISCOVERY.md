@@ -1,6 +1,6 @@
 # VK Platform M3 Staging Discovery
 
-Status: **PRE-M3 READ-ONLY STAGING DISCOVERY — COMPLETED**
+Status: **PRE-M3 READ-ONLY STAGING DISCOVERY — BLOCKED AFTER REAL READ-ONLY EVIDENCE**
 Captured at UTC: 2026-08-29
 
 ```text
@@ -86,3 +86,7 @@ BOT_CODE_CREATED = no
 VK_RUNTIME_CODE_CREATED = no
 SECRETS_COMMITTED = no
 ```
+
+The read-only discovery gate remains blocked: the required community-settings
+readback is unavailable for the configured token, and the actual Callback server
+is failed and still configured for API `5.130` rather than the locked `5.199`.
