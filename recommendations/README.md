@@ -24,6 +24,7 @@
 
 Current VK documents:
 
+- `VK_PLATFORM_DOCUMENTATION_FREEZE.md` — контрольная точка завершённого documentation-first architecture phase и текущие code gates;
 - `VK_PLATFORM_ARCHITECTURE.md` — обязательная pre-implementation архитектура VK Bot + Mini App, построенная по официальным VK contracts;
 - `VK_PLATFORM_OFFICIAL_CONTRACT_LEDGER.md` — реестр подтверждённых официальных VK contracts, разрешённых implementation surfaces и `UNRESOLVED` gaps;
 - `VK_PLATFORM_PRE_M3_CONTRACT.md` — официальный PRE-M3 transport/configuration baseline, provisioning/preflight contracts и staging requirements;
