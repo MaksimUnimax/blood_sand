@@ -23,6 +23,8 @@ def parse_dates(text: str | None) -> list[ParsedDate]:
 def parse_gender(text: str | None) -> str | None:
     return {"мужчине":"male", "male":"male", "женщине":"female", "female":"female"}.get((text or "").strip().lower())
 def is_restart(text: str | None) -> bool: return (text or "").strip().lower() == "подобрать снова"
+def menu_text_action(text: str | None):
+    return {"Подобрать оберег": ("menu", "recommend"), "Задать вопрос": ("menu", "human")}.get(text)
 
 def parse_keyboard_payload(payload, text: str | None):
     """Return a whitelisted semantic tuple, or None.  Never infer from bad payload."""
@@ -35,4 +37,7 @@ def parse_keyboard_payload(payload, text: str | None):
         return ("gender", value["value"]) if text == expected else None
     if set(value) == {"kip", "v"} and value == {"kip": "restart", "v": 1}:
         return ("restart", None) if text == "Подобрать снова" else None
+    if set(value) == {"kip", "value", "v"} and value.get("kip") == "menu" and value.get("v") == 1 and value.get("value") in {"recommend", "human"}:
+        expected = {"recommend": "Подобрать оберег", "human": "Задать вопрос"}[value["value"]]
+        return ("menu", value["value"]) if text == expected else None
     return None

@@ -3,12 +3,24 @@ from __future__ import annotations
 
 def gender_keyboard() -> dict:
     return {
-        "one_time": True,
-        "inline": False,
+        "one_time": False,
+        "inline": True,
         "buttons": [[
             {"action": {"type": "text", "label": "Мужчине", "payload": '{"kip":"gender","value":"male","v":1}'}, "color": "primary"},
             {"action": {"type": "text", "label": "Женщине", "payload": '{"kip":"gender","value":"female","v":1}'}, "color": "secondary"},
         ]],
+    }
+
+
+def main_menu_keyboard() -> dict:
+    """The sole persistent, non-inline navigation keyboard for the bot."""
+    return {
+        "one_time": False,
+        "inline": False,
+        "buttons": [
+            [{"action": {"type": "text", "label": "Подобрать оберег", "payload": '{"kip":"menu","value":"recommend","v":1}'}, "color": "primary"}],
+            [{"action": {"type": "text", "label": "Задать вопрос", "payload": '{"kip":"menu","value":"human","v":1}'}, "color": "secondary"}],
+        ],
     }
 
 
