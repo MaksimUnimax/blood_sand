@@ -14,7 +14,7 @@ _CODE = {action: index + 1 for index, action in enumerate(_ACTIONS)}
 _ACTION = {value: key for key, value in _CODE.items()}
 # qid, rid, arg.  ``ignore`` has two renderer-emitted contextual forms.
 SCHEMA = {
- 'manual': ((True, False, None),), 'codex': ((True, False, None),),
+ 'manual': ((True, False, None),), 'codex': ((True, False, None), (True, True, None)),
  'ignore': ((True, False, None), (True, True, None)),
  'send': ((True, True, None),), 'edit': ((True, True, None),),
  'retry_codex': ((True, False, None),), 'confirm_regenerate': ((True, False, None),),

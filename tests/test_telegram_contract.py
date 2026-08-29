@@ -55,7 +55,7 @@ def test_callback_schema_is_canonical_and_full_sqlite_ids_fit():
  emitted=(('manual',maximum,None,None),('codex',maximum,None,None),('ignore',maximum,None,None),('ignore',maximum,maximum,None),('send',maximum,maximum,None),('edit',maximum,maximum,None),('retry_codex',maximum,None,None),('retry_send',maximum,maximum,None),('confirm_regenerate',maximum,None,None),('choose_codex',maximum,maximum,'menu'),('choose_codex',maximum,maximum,'codex3'))
  assert max(len(encode(*item).encode('utf-8')) for item in emitted) <= MAX_CALLBACK_DATA_BYTES
  for item in emitted: assert decode(encode(*item)) == {'action':item[0],'question_id':item[1],'revision_id':item[2],'arg':item[3]}
- for bad in (('manual',1,2,None),('manual',1,None,'x'),('codex',1,2,None),('ignore',1,None,'x'),('send',1,None,None),('send',1,2,'x'),('edit',1,None,None),('retry_codex',1,2,None),('retry_send',1,None,None),('confirm_regenerate',1,2,None),('choose_codex',1,None,None),('choose_codex',1,None,'bad'),('ignore',0,None,None)):
+ for bad in (('manual',1,2,None),('manual',1,None,'x'),('codex',1,None,'x'),('ignore',1,None,'x'),('send',1,None,None),('send',1,2,'x'),('edit',1,None,None),('retry_codex',1,2,None),('retry_send',1,None,None),('confirm_regenerate',1,2,None),('choose_codex',1,None,None),('choose_codex',1,None,'bad'),('ignore',0,None,None)):
   with pytest.raises(ValueError): encode(*bad)
 
 @pytest.mark.asyncio
@@ -137,21 +137,21 @@ async def test_choose_codex_nonrevision_new_and_codex_error_remain_valid(tmp_pat
 
 
 @pytest.mark.asyncio
-async def test_frozen_button_sets_include_switch_and_review_has_no_regeneration(tmp_path):
+async def test_frozen_button_sets_include_switch_and_review_regeneration(tmp_path):
  db=await connect(tmp_path/'x'); await init(db); repo=Repository(db)
  q,_=await repo.insert_question({'marketplace':'ozon','external_question_id':'buttons','question_text':'q'})
  rid=await repo.create_answer_revision(q['id'],'manual','a'); await repo.set_current_answer_revision(q['id'],rid); q=await repo.get_question(q['id'])
  bot=OperatorBot(1,SimpleNamespace(repo=repo))
  labels=lambda state:[b.text for row in bot.buttons(q,state).inline_keyboard for b in row]
  assert labels('NEW')==['✍️ Ответить самому','🤖 Отправить в Codex','🚫 Игнорировать','🤖 Сменить Codex']
- assert labels('REVIEW')==['✅ Отправить','✏️ Редактировать','🚫 Игнорировать','🤖 Сменить Codex']
+ assert labels('REVIEW')==['✅ Отправить','✏️ Редактировать','🤖 Отправить в Codex','🚫 Игнорировать','🤖 Сменить Codex']
  assert labels('CODEX_ERROR')==['🔄 Повторить','✍️ Ответить самому','🚫 Игнорировать','🤖 Сменить Codex']
  for state in ('MANUAL_INPUT','CODEX_RUNNING','EDITING','IGNORED','SENDING','SENT','SEND_FAILED','SEND_UNKNOWN','ANSWERED_EXTERNALLY'):
   assert '🤖 Сменить Codex' in labels(state)
  assert '🔎 Проверить публикацию' not in labels('SEND_UNKNOWN')
  assert '🔄 Повторить отправку' not in labels('SEND_UNKNOWN') and '✅ Отправить' not in labels('SEND_UNKNOWN')
  assert labels('ANSWERED_EXTERNALLY') == ['🤖 Сменить Codex']
- assert not any('генерировать' in x.lower() for x in labels('REVIEW'))
+ assert '🤖 Отправить в Codex' in labels('REVIEW')
  await db.close()
 
 
@@ -386,7 +386,7 @@ async def test_ordinary_manual_text_is_durably_bound_and_review_only(tmp_path):
  assert await repo.get_active_text_input_context() is None
  assert (await (await repo.db.execute('SELECT COUNT(*) FROM draft_attempts')).fetchone())[0]==0
  bot=OperatorBot(1,SimpleNamespace(repo=repo)); labels=[b.text for row in bot.buttons(await repo.get_question(q1['id'])).inline_keyboard for b in row]
- assert labels==['✅ Отправить','✏️ Редактировать','🚫 Игнорировать','🤖 Сменить Codex']
+ assert labels==['✅ Отправить','✏️ Редактировать','🤖 Отправить в Codex','🚫 Игнорировать','🤖 Сменить Codex']
  await db.close()
 
 @pytest.mark.asyncio
@@ -533,7 +533,7 @@ async def test_repeated_edit_prompts_are_context_bound_and_same_callback_replays
  r3=await service.ordinary_text('edit two'); rows=await (await repo.db.execute('SELECT * FROM answer_revisions WHERE question_id=? ORDER BY id',(q['id'],))).fetchall(); current=await repo.get_question(q['id'])
  assert [(row['id'],row['based_on_revision_id'],row['text']) for row in rows]==[(r1,None,'original'),(r2,r1,'edit one'),(r3,r2,'edit two')]
  assert current['current_answer_revision_id']==r3 and current['status']=='REVIEW' and await repo.get_active_text_input_context() is None
- labels=[b.text for row in bot.buttons(current).inline_keyboard for b in row]; assert labels==['✅ Отправить','✏️ Редактировать','🚫 Игнорировать','🤖 Сменить Codex']
+ labels=[b.text for row in bot.buttons(current).inline_keyboard for b in row]; assert labels==['✅ Отправить','✏️ Редактировать','🤖 Отправить в Codex','🚫 Игнорировать','🤖 Сменить Codex']
  await db.close()
 
 
@@ -592,7 +592,7 @@ async def test_CODEX_RUNNING_STANDALONE_TEST_and_CODEX_REVIEW_STANDALONE_TEST(tm
  assert (revision['source'],revision['text'],revision['draft_attempt_id'])==('codex','deterministic test answer',attempt['id'])
  projection,review=message.calls[-2:]; assert '🤖 Подготовил: codex1' in projection[0][0] and '🟢 Сейчас активен: codex2' in projection[0][0] and review[0][0]=='deterministic test answer'
  assert_standalone(review)
- assert [b.text for row in review[1]['reply_markup'].inline_keyboard for b in row]==['✅ Отправить','✏️ Редактировать','🚫 Игнорировать','🤖 Сменить Codex']
+ assert [b.text for row in review[1]['reply_markup'].inline_keyboard for b in row]==['✅ Отправить','✏️ Редактировать','🤖 Отправить в Codex','🚫 Игнорировать','🤖 Сменить Codex']
  assert not any(word in review[0][0] for word in ('Сгенерировать','Сгенерировать заново','Перегенерировать'))
  await db.close()
 
@@ -712,7 +712,7 @@ async def test_REVIEW_SWITCH_PRESERVES_GENERATOR_PROVENANCE_TEST(tmp_path):
  assert (await (await repo.db.execute('SELECT COUNT(*) FROM answer_revisions')).fetchone())[0]==1
  assert text['text']=='T4 deterministic Codex answer'
  assert all(value in projection['text'] for value in ('Источник ревизии: codex','🤖 Подготовил: codex1','🟢 Сейчас активен: codex2')) and '🤖 Подготовил: codex2' not in projection['text']
- assert [b.text for row in markup.inline_keyboard for b in row]==['✅ Отправить','✏️ Редактировать','🚫 Игнорировать','🤖 Сменить Codex']
+ assert [b.text for row in markup.inline_keyboard for b in row]==['✅ Отправить','✏️ Редактировать','🤖 Отправить в Codex','🚫 Игнорировать','🤖 Сменить Codex']
  assert 'Перегенерировать' not in text and wire.calls[-1].get('reply_parameters') is None and wire.calls[-1].get('reply_to_message_id') is None and not isinstance(markup,ForceReply)
  await db.close()
 

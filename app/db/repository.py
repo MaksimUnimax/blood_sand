@@ -249,8 +249,12 @@ class Repository:
     async def claim_codex(self, qid, expected_revision_id=None):
         await self.db.execute('BEGIN IMMEDIATE')
         q = await self.get_question(qid)
-        # Successful review regeneration is deliberately not a product transition.
-        if not q or q['status'] not in {'NEW', 'CODEX_ERROR'}:
+        if not q or q['status'] not in {'NEW', 'CODEX_ERROR', 'REVIEW'}:
+            await self.db.rollback()
+            raise StaleState('STALE_STATE')
+        if q['status'] == 'REVIEW' and (
+            expected_revision_id is None or q['current_answer_revision_id'] != expected_revision_id
+        ):
             await self.db.rollback()
             raise StaleState('STALE_STATE')
         profile = await self.active_codex_profile()
@@ -258,10 +262,17 @@ class Repository:
             "INSERT INTO draft_attempts(question_id,codex_profile,status,started_at) VALUES(?,?, 'RUNNING',?)",
             (qid, profile, now()),
         )
-        changed = await self.db.execute(
-            "UPDATE questions SET status='CODEX_RUNNING',current_draft_attempt_id=?,updated_at=? WHERE id=? AND status=?",
-            (c.lastrowid, now(), qid, q['status']),
-        )
+        if q['status'] == 'REVIEW':
+            changed = await self.db.execute(
+                "UPDATE questions SET status='CODEX_RUNNING',current_draft_attempt_id=?,updated_at=? "
+                "WHERE id=? AND status='REVIEW' AND current_answer_revision_id=?",
+                (c.lastrowid, now(), qid, expected_revision_id),
+            )
+        else:
+            changed = await self.db.execute(
+                "UPDATE questions SET status='CODEX_RUNNING',current_draft_attempt_id=?,updated_at=? WHERE id=? AND status=?",
+                (c.lastrowid, now(), qid, q['status']),
+            )
         if not changed.rowcount:
             await self.db.rollback()
             raise StaleState('STALE_STATE')

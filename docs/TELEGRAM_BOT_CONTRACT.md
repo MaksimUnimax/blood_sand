@@ -77,10 +77,12 @@ Successful REVIEW (manual, Codex, and edited) uses the shared two-part
 operator projection followed by a clean message containing exactly
 `answer_revision.text`. REVIEW controls attach to that clean answer message,
 not the operator projection. Marketplace API REVIEW exposes Send, Edit, Ignore,
-and Switch Codex; Ozon MANUAL_COPY exposes Edit, Close, and Switch Codex only.
-It has no regenerate action or transition to Codex.
-Legacy successful-review regeneration callbacks are rejected and acknowledged
-without mutation. Send callback data binds the question and revision; the
+and Send to Codex, Ignore, and Switch Codex; Ozon MANUAL_COPY exposes Edit,
+Close, Send to Codex, and Switch Codex only. Send to Codex is an explicit,
+generation-only REVIEW action. Its callback binds the question and current
+answer revision; a stale callback is rejected without mutation. It claims one
+new attempt using the active profile at click time and retains the old revision
+until a successful new revision replaces it. Send callback data binds the question and revision; the
 durable `SENDING` claim verifies the revision is current before acknowledgement
 and before the marketplace call.
 

@@ -171,7 +171,7 @@ async def test_manual_copy_review_has_no_send_and_close_is_local_only(tmp_path):
     revision = await repo.get_current_answer_revision(q['id'])
     markup = OperatorBot('1', service).buttons(q, revision=revision)
     labels = [button.text for row in markup.inline_keyboard for button in row]
-    assert labels == ['✏️ Редактировать', '✅ Закрыть', '🤖 Сменить Codex']
+    assert labels == ['✏️ Редактировать', '✅ Закрыть', '🤖 Отправить в Codex', '🤖 Сменить Codex']
     assert '✅ Отправить' not in labels
 
     with pytest.raises(StaleState):
@@ -302,8 +302,8 @@ async def test_shared_review_presentation_is_clean_for_all_marketplaces_and_chun
         def get_bot(self): return self.wire
 
     for marketplace, mode, expected in (
-        ('ozon', 'MANUAL_COPY', ['✏️ Редактировать', '✅ Закрыть', '🤖 Сменить Codex']),
-        ('wildberries', 'MARKETPLACE_API', ['✅ Отправить', '✏️ Редактировать', '🚫 Игнорировать', '🤖 Сменить Codex']),
+        ('ozon', 'MANUAL_COPY', ['✏️ Редактировать', '✅ Закрыть', '🤖 Отправить в Codex', '🤖 Сменить Codex']),
+        ('wildberries', 'MARKETPLACE_API', ['✅ Отправить', '✏️ Редактировать', '🤖 Отправить в Codex', '🚫 Игнорировать', '🤖 Сменить Codex']),
     ):
         q, _ = await repo.insert_question({'marketplace': marketplace, 'external_question_id': f'{marketplace}-review', 'question_text': 'buyer'})
         await db.execute('UPDATE questions SET publish_mode=? WHERE id=?', (mode, q['id']))

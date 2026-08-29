@@ -91,12 +91,14 @@ class OperatorBot:
             rows = [
                 [InlineKeyboardButton('✏️ Редактировать', callback_data=encode('edit', qid, rid)),
                  InlineKeyboardButton('✅ Закрыть', callback_data=encode('close', qid, rid))],
+                [InlineKeyboardButton('🤖 Отправить в Codex', callback_data=encode('codex', qid, rid))],
                 [switch],
             ]
         elif state == 'REVIEW':
             rows = [
                 [InlineKeyboardButton('✅ Отправить', callback_data=encode('send', qid, rid)),
                  InlineKeyboardButton('✏️ Редактировать', callback_data=encode('edit', qid, rid))],
+                [InlineKeyboardButton('🤖 Отправить в Codex', callback_data=encode('codex', qid, rid))],
                 [InlineKeyboardButton('🚫 Игнорировать', callback_data=encode('ignore', qid, rid))],
                 [switch],
             ]
@@ -380,7 +382,7 @@ class OperatorBot:
                 raise StaleState('STALE_STATE')
 
             if action in {'codex', 'retry_codex', 'confirm_regenerate'}:
-                claim = await self.service.repo.claim_codex(qid)
+                claim = await self.service.repo.claim_codex(qid, rid if action == 'codex' else None)
                 await self._ack(query, 'Codex started')
                 await self._disable(query)
                 await self.show_question(query.message, qid)
