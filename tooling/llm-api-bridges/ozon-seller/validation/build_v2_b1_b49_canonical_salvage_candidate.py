@@ -45,8 +45,10 @@ class ConstDecl:
 class PropertyBlock:
     key: str
     start: int
-    end: int
-    text: str
+    core_end: int
+    full_end: int
+    core_text: str
+    full_text: str
 
 
 def merge_file(ours: Path, base: Path, theirs: Path) -> None:
@@ -228,8 +230,8 @@ def _balanced_object_end(text: str, open_brace: int, key: str) -> int:
     raise AssertionError(f"unterminated object block for {key}")
 
 
-def _extend_property_end(text: str, end: int) -> int:
-    i = end
+def _extend_property_end(text: str, core_end: int) -> int:
+    i = core_end
     while i < len(text) and text[i] in " \t":
         i += 1
     if i < len(text) and text[i] == ",":
@@ -249,13 +251,22 @@ def _property_blocks_in_const(text: str, const_name: str) -> list[PropertyBlock]
         open_brace = text.find("{", match.start(), match.end())
         if open_brace < 0:
             continue
-        end = _balanced_object_end(text, open_brace, match.group(1))
-        block = text[match.start():end]
+        core_end = _balanced_object_end(text, open_brace, match.group(1))
+        core_text = text[match.start():core_end]
         # Direct operation records are the only property blocks in OPERATIONS with fixed provider/path/effect metadata.
-        if "provider:" not in block or "path:" not in block or "effect:" not in block:
+        if "provider:" not in core_text or "path:" not in core_text or "effect:" not in core_text:
             continue
-        full_end = _extend_property_end(text, end)
-        out.append(PropertyBlock(match.group(1), match.start(), full_end, text[match.start():full_end]))
+        full_end = _extend_property_end(text, core_end)
+        out.append(
+            PropertyBlock(
+                key=match.group(1),
+                start=match.start(),
+                core_end=core_end,
+                full_end=full_end,
+                core_text=core_text,
+                full_text=text[match.start():full_end],
+            )
+        )
     return out
 
 
@@ -286,10 +297,13 @@ def restore_canonical_operation_overlaps(candidate_path: Path, canonical_path: P
         if len(merged) > 2:
             raise AssertionError(f"canonical B1 alias appears more than twice after merge: {alias} -> {len(merged)}")
         overlap_counts[alias] = len(merged)
+
+        # Replace only the property body. Preserve the merged first copy's existing comma/newline separator.
         first = merged[0]
-        replacements.append((first.start, first.end, canonical_block.text))
+        replacements.append((first.start, first.core_end, canonical_block.core_text))
+        # Any later historical duplicate is removed together with its own comma/newline separator.
         for extra in merged[1:]:
-            replacements.append((extra.start, extra.end, ""))
+            replacements.append((extra.start, extra.full_end, ""))
 
     for start, end, replacement in sorted(replacements, key=lambda item: item[0], reverse=True):
         candidate_text = candidate_text[:start] + replacement + candidate_text[end:]
@@ -353,6 +367,22 @@ def reclassify_rating_registry(path: Path) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def node_check(path: Path) -> None:
+    result = subprocess.run(
+        ["node", "--check", str(path)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if result.returncode != 0:
+        if result.stdout:
+            print(result.stdout, end="")
+        if result.stderr:
+            print(result.stderr, end="")
+        raise AssertionError(f"node --check failed for {path}")
+    print(f"V2_B1_B49_NODE_CHECK_PASS {path.name}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--b0", required=True)
@@ -387,12 +417,17 @@ def main() -> None:
         raise AssertionError(f"expected proven exact overlaps not found: {missing_known}; actual={sorted(deduped)}")
 
     # Corrected canonical B1 is authoritative for every alias it already implements.
-    # Replace any merged duplicate/modified operation records wholesale with the exact canonical B1 source block.
+    # Replace any merged duplicate/modified operation records wholesale with the exact canonical B1 body.
     registry = out / "shared/ozon_operation_registry.js"
     restore_canonical_operation_overlaps(registry, canonical / "shared/ozon_operation_registry.js")
 
     # Historical B10 operations are valid reads, but the old top-level seller_health taxonomy is not part of V2.
     reclassify_rating_registry(registry)
+
+    # Syntax is a builder postcondition, not something deferred to a later behavior gate.
+    node_check(registry)
+    node_check(out / "shared/ozon_contract.js")
+    node_check(out / "shared/ozon_entitlements.js")
 
     # Hard boundary: only the three merge-authorized files may differ from canonical B1.
     canonical_files = sorted(p.relative_to(canonical) for p in canonical.rglob("*") if p.is_file())
