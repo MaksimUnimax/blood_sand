@@ -108,6 +108,8 @@ class OperatorBot:
             ]
         elif state == 'SEND_FAILED':
             rows = [[InlineKeyboardButton('🔄 Повторить отправку', callback_data=encode('retry_send', qid, rid))], [switch]]
+        elif state == 'SEND_UNKNOWN':
+            rows = [[InlineKeyboardButton('🔎 Проверить публикацию', callback_data=encode('check_publication', qid, rid))], [switch]]
         else:
             rows = [[switch]]
         return InlineKeyboardMarkup(rows)
@@ -161,7 +163,7 @@ class OperatorBot:
             revision = await self.service.repo.get_current_answer_revision(qid)
             cards = (
                 render.delivery(q, revision, q['status'])
-                if q['status'] in {'SENDING', 'SENT', 'SEND_FAILED', 'SEND_UNKNOWN'}
+                if q['status'] in {'SENDING', 'SENT', 'SEND_FAILED', 'SEND_UNKNOWN', 'ANSWERED_EXTERNALLY'}
                 else None
             )
         else:
@@ -400,6 +402,15 @@ class OperatorBot:
                 claim = await self.service.claim_retry_send(qid, rid)
                 await self._ack(query)
                 outcome = await self.service.execute_send(qid, claim)
+                current = await self.service.repo.get_question(qid)
+                rev = await self.service.repo.get_answer_revision(rid)
+                await self.cards(query.message, render.delivery(current, rev, outcome), self.buttons(current))
+                await self._disable(query)
+            elif action == 'check_publication':
+                if q['current_answer_revision_id'] != rid:
+                    raise StaleState('STALE_STATE')
+                await self._ack(query)
+                outcome = await self.service.check_publication(qid)
                 current = await self.service.repo.get_question(qid)
                 rev = await self.service.repo.get_answer_revision(rid)
                 await self.cards(query.message, render.delivery(current, rev, outcome), self.buttons(current))

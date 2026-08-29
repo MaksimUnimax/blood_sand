@@ -149,12 +149,21 @@ class WildberriesAdapter:
         except (httpx.TimeoutException, httpx.TransportError):
             return {'status': 'AMBIGUOUS'}
         if 200 <= response.status_code < 300:
-            return {'status': 'SUCCESS'}
+            # WB can return an application error in an otherwise successful HTTP
+            # response.  HTTP acceptance is never evidence of publication.
+            try:
+                payload = response.json()
+            except ValueError:
+                payload = None
+            if isinstance(payload, dict) and payload.get('error') is True:
+                return {'status': 'CLEAR_FAILURE'}
+            return {'status': 'ACCEPTED_UNVERIFIED'}
         if response.status_code >= 500:
             return {'status': 'AMBIGUOUS'}
         return {'status': 'CLEAR_FAILURE'}
 
-    async def reconcile_answer(self, question, expected_text, send_started_at):
+    async def inspect_answer(self, question, expected_text):
+        """Read the documented question envelope without changing answer text."""
         try:
             response = await self._request('GET', '/api/v1/question', params={'id': question['external_question_id']})
             response.raise_for_status()
@@ -162,9 +171,15 @@ class WildberriesAdapter:
         except (httpx.HTTPError, ValueError):
             return 'UNKNOWN'
         data = payload.get('data') if isinstance(payload, dict) else None
-        observed = data if isinstance(data, dict) else payload if isinstance(payload, dict) else None
-        answer = observed.get('answer') if observed else None
-        answer_text = answer.get('text') if isinstance(answer, dict) else answer if isinstance(answer, str) else None
-        if answer_text is None:
+        if not isinstance(data, dict):
             return 'UNKNOWN'
-        return 'MATCHED' if answer_text == expected_text else 'NOT_FOUND'
+        answer = data.get('answer')
+        if answer is None:
+            return 'ABSENT'
+        if not isinstance(answer, dict) or not isinstance(answer.get('text'), str):
+            return 'UNKNOWN'
+        return 'MATCHED' if answer['text'] == expected_text else 'DIFFERENT'
+
+    async def reconcile_answer(self, question, expected_text, send_started_at):
+        """Compatibility wrapper for old callers; new send paths use inspection."""
+        return await self.inspect_answer(question, expected_text)

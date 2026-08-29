@@ -88,8 +88,6 @@ class QuestionService:
             raise StaleState('STALE_STATE')
         if q['status'] == 'SEND_FAILED':
             await self.repo.transition(qid, 'SEND_FAILED', 'REVIEW')
-        elif q['status'] == 'SEND_UNKNOWN':
-            await self.repo.transition(qid, 'SEND_UNKNOWN', 'REVIEW')
         else:
             raise StaleState('STALE_STATE')
         return await self.repo.claim_send(qid, rid)
@@ -98,25 +96,65 @@ class QuestionService:
         q = await self.repo.get_question(qid)
         if not q or q['publish_mode'] != 'MARKETPLACE_API' or q['marketplace'] not in self.adapters:
             raise StaleState('STALE_STATE')
-        result = await self.adapters[q['marketplace']].send_answer(q, rev['text'])
-        if result['status'] == 'SUCCESS':
+        adapter = self.adapters[q['marketplace']]
+        inspect = getattr(adapter, 'inspect_answer', None)
+        # WB must never overwrite an existing public answer.  The durable
+        # SENDING claim exists before this guard, so exactly one operator claim
+        # has one possible PATCH.
+        if inspect is not None:
+            preflight = await inspect(q, rev['text'])
+            if preflight == 'MATCHED':
+                await self.repo.mark_sent(qid, None)
+                return 'SENT'
+            if preflight == 'DIFFERENT':
+                await self.repo.mark_answered_externally(qid)
+                return 'ANSWERED_EXTERNALLY'
+            if preflight == 'UNKNOWN':
+                await self.repo.mark_send_failed(qid)
+                return 'SEND_FAILED'
+            if preflight != 'ABSENT':
+                await self.repo.mark_send_failed(qid)
+                return 'SEND_FAILED'
+        result = await adapter.send_answer(q, rev['text'])
+        if result['status'] == 'SUCCESS':  # legacy non-WB adapter compatibility
             await self.repo.mark_sent(qid, result.get('answer_id'))
             return 'SENT'
         if result['status'] == 'CLEAR_FAILURE':
             await self.repo.mark_send_failed(qid)
             return 'SEND_FAILED'
+        # Both accepted-but-unverified and ambiguous writes require readback.
         await self.repo.mark_send_unknown(qid)
-        outcome = await self.adapters[q['marketplace']].reconcile_answer(q, rev['text'], None)
+        outcome = await inspect(q, rev['text']) if inspect is not None else 'UNKNOWN'
         if outcome == 'MATCHED':
             await self.repo.transition(
                 qid, 'SEND_UNKNOWN', 'SENT',
                 {'sent_at': __import__('app.db.repository', fromlist=['now']).now()},
             )
             return 'SENT'
-        return 'SEND_UNKNOWN' if outcome == 'UNKNOWN' else 'NOT_FOUND'
+        if outcome == 'DIFFERENT':
+            await self.repo.mark_answered_externally(qid, 'SEND_UNKNOWN')
+            return 'ANSWERED_EXTERNALLY'
+        return 'SEND_UNKNOWN'
 
     async def retry_send(self, qid, rid):
         return await self.execute_send(qid, await self.claim_retry_send(qid, rid))
+
+    async def check_publication(self, qid):
+        q = await self.repo.get_question(qid)
+        if not q or q['status'] != 'SEND_UNKNOWN' or q['marketplace'] not in self.adapters:
+            raise StaleState('STALE_STATE')
+        rev = await self.repo.get_current_answer_revision(qid)
+        inspect = getattr(self.adapters[q['marketplace']], 'inspect_answer', None)
+        if inspect is None:
+            raise StaleState('STALE_STATE')
+        outcome = await inspect(q, rev['text'])
+        if outcome == 'MATCHED':
+            await self.repo.transition(qid, 'SEND_UNKNOWN', 'SENT', {'sent_at': __import__('app.db.repository', fromlist=['now']).now()})
+            return 'SENT'
+        if outcome == 'DIFFERENT':
+            await self.repo.mark_answered_externally(qid, 'SEND_UNKNOWN')
+            return 'ANSWERED_EXTERNALLY'
+        return 'SEND_UNKNOWN'
 
     async def codex(self, qid, expected_revision_id=None, claim=None):
         aid, profile = claim or await self.repo.claim_codex(qid, expected_revision_id)

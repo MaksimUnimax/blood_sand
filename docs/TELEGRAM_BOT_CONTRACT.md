@@ -49,15 +49,16 @@ The common edge returns `SUCCESS`, `DETERMINISTIC_FAILURE`, `PERMISSION_FAILURE`
 | Codex/regenerate/retry | CODEX_RUNNING claim | then | async Codex | disable/render later |
 | Ignore | → IGNORED | then | none | disable |
 | Send | SENDING claim | then | marketplace/reconciliation | render/disable |
-| retry_send | retry transition + SENDING claim | then | marketplace/reconciliation | render/disable |
+| retry_send | SEND_FAILED retry transition + SENDING claim | then | marketplace/reconciliation | render/disable |
+| check_publication | SEND_UNKNOWN read-only inspection | then | WB GET only | render/disable |
 | profile switch | active-profile update | then | none | confirmation reply |
 | malformed/stale/legacy/unauthorized/duplicate | none | attempted via ack policy | none | none |
 
 ## Frozen operator UX
 
 Every question-state card (`NEW`, `MANUAL_INPUT`, `CODEX_RUNNING`, `CODEX_ERROR`,
-`REVIEW`, `EDITING`, `IGNORED`, `SENDING`, `SENT`, `SEND_FAILED`, and
-`SEND_UNKNOWN`) includes **🤖 Сменить Codex**. It is the normal product path;
+`REVIEW`, `EDITING`, `IGNORED`, `SENDING`, `SENT`, `SEND_FAILED`,
+`SEND_UNKNOWN`, and `ANSWERED_EXTERNALLY`) includes **🤖 Сменить Codex**. It is the normal product path;
 `/codex` remains diagnostic only. In every non-error state a selection commits
 only the global active profile and returns to the same question/state: it makes
 no attempt, starts no Codex run, and writes no marketplace answer. A running

@@ -73,11 +73,11 @@ async def test_429_missing_header_uses_bounded_fallback_then_one_retry():
         return httpx.Response(429) if len(calls) == 1 else httpx.Response(200, json={})
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         result = await WildberriesAdapter(client, 'token', clock=fake.clock, sleep=fake.sleep).send_answer({'external_question_id': 'x'}, 'answer')
-    assert result['status'] == 'SUCCESS' and len(calls) == 2 and all(delay <= 30 for delay in fake.sleeps)
+    assert result['status'] == 'ACCEPTED_UNVERIFIED' and len(calls) == 2 and all(delay <= 30 for delay in fake.sleeps)
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('response,status', [(httpx.Response(400), 'CLEAR_FAILURE'), (httpx.Response(500), 'AMBIGUOUS')])
+@pytest.mark.parametrize('response,status', [(httpx.Response(400), 'CLEAR_FAILURE'), (httpx.Response(500), 'AMBIGUOUS'), (httpx.Response(200, json={'error': True}), 'CLEAR_FAILURE'), (httpx.Response(200, json={}), 'ACCEPTED_UNVERIFIED')])
 async def test_write_status_semantics_and_exact_payload(response, status):
     seen = []
     async def handler(request): seen.append(request); return response
@@ -97,12 +97,19 @@ async def test_timeout_is_ambiguous_and_not_retried():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('answer,expected,outcome', [
-    ({'text': ' exact '}, ' exact ', 'MATCHED'), ({'text': 'other'}, ' exact ', 'NOT_FOUND'), (None, 'x', 'UNKNOWN')])
-async def test_reconcile_documented_data_answer_text(answer, expected, outcome):
+    ({'text': ' exact '}, ' exact ', 'MATCHED'), ({'text': 'other'}, ' exact ', 'DIFFERENT'), (None, 'x', 'ABSENT')])
+async def test_inspect_documented_data_answer_text(answer, expected, outcome):
     async def handler(request): return httpx.Response(200, json={'data': {'answer': answer}})
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        result = await WildberriesAdapter(client, 'token').reconcile_answer({'external_question_id': 'x'}, expected, None)
+        result = await WildberriesAdapter(client, 'token').inspect_answer({'external_question_id': 'x'}, expected)
     assert result == outcome
+
+
+@pytest.mark.asyncio
+async def test_inspect_malformed_envelope_is_unknown():
+    async def handler(request): return httpx.Response(200, json={'answer': None})
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        assert await WildberriesAdapter(client, 'token').inspect_answer({'external_question_id': 'x'}, 'x') == 'UNKNOWN'
 
 
 def jwt(claims):

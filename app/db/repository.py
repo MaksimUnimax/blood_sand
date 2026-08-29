@@ -50,7 +50,7 @@ class Repository:
 
     async def list_open_questions(self):
         return await (await self.db.execute(
-            "SELECT * FROM questions WHERE status NOT IN ('SENT','IGNORED','CLOSED') ORDER BY id DESC"
+            "SELECT * FROM questions WHERE status NOT IN ('SENT','IGNORED','CLOSED','ANSWERED_EXTERNALLY') ORDER BY id DESC"
         )).fetchall()
 
     async def transition(self, qid, expected, new, mutation_fields=None):
@@ -199,6 +199,9 @@ class Repository:
 
     async def mark_send_unknown(self, qid):
         await self.transition(qid, 'SENDING', 'SEND_UNKNOWN')
+
+    async def mark_answered_externally(self, qid, expected='SENDING'):
+        await self.transition(qid, expected, 'ANSWERED_EXTERNALLY')
 
     async def active_codex_profile(self):
         r = await (await self.db.execute("SELECT value FROM settings WHERE key='active_codex_profile'")).fetchone()

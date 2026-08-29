@@ -70,6 +70,10 @@ def codex_error(question, profile, error_type, message, active_profile):
 
 def delivery(question, revision, state, detail=''):
     answer = revision['text']
+    if state == 'SEND_UNKNOWN':
+        detail = 'WB принял/мог принять отправку, но публикация ещё не подтверждена. Повторная отправка заблокирована.'
+    elif state == 'ANSWERED_EXTERNALLY':
+        detail = 'WB уже содержит другой ответ. Эта ревизия MQO не отправлена, чтобы не перезаписать существующий ответ.'
     return split_card(question, f"Ответ:\n{answer}\n\nДоставка: {state}" + (f"\n{detail}" if detail else ''))
 
 

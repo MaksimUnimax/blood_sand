@@ -18,11 +18,37 @@ HTTP client. When enabled, a locally decoded Personal RW JWT is required:
 `acc=3`, `for=self`, `t=false`, unexpired, Feedbacks/Questions bit 7 enabled,
 and read-only bit 30 disabled. Classification never sends the token to WB.
 
-Answers use `PATCH /api/v1/questions` with `id`, `text`, and `state=wbRu`.
-Timeouts, transport failures, and 5xx writes are ambiguous and are never
-automatically retried. Reconciliation reads `data.answer.text` and compares it
-exactly. Actual publication still happens only after the operator explicitly
-chooses Send.
+## Verified public product-card publication
+
+WB publication mode is **PUBLIC_PRODUCT_CARD_ONLY**. The sole answer write is
+`PATCH /api/v1/questions` with exactly `id`, `text`, and `state=wbRu`. The
+private `state=none` is forbidden. Buyer Chat/private-message APIs (including
+`/api/v1/seller/message`) are forbidden in every MQO source path.
+
+WB seller answers undergo preliminary moderation/processing. Consequently an
+HTTP 2xx only means **accepted/unverified**, never published. `SENT` means one
+thing only: a later `GET /api/v1/question?id=<id>` has read the documented
+`data.answer.text` and found byte-for-byte/exact-string equality with the
+submitted revision (no whitespace normalization).
+
+After the durable operator Send claim and before PATCH, MQO performs a read-only
+inspection. `MATCHED` marks `SENT` without PATCH; `DIFFERENT` marks terminal
+`ANSWERED_EXTERNALLY` without PATCH, preventing an overwrite; `ABSENT` permits
+one PATCH; and `UNKNOWN` marks `SEND_FAILED` because no write was attempted.
+
+After accepted/unverified or timeout/transport/5xx (ambiguous) PATCH results,
+MQO always reads back. `MATCHED` becomes `SENT`, `DIFFERENT` becomes terminal
+`ANSWERED_EXTERNALLY`, and `ABSENT` or `UNKNOWN` becomes `SEND_UNKNOWN` while
+WB may still be processing/moderating the answer. A clear 4xx failure becomes
+`SEND_FAILED`. An application JSON envelope with `error=true` is a clear
+failure even under HTTP 2xx.
+
+`SEND_UNKNOWN` never retries PATCH and has only the read-only Telegram action
+“🔎 Проверить публикацию”. That action performs GET only: it can move to `SENT`
+or `ANSWERED_EXTERNALLY`, otherwise remains `SEND_UNKNOWN`. `ANSWERED_EXTERNALLY`
+blocks all marketplace writes. `SEND_FAILED` alone retains explicit retry.
+Actual publication remains operator-explicit: poll → review → explicit Send;
+there is no automatic WB Codex or marketplace send.
 
 WB uses the shared generic Telegram REVIEW presentation and API-question flow;
 it does not have a special review UI. Production WB acceptance remains pending.

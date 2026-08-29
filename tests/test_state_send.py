@@ -17,3 +17,9 @@ async def test_double_send_and_completion(r):
  x,q=r; a=await review(x,q); await x.claim_send(q['id'],a)
  with pytest.raises(StaleState): await x.claim_send(q['id'],a)
  await x.mark_sent(q['id'],'reply'); z=await x.get_question(q['id']); assert z['status']=='SENT' and z['external_reply_id']=='reply'
+
+async def test_send_unknown_cannot_transition_to_sending_and_external_is_terminal(r):
+ x,q=r; a=await review(x,q); await x.claim_send(q['id'],a); await x.mark_send_unknown(q['id'])
+ assert not __import__('app.state_machine', fromlist=['allowed']).allowed('SEND_UNKNOWN','SENDING')
+ await x.mark_answered_externally(q['id'], 'SEND_UNKNOWN')
+ assert (await x.get_question(q['id']))['status']=='ANSWERED_EXTERNALLY'
