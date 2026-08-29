@@ -40,7 +40,7 @@ Business recommendation semantics этот документ не меняет.
 VKCOM/vk-api-schema
 ```
 
-Проверены current `master` files:
+Повторно проверены exact-commit files (`333481bd082ad747d4873ef4a77f9247097eeef0`):
 
 ```text
 groups/methods.json
@@ -65,6 +65,7 @@ Status:
 
 ```text
 VK_API_SCHEMA_VERSION_5_199 = VERIFIED_CURRENT_BASELINE
+VK_SCHEMA_COMMIT = 333481bd082ad747d4873ef4a77f9247097eeef0
 M3_API_VERSION_PIN = REVALIDATE_IMMEDIATELY_BEFORE_CODE/STAGING
 ```
 
@@ -74,7 +75,36 @@ Reason: мы не будем считать repository version вечной ко
 
 ## 3. Community configuration API
 
-### 3.1 `groups.setSettings`
+### 3.1 `groups.getSettings`
+
+Official method:
+
+```text
+groups.getSettings
+```
+
+Access token types, as declared by the exact official schema commit:
+
+```text
+user
+```
+
+Therefore the real staging result when called with the configured group token:
+
+```text
+VK error 27
+Group authorization failed: method is unavailable with group auth
+```
+
+is expected, contract-consistent behavior. It is not evidence of a malformed
+staging group token and it does not require a replacement group token.
+
+```text
+GROUPS_GET_SETTINGS_ACCESS_TOKEN_TYPE = user only
+GROUP_TOKEN_GETSETTINGS_READBACK = NOT_SUPPORTED_BY_OFFICIAL_SCHEMA
+```
+
+### 3.2 `groups.setSettings`
 
 Official method:
 
@@ -136,7 +166,7 @@ bots_add_to_chat = not required by this product
 
 The runtime must never infer group-chat support merely because `bots_add_to_chat` happens to be enabled in the community.
 
-### Readback caveat
+### Schema fields and group-token readback boundary
 
 Current `groups.getSettings` response explicitly exposes:
 
@@ -148,16 +178,22 @@ bots_add_to_chat
 
 The checked current response schema does **not** expose a clear symmetric `messages` boolean in that response object.
 
-Therefore:
+The response fields are schema-verified, but that does not make this method
+available to a group token. Therefore:
 
 ```text
-READBACK_BOTS_CAPABILITIES = VERIFIED
-READBACK_BOTS_START_BUTTON = VERIFIED
-READBACK_BOTS_ADD_TO_CHAT = VERIFIED
+BOTS_CAPABILITIES_SCHEMA_FIELD = VERIFIED
+BOTS_START_BUTTON_SCHEMA_FIELD = VERIFIED
+BOTS_ADD_TO_CHAT_SCHEMA_FIELD = VERIFIED
+GROUP_TOKEN_GETSETTINGS_READBACK = NOT_SUPPORTED_BY_OFFICIAL_SCHEMA
+READBACK_BOTS_CAPABILITIES = NOT_AVAILABLE_IN_CURRENT_GROUP_TOKEN_CONTOUR
+READBACK_BOTS_START_BUTTON = NOT_AVAILABLE_IN_CURRENT_GROUP_TOKEN_CONTOUR
+READBACK_BOTS_ADD_TO_CHAT = NOT_AVAILABLE_IN_CURRENT_GROUP_TOKEN_CONTOUR
 READBACK_MESSAGES_ENABLED_VIA_GETSETTINGS = NOT_VERIFIED
 ```
 
-Do not invent a readback field.
+Do not invent group-token access for `groups.getSettings`, a readback field, or
+a user-token requirement merely to close the group-token Bot transport gate.
 
 Message functionality itself must additionally be proven by staging `message_new` + `messages.send` fixtures.
 
@@ -1079,8 +1115,8 @@ Before Bot runtime is considered ready, an operator/preflight command must valid
 ```text
 1. VK group token authenticates.
 2. groups.getTokenPermissions returns a valid permission object.
-3. groups.getSettings confirms bots_capabilities when keyboards are enabled.
-4. groups.getCallbackServers finds the configured callback URL/server.
+3. groups.getCallbackServers records existing Callback servers without assuming ownership.
+4. groups.getCallbackSettings is used only for an identified project Callback server.
 5. selected callback server status == ok.
 6. groups.getCallbackSettings confirms selected api_version.
 7. groups.getCallbackSettings confirms message_new enabled.
@@ -1158,7 +1194,6 @@ messages_send_permanent_error.json
 messages_send_transient_error.json
 groups_callback_servers.json
 groups_callback_settings.json
-groups_settings_bot_capabilities.json
 groups_token_permissions.json
 ```
 
@@ -1192,8 +1227,9 @@ U2 exact API version at M3 implementation date
 U3 exact required group-token permission names/settings
    status: STAGING_REQUIRED using groups.getTokenPermissions + real send
 
-U4 symmetric readback proving community messages setting itself is enabled
-   status: NOT VERIFIED in checked groups.getSettings response; prove by provisioning/staging
+U4 group-token readback for community settings
+   status: NOT_SUPPORTED_BY_OFFICIAL_SCHEMA; groups.getSettings is user-token only.
+   A user token is not required for the group-token Bot transport gate.
 
 U5 exact messages.send retry allowlist
    status: PRE-M3 architecture + staging freeze required

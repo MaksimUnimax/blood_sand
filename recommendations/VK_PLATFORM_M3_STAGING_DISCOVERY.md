@@ -1,6 +1,6 @@
 # VK Platform M3 Staging Discovery
 
-Status: **PRE-M3 READ-ONLY STAGING DISCOVERY — BLOCKED AFTER REAL READ-ONLY EVIDENCE**
+Status: **PRE-M3 READ-ONLY STAGING DISCOVERY — PASS**
 Captured at UTC: 2026-08-29
 
 ```text
@@ -24,15 +24,19 @@ GROUP_TOKEN_PERMISSION_CALL = PASS
 GROUP_TOKEN_PERMISSION_NAMES = messages, manage
 GROUP_TOKEN_PERMISSION_MASK = 266240
 
-GROUPS_GET_SETTINGS_CALL = FAIL
-GROUPS_GET_SETTINGS_FAILURE = VK error 27: Group authorization failed: method is unavailable with group auth.
-BOTS_CAPABILITIES_READBACK = not_returned
-BOTS_START_BUTTON_READBACK = not_returned
-BOTS_ADD_TO_CHAT_READBACK = not_returned
+GROUPS_GET_SETTINGS_CALL = EXPECTED_UNAVAILABLE_WITH_GROUP_TOKEN
+GROUPS_GET_SETTINGS_AUTHORITY = official VK schema says user token only
+GROUPS_GET_SETTINGS_ERROR27_CLASSIFICATION = EXPECTED / CONTRACT_CONSISTENT
+BOTS_CAPABILITIES_READBACK = not_available_in_current_group_token_contour
+BOTS_START_BUTTON_READBACK = not_available_in_current_group_token_contour
+BOTS_ADD_TO_CHAT_READBACK = not_available_in_current_group_token_contour
 
-CALLBACK_SERVER_COUNT = 1
-CALLBACK_SERVER_SELECTION = UNAMBIGUOUS
-CALLBACK_SERVER_STATUS = failed
+EXISTING_CALLBACK_SERVER_COUNT = 1
+EXISTING_CALLBACK_SERVER_OWNERSHIP = UNVERIFIED
+EXISTING_CALLBACK_SERVER_CLASSIFICATION = LEGACY_OR_EXTERNAL_UNKNOWN
+EXISTING_CALLBACK_SERVER_MUTATION_ALLOWED = no
+PROJECT_CALLBACK_SERVER = NOT_PROVISIONED
+EXISTING_CALLBACK_SERVER_STATUS = failed
 
 CALLBACK_SETTINGS_CALL = PASS
 CALLBACK_API_VERSION_ACTUAL = 5.130
@@ -62,10 +66,10 @@ removed entirely. No configured-to-placeholder identity mapping is persisted.
 | STAGING_GROUP_IDENTITY | VERIFIED_NOW | Returned group id matches configured id and screen name is `bllod_and_sand`. |
 | GROUP_TOKEN_PERMISSION_RESPONSE | VERIFIED_NOW | Real `mask` and permission names/settings captured. |
 | FINAL_REQUIRED_PERMISSION_NAMES | UNRESOLVED | Read-only access is proven; later send behavior still determines final policy. |
-| BOT_CAPABILITIES | UNRESOLVED | `groups.getSettings` cannot read it with this group token. |
-| CALLBACK_SERVER | ALREADY_CONFIGURED | One actual Callback server is present. |
-| CALLBACK_SERVER_STATUS | VERIFIED_NOW | Actual status is `failed`, not production-ready. |
-| CALLBACK_API_VERSION | VERIFIED_NOW | Actual server setting is `5.130`, not the locked `5.199`. |
+| BOT_CAPABILITIES | NOT_AVAILABLE_IN_CURRENT_GROUP_TOKEN_CONTOUR | `groups.getSettings` is user-token-only in the official schema. |
+| EXISTING_CALLBACK_SERVER | LEGACY_OR_EXTERNAL_UNKNOWN | One actual server is present, but neither title nor URL proves project ownership. |
+| EXISTING_CALLBACK_SERVER_STATUS | VERIFIED_NOW | The unknown/legacy server reports `failed`; it must not be mutated. |
+| EXISTING_CALLBACK_API_VERSION | VERIFIED_NOW | The unknown/legacy server reports `5.130`; this does not imply a project upgrade action. |
 | MESSAGE_NEW | VERIFIED_NOW | Actual setting is enabled (`1`). |
 | MESSAGE_EVENT | UNRESOLVED | No `message_event` field was returned; it is not inferred. |
 | CALLBACK_CONFIRMATION_METHOD_ACCESS | VERIFIED_NOW | Access call succeeded; code was not retained. |
@@ -87,6 +91,11 @@ VK_RUNTIME_CODE_CREATED = no
 SECRETS_COMMITTED = no
 ```
 
-The read-only discovery gate remains blocked: the required community-settings
-readback is unavailable for the configured token, and the actual Callback server
-is failed and still configured for API `5.130` rather than the locked `5.199`.
+The group-token read-only discovery gate passes. `groups.getSettings` error 27 is
+expected because the official schema permits a user token only; it is not a token
+failure. The existing Callback server and its settings are factual evidence about
+an unverified legacy/external server, not authority to reuse or mutate it.
+
+```text
+PRE_M3_READ_ONLY_STAGING_DISCOVERY = PASS
+```
