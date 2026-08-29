@@ -41,6 +41,15 @@ jobs:
           node /tmp/old-b49-repo/tooling/llm-api-bridges/ozon-seller/validation/PATCH_B49_FBS_POSTING_TIMESLOT_CHANGE_RESTRICTIONS_REGRESSION_2026-08-28.mjs /tmp/old-b49-exact
           find /tmp/old-b49-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
 
+      - name: Materialize explicit early B0-B3 stage trees
+        run: |
+          set -euo pipefail
+          v=/tmp/old-b49-repo/tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$v/materialize_patch_b0_full_read_core_candidate.py" /tmp/old-b49-repo /tmp/old-b49-lineage/b0-base
+          python3 "$v/materialize_patch_b1_assortment_master_candidate.py" /tmp/old-b49-repo /tmp/old-b49-lineage/b1-base
+          python3 "$v/materialize_patch_b2_prices_listing_state_candidate.py" /tmp/old-b49-repo /tmp/old-b49-lineage/b2-base
+          python3 "$v/materialize_patch_b3_warehouse_stock_geography_candidate.py" /tmp/old-b49-repo /tmp/old-b49-lineage/b3-base
+
       - name: Build operation-level B1-B49 salvage manifest
         run: |
           set -euo pipefail
