@@ -116,7 +116,7 @@ def main() -> None:
     for rel in canonical_files:
         if (canonical / rel).read_bytes() != (out / rel).read_bytes():
             changed.append(rel.as_posix())
-    if changed != MERGED_FILES:
+    if changed != sorted(MERGED_FILES):
         raise AssertionError(f"unexpected candidate production delta: {changed}")
 
     print("V2_B1_B49_LEGACY_SELLER_HEALTH_CLUSTER_REMOVED_PASS")
