@@ -1,0 +1,3706 @@
+{
+  "schema": "OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_V1",
+  "as_of": "2026-08-29",
+  "roadmap_step": 5,
+  "status": "WORKFLOW_REPORT_DOCUMENT_CANDIDATE_UNIVERSE_BUILT_EXACT_SCHEMA_DECISIONS_PENDING",
+  "authorities": {
+    "seller_master_operations": 463,
+    "seller_exact_swagger_sha256": "39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40",
+    "accepted_step3_seller_aliases": 191,
+    "historical_acceptance": {
+      "B5": {
+        "commit": "e296ff76b975470e8e12e566e2c4aff29adea00c",
+        "accepted_single_reads": {
+          "report_list": "POST /v1/report/list",
+          "report_info": "POST /v1/report/info"
+        },
+        "boundary": "report create/retrieval/download workflow not authorized automatically; file URLs redacted and never auto-fetched"
+      },
+      "B24": {
+        "commit": "972e0aeb039ae29660985296f410045dade5231c",
+        "accepted_single_reads": {
+          "supply_order_act_accept_status": "POST /v1/supply-order/act/accept/status",
+          "supply_order_act_product_get": "POST /v1/supply-order/act/product/get",
+          "supply_order_act_summary_get": "POST /v1/supply-order/act/summary/get",
+          "supply_order_cancel_status": "POST /v1/supply-order/cancel/status",
+          "supply_order_content_update_status": "POST /v1/supply-order/content/update/status",
+          "supply_order_content_update_validation": "POST /v1/supply-order/content/update/validation",
+          "supply_order_pass_status": "POST /v1/supply-order/pass/status",
+          "supply_order_timeslot_status": "POST /v1/supply-order/timeslot/status"
+        },
+        "boundary": "status/get/validation reads are explicit single reads; mutation endpoints remain separate and disabled"
+      },
+      "B37": {
+        "commit": "cfd9a4b695fafa56f91af59a3723eb56171a1794",
+        "accepted_single_reads": {
+          "removal_from_stock_list": "POST /v1/removal/from-stock/list",
+          "removal_from_supply_list": "POST /v1/removal/from-supply/list"
+        },
+        "boundary": "report-named removal data is a direct read; no automatic last_id pagination, retry, polling, fanout, chaining, or secondary request"
+      },
+      "B40": {
+        "commit": "2c3cae10d6c204628403e82c8c763b402970303a",
+        "accepted_single_reads": {
+          "finance_balance": "POST /v1/finance/balance",
+          "finance_realization_by_day": "POST /v1/finance/realization/by-day",
+          "finance_realization_posting": "POST /v1/finance/realization/posting",
+          "finance_realization_v2": "POST /v2/finance/realization"
+        },
+        "boundary": "direct finance reads only; async report creators and PDF/CSV/barcode/document endpoints were excluded"
+      }
+    }
+  },
+  "invariants": [
+    "NO_HIDDEN_PAGINATION",
+    "NO_HIDDEN_RETRY",
+    "NO_HIDDEN_POLLING",
+    "NO_HIDDEN_FANOUT",
+    "NO_PROVIDER_CHAINING",
+    "ONE_EXPLICIT_COMMAND_ONE_BUSINESS_REQUEST",
+    "REPORT_CREATE_IS_NOT_ASSUMED_TO_BE_A_READ",
+    "DOCUMENT_URL_IS_NOT_AUTO_FETCHED"
+  ],
+  "counts": {
+    "seller_master_rows": 463,
+    "accepted_step3_seller_aliases": 191,
+    "step5_candidate_rows": 203,
+    "accepted_step3_candidate_rows": 85,
+    "pending_exact_schema_candidate_rows": 118,
+    "accepted_direct_single_reads": 85,
+    "accepted_explicit_workflow_read_steps": 0,
+    "generation_or_workflow_start_candidates_pending": 63,
+    "document_read_candidates_pending": 37,
+    "workflow_result_read_candidates_pending": 14
+  },
+  "historical_carry_forward_rows": [
+    {
+      "stage": "B24",
+      "commit": "972e0aeb039ae29660985296f410045dade5231c",
+      "alias": "supply_order_act_accept_status",
+      "operation_key": "POST /v1/supply-order/act/accept/status",
+      "boundary": "status/get/validation reads are explicit single reads; mutation endpoints remain separate and disabled"
+    },
+    {
+      "stage": "B24",
+      "commit": "972e0aeb039ae29660985296f410045dade5231c",
+      "alias": "supply_order_act_product_get",
+      "operation_key": "POST /v1/supply-order/act/product/get",
+      "boundary": "status/get/validation reads are explicit single reads; mutation endpoints remain separate and disabled"
+    },
+    {
+      "stage": "B24",
+      "commit": "972e0aeb039ae29660985296f410045dade5231c",
+      "alias": "supply_order_act_summary_get",
+      "operation_key": "POST /v1/supply-order/act/summary/get",
+      "boundary": "status/get/validation reads are explicit single reads; mutation endpoints remain separate and disabled"
+    },
+    {
+      "stage": "B24",
+      "commit": "972e0aeb039ae29660985296f410045dade5231c",
+      "alias": "supply_order_cancel_status",
+      "operation_key": "POST /v1/supply-order/cancel/status",
+      "boundary": "status/get/validation reads are explicit single reads; mutation endpoints remain separate and disabled"
+    },
+    {
+      "stage": "B24",
+      "commit": "972e0aeb039ae29660985296f410045dade5231c",
+      "alias": "supply_order_content_update_status",
+      "operation_key": "POST /v1/supply-order/content/update/status",
+      "boundary": "status/get/validation reads are explicit single reads; mutation endpoints remain separate and disabled"
+    },
+    {
+      "stage": "B24",
+      "commit": "972e0aeb039ae29660985296f410045dade5231c",
+      "alias": "supply_order_content_update_validation",
+      "operation_key": "POST /v1/supply-order/content/update/validation",
+      "boundary": "status/get/validation reads are explicit single reads; mutation endpoints remain separate and disabled"
+    },
+    {
+      "stage": "B24",
+      "commit": "972e0aeb039ae29660985296f410045dade5231c",
+      "alias": "supply_order_pass_status",
+      "operation_key": "POST /v1/supply-order/pass/status",
+      "boundary": "status/get/validation reads are explicit single reads; mutation endpoints remain separate and disabled"
+    },
+    {
+      "stage": "B24",
+      "commit": "972e0aeb039ae29660985296f410045dade5231c",
+      "alias": "supply_order_timeslot_status",
+      "operation_key": "POST /v1/supply-order/timeslot/status",
+      "boundary": "status/get/validation reads are explicit single reads; mutation endpoints remain separate and disabled"
+    },
+    {
+      "stage": "B37",
+      "commit": "cfd9a4b695fafa56f91af59a3723eb56171a1794",
+      "alias": "removal_from_stock_list",
+      "operation_key": "POST /v1/removal/from-stock/list",
+      "boundary": "report-named removal data is a direct read; no automatic last_id pagination, retry, polling, fanout, chaining, or secondary request"
+    },
+    {
+      "stage": "B37",
+      "commit": "cfd9a4b695fafa56f91af59a3723eb56171a1794",
+      "alias": "removal_from_supply_list",
+      "operation_key": "POST /v1/removal/from-supply/list",
+      "boundary": "report-named removal data is a direct read; no automatic last_id pagination, retry, polling, fanout, chaining, or secondary request"
+    },
+    {
+      "stage": "B40",
+      "commit": "2c3cae10d6c204628403e82c8c763b402970303a",
+      "alias": "finance_balance",
+      "operation_key": "POST /v1/finance/balance",
+      "boundary": "direct finance reads only; async report creators and PDF/CSV/barcode/document endpoints were excluded"
+    },
+    {
+      "stage": "B40",
+      "commit": "2c3cae10d6c204628403e82c8c763b402970303a",
+      "alias": "finance_realization_by_day",
+      "operation_key": "POST /v1/finance/realization/by-day",
+      "boundary": "direct finance reads only; async report creators and PDF/CSV/barcode/document endpoints were excluded"
+    },
+    {
+      "stage": "B40",
+      "commit": "2c3cae10d6c204628403e82c8c763b402970303a",
+      "alias": "finance_realization_posting",
+      "operation_key": "POST /v1/finance/realization/posting",
+      "boundary": "direct finance reads only; async report creators and PDF/CSV/barcode/document endpoints were excluded"
+    },
+    {
+      "stage": "B40",
+      "commit": "2c3cae10d6c204628403e82c8c763b402970303a",
+      "alias": "finance_realization_v2",
+      "operation_key": "POST /v2/finance/realization",
+      "boundary": "direct finance reads only; async report creators and PDF/CSV/barcode/document endpoints were excluded"
+    },
+    {
+      "stage": "B5",
+      "commit": "e296ff76b975470e8e12e566e2c4aff29adea00c",
+      "alias": "report_info",
+      "operation_key": "POST /v1/report/info",
+      "boundary": "report create/retrieval/download workflow not authorized automatically; file URLs redacted and never auto-fetched"
+    },
+    {
+      "stage": "B5",
+      "commit": "e296ff76b975470e8e12e566e2c4aff29adea00c",
+      "alias": "report_list",
+      "operation_key": "POST /v1/report/list",
+      "boundary": "report create/retrieval/download workflow not authorized automatically; file URLs redacted and never auto-fetched"
+    }
+  ],
+  "rows": [
+    {
+      "operation_key": "GET /v1/cargoes-label/file/{file_guid}",
+      "http_method": "GET",
+      "fixed_path": "/v1/cargoes-label/file/{file_guid}",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Получить PDF с этикетками грузовых мест",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "GET /v1/product/certificate/accordance-types",
+      "http_method": "GET",
+      "fixed_path": "/v1/product/certificate/accordance-types",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Список типов соответствия требованиям (версия 1)",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "GET /v1/product/certificate/types",
+      "http_method": "GET",
+      "fixed_path": "/v1/product/certificate/types",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Справочник типов документов",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_certificate_types",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "GET /v2/product/certificate/accordance-types/list",
+      "http_method": "GET",
+      "fixed_path": "/v2/product/certificate/accordance-types/list",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Список типов соответствия требованиям (версия 2)",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_certificate_accordance_types",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/barcode/add",
+      "http_method": "POST",
+      "fixed_path": "/v1/barcode/add",
+      "source_category_tag": "BarcodeAPI",
+      "source_category_title": "Штрихкоды товаров",
+      "purpose": "Привязать штрихкод к товару",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/barcode/generate",
+      "http_method": "POST",
+      "fixed_path": "/v1/barcode/generate",
+      "source_category_tag": "BarcodeAPI",
+      "source_category_title": "Штрихкоды товаров",
+      "purpose": "Создать штрихкод для товара",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/cargoes-label/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes-label/create",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Сгенерировать этикетки для грузомест",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/cargoes-label/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes-label/get",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Получить идентификатор этикетки для грузомест",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/create",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Установка грузомест",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/delete/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/delete/status",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Информация о статусе удаления грузоместа",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbo_cargoes_delete_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/label/transport-by-order/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/label/transport-by-order/create",
+      "source_category_tag": "FBOTransport",
+      "source_category_title": "Работа с транспортными грузоместами FBO",
+      "purpose": "Сгенерировать этикетки для транспортных грузомест по идентификатору поставки",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/label/transport-by-order/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/label/transport-by-order/status",
+      "source_category_tag": "FBOTransport",
+      "source_category_title": "Работа с транспортными грузоместами FBO",
+      "purpose": "Получить статус генерации этикеток для транспортных грузомеcт по идентификатору поставки",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/label/transport/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/label/transport/create",
+      "source_category_tag": "FBOTransport",
+      "source_category_title": "Работа с транспортными грузоместами FBO",
+      "purpose": "Сгенерировать этикетки транспортных грузомест по идентификатору грузоместа",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/label/transport/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/label/transport/status",
+      "source_category_tag": "FBOTransport",
+      "source_category_title": "Работа с транспортными грузоместами FBO",
+      "purpose": "Получить статус генерации этикеток транспортных грузомест по идентификатору грузоместа",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/transport/activate/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/transport/activate/status",
+      "source_category_tag": "FBOTransport",
+      "source_category_title": "Работа с транспортными грузоместами FBO",
+      "purpose": "Получить статус включения или отключения транспортных грузомест",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbo_cargoes_transport_activate_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/transport/bind/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/transport/bind/status",
+      "source_category_tag": "FBOTransport",
+      "source_category_title": "Работа с транспортными грузоместами FBO",
+      "purpose": "Получить статус связывания или отвязывания грузомест и транспортных грузомест",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbo_cargoes_transport_bind_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/transport/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/transport/create",
+      "source_category_tag": "FBOTransport",
+      "source_category_title": "Работа с транспортными грузоместами FBO",
+      "purpose": "Создать транспортное грузоместо",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/transport/create/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/transport/create/status",
+      "source_category_tag": "FBOTransport",
+      "source_category_title": "Работа с транспортными грузоместами FBO",
+      "purpose": "Получить статус создания транспортного грузоместа",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/carriage/act-discrepancy/pdf",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/act-discrepancy/pdf",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Получить акт о расхождениях по отгрузке FBS",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/carriage/container/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/container/create",
+      "source_category_tag": "CarriageAPI",
+      "source_category_title": "Работа с грузоместами FBS",
+      "purpose": "Создать грузоместо",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/carriage/container/document/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/container/document/get",
+      "source_category_tag": "CarriageAPI",
+      "source_category_title": "Работа с грузоместами FBS",
+      "purpose": "Получить документы по грузоместам — ТрН и лист отгрузки",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/carriage/container/label/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/container/label/get",
+      "source_category_tag": "CarriageAPI",
+      "source_category_title": "Работа с грузоместами FBS",
+      "purpose": "Получить этикетку по грузоместам",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/carriage/container/status/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/container/status/get",
+      "source_category_tag": "CarriageAPI",
+      "source_category_title": "Работа с грузоместами FBS",
+      "purpose": "Получить статус грузомест FBS",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbs_carriage_container_status_get",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/carriage/container/task/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/container/task/info",
+      "source_category_tag": "CarriageAPI",
+      "source_category_title": "Работа с грузоместами FBS",
+      "purpose": "Получить статус задачи грузового места",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbs_carriage_container_task_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/carriage/courier-contact/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/courier-contact/get",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Получить контактные данные продавца для курьера",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/carriage/courier-contact/set",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/courier-contact/set",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Добавить или обновить контактные данные продавца для курьера",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/carriage/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/create",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Создание отгрузки",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/carriage/ettn/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/ettn/status",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Получить статус проверки электронной ТТН на прослеживаемой перевозке FBS",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbs_carriage_ettn_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/carriage/pass/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/pass/create",
+      "source_category_tag": "Pass",
+      "source_category_title": "Пропуски",
+      "purpose": "Создать пропуск",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/chat/send/file",
+      "http_method": "POST",
+      "fixed_path": "/v1/chat/send/file",
+      "source_category_tag": "ChatAPI",
+      "source_category_title": "Чаты с покупателями",
+      "purpose": "Отправить файл",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/chat/start",
+      "http_method": "POST",
+      "fixed_path": "/v1/chat/start",
+      "source_category_tag": "Premium",
+      "source_category_title": "Premium-методы",
+      "purpose": "Создать новый чат",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/delivery/point/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/delivery/point/info",
+      "source_category_tag": "DeliveryAPI",
+      "source_category_title": "Доставка",
+      "purpose": "Получить информацию о точке самовывоза",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/description-category/attribute",
+      "http_method": "POST",
+      "fixed_path": "/v1/description-category/attribute",
+      "source_category_tag": "CategoryAPI",
+      "source_category_title": "Атрибуты и характеристики Ozon",
+      "purpose": "Список характеристик категории",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "description_category_attributes",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/description-category/attribute/values",
+      "http_method": "POST",
+      "fixed_path": "/v1/description-category/attribute/values",
+      "source_category_tag": "CategoryAPI",
+      "source_category_title": "Атрибуты и характеристики Ozon",
+      "purpose": "Справочник значений характеристики",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "description_category_attribute_values",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/description-category/attribute/values/search",
+      "http_method": "POST",
+      "fixed_path": "/v1/description-category/attribute/values/search",
+      "source_category_tag": "CategoryAPI",
+      "source_category_title": "Атрибуты и характеристики Ozon",
+      "purpose": "Поиск по справочным значениям характеристики",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "description_category_attribute_values_search",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/draft/crossdock/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/draft/crossdock/create",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Создать черновик заявки на поставку кросс-докингом",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/draft/direct/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/draft/direct/create",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Создать черновик заявки на прямую поставку",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/draft/multi-cluster/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/draft/multi-cluster/create",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Создать черновик заявки на поставку для нескольких кластеров",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/act-from/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/act-from/create",
+      "source_category_tag": "DeliveryFBP",
+      "source_category_title": "Работа с созданной поставкой FBP",
+      "purpose": "Сгенерировать акт приёмки",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/act-from/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/act-from/get",
+      "source_category_tag": "DeliveryFBP",
+      "source_category_title": "Работа с созданной поставкой FBP",
+      "purpose": "Получить статус генерации акта приёмки",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/act-to/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/act-to/create",
+      "source_category_tag": "DeliveryFBP",
+      "source_category_title": "Работа с созданной поставкой FBP",
+      "purpose": "Сгенерировать транспортную накладную",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/act-to/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/act-to/get",
+      "source_category_tag": "DeliveryFBP",
+      "source_category_title": "Работа с созданной поставкой FBP",
+      "purpose": "Получить статус генерации транспортной накладной",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/direct/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/direct/create",
+      "source_category_tag": "DraftDirectFBP",
+      "source_category_title": "Работа с FBP-черновиками с доставкой direct",
+      "purpose": "Создать черновик заявки на поставку без указания способа доставки",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/direct/seller-dlv/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/direct/seller-dlv/create",
+      "source_category_tag": "DraftDirectFBP",
+      "source_category_title": "Работа с FBP-черновиками с доставкой direct",
+      "purpose": "Создать черновик с доставкой силами продавца",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/direct/timeslot/edit",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/direct/timeslot/edit",
+      "source_category_tag": "DraftDirectFBP",
+      "source_category_title": "Работа с FBP-черновиками с доставкой direct",
+      "purpose": "Отредактировать таймслот в черновике",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/direct/tpl-dlv/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/direct/tpl-dlv/create",
+      "source_category_tag": "DraftDirectFBP",
+      "source_category_title": "Работа с FBP-черновиками с доставкой direct",
+      "purpose": "Создать черновик заявки на доставку сторонней транспортной компанией",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/direct/tpl-dlv/edit",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/direct/tpl-dlv/edit",
+      "source_category_tag": "DraftDirectFBP",
+      "source_category_title": "Работа с FBP-черновиками с доставкой direct",
+      "purpose": "Редактировать черновик поставки со способом доставки сторонней транспортной компанией",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/drop-off/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/drop-off/create",
+      "source_category_tag": "DraftDropOffFBP",
+      "source_category_title": "Работа с FBP-черновиками c доставкой drop-off",
+      "purpose": "Создать черновик для доставки в drop-off пункт",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/drop-off/dlv/edit",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/drop-off/dlv/edit",
+      "source_category_tag": "DraftDropOffFBP",
+      "source_category_title": "Работа с FBP-черновиками c доставкой drop-off",
+      "purpose": "Отредактировать детали доставки для drop-off черновика",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/pick-up/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/pick-up/create",
+      "source_category_tag": "DraftPickupFBP",
+      "source_category_title": "Работа с FBP-черновиками с доставкой pick-up",
+      "purpose": "Создать черновик заявки на pick-up поставку",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/label/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/label/create",
+      "source_category_tag": "DeliveryFBP",
+      "source_category_title": "Работа с созданной поставкой FBP",
+      "purpose": "Cоздать задание на генерацию этикеток",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/label/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/label/get",
+      "source_category_tag": "DeliveryFBP",
+      "source_category_title": "Работа с созданной поставкой FBP",
+      "purpose": "Получить статус задания на генерацию этикеток",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/order/direct/timeslot/edit",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/order/direct/timeslot/edit",
+      "source_category_tag": "OrderDirectFBP",
+      "source_category_title": "Работа с FBP-поставками с доставкой direct",
+      "purpose": "Отредактировать таймслот в заявке на поставку",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/order/drop-off/dlv/edit",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/order/drop-off/dlv/edit",
+      "source_category_tag": "OrderDropOffFBP",
+      "source_category_title": "Работа с FBP-поставками с доставкой drop-off",
+      "purpose": "Отредактировать информацию о поставке на drop-off пункт",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/finance/balance",
+      "http_method": "POST",
+      "fixed_path": "/v1/finance/balance",
+      "source_category_tag": "BetaMethod",
+      "source_category_title": "Прочие методы",
+      "purpose": "Получить отчёт о балансе",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": "finance_balance",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/finance/cash-flow-statement/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/finance/cash-flow-statement/list",
+      "source_category_tag": "ReportAPI",
+      "source_category_title": "Отчёты",
+      "purpose": "Финансовый отчёт",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": "finance_cash_flow_statement_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/finance/compensation",
+      "http_method": "POST",
+      "fixed_path": "/v1/finance/compensation",
+      "source_category_tag": "FinanceAPI",
+      "source_category_title": "Финансовые отчёты",
+      "purpose": "Отчёт о компенсациях",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "WORKFLOW_REPORT_DOCUMENT_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/finance/decompensation",
+      "http_method": "POST",
+      "fixed_path": "/v1/finance/decompensation",
+      "source_category_tag": "FinanceAPI",
+      "source_category_title": "Финансовые отчёты",
+      "purpose": "Отчёт о декомпенсациях",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "WORKFLOW_REPORT_DOCUMENT_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/finance/mutual-settlement",
+      "http_method": "POST",
+      "fixed_path": "/v1/finance/mutual-settlement",
+      "source_category_tag": "FinanceAPI",
+      "source_category_title": "Финансовые отчёты",
+      "purpose": "Отчёт о взаиморасчётах",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "WORKFLOW_REPORT_DOCUMENT_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/finance/products/buyout",
+      "http_method": "POST",
+      "fixed_path": "/v1/finance/products/buyout",
+      "source_category_tag": "FinanceAPI",
+      "source_category_title": "Финансовые отчёты",
+      "purpose": "Отчёт о выкупленных товарах",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": "finance_products_buyout",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/finance/realization/by-day",
+      "http_method": "POST",
+      "fixed_path": "/v1/finance/realization/by-day",
+      "source_category_tag": "Premium",
+      "source_category_title": "Premium-методы",
+      "purpose": "Отчёт о реализации товаров за день",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": "finance_realization_by_day",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/finance/realization/posting",
+      "http_method": "POST",
+      "fixed_path": "/v1/finance/realization/posting",
+      "source_category_tag": "FinanceAPI",
+      "source_category_title": "Финансовые отчёты",
+      "purpose": "Позаказный отчёт о реализации товаров",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": "finance_realization_posting",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/invoice/delete",
+      "http_method": "POST",
+      "fixed_path": "/v1/invoice/delete",
+      "source_category_tag": "SupplierAPI",
+      "source_category_title": "Накладные",
+      "purpose": "Удалить ссылку на счёт-фактуру",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/invoice/file/upload",
+      "http_method": "POST",
+      "fixed_path": "/v1/invoice/file/upload",
+      "source_category_tag": "SupplierAPI",
+      "source_category_title": "Накладные",
+      "purpose": "Загрузка счёта-фактуры",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/order/cancel/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/order/cancel/status",
+      "source_category_tag": "OrderAPI",
+      "source_category_title": "Заказы",
+      "purpose": "Получить статус отмены заказа",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "order_cancel_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/polygon/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/polygon/create",
+      "source_category_tag": "PolygonAPI",
+      "source_category_title": "Полигоны",
+      "purpose": "Создайте полигон доставки",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/posting/cancel/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/posting/cancel/status",
+      "source_category_tag": "FboPostingAPI",
+      "source_category_title": "Отправления",
+      "purpose": "Проверить статус отмены отправления",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "posting_cancel_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/posting/fbs/package-label/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/posting/fbs/package-label/create",
+      "source_category_tag": "FBS",
+      "source_category_title": "Обработка заказов FBS и rFBS",
+      "purpose": "Создать задание на выгрузку этикеток",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/posting/fbs/package-label/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/posting/fbs/package-label/get",
+      "source_category_tag": "FBS",
+      "source_category_title": "Обработка заказов FBS и rFBS",
+      "purpose": "Получить файл с этикетками",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/pricing-strategy/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/pricing-strategy/create",
+      "source_category_tag": "PricingStrategyAPI",
+      "source_category_title": "Стратегии ценообразования",
+      "purpose": "Создать стратегию",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/pricing-strategy/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/pricing-strategy/info",
+      "source_category_tag": "PricingStrategyAPI",
+      "source_category_title": "Стратегии ценообразования",
+      "purpose": "Информация о стратегии",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "pricing_strategy_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/pricing-strategy/product/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/pricing-strategy/product/info",
+      "source_category_tag": "PricingStrategyAPI",
+      "source_category_title": "Стратегии ценообразования",
+      "purpose": "Цена товара у конкурента",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "pricing_strategy_product_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/pricing-strategy/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/pricing-strategy/status",
+      "source_category_tag": "PricingStrategyAPI",
+      "source_category_title": "Стратегии ценообразования",
+      "purpose": "Изменить статус стратегии",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/product/action/timer/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/action/timer/status",
+      "source_category_tag": "Prices&StocksAPI",
+      "source_category_title": "Цены и остатки товаров",
+      "purpose": "Получить статус установленного таймера",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_action_timer_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/action/timer/update",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/action/timer/update",
+      "source_category_tag": "Prices&StocksAPI",
+      "source_category_title": "Цены и остатки товаров",
+      "purpose": "Обновление таймера актуальности минимальной цены",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/product/attributes/update",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/attributes/update",
+      "source_category_tag": "ProductAPI",
+      "source_category_title": "Загрузка и обновление товаров",
+      "purpose": "Обновить характеристики товара",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/bind",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/bind",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Привязать сертификат к товару",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/create",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Добавить сертификаты для товаров ⚠️ deprecated",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/delete",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/delete",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Удалить сертификат",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/info",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Информация о сертификате",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_certificate_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/list",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Список сертификатов",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_certificate_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/product_status/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/product_status/list",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Список возможных статусов товаров",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_certificate_product_status_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/products/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/products/list",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Список товаров, привязанных к сертификату",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_certificate_products",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/rejection_reasons/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/rejection_reasons/list",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Возможные причины отклонения сертификата",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_certificate_rejection_reasons",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/status/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/status/list",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Возможные статусы сертификатов",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_certificate_status_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/unbind",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/unbind",
+      "source_category_tag": "CertificationAPI",
+      "source_category_title": "Сертификаты качества",
+      "purpose": "Отвязать товар от сертификата",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/product/import-by-sku",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/import-by-sku",
+      "source_category_tag": "ProductAPI",
+      "source_category_title": "Загрузка и обновление товаров",
+      "purpose": "Создать товар по SKU",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/product/import/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/import/info",
+      "source_category_tag": "ProductAPI",
+      "source_category_title": "Загрузка и обновление товаров",
+      "purpose": "Узнать статус добавления или обновления товара",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_import_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/info/description",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/info/description",
+      "source_category_tag": "ProductAPI",
+      "source_category_title": "Загрузка и обновление товаров",
+      "purpose": "Получить описание товара",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_info_description",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/info/discounted",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/info/discounted",
+      "source_category_tag": "Prices&StocksAPI",
+      "source_category_title": "Цены и остатки товаров",
+      "purpose": "Узнать информацию об уценке и основном товаре по SKU уценённого товара",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_discounted_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/info/stocks-by-warehouse/fbo",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/info/stocks-by-warehouse/fbo",
+      "source_category_tag": "ProductAPI",
+      "source_category_title": "Загрузка и обновление товаров",
+      "purpose": "Получить информацию о стоках на складах FBO",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbo_stock_by_warehouse",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/info/stocks-by-warehouse/fbs",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/info/stocks-by-warehouse/fbs",
+      "source_category_tag": "Prices&StocksAPI",
+      "source_category_title": "Цены и остатки товаров",
+      "purpose": "Информация об остатках на складах продавца (FBS и rFBS)",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/product/info/subscription",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/info/subscription",
+      "source_category_tag": "ProductAPI",
+      "source_category_title": "Загрузка и обновление товаров",
+      "purpose": "Количество подписавшихся на товар пользователей",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_subscription_count",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/info/warehouse/stocks",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/info/warehouse/stocks",
+      "source_category_tag": "Prices&StocksAPI",
+      "source_category_title": "Цены и остатки товаров",
+      "purpose": "Получить информацию по остаткам на складе FBS и rFBS",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_fbs_warehouse_stocks",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/info/wrong-volume",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/info/wrong-volume",
+      "source_category_tag": "ProductAPI",
+      "source_category_title": "Загрузка и обновление товаров",
+      "purpose": "Список товаров с некорректными ОВХ",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_wrong_volume",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/placement-zone/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/placement-zone/info",
+      "source_category_tag": "CategoryAPI",
+      "source_category_title": "Атрибуты и характеристики Ozon",
+      "purpose": "Получить зоны размещения товаров по SKU перед поставкой",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_placement_zone_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/quant/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/quant/info",
+      "source_category_tag": "Quants",
+      "source_category_title": "Работа с квантами",
+      "purpose": "Информация об эконом-товаре",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_quant_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/product/visibility/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/visibility/info",
+      "source_category_tag": "BetaMethod",
+      "source_category_title": "Прочие методы",
+      "purpose": "Получить информацию о видимости товара",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_visibility_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/question/answer/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/question/answer/create",
+      "source_category_tag": "Questions&Answers",
+      "source_category_title": "Работа с вопросами и ответами",
+      "purpose": "Создать ответ на вопрос",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/question/change-status",
+      "http_method": "POST",
+      "fixed_path": "/v1/question/change-status",
+      "source_category_tag": "Questions&Answers",
+      "source_category_title": "Работа с вопросами и ответами",
+      "purpose": "Изменить статус вопросов",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/question/count",
+      "http_method": "POST",
+      "fixed_path": "/v1/question/count",
+      "source_category_tag": "Questions&Answers",
+      "source_category_title": "Работа с вопросами и ответами",
+      "purpose": "Количество вопросов по статусам",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "question_count",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/question/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/question/info",
+      "source_category_tag": "Questions&Answers",
+      "source_category_title": "Работа с вопросами и ответами",
+      "purpose": "Информация о вопросе",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "question_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "operator_personal_data_gate",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/rating/index/fbs/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/rating/index/fbs/info",
+      "source_category_tag": "SellerRating",
+      "source_category_title": "Рейтинг продавца",
+      "purpose": "Получить индекс ошибок FBS и rFBS",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "seller_fbs_error_index",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/receipts/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/receipts/get",
+      "source_category_tag": "Receipt",
+      "source_category_title": "Чеки",
+      "purpose": "Получить чек в формате PDF",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/removal/from-stock/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/removal/from-stock/list",
+      "source_category_tag": "BetaMethod",
+      "source_category_title": "Прочие методы",
+      "purpose": "Отчёт по вывозу и утилизации со стока FBO",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": "removal_from_stock_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/removal/from-supply/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/removal/from-supply/list",
+      "source_category_tag": "BetaMethod",
+      "source_category_title": "Прочие методы",
+      "purpose": "Отчёт по вывозу и утилизации с поставки FBO",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": "removal_from_supply_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/report/discounted/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/discounted/create",
+      "source_category_tag": "ReportAPI",
+      "source_category_title": "Отчёты",
+      "purpose": "Отчёт об уценённых товарах",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/report/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/info",
+      "source_category_tag": "ReportAPI",
+      "source_category_title": "Отчёты",
+      "purpose": "Информация об отчёте",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "report_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/report/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/list",
+      "source_category_tag": "ReportAPI",
+      "source_category_title": "Отчёты",
+      "purpose": "Список отчётов",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": "report_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/report/marked-products-sales/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/marked-products-sales/create",
+      "source_category_tag": "ReportAPI",
+      "source_category_title": "Отчёты",
+      "purpose": "Сгенерировать отчёт по продажам товаров с маркировкой",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/report/placement/by-products/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/placement/by-products/create",
+      "source_category_tag": "ReportAPI",
+      "source_category_title": "Отчёты",
+      "purpose": "Получить отчёт о стоимости размещения по товарам",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/report/placement/by-supplies/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/placement/by-supplies/create",
+      "source_category_tag": "ReportAPI",
+      "source_category_title": "Отчёты",
+      "purpose": "Получить отчёт о стоимости размещения по поставкам",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/report/postings/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/postings/create",
+      "source_category_tag": "ReportAPI",
+      "source_category_title": "Отчёты",
+      "purpose": "Отчёт об отправлениях",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/report/products/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/products/create",
+      "source_category_tag": "ReportAPI",
+      "source_category_title": "Отчёты",
+      "purpose": "Отчёт по товарам",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/report/realization/posting/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/realization/posting/create",
+      "source_category_tag": "BetaMethod",
+      "source_category_title": "Прочие методы",
+      "purpose": "Получить позаказный отчёт о реализации товаров",
+      "detection_reasons": [
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/report/warehouse/stock",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/warehouse/stock",
+      "source_category_tag": "ReportAPI",
+      "source_category_title": "Отчёты",
+      "purpose": "Отчёт об остатках на FBS-складе",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "WORKFLOW_REPORT_DOCUMENT_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/return/giveout/barcode",
+      "http_method": "POST",
+      "fixed_path": "/v1/return/giveout/barcode",
+      "source_category_tag": "ReturnAPI",
+      "source_category_title": "Возвратные отгрузки",
+      "purpose": "Значение штрихкода для возвратных отгрузок",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/return/giveout/barcode-reset",
+      "http_method": "POST",
+      "fixed_path": "/v1/return/giveout/barcode-reset",
+      "source_category_tag": "ReturnAPI",
+      "source_category_title": "Возвратные отгрузки",
+      "purpose": "Сгенерировать новый штрихкод",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/return/giveout/get-pdf",
+      "http_method": "POST",
+      "fixed_path": "/v1/return/giveout/get-pdf",
+      "source_category_tag": "ReturnAPI",
+      "source_category_title": "Возвратные отгрузки",
+      "purpose": "Штрихкод для получения возвратной отгрузки в формате PDF",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/return/giveout/get-png",
+      "http_method": "POST",
+      "fixed_path": "/v1/return/giveout/get-png",
+      "source_category_tag": "ReturnAPI",
+      "source_category_title": "Возвратные отгрузки",
+      "purpose": "Штрихкод для получения возвратной отгрузки в формате PNG",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/return/giveout/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/return/giveout/info",
+      "source_category_tag": "ReturnAPI",
+      "source_category_title": "Возвратные отгрузки",
+      "purpose": "Информация о возвратной отгрузке",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "return_giveout_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/return/giveout/is-enabled",
+      "http_method": "POST",
+      "fixed_path": "/v1/return/giveout/is-enabled",
+      "source_category_tag": "ReturnAPI",
+      "source_category_title": "Возвратные отгрузки",
+      "purpose": "Проверить возможность получения возвратных отгрузок по штрихкоду",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "return_giveout_is_enabled",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/return/pass/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/return/pass/create",
+      "source_category_tag": "Pass",
+      "source_category_title": "Пропуски",
+      "purpose": "Создать пропуск для возврата",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/returns/company/fbs/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/returns/company/fbs/info",
+      "source_category_tag": "ReturnAPI",
+      "source_category_title": "Возвратные отгрузки",
+      "purpose": "Количество возвратов FBS",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "returns_company_fbs_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/returns/settings/utilization/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/returns/settings/utilization/info",
+      "source_category_tag": "ReturnsAPI",
+      "source_category_title": "Возвраты товаров FBO и FBS",
+      "purpose": "Получить настройки автоутилизации",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "returns_utilization_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/review/change-status",
+      "http_method": "POST",
+      "fixed_path": "/v1/review/change-status",
+      "source_category_tag": "ReviewAPI",
+      "source_category_title": "Работа с отзывами",
+      "purpose": "Изменить статус отзывов ⚠️ deprecated",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/review/comment/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/review/comment/create",
+      "source_category_tag": "ReviewAPI",
+      "source_category_title": "Работа с отзывами",
+      "purpose": "Оставить комментарий на отзыв",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/review/count",
+      "http_method": "POST",
+      "fixed_path": "/v1/review/count",
+      "source_category_tag": "ReviewAPI",
+      "source_category_title": "Работа с отзывами",
+      "purpose": "Количество отзывов по статусам ⚠️ deprecated",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/review/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/review/info",
+      "source_category_tag": "ReviewAPI",
+      "source_category_title": "Работа с отзывами",
+      "purpose": "Получить информацию об отзыве ⚠️ deprecated",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/seller-actions/create/discount",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller-actions/create/discount",
+      "source_category_tag": "SellerActions",
+      "source_category_title": "Акции продавца",
+      "purpose": "Создать акцию с механикой «Скидка»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/seller-actions/create/discount-with-condition",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller-actions/create/discount-with-condition",
+      "source_category_tag": "SellerActions",
+      "source_category_title": "Акции продавца",
+      "purpose": "Создать акцию с механикой «Скидка от суммы заказа»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/seller-actions/create/installment",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller-actions/create/installment",
+      "source_category_tag": "SellerActions",
+      "source_category_title": "Акции продавца",
+      "purpose": "Создать акцию с механикой «Беспроцентная рассрочка»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/seller-actions/create/multi-level-discount",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller-actions/create/multi-level-discount",
+      "source_category_tag": "SellerActions",
+      "source_category_title": "Акции продавца",
+      "purpose": "Создать акцию с механикой «Многоуровневая скидка от суммы»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/seller-actions/create/voucher",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller-actions/create/voucher",
+      "source_category_tag": "SellerActions",
+      "source_category_title": "Акции продавца",
+      "purpose": "Создать акцию с механикой «Скидка по промокоду»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/seller-actions/voucher/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller-actions/voucher/get",
+      "source_category_tag": "SellerActions",
+      "source_category_title": "Акции продавца",
+      "purpose": "Получить файл с промокодами в формате CSV",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/seller/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller/info",
+      "source_category_tag": "SellerInfo",
+      "source_category_title": "Информация по кабинету продавца",
+      "purpose": "Информация о кабинете продавца",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "seller_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/seller/ozon-logistics/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller/ozon-logistics/info",
+      "source_category_tag": "SellerInfo",
+      "source_category_title": "Информация по кабинету продавца",
+      "purpose": "Информация о подключении Ozon Доставки",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "seller_ozon_logistics_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/act/accept",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/act/accept",
+      "source_category_tag": "SupplyOrderAPI",
+      "source_category_title": "Работа с актами FBO",
+      "purpose": "Согласовать акт",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/act/accept/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/act/accept/status",
+      "source_category_tag": "SupplyOrderAPI",
+      "source_category_title": "Работа с актами FBO",
+      "purpose": "Получить статус согласования акта",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "supply_order_act_accept_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/act/product/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/act/product/get",
+      "source_category_tag": "SupplyOrderAPI",
+      "source_category_title": "Работа с актами FBO",
+      "purpose": "Получить информацию о товарах в акте",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "supply_order_act_product_get",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/act/summary/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/act/summary/get",
+      "source_category_tag": "SupplyOrderAPI",
+      "source_category_title": "Работа с актами FBO",
+      "purpose": "Получить информацию об акте",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "supply_order_act_summary_get",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/cancel/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/cancel/status",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Получить статус отмены заявки на поставку",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "supply_order_cancel_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/content/update",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/content/update",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Редактирование товарного состава",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/content/update/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/content/update/status",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Информация о статусе редактирования товарного состава",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "supply_order_content_update_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/content/update/validation",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/content/update/validation",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Проверить новый товарный состав",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "supply_order_content_update_validation",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/pass/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/pass/create",
+      "source_category_tag": "FBO",
+      "source_category_title": "Доставка FBO",
+      "purpose": "Указать данные о водителе и автомобиле",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/pass/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/pass/status",
+      "source_category_tag": "FBO",
+      "source_category_title": "Доставка FBO",
+      "purpose": "Статус ввода данных о водителе и автомобиле",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "supply_order_pass_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/status/counter",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/status/counter",
+      "source_category_tag": "FBO",
+      "source_category_title": "Доставка FBO",
+      "purpose": "Количество заявок по статусам",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "supply_order_status_counter",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/timeslot/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/timeslot/status",
+      "source_category_tag": "FBO",
+      "source_category_title": "Доставка FBO",
+      "purpose": "Статус интервала поставки",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "supply_order_timeslot_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/erfbs/aggregator/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/erfbs/aggregator/create",
+      "source_category_tag": "rFBSWarehouseSetup",
+      "source_category_title": "Создание складов rFBS Express и управление ими",
+      "purpose": "Создать склад с методом доставки «Партнёры Ozon»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/erfbs/non-integrated/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/erfbs/non-integrated/create",
+      "source_category_tag": "rFBSWarehouseSetup",
+      "source_category_title": "Создание складов rFBS Express и управление ими",
+      "purpose": "Создать склад с методом доставки «Вы или сторонняя служба»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/fbs/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/fbs/create",
+      "source_category_tag": "FBSWarehouseSetup",
+      "source_category_title": "Создание FBS-складов и управление ими",
+      "purpose": "Создать склад",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/fbs/create/drop-off/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/fbs/create/drop-off/list",
+      "source_category_tag": "FBSWarehouseSetup",
+      "source_category_title": "Создание FBS-складов и управление ими",
+      "purpose": "Получить список drop-off пунктов для создания склада",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": "warehouse_fbs_create_dropoff_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/fbs/create/drop-off/timeslot/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/fbs/create/drop-off/timeslot/list",
+      "source_category_tag": "FBSWarehouseSetup",
+      "source_category_title": "Создание FBS-складов и управление ими",
+      "purpose": "Получить список таймслотов для создания склада с отгрузкой drop-off",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": "warehouse_fbs_create_dropoff_timeslot_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/fbs/create/pick-up/timeslot/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/fbs/create/pick-up/timeslot/list",
+      "source_category_tag": "FBSWarehouseSetup",
+      "source_category_title": "Создание FBS-складов и управление ими",
+      "purpose": "Получить список таймслотов для создания склада с отгрузкой pick-up",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": "warehouse_fbs_create_pickup_timeslot_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/fbs/create/return-point/list",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/fbs/create/return-point/list",
+      "source_category_tag": "FBSWarehouseSetup",
+      "source_category_title": "Создание FBS-складов и управление ими",
+      "purpose": "Получить список пунктов возврата для создания склада",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": "warehouse_fbs_create_return_point_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/fbs/pickup/courier/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/fbs/pickup/courier/create",
+      "source_category_tag": "FBSWarehouseSetup",
+      "source_category_title": "Создание FBS-складов и управление ими",
+      "purpose": "Создать вызов курьера на забор отгрузки pick-up",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/fbs/return-mile/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/fbs/return-mile/info",
+      "source_category_tag": "FBSWarehouseSetup",
+      "source_category_title": "Создание FBS-складов и управление ими",
+      "purpose": "Получить информацию о возвратной миле",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "warehouse_fbs_return_mile_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/operation/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/operation/status",
+      "source_category_tag": "WarehouseAPI",
+      "source_category_title": "Работа со складами FBS и rFBS",
+      "purpose": "Получить статус операции",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "warehouse_operation_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/analytics/stock_on_warehouses",
+      "http_method": "POST",
+      "fixed_path": "/v2/analytics/stock_on_warehouses",
+      "source_category_tag": "AnalyticsAPI",
+      "source_category_title": "Аналитические отчёты",
+      "purpose": "Отчёт по остаткам и товарам",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": "stock_on_warehouses_v2",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/cargoes/create/info",
+      "http_method": "POST",
+      "fixed_path": "/v2/cargoes/create/info",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Получить информацию по установке грузомест",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbo_cargoes_create_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/cargoes/delete/status",
+      "http_method": "POST",
+      "fixed_path": "/v2/cargoes/delete/status",
+      "source_category_tag": "FBOTransport",
+      "source_category_title": "Работа с транспортными грузоместами FBO",
+      "purpose": "Получить информацию о статусе удаления грузомест и транспортных грузомест",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbo_cargoes_v2_delete_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/draft/create/info",
+      "http_method": "POST",
+      "fixed_path": "/v2/draft/create/info",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Получить информацию о черновике заявки на поставку",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbo_draft_create_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/draft/supply/create",
+      "http_method": "POST",
+      "fixed_path": "/v2/draft/supply/create",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Создать заявку на поставку по черновику",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/draft/supply/create/status",
+      "http_method": "POST",
+      "fixed_path": "/v2/draft/supply/create/status",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Получить информацию о создании заявки на поставку",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbo_draft_supply_create_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/draft/timeslot/info",
+      "http_method": "POST",
+      "fixed_path": "/v2/draft/timeslot/info",
+      "source_category_tag": "FboSupplyRequest",
+      "source_category_title": "Создание и управление заявками на поставку FBO",
+      "purpose": "Получить список доступных таймслотов",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbo_draft_timeslot_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/fbs/posting/delivered",
+      "http_method": "POST",
+      "fixed_path": "/v2/fbs/posting/delivered",
+      "source_category_tag": "DeliveryrFBS",
+      "source_category_title": "Доставка rFBS",
+      "purpose": "Изменить статус на «Доставлено»",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/fbs/posting/delivering",
+      "http_method": "POST",
+      "fixed_path": "/v2/fbs/posting/delivering",
+      "source_category_tag": "DeliveryrFBS",
+      "source_category_title": "Доставка rFBS",
+      "purpose": "Изменить статус на «Доставляется»",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/fbs/posting/last-mile",
+      "http_method": "POST",
+      "fixed_path": "/v2/fbs/posting/last-mile",
+      "source_category_tag": "DeliveryrFBS",
+      "source_category_title": "Доставка rFBS",
+      "purpose": "Изменить статус на «Последняя миля»",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/finance/realization",
+      "http_method": "POST",
+      "fixed_path": "/v2/finance/realization",
+      "source_category_tag": "FinanceAPI",
+      "source_category_title": "Финансовые отчёты",
+      "purpose": "Отчёт о реализации товаров (версия 2)",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "accepted_step3_alias": "finance_realization_v2",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/invoice/create-or-update",
+      "http_method": "POST",
+      "fixed_path": "/v2/invoice/create-or-update",
+      "source_category_tag": "SupplierAPI",
+      "source_category_title": "Накладные",
+      "purpose": "Создать или изменить счёт-фактуру",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/invoice/get",
+      "http_method": "POST",
+      "fixed_path": "/v2/invoice/get",
+      "source_category_tag": "SupplierAPI",
+      "source_category_title": "Накладные",
+      "purpose": "Получить информацию о счёте-фактуре",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/order/create",
+      "http_method": "POST",
+      "fixed_path": "/v2/order/create",
+      "source_category_tag": "OrderAPI",
+      "source_category_title": "Заказы",
+      "purpose": "Создать заказ",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/check-status",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/check-status",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Статус отгрузки и документов",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbs_act_check_status",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/create",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/create",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Подтвердить отгрузку и создать документы",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/get-barcode",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/get-barcode",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Штрихкод для отгрузки отправления",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/get-barcode/text",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/get-barcode/text",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Значение штрихкода для отгрузки отправления",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/get-container-labels",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/get-container-labels",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Этикетки для грузового места",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/get-pdf",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/get-pdf",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Получить PDF c документами",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/get-postings",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/get-postings",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Список отправлений в акте",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbs_act_get_postings",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/list",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/list",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Список актов по отгрузкам",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbs_act_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/digital/act/check-status",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/digital/act/check-status",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Статус формирования накладной ⚠️ deprecated",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/digital/act/get-pdf",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/digital/act/get-pdf",
+      "source_category_tag": "DeliveryFBS",
+      "source_category_title": "Доставка FBS",
+      "purpose": "Получить лист отгрузки по перевозке ⚠️ deprecated",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/get-by-barcode",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/get-by-barcode",
+      "source_category_tag": "FBS",
+      "source_category_title": "Обработка заказов FBS и rFBS",
+      "purpose": "Получить информацию об отправлении по штрихкоду",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/package-label",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/package-label",
+      "source_category_tag": "FBS",
+      "source_category_title": "Обработка заказов FBS и rFBS",
+      "purpose": "Напечатать этикетку",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DOCUMENT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/package-label/create",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/package-label/create",
+      "source_category_tag": "FBS",
+      "source_category_title": "Обработка заказов FBS и rFBS",
+      "purpose": "Создать задание на формирование этикеток",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/product/certificate/create",
+      "http_method": "POST",
+      "fixed_path": "/v2/product/certificate/create",
+      "source_category_tag": "BetaMethod",
+      "source_category_title": "Прочие методы",
+      "purpose": "Создать сертификат качества",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/product/certification/options",
+      "http_method": "POST",
+      "fixed_path": "/v2/product/certification/options",
+      "source_category_tag": "BetaMethod",
+      "source_category_title": "Прочие методы",
+      "purpose": "Получить параметры для создания сертификата качества",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_certification_options",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/product/certification/params",
+      "http_method": "POST",
+      "fixed_path": "/v2/product/certification/params",
+      "source_category_tag": "BetaMethod",
+      "source_category_title": "Прочие методы",
+      "purpose": "Получить обязательные параметры для создания сертификата качества",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/product/info/stocks-by-warehouse/fbs",
+      "http_method": "POST",
+      "fixed_path": "/v2/product/info/stocks-by-warehouse/fbs",
+      "source_category_tag": "Prices&StocksAPI",
+      "source_category_title": "Цены и остатки товаров",
+      "purpose": "Получить информацию об остатках на складах продавца",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "fbs_stock_by_warehouse",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/product/pictures/info",
+      "http_method": "POST",
+      "fixed_path": "/v2/product/pictures/info",
+      "source_category_tag": "ProductAPI",
+      "source_category_title": "Загрузка и обновление товаров",
+      "purpose": "Получить изображения товаров",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_pictures_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/report/returns/create",
+      "http_method": "POST",
+      "fixed_path": "/v2/report/returns/create",
+      "source_category_tag": "ReportAPI",
+      "source_category_title": "Отчёты",
+      "purpose": "Отчёт о возвратах",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/review/change-status",
+      "http_method": "POST",
+      "fixed_path": "/v2/review/change-status",
+      "source_category_tag": "ReviewAPI",
+      "source_category_title": "Работа с отзывами",
+      "purpose": "Изменить статус отзывов",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v2/review/count",
+      "http_method": "POST",
+      "fixed_path": "/v2/review/count",
+      "source_category_tag": "ReviewAPI",
+      "source_category_title": "Работа с отзывами",
+      "purpose": "Получить количество отзывов по статусам",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "review_count",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v2/review/info",
+      "http_method": "POST",
+      "fixed_path": "/v2/review/info",
+      "source_category_tag": "ReviewAPI",
+      "source_category_title": "Работа с отзывами",
+      "purpose": "Получить информацию по отзыву",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "review_info",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "operator_personal_data_gate",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v3/product/import",
+      "http_method": "POST",
+      "fixed_path": "/v3/product/import",
+      "source_category_tag": "ProductAPI",
+      "source_category_title": "Загрузка и обновление товаров",
+      "purpose": "Создать или обновить товар",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v3/product/info/list",
+      "http_method": "POST",
+      "fixed_path": "/v3/product/info/list",
+      "source_category_tag": "ProductAPI",
+      "source_category_title": "Загрузка и обновление товаров",
+      "purpose": "Получить информацию о товарах по идентификаторам",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "seller_product_info_list",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v4/product/info/attributes",
+      "http_method": "POST",
+      "fixed_path": "/v4/product/info/attributes",
+      "source_category_tag": "ProductAPI",
+      "source_category_title": "Загрузка и обновление товаров",
+      "purpose": "Получить описание характеристик товара",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "seller_product_attributes",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v4/product/info/limit",
+      "http_method": "POST",
+      "fixed_path": "/v4/product/info/limit",
+      "source_category_tag": "ProductAPI",
+      "source_category_title": "Загрузка и обновление товаров",
+      "purpose": "Лимиты на ассортимент, создание и обновление товаров",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_upload_quota",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v4/product/info/stocks",
+      "http_method": "POST",
+      "fixed_path": "/v4/product/info/stocks",
+      "source_category_tag": "Prices&StocksAPI",
+      "source_category_title": "Цены и остатки товаров",
+      "purpose": "Информация о количестве товаров",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "stocks_current",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v5/fbs/posting/product/exemplar/status",
+      "http_method": "POST",
+      "fixed_path": "/v5/fbs/posting/product/exemplar/status",
+      "source_category_tag": "FBS&rFBSMarks",
+      "source_category_title": "Управление кодами маркировки и сборкой заказов для FBS/rFBS",
+      "purpose": "Получить статус добавления экземпляров",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "DIRECT_OR_WORKFLOW_RESULT_READ_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    },
+    {
+      "operation_key": "POST /v5/product/info/prices",
+      "http_method": "POST",
+      "fixed_path": "/v5/product/info/prices",
+      "source_category_tag": "Prices&StocksAPI",
+      "source_category_title": "Цены и остатки товаров",
+      "purpose": "Получить информацию о цене товара",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "accepted_step3_alias": "product_prices_bulk",
+      "accepted_step3_effect": "READ",
+      "accepted_step3_workflow_role": "single_read",
+      "accepted_step3_privacy_policy": "safe_projection",
+      "step5_classification": "ACCEPTED_DIRECT_SINGLE_READ",
+      "exact_schema_decision": "CARRY_FORWARD_ACCEPTED_STEP3_METADATA"
+    },
+    {
+      "operation_key": "POST /v6/fbs/posting/product/exemplar/create-or-get",
+      "http_method": "POST",
+      "fixed_path": "/v6/fbs/posting/product/exemplar/create-or-get",
+      "source_category_tag": "FBS&rFBSMarks",
+      "source_category_title": "Управление кодами маркировки и сборкой заказов для FBS/rFBS",
+      "purpose": "Получить данные созданных экземпляров",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "accepted_step3_alias": null,
+      "accepted_step3_effect": null,
+      "accepted_step3_workflow_role": null,
+      "accepted_step3_privacy_policy": null,
+      "step5_classification": "SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED",
+      "exact_schema_decision": "REQUIRES_EXACT_ACCEPTED_SWAGGER_SNAPSHOT"
+    }
+  ],
+  "boundary": "This inventory identifies the Step5 candidate surface. Accepted Step3 metadata is carried forward. Unimplemented rows remain fail-closed and require exact accepted Swagger schema review before implementation or terminal rejection. Detection signals are discovery-only and are not semantic authority.",
+  "final_action": "USE_AS_STEP5_CANDIDATE_MATRIX; NEXT CLASSIFY_PENDING_ROWS_WITH_EXACT_ACCEPTED_SWAGGER_AND_IMPLEMENT_ONLY_EXPLICIT_READ_STEPS"
+}
