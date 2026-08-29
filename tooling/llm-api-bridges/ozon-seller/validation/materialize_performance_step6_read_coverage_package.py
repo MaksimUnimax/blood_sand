@@ -88,10 +88,16 @@ def main() -> None:
 
     transport = manifest["transport"]
     transport_path = validation / transport["file"]
-    b64 = transport_path.read_bytes()
+    disk_b64 = transport_path.read_bytes()
+    # Git may materialize this text-only base64 carrier with CRLF on Windows.
+    # The package identity is the canonical repository LF representation; the
+    # decoded gzip and raw patch remain byte-exact on every platform.
+    b64 = disk_b64.replace(b"\r\n", b"\n")
+    if b"\r" in b64:
+        raise RuntimeError("Step6 base64 transport contains unsupported carriage returns")
     if len(b64) != transport["base64_text_bytes"] or sha(b64) != transport["base64_text_sha256"]:
-        raise RuntimeError("Step6 base64 transport identity mismatch")
-    print("PERFORMANCE_STEP6_PACKAGE_BASE64_TRANSPORT_IDENTITY_PASS")
+        raise RuntimeError("Step6 canonical base64 transport identity mismatch")
+    print("PERFORMANCE_STEP6_PACKAGE_CANONICAL_BASE64_TRANSPORT_IDENTITY_PASS")
 
     try:
         gz = base64.b64decode(b64.strip(), validate=True)
