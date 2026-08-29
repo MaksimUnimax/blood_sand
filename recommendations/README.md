@@ -26,6 +26,9 @@ Current VK documents:
 
 - `VK_PLATFORM_ARCHITECTURE.md` — обязательная pre-implementation архитектура VK Bot + Mini App, построенная по официальным VK contracts;
 - `VK_PLATFORM_OFFICIAL_CONTRACT_LEDGER.md` — реестр подтверждённых официальных VK contracts, разрешённых implementation surfaces и `UNRESOLVED` gaps;
+- `VK_PLATFORM_PRE_M3_CONTRACT.md` — официальный PRE-M3 transport/configuration baseline, provisioning/preflight contracts и staging requirements;
+- `VK_IMPLEMENTATION_ARCHITECTURE.md` — полная pre-code implementation architecture backend/Bot/Mini App, persistence, inbox/outbox, auth, handoff, failure isolation и test strategy;
+- `VK_IMPLEMENTATION_GATE_MATRIX.md` — обязательная матрица разрешённых/заблокированных milestone implementation gates;
 - `VK_UX_FLOW.md` — consumer Bot / Mini App UX authority;
 - `ROADMAP.md` — V2 implementation sequence;
 - `DATA_API_CONTRACT.md` — shared Recommendation API transport contract;
@@ -48,14 +51,34 @@ Platform anti-guessing gate:
 → только потом писать production functionality
 ```
 
-Для любого M2/M3/M5/M6 implementation prompt обязательное чтение:
+Для любого нового VK runtime implementation prompt обязательное чтение:
 
 ```text
 VK_PLATFORM_ARCHITECTURE.md
 VK_PLATFORM_OFFICIAL_CONTRACT_LEDGER.md
+VK_IMPLEMENTATION_ARCHITECTURE.md
+VK_IMPLEMENTATION_GATE_MATRIX.md
 ```
 
-Для M3/M5/M6 дополнительно обязательны соответствующие PRE-M3 / PRE-M5 / PRE-M6 gates из этих документов. `UNRESOLVED` item нельзя молча превращать в guessed implementation.
+Для M3 дополнительно обязательно:
+
+```text
+VK_PLATFORM_PRE_M3_CONTRACT.md
+```
+
+Для M5/M6 до кода должны быть созданы и проверены соответствующие current PRE-M5/PRE-M6 contract/ADR artifacts после повторной проверки официальной документации VK и необходимого staging behavior.
+
+`UNRESOLVED`, `STAGING_REQUIRED` или `REVALIDATE` нельзя молча превращать в guessed implementation.
+
+Milestone code gate:
+
+```text
+relevant documentation gate != PASS
+→ implementation prompt не выдаётся
+→ Codex/runtime code не запускается
+```
+
+Документация platform/architecture не является формальностью после кода: она должна существовать, быть проверена и находиться в exact starting HEAD **до** соответствующего implementation run.
 
 Old VK/V1 examples or prompts that contain:
 
