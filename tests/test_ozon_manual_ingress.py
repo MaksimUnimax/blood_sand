@@ -193,7 +193,7 @@ def test_v2_reference_snapshot_is_exact_and_contains_required_semantics():
     )
     for name in files:
         authority = subprocess.check_output(
-            ['git', 'show', f'63e117000f75a08d1caa948c2ccba10ac181db65:recommendations/{name}'], cwd=root
+            ['git', 'show', f'f31bbe0c2d0ab7ca822b69e8bbd02fa8ec3b77c4:recommendations/{name}'], cwd=root
         )
         assert (root / 'references' / name).read_bytes() == authority
     text = '\n'.join((root / 'references' / name).read_text() for name in files)
@@ -209,6 +209,25 @@ def test_v2_reference_snapshot_is_exact_and_contains_required_semantics():
     assert 'https://www.ozon.ru/product/2184199958/' in text
     assert 'Печать Велеса — Медвежья лапа' not in text
     assert 'Печать Велеса' in text
+    lebed_female = (root / 'references' / 'CUSTOMER_RECOMMENDATION_COPY_GUIDE.md').read_text()
+    expected_context = (
+        'Дата {DD.MM.YYYY} относится к Чертогу Лебедя. Этот Чертог связывают с гармонией, '
+        'семьёй, внутренним равновесием и сохранением связи с близкими.\n>\n>'
+    )
+    assert expected_context in lebed_female
+    assert (
+        'Женщине рекомендуем оберег «Макошь». Макошь считается покровительницей Чертога Лебедя.'
+    ) in lebed_female
+    assert lebed_female.index(expected_context) < lebed_female.index('Женщине рекомендуем оберег «Макошь»')
+    matrix = (root / 'references' / 'RECOMMENDATION_MATRIX.md').read_text()
+    for selection in (
+        '| Лиса | **Чернобог** | **Мара** | **Чернобог** | **Мара** |',
+        '| Орёл | **Перун** | **Звезда Лады** | **Перун** | **Звезда Лады** |',
+        '| Медведь | **Печать Велеса** | **Печать Велеса** | **Печать Велеса** | **Печать Велеса** |',
+        '| Волк | **Велес** | **Велес** | **Велес** | **Велес** |',
+        '| Ворон | **Колядник** | **Алатырь** | **Алатырь** | **Алатырь** |',
+    ):
+        assert selection in matrix
 
 
 def test_shared_customer_answer_prompt_and_validation_limit(tmp_path):
