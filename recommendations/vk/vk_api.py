@@ -1,0 +1,15 @@
+from __future__ import annotations
+import httpx
+class VKTransportUnknown(Exception): pass
+class VKAPIResult:
+ def __init__(self,message_id=None,error_code=None):self.message_id,self.error_code=message_id,error_code
+class VKAPIClient:
+ """Narrow adapter: its only runtime operation is messages.send."""
+ def __init__(self,config,client=None):self.config,self.client=config,client or httpx.Client(timeout=10)
+ def messages_send(self,peer_id:int,message:str,random_id:int)->VKAPIResult:
+  try:r=self.client.post('https://api.vk.com/method/messages.send',data={'access_token':self.config.group_token,'v':'5.199','group_id':self.config.group_id,'peer_id':peer_id,'message':message,'random_id':random_id})
+  except httpx.TransportError as exc:raise VKTransportUnknown() from exc
+  try:data=r.json()
+  except ValueError as exc:raise VKTransportUnknown() from exc
+  if 'response' in data:return VKAPIResult(message_id=data['response'])
+  error=data.get('error',{});return VKAPIResult(error_code=error.get('error_code'))

@@ -1,0 +1,30 @@
+from __future__ import annotations
+import json, secrets, sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
+from .migrations import initialize
+from .normalization import redact_callback
+def now(): return datetime.now(timezone.utc).isoformat()
+class VKStorage:
+ def __init__(self,path:str): self.path=path; Path(path).parent.mkdir(parents=True,exist_ok=True); self.connection=sqlite3.connect(path, timeout=5, isolation_level=None); self.connection.row_factory=sqlite3.Row; initialize(self.connection)
+ def close(self): self.connection.close()
+ def accept(self,payload:dict)->bool:
+  clean=redact_callback(payload); self.connection.execute("BEGIN IMMEDIATE")
+  try:
+   self.connection.execute("INSERT INTO vk_inbound_events(vk_group_id,transport,event_id,api_version,event_type,raw_payload_json,status,received_at) VALUES(?,?,?,?,?,?, 'NEW',?)",(clean["group_id"],"callback",str(clean["event_id"]),str(clean["v"]),clean["type"],json.dumps(clean,ensure_ascii=False),now())); self.connection.commit(); return True
+  except sqlite3.IntegrityError: self.connection.rollback(); return False
+ def claim_event(self):
+  self.connection.execute("BEGIN IMMEDIATE"); row=self.connection.execute("SELECT * FROM vk_inbound_events WHERE status='NEW' ORDER BY id LIMIT 1").fetchone()
+  if not row: self.connection.commit(); return None
+  self.connection.execute("UPDATE vk_inbound_events SET status='PROCESSING',attempt_count=attempt_count+1,claimed_at=? WHERE id=? AND status='NEW'",(now(),row["id"])); self.connection.commit(); return dict(row)
+ def finish_event(self,id,status,normalized=None,error=None): self.connection.execute("UPDATE vk_inbound_events SET status=?, normalized_payload_json=?, processed_at=?,last_error_detail=? WHERE id=?",(status,json.dumps(normalized,ensure_ascii=False) if normalized else None,now(),error,id))
+ def session(self,g,p): return self.connection.execute("SELECT * FROM vk_bot_sessions WHERE vk_group_id=? AND peer_id=?",(g,p)).fetchone()
+ def transition_and_enqueue(self,event_id,g,p,state,fields,text):
+  self.connection.execute("BEGIN IMMEDIATE"); old=self.session(g,p); vals={"birth_day":None,"birth_month":None,"birth_year":None,"gender":None,"marketplace":None,"last_result_id":None}; vals.update(dict(old) if old else {}); vals.update(fields)
+  self.connection.execute("INSERT INTO vk_bot_sessions(vk_group_id,peer_id,state,birth_day,birth_month,birth_year,gender,marketplace,last_result_id,state_version,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(vk_group_id,peer_id) DO UPDATE SET state=excluded.state,birth_day=excluded.birth_day,birth_month=excluded.birth_month,birth_year=excluded.birth_year,gender=excluded.gender,marketplace=excluded.marketplace,last_result_id=excluded.last_result_id,state_version=vk_bot_sessions.state_version+1,updated_at=excluded.updated_at",(g,p,state,vals['birth_day'],vals['birth_month'],vals['birth_year'],vals['gender'],vals['marketplace'],vals['last_result_id'],1,now()))
+  rid=secrets.randbelow(2_000_000_000)+1; self.connection.execute("INSERT OR IGNORE INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,random_id,status,created_at) VALUES(?,?,?,?,?,'PENDING',?)",(event_id,g,p,text,rid,now())); self.connection.commit()
+ def claim_outbox(self):
+  self.connection.execute("BEGIN IMMEDIATE"); row=self.connection.execute("SELECT * FROM vk_outbox WHERE status IN ('PENDING','RETRY_WAIT') AND (next_attempt_at IS NULL OR next_attempt_at<=?) ORDER BY outbox_id LIMIT 1",(now(),)).fetchone()
+  if not row:self.connection.commit();return None
+  self.connection.execute("UPDATE vk_outbox SET status='SENDING',claimed_at=?,attempt_count=attempt_count+1 WHERE outbox_id=?",(now(),row['outbox_id']));self.connection.commit(); claimed=dict(row);claimed['attempt_count']+=1;return claimed
+ def outbox_result(self,id,status,code=None,klass=None,detail=None,next_at=None,message_id=None): self.connection.execute("UPDATE vk_outbox SET status=?,last_error_code=?,last_error_class=?,last_error_detail=?,next_attempt_at=?,sent_at=?,vk_message_id=? WHERE outbox_id=?",(status,code,klass,detail,next_at,now() if status=='SENT' else None,message_id,id))

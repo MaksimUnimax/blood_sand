@@ -49,6 +49,7 @@ def _is_json_content_type(request: Request) -> bool:
 def create_app(
     service: RecommendationApplicationService | None = None,
     service_factory: Callable[[], RecommendationApplicationService] = RecommendationApplicationService,
+    vk_config=None,
 ) -> FastAPI:
     """Create an independently testable M2 app, optionally with an injected service."""
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
@@ -59,6 +60,14 @@ def create_app(
             app.state.service = service_factory()
         except ConfigurationValidationError:
             app.state.configuration_unavailable = True
+    # M3 is opt-in: ordinary M2 use neither reads VK secrets nor opens its DB.
+    if vk_config is None:
+        from recommendations.vk.config import VKRuntimeConfig
+        vk_config = VKRuntimeConfig.from_environment()
+    app.state.vk_runtime = None
+    if vk_config is not None:
+        from recommendations.vk.storage import VKStorage
+        app.state.vk_runtime = {"config": vk_config, "storage": VKStorage(vk_config.state_db_path)}
 
     @app.middleware("http")
     async def request_metadata(request: Request, call_next: Callable) -> Response:
@@ -144,6 +153,11 @@ def create_app(
         return ContractJSONResponse(
             serialize_success(model, result.semantic_result), headers={"X-Result-Id": result.result_id}
         )
+
+    if app.state.vk_runtime is not None:
+        from recommendations.vk.callback import callback
+        # Application decision: mount behind HTTPS only during later deployment.
+        app.add_api_route("/internal/vk/callback", callback, methods=["POST"], include_in_schema=False)
 
     return app
 

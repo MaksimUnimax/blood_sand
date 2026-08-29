@@ -87,6 +87,19 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 | M7 | hardening/operator/analytics | architecture boundaries defined | depends on preceding runtime evidence | **BLOCKED** |
 | M8 | controlled launch | roadmap defined | production gates not yet executed | **BLOCKED** |
 
+M3 local runtime record:
+
+```text
+M3_CODE_GATE = PASS
+M3_CODE_GATE_SCOPE = PLAIN_TEXT_RUNTIME_SLICE
+M3_PLAIN_TEXT_RUNTIME_IMPLEMENTATION = PASS
+M3_PLAIN_TEXT_RUNTIME_LOCAL_TESTS = PASS
+M3_PLAIN_TEXT_RUNTIME_STAGING_DEPLOYMENT = PENDING
+M3_PLAIN_TEXT_RUNTIME_REAL_E2E = PENDING
+M3_KEYBOARD_CODE_GATE = BLOCKED_PENDING_REAL_TEXT_KEYBOARD_STAGING_FIXTURE
+NEXT_M3_GATE = CONTROLLED_STAGING_RUNTIME_DEPLOYMENT
+```
+
 ---
 
 ## 4. M2 gate — shared Recommendation API
