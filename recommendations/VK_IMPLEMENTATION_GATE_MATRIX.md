@@ -1,6 +1,6 @@
 # VK Implementation Gate Matrix
 
-Версия: 0.2  
+Версия: 0.3  
 Статус: **MANDATORY PRE-CODE GATE AUTHORITY**  
 Дата: 2026-08-29  
 Бренд: «Кровь и Песок»
@@ -11,7 +11,7 @@
 
 ```text
 Что именно уже разрешено реализовывать,
-а что ещё нельзя писать без дополнительного VK contract/staging evidence?
+а что ещё нельзя писать без дополнительного contract/staging/setup evidence?
 ```
 
 Он не заменяет подробные документы. Он связывает их с milestone gates.
@@ -46,6 +46,12 @@ ROADMAP.md
 VK_UX_FLOW.md
 ```
 
+Для M2 дополнительно:
+
+```text
+M2_BACKEND_DEPENDENCY_ADR.md
+```
+
 Для M3 дополнительно:
 
 ```text
@@ -70,10 +76,10 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 
 ## 3. Current milestone status
 
-| Milestone | Purpose | Architecture status | Platform/staging status | Code gate |
+| Milestone | Purpose | Architecture status | Platform/setup status | Code gate |
 |---|---|---|---|---|
 | M1 | deterministic config/Core | CLOSED | n/a | PASS |
-| M2 | shared Recommendation API/backend foundation | documented | no VK credential/runtime primitive required | **ALLOWED AFTER LOCAL WORKTREE SYNC + DEPENDENCY FREEZE** |
+| M2 | shared Recommendation API/backend foundation | documented + dependency policy frozen | local worktree sync + actual `pyproject.toml`/`uv.lock` setup/regression still required | **SETUP SLICE ALLOWED; APPLICATION CODE AFTER SETUP PASS** |
 | M3 | VK Community Bot | fully architected + PRE-M3 contract exists | real community/token/Callback fixtures still required | **BLOCKED** |
 | M4 | destinations/availability overlay | high-level architecture defined | concrete destination registry/availability source gate still required | **BLOCKED UNTIL M3/M4 AUTHORITY PASS** |
 | M5 | VK Mini App | fully architected + PRE-M5 contract exists | official deploy-tool conflict + app/security/client staging remain | **BLOCKED** |
@@ -85,6 +91,12 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 
 ## 4. M2 gate — shared Recommendation API
 
+Current dependency authority:
+
+```text
+M2_BACKEND_DEPENDENCY_ADR.md
+```
+
 ### Already satisfied
 
 ```text
@@ -93,20 +105,32 @@ DATA_API_CONTRACT corrected/aligned
 hybrid one-product roadmap fixed
 VK platform architecture documented
 full implementation architecture documented
+Python project baseline >=3.11 frozen
+FastAPI 0.141.1 frozen
+Uvicorn 0.52.4 frozen
+Pydantic 2.13.5 frozen
+HTTPX stable 0.28.1 frozen
+uv 0.12.7 selected as lock/project tool
+pyproject.toml + uv.lock chosen as dependency authority
+normal sync/run must use --locked
+production/CI automatic Python downloads disabled
 M2 does not require a VK token/community/App
 ```
 
-### Required immediately before M2 code
+### Required setup slice before application code
 
-1. Fast-forward local VK worktree to current remote dev docs HEAD.
-2. Verify clean worktree.
-3. Re-read current `DATA_API_CONTRACT.md` and `VK_IMPLEMENTATION_ARCHITECTURE.md` from that HEAD.
-4. Inspect current Python/runtime conventions in repository.
-5. Research current stable versions/support status of selected backend dependencies from their primary documentation/package metadata.
-6. Freeze exact dependency versions and supported Python version in an M2 implementation/dependency ADR or lock artifact.
-7. Do not add any VK transport behavior to M2.
+1. Fast-forward local VK worktree to exact independently verified remote docs HEAD.
+2. Verify clean worktree; never reset unknown local work.
+3. Record `python3 --version`; require >=3.11.
+4. Install/verify exact `uv 0.12.7`; do not use moving `latest` without version check.
+5. Create `pyproject.toml` with `requires-python >=3.11` and exact direct pins from ADR.
+6. Generate and commit `uv.lock` with uv 0.12.7.
+7. Recreate clean environment using `UV_PYTHON_DOWNLOADS=never uv sync --locked` or equivalent exact current setting.
+8. Run all existing M1 tests through `uv run --locked`.
+9. Verify normal sync/test did not modify `uv.lock`.
+10. Independently audit the setup diff before any M2 application source is written.
 
-M2 may implement only:
+Only after setup PASS may M2 application code implement:
 
 ```text
 shared application service
@@ -133,9 +157,12 @@ Current status:
 
 ```text
 M2_ARCHITECTURE_GATE = PASS
+M2_DEPENDENCY_POLICY_GATE = PASS
 M2_LOCAL_SYNC_GATE = PENDING
-M2_DEPENDENCY_FREEZE_GATE = PENDING
-M2_CODE_GATE = NOT_YET_OPEN
+M2_LOCK_ARTIFACT_GATE = PENDING_SETUP
+M2_LOCKED_ENV_REGRESSION_GATE = PENDING_SETUP
+M2_SETUP_CODE_GATE = OPEN_FOR_SETUP_ONLY
+M2_APPLICATION_CODE_GATE = BLOCKED_UNTIL_SETUP_PASS
 ```
 
 ---
@@ -411,14 +438,14 @@ Any unexplained failure blocks milestone closure.
 
 ## 12. Current next action
 
-Documentation architecture for M2/M3/M5/M6 is now present.
+Documentation architecture for M2/M3/M5/M6 is present and M2 dependency policy is frozen.
 
-M2 code still waits for:
+The only code currently allowed is an **M2 setup-only slice** to synchronize the local worktree and create the reviewed dependency metadata/lock environment. No application endpoint code is allowed in that setup slice.
+
+After independent audit of that setup slice:
 
 ```text
-CURRENT_REMOTE_DOCS_HEAD independently verified
-LOCAL_WORKTREE fast-forwarded safely
-M2 backend dependency versions researched/frozen
+M2_APPLICATION_CODE_GATE may open
 ```
 
 M3 waits for real VK community staging/config evidence.
@@ -430,5 +457,5 @@ M6 waits for Bot→App staging and resolution/exclusion of the Mini App→commun
 Decision marker:
 
 ```text
-KIP_VK_IMPLEMENTATION_GATE_MATRIX_V2
+KIP_VK_IMPLEMENTATION_GATE_MATRIX_V3
 ```
