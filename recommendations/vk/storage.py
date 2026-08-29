@@ -110,7 +110,7 @@ class VKStorage:
     def _before_outbox_insert(self, connection) -> None:
         """Narrow failure-injection seam; production intentionally does nothing."""
 
-    def transition_and_enqueue(self, event_id, g, p, state, fields, text):
+    def transition_and_enqueue(self, event_id, g, p, state, fields, text, keyboard=None):
         def run(c):
             c.execute("BEGIN IMMEDIATE")
             try:
@@ -126,7 +126,8 @@ class VKStorage:
                 self._after_session_write(c)
                 rid = secrets.randbelow(2_000_000_000)+1
                 self._before_outbox_insert(c)
-                c.execute("INSERT INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,random_id,status,created_at) VALUES(?,?,?,?,?,'PENDING',?)", (event_id,g,p,text,rid,now()))
+                keyboard_json = json.dumps(keyboard, ensure_ascii=False, separators=(',', ':')) if keyboard is not None else None
+                c.execute("INSERT INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,keyboard_json,random_id,status,created_at) VALUES(?,?,?,?,?,?,'PENDING',?)", (event_id,g,p,text,keyboard_json,rid,now()))
                 c.commit()
             except Exception:
                 c.rollback(); raise

@@ -7,8 +7,10 @@ class VKAPIResult:
 class VKAPIClient:
  """Narrow adapter: its only runtime operation is messages.send."""
  def __init__(self,config,client=None):self.config,self.client=config,client or httpx.Client(timeout=10)
- def messages_send(self,peer_id:int,message:str,random_id:int)->VKAPIResult:
-  try:r=self.client.post('https://api.vk.com/method/messages.send',data={'access_token':self.config.group_token,'v':'5.199','group_id':self.config.group_id,'peer_id':peer_id,'message':message,'random_id':random_id})
+ def messages_send(self,peer_id:int,message:str,random_id:int,keyboard:str|None=None)->VKAPIResult:
+  data={'access_token':self.config.group_token,'v':'5.199','group_id':self.config.group_id,'peer_id':peer_id,'message':message,'random_id':random_id}
+  if keyboard is not None: data['keyboard']=keyboard
+  try:r=self.client.post('https://api.vk.com/method/messages.send',data=data)
   except httpx.TransportError as exc:raise VKTransportUnknown() from exc
   try:data=r.json()
   except ValueError as exc:raise VKProtocolError() from exc

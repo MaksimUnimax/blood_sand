@@ -10,7 +10,7 @@ def present(result: dict) -> str:
     themes = ", ".join(record['themes'])
     recommendation = record['recommendation_template'].format(customer_label=label)
     why = record['why_it_fits_template'].format(customer_label=label)
-    return f"Дата {date} относится к Чертогу {ch}. Этот Чертог связывают с {themes}.\n\n{recommendation} {why}\n\nЧтобы начать новый подбор, напишите: Подобрать снова"
-DATE_PROMPT="Укажите день и месяц рождения, например 13.10."
-DATE_CORRECTION="Не удалось распознать дату. Укажите день и месяц, например 13.10."
-GENDER_PROMPT="Для кого подбираем оберег? Напишите: Мужчине или Женщине."
+    return f"Дата {date} относится к Чертогу {ch}. Этот Чертог связывают с {themes}.\n\n{recommendation} {why}\n\nЧтобы начать новый подбор, используйте кнопку ниже."
+DATE_PROMPT="Введите дату рождения в формате ДД.ММ.ГГГГ."
+DATE_CORRECTION="Не удалось распознать дату. Введите дату рождения в формате ДД.ММ.ГГГГ."
+GENDER_PROMPT="Для кого подбираем оберег?"
