@@ -103,7 +103,7 @@ jobs:
           if(Test-Path C:\pdaudit){Remove-Item C:\pdaudit -Recurse -Force}
           node "$v/build_ozon_personal_data_gate_audit.mjs" C:\pdstep3 "$v/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.json" C:\pdaudit
           if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
-          python -c "import json,pathlib;a=json.loads(pathlib.Path(r'C:\pdaudit\OZON_PERSONAL_DATA_GATE_AUDIT_2026-08-29.json').read_text());assert len(a['rows'])==463 and len(a['gated_aliases'])==10 and a['counts']['accepted_safe_projection_aliases']==181;print('PERSONAL_DATA_AUDIT_WINDOWS_EVIDENCE_COUNTS_PASS')"
+          python -c "import json,pathlib;a=json.loads(pathlib.Path(r'C:\pdaudit\OZON_PERSONAL_DATA_GATE_AUDIT_2026-08-29.json').read_text(encoding='utf-8'));assert len(a['rows'])==463 and len(a['gated_aliases'])==10 and a['counts']['accepted_safe_projection_aliases']==181;print('PERSONAL_DATA_AUDIT_WINDOWS_EVIDENCE_COUNTS_PASS')"
           if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
 
   commit-audit-evidence:
