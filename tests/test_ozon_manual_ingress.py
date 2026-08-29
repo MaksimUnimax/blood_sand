@@ -193,13 +193,18 @@ def test_v2_reference_snapshot_is_exact_and_contains_required_semantics():
     )
     for name in files:
         authority = subprocess.check_output(
-            ['git', 'show', f'2e1d82e7762b36477cfbc451852b02dddb3beb6e:recommendations/{name}'], cwd=root
+            ['git', 'show', f'63e117000f75a08d1caa948c2ccba10ac181db65:recommendations/{name}'], cwd=root
         )
         assert (root / 'references' / name).read_bytes() == authority
     text = '\n'.join((root / 'references' / name).read_text() for name in files)
     assert 'KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED' in text
     assert 'Лиса + мужчина → Чернобог' in text
     assert 'Лиса + женщина → Мара' in text
+    assert 'Орёл + мужчина → Перун' in text
+    assert 'Орёл + женщина → Звезда Лады' in text
+    assert '19.11.1988' in text
+    assert '19.11 относится к Чертогу Лебедя' in text
+    assert 'если не указан и male/female различаются — обе ветки' in text
     assert 'https://www.ozon.ru/product/1630040194/' in text
     assert 'https://www.ozon.ru/product/2184199958/' in text
     assert 'Печать Велеса — Медвежья лапа' not in text
