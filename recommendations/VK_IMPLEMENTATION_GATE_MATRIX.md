@@ -79,7 +79,7 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 | Milestone | Purpose | Architecture status | Platform/setup status | Code gate |
 |---|---|---|---|---|
 | M1 | deterministic config/Core | CLOSED | n/a | PASS |
-| M2 | shared Recommendation API/backend foundation | architecture + exact HTTP contract + dependency policy frozen | locked environment setup committed and independently audited | **APPLICATION CODE OPEN** |
+| M2 | shared Recommendation API/backend foundation | architecture + exact HTTP contract + dependency policy frozen | locked environment setup committed and independently audited | **CLOSED / PASS** |
 | M3 | VK Community Bot | fully architected + PRE-M3 contract exists | real community/token/Callback fixtures still required | **BLOCKED** |
 | M4 | destinations/availability overlay | high-level architecture defined | concrete destination registry/availability source gate still required | **BLOCKED UNTIL M3/M4 AUTHORITY PASS** |
 | M5 | VK Mini App | fully architected + PRE-M5 contract exists | official deploy-tool conflict + app/security/client staging remain | **BLOCKED** |
@@ -206,9 +206,9 @@ locked Uvicorn runtime command
 
 No framework default error body/status may silently override this authority.
 
-### M2 application code now allowed
+### M2 closure — final contract audit
 
-M2 may implement only:
+M2 scope was limited to:
 
 ```text
 shared application service
@@ -232,6 +232,16 @@ Bot state
 Mini App
 ```
 
+Independent M2 evidence chain:
+
+```text
+setup: 7ac8a58710888835532f6c6f060415dc688c6aaa
+exact HTTP authority: 5188e3d83e5df7db3e3ad93fe0e19162582652dd
+M2 implementation: 89eb375744b09988a5c1143975309d692d13e200
+contract completeness: 37fa50f4121e488edff24614bedd21a8ada2e464
+final transport evidence: b29c641a4734f0d48c3c4eb23bcb2cb6689f1f6d
+```
+
 Current status:
 
 ```text
@@ -243,7 +253,19 @@ M2_LOCKED_ENV_REGRESSION_GATE = PASS_RUN_EVIDENCE
 M2_SETUP_INDEPENDENT_GITHUB_AUDIT = PASS
 M2_EXACT_HTTP_CONTRACT_GATE = PASS
 M2_SETUP_CODE_GATE = CLOSED_COMPLETE
-M2_APPLICATION_CODE_GATE = OPEN
+M2_APPLICATION_SERVICE = PASS
+M2_HTTP_API = PASS
+M2_API_CORE_PARITY = PASS
+M2_TRANSPORT_CONTRACT = PASS
+M2_FINAL_INDEPENDENT_GITHUB_AUDIT = PASS
+M2_CODE_GATE = CLOSED_COMPLETE
+M2 = CLOSED / PASS
+```
+
+Next milestone:
+
+```text
+PRE-M3 REAL VK STAGING CONTRACT
 ```
 
 ---
