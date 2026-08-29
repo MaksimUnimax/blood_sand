@@ -1,6 +1,6 @@
 # VK Platform M3 Callback Endpoint Preflight
 
-Status: **READ-ONLY SERVER DISCOVERY**  
+Status: **READ-ONLY PREFLIGHT COMPLETED; CONTROLLED STAGING ROUTE PROVISIONED**
 Captured: 2026-08-29
 
 This evidence concerns server infrastructure only. It creates no Callback
@@ -28,9 +28,11 @@ EXISTING_CALLBACK_SERVER = legacy_or_external_unknown
 EXISTING_CALLBACK_SERVER_MUTATION_ALLOWED = no
 PROJECT_CALLBACK_SERVER = not_provisioned
 
-HTTPS_CALLBACK_ENDPOINT_CANDIDATE = BLOCKED
-CANDIDATE_HOSTNAME = none
-CANDIDATE_PATH = none
+HTTPS_CALLBACK_ENDPOINT_CANDIDATE = AUTHORIZED_AND_PROVISIONED
+CANDIDATE_HOSTNAME = api.autopostmanager.ru
+CANDIDATE_PATH = /vk-staging/callback
+PUBLIC_HTTPS_ROUTE = PASS
+NGINX_CONFIG_PATH = /etc/nginx/sites-available/autopostmanager_api.conf
 ```
 
 ## Sanitized factual evidence

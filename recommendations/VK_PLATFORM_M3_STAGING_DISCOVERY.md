@@ -99,3 +99,11 @@ an unverified legacy/external server, not authority to reuse or mutate it.
 ```text
 PRE_M3_READ_ONLY_STAGING_DISCOVERY = PASS
 ```
+
+## Controlled provisioning follow-up
+
+The subsequent authorized write-stage created a separate Callback server id
+`4` at `https://api.autopostmanager.ru/vk-staging/callback`, confirmed it as
+`ok`, and set its API version to `5.199` with only `message_new=1` enabled.
+The legacy server id `3` was not mutated. See
+`VK_PLATFORM_M3_STAGING_PROVISIONING.md` for the current controlled state.
