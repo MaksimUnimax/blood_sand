@@ -106,16 +106,14 @@ def _snapshot_operations_span(text: str) -> tuple[int, int, int]:
     return match.start(), open_brace, end
 
 
-def _entitlement_rule_lines(text: str) -> dict[str, str]:
+def _entitlement_rule_lines(text: str) -> dict[str, list[str]]:
     _, open_brace, end = _snapshot_operations_span(text)
     segment = text[open_brace + 1:end - 1]
     pattern = re.compile(r'(?m)^(\s{6}("(?:[^"\\]|\\.)+"):\s*\{[^\r\n]*\},?\r?\n)')
-    out: dict[str, str] = {}
+    out: dict[str, list[str]] = {}
     for match in pattern.finditer(segment):
         key = json.loads(match.group(2))
-        if key in out:
-            raise AssertionError(f"duplicate entitlement operation rule: {key}")
-        out[key] = match.group(1)
+        out.setdefault(key, []).append(match.group(1))
     return out
 
 
@@ -125,15 +123,16 @@ def restore_proven_entitlement_gap(candidate_path: Path, historical_path: Path) 
     historical = _entitlement_rule_lines(historical_text)
     candidate = _entitlement_rule_lines(candidate_text)
 
-    absent_expected = {key for key in EXPECTED_ENTITLEMENT_GAP if key not in candidate}
+    absent_expected = {key for key in EXPECTED_ENTITLEMENT_GAP if len(candidate.get(key, [])) == 0}
     if absent_expected != EXPECTED_ENTITLEMENT_GAP:
+        counts = {key: len(candidate.get(key, [])) for key in sorted(EXPECTED_ENTITLEMENT_GAP)}
         raise AssertionError(
             "proven entitlement gap changed before restoration: "
-            f"expected_absent={sorted(EXPECTED_ENTITLEMENT_GAP)} actual_absent={sorted(absent_expected)}"
+            f"expected_absent={sorted(EXPECTED_ENTITLEMENT_GAP)} actual_absent={sorted(absent_expected)} counts={counts}"
         )
-    missing_from_historical = EXPECTED_ENTITLEMENT_GAP - set(historical)
-    if missing_from_historical:
-        raise AssertionError(f"accepted B49 lacks expected entitlement rules: {sorted(missing_from_historical)}")
+    for key in EXPECTED_ENTITLEMENT_GAP:
+        if len(historical.get(key, [])) != 1:
+            raise AssertionError(f"accepted B49 entitlement rule count {key}: {len(historical.get(key, []))}")
 
     _, open_brace, _ = _snapshot_operations_span(candidate_text)
     insert_at = open_brace + 1
@@ -141,14 +140,15 @@ def restore_proven_entitlement_gap(candidate_path: Path, historical_path: Path) 
         insert_at += 2
     elif candidate_text[insert_at:insert_at + 1] == "\n":
         insert_at += 1
-    payload = "".join(historical[key] for key in sorted(EXPECTED_ENTITLEMENT_GAP))
+    payload = "".join(historical[key][0] for key in sorted(EXPECTED_ENTITLEMENT_GAP))
     candidate_text = candidate_text[:insert_at] + payload + candidate_text[insert_at:]
     candidate_path.write_text(candidate_text, encoding="utf-8")
 
     final = _entitlement_rule_lines(candidate_text)
     for key in EXPECTED_ENTITLEMENT_GAP:
-        if final.get(key) != historical[key]:
-            raise AssertionError(f"restored entitlement rule is not byte-exact historical B49: {key}")
+        lines = final.get(key, [])
+        if len(lines) != 1 or lines[0] != historical[key][0]:
+            raise AssertionError(f"restored entitlement rule is not single byte-exact historical B49 record: {key}")
     print(f"V2_B1_B49_PROVEN_ENTITLEMENT_RULE_GAP_RESTORED_PASS {len(EXPECTED_ENTITLEMENT_GAP)}")
 
 
