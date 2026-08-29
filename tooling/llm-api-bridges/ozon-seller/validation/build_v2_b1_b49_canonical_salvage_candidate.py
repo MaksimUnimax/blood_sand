@@ -31,11 +31,29 @@ KNOWN_EXACT_OVERLAPS = {
 }
 
 CANONICAL_SECTION_OVERRIDES = {
-    "warehouse_fbs_return_mile_check": ("logistics_settings", "warehouse_diagnostics"),
-    "warehouse_fbs_return_mile_info": ("logistics_settings", "warehouse_diagnostics"),
-    "warehouse_operation_status": ("logistics_settings", "warehouse_diagnostics"),
-    "supplier_available_warehouses": ("warehouses", "ozon_warehouses"),
+    "warehouse_fbs_return_mile_check": (
+        "/v1/warehouse/fbs/return-mile/check",
+        "logistics_settings",
+        "warehouse_diagnostics",
+    ),
+    "warehouse_fbs_return_mile_info": (
+        "/v1/warehouse/fbs/return-mile/info",
+        "logistics_settings",
+        "warehouse_diagnostics",
+    ),
+    "warehouse_operation_status": (
+        "/v1/warehouse/operation/status",
+        "logistics_settings",
+        "warehouse_diagnostics",
+    ),
+    "supplier_available_warehouses": (
+        "/v1/supplier/available_warehouses",
+        "warehouses",
+        "ozon_warehouses",
+    ),
 }
+
+SUPPLY_ORDER_GET_PATH = "/v3/supply-order/get"
 
 
 @dataclass(frozen=True)
@@ -165,16 +183,7 @@ def dedupe_exact_top_level_const_overlaps(path: Path) -> list[str]:
     return deduped
 
 
-def _find_object_property_block(text: str, key: str) -> tuple[int, int]:
-    pattern = re.compile(rf"(?m)^\s*(?:['\"])?{re.escape(key)}(?:['\"])?\s*:\s*\{{\s*$")
-    matches = list(pattern.finditer(text))
-    if len(matches) != 1:
-        raise AssertionError(f"expected exactly one object block for {key}, found {len(matches)}")
-    start = matches[0].start()
-    open_brace = text.find("{", matches[0].start(), matches[0].end())
-    if open_brace < 0:
-        raise AssertionError(f"missing opening brace for {key}")
-
+def _balanced_object_end(text: str, open_brace: int, key: str) -> int:
     depth = 0
     quote: str | None = None
     escaped = False
@@ -222,14 +231,43 @@ def _find_object_property_block(text: str, key: str) -> tuple[int, int]:
         elif ch == "}":
             depth -= 1
             if depth == 0:
-                return start, i + 1
+                return i + 1
         i += 1
     raise AssertionError(f"unterminated object block for {key}")
 
 
-def rewrite_operation_section(path: Path, alias: str, old: str, new: str) -> None:
+def _find_object_property_blocks(text: str, key: str) -> list[tuple[int, int]]:
+    pattern = re.compile(rf"(?m)^\s*(?:['\"])?{re.escape(key)}(?:['\"])?\s*:\s*\{{\s*$")
+    blocks: list[tuple[int, int]] = []
+    for match in pattern.finditer(text):
+        open_brace = text.find("{", match.start(), match.end())
+        if open_brace < 0:
+            raise AssertionError(f"missing opening brace for {key}")
+        blocks.append((match.start(), _balanced_object_end(text, open_brace, key)))
+    return blocks
+
+
+def _find_operation_block(text: str, key: str, expected_path: str) -> tuple[int, int]:
+    candidates: list[tuple[int, int]] = []
+    path_patterns = [f"path: '{expected_path}'", f'path: "{expected_path}"']
+    provider_patterns = ["provider: 'seller_api'", 'provider: "seller_api"']
+    for start, end in _find_object_property_blocks(text, key):
+        block = text[start:end]
+        has_path = any(pattern in block for pattern in path_patterns)
+        has_provider = any(pattern in block for pattern in provider_patterns)
+        if has_path and has_provider:
+            candidates.append((start, end))
+    if len(candidates) != 1:
+        raise AssertionError(
+            f"expected exactly one seller operation block for {key} {expected_path}, found {len(candidates)} "
+            f"among {len(_find_object_property_blocks(text, key))} same-key blocks"
+        )
+    return candidates[0]
+
+
+def rewrite_operation_section(path: Path, alias: str, expected_path: str, old: str, new: str) -> None:
     text = path.read_text(encoding="utf-8")
-    start, end = _find_object_property_block(text, alias)
+    start, end = _find_operation_block(text, alias, expected_path)
     block = text[start:end]
     patterns = [f"section: '{old}'", f'section: "{old}"']
     count = sum(block.count(p) for p in patterns)
@@ -243,7 +281,7 @@ def rewrite_operation_section(path: Path, alias: str, old: str, new: str) -> Non
 
 def rewrite_supply_order_get_template(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
-    start, end = _find_object_property_block(text, "supply_order_get")
+    start, end = _find_operation_block(text, "supply_order_get", SUPPLY_ORDER_GET_PATH)
     block = text[start:end]
     pattern = re.compile(r"order_ids\s*:\s*\[\s*(['\"])1\1\s*\]")
     matches = list(pattern.finditer(block))
@@ -341,8 +379,8 @@ def main() -> None:
         raise AssertionError(f"expected proven exact overlaps not found: {missing_known}; actual={sorted(deduped)}")
 
     registry = out / "shared/ozon_operation_registry.js"
-    for alias, (old, new) in CANONICAL_SECTION_OVERRIDES.items():
-        rewrite_operation_section(registry, alias, old, new)
+    for alias, (expected_path, old, new) in CANONICAL_SECTION_OVERRIDES.items():
+        rewrite_operation_section(registry, alias, expected_path, old, new)
     rewrite_supply_order_get_template(registry)
     reclassify_rating_registry(registry)
 
