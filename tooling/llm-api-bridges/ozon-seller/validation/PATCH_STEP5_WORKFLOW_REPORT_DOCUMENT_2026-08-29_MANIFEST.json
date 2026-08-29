@@ -1,0 +1,58 @@
+{
+  "schema": "OZON_STEP5_WORKFLOW_REPORT_DOCUMENT_PATCH_PACKAGE_V1",
+  "as_of": "2026-08-29",
+  "roadmap_step": 5,
+  "base": {
+    "name": "accepted Step3 B1-B49 canonical salvage",
+    "production_tree_sha256": "ae3f53084d7a9aff5de820503a44b2875ab0c63c6ffc14bf72d941e8d0dab24e",
+    "seller_aliases": 191,
+    "registry_aliases_total": 201
+  },
+  "decision_authority": {
+    "rows": 118,
+    "implement_reads": 28,
+    "reject_server_side_generation_or_creation": 60,
+    "reject_mutation_side_effect": 25,
+    "reject_sunset_replaced": 3,
+    "reject_deprecated_replaced": 2,
+    "seller_swagger_bytes": 3933043,
+    "seller_swagger_sha256": "39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40"
+  },
+  "transport": {
+    "file": "PATCH_STEP5_WORKFLOW_REPORT_DOCUMENT_2026-08-29.patch.gz.b64",
+    "base64_text_bytes": 10524,
+    "base64_text_sha256": "ce6a8768ebc70a5843d33b64db718da87a26df9e89c073e466fecc35316efaf6",
+    "decoded_gzip_bytes": 7892,
+    "decoded_gzip_sha256": "69ff1d776f6daec5f309dd165b6f6c11682dd0b9c6e032e9467dd8fd99ec5e16",
+    "raw_patch_bytes": 47491,
+    "raw_patch_sha256": "e3f4606d7a091a4fdb0d63ecbe0f8a06ae35efa5f2284e22b840e88a3c8fe31e"
+  },
+  "candidate": {
+    "production_tree_sha256": "3c0412d640343e00b5a08f3419a3e6fdb7b1c327d694c8ad3351729af5c4d7ce",
+    "production_files": 21,
+    "javascript_files": 18,
+    "seller_aliases": 219,
+    "registry_aliases_total": 229,
+    "new_seller_reads": 28,
+    "new_personal_data_gated_reads": 9,
+    "total_personal_data_gated_seller_reads": 19,
+    "direct_binary_reads": 4
+  },
+  "changed_production_files": {
+    "shared/ozon_operation_registry.js": "2b3143632d964e4c10ad29b5a85b36c69698d9bf59521ade92279f88de6ec91f",
+    "shared/ozon_contract.js": "4e6f488b707cd1e66f78ccbdb50688d18d430c47b796b1684c1f96e245235920",
+    "shared/ozon_entitlements.js": "5f31664e1a0fbb7cada89c0d7673a7720c72ee2ce60fa27a7294ddec9ad30ad3",
+    "shared/provider_transport_core.js": "5b8d085a6be3a26a4278aa6ea718656fd66293a72b7957c5e377284c9f6188a7"
+  },
+  "invariants": [
+    "NO_HIDDEN_PAGINATION",
+    "NO_HIDDEN_RETRY",
+    "NO_HIDDEN_POLLING",
+    "NO_HIDDEN_FANOUT",
+    "NO_PROVIDER_CHAINING",
+    "ONE_EXPLICIT_COMMAND_ONE_BUSINESS_REQUEST",
+    "DOCUMENT_URL_IS_NEVER_AUTO_FETCHED",
+    "BINARY_RESPONSE_IS_BYTE_PRESERVING_BASE64_ENVELOPE",
+    "FAILED_BINARY_ENDPOINT_HTTP_RESPONSES_RETAIN_JSON_TEXT_ERROR_HANDLING"
+  ]
+}
