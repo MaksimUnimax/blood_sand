@@ -244,8 +244,15 @@ Status:
 
 ```text
 GROUP_TOKEN_PERMISSION_RESPONSE = VERIFIED
-FINAL_REQUIRED_PERMISSION_NAMES = STAGING_REQUIRED
+FINAL_REQUIRED_PERMISSION_NAMES = messages, manage
+FINAL_REQUIRED_PERMISSION_POLICY = TESTED_OPERATIONAL_PROFILE
+RUNTIME_MINIMAL_NAMED_PERMISSION_SET = UNRESOLVED_NON_BLOCKING_HARDENING
 ```
+
+The final V1 policy is the exact operational profile successfully exercised in
+staging. It is not a claim that these names are the mathematical minimum for
+every runtime method. A separate messages-only credential experiment remains
+optional hardening and does not block M3.
 
 Do not hardcode remembered permission bitmasks.
 
@@ -905,7 +912,8 @@ Status:
 
 ```text
 SEND_ERROR_INVENTORY = VERIFIED
-FINAL_RETRY_ALLOWLIST = STAGING_AND_ARCHITECTURE_DECISION_REQUIRED
+FINAL_RETRY_ALLOWLIST = 6, 10, 36
+RETRY_POLICY = FROZEN_BOUNDED_V1
 ```
 
 Do not implement `retry all errors`.
@@ -921,6 +929,23 @@ UNKNOWN_FAIL_CLOSED
 ```
 
 Unknown VK errors do not enter infinite retry.
+
+Final V1 classification, checked against the exact schema baseline:
+
+```text
+PERMANENT_USER_STATE = 900, 901, 902, 917, 936, 945, 946, 950, 985, 987, 988, 1012
+AUTH_CONFIGURATION = 5, 7, 15, 925, 103
+INVALID_REQUEST_OR_CODE_BUG = 8, 100, 911, 914, 921, 943, 944
+TRANSIENT_RATE_OR_SERVICE = 6, 10, 36
+NO_AUTOMATIC_RETRY_BUT_TRANSIENT_OR_THROTTLING = 9, 940
+UNKNOWN_FAIL_CLOSED = every explicit VK API error outside the automatic retry allowlist
+```
+
+Only `6`, `10`, and `36` permit one automatic retry. `9` and `940` are
+terminal for automatic processing to avoid amplifying throttling. One logical
+outbound message has at most two attempts, always reusing its one persisted
+`random_id`; parsed success is terminal. Separately, one transport-unknown
+outcome may be retried once with that same persisted `random_id`.
 
 ---
 
@@ -1224,15 +1249,16 @@ U1 exact numeric Callback delivery timeout
 U2 exact API version at M3 implementation date
    status: REVALIDATE; current official baseline 5.199
 
-U3 exact required group-token permission names/settings
-   status: STAGING_REQUIRED using groups.getTokenPermissions + real send
+U3 runtime-minimal named group-token permission set
+   status: UNRESOLVED_NON_BLOCKING_HARDENING; the tested V1 operational profile
+   is frozen as `messages, manage` after groups.getTokenPermissions + real send
 
 U4 group-token readback for community settings
    status: NOT_SUPPORTED_BY_OFFICIAL_SCHEMA; groups.getSettings is user-token only.
    A user token is not required for the group-token Bot transport gate.
 
 U5 exact messages.send retry allowlist
-   status: PRE-M3 architecture + staging freeze required
+   status: CLOSED; `6, 10, 36`, with one automatic retry maximum
 
 U6 exact open_app owner_id value/client behavior for our registered app
    status: PRE-M5/M6 staging required; does not block Bot-only M3
@@ -1270,10 +1296,24 @@ MESSAGES_SEND_FIXTURE = captured/sanitized
 RETRY_POLICY = frozen bounded allowlist/classification
 ```
 
-Until that gate passes:
+Final runtime boundary:
 
 ```text
-M3_VK_TRANSPORT_IMPLEMENTATION = BLOCKED
+M3_V1_RUNTIME_VK_METHOD_ALLOWLIST = messages.send
+PROVISIONING_METHODS_FORBIDDEN_AT_RUNTIME = groups.setSettings, groups.setCallbackSettings, groups.addCallbackServer, groups.editCallbackServer, groups.deleteCallbackServer
+M3_INITIAL_RUNTIME_SLICE = PLAIN_TEXT_ONLY
+TEXT_KEYBOARD_FIXTURE_BLOCKS_PLAIN_TEXT_M3 = no
+M3_KEYBOARD_CODE_GATE = BLOCKED_PENDING_REAL_TEXT_KEYBOARD_STAGING_FIXTURE
+```
+
+No automatic remote provisioning is allowed at runtime. Keyboard serialization
+or sending is outside the first runtime slice; ordinary text choices remain
+supported by the approved parser.
+
+Final gate status:
+
+```text
+M3_VK_TRANSPORT_IMPLEMENTATION = PASS_FOR_PLAIN_TEXT_RUNTIME_SLICE
 ```
 
 M2 shared Recommendation API remains independent of these VK transport gaps.

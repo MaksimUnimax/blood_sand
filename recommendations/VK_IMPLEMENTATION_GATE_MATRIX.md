@@ -80,7 +80,7 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 |---|---|---|---|---|
 | M1 | deterministic config/Core | CLOSED | n/a | PASS |
 | M2 | shared Recommendation API/backend foundation | architecture + exact HTTP contract + dependency policy frozen | locked environment setup committed and independently audited | **CLOSED / PASS** |
-| M3 | VK Community Bot | fully architected + PRE-M3 contract exists | real community/token/Callback fixtures still required | **BLOCKED** |
+| M3 | VK Community Bot | fully architected + final PRE-M3 authority frozen | real staging evidence complete; plain-text slice authorized | **PASS — PLAIN_TEXT_ONLY** |
 | M4 | destinations/availability overlay | high-level architecture defined | concrete destination registry/availability source gate still required | **BLOCKED UNTIL M3/M4 AUTHORITY PASS** |
 | M5 | VK Mini App | fully architected + PRE-M5 contract exists | official deploy-tool conflict + app/security/client staging remain | **BLOCKED** |
 | M6 | Bot ↔ Mini App continuity | fully architected + PRE-M6 contract exists | Mini App → community-dialog primitive unresolved; cross-client staging required | **BLOCKED** |
@@ -278,7 +278,9 @@ Current official-contract authority:
 VK_PLATFORM_PRE_M3_CONTRACT.md
 ```
 
-M3 code remains blocked until a dedicated test VK community/staging pass produces a short final ADR and sanitized fixtures.
+M3 code was blocked until a dedicated test VK community/staging pass produced a
+short final ADR and sanitized fixtures. That authority is now complete for the
+plain-text runtime slice only.
 
 Required before the first M3 runtime patch:
 
@@ -325,10 +327,14 @@ M3_WRITE_STAGING = PASS
 M3_CALLBACK_CONFIRMATION = PASS
 M3_REAL_MESSAGE_NEW_FIXTURE = PASS
 M3_REAL_MESSAGES_SEND_FIXTURE = PASS
-M3_CODE_GATE = BLOCKED
-M3_CODE_GATE_BLOCKERS =
-- FINAL_REQUIRED_PERMISSION_NAMES remains unresolved: staging proves that a token carrying `messages, manage` can send, not the runtime-minimal named permission set.
-- RETRY_ERROR_ALLOWLIST remains unresolved: the initial fail-closed policy is no automatic retry for explicit VK API errors and at most one retry for narrowly classified transport uncertainty with the same random_id, but no verified automatic VK API error-code allowlist is frozen.
+FINAL_REQUIRED_PERMISSION_NAMES = FROZEN
+RETRY_POLICY = FROZEN_BOUNDED_V1
+M3_FINAL_GATE_ADR = PASS
+M3_INITIAL_RUNTIME_SLICE = PLAIN_TEXT_ONLY
+M3_KEYBOARD_CODE_GATE = BLOCKED_PENDING_REAL_TEXT_KEYBOARD_STAGING_FIXTURE
+M3_CODE_GATE = PASS
+M3_CODE_GATE_SCOPE = PLAIN_TEXT_RUNTIME_SLICE
+REMAINING_M3_CODE_GATE_BLOCKERS = none
 ```
 
 ---
