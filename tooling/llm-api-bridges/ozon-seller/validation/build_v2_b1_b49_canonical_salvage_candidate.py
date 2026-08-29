@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -27,6 +28,27 @@ def merge_file(ours: Path, base: Path, theirs: Path) -> None:
     )
 
 
+def remove_legacy_cluster_block(text: str, key: str) -> str:
+    lines = text.splitlines(keepends=True)
+    starts = [i for i, line in enumerate(lines) if re.match(rf"^\s*{re.escape(key)}\s*:\s*\{{\s*$", line.rstrip("\r\n"))]
+    if len(starts) != 1:
+        raise AssertionError(f"expected exactly one legacy {key} cluster definition, found {len(starts)}")
+    start = starts[0]
+    depth = 0
+    end = None
+    for i in range(start, len(lines)):
+        depth += lines[i].count("{") - lines[i].count("}")
+        if depth == 0:
+            end = i
+            break
+    if end is None:
+        raise AssertionError(f"unterminated legacy {key} cluster definition")
+    if not re.match(r"^\s*}\s*,?\s*$", lines[end].rstrip("\r\n")):
+        raise AssertionError(f"unexpected legacy {key} cluster terminator: {lines[end].rstrip()}")
+    del lines[start:end + 1]
+    return "".join(lines)
+
+
 def reclassify_rating_registry(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
     before = text
@@ -44,6 +66,8 @@ def reclassify_rating_registry(path: Path) -> None:
     text = text.replace('section: "ratings"', 'section: "delivery_returns_cancellations_metrics"')
     text = text.replace("section: 'fbs_error_index'", "section: 'delivery_returns_cancellations_metrics'")
     text = text.replace('section: "fbs_error_index"', 'section: "delivery_returns_cancellations_metrics"')
+
+    text = remove_legacy_cluster_block(text, "seller_health")
 
     residual = [(i, line.rstrip()) for i, line in enumerate(text.splitlines(), 1) if "seller_health" in line]
     if residual:
@@ -95,6 +119,7 @@ def main() -> None:
     if changed != MERGED_FILES:
         raise AssertionError(f"unexpected candidate production delta: {changed}")
 
+    print("V2_B1_B49_LEGACY_SELLER_HEALTH_CLUSTER_REMOVED_PASS")
     print("V2_B1_B49_SALVAGE_THREE_FILE_BOUNDARY_PASS")
     print(out)
 
