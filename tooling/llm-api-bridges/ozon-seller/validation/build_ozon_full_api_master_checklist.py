@@ -37,6 +37,12 @@ PERFORMANCE_EXACT = {
     "operations": 48,
 }
 
+EXPECTED_CURRENT_REGISTRY_OUTSIDE_INVENTORY = [
+    ("performance_api", "GET /api/client/statistics/campaign/product/json", "performance_campaign_product"),
+    ("performance_api", "GET /api/client/statistics/daily/json", "performance_daily"),
+    ("performance_api", "GET /api/client/statistics/expense/json", "performance_expense"),
+]
+
 HEADER_RE = re.compile(r"^##\s+(?P<title>.*?)\s+\(`(?P<tag>[^`]+)`,\s*(?P<count>\d+)\)")
 OP_RE = re.compile(r"^-\s+`(?P<method>[A-Z]+)\s+(?P<path>/[^`]+)`\s+—\s+(?P<purpose>.*)$")
 
@@ -181,6 +187,33 @@ def enrich(rows, registry):
     return out
 
 
+def registry_outside_inventory(registry, rows):
+    inventory_keys = {(r["provider"], r["operation_key"]) for r in rows}
+    extras = []
+    for (provider, operation_key), hits in sorted(registry.items()):
+        if (provider, operation_key) in inventory_keys:
+            continue
+        aliases = sorted(alias for alias, _ in hits)
+        metas = [m for _, m in hits]
+        extras.append({
+            "provider": provider,
+            "operation_key": operation_key,
+            "aliases": aliases,
+            "effects": sorted({str(m.get("effect")) for m in metas if m.get("effect")}),
+            "execution_enabled": sorted({bool(m.get("execution_enabled")) for m in metas}),
+            "reason": "PRESERVED_LEGACY_COMPATIBILITY_ROUTE_OUTSIDE_CURRENT_PINNED_API_INDEX",
+            "source": "accepted B0/B6 compatibility surface carried by canonical B1",
+            "final_action": "PRESERVE_COMPATIBILITY_AND_DO_NOT_COUNT_AS_CURRENT_48_OPERATION_PERFORMANCE_INVENTORY",
+        })
+    signature = sorted(
+        (x["provider"], x["operation_key"], alias)
+        for x in extras
+        for alias in x["aliases"]
+    )
+    assert signature == EXPECTED_CURRENT_REGISTRY_OUTSIDE_INVENTORY, signature
+    return extras
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seller-index", required=True)
@@ -205,8 +238,13 @@ def main():
     assert len(rows) == 511
     assert len({(r["provider"], r["operation_key"]) for r in rows}) == 511
 
+    registry_alias_count = sum(len(hits) for hits in registry.values())
+    assert registry_alias_count == 42, registry_alias_count
+    extras = registry_outside_inventory(registry, rows)
+    assert len(extras) == 3
+
     payload = {
-        "schema": "OZON_FULL_API_MASTER_CHECKLIST_V1",
+        "schema": "OZON_FULL_API_MASTER_CHECKLIST_V2",
         "as_of": "2026-08-29",
         "roadmap_step": 2,
         "status": "OPERATION_UNIVERSE_BUILT_EXACT_SCHEMA_RECONCILIATION_PENDING",
@@ -230,9 +268,12 @@ def main():
             "total": len(rows),
             "seller_categories": len(seller_sections),
             "performance_categories": len(perf_sections),
-            "current_canonical_implemented": sum(1 for r in rows if r["bridge_implemented_current_canonical"]),
+            "current_registry_aliases_total": registry_alias_count,
+            "current_canonical_in_current_inventory": sum(1 for r in rows if r["bridge_implemented_current_canonical"]),
+            "current_registry_outside_current_inventory": len(extras),
             "classification_unresolved": sum(1 for r in rows if r["classification"] == "UNRESOLVED"),
         },
+        "current_registry_outside_current_inventory": extras,
         "rows": rows,
     }
 
@@ -255,9 +296,13 @@ def main():
                     flat[key] = json.dumps(flat[key], ensure_ascii=False, separators=(",", ":"))
             writer.writerow({k: flat.get(k) for k in columns})
 
-    implemented = payload["counts"]["current_canonical_implemented"]
+    implemented = payload["counts"]["current_canonical_in_current_inventory"]
     unresolved = payload["counts"]["classification_unresolved"]
-    summary = f"""# Ozon full API master checklist — generated inventory\n\nDate: 2026-08-29  \nRoadmap step: 2\n\n## Result\n\n- Seller operation rows: **{len(seller)}**\n- Performance operation rows: **{len(perf)}**\n- Total rows: **{len(rows)}**\n- Performance unique paths: **{len({r['fixed_path'] for r in perf})}**\n- Operations already present in the current canonical registry: **{implemented}**\n- Rows still requiring semantic/exact-schema classification: **{unresolved}**\n\nThe operation universe is complete at method+path level. It was reconstructed from pinned audited GitHub indexes whose blob identities are verified by the generator.\n\n## Critical provenance rule\n\nThe project-accepted exact Swagger identities remain:\n\n- Seller: 3,933,043 bytes; SHA-256 `{SELLER_EXACT['sha256']}`; 463 operations.\n- Performance: 304,771 bytes; SHA-256 `{PERFORMANCE_EXACT['sha256']}`; 47 paths / 48 operations.\n\nThe bundled OpenAPI JSON files in the pinned public mirror are **not byte-identical** to those accepted snapshots. Therefore the pinned indexes are used only for the complete `method + path + purpose` universe. Exact schema, request, response, deprecation, workflow and safety decisions must be reconciled against the accepted exact Swagger evidence/snapshot before implementation or final terminal classification.\n\nNo Ozon business API request is made by this generator.\n"""
+    extra_lines = "\n".join(
+        f"- `{x['aliases'][0]}` → `{x['operation_key']}`"
+        for x in extras
+    )
+    summary = f"""# Ozon full API master checklist — generated inventory\n\nDate: 2026-08-29  \nRoadmap step: 2\n\n## Result\n\n- Seller operation rows: **{len(seller)}**\n- Performance operation rows: **{len(perf)}**\n- Total current API rows: **{len(rows)}**\n- Performance unique paths: **{len({r['fixed_path'] for r in perf})}**\n- Current canonical registry aliases total: **{registry_alias_count}**\n- Current API rows already present in the canonical registry: **{implemented}**\n- Preserved current-registry compatibility routes outside the current API inventory: **{len(extras)}**\n- Rows still requiring semantic/exact-schema classification: **{unresolved}**\n\nThe current operation universe is complete at method+path level: 463 Seller + 48 Performance = 511 current API rows. It was reconstructed from pinned audited GitHub indexes whose blob identities are verified by the generator.\n\n## Preserved compatibility routes outside the current 48-operation Performance inventory\n\n{extra_lines}\n\nThese three routes remain part of the accepted compatibility registry, but they are not counted as additional current Performance Swagger operations. They are tracked separately so the 42-alias canonical registry reconciles cleanly as 39 current-inventory matches + 3 compatibility routes.\n\n## Critical provenance rule\n\nThe project-accepted exact Swagger identities remain:\n\n- Seller: 3,933,043 bytes; SHA-256 `{SELLER_EXACT['sha256']}`; 463 operations.\n- Performance: 304,771 bytes; SHA-256 `{PERFORMANCE_EXACT['sha256']}`; 47 paths / 48 operations.\n\nThe bundled OpenAPI JSON files in the pinned public mirror are **not byte-identical** to those accepted snapshots. Therefore the pinned indexes are used only for the complete `method + path + purpose` universe. Exact schema, request, response, deprecation, workflow and safety decisions must be reconciled against the accepted exact Swagger evidence/snapshot before implementation or final terminal classification.\n\nNo Ozon business API request is made by this generator.\n"""
     Path(args.out_summary).write_text(summary, encoding="utf-8")
 
     print(json.dumps(payload["counts"], ensure_ascii=False, sort_keys=True))
