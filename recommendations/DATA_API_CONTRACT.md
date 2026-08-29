@@ -1,8 +1,8 @@
 # Data & API Contract — recommendation system V2
 
-Версия: 0.2  
+Версия: 0.3  
 Статус: **V2 SALES-WEIGHTED contract authority**  
-Revision: **2026-08-29 owner update**
+Revision: **2026-08-29 M2 HTTP contract freeze**
 
 ## 1. Authority
 
@@ -11,6 +11,12 @@ Business authority:
 - `RECOMMENDATION_MATRIX.md`;
 - `PRODUCT_CLASSIFICATION.md`;
 - `CUSTOMER_RECOMMENDATION_COPY_GUIDE.md`.
+
+HTTP/application architecture additionally follows:
+
+- `VK_IMPLEMENTATION_ARCHITECTURE.md`;
+- `M2_BACKEND_DEPENDENCY_ADR.md`;
+- `VK_IMPLEMENTATION_GATE_MATRIX.md`.
 
 ## 2. Version identifiers
 
@@ -175,7 +181,7 @@ type RecommendationResult = {
     day: number;
     month: number;
     year: number | null;
-    display: string; // DD.MM.YYYY when year exists, otherwise only supplied date parts
+    display: string;
   };
   chertog: {
     id: string;
@@ -208,47 +214,182 @@ type RecommendationResult = {
 
 Exactly one `recommendation` is returned.
 
-The TypeScript-style camelCase notation in this section is conceptual domain
-documentation. Python/domain implementations may use internal snake_case
-dictionaries. Section 11 is authoritative for M2 HTTP JSON field names and
-uses snake_case only.
+The TypeScript-style camelCase notation in this section is conceptual domain documentation. Python/domain implementations may use internal snake_case dictionaries. Section 11 is authoritative for M2 HTTP JSON field names and uses snake_case only.
 
-## 11. HTTP API
+## 11. M2 HTTP API — exact transport contract
+
+### 11.1 Public routes
+
+M2 exposes exactly these application routes:
 
 ```text
 POST /v1/recommendations/resolve
-Content-Type: application/json
+GET  /healthz
+GET  /readyz
 ```
 
-Example request with a full birth date:
+M2 must not expose FastAPI documentation/schema routes as additional public surface:
 
-```json
-{
-  "birth_day": 16,
-  "birth_month": 1,
-  "birth_year": 1986,
-  "gender": "male",
-  "marketplace": "ozon"
-}
+```text
+/docs
+/redoc
+/openapi.json
 ```
 
-Required request fields: `birth_day`, `birth_month`, `gender`.
+They are disabled for M2.
 
-Optional request fields: `birth_year`, `marketplace`. `gender` supports
-`male` and `female`; `marketplace` supports `ozon`, `wildberries`, or
-omitted/`null`. `channel` is not semantic input, and availability is not an
-input.
+Unknown route → `404 NOT_FOUND` using the error envelope in section 14.
 
-The following is the exact owner-approved M2 HTTP success response shape.
-It returns the semantic recommendation only; it contains exactly one
-`recommendation` and no `availability` or `destination` fields.
+Known route with unsupported HTTP method → `405 METHOD_NOT_ALLOWED` using the same envelope.
 
-Success example for Медведь:
+### 11.2 Resolve media type
+
+`POST /v1/recommendations/resolve` requires a JSON content type.
+
+Accepted base media type:
+
+```text
+application/json
+```
+
+Media-type parameters are allowed, for example:
+
+```text
+application/json; charset=utf-8
+```
+
+Missing or different base media type → `415 UNSUPPORTED_MEDIA_TYPE`.
+
+All JSON responses use:
+
+```text
+Content-Type: application/json; charset=utf-8
+```
+
+Customer-facing Cyrillic is emitted as UTF-8 text, not intentionally ASCII-escaped.
+
+### 11.3 Request body size
+
+Maximum resolve request body:
+
+```text
+16384 bytes
+```
+
+The limit applies to actual received body bytes, not only `Content-Length`.
+
+Body larger than the limit →:
+
+```text
+413 PAYLOAD_TOO_LARGE
+```
+
+Do not perform an unbounded request-body read.
+
+### 11.4 Resolve request shape
+
+Request must be exactly one JSON object.
+
+Required fields:
+
+```text
+birth_day
+birth_month
+gender
+```
+
+Optional fields:
+
+```text
+birth_year
+marketplace
+```
+
+No other fields are allowed.
+
+Examples of rejected unknown semantic/non-semantic fields:
+
+```text
+channel
+availability
+destination
+product_key
+chertog
+secondary
+fallback
+score
+```
+
+Primitive/type rules are strict, not coercive:
+
+```text
+birth_day   = JSON integer, bool forbidden
+birth_month = JSON integer, bool forbidden
+birth_year  = JSON integer when present, bool/null forbidden
+
+gender      = exactly "male" or "female"
+marketplace = "ozon" | "wildberries" | null when present
+```
+
+`marketplace` omission and explicit JSON `null` both mean no marketplace override.
+
+`birth_year` omission means no year was supplied. Explicit `birth_year: null` is invalid.
+
+Syntactically valid JSON that is not an object → `422 INVALID_REQUEST`.
+
+Missing required field, unknown field, wrong primitive type, invalid date, invalid gender, invalid marketplace or explicit null `birth_year` → `422 INVALID_REQUEST`.
+
+Domain validity remains owned by `RecommendationCore`; transport validation must not create a competing date/business rule set.
+
+### 11.5 Input echo
+
+The success `input` object preserves supplied optional fields.
+
+If `birth_year` was supplied:
+
+```text
+input.birth_year = supplied integer
+birth_date.year = supplied integer
+birth_date.display = DD.MM.YYYY
+```
+
+If `birth_year` was omitted:
+
+```text
+input.birth_year is omitted
+birth_date.year = null
+birth_date.display = DD.MM
+```
+
+If `marketplace` was omitted:
+
+```text
+input.marketplace is omitted
+top-level marketplace = null
+```
+
+If explicit `marketplace: null` was supplied:
+
+```text
+input.marketplace = null
+top-level marketplace = null
+```
+
+Do not invent a year and do not assume Ozon.
+
+### 11.6 Exact success response
+
+HTTP status:
+
+```text
+200 OK
+```
+
+Example for Медведь:
 
 ```json
 {
   "api_version": "v1",
-
   "input": {
     "birth_day": 16,
     "birth_month": 1,
@@ -256,7 +397,6 @@ Success example for Медведь:
     "gender": "male",
     "marketplace": "ozon"
   },
-
   "versions": {
     "calendar_version": "KIP_CHERTOG_CALENDAR_V1",
     "product_policy_version": "KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED",
@@ -264,7 +404,6 @@ Success example for Медведь:
     "marketplace_override_version": "KIP_MARKETPLACE_OVERRIDE_V1",
     "copy_version": "KIP_REASON_COPY_V2_SALES_WEIGHTED"
   },
-
   "birth_date": {
     "day": 16,
     "month": 1,
@@ -276,10 +415,8 @@ Success example for Медведь:
     "name": "Медведь",
     "patron_name": "Сварог"
   },
-
   "gender": "male",
   "marketplace": "ozon",
-
   "recommendation": {
     "product_key": "bear_paw",
     "sku": "1636048691",
@@ -292,28 +429,286 @@ Success example for Медведь:
 }
 ```
 
-The `input` object preserves whether optional values were supplied:
+The success body contains exactly one `recommendation` object.
 
-- when `birth_year` was supplied, `input.birth_year` is present with that integer;
-- when it was omitted, `input.birth_year` may be omitted and `birth_date.year` is `null`;
-- when `marketplace` was supplied, `input.marketplace` is present;
-- when it was omitted, `input.marketplace` may be omitted and top-level `marketplace` is `null`.
+M2 success body does not contain:
 
-Do not invent a birth year or assume Ozon.
+```text
+availability
+destination
+secondary
+alternatives
+fallback
+score
+sales
+channel
+request_id
+result_id
+```
 
-`patron_name` is calendar metadata and does not force selection of the patron product.
+`patron_name` is calendar metadata and does not force patron-product selection.
 
-## 12. Channel vs marketplace
+## 12. Correlation contract
 
-`channel` is telemetry/UI only and is not semantic input. `marketplace` may
-change a result only through explicit override config.
+### 12.1 Request ID
 
-## 13. Availability
+Every M2 HTTP response, including errors, contains:
 
-M2 Recommendation API returns the semantic recommendation only:
-`availability` and `destination` are not present yet. The later M4 product
-destinations / availability overlay may enrich an API/channel-facing result,
-but it must never change semantic product selection.
+```text
+X-Request-Id
+```
+
+M2 generates a fresh server-side UUIDv4 per received HTTP request.
+
+An inbound `X-Request-Id` is not trusted/adopted as the canonical server request identifier in M2.
+
+### 12.2 Result ID
+
+Every successful `POST /v1/recommendations/resolve` response additionally contains:
+
+```text
+X-Result-Id
+```
+
+`X-Result-Id` is a fresh UUIDv4 generated for the successful logical recommendation resolution outside semantic selection.
+
+Health/readiness/error responses do not carry `X-Result-Id`.
+
+Neither ID may affect Chertog/product/reason selection.
+
+The IDs remain transport/application metadata and are intentionally absent from the owner-approved success JSON body.
+
+## 13. Health and readiness contract
+
+### 13.1 `GET /healthz`
+
+Purpose: process liveness only.
+
+It must not call VK and must not require Recommendation Core success.
+
+Healthy process response:
+
+```text
+200 OK
+```
+
+```json
+{
+  "api_version": "v1",
+  "status": "ok"
+}
+```
+
+### 13.2 `GET /readyz`
+
+Purpose: local recommendation-service readiness.
+
+M2 readiness means:
+
+```text
+canonical configuration can be loaded and validated
+AND
+RecommendationCore can be initialized
+```
+
+Ready response:
+
+```text
+200 OK
+```
+
+```json
+{
+  "api_version": "v1",
+  "status": "ready"
+}
+```
+
+If canonical configuration/Core initialization is unavailable:
+
+```text
+503 SERVICE_UNAVAILABLE
+CONFIGURATION_UNAVAILABLE
+```
+
+using the exact error envelope in section 14.
+
+A configuration-unavailable service may remain alive so `/healthz` can still report liveness and `/readyz` can fail closed. A valid resolve request while the canonical Core is unavailable also returns `503 CONFIGURATION_UNAVAILABLE`.
+
+`/readyz` does not perform a live VK API call.
+
+## 14. M2 exact error contract
+
+### 14.1 Error envelope
+
+Every application-generated M2 error response body uses exactly this envelope shape:
+
+```json
+{
+  "api_version": "v1",
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "Request body is invalid."
+  }
+}
+```
+
+No FastAPI/Pydantic default `detail` envelope is allowed on these routes/errors.
+
+Do not return:
+
+- stack traces;
+- Python exception repr;
+- absolute filesystem paths;
+- raw configuration;
+- environment values;
+- request body dumps.
+
+### 14.2 Status/code/message table
+
+| Condition | HTTP | code | message |
+|---|---:|---|---|
+| invalid JSON bytes/syntax or empty resolve body | 400 | `MALFORMED_JSON` | `Request body must be valid JSON.` |
+| resolve body exceeds 16384 bytes | 413 | `PAYLOAD_TOO_LARGE` | `Request body exceeds 16384 bytes.` |
+| resolve media type is not application/json | 415 | `UNSUPPORTED_MEDIA_TYPE` | `Content-Type must be application/json.` |
+| valid JSON but invalid request shape/type/domain input | 422 | `INVALID_REQUEST` | `Request body is invalid.` |
+| canonical configuration/Core unavailable due expected configuration load/validation failure | 503 | `CONFIGURATION_UNAVAILABLE` | `Recommendation configuration is unavailable.` |
+| `RecommendationCoreError` during resolution | 500 | `CORE_ERROR` | `Recommendation core failed.` |
+| otherwise unexpected internal exception | 500 | `INTERNAL_ERROR` | `Internal server error.` |
+| unknown route | 404 | `NOT_FOUND` | `Route not found.` |
+| unsupported method on known route | 405 | `METHOD_NOT_ALLOWED` | `Method not allowed.` |
+
+### 14.3 Exception mapping boundary
+
+Current domain exceptions:
+
+```text
+RecommendationInputError
+RecommendationCoreError
+ConfigurationValidationError
+```
+
+Mapping:
+
+```text
+RecommendationInputError       → 422 INVALID_REQUEST
+ConfigurationValidationError   → 503 CONFIGURATION_UNAVAILABLE
+RecommendationCoreError        → 500 CORE_ERROR
+```
+
+Expected canonical configuration load/initialization failures that make a valid Core unavailable are normalized to `503 CONFIGURATION_UNAVAILABLE` without exposing filesystem/internal details.
+
+Any other unexpected exception → `500 INTERNAL_ERROR`.
+
+Framework validation failures that correspond to section 11.4 request-shape rules → `422 INVALID_REQUEST` with the project envelope, not FastAPI's default body.
+
+## 15. Application-service boundary
+
+M2 introduces one transport-neutral application service equivalent to:
+
+```text
+RecommendationApplicationService.resolve(input)
+```
+
+It must:
+
+1. accept normalized domain/application input;
+2. delegate semantic selection to the existing `RecommendationCore`;
+3. return the exact Core semantic result unchanged in meaning;
+4. attach/generate application metadata such as `result_id` outside semantic selection;
+5. contain no FastAPI request/response object dependency.
+
+HTTP endpoint uses this application service.
+
+Future Bot orchestrator uses the same in-process service rather than calling our own HTTP endpoint over loopback.
+
+Hard parity:
+
+```text
+Core semantic output
+== ApplicationService semantic output
+== HTTP semantic output
+```
+
+No second recommendation matrix/date resolver is allowed in API/application code.
+
+## 16. Serialization boundary
+
+Core currently returns version fields at domain top level. HTTP serializer nests them under:
+
+```text
+versions
+```
+
+This is transport adaptation only.
+
+HTTP field naming is strictly:
+
+```text
+snake_case
+```
+
+The API serializer must not mutate semantic values.
+
+No customer-facing copy renderer is introduced in M2.
+
+## 17. Logging contract
+
+M2 emits concise structured request-completion logs without full request body/DOB logging.
+
+At minimum each request completion log contains:
+
+```text
+event = "http_request_completed"
+request_id
+method
+path
+status
+duration_ms
+```
+
+Successful resolve additionally includes:
+
+```text
+result_id
+```
+
+Failure additionally includes:
+
+```text
+error_code
+```
+
+Do not log full request bodies by default.
+
+Do not log configuration contents, secrets or stack traces as ordinary structured fields.
+
+Logging failures must not change the HTTP response.
+
+## 18. Server/runtime contract
+
+M2 runs from the locked environment defined by `M2_BACKEND_DEPENDENCY_ADR.md`.
+
+Canonical local command shape:
+
+```text
+UV_PYTHON_DOWNLOADS=never \
+uv run --locked uvicorn recommendations.api.app:app --host 127.0.0.1 --port 8080
+```
+
+Default/local bind is loopback only.
+
+TLS/reverse proxy/process supervision are deployment/hardening concerns outside M2.
+
+No VK token or network call is needed by M2.
+
+## 19. Channel vs marketplace
+
+`channel` is telemetry/UI only and is not semantic input. `marketplace` may change a result only through explicit override config.
+
+## 20. Availability
+
+M2 Recommendation API returns the semantic recommendation only: `availability` and `destination` are not present yet. The later M4 product destinations / availability overlay may enrich an API/channel-facing result, but it must never change semantic product selection.
 
 Availability is post-processing and never causes hidden replacement.
 
@@ -331,20 +726,7 @@ UI
 
 Customer-facing copy must not announce missing stock/card/link.
 
-## 14. M2 error contract boundary
-
-M2 must define deterministic HTTP error mapping for:
-
-- malformed JSON/request shape;
-- `RecommendationInputError`;
-- `ConfigurationValidationError` / unavailable valid configuration;
-- unexpected internal `RecommendationCoreError`.
-
-The exact HTTP status and error-envelope contract will be implemented and
-documented as part of M2. This authority correction does not define status
-codes or error JSON.
-
-## 15. Semantic serialization invariants
+## 21. Semantic serialization invariants
 
 HTTP serialization must not change Core semantics:
 
@@ -355,10 +737,9 @@ voron + male + wildberries            → alatyr    → VORON_CHANGE_INNER_SUPPO
 medved + male/female                  → customer_label exactly "Печать Велеса"
 ```
 
-There is no secondary result, hidden fallback, or selection effect from year;
-year remains display/audit context only.
+There is no secondary result, hidden fallback, or selection effect from year; year remains display/audit context only.
 
-## 16. Customer-label and date-render contract
+## 22. Customer-label and date-render contract
 
 The UI/copy layer must render `customerLabel`, not internal aliases or product keys.
 
@@ -385,7 +766,7 @@ Example:
 
 The renderer must not shorten this to `19.11`.
 
-## 17. Validation gates
+## 23. Validation gates
 
 CI/startup must fail if:
 
@@ -408,7 +789,24 @@ CI/startup must fail if:
 17. unapproved marketplace override exists;
 18. reserve product auto-appears without owner decision.
 
-## 18. Contract tests
+M2 adds transport gates:
+
+19. HTTP success body exactly matches section 11;
+20. API/Core semantic parity for all 32 base cases;
+21. Ozon produces 32/32 base results and zero overrides;
+22. Wildberries produces exactly 31 base results plus the one approved Voron-male override;
+23. request shape is strict/non-coercive;
+24. all error paths use section 14 envelope/status/code;
+25. every response has `X-Request-Id`;
+26. successful resolve has `X-Result-Id`;
+27. configuration-unavailable readiness and resolve fail closed;
+28. health remains liveness-only;
+29. body-size/media-type gates are enforced;
+30. M2 source imports/calls no VK transport/runtime.
+
+## 24. Contract tests
+
+Business/domain cases:
 
 ```text
 25.03.1993 + male + ozon → lisa / Чернобог; rendered date includes 1993
@@ -423,8 +821,48 @@ CI/startup must fail if:
 13.08.1988 + female → rasa / Даждьбог
 ```
 
+M2 HTTP contract tests additionally cover at minimum:
+
+```text
+valid full DOB success
+valid no-year success
+marketplace omitted success
+marketplace null success
+malformed JSON
+empty body
+JSON array instead of object
+missing required fields
+unknown fields
+bool day/month/year
+birth_year null
+invalid Gregorian date
+invalid gender
+invalid marketplace
+wrong/missing Content-Type
+body > 16384 bytes
+unknown route
+wrong method
+health success
+readiness success
+readiness configuration failure
+resolve configuration failure
+RecommendationCoreError mapping
+unexpected internal error mapping
+request/result UUID headers
+unique request IDs across requests
+32 base API parity
+32 Ozon parity / 0 overrides
+32 Wildberries / exactly 1 override
+Voron male exact reason semantics
+Medved exact customer label
+full-DOB/year invariance
+absence of availability/destination/secondary/fallback
+```
+
+All existing M1 tests remain mandatory regression tests under the locked environment.
+
 Decision marker:
 
 ```text
-KIP_DATA_API_CONTRACT_V2_SALES_WEIGHTED_APPROVED
+KIP_DATA_API_CONTRACT_V2_M2_HTTP_FROZEN
 ```
