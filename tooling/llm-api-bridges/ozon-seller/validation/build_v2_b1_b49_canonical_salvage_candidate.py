@@ -247,22 +247,39 @@ def _find_object_property_blocks(text: str, key: str) -> list[tuple[int, int]]:
     return blocks
 
 
+def _enclosing_top_level_const(text: str, offset: int) -> str | None:
+    matches = [decl.name for decl in scan_top_level_const_declarations(text) if decl.start <= offset < decl.end]
+    if len(matches) > 1:
+        raise AssertionError(f"offset {offset} is enclosed by multiple top-level const declarations: {matches}")
+    return matches[0] if matches else None
+
+
 def _find_operation_block(text: str, key: str, expected_path: str) -> tuple[int, int]:
-    candidates: list[tuple[int, int]] = []
+    all_same_key = _find_object_property_blocks(text, key)
+    candidates: list[tuple[int, int, str | None]] = []
     path_patterns = [f"path: '{expected_path}'", f'path: "{expected_path}"']
     provider_patterns = ["provider: 'seller_api'", 'provider: "seller_api"']
-    for start, end in _find_object_property_blocks(text, key):
+    for start, end in all_same_key:
         block = text[start:end]
         has_path = any(pattern in block for pattern in path_patterns)
         has_provider = any(pattern in block for pattern in provider_patterns)
         if has_path and has_provider:
-            candidates.append((start, end))
-    if len(candidates) != 1:
-        raise AssertionError(
-            f"expected exactly one seller operation block for {key} {expected_path}, found {len(candidates)} "
-            f"among {len(_find_object_property_blocks(text, key))} same-key blocks"
-        )
-    return candidates[0]
+            candidates.append((start, end, _enclosing_top_level_const(text, start)))
+
+    authoritative = [(start, end) for start, end, parent in candidates if parent == "OPERATIONS"]
+    if len(authoritative) == 1:
+        return authoritative[0]
+    if len(authoritative) > 1:
+        raise AssertionError(f"multiple OPERATIONS blocks for {key} {expected_path}: {len(authoritative)}")
+    if len(candidates) == 1:
+        start, end, _ = candidates[0]
+        return start, end
+
+    parents = [parent for _, _, parent in candidates]
+    raise AssertionError(
+        f"expected exactly one authoritative seller operation block for {key} {expected_path}; "
+        f"filtered={len(candidates)} same_key={len(all_same_key)} enclosing_consts={parents}"
+    )
 
 
 def rewrite_operation_section(path: Path, alias: str, expected_path: str, old: str, new: str) -> None:
