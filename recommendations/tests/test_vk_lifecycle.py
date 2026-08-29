@@ -17,8 +17,8 @@ FIXTURE = Path(__file__).parent / "fixtures/vk/staging/message_new.v5_199.saniti
 
 class FakeAPI:
     def __init__(self): self.calls = []
-    def messages_send(self, peer_id, message, random_id):
-        self.calls.append((peer_id, message, random_id))
+    def messages_send(self, peer_id, message, random_id, keyboard=None):
+        self.calls.append((peer_id, message, random_id, keyboard))
         return VKAPIResult(message_id=len(self.calls))
 
 
@@ -38,15 +38,15 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(.02)
         self.tmp.cleanup()
 
-    def payload(self, text, event_id):
+    def payload(self, text, event_id, payload=None):
         value = json.loads(FIXTURE.read_text())
         value.update(group_id=1, event_id=event_id, secret="secret")
-        value["object"]["message"].update(peer_id=11, from_id=11, text=text)
+        value["object"]["message"].update(peer_id=11, from_id=11, text=text, payload=payload)
         return value
 
-    async def post(self, text, event_id):
+    async def post(self, text, event_id, payload=None):
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=self.app), base_url="http://test") as client:
-            response = await client.post("/internal/vk/callback", content=json.dumps(self.payload(text, event_id)))
+            response = await client.post("/internal/vk/callback", content=json.dumps(self.payload(text, event_id, payload)))
         self.assertEqual(response.text, "ok")
 
     async def wait_for(self, predicate):
@@ -58,13 +58,15 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
     async def test_autonomous_complete_flow_without_manual_process_one(self):
         await self.post("13.10.1990", "date")
         await self.wait_for(lambda: len(self.api.calls) == 1)
-        self.assertIn("Мужчине", self.api.calls[0][1])
-        await self.post("Мужчине", "gender")
+        self.assertEqual(self.api.calls[0][1], "Для кого подбираем оберег?")
+        self.assertIsNotNone(self.api.calls[0][3])
+        await self.post("Мужчине", "gender", '{"kip":"gender","value":"male","v":1}')
         await self.wait_for(lambda: len(self.api.calls) == 2)
         self.assertIn("рекомендуем оберег", self.api.calls[1][1])
-        await self.post("Подобрать снова", "restart")
+        self.assertIsNotNone(self.api.calls[1][3])
+        await self.post("Подобрать снова", "restart", '{"kip":"restart","v":1}')
         await self.wait_for(lambda: len(self.api.calls) == 3)
-        self.assertIn("день и месяц", self.api.calls[2][1])
+        self.assertIn("ДД.ММ.ГГГГ", self.api.calls[2][1])
         self.assertEqual(len({row[2] for row in self.api.calls}), 3)
 
     async def test_clean_shutdown_stops_tasks_and_closes_resources(self):

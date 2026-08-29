@@ -14,7 +14,7 @@ class OutboxWorker:
  def process_one(self):
   row=self.storage.claim_outbox()
   if not row:return False
-  try: result=self.api.messages_send(row['peer_id'],row['message_text'],row['random_id'])
+  try: result=self.api.messages_send(row['peer_id'],row['message_text'],row['random_id'], row['keyboard_json']) if row.get('keyboard_json') is not None else self.api.messages_send(row['peer_id'],row['message_text'],row['random_id'])
   except (VKTransportUnknown, VKProtocolError):
    if row['attempt_count']<2:self.storage.outbox_result(row['outbox_id'],'RETRY_WAIT',klass='TRANSPORT_UNKNOWN',next_at=(datetime.now(timezone.utc)+timedelta(seconds=self.delay)).isoformat())
    else:self.storage.outbox_result(row['outbox_id'],'FAILED_TERMINAL',klass='TRANSPORT_UNKNOWN')
