@@ -19,16 +19,17 @@ Marketplace override: `KIP_MARKETPLACE_OVERRIDE_V1`
 V2 authority
 → machine-readable configuration
 → deterministic Recommendation Core
-→ Recommendation API
-→ VK Community Bot MVP
+→ shared Recommendation API
+→ hybrid VK product foundation
+→ VK Community Bot — first surface
 → product destinations / availability overlay
-→ VK Mini App
-→ shared analytics / operator handoff
-→ production hardening
+→ VK Mini App — second surface
+→ cross-channel continuity
+→ analytics / operator / production hardening
 → controlled launch
 ```
 
-Bot и Mini App должны быть двумя UI-каналами одного core/API.
+Целевой продукт — один VK recommendation product: один Recommendation Core, один Recommendation API, один semantic result и два согласованных UI-канала — VK Community Bot и VK Mini App. Это архитектурное ограничение действует с M2: Bot и Mini App не являются отдельными продуктами, которые будут соединены позже. Bot не временный и не заменяется Mini App.
 
 ## 2. Current authority freeze
 
@@ -88,15 +89,15 @@ M0  V2 domain authority freeze
  ↓
 M1  Machine-readable V2 configuration + Recommendation Core
  ↓
-M2  Recommendation API
+M2  Shared Recommendation API + hybrid-product backend foundation
  ↓
-M3  VK Community Bot MVP
+M3  VK Community Bot — first interactive surface of the hybrid product
  ↓
 M4  Product destinations + availability overlay
  ↓
-M5  VK Mini App MVP
+M5  VK Mini App — second interactive surface of the same hybrid product
  ↓
-M6  Bot/Mini App hybrid integration
+M6  Bot ↔ Mini App cross-channel continuity and hybrid completion
  ↓
 M7  Analytics / operator / production hardening
  ↓
@@ -228,11 +229,11 @@ FULL_DOB_PRESERVATION_PASS
 
 VK integration cannot start before M1 PASS.
 
-## M2 — Recommendation API
+## M2 — Shared Recommendation API + hybrid-product backend foundation
 
 ### Цель
 
-Один backend contract для Bot и Mini App.
+Создать общий channel-independent backend foundation для одного hybrid VK product. Это один Recommendation API для будущих Bot и Mini App, с одним semantic result; M2 не определяет UI и не реализует session transport между интерфейсами.
 
 Implement:
 
@@ -253,7 +254,7 @@ Requirements:
 - typed request/response;
 - stable validation errors;
 - version metadata;
-- correlation/result id;
+- correlation/result id for shared result correlation;
 - structured logs;
 - optional `birth_year` preserved;
 - optional marketplace applied only via versioned override;
@@ -272,11 +273,11 @@ RECOMMENDATION_API_PARITY_PASS
 RECOMMENDATION_API_ERROR_CONTRACT_PASS
 ```
 
-## M3 — VK Community Bot MVP
+## M3 — VK Community Bot — first interactive surface of the hybrid product
 
 ### Цель
 
-Проверить реальный consumer flow внутри VK до Mini App.
+VK Community Bot — первая production-facing interface того же hybrid product, а не отдельный продукт. Он выполняет полный recommendation flow непосредственно в community messages и остаётся полезным, когда Mini App недоступен. Будущий Mini App CTA должен добавляться без переписывания recommendation logic.
 
 ### Перед implementation
 
@@ -314,13 +315,16 @@ RESOLVED → HUMAN_HANDOFF
 - preserve supplied year;
 - gender buttons;
 - call shared API/core;
+- use result/correlation identity where available;
 - current customer-copy renderer;
-- product action;
+- product action abstraction suitable for later destination mapping;
 - `Подобрать снова`;
-- optional human handoff;
+- human handoff abstraction;
 - event dedup;
 - session TTL;
 - structured telemetry.
+
+Bot state model must not prevent a later optional Bot → Mini App continuation. Bot must not own a local semantic matrix, and M3 does not require Mini App to exist.
 
 Supported date forms at minimum:
 
@@ -391,11 +395,11 @@ PRODUCT_DESTINATION_MAPPING_PASS
 AVAILABILITY_DOES_NOT_RERANK_PASS
 ```
 
-## M5 — VK Mini App MVP
+## M5 — VK Mini App — second interactive surface of the same hybrid product
 
 ### Цель
 
-Визуальный flow поверх того же API.
+VK Mini App — второй UI-канал уже существующего VK recommendation product, а не отдельное recommendation application. Он использует точно те же Recommendation API, Core, semantic result, product destination mapping и customer-copy authority, что и Bot. Для одинакового semantic input его result обязан совпадать с Bot.
 
 Screens:
 
@@ -408,7 +412,7 @@ Screens:
 
 Hard rules:
 
-- frontend never computes an independent recommendation;
+- frontend never computes or owns an independent recommendation matrix;
 - exactly one recommendation card;
 - same current copy semantics;
 - loading/error states;
@@ -425,17 +429,20 @@ MINIAPP_SINGLE_RESULT_PASS
 MINIAPP_ERROR_STATE_PASS
 ```
 
-## M6 — Hybrid Bot + Mini App integration
+## M6 — Bot ↔ Mini App cross-channel continuity and hybrid completion
 
-Bot and Mini App become two entry points into one product.
+Hybrid product exists architecturally since M2; M6 does not create it for the first time. M6 completes a shared user journey and continuity between its two surfaces.
 
 Implement as useful:
 
 - Bot → Mini App CTA;
 - Mini App → community messages/handoff;
 - shared result/session correlation;
+- optional shared flow/session correlation and safe transfer of known birth date/gender/result;
 - same product destination mapping;
 - cross-channel analytics.
+
+Avoid duplicate recommendations or replies while an interface transition is active. Cross-channel session sharing is not mandatory where VK platform constraints make it unsafe or impossible; the exact verified mechanism belongs in the relevant implementation ADR.
 
 Semantic parity set must match on:
 
@@ -453,6 +460,37 @@ Gate:
 VK_HYBRID_RESULT_PARITY_PASS
 VK_HYBRID_DESTINATION_PARITY_PASS
 ```
+
+## Hybrid user journeys
+
+All journeys use one semantic Recommendation Core/API.
+
+```text
+Journey A — Bot only
+Community messages → Bot asks date → Bot asks gender → recommendation → product action / start again
+
+Journey B — Mini App only
+Community CTA → Mini App → date → gender → recommendation → product action
+
+Journey C — Hybrid
+Bot conversation → user optionally opens Mini App when useful → Mini App continues/opens recommendation experience → product action or return to community messages
+
+Journey D — Human handoff
+Bot or Mini App → community messages → human/manager handoff
+```
+
+## Hard hybrid invariants
+
+1. Bot and Mini App never own separate recommendation matrices.
+2. Identical birth date, gender and marketplace produce an identical semantic result in Bot and Mini App.
+3. Switching interface never reranks or substitutes the product.
+4. Channel is UI/telemetry context only and never affects recommendation selection.
+5. Bot remains independently usable without Mini App.
+6. Mini App remains usable without completing a Bot conversation first.
+7. Bot → Mini App is an optional user journey, not a mandatory redirect.
+8. Mini App → community messages/human is a supported product direction.
+9. No Telegram redirect is required for consumer recommendation.
+10. One user journey must not accidentally produce duplicate recommendations or duplicate messages because two interfaces are active.
 
 ## M7 — Production hardening
 
@@ -503,7 +541,7 @@ OBSERVABILITY_BASELINE_PASS
 
 ### Stage 1
 
-Community messages / limited Bot CTA.
+Community messages / limited Bot CTA first, because it is the fastest way to validate consumer behavior. This is rollout sequencing, not separate-product architecture.
 
 Validate:
 
@@ -517,7 +555,7 @@ Validate:
 
 ### Stage 2
 
-Add Mini App as primary/secondary community CTA based on observed flow completion.
+Add Mini App as a second interface of the same product; select primary/secondary community CTA based on observed flow completion.
 
 ### Stage 3
 
@@ -527,6 +565,8 @@ External entry points:
 - QR;
 - product content;
 - website when useful.
+
+They can route to either Bot/community messages or Mini App according to UX.
 
 Launch gate:
 
@@ -577,10 +617,14 @@ V1 production считается завершённой только если о
 - V2 machine-readable config exists and validates;
 - all 32 base cases pass;
 - single-result invariant passes;
-- Recommendation Core is deterministic;
-- Recommendation API parity passes;
+- one shared deterministic Recommendation Core exists;
+- one shared Recommendation API exists and parity passes;
 - VK Bot works inside community messages;
-- VK Mini App uses the same API/core;
+- VK Mini App works and uses the same API/core, semantic result, destination mapping and customer-copy authority;
+- Bot and Mini App have semantic parity for identical input;
+- optional cross-channel transitions do not change selection and are tested where implemented;
+- Bot remains usable standalone without Mini App;
+- Mini App remains usable standalone without a Bot flow;
 - full supplied DOB survives to customer copy;
 - Telegram is not required for consumer recommendation;
 - availability never changes semantic result;
