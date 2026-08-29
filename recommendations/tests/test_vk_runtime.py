@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from recommendations.application import RecommendationApplicationService
@@ -49,3 +50,23 @@ class VKRuntimeTests(unittest.TestCase):
         self.assertEqual(classify(9),'NO_AUTOMATIC_RETRY_BUT_TRANSIENT_OR_THROTTLING');self.assertEqual(classify(940),'NO_AUTOMATIC_RETRY_BUT_TRANSIENT_OR_THROTTLING');self.assertEqual(classify(999),'UNKNOWN_FAIL_CLOSED')
     def test_bootstrap_is_idempotent_and_restart_persists(self):
         path=self.db.path;self.db.close();other=VKStorage(path);self.assertEqual(other.connection.execute('select version from vk_schema_migrations').fetchone()[0],1);other.close();self.db=VKStorage(path)
+
+    def test_session_retention_expires_to_fresh_start_without_breaking_dedup(self):
+        self.db.close()
+        current = [datetime(2026, 1, 1, tzinfo=timezone.utc)]
+        self.db = VKStorage(self.db.path, session_retention_seconds=60, clock=lambda: current[0])
+        worker = InboundWorker(self.db, BotOrchestrator(self.db, RecommendationApplicationService()))
+        first = self.payload("13.10.1990", "retained-date")
+        self.assertTrue(self.db.accept(first)); worker.process_one()
+        session = self.db.session(1, 10)
+        self.assertIsNotNone(session["expires_at"])
+        current[0] += timedelta(seconds=59)
+        self.assertEqual(self.db.session(1, 10)["state"], "WAITING_GENDER")
+        current[0] += timedelta(seconds=2)
+        self.assertIsNone(self.db.session(1, 10))
+        fresh = self.payload("Мужчине", "expired-gender")
+        self.assertTrue(self.db.accept(fresh)); worker.process_one()
+        reset = self.db.session(1, 10)
+        self.assertEqual(reset["state"], "WAITING_DATE")
+        self.assertIsNone(reset["birth_day"])
+        self.assertFalse(self.db.accept(first))

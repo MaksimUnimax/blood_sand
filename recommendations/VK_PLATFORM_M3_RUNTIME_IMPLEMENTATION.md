@@ -21,13 +21,15 @@ unknown transport result, reusing the random id; every other parsed error is
 terminal. The five-second retry delay is application policy.
 
 VK is disabled unless `KIP_VK_ENABLED` is true and all required `KIP_VK_*`
-configuration is supplied. No runtime calls or deployment occurred in this run.
+configuration is supplied. The enabled runtime is owned by the FastAPI lifespan:
+one deployable process owns the Callback endpoint, inbound loop, outbox loop,
+SQLite state, and narrow `messages.send` client. No worker starts at import.
 ```text
 IMPLEMENTATION_COMMIT = 86ea0e013a311e75525693baf44ca82a60e712ff
 ACCEPTANCE_ADVANCE_COMMIT = 4be6e10c1e2688657e3aedcc095748d2410694f4
 LOCAL_ACCEPTANCE = PASS
-VK_TESTS = 25
-TOTAL_TESTS = 83
+VK_TESTS = 30
+TOTAL_TESTS = 87
 CALLBACK_DURABLE_ACK = PASS
 STATE_MACHINE_MATRIX = PASS
 BUSINESS_PARITY_MATRIX = PASS
@@ -43,9 +45,13 @@ RAW_CALLBACK_RETENTION = BOUNDED_CONFIGURABLE
 STALE_CLAIM_RECOVERY = PASS
 MALFORMED_VK_RESPONSE_FAIL_CLOSED = PASS
 MULTIPLE_DATE_AMBIGUITY_FAIL_CLOSED = PASS
+DEPLOYABLE_WORKER_LIFECYCLE = PASS
+AUTONOMOUS_RUNTIME_LOCAL_FLOW = PASS
+VK_RUNTIME_CLEAN_SHUTDOWN = PASS
+STAGING_SESSION_RETENTION_POLICY = 86400 seconds
+PRODUCTION_SESSION_RETENTION_POLICY = NOT_FROZEN_BY_THIS_DECISION
 STAGING_DEPLOYMENT = PENDING
 REAL_E2E = PENDING
-SESSION_RETENTION_POLICY = PENDING_CONTROLLED_STAGING_DEPLOYMENT_CONFIGURATION
 ```
 
 The local matrix is complete; see `VK_PLATFORM_M3_LOCAL_ACCEPTANCE.md`.

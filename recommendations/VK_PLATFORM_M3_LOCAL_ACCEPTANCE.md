@@ -3,7 +3,8 @@
 Status: **PASS — complete mandatory plain-text local acceptance matrix**.
 
 Evidence: `test_vk_callback.py`, `test_vk_acceptance.py`, `test_vk_runtime.py`,
-and `test_vk_m3_final_acceptance.py`; 25 VK tests and 83 total tests pass.
+`test_vk_lifecycle.py`, and `test_vk_m3_final_acceptance.py`; 30 VK tests and
+87 total tests pass.
 
 ```text
 CALLBACK_HTTP_MATRIX = PASS
@@ -41,6 +42,12 @@ RUNTIME_METHOD_ALLOWLIST = PASS (messages.send only)
 KEYBOARD_PROHIBITION = PASS
 M2_REGRESSION = PASS
 CONFIG_VALIDATION = PASS
+DEPLOYABLE_WORKER_LIFECYCLE = PASS
+AUTONOMOUS_RUNTIME_LOCAL_FLOW = PASS
+VK_RUNTIME_CLEAN_SHUTDOWN = PASS
+STAGING_SESSION_RETENTION_POLICY = 86400 seconds
+PRODUCTION_SESSION_RETENTION_POLICY = NOT_FROZEN_BY_THIS_DECISION
+STAGING_DEPLOYMENT = PENDING
 ```
 
 The tests prove durable Callback acknowledgement, production-path state
@@ -49,6 +56,5 @@ boundary without adding M4 UX), atomic rollback, independent SQLite claims,
 restart persistence, retry classification and a two-attempt logical-message
 budget. No external VK API call is made.
 
-Session retention remains
-`PENDING_CONTROLLED_STAGING_DEPLOYMENT_CONFIGURATION`; no production duration
-is asserted by this local slice.
+The staging session policy is 86400 seconds. It is an operational staging
+privacy decision; no production retention duration is asserted by this slice.

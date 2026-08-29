@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from contextlib import asynccontextmanager
 from collections.abc import Callable
 from uuid import uuid4
 
@@ -50,9 +51,24 @@ def create_app(
     service: RecommendationApplicationService | None = None,
     service_factory: Callable[[], RecommendationApplicationService] = RecommendationApplicationService,
     vk_config=None,
+    vk_runtime_factory=None,
 ) -> FastAPI:
     """Create an independently testable M2 app, optionally with an injected service."""
-    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+    @asynccontextmanager
+    async def lifespan(application: FastAPI):
+        controller = None
+        if application.state.vk_config is not None:
+            from recommendations.vk.runtime import VKRuntimeController
+            controller = (vk_runtime_factory or VKRuntimeController)(application.state.vk_config)
+            await controller.start()
+            application.state.vk_runtime = {"config": application.state.vk_config, "storage": controller.storage, "controller": controller}
+        try:
+            yield
+        finally:
+            if controller is not None:
+                await controller.stop()
+                application.state.vk_runtime = None
+    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     app.state.service = service
     app.state.configuration_unavailable = False
     if service is None:
@@ -64,10 +80,11 @@ def create_app(
     if vk_config is None:
         from recommendations.vk.config import VKRuntimeConfig
         vk_config = VKRuntimeConfig.from_environment()
+    app.state.vk_config = vk_config
     app.state.vk_runtime = None
     if vk_config is not None:
-        from recommendations.vk.storage import VKStorage
-        app.state.vk_runtime = {"config": vk_config, "storage": VKStorage(vk_config.state_db_path, vk_config.claim_lease_seconds, vk_config.raw_payload_retention_seconds)}
+        # State and workers are deliberately opened only inside lifespan.
+        app.state.vk_runtime = {"config": vk_config}
 
     @app.middleware("http")
     async def request_metadata(request: Request, call_next: Callable) -> Response:

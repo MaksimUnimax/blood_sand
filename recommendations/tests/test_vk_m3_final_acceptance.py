@@ -15,6 +15,7 @@ from recommendations.vk.outbox import OutboxWorker
 from recommendations.vk.storage import VKStorage
 from recommendations.vk.vk_api import VKAPIClient, VKAPIResult, VKTransportUnknown
 from recommendations.vk.config import VKRuntimeConfig
+from recommendations.vk.storage import VKStorage
 
 
 FIXTURE = Path(__file__).parent / "fixtures/vk/staging/message_new.v5_199.sanitized.json"
@@ -40,7 +41,7 @@ class M3FinalAcceptanceTests(unittest.TestCase):
 
     def test_callback_durable_ack_and_failure_is_not_ok_or_secret_leak(self):
         config = VKRuntimeConfig(1, "token-private", "secret-private", "confirmation-private", self.path)
-        app = create_app(vk_config=config); storage = app.state.vk_runtime["storage"]
+        app = create_app(vk_config=config); storage = VKStorage(config.state_db_path); app.state.vk_runtime = {"config": config, "storage": storage}
         def post(payload):
             async def run():
                 async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test") as c:
@@ -58,7 +59,7 @@ class M3FinalAcceptanceTests(unittest.TestCase):
 
     def test_real_callback_to_worker_and_complete_local_bot_flow(self):
         config = VKRuntimeConfig(1, "token", "secret", "confirm", self.path)
-        app = create_app(vk_config=config); storage = app.state.vk_runtime["storage"]
+        app = create_app(vk_config=config); storage = VKStorage(config.state_db_path); app.state.vk_runtime = {"config": config, "storage": storage}
         def post(text, eid):
             payload=self.payload(text,eid); payload["secret"]="secret"
             async def run():

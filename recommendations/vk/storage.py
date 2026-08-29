@@ -17,10 +17,12 @@ def now() -> str:
 class VKStorage:
     """Short-lived SQLite connections make ASGI threads and worker processes safe."""
 
-    def __init__(self, path: str, claim_lease_seconds: int = 300, raw_payload_retention_seconds: int = 86400):
+    def __init__(self, path: str, claim_lease_seconds: int = 300, raw_payload_retention_seconds: int = 86400, session_retention_seconds: int = 86400, clock=None):
         self.path = path
         self.claim_lease_seconds = claim_lease_seconds
         self.raw_payload_retention_seconds = raw_payload_retention_seconds
+        self.session_retention_seconds = session_retention_seconds
+        self.clock = clock or (lambda: datetime.now(timezone.utc))
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         self.connection = self._connect()
         initialize(self.connection)
@@ -35,6 +37,12 @@ class VKStorage:
 
     def close(self):
         self.connection.close()
+
+    def _now(self) -> str:
+        return self.clock().astimezone(timezone.utc).isoformat()
+
+    def _expired(self, row) -> bool:
+        return bool(row and row["expires_at"] and row["expires_at"] <= self._now())
 
     def _run(self, fn):
         connection = self._connect()
@@ -88,7 +96,13 @@ class VKStorage:
         self._run(lambda c: c.execute("UPDATE vk_inbound_events SET status=?, normalized_payload_json=?, processed_at=?,last_error_detail=? WHERE id=?", (status, json.dumps(normalized, ensure_ascii=False) if normalized else None, now(), error, id)))
 
     def session(self, g, p):
-        return self._run(lambda c: c.execute("SELECT * FROM vk_bot_sessions WHERE vk_group_id=? AND peer_id=?", (g, p)).fetchone())
+        def run(c):
+            row = c.execute("SELECT * FROM vk_bot_sessions WHERE vk_group_id=? AND peer_id=?", (g, p)).fetchone()
+            if self._expired(row):
+                c.execute("DELETE FROM vk_bot_sessions WHERE vk_group_id=? AND peer_id=?", (g, p))
+                return None
+            return row
+        return self._run(run)
 
     def _after_session_write(self, connection) -> None:
         """Narrow failure-injection seam; production intentionally does nothing."""
@@ -101,10 +115,14 @@ class VKStorage:
             c.execute("BEGIN IMMEDIATE")
             try:
                 old = c.execute("SELECT * FROM vk_bot_sessions WHERE vk_group_id=? AND peer_id=?", (g, p)).fetchone()
+                if self._expired(old):
+                    old = None
                 vals = {"birth_day":None,"birth_month":None,"birth_year":None,"gender":None,"marketplace":None,"last_result_id":None}
                 if old: vals.update(dict(old))
                 vals.update(fields)
-                c.execute("INSERT INTO vk_bot_sessions(vk_group_id,peer_id,state,birth_day,birth_month,birth_year,gender,marketplace,last_result_id,state_version,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(vk_group_id,peer_id) DO UPDATE SET state=excluded.state,birth_day=excluded.birth_day,birth_month=excluded.birth_month,birth_year=excluded.birth_year,gender=excluded.gender,marketplace=excluded.marketplace,last_result_id=excluded.last_result_id,state_version=vk_bot_sessions.state_version+1,updated_at=excluded.updated_at", (g,p,state,vals['birth_day'],vals['birth_month'],vals['birth_year'],vals['gender'],vals['marketplace'],vals['last_result_id'],1,now()))
+                updated_at = self._now()
+                expires_at = (self.clock().astimezone(timezone.utc) + timedelta(seconds=self.session_retention_seconds)).isoformat()
+                c.execute("INSERT INTO vk_bot_sessions(vk_group_id,peer_id,state,birth_day,birth_month,birth_year,gender,marketplace,last_result_id,state_version,updated_at,expires_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(vk_group_id,peer_id) DO UPDATE SET state=excluded.state,birth_day=excluded.birth_day,birth_month=excluded.birth_month,birth_year=excluded.birth_year,gender=excluded.gender,marketplace=excluded.marketplace,last_result_id=excluded.last_result_id,state_version=vk_bot_sessions.state_version+1,updated_at=excluded.updated_at,expires_at=excluded.expires_at", (g,p,state,vals['birth_day'],vals['birth_month'],vals['birth_year'],vals['gender'],vals['marketplace'],vals['last_result_id'],1,updated_at,expires_at))
                 self._after_session_write(c)
                 rid = secrets.randbelow(2_000_000_000)+1
                 self._before_outbox_insert(c)

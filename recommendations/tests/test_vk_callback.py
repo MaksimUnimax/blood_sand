@@ -4,12 +4,13 @@ import httpx
 
 from recommendations.api.app import create_app
 from recommendations.vk.config import VKRuntimeConfig
+from recommendations.vk.storage import VKStorage
 
 FIXTURE = Path(__file__).parent / "fixtures/vk/staging/message_new.v5_199.sanitized.json"
 
 class CallbackHTTPTests(unittest.TestCase):
  def setUp(self):
-  self.tmp=tempfile.TemporaryDirectory(); self.config=VKRuntimeConfig(1,"test-token","test-secret","test-confirmation",str(Path(self.tmp.name)/"state.sqlite"),callback_max_body_bytes=1000);self.app=create_app(vk_config=self.config)
+  self.tmp=tempfile.TemporaryDirectory(); self.config=VKRuntimeConfig(1,"test-token","test-secret","test-confirmation",str(Path(self.tmp.name)/"state.sqlite"),callback_max_body_bytes=1000);self.app=create_app(vk_config=self.config); self.app.state.vk_runtime={"config":self.config,"storage":VKStorage(self.config.state_db_path)}
  def tearDown(self): self.app.state.vk_runtime['storage'].close();self.tmp.cleanup()
  def request(self, content, headers=None):
   async def run():
@@ -37,4 +38,3 @@ class CallbackHTTPTests(unittest.TestCase):
   raw=self.rows()[0]['raw_payload_json'];self.assertNotIn('test-secret',raw);self.assertNotIn('access_token',raw);self.assertNotIn('confirmation',raw)
  def test_unsupported_event_is_durable_then_ignored(self):
   p=self.event(type='wall_post_new',object={});self.assertEqual(self.request(json.dumps(p)).text,'ok'); row=self.rows()[0];self.assertEqual(row['status'],'NEW')
-
