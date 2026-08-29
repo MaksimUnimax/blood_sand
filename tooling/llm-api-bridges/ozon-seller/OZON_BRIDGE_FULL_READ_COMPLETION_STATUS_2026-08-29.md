@@ -1,15 +1,15 @@
 # Ozon Bridge full-read completion — current status
 
 Date: 2026-08-29  
-Status authority after canonical B1 acceptance, full 463+48 operation-inventory acceptance, and canonical B1–B49 salvage acceptance.
+Status authority after canonical B1 acceptance, full 463+48 operation-inventory acceptance, canonical B1–B49 salvage acceptance, and Personal Data gate audit acceptance.
 
 ## Current roadmap
 
 1. ✅ Закрепить исправленную базу и formal acceptance canonical B1.
 2. ✅ Построить master-checklist всех 463 Seller + 48 Performance операций.
 3. ✅ Восстановить полезный Seller read-набор из принятой работы B1–B49 по правильным разделам.
-4. 🔄 Проверить существующий Personal Data gate на всём Seller read-наборе.
-5. ⬜ Реализовать все допустимые Seller read-workflow/report/document операции.
+4. ✅ Проверить существующий Personal Data gate на принятом Seller read-наборе.
+5. 🔄 Реализовать и классифицировать все допустимые Seller read-workflow/report/document операции.
 6. ⬜ Завершить Performance API coverage по всем 48 операциям.
 7. ⬜ Финальная полнота Seller: 463/463 имеют окончательное решение.
 8. ⬜ Финальная полнота Performance: 48/48 имеют окончательное решение.
@@ -117,7 +117,7 @@ Accepted B0 already defines the Personal Data gate:
 
 Accepted B9 keeps `review_list`, `review_info`, and `question_list` behind that existing gate. Accepted B17 preserves the same gate for extended review/question reads. These implementations remain valid salvage/reference material.
 
-Step 4 verifies that every Seller operation that needs Personal Data is correctly attached to this existing gate. Do not invent a replacement privacy mechanism merely because an operation can return personal data.
+Step 4 confirmed that the current accepted Personal Data reads are correctly attached to this existing registry-driven gate, that the gate executes before provider transport, and that the accepted no-replay / explicit-resubmit semantics are preserved. Do not invent a replacement privacy mechanism merely because an operation can return personal data.
 
 ### Performance correction
 
@@ -189,26 +189,84 @@ Step 3 does not claim Seller 463/463 completion or Performance 48/48 completion.
 
 No fresh Seller or Performance business API requests were made for salvage or acceptance.
 
-## Step 4 — current action
+## Step 4 — closed
 
-Current task: audit the already accepted B0 Personal Data gate across the Seller read surface, beginning with the accepted Step 3 exact candidate and controlling the audit against the 463-row Seller master checklist.
+Formal acceptance:
 
-The gate behavior itself is not being redesigned. The accepted behavior to preserve is:
+`validation/OZON_PERSONAL_DATA_GATE_AUDIT_ACCEPTED_2026-08-29.md`
 
-- Personal Data OFF blocks before provider execution;
-- blocked execution produces zero physical business requests;
-- enabling Personal Data does not replay a blocked command;
-- explicit resubmit is required after enabling;
-- only that explicit resubmit may execute an otherwise allowed read.
+Final cross-platform audit authority:
 
-Audit requirements:
+- workflow run `33241158626`: SUCCESS;
+- audit head `3b8f07461a7624ac3e08da024ee5875b9f6f56d6`;
+- Linux audit: PASS;
+- Windows audit: PASS;
+- evidence commit `2008198a64d8144f7a45ff540eeed2977e968ba1`;
+- formal acceptance commit `0f61335978cbb6c74db0a3226ed4a68988de57bb`.
 
-- identify every accepted/salvaged Seller read whose existing metadata requires the Personal Data gate;
-- verify that the runtime gate is actually attached before provider execution for those reads;
-- verify that reads not requiring the Personal Data gate are not arbitrarily forced behind a new mechanism;
-- preserve accepted B9/B17 review/question behavior;
-- map the audit result back to Seller `method + path` rows in the 463-row master checklist;
-- distinguish `personal_data_gate` decisions from safe-projection/redaction behavior rather than conflating them;
-- record any uncovered operation as an explicit Step 4 audit gap for later classification, not as a new B50/B51 stage.
+Generated evidence:
 
-No fresh Seller or Performance business API requests are authorized for this audit.
+- `validation/OZON_PERSONAL_DATA_GATE_AUDIT_2026-08-29.json`;
+- `validation/OZON_PERSONAL_DATA_GATE_AUDIT_2026-08-29.csv`;
+- `validation/OZON_PERSONAL_DATA_GATE_AUDIT_SUMMARY_2026-08-29.md`.
+
+Accepted Step 4 result:
+
+- Seller master inventory: 463 operations;
+- accepted Step 3 Seller reads: 191;
+- `operator_personal_data_gate`: 10 accepted reads;
+- `safe_projection` without the operator gate: 181 accepted reads;
+- 272 Seller rows do not yet have an accepted Step 3 alias and remain explicitly pending later exact-schema privacy classification;
+- all 191 accepted Seller reads map one-to-one to current Seller `method + path` rows;
+- Personal Data gating is registry-driven, not alias-hardcoded;
+- local policy executes before capability planning, query planning and provider execution;
+- blocked Personal Data reads become local `policy_error` results with `external_request_executed:false`;
+- saving Personal Data ON/OFF does not execute or replay provider work;
+- accepted B9/B17 review/question behavior remains behind the same B0 gate;
+- `safe_projection` and `operator_personal_data_gate` remain distinct controls.
+
+Accepted gated operation set:
+
+- `fbs_posting_list` — `POST /v4/posting/fbs/list`;
+- `fbs_unfulfilled_list` — `POST /v4/posting/fbs/unfulfilled/list`;
+- `posting_fbs_get` — `POST /v3/posting/fbs/get`;
+- `rfbs_returns_list` — `POST /v2/returns/rfbs/list`;
+- `review_list` — `POST /v2/review/list`;
+- `review_info` — `POST /v2/review/info`;
+- `review_comment_list` — `POST /v1/review/comment/list`;
+- `question_list` — `POST /v1/question/list`;
+- `question_answer_list` — `POST /v1/question/answer/list`;
+- `question_info` — `POST /v1/question/info`.
+
+The prior Windows-only CI failure was an audit-tool UTF-8 decoding portability issue (`cp1252` default). It was fixed in workflow validation only; no production code or runtime semantics changed.
+
+No fresh Seller or Performance business API requests were made for Step 4.
+
+## Step 5 — current action
+
+Current task: identify, classify and implement every admissible Seller read workflow/report/document operation that cannot be represented safely as an ordinary one-request JSON read.
+
+The 463-row Seller master checklist remains the controlling inventory. Step 5 must not create B50/B51/etc. stages.
+
+Step 5 must explicitly distinguish at least:
+
+- direct document/file reads where one fixed request returns a document or download result;
+- report-list/report-info/status reads that are ordinary reads of already-existing report state;
+- report creation/generation operations that cause server-side side effects and therefore are not ordinary reads;
+- async workflows that require a later explicit status/result command rather than hidden polling;
+- multi-step document/report retrieval where each physical request must remain visible and separately authorized;
+- deprecated/obsolete workflow endpoints;
+- mutation/write operations that must receive a terminal non-read decision rather than being smuggled into read coverage.
+
+Required Step 5 invariants:
+
+- no hidden fanout;
+- no automatic polling;
+- no automatic retry that creates additional business operations;
+- no implicit report creation from a read command;
+- no mutation side effects under a read alias;
+- one explicit command must map to a deterministic, auditable physical request plan;
+- Personal Data decisions from Step 4 remain preserved;
+- final Step 5 decisions map back to exact Seller `method + path` rows in the 463-row master checklist.
+
+No fresh Seller or Performance business API requests are authorized for Step 5 research or deterministic validation.
