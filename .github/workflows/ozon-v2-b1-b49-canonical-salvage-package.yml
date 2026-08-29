@@ -1,0 +1,154 @@
+name: Ozon V2 B1-B49 canonical salvage package
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-v2-b1-b49-canonical-salvage-package.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build-verify-and-commit-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair authority with all refs
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Rebuild validated canonical salvage candidate
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$v/materialize_patch_v2_b1_stocks_warehouse_candidate.py" --repo-root . --work-root /tmp/current-b1-work --out /tmp/current-b1
+          node "$v/PATCH_V2_B1_STOCKS_WAREHOUSE_REGRESSION_2026-08-29.mjs" /tmp/current-b1
+
+          B49=59ce0cedf93e409f5988b16d5b569b4a5f229b1b
+          test "$(git rev-parse "$B49")" = "$B49"
+          git worktree add --detach /tmp/old-b49-repo "$B49"
+          hv=/tmp/old-b49-repo/tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$hv/materialize_patch_b49_fbs_posting_timeslot_change_restrictions_candidate.py" \
+            --repo-root /tmp/old-b49-repo --work-root /tmp/old-b49-work --out /tmp/old-b49
+          node "$hv/PATCH_B49_FBS_POSTING_TIMESLOT_CHANGE_RESTRICTIONS_REGRESSION_2026-08-28.mjs" /tmp/old-b49
+          python3 "$hv/materialize_patch_b0_full_read_core_candidate.py" /tmp/old-b49-repo /tmp/accepted-b0
+
+          python3 "$v/build_v2_b1_b49_canonical_salvage_candidate.py" \
+            --b0 /tmp/accepted-b0 --canonical-b1 /tmp/current-b1 --historical-b49 /tmp/old-b49 --out /tmp/canonical-salvage
+          python3 "$v/repair_v2_b1_b49_missing_salvage_records.py" \
+            --candidate /tmp/canonical-salvage --canonical-b1 /tmp/current-b1 --historical-b49 /tmp/old-b49
+          python3 "$v/repair_v2_b1_b49_remaining_historical_entitlements.py" \
+            --candidate /tmp/canonical-salvage --canonical-b1 /tmp/current-b1 --historical-b49 /tmp/old-b49
+          node "$v/V2_B1_B49_CANONICAL_SALVAGE_REGRESSION_2026-08-29.mjs" \
+            /tmp/current-b1 /tmp/old-b49 /tmp/canonical-salvage "$v/OZON_B1_B49_OPERATION_SALVAGE_MANIFEST_2026-08-29.json"
+          find /tmp/canonical-salvage -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Build deterministic patch transport and manifest
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          rm -rf /tmp/patch-repo
+          mkdir /tmp/patch-repo
+          cp -a /tmp/current-b1/. /tmp/patch-repo/
+          cd /tmp/patch-repo
+          git init -q
+          git config user.email package@example.invalid
+          git config user.name package
+          git add .
+          git commit -qm base
+          cp /tmp/canonical-salvage/shared/ozon_contract.js shared/ozon_contract.js
+          cp /tmp/canonical-salvage/shared/ozon_entitlements.js shared/ozon_entitlements.js
+          cp /tmp/canonical-salvage/shared/ozon_operation_registry.js shared/ozon_operation_registry.js
+          git diff --binary --no-renames HEAD -- \
+            shared/ozon_contract.js shared/ozon_entitlements.js shared/ozon_operation_registry.js > /tmp/canonical-salvage.patch
+          cd "$GITHUB_WORKSPACE"
+          python3 - <<'PY'
+          import gzip,hashlib,json
+          from pathlib import Path
+
+          def sha(b): return hashlib.sha256(b).hexdigest()
+          raw=Path('/tmp/canonical-salvage.patch').read_bytes()
+          assert len(raw)==332186, len(raw)
+          assert sha(raw)=='6f81a335f13b1a2a673763588e8aca85b1284598ccd6e267ca14beecca02d0bc', sha(raw)
+          v=Path('tooling/llm-api-bridges/ozon-seller/validation')
+          gz_path=v/'PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29.patch.gz'
+          with gz_path.open('wb') as f:
+              with gzip.GzipFile(filename='',mode='wb',fileobj=f,mtime=0) as g: g.write(raw)
+          gz=gz_path.read_bytes()
+          assert len(gz)==37278, len(gz)
+          assert sha(gz)=='363724a309deb6a03b04c53131108d985e02863f42ada158d0129acd4e8c6c4b', sha(gz)
+
+          root=Path('/tmp/canonical-salvage')
+          files=sorted((p for p in root.rglob('*') if p.is_file()), key=lambda p:p.relative_to(root).as_posix())
+          lines=[]
+          for p in files:
+              rel=p.relative_to(root).as_posix(); lines.append(f'{rel}\0{sha(p.read_bytes())}\n')
+          tree=sha(''.join(lines).encode())
+          assert tree=='ae3f53084d7a9aff5de820503a44b2875ab0c63c6ffc14bf72d941e8d0dab24e'
+          changed={rel:sha((root/rel).read_bytes()) for rel in [
+              'shared/ozon_contract.js','shared/ozon_entitlements.js','shared/ozon_operation_registry.js']}
+          assert changed=={
+              'shared/ozon_contract.js':'18dde6b56894bcd3d7f3ad3a597d4f7f3dc16d0464ba4078f6122aecf32699c4',
+              'shared/ozon_entitlements.js':'ff53866ce2b2c33a1e270d9c50371641a55bac63d4d02b79f5f3d8fcd1b890f8',
+              'shared/ozon_operation_registry.js':'e2fb7e8437a34ffa345825ee4cac9547cbcdfd3f14bb3b42289d9a57f5eb9cdb'}
+          manifest={
+              'schema':'ozon-v2-b1-b49-canonical-salvage-package-v1',
+              'date':'2026-08-29',
+              'base':{
+                  'authority':'accepted_corrected_canonical_b1',
+                  'production_tree_sha256':'c007f650cb46c0575561532d11a2aa4355f650dfb37be4396c6e8065c1f3276f'},
+              'historical_authority':{
+                  'accepted_b49_commit':'59ce0cedf93e409f5988b16d5b569b4a5f229b1b'},
+              'patch':{
+                  'file':'PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29.patch.gz',
+                  'gzip_bytes':len(gz),'gzip_sha256':sha(gz),
+                  'raw_bytes':len(raw),'raw_sha256':sha(raw)},
+              'candidate':{
+                  'production_files':len(files),'production_js_files':sum(p.suffix=='.js' for p in files),
+                  'production_tree_sha256':tree,'changed_core_sha256':changed},
+              'salvage':{
+                  'canonical_aliases_preserved':42,
+                  'historical_seller_aliases':191,
+                  'historical_seller_aliases_salvaged_beyond_canonical':153,
+                  'historical_performance_aliases_preserved':10,
+                  'candidate_registry_aliases':201,
+                  'rating_aliases_reclassified':4,
+                  'legacy_seller_health_cluster_removed':True},
+              'validated_source':{
+                  'workflow_run':33239516701,
+                  'artifact_id':9710920643,
+                  'artifact_zip_sha256':'46ef1125860c810059783daccccc4318569949d373d750191c0390263ab0d80d'}
+          }
+          assert manifest['candidate']['production_files']==21
+          assert manifest['candidate']['production_js_files']==18
+          (v/'PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29_MANIFEST.json').write_text(
+              json.dumps(manifest,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print('V2_B1_B49_DETERMINISTIC_RAW_PATCH_IDENTITY_PASS')
+          print('V2_B1_B49_DETERMINISTIC_GZIP_PATCH_IDENTITY_PASS')
+          print('V2_B1_B49_PACKAGE_MANIFEST_GENERATION_PASS')
+          PY
+
+      - name: Prove packaged materializer reproduces candidate
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$v/materialize_v2_b1_b49_canonical_salvage_candidate.py" \
+            --repo-root . --work-root /tmp/package-proof-work --out /tmp/package-proof
+          diff -qr /tmp/package-proof /tmp/canonical-salvage
+          find /tmp/package-proof -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+          echo V2_B1_B49_PACKAGE_BYTE_REPRODUCTION_PASS
+
+      - name: Commit deterministic package to repair authority
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f "$v/PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29.patch.gz"
+          git add "$v/PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29_MANIFEST.json"
+          git diff --cached --quiet && { echo 'package already committed'; exit 0; }
+          git commit -m 'validation(ozon): package exact B1-B49 salvage candidate'
+          git push origin HEAD:repair/ozon-v2-b1-stocks-warehouse-2026-08-29
