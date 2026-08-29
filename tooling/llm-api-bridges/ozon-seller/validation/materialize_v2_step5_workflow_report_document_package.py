@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import base64
 import gzip
 import hashlib
 import json
@@ -69,19 +70,52 @@ def main() -> None:
     out = Path(args.out).resolve()
     validation = repo / "tooling/llm-api-bridges/ozon-seller/validation"
     base_materializer = validation / "materialize_v2_b1_b49_canonical_salvage_candidate.py"
-    patch_path = validation / "PATCH_V2_STEP5_WORKFLOW_REPORT_DOCUMENT_2026-08-29.patch.gz"
-    manifest_path = validation / "PATCH_V2_STEP5_WORKFLOW_REPORT_DOCUMENT_2026-08-29_MANIFEST.json"
+    manifest_path = validation / "PATCH_STEP5_WORKFLOW_REPORT_DOCUMENT_2026-08-29_MANIFEST.json"
 
     if not base_materializer.is_file():
         raise RuntimeError(f"missing Step3 materializer: {base_materializer}")
-    if not patch_path.is_file() or not manifest_path.is_file():
-        raise RuntimeError("missing Step5 package transport or manifest")
+    if not manifest_path.is_file():
+        raise RuntimeError(f"missing Step5 package manifest: {manifest_path}")
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    expected_raw = manifest["raw_patch_sha256"]
-    expected_gzip = manifest["gzip_patch_sha256"]
-    if manifest.get("base_tree_sha256") != BASE_TREE or manifest.get("final_tree_sha256") != FINAL_TREE:
-        raise RuntimeError("Step5 package manifest tree identities mismatch")
+    if manifest.get("schema") != "OZON_STEP5_WORKFLOW_REPORT_DOCUMENT_PATCH_PACKAGE_V1":
+        raise RuntimeError("unexpected Step5 package manifest schema")
+    if manifest["base"]["production_tree_sha256"] != BASE_TREE:
+        raise RuntimeError("Step5 package manifest base tree mismatch")
+    if manifest["candidate"]["production_tree_sha256"] != FINAL_TREE:
+        raise RuntimeError("Step5 package manifest final tree mismatch")
+    if manifest["candidate"]["production_files"] != EXPECTED_FILES or manifest["candidate"]["javascript_files"] != EXPECTED_JS:
+        raise RuntimeError("Step5 package manifest production counts mismatch")
+    if manifest["changed_production_files"] != EXPECTED_CHANGED_HASHES:
+        raise RuntimeError("Step5 package manifest changed-file identities mismatch")
+
+    transport = manifest["transport"]
+    transport_path = validation / transport["file"]
+    if not transport_path.is_file():
+        raise RuntimeError(f"missing Step5 base64 patch transport: {transport_path}")
+    b64_bytes = transport_path.read_bytes()
+    if len(b64_bytes) != transport["base64_text_bytes"]:
+        raise RuntimeError("Step5 base64 transport byte count mismatch")
+    if sha(b64_bytes) != transport["base64_text_sha256"]:
+        raise RuntimeError("Step5 base64 transport SHA mismatch")
+    print("STEP5_PACKAGE_BASE64_TRANSPORT_IDENTITY_PASS")
+
+    try:
+        gz = base64.b64decode(b64_bytes.strip(), validate=True)
+    except Exception as exc:
+        raise RuntimeError("Step5 base64 transport decode failed") from exc
+    if len(gz) != transport["decoded_gzip_bytes"]:
+        raise RuntimeError("Step5 decoded gzip byte count mismatch")
+    if sha(gz) != transport["decoded_gzip_sha256"]:
+        raise RuntimeError("Step5 decoded gzip SHA mismatch")
+    print("STEP5_PACKAGE_GZIP_TRANSPORT_IDENTITY_PASS")
+
+    raw = gzip.decompress(gz)
+    if len(raw) != transport["raw_patch_bytes"]:
+        raise RuntimeError("Step5 raw patch byte count mismatch")
+    if sha(raw) != transport["raw_patch_sha256"]:
+        raise RuntimeError("Step5 raw patch SHA mismatch")
+    print("STEP5_PACKAGE_RAW_PATCH_IDENTITY_PASS")
 
     if work.exists():
         shutil.rmtree(work)
@@ -97,14 +131,6 @@ def main() -> None:
     if tree_digest(base) != BASE_TREE:
         raise RuntimeError("Step3 base tree identity mismatch")
     print("STEP5_PACKAGE_BASE_EXACT_STEP3_TREE_IDENTITY_PASS")
-
-    gz = patch_path.read_bytes()
-    if sha(gz) != expected_gzip:
-        raise RuntimeError("Step5 package gzip SHA mismatch")
-    raw = gzip.decompress(gz)
-    if sha(raw) != expected_raw:
-        raise RuntimeError("Step5 package raw SHA mismatch")
-    print("STEP5_PACKAGE_PATCH_TRANSPORT_IDENTITY_PASS")
 
     if out.exists():
         shutil.rmtree(out)
