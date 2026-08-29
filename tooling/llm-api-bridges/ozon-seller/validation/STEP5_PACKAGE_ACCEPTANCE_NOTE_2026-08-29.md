@@ -1,1 +1,0 @@
-Temporary validation note: the formal acceptance file must only be created after a clean Linux + Windows exact-package run and independent artifact verification. This note is not an acceptance marker and does not advance the roadmap state.
