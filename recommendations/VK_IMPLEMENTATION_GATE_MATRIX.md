@@ -605,3 +605,12 @@ Decision marker:
 ```text
 KIP_VK_IMPLEMENTATION_GATE_MATRIX_V5
 ```
+## M3 calendar handoff (2026-08-29)
+
+| Gate | State |
+|---|---|
+| M3 calendar architecture | PASS |
+| backend code | PASS (local implementation) |
+| frontend code | PASS (build/test) |
+| static staging deployment | BLOCKED pending controlled nginx deployment |
+| live open_app | BLOCKED_PENDING_PROTECTED_KEY_AND_OPEN_APP_OWNER_ID |

@@ -32,7 +32,8 @@ class VKRuntimeController:
         self.storage.recover_stale_claims()
         self.http_client = httpx.Client(timeout=10)
         api = self._api_client or VKAPIClient(self.config, self.http_client)
-        orchestrator = BotOrchestrator(self.storage, self._service_factory())
+        from .config import VKMiniAppConfig
+        orchestrator = BotOrchestrator(self.storage, self._service_factory(), VKMiniAppConfig.from_environment())
         self.inbound_worker = InboundWorker(self.storage, orchestrator)
         self.outbox_worker = OutboxWorker(self.storage, api, self.config.retry_delay_seconds)
         self.tasks = [asyncio.create_task(self._loop("inbound", self.inbound_worker), name="vk-inbound-worker"), asyncio.create_task(self._loop("outbox", self.outbox_worker), name="vk-outbox-worker")]

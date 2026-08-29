@@ -2,21 +2,27 @@ from __future__ import annotations
 from recommendations.application import ApplicationRecommendationInput, RecommendationApplicationService
 from .bot_parser import is_restart, parse_dates, parse_gender, parse_keyboard_payload
 from .keyboard import gender_keyboard, restart_keyboard
+from .config import VKMiniAppConfig
 from .presenter import DATE_CORRECTION, DATE_PROMPT, GENDER_PROMPT, present
 class BotOrchestrator:
- def __init__(self,storage,service:RecommendationApplicationService): self.storage,self.service=storage,service
+ def __init__(self,storage,service:RecommendationApplicationService,miniapp_config=None): self.storage,self.service,self.miniapp_config=storage,service,miniapp_config or VKMiniAppConfig()
+ def _date_prompt(self,event_id,event,fields,text):
+  config=self.miniapp_config
+  if config.enabled and event.from_id is not None:
+   self.storage.transition_and_enqueue_calendar(event_id,event.group_id,event.peer_id,event.from_id,fields,text,app_id=config.app_id,owner_id=config.owner_id,ttl=config.handoff_ttl_seconds)
+  else:self.storage.transition_and_enqueue(event_id,event.group_id,event.peer_id,'WAITING_DATE',fields,text)
  def process(self,event_id,event):
   if event.event_type!='message_new' or event.peer_id is None: return 'IGNORED'
   old=self.storage.session(event.group_id,event.peer_id); state=old['state'] if old else 'START'; text=event.text or ''
   present_payload = event.payload is not None
   action = parse_keyboard_payload(event.payload, text) if present_payload else None
   if state=='RESOLVED' and ((action == ('restart', None)) if present_payload else is_restart(text)):
-   self.storage.transition_and_enqueue(event_id,event.group_id,event.peer_id,'WAITING_DATE',{'birth_day':None,'birth_month':None,'birth_year':None,'gender':None,'last_result_id':None},DATE_PROMPT);return 'PROCESSED'
+   self._date_prompt(event_id,event,{'birth_day':None,'birth_month':None,'birth_year':None,'gender':None,'last_result_id':None},DATE_PROMPT);return 'PROCESSED'
   if state in {'START','WAITING_DATE'}:
    dates=parse_dates(text)
    if len(dates)==1:
     d=dates[0];self.storage.transition_and_enqueue(event_id,event.group_id,event.peer_id,'WAITING_GENDER',{'birth_day':d.day,'birth_month':d.month,'birth_year':d.year,'gender':None},GENDER_PROMPT,gender_keyboard())
-   else:self.storage.transition_and_enqueue(event_id,event.group_id,event.peer_id,'WAITING_DATE',{},DATE_PROMPT if state=='START' else DATE_CORRECTION)
+   else:self._date_prompt(event_id,event,{},DATE_PROMPT if state=='START' else DATE_CORRECTION)
    return 'PROCESSED'
   if state=='WAITING_GENDER':
    gender = action[1] if present_payload and action and action[0] == 'gender' else (parse_gender(text) if not present_payload else None)

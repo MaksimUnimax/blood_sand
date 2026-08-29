@@ -9,6 +9,35 @@ class VKConfigurationError(ValueError):
 
 
 @dataclass(frozen=True)
+class VKMiniAppConfig:
+    """Opt-in Mini App settings; deliberately separate from Bot credentials."""
+    enabled: bool = False
+    app_id: int = 54743026
+    owner_id: int | None = None
+    protected_key: str | None = None
+    handoff_secret: str | None = None
+    handoff_ttl_seconds: int = 600
+    session_ttl_seconds: int = 900
+    public_url: str | None = None
+
+    @classmethod
+    def from_environment(cls) -> "VKMiniAppConfig":
+        enabled = os.environ.get("KIP_VK_MINIAPP_ENABLED", "false").lower() in {"1", "true", "yes"}
+        raw = {name: os.environ.get("KIP_VK_MINIAPP_" + name) for name in ("APP_ID", "OWNER_ID", "PROTECTED_KEY", "HANDOFF_SECRET", "HANDOFF_TTL_SECONDS", "SESSION_TTL_SECONDS", "PUBLIC_URL")}
+        if not enabled:
+            return cls(enabled=False, app_id=int(raw["APP_ID"] or 54743026), handoff_ttl_seconds=int(raw["HANDOFF_TTL_SECONDS"] or 600), session_ttl_seconds=int(raw["SESSION_TTL_SECONDS"] or 900), public_url=raw["PUBLIC_URL"])
+        if any(not raw[name] for name in raw):
+            raise VKConfigurationError("enabled Mini App requires all Mini App security and identity values")
+        try:
+            app_id, owner_id, handoff_ttl, session_ttl = int(raw["APP_ID"]), int(raw["OWNER_ID"]), int(raw["HANDOFF_TTL_SECONDS"]), int(raw["SESSION_TTL_SECONDS"])
+        except ValueError as exc:
+            raise VKConfigurationError("Mini App identity and TTL values must be integers") from exc
+        if app_id != 54743026 or owner_id == 0 or handoff_ttl <= 0 or session_ttl <= 0:
+            raise VKConfigurationError("Mini App configuration is invalid")
+        return cls(True, app_id, owner_id, raw["PROTECTED_KEY"], raw["HANDOFF_SECRET"], handoff_ttl, session_ttl, raw["PUBLIC_URL"])
+
+
+@dataclass(frozen=True)
 class VKRuntimeConfig:
     group_id: int
     group_token: str

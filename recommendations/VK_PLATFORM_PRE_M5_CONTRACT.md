@@ -753,3 +753,8 @@ Decision marker:
 ```text
 KIP_VK_PLATFORM_PRE_M5_OFFICIAL_CONTRACT_V1
 ```
+## Current package reconciliation (2026-08-29)
+
+Frozen frontend versions: `@vkontakte/vk-bridge 3.0.2`, `@vkontakte/vkui
+8.3.0`, React 19.2.0, and Vite 6.2.4. No router or vk-miniapps-deploy package
+is installed for the single-screen calendar slice.

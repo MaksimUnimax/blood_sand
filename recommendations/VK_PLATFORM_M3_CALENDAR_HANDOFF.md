@@ -99,3 +99,25 @@ production HTTPS URLs. Report only these non-secret facts: `app_id`, app owner
 and bound-community identifiers, and approved staging/production origins/URLs.
 Place the protected key directly in the existing protected server secrets
 location; never paste it into chat or source control.
+## M3 calendar handoff implementation — 2026-08-29
+
+`VK_MINIAPP_APP_ID = 54743026` (owner-registered ID).  The backend uses a v3
+SQLite migration with SHA-256-only handoff/session persistence, a 600 second
+single-use handoff boundary, and 900 second Mini App sessions.  Raw handoff
+capabilities are permitted only inside a pending/retry open_app outbox keyboard
+and are scrubbed at terminal delivery; they are never long-term storage.
+
+The first UI adapter is `recommendations/miniapp`: VKUI + Bridge + React +
+Vite, with no Router and no recommendation business logic.  It preserves the
+original query string for verification, uses `window.location.hash` directly,
+and uses VKUI Calendar in single-date, `size="s"`, `enableTime={false}` mode.
+
+Official reconciliation: VKUI master package is 8.3.0; Bridge is pinned to
+3.0.2; create-vk-mini-app is 3.0.0. Router 1.8.6 was checked only as a
+compatibility reference and deliberately is not installed.  The older 8.4.0
+project statement was stale.
+
+`APP_AUTHOR_OWNER_ID` and `OPEN_APP_OWNER_ID` remain unresolved. They are not
+derived from the app ID, bot community ID, or each other. `VK_TS` has no
+established VK-required TTL here; staging policy is
+`SIGNED_LAUNCH_PLUS_10_MINUTE_SINGLE_USE_HANDOFF_BOUNDARY`.

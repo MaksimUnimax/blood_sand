@@ -14,6 +14,7 @@ from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
+from pydantic import BaseModel, ConfigDict
 
 from recommendations.application import ApplicationRecommendationInput, RecommendationApplicationService
 from recommendations.core import RecommendationCoreError, RecommendationInputError
@@ -51,6 +52,7 @@ def create_app(
     service: RecommendationApplicationService | None = None,
     service_factory: Callable[[], RecommendationApplicationService] = RecommendationApplicationService,
     vk_config=None,
+    miniapp_config=None,
     vk_runtime_factory=None,
 ) -> FastAPI:
     """Create an independently testable M2 app, optionally with an injected service."""
@@ -81,6 +83,10 @@ def create_app(
         from recommendations.vk.config import VKRuntimeConfig
         vk_config = VKRuntimeConfig.from_environment()
     app.state.vk_config = vk_config
+    if miniapp_config is None:
+        from recommendations.vk.config import VKMiniAppConfig
+        miniapp_config = VKMiniAppConfig.from_environment()
+    app.state.miniapp_config = miniapp_config
     app.state.vk_runtime = None
     if vk_config is not None:
         # State and workers are deliberately opened only inside lifespan.
@@ -175,6 +181,42 @@ def create_app(
         from recommendations.vk.callback import callback
         # Application decision: mount behind HTTPS only during later deployment.
         app.add_api_route("/internal/vk/callback", callback, methods=["POST"], include_in_schema=False)
+
+    class Bootstrap(BaseModel):
+        model_config=ConfigDict(extra='forbid',strict=True)
+        launch_params: str
+        handoff_token: str
+    class BirthDate(BaseModel):
+        model_config=ConfigDict(extra='forbid',strict=True)
+        birth_date: str
+
+    def mini_storage(request):
+        runtime=request.app.state.vk_runtime
+        if not runtime or not request.app.state.miniapp_config.enabled: raise APIError(503,'MINIAPP_DISABLED','Mini App is disabled.')
+        return runtime['storage']
+
+    @app.post('/vk-miniapp-api/v1/bootstrap')
+    async def mini_bootstrap(request: Request) -> Response:
+        model=Bootstrap.model_validate(json.loads((await _bounded_body(request)).decode('utf-8')))
+        config=request.app.state.miniapp_config; storage=mini_storage(request)
+        from recommendations.vk.miniapp import verify_launch, MiniAppError
+        try:
+            launch=verify_launch(model.launch_params,config.protected_key,config.app_id)
+            token=storage.bootstrap_miniapp(model.handoff_token,int(launch['vk_user_id']),config.app_id,config.session_ttl_seconds)
+        except (ValueError,MiniAppError,KeyError): raise APIError(403,'MINIAPP_AUTH_REJECTED','Mini App launch is not accepted.')
+        return ContractJSONResponse({'session_token':token,'expires_in':config.session_ttl_seconds,'purpose':'birth_date'})
+
+    @app.post('/vk-miniapp-api/v1/birth-date')
+    async def mini_birth_date(request: Request) -> Response:
+        auth=request.headers.get('authorization','');
+        if not auth.startswith('Bearer ') or not auth[7:]: raise APIError(401,'MINIAPP_AUTH_REJECTED','Mini App session is not accepted.')
+        model=BirthDate.model_validate(json.loads((await _bounded_body(request)).decode('utf-8')))
+        storage=mini_storage(request)
+        from recommendations.vk.presenter import GENDER_PROMPT
+        from recommendations.vk.keyboard import gender_keyboard
+        try: storage.submit_miniapp_birth_date(auth[7:],model.birth_date,GENDER_PROMPT,gender_keyboard())
+        except ValueError as exc: raise APIError(409,'MINIAPP_DATE_REJECTED','Birth date cannot be accepted.') from exc
+        return ContractJSONResponse({'status':'ok'})
 
     return app
 
