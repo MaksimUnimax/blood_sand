@@ -7,8 +7,8 @@ on:
     paths:
       - .github/workflows/ozon-step5-workflow-report-document-package.yml
       - tooling/llm-api-bridges/ozon-seller/validation/materialize_v2_step5_workflow_report_document_package.py
-      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_STEP5_WORKFLOW_REPORT_DOCUMENT_2026-08-29.patch.gz
-      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_STEP5_WORKFLOW_REPORT_DOCUMENT_2026-08-29_MANIFEST.json
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_STEP5_WORKFLOW_REPORT_DOCUMENT_2026-08-29.patch.gz.b64
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_STEP5_WORKFLOW_REPORT_DOCUMENT_2026-08-29_MANIFEST.json
       - tooling/llm-api-bridges/ozon-seller/validation/OZON_STEP5_WORKFLOW_REPORT_DOCUMENT_REGRESSION_2026-08-29.mjs
       - tooling/llm-api-bridges/ozon-seller/validation/OZON_STEP5_EXACT_DECISION_MATRIX_2026-08-29.json
   workflow_dispatch:
