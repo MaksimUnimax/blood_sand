@@ -1,0 +1,51 @@
+name: Ozon canonical V2 B1 stocks warehouse exact
+on:
+  push:
+    branches: [repair/ozon-v2-b1-stocks-warehouse-2026-08-29]
+    paths:
+      - .github/workflows/ozon-v2-b1-stocks-warehouse-exact.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_STOCKS_WAREHOUSE_2026-08-29.patch.gz
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_v2_b1_stocks_warehouse_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_STOCKS_WAREHOUSE_REGRESSION_2026-08-29.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_STOCKS_WAREHOUSE_CANDIDATE_EVIDENCE_2026-08-29.md
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_STOCKS_WAREHOUSE_CANDIDATE_MANIFEST_2026-08-29.md
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify canonical B1 patch transport identity
+        run: python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_STOCKS_WAREHOUSE_2026-08-29.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='e02d68c233067c258b3a115132296a4b25bdd1ab43ed061a030843fbbf475261';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='5485652cb41ea68d27285ba1678a23a4325037f1909426c933c60bdeabacf11f'"
+      - name: Materialize canonical V2 B1
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_v2_b1_stocks_warehouse_candidate.py --repo-root . --work-root /tmp/v2b1-work --out /tmp/v2b1-exact
+      - name: Verify accepted B0 base and canonical B1 gates
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B0_FULL_READ_CORE_REGRESSION_2026-08-25.mjs /tmp/v2b1-work/b0-base
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_STOCKS_WAREHOUSE_REGRESSION_2026-08-29.mjs /tmp/v2b1-exact
+          find /tmp/v2b1-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-v2-b1-stocks-warehouse-candidate
+          path: /tmp/v2b1-exact
+          if-no-files-found: error
+          retention-days: 3
+  windows-materialize:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --system core.longpaths true
+      - name: Verify canonical B1 patch transport identity
+        shell: pwsh
+        run: python -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_STOCKS_WAREHOUSE_2026-08-29.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='e02d68c233067c258b3a115132296a4b25bdd1ab43ed061a030843fbbf475261';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='5485652cb41ea68d27285ba1678a23a4325037f1909426c933c60bdeabacf11f'"
+      - name: Materialize canonical V2 B1
+        shell: pwsh
+        run: python tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_v2_b1_stocks_warehouse_candidate.py --repo-root . --work-root C:\v2b1w --out C:\v2b1o
+      - name: Verify accepted B0 base and canonical B1 gates
+        shell: pwsh
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B0_FULL_READ_CORE_REGRESSION_2026-08-25.mjs C:\v2b1w\b0-base; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_STOCKS_WAREHOUSE_REGRESSION_2026-08-29.mjs C:\v2b1o; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem C:\v2b1o -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE} }
