@@ -24,9 +24,12 @@
 
 Current VK documents:
 
+- `VK_PLATFORM_ARCHITECTURE.md` — обязательная pre-implementation архитектура VK Bot + Mini App, построенная по официальным VK contracts;
+- `VK_PLATFORM_OFFICIAL_CONTRACT_LEDGER.md` — реестр подтверждённых официальных VK contracts, разрешённых implementation surfaces и `UNRESOLVED` gaps;
 - `VK_UX_FLOW.md` — consumer Bot / Mini App UX authority;
 - `ROADMAP.md` — V2 implementation sequence;
-- `prompts/M1_1_CODEX_PROMPT.md` — current first implementation prompt for V2 machine-readable configuration.
+- `DATA_API_CONTRACT.md` — shared Recommendation API transport contract;
+- `prompts/M1_1_CODEX_PROMPT.md` — historical/current M1.1 implementation prompt only; не является VK platform authority.
 
 Hard boundary:
 
@@ -34,6 +37,25 @@ Hard boundary:
 VK Bot / Mini App do not own a separate recommendation matrix.
 They consume the same V2 Recommendation Core/API.
 ```
+
+Platform anti-guessing gate:
+
+```text
+нет подтверждённого VK platform contract
+→ не придумывать поля / event shape / error semantics / timeout / deep link
+→ пометить UNRESOLVED
+→ проверить официальную документацию VK или staging contract fixture
+→ только потом писать production functionality
+```
+
+Для любого M2/M3/M5/M6 implementation prompt обязательное чтение:
+
+```text
+VK_PLATFORM_ARCHITECTURE.md
+VK_PLATFORM_OFFICIAL_CONTRACT_LEDGER.md
+```
+
+Для M3/M5/M6 дополнительно обязательны соответствующие PRE-M3 / PRE-M5 / PRE-M6 gates из этих документов. `UNRESOLVED` item нельзя молча превращать в guessed implementation.
 
 Old VK/V1 examples or prompts that contain:
 
