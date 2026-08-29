@@ -1,0 +1,84 @@
+name: Ozon B1-B49 operation salvage map
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-b1-b49-salvage-map.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/build_ozon_b1_b49_salvage_manifest.py
+
+permissions:
+  contents: write
+
+jobs:
+  build-salvage-map:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair authority with all refs
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Materialize accepted canonical B1
+        run: |
+          set -euo pipefail
+          python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_STOCKS_WAREHOUSE_2026-08-29.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='e02d68c233067c258b3a115132296a4b25bdd1ab43ed061a030843fbbf475261';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='5485652cb41ea68d27285ba1678a23a4325037f1909426c933c60bdeabacf11f'"
+          python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_v2_b1_stocks_warehouse_candidate.py --repo-root . --work-root /tmp/current-b1-work --out /tmp/current-b1
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_STOCKS_WAREHOUSE_REGRESSION_2026-08-29.mjs /tmp/current-b1
+
+      - name: Materialize exact accepted historical B49 lineage
+        run: |
+          set -euo pipefail
+          B49=59ce0cedf93e409f5988b16d5b569b4a5f229b1b
+          test "$(git rev-parse "$B49")" = "$B49"
+          git worktree add --detach /tmp/old-b49-repo "$B49"
+          python3 /tmp/old-b49-repo/tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b49_fbs_posting_timeslot_change_restrictions_candidate.py \
+            --repo-root /tmp/old-b49-repo \
+            --work-root /tmp/old-b49-lineage \
+            --out /tmp/old-b49-exact
+          node /tmp/old-b49-repo/tooling/llm-api-bridges/ozon-seller/validation/PATCH_B49_FBS_POSTING_TIMESLOT_CHANGE_RESTRICTIONS_REGRESSION_2026-08-28.mjs /tmp/old-b49-exact
+          find /tmp/old-b49-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Build operation-level B1-B49 salvage manifest
+        run: |
+          set -euo pipefail
+          validation=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$validation/build_ozon_b1_b49_salvage_manifest.py" \
+            --repo-root . \
+            --lineage-work /tmp/old-b49-lineage \
+            --b49-out /tmp/old-b49-exact \
+            --canonical-b1 /tmp/current-b1 \
+            --master-checklist "$validation/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.json" \
+            --out-json "$validation/OZON_B1_B49_OPERATION_SALVAGE_MANIFEST_2026-08-29.json" \
+            --out-summary "$validation/OZON_B1_B49_OPERATION_SALVAGE_SUMMARY_2026-08-29.md"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('tooling/llm-api-bridges/ozon-seller/validation/OZON_B1_B49_OPERATION_SALVAGE_MANIFEST_2026-08-29.json')
+          x=json.loads(p.read_text(encoding='utf-8'))
+          assert x['counts']['historical_stages'] == 49
+          assert len(x['stages']) == 49
+          assert x['counts']['quarantined_orphan_branches'] == 2
+          assert len(x['orphan_branch_quarantine']) == 2
+          assert x['authorities']['accepted_b0_commit'] == '3795359959c965fc5cd1837b9a1c978493ae2ac5'
+          assert x['authorities']['accepted_historical_b49_tip'] == '59ce0cedf93e409f5988b16d5b569b4a5f229b1b'
+          print(json.dumps(x['counts'], sort_keys=True))
+          PY
+
+      - name: Commit generated salvage manifest
+        run: |
+          set -euo pipefail
+          validation=tooling/llm-api-bridges/ozon-seller/validation
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add \
+            "$validation/OZON_B1_B49_OPERATION_SALVAGE_MANIFEST_2026-08-29.json" \
+            "$validation/OZON_B1_B49_OPERATION_SALVAGE_SUMMARY_2026-08-29.md"
+          if git diff --cached --quiet; then
+            echo "Salvage manifest unchanged"
+            exit 0
+          fi
+          git commit -m "validation(ozon): generate B1-B49 operation salvage map"
+          git push origin HEAD:repair/ozon-v2-b1-stocks-warehouse-2026-08-29
