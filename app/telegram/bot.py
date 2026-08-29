@@ -13,6 +13,7 @@ from app.telegram.edge import TelegramEdge, Operation, Outcome
 
 
 OZON_BUTTON = '➕ Отправить вопрос'
+CHECK_QUESTIONS_BUTTON = '🔎 Проверить вопросы'
 
 
 class OperatorBot:
@@ -49,7 +50,7 @@ class OperatorBot:
     @staticmethod
     def main_menu():
         return ReplyKeyboardMarkup(
-            [[OZON_BUTTON]],
+            [[OZON_BUTTON], [CHECK_QUESTIONS_BUTTON]],
             resize_keyboard=True,
             is_persistent=True,
             one_time_keyboard=False,
@@ -145,7 +146,7 @@ class OperatorBot:
                 return False
         return True
 
-    async def show_question(self, message, qid):
+    async def show_question(self, message, qid, force_initial=False):
         q = await self.service.repo.get_question(qid)
         revision = None
         active = await self.service.repo.active_codex_profile()
@@ -170,6 +171,18 @@ class OperatorBot:
             cards = render.split_card(q, f'Состояние: {q["status"]}\n🟢 Сейчас активен: {active}')
         if q['status'] == 'REVIEW':
             await self.deliver_review(message, q)
+        elif q['status'] == 'NEW' and force_initial:
+            first = None
+            for i, text in enumerate(cards):
+                outcome = await self._reply(message, text, reply_markup=self.buttons(q) if i == 0 else None)
+                if outcome.outcome is not Outcome.SUCCESS:
+                    await self.service.repo.record_delivery_failure(qid, 'INITIAL_CARD', outcome.outcome.value, str(outcome.error))
+                    return False
+                if first is None:
+                    first = outcome.value.message_id
+            await self.service.repo.persist_question_message_id(qid, first)
+            await self.service.repo.clear_delivery_failure(qid, 'INITIAL_CARD')
+            return True
         else:
             await self.cards(message, cards, self.buttons(q, revision=revision), qid,
                              operation='CODEX_RUNNING_CARD' if q['status'] == 'CODEX_RUNNING' else 'STATUS_CARD')
@@ -199,6 +212,20 @@ class OperatorBot:
             reply_markup=self.main_menu(),
         )
 
+    async def check_questions(self, u, c=None):
+        if await self._denied(u):
+            return
+        try:
+            questions = await self.service.check_wildberries_unanswered()
+        except Exception:
+            await self._reply(u.message, 'Проверка вопросов WB не удалась.', reply_markup=self.main_menu())
+            return
+        if not questions:
+            await self._reply(u.message, 'Неотвеченных вопросов WB нет.', reply_markup=self.main_menu())
+            return
+        for question in questions:
+            await self.show_question(u.message, question['id'], force_initial=True)
+
     async def command(self, u, c):
         if await self._denied(u):
             return
@@ -222,12 +249,7 @@ class OperatorBot:
             active = await self.service.repo.active_codex_profile()
             await self._reply(u.message, f'🤖 CODEX\nАктивен: {active}\nСмените профиль из меню конкретного вопроса.', reply_markup=self.main_menu())
         elif cmd == '/questions':
-            rows = await self.service.repo.list_open_questions()
-            await self._reply(
-                u.message,
-                '\n'.join(f"{q['public_id']} · {q['marketplace']} · {q['status']}" for q in rows) or 'Open questions: 0',
-                reply_markup=self.main_menu(),
-            )
+            await self.check_questions(u, c)
         elif cmd == '/errors':
             rows = await self.service.repo.recent_errors()
             await self._reply(
@@ -463,6 +485,10 @@ class OperatorBot:
             MessageHandler(
                 filters.TEXT & ~filters.COMMAND & filters.Regex(r'^➕ Отправить вопрос$'),
                 lambda u, c: self._tracked(self.begin_ozon, u, c),
+            ),
+            MessageHandler(
+                filters.TEXT & ~filters.COMMAND & filters.Regex(r'^🔎 Проверить вопросы$'),
+                lambda u, c: self._tracked(self.check_questions, u, c),
             ),
             MessageHandler(
                 filters.TEXT & ~filters.COMMAND,

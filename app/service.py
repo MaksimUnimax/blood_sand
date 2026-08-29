@@ -38,6 +38,26 @@ class QuestionService:
             await self.repo.clear_delivery_failure(qid, 'INITIAL_CARD')
         return bool(mid)
 
+    async def check_wildberries_unanswered(self):
+        """Provider-authoritative WB scan used only by the operator recovery path."""
+        adapter = self.adapters.get('wildberries')
+        if adapter is None:
+            raise RuntimeError('Wildberries question check is unavailable')
+        try:
+            rows = await adapter.fetch_unanswered_questions()
+        except Exception as exc:
+            await self.repo.record_error('wildberries', 'MANUAL_QUESTION_CHECK', str(exc))
+            raise
+        questions = []
+        for raw in rows:
+            question, _new = await self.repo.insert_question(raw)
+            # INSERT OR IGNORE leaves SQLite in an implicit transaction when
+            # the identity already exists; finish that read before the bounded
+            # reconciliation transaction below.
+            await self.repo.db.commit()
+            questions.append(await self.repo.recover_provider_unanswered(question['id']))
+        return questions
+
     async def manual(self, qid, prompt_id=None):
         return await self.begin_manual(qid)
 

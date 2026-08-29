@@ -84,7 +84,9 @@ async def test_operator_menu_registers_only_primary_question_action_for_operator
     assert len(calls) == 2
     commands = calls[0][1]
     scope = calls[0][2]
-    assert [(x.command, x.description) for x in commands] == [('ozon', '➕ Отправить вопрос')]
+    assert [(x.command, x.description) for x in commands] == [
+        ('ozon', '➕ Отправить вопрос'), ('questions', '🔎 Проверить вопросы')
+    ]
     assert scope.chat_id == 286579139
     assert calls[1][1] == 286579139
     assert type(calls[1][2]).__name__ == 'MenuButtonCommands'

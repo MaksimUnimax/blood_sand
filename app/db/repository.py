@@ -164,6 +164,25 @@ class Repository:
             (qid, operation),
         )).fetchone()
 
+    async def recover_provider_unanswered(self, qid):
+        """Narrow provider-authoritative recovery for an explicit WB manual scan."""
+        await self.db.execute('BEGIN IMMEDIATE')
+        try:
+            q = await self.get_question(qid)
+            if not q:
+                raise StaleState('STALE_STATE')
+            if q['status'] in {'SENT', 'ANSWERED_EXTERNALLY', 'IGNORED', 'SEND_UNKNOWN'}:
+                target = 'REVIEW' if q['current_answer_revision_id'] else 'NEW'
+                fields, values = 'status=?,updated_at=?', [target, now()]
+                if q['status'] in {'SENT', 'ANSWERED_EXTERNALLY'}:
+                    fields += ',sent_at=NULL,external_reply_id=NULL'
+                await self.db.execute(f'UPDATE questions SET {fields} WHERE id=?', values + [qid])
+            await self.db.commit()
+            return await self.get_question(qid)
+        except Exception:
+            await self.db.rollback()
+            raise
+
     async def get_current_answer_revision(self, qid):
         return await (await self.db.execute(
             'SELECT r.* FROM answer_revisions r JOIN questions q ON q.current_answer_revision_id=r.id WHERE q.id=?',

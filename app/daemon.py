@@ -74,7 +74,7 @@ def make_marketplace_adapters(secrets, client_factory=httpx.AsyncClient):
 async def configure_operator_menu(bot, operator_id):
     """Make manual Ozon ingress discoverable from Telegram's persistent bot menu."""
     chat_id = int(operator_id)
-    commands = [BotCommand('ozon', '➕ Отправить вопрос')]
+    commands = [BotCommand('ozon', '➕ Отправить вопрос'), BotCommand('questions', '🔎 Проверить вопросы')]
     await bot.set_my_commands(commands, scope=BotCommandScopeChat(chat_id=chat_id))
     await bot.set_chat_menu_button(chat_id=chat_id, menu_button=MenuButtonCommands())
 
