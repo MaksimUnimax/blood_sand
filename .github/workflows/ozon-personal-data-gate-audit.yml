@@ -1,0 +1,139 @@
+name: Ozon Personal Data gate audit
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-personal-data-gate-audit.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/build_ozon_personal_data_gate_audit.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  linux-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair authority with all refs
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Verify accepted B0 Personal Data evidence identity
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse a48e06b331bb959856808aff0b8697cb9834807c)" = a48e06b331bb959856808aff0b8697cb9834807c
+          test "$(git rev-parse cc6413d25dd794a12fd61b71728aaac9702bc6de)" = cc6413d25dd794a12fd61b71728aaac9702bc6de
+          p=tooling/llm-api-bridges/ozon-seller/validation/PATCH_B0_FULL_READ_CORE_ACCEPTED_2026-08-25.md
+          git show origin/feature/ozon-full-read-core-b0-2026-08-25:"$p" > /tmp/B0_ACCEPTED.md
+          grep -F 'Personal Data OFF: PASS, zero provider requests.' /tmp/B0_ACCEPTED.md
+          grep -F 'Enabling Personal Data did not replay the blocked command: PASS' /tmp/B0_ACCEPTED.md
+          grep -F 'Personal Data ON explicit resubmit: PASS' /tmp/B0_ACCEPTED.md
+          echo PERSONAL_DATA_AUDIT_B0_ACCEPTED_BROWSER_EVIDENCE_PASS
+
+      - name: Materialize accepted Step 3 exact candidate
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$v/materialize_v2_b1_b49_canonical_salvage_candidate.py" \
+            --repo-root . --work-root /tmp/pd-step3-work --out /tmp/pd-step3
+          find /tmp/pd-step3 -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Build and validate 463-row Personal Data attachment audit
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          rm -rf /tmp/pd-audit
+          node "$v/build_ozon_personal_data_gate_audit.mjs" \
+            /tmp/pd-step3 \
+            "$v/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.json" \
+            /tmp/pd-audit
+          python3 - <<'PY'
+          import csv,json,pathlib
+          root=pathlib.Path('/tmp/pd-audit')
+          a=json.loads((root/'OZON_PERSONAL_DATA_GATE_AUDIT_2026-08-29.json').read_text())
+          assert a['counts']=={
+            'seller_master_rows':463,
+            'accepted_step3_seller_aliases':191,
+            'accepted_personal_data_gate_aliases':10,
+            'accepted_safe_projection_aliases':181,
+            'master_rows_without_accepted_step3_alias':272}
+          assert len(a['rows'])==463
+          assert len(a['gated_aliases'])==10
+          with (root/'OZON_PERSONAL_DATA_GATE_AUDIT_2026-08-29.csv').open(newline='',encoding='utf-8') as f:
+            assert sum(1 for _ in csv.DictReader(f))==463
+          print('PERSONAL_DATA_AUDIT_GENERATED_EVIDENCE_COUNTS_PASS')
+          PY
+
+      - name: Upload Linux audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-personal-data-gate-audit-linux
+          path: /tmp/pd-audit
+          if-no-files-found: error
+          retention-days: 7
+
+  windows-audit:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repair authority with all refs
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --system core.longpaths true
+
+      - name: Materialize and validate Step 3 exact candidate
+        shell: pwsh
+        run: |
+          $v='tooling/llm-api-bridges/ozon-seller/validation'
+          python "$v/materialize_v2_b1_b49_canonical_salvage_candidate.py" --repo-root . --work-root C:\pdw --out C:\pdstep3
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem C:\pdstep3 -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE} }
+
+      - name: Run Personal Data attachment audit on Windows
+        shell: pwsh
+        run: |
+          $v='tooling/llm-api-bridges/ozon-seller/validation'
+          if(Test-Path C:\pdaudit){Remove-Item C:\pdaudit -Recurse -Force}
+          node "$v/build_ozon_personal_data_gate_audit.mjs" C:\pdstep3 "$v/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.json" C:\pdaudit
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          python -c "import json,pathlib;a=json.loads(pathlib.Path(r'C:\pdaudit\OZON_PERSONAL_DATA_GATE_AUDIT_2026-08-29.json').read_text());assert len(a['rows'])==463 and len(a['gated_aliases'])==10 and a['counts']['accepted_safe_projection_aliases']==181;print('PERSONAL_DATA_AUDIT_WINDOWS_EVIDENCE_COUNTS_PASS')"
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+
+  commit-audit-evidence:
+    needs: [linux-audit, windows-audit]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair authority
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Regenerate accepted audit evidence
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$v/materialize_v2_b1_b49_canonical_salvage_candidate.py" --repo-root . --work-root /tmp/pd-final-work --out /tmp/pd-final-step3
+          rm -rf /tmp/pd-final-audit
+          node "$v/build_ozon_personal_data_gate_audit.mjs" /tmp/pd-final-step3 "$v/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.json" /tmp/pd-final-audit
+          cp /tmp/pd-final-audit/OZON_PERSONAL_DATA_GATE_AUDIT_2026-08-29.json "$v/"
+          cp /tmp/pd-final-audit/OZON_PERSONAL_DATA_GATE_AUDIT_2026-08-29.csv "$v/"
+          cp /tmp/pd-final-audit/OZON_PERSONAL_DATA_GATE_AUDIT_SUMMARY_2026-08-29.md "$v/"
+
+      - name: Commit accepted audit evidence
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$v/OZON_PERSONAL_DATA_GATE_AUDIT_2026-08-29.json" "$v/OZON_PERSONAL_DATA_GATE_AUDIT_2026-08-29.csv" "$v/OZON_PERSONAL_DATA_GATE_AUDIT_SUMMARY_2026-08-29.md"
+          git diff --cached --quiet && { echo 'audit evidence already committed'; exit 0; }
+          git commit -m 'validation(ozon): record Personal Data gate attachment audit'
+          git push origin HEAD:repair/ozon-v2-b1-stocks-warehouse-2026-08-29
