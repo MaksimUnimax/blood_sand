@@ -1,0 +1,24 @@
+name: Ozon B0 exact rematerialize temp
+on:
+  push:
+    branches: [tmp/ozon-b0-rematerialize-2026-08-29]
+    paths:
+      - .github/workflows/ozon-b0-rematerialize-temp.yml
+permissions: {contents: read}
+jobs:
+  linux-materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact accepted B0
+        run: python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_b0_full_read_core_candidate.py . /tmp/ozon-b0-exact
+      - name: Verify B0 regression and syntax
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_B0_FULL_READ_CORE_REGRESSION_2026-08-25.mjs /tmp/ozon-b0-exact
+          find /tmp/ozon-b0-exact -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-b0-exact-rematerialized
+          path: /tmp/ozon-b0-exact
+          if-no-files-found: error
+          retention-days: 1
