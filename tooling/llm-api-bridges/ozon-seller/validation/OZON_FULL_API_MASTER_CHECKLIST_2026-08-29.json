@@ -1,5 +1,5 @@
 {
-  "schema": "OZON_FULL_API_MASTER_CHECKLIST_V1",
+  "schema": "OZON_FULL_API_MASTER_CHECKLIST_V2",
   "as_of": "2026-08-29",
   "roadmap_step": 2,
   "status": "OPERATION_UNIVERSE_BUILT_EXACT_SCHEMA_RECONCILIATION_PENDING",
@@ -34,9 +34,61 @@
     "total": 511,
     "seller_categories": 57,
     "performance_categories": 6,
-    "current_canonical_implemented": 39,
+    "current_registry_aliases_total": 42,
+    "current_canonical_in_current_inventory": 39,
+    "current_registry_outside_current_inventory": 3,
     "classification_unresolved": 472
   },
+  "current_registry_outside_current_inventory": [
+    {
+      "provider": "performance_api",
+      "operation_key": "GET /api/client/statistics/campaign/product/json",
+      "aliases": [
+        "performance_campaign_product"
+      ],
+      "effects": [
+        "READ"
+      ],
+      "execution_enabled": [
+        true
+      ],
+      "reason": "PRESERVED_LEGACY_COMPATIBILITY_ROUTE_OUTSIDE_CURRENT_PINNED_API_INDEX",
+      "source": "accepted B0/B6 compatibility surface carried by canonical B1",
+      "final_action": "PRESERVE_COMPATIBILITY_AND_DO_NOT_COUNT_AS_CURRENT_48_OPERATION_PERFORMANCE_INVENTORY"
+    },
+    {
+      "provider": "performance_api",
+      "operation_key": "GET /api/client/statistics/daily/json",
+      "aliases": [
+        "performance_daily"
+      ],
+      "effects": [
+        "READ"
+      ],
+      "execution_enabled": [
+        true
+      ],
+      "reason": "PRESERVED_LEGACY_COMPATIBILITY_ROUTE_OUTSIDE_CURRENT_PINNED_API_INDEX",
+      "source": "accepted B0/B6 compatibility surface carried by canonical B1",
+      "final_action": "PRESERVE_COMPATIBILITY_AND_DO_NOT_COUNT_AS_CURRENT_48_OPERATION_PERFORMANCE_INVENTORY"
+    },
+    {
+      "provider": "performance_api",
+      "operation_key": "GET /api/client/statistics/expense/json",
+      "aliases": [
+        "performance_expense"
+      ],
+      "effects": [
+        "READ"
+      ],
+      "execution_enabled": [
+        true
+      ],
+      "reason": "PRESERVED_LEGACY_COMPATIBILITY_ROUTE_OUTSIDE_CURRENT_PINNED_API_INDEX",
+      "source": "accepted B0/B6 compatibility surface carried by canonical B1",
+      "final_action": "PRESERVE_COMPATIBILITY_AND_DO_NOT_COUNT_AS_CURRENT_48_OPERATION_PERFORMANCE_INVENTORY"
+    }
+  ],
   "rows": [
     {
       "provider": "seller_api",
