@@ -80,7 +80,7 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 |---|---|---|---|---|
 | M1 | deterministic config/Core | CLOSED | n/a | PASS |
 | M2 | shared Recommendation API/backend foundation | architecture + exact HTTP contract + dependency policy frozen | locked environment setup committed and independently audited | **CLOSED / PASS** |
-| M3 | VK Community Bot | fully architected + final PRE-M3 authority frozen | text-keyboard send is evidenced; click evidence is pending user action | **KEYBOARD CODE BLOCKED** |
+| M3 | VK Community Bot | fully architected + final PRE-M3 authority frozen | real text-keyboard send/click round trip is evidenced; calendar authority remains pending | **TEXT KEYBOARD CODE GATE PASS** |
 | M4 | destinations/availability overlay | high-level architecture defined | concrete destination registry/availability source gate still required | **BLOCKED UNTIL M3/M4 AUTHORITY PASS** |
 | M5 | VK Mini App | fully architected + PRE-M5 contract exists | official deploy-tool conflict + app/security/client staging remain | **BLOCKED** |
 | M6 | Bot ↔ Mini App continuity | fully architected + PRE-M6 contract exists | Mini App → community-dialog primitive unresolved; cross-client staging required | **BLOCKED** |
@@ -99,12 +99,15 @@ M3_DEPLOYABLE_WORKER_LIFECYCLE = PASS
 M3_PLAIN_TEXT_RUNTIME_STAGING_DEPLOYMENT = PASS
 M3_REAL_E2E_LEG_1_DATE_TO_GENDER_PROMPT = PASS
 M3_REAL_E2E_LEG_2_GENDER_TO_RECOMMENDATION = PAUSED_PRODUCT_DIRECTION_CHANGE
-M3_PLAIN_TEXT_RUNTIME_REAL_E2E = PAUSED_FOR_KEYBOARD_UX_UPGRADE
+M3_PLAIN_TEXT_RUNTIME_REAL_E2E = SUPERSEDED_BY_KEYBOARD_UX_ACCEPTANCE
 M3_TEXT_KEYBOARD_UX_DECISION = PASS
 M3_TEXT_KEYBOARD_SEND_STAGING_FIXTURE = PASS
-M3_TEXT_KEYBOARD_CLICK_STAGING_FIXTURE = PENDING_USER_ACTION
-M3_KEYBOARD_CODE_GATE = BLOCKED_PENDING_REAL_TEXT_KEYBOARD_CLICK_FIXTURE
-NEXT_M3_GATE = REAL_TEXT_KEYBOARD_CLICK_EVIDENCE
+M3_TEXT_KEYBOARD_CLICK_STAGING_FIXTURE = PASS
+M3_TEXT_KEYBOARD_REAL_ROUND_TRIP = PASS
+M3_KEYBOARD_CODE_GATE = PASS_TEXT_KEYBOARD_V1
+M3_CALENDAR_UX_DIRECTION = TEXT_OR_MINI_APP_CALENDAR
+M3_CALENDAR_CODE_GATE = BLOCKED_PENDING_OPEN_APP_AND_HANDOFF_AUTHORITY
+NEXT_M3_GATE = TEXT_KEYBOARD_RUNTIME_IMPLEMENTATION_AND_CALENDAR_AUTHORITY
 ```
 
 The formerly plain-text Leg 2 is not keyboard-compliant acceptance evidence:

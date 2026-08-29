@@ -15,6 +15,7 @@ from recommendations.vk.vk_api import VKAPIResult, VKTransportUnknown
 
 
 FIXTURE = Path(__file__).parent / "fixtures/vk/staging/message_new.v5_199.sanitized.json"
+TEXT_KEYBOARD_RESTART_FIXTURE = Path(__file__).parent / "fixtures/vk/staging/message_new_text_keyboard_restart_click.v5_199.sanitized.json"
 
 class FakeAPI:
     def __init__(self, result): self.result=result; self.calls=[]
@@ -32,6 +33,11 @@ class VKRuntimeTests(unittest.TestCase):
     def test_real_nested_fixture_normalizes(self):
         event=normalize_callback(json.loads(FIXTURE.read_text()))
         self.assertEqual(event.event_type,"message_new"); self.assertEqual(event.text,"sanitized staging text"); self.assertIn('keyboard',event.client_info)
+    def test_real_text_keyboard_click_fixture_preserves_text_and_payload(self):
+        event=normalize_callback(json.loads(TEXT_KEYBOARD_RESTART_FIXTURE.read_text()))
+        self.assertEqual(event.event_type,"message_new")
+        self.assertEqual(event.text,"Подобрать снова")
+        self.assertEqual(event.payload,'{"kip":"restart","v":1}')
     def test_dates_and_gender_are_deterministic(self):
         self.assertEqual(parse_dates('13.10 20.11'),[]); self.assertEqual(parse_dates('29.02.2020')[0].year,2020)
         self.assertEqual(parse_gender('Мужчине'),'male'); self.assertIsNone(parse_gender('Иван'))

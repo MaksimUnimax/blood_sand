@@ -1,0 +1,38 @@
+{
+  "_fixture": {
+    "source": "VK staging Callback text-keyboard click",
+    "vk_api_version": "5.199",
+    "sanitized": true,
+    "secrets_present": false,
+    "real_staging_event": true
+  },
+  "group_id": 0,
+  "type": "message_new",
+  "event_id": "sanitized",
+  "v": "5.199",
+  "object": {
+    "client_info": {
+      "button_actions": ["text", "vkpay", "open_app", "location", "open_link", "open_photo", "callback", "intent_subscribe", "intent_unsubscribe"],
+      "keyboard": true,
+      "inline_keyboard": true,
+      "carousel": true,
+      "lang_id": 0
+    },
+    "message": {
+      "date": 0,
+      "from_id": 0,
+      "id": 0,
+      "version": 0,
+      "out": 0,
+      "fwd_messages": [],
+      "important": false,
+      "is_hidden": false,
+      "attachments": [],
+      "conversation_message_id": 0,
+      "text": "Подобрать снова",
+      "payload": "{\"kip\":\"restart\",\"v\":1}",
+      "peer_id": 0,
+      "random_id": 0
+    }
+  }
+}

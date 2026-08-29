@@ -49,6 +49,36 @@ payload = {"kip":"restart","v":1}
 All actions use `type = text`. This V1 slice does not use callback actions,
 `message_event`, or Callback subscription changes.
 
+## Real staging evidence
+
+```text
+REAL_TEXT_KEYBOARD_SEND = PASS
+REAL_TEXT_KEYBOARD_CLICK = PASS
+REAL_CLICK_TRANSPORT = message_new
+REAL_CLICK_PAYLOAD = {"kip":"restart","v":1}
+```
+
+The real Callback click fixture is
+`tests/fixtures/vk/staging/message_new_text_keyboard_restart_click.v5_199.sanitized.json`.
+It verifies the actual text-keyboard round trip: `messages.send` text keyboard
+to `message_new` with the returned string payload. No `message_event` is
+needed for this UX.
+
+## Date input direction
+
+```text
+DATE_INPUT_PRIMARY_UX = TEXT_OR_CALENDAR
+DATE_TEXT_INPUT = SUPPORTED
+DATE_CALENDAR_BUTTON = PLANNED_OPEN_APP_GATE
+DATE_INPUT_DUAL_MODE = TEXT_OR_MINI_APP_CALENDAR
+CALENDAR_IMPLEMENTATION = NEXT_AUTHORITY_STAGE
+```
+
+The future calendar path is an `open_app` keyboard action, a minimal VK Mini
+App date picker, signed VK launch parameters, and a short-lived opaque one-time
+Bot handoff token into the same deterministic date transition. App identity,
+hosting URL, and handoff API remain unfrozen pending independent authority.
+
 ## Payload security and semantic precedence
 
 Keyboard payload is user-returned input. A future parser may prefer its
