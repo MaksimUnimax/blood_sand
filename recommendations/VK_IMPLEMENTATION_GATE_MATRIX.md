@@ -1,6 +1,6 @@
 # VK Implementation Gate Matrix
 
-Версия: 0.1  
+Версия: 0.2  
 Статус: **MANDATORY PRE-CODE GATE AUTHORITY**  
 Дата: 2026-08-29  
 Бренд: «Кровь и Песок»
@@ -23,7 +23,7 @@ milestone gate != PASS
 → Codex/runtime implementation этого milestone не запускается
 ```
 
-Никакой prompt не имеет права превращать `UNRESOLVED`, `STAGING_REQUIRED` или `REVALIDATE` в guessed implementation.
+Никакой prompt не имеет права превращать `UNRESOLVED`, `STAGING_REQUIRED`, `OFFICIAL_CONFLICT` или `REVALIDATE` в guessed implementation.
 
 ---
 
@@ -52,7 +52,19 @@ VK_UX_FLOW.md
 VK_PLATFORM_PRE_M3_CONTRACT.md
 ```
 
-Для M5/M6 перед кодом должны быть созданы и проверены соответствующие PRE-M5/PRE-M6 contract/ADR artifacts после повторной проверки текущей VK documentation/staging behavior.
+Для M5 дополнительно:
+
+```text
+VK_PLATFORM_PRE_M5_CONTRACT.md
+```
+
+Для M6 дополнительно:
+
+```text
+VK_PLATFORM_PRE_M6_CONTRACT.md
+```
+
+Перед фактическим кодом каждого milestone его current external contracts всё равно revalidate на дату implementation; существование PRE-document не разрешает игнорировать явно отмеченные staging/conflict/revalidation gates.
 
 ---
 
@@ -62,10 +74,10 @@ VK_PLATFORM_PRE_M3_CONTRACT.md
 |---|---|---|---|---|
 | M1 | deterministic config/Core | CLOSED | n/a | PASS |
 | M2 | shared Recommendation API/backend foundation | documented | no VK credential/runtime primitive required | **ALLOWED AFTER LOCAL WORKTREE SYNC + DEPENDENCY FREEZE** |
-| M3 | VK Community Bot | fully architected | real community/token/Callback fixtures still required | **BLOCKED** |
+| M3 | VK Community Bot | fully architected + PRE-M3 contract exists | real community/token/Callback fixtures still required | **BLOCKED** |
 | M4 | destinations/availability overlay | high-level architecture defined | concrete destination registry/availability source gate still required | **BLOCKED UNTIL M3/M4 AUTHORITY PASS** |
-| M5 | VK Mini App | fully architected at logical/security level | package versions, launch freshness policy, registered app/open_app staging required | **BLOCKED** |
-| M6 | Bot ↔ Mini App continuity | architecture defined | Mini App → community-dialog primitive unresolved; cross-client staging required | **BLOCKED** |
+| M5 | VK Mini App | fully architected + PRE-M5 contract exists | official deploy-tool conflict + app/security/client staging remain | **BLOCKED** |
+| M6 | Bot ↔ Mini App continuity | fully architected + PRE-M6 contract exists | Mini App → community-dialog primitive unresolved; cross-client staging required | **BLOCKED** |
 | M7 | hardening/operator/analytics | architecture boundaries defined | depends on preceding runtime evidence | **BLOCKED** |
 | M8 | controlled launch | roadmap defined | production gates not yet executed | **BLOCKED** |
 
@@ -129,6 +141,12 @@ M2_CODE_GATE = NOT_YET_OPEN
 ---
 
 ## 5. M3 gate — Community Bot
+
+Current official-contract authority:
+
+```text
+VK_PLATFORM_PRE_M3_CONTRACT.md
+```
 
 M3 code remains blocked until a dedicated test VK community/staging pass produces a short final ADR and sanitized fixtures.
 
@@ -200,26 +218,55 @@ M4_CODE_GATE = BLOCKED
 
 ## 7. M5 gate — Mini App
 
-Before M5 code, perform a fresh official VK Mini Apps documentation/repository pass and create PRE-M5 authority.
-
-Must verify/freeze:
+Current official-contract authority:
 
 ```text
-current official create-vk-mini-app version
-current Node requirement
-exact VKUI/Bridge/Router/Vite dependency versions
-current hosting/deploy mechanism and staging origin
-registered VK app id
-VKWebAppInit behavior
-Bridge capability-check mechanism
-complete launch parameter set actually observed
-official signature algorithm still current
-expected vk_app_id validation
-application freshness/replay policy for launch data
-Mini App backend session TTL
-allowed frontend origins
-open_app app_id/owner_id/hash behavior in real staging
-web/Android/iOS support matrix relevant to launch
+VK_PLATFORM_PRE_M5_CONTRACT.md
+```
+
+Research-time verified baseline includes:
+
+```text
+create-vk-mini-app 3.0.0
+Node >= 18 in generator
+VK Bridge repo 3.0.2
+VKUI repo 8.4.0
+VK Mini Apps Router repo 1.8.6
+VKWebAppInit contract
+VKWebAppGetLaunchParams typed result
+supportsAsync capability API
+signed launch authentication algorithm
+VKWebAppAllowMessagesFromGroup boundary
+VKWebAppOpenApp boundary
+```
+
+A current official-source conflict is explicitly recorded:
+
+```text
+generator template: @vkontakte/vk-miniapps-deploy ^0.1.6
+official deploy repo: all versions <1.0.0 deprecated/unsupported
+```
+
+Therefore no M5 scaffold may blindly copy that stale generated dependency.
+
+Before M5 code freeze:
+
+```text
+current official package versions revalidated at implementation date
+supported deploy-tool version conflict resolved
+exact package versions pinned + lockfile committed
+current hosting/deploy mechanism and staging origin verified
+registered VK app id configured
+VKWebAppInit staging behavior captured
+Bridge capability behavior captured
+actual launch parameter fixture captured
+official signature algorithm revalidated
+expected vk_app_id validation defined
+application freshness/replay policy frozen
+Mini App backend session TTL frozen
+allowed frontend origins frozen
+open_app app_id/owner_id/hash behavior verified in staging before CTA production
+web/Android/iOS support matrix captured for selected rollout
 ```
 
 Important:
@@ -236,7 +283,9 @@ Current status:
 
 ```text
 M5_LOGICAL_ARCHITECTURE = PASS
-M5_OFFICIAL_CURRENT_REVALIDATION = PENDING
+M5_OFFICIAL_CONTRACT_BASELINE = PASS
+M5_DEPLOY_TOOL_OFFICIAL_CONFLICT = PENDING_RESOLUTION
+M5_CURRENT_VERSION_REVALIDATION = PENDING_AT_IMPLEMENTATION
 M5_REGISTERED_APP_STAGING = PENDING
 M5_SECURITY_POLICY_FREEZE = PENDING
 M5_CODE_GATE = BLOCKED
@@ -246,9 +295,23 @@ M5_CODE_GATE = BLOCKED
 
 ## 8. M6 gate — cross-channel continuity
 
-Bot → Mini App has an official `open_app` action schema, but actual registered app/community values and client behavior require staging.
+Current authority:
+
+```text
+VK_PLATFORM_PRE_M6_CONTRACT.md
+```
+
+Bot → Mini App has a verified official keyboard `open_app` field schema, but actual registered app/community values and client behavior require staging.
 
 Mini App → community conversation is still not proven by an official current primitive.
+
+Verified non-solutions:
+
+```text
+VKWebAppAllowMessagesFromGroup = permission, not dialog navigation
+VKWebAppOpenApp = Mini App → another app, not community dialog
+VKWebAppClose = exists, but target return destination is not a verified community-dialog contract
+```
 
 Therefore before M6 code:
 
@@ -267,6 +330,7 @@ No guessed `vk.me/...` link may be introduced as an official platform mechanism.
 Current status:
 
 ```text
+M6_OFFICIAL_CONTRACT_BOUNDARY = PASS
 M6_BOT_TO_APP_SCHEMA = PASS
 M6_BOT_TO_APP_STAGING = PENDING
 M6_APP_TO_MESSAGES_PRIMITIVE = UNRESOLVED
@@ -332,7 +396,7 @@ Reviewer must be able to answer:
 1. Which authority defines this business behavior?
 2. Which official VK contract/staging fixture defines this platform behavior?
 3. Which part is explicitly our architecture/policy?
-4. Is any unresolved value being guessed?
+4. Is any unresolved/conflicting value being guessed?
 5. Are historical VK payload shapes being supported without evidence?
 6. Can a duplicate event cause duplicate state/send?
 7. Can a crash lose an acknowledged event or planned reply?
@@ -347,7 +411,9 @@ Any unexplained failure blocks milestone closure.
 
 ## 12. Current next action
 
-Documentation architecture is sufficiently defined to prepare M2, but M2 code must wait for:
+Documentation architecture for M2/M3/M5/M6 is now present.
+
+M2 code still waits for:
 
 ```text
 CURRENT_REMOTE_DOCS_HEAD independently verified
@@ -355,10 +421,14 @@ LOCAL_WORKTREE fast-forwarded safely
 M2 backend dependency versions researched/frozen
 ```
 
-M3 remains blocked until real VK staging/config evidence exists.
+M3 waits for real VK community staging/config evidence.
+
+M5 waits for current-version/deploy-conflict resolution, registered app staging and explicit security policy.
+
+M6 waits for Bot→App staging and resolution/exclusion of the Mini App→community-dialog feature.
 
 Decision marker:
 
 ```text
-KIP_VK_IMPLEMENTATION_GATE_MATRIX_V1
+KIP_VK_IMPLEMENTATION_GATE_MATRIX_V2
 ```
