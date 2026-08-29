@@ -18,6 +18,8 @@ Recommendation Core детерминированно выбирает один �
 - полу;
 - marketplace, если известен.
 
+Год рождения не влияет на выбор Чертога, но если он указан покупателем, он должен пройти через pipeline как display/audit context и быть сохранён в customer-facing ответе.
+
 Продажи используются офлайн при утверждении versioned matrix, но не являются live runtime input.
 
 ## 2. Pipeline
@@ -43,21 +45,26 @@ Input:
 ```text
 birth_day
 birth_month
+birth_year?   # display-only, не участвует в selection
 gender
 marketplace
 ```
 
 Flow:
 
-1. validate date;
-2. resolve Chertog by `KIP_CHERTOG_CALENDAR_V1`;
-3. resolve one base row by `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`;
-4. apply explicit marketplace override;
-5. validate `KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED`;
-6. return exactly one product.
+1. validate supplied birth date;
+2. resolve Chertog by day/month via `KIP_CHERTOG_CALENDAR_V1`;
+3. preserve supplied `birth_year` unchanged for the response/copy context;
+4. resolve one base row by `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`;
+5. apply explicit marketplace override;
+6. validate `KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED`;
+7. return exactly one product plus birth-date display context.
 
 Core must not:
 
+- use birth year to change Chertog/product selection;
+- drop a supplied birth year before rendering;
+- invent a year that customer did not provide;
 - call LLM for selection;
 - read live sales/stock to change result;
 - invent similar SKU;
@@ -105,9 +112,12 @@ All other rows currently match between Ozon and Wildberries.
 Даждьбог → only Раса male + female
 Печать Велеса → only Медведь male + female
 Печать Велеса → Волк FORBIDDEN
+Печать Велеса → Орёл FORBIDDEN
 Волк → Велес
 Лиса male → Чернобог
 Лиса female → Мара
+Орёл male → Перун
+Орёл female → Звезда Лады
 Сварог → male only
 secondary recommendation → forbidden
 ```
@@ -150,10 +160,13 @@ Startup/CI must fail if:
 9. Сварог in female row;
 10. Лиса male != Чернобог;
 11. Лиса female != Мара;
-12. Чернобог in female row;
-13. Мара in male row;
-14. unapproved marketplace override;
-15. reserve product appears automatically.
+12. Орёл male != Перун;
+13. Орёл female != Звезда Лады;
+14. Чернобог in female row;
+15. Мара in male row;
+16. supplied birth year is lost before customer rendering;
+17. unapproved marketplace override;
+18. reserve product appears automatically.
 
 ## 9. API
 
@@ -165,7 +178,7 @@ POST /v1/recommendations/resolve
 
 Detailed contract: `DATA_API_CONTRACT.md`.
 
-The response returns one recommendation plus configuration versions.
+The response returns one recommendation plus configuration versions and preserved birth-date display context.
 
 ## 10. Availability
 
@@ -188,10 +201,25 @@ No hidden replacement because of stock.
 Copy receives the already selected product and produces:
 
 ```text
-Чертог → темы → выбранный символ → почему подходит → marketplace link
+полная указанная дата → Чертог → темы → выбранный символ → почему подходит → marketplace link
 ```
 
-It must not expose:
+Hard date rule:
+
+```text
+если customer input содержит DD.MM.YYYY
+→ первая фраза customer-facing ответа повторяет DD.MM.YYYY полностью
+```
+
+Например:
+
+```text
+19.11.1988 → "Дата 19.11.1988 относится к Чертогу Лебедя."
+```
+
+Нельзя сокращать до `19.11`. Год не влияет на recommendation, но обязан сохраняться в copy. Если год не был дан, его не придумывать.
+
+Copy must not expose:
 
 - sales;
 - ranking;
@@ -221,6 +249,13 @@ Both genders → `Велес`.
 
 - male → `Чернобог`;
 - female → `Мара`.
+
+### Орёл
+
+- male → `Перун`;
+- female → `Звезда Лады`.
+
+`Печать Велеса` intentionally remains unavailable to Орёл because its actual visual execution is tied to Медведь; high sales do not override that visual contradiction.
 
 ### Раса
 
