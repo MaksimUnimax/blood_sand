@@ -1,0 +1,520 @@
+{
+  "schema": "OZON_PERFORMANCE_STEP6_EXACT_MATRIX_V1",
+  "as_of": "2026-08-29",
+  "roadmap_step": 6,
+  "authority": {
+    "swagger_bytes": 304771,
+    "swagger_sha256": "7436e4a3e40b4d5bf926a887d7891c1db264cbb6582266299a2df10f67592fec",
+    "openapi": "3.0.0",
+    "paths": 47,
+    "operations": 48
+  },
+  "invariants": [
+    "PERFORMANCE_PROVIDER_REMAINS_SEPARATE",
+    "ONE_EXPLICIT_COMMAND_ONE_BUSINESS_REQUEST",
+    "NO_HIDDEN_PAGINATION",
+    "NO_HIDDEN_RETRY",
+    "NO_HIDDEN_POLLING",
+    "NO_HIDDEN_FANOUT",
+    "NO_PROVIDER_CHAINING",
+    "ASYNC_REPORT_GENERATION_REMAINS_BLOCKED",
+    "PERFORMANCE_MUTATIONS_REMAIN_BLOCKED",
+    "DOCUMENTED_JSON_VARIANTS_DO_NOT_REPLACE_CURRENT_METHOD_PATH_COUNT"
+  ],
+  "counts": {
+    "rows": 48,
+    "admissible_current_reads": 21,
+    "already_implemented_current_path_reads": 6,
+    "new_reads_to_implement": 15,
+    "documented_json_variants_already_preserved": 4,
+    "READ_ALREADY_IMPLEMENTED_CURRENT_PATH": 6,
+    "READ_IMPLEMENT_STEP6": 15,
+    "BLOCK_ASYNC_REPORT_GENERATION": 9,
+    "BLOCK_MUTATION_SIDE_EFFECT": 16,
+    "SKIP_DEPRECATED_READLIKE": 2
+  },
+  "rows": [
+    {
+      "operation_key": "GET /api/client/campaign",
+      "http_method": "GET",
+      "fixed_path": "/api/client/campaign",
+      "operation_id": "ListCampaigns",
+      "deprecated": false,
+      "summary": "Список кампаний",
+      "step6_decision": "READ_ALREADY_IMPLEMENTED_CURRENT_PATH",
+      "alias": "performance_campaigns",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "GET /api/client/campaign/{campaignId}/objects",
+      "http_method": "GET",
+      "fixed_path": "/api/client/campaign/{campaignId}/objects",
+      "operation_id": "ListCampaignObjects",
+      "deprecated": false,
+      "summary": "Список продвигаемых объектов в кампании",
+      "step6_decision": "READ_ALREADY_IMPLEMENTED_CURRENT_PATH",
+      "alias": "performance_campaign_objects",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "GET /api/client/limits/list",
+      "http_method": "GET",
+      "fixed_path": "/api/client/limits/list",
+      "operation_id": "GetLimitsList",
+      "deprecated": false,
+      "summary": "Лимиты ставок для инструментов продвижения",
+      "step6_decision": "READ_ALREADY_IMPLEMENTED_CURRENT_PATH",
+      "alias": "performance_bid_limits",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "POST /api/client/min/sku",
+      "http_method": "POST",
+      "fixed_path": "/api/client/min/sku",
+      "operation_id": "ExternalCampaign_BidBySKU",
+      "deprecated": false,
+      "summary": "Минимальная ставка для товаров по SKU",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_min_bid_by_sku",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "GET /api/client/products_with_bonuses",
+      "http_method": "GET",
+      "fixed_path": "/api/client/products_with_bonuses",
+      "operation_id": "ExternalCampaign_ListProductsWithBonuses2",
+      "deprecated": false,
+      "summary": "Список товаров с бонусами",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_products_with_bonuses",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "POST /api/client/statistics",
+      "http_method": "POST",
+      "fixed_path": "/api/client/statistics",
+      "operation_id": "SubmitRequest",
+      "deprecated": false,
+      "summary": "Статистика по кампании",
+      "step6_decision": "BLOCK_ASYNC_REPORT_GENERATION"
+    },
+    {
+      "operation_key": "POST /api/client/statistics/video",
+      "http_method": "POST",
+      "fixed_path": "/api/client/statistics/video",
+      "operation_id": "VideoCampaignsSubmitRequest",
+      "deprecated": false,
+      "summary": "Статистика по показам видеобаннера",
+      "step6_decision": "BLOCK_ASYNC_REPORT_GENERATION"
+    },
+    {
+      "operation_key": "POST /api/client/statistics/attribution",
+      "http_method": "POST",
+      "fixed_path": "/api/client/statistics/attribution",
+      "operation_id": "AttributionSubmitRequest",
+      "deprecated": false,
+      "summary": "Отчёт по заказам",
+      "step6_decision": "BLOCK_ASYNC_REPORT_GENERATION"
+    },
+    {
+      "operation_key": "GET /api/client/statistics/{UUID}",
+      "http_method": "GET",
+      "fixed_path": "/api/client/statistics/{UUID}",
+      "operation_id": "StatisticsCheck",
+      "deprecated": false,
+      "summary": "Cтатус отчёта",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_statistics_status",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "GET /api/client/statistics/list",
+      "http_method": "GET",
+      "fixed_path": "/api/client/statistics/list",
+      "operation_id": "ListReports",
+      "deprecated": false,
+      "summary": "Список отчётов, сгенерированных через интерфейс",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_statistics_list_ui",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "GET /api/client/statistics/externallist",
+      "http_method": "GET",
+      "fixed_path": "/api/client/statistics/externallist",
+      "operation_id": "ListReportsExternal",
+      "deprecated": false,
+      "summary": "Список отчётов, сгенерированных через API",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_statistics_list_api",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "GET /api/client/statistics/report",
+      "http_method": "GET",
+      "fixed_path": "/api/client/statistics/report",
+      "operation_id": "DownloadStatistics",
+      "deprecated": false,
+      "summary": "Получить отчёты",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_statistics_report_download",
+      "response_kind": "DIRECT_BINARY"
+    },
+    {
+      "operation_key": "GET /api/client/statistics/campaign/media",
+      "http_method": "GET",
+      "fixed_path": "/api/client/statistics/campaign/media",
+      "operation_id": "MediaCampaignList",
+      "deprecated": false,
+      "summary": "Статистика по медийным кампаниям",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_media_csv",
+      "response_kind": "DIRECT_BINARY",
+      "documented_json_variant_alias": "performance_media",
+      "documented_json_variant_path": "/api/client/statistics/campaign/media/json"
+    },
+    {
+      "operation_key": "GET /api/client/statistics/campaign/product",
+      "http_method": "GET",
+      "fixed_path": "/api/client/statistics/campaign/product",
+      "operation_id": "ProductCampaignList",
+      "deprecated": false,
+      "summary": "Статистика по кампании Оплата за клик",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_campaign_product_csv",
+      "response_kind": "DIRECT_BINARY",
+      "documented_json_variant_alias": "performance_campaign_product",
+      "documented_json_variant_path": "/api/client/statistics/campaign/product/json"
+    },
+    {
+      "operation_key": "GET /api/client/statistics/expense",
+      "http_method": "GET",
+      "fixed_path": "/api/client/statistics/expense",
+      "operation_id": "GetCampaignExpense",
+      "deprecated": false,
+      "summary": "Статистика по расходу кампаний",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_expense_csv",
+      "response_kind": "DIRECT_BINARY",
+      "documented_json_variant_alias": "performance_expense",
+      "documented_json_variant_path": "/api/client/statistics/expense/json"
+    },
+    {
+      "operation_key": "GET /api/client/statistics/daily",
+      "http_method": "GET",
+      "fixed_path": "/api/client/statistics/daily",
+      "operation_id": "GetCampaignDailyStats",
+      "deprecated": false,
+      "summary": "Дневная статистика по кампаниям",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_daily_csv",
+      "response_kind": "DIRECT_BINARY",
+      "documented_json_variant_alias": "performance_daily",
+      "documented_json_variant_path": "/api/client/statistics/daily/json"
+    },
+    {
+      "operation_key": "POST /api/client/statistic/orders/generate",
+      "http_method": "POST",
+      "fixed_path": "/api/client/statistic/orders/generate",
+      "operation_id": "SearchPromoOrdersReportSubmitRequest",
+      "deprecated": false,
+      "summary": "Получить отчёт по заказам в оплате за заказ — выбранные товары",
+      "step6_decision": "BLOCK_ASYNC_REPORT_GENERATION"
+    },
+    {
+      "operation_key": "POST /api/client/statistic/products/generate",
+      "http_method": "POST",
+      "fixed_path": "/api/client/statistic/products/generate",
+      "operation_id": "SearchPromoProductsReportSubmitRequest",
+      "deprecated": false,
+      "summary": "Получить отчёт по товарам в оплате за заказ — выбранные товары",
+      "step6_decision": "BLOCK_ASYNC_REPORT_GENERATION"
+    },
+    {
+      "operation_key": "GET /api/client/statistics/all_sku_promo/orders/generate",
+      "http_method": "GET",
+      "fixed_path": "/api/client/statistics/all_sku_promo/orders/generate",
+      "operation_id": "GenerateAllSkuPromoOrdersReport",
+      "deprecated": false,
+      "summary": "Получить отчёт по заказам в оплате за заказ — все товары",
+      "step6_decision": "BLOCK_ASYNC_REPORT_GENERATION"
+    },
+    {
+      "operation_key": "GET /api/client/statistics/all_sku_promo/products/generate",
+      "http_method": "GET",
+      "fixed_path": "/api/client/statistics/all_sku_promo/products/generate",
+      "operation_id": "GenerateAllSkuPromoProductsReport",
+      "deprecated": false,
+      "summary": "Получить отчёт по товарам в оплате за заказ — все товары",
+      "step6_decision": "BLOCK_ASYNC_REPORT_GENERATION"
+    },
+    {
+      "operation_key": "POST /api/client/statistics/phrases",
+      "http_method": "POST",
+      "fixed_path": "/api/client/statistics/phrases",
+      "operation_id": "ExternalStatistics_StatisticsPhrasesSubmitRequest2",
+      "deprecated": false,
+      "summary": "Отчёт по поисковым запросам",
+      "step6_decision": "BLOCK_ASYNC_REPORT_GENERATION"
+    },
+    {
+      "operation_key": "POST /api/client/statistics/products/sku",
+      "http_method": "POST",
+      "fixed_path": "/api/client/statistics/products/sku",
+      "operation_id": "SearchPromoProductsSKUStatistics2",
+      "deprecated": false,
+      "summary": "Получить статистику по товарам в оплате за клик",
+      "step6_decision": "READ_ALREADY_IMPLEMENTED_CURRENT_PATH",
+      "alias": "performance_sku_statistics",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "POST /api/client/campaign/cpc/v2/product",
+      "http_method": "POST",
+      "fixed_path": "/api/client/campaign/cpc/v2/product",
+      "operation_id": "CreateProductCampaignCPCV2",
+      "deprecated": false,
+      "summary": "Создать кампанию с оплатой за клики",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /external/api/dynamic_budget",
+      "http_method": "POST",
+      "fixed_path": "/external/api/dynamic_budget",
+      "operation_id": "CalculateDynamicBudget",
+      "deprecated": true,
+      "summary": "Рассчитать минимальный бюджет кампании",
+      "step6_decision": "SKIP_DEPRECATED_READLIKE"
+    },
+    {
+      "operation_key": "POST /api/client/campaign/{campaignId}/activate",
+      "http_method": "POST",
+      "fixed_path": "/api/client/campaign/{campaignId}/activate",
+      "operation_id": "ActivateCampaign",
+      "deprecated": false,
+      "summary": "Активировать кампанию",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /api/client/campaign/{campaignId}/deactivate",
+      "http_method": "POST",
+      "fixed_path": "/api/client/campaign/{campaignId}/deactivate",
+      "operation_id": "DeactivateCampaign",
+      "deprecated": false,
+      "summary": "Выключить кампанию",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "PATCH /api/client/campaign/{campaignId}",
+      "http_method": "PATCH",
+      "fixed_path": "/api/client/campaign/{campaignId}",
+      "operation_id": "PatchProductCampaign",
+      "deprecated": false,
+      "summary": "Параметры кампании",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /api/client/campaign/{campaignId}/products",
+      "http_method": "POST",
+      "fixed_path": "/api/client/campaign/{campaignId}/products",
+      "operation_id": "AddProducts",
+      "deprecated": false,
+      "summary": "Добавить товары в кампанию",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "PUT /api/client/campaign/{campaignId}/products",
+      "http_method": "PUT",
+      "fixed_path": "/api/client/campaign/{campaignId}/products",
+      "operation_id": "UpdateProducts",
+      "deprecated": false,
+      "summary": "Обновить ставки товаров",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "GET /api/client/campaign/{campaignId}/v2/products",
+      "http_method": "GET",
+      "fixed_path": "/api/client/campaign/{campaignId}/v2/products",
+      "operation_id": "GetProductsV2",
+      "deprecated": false,
+      "summary": "Список товаров кампании",
+      "step6_decision": "READ_ALREADY_IMPLEMENTED_CURRENT_PATH",
+      "alias": "performance_campaign_products",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "POST /api/client/campaign/{campaignId}/products/delete",
+      "http_method": "POST",
+      "fixed_path": "/api/client/campaign/{campaignId}/products/delete",
+      "operation_id": "DeleteProducts",
+      "deprecated": false,
+      "summary": "Удалить товары из кампании",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "GET /api/client/campaign/{campaignId}/products/bids/competitive",
+      "http_method": "GET",
+      "fixed_path": "/api/client/campaign/{campaignId}/products/bids/competitive",
+      "operation_id": "GetProductsCompetitiveBids",
+      "deprecated": false,
+      "summary": "Конкурентные ставки для товара",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_competitive_bids",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "POST /api/client/campaign/search_promo/v2/products",
+      "http_method": "POST",
+      "fixed_path": "/api/client/campaign/search_promo/v2/products",
+      "operation_id": "ExternalCampaign_ListSearchPromoProductsV2",
+      "deprecated": false,
+      "summary": "Список товаров в продвижении в оплате за заказ",
+      "step6_decision": "READ_ALREADY_IMPLEMENTED_CURRENT_PATH",
+      "alias": "performance_search_promo_products",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "POST /api/client/search_promo/bids/recommendation",
+      "http_method": "POST",
+      "fixed_path": "/api/client/search_promo/bids/recommendation",
+      "operation_id": "ExternalCampaign_GetProductsRecommendedBids",
+      "deprecated": true,
+      "summary": "Рекомендованные ставки для товаров",
+      "step6_decision": "SKIP_DEPRECATED_READLIKE"
+    },
+    {
+      "operation_key": "POST /api/client/campaign/search_promo/v2/bids/set",
+      "http_method": "POST",
+      "fixed_path": "/api/client/campaign/search_promo/v2/bids/set",
+      "operation_id": "ExternalCampaign_SetSearchPromoBidsV2",
+      "deprecated": true,
+      "summary": "Установить ставку на товар",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /api/client/search_promo/get_cpo_min_bids",
+      "http_method": "POST",
+      "fixed_path": "/api/client/search_promo/get_cpo_min_bids",
+      "operation_id": "ExternalCampaign_GetCPOMinBids",
+      "deprecated": false,
+      "summary": "Получить фиксированные ставки для товаров",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_cpo_min_bids",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "POST /api/client/search_promo/product/enable",
+      "http_method": "POST",
+      "fixed_path": "/api/client/search_promo/product/enable",
+      "operation_id": "ExternalCampaign_BatchEnableProducts",
+      "deprecated": false,
+      "summary": "Включить продвижение товара в оплате за заказ",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /api/client/search_promo/product/disable",
+      "http_method": "POST",
+      "fixed_path": "/api/client/search_promo/product/disable",
+      "operation_id": "ExternalCampaign_BatchDisableProducts",
+      "deprecated": false,
+      "summary": "Отключить продвижение товара в оплате за заказ",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /api/client/campaign/search_promo/v2/bids/delete",
+      "http_method": "POST",
+      "fixed_path": "/api/client/campaign/search_promo/v2/bids/delete",
+      "operation_id": "ExternalCampaign_DeleteSearchPromoBidsV2",
+      "deprecated": false,
+      "summary": "Удалить товар из продвижения в оплате за заказ",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "GET /api/client/campaign/all_sku_promo/activate",
+      "http_method": "GET",
+      "fixed_path": "/api/client/campaign/all_sku_promo/activate",
+      "operation_id": "ActivateAllSkuPromoCampaign",
+      "deprecated": false,
+      "summary": "Включить продвижение в оплате за заказ — все товары",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "GET /api/client/campaign/all_sku_promo/deactivate",
+      "http_method": "GET",
+      "fixed_path": "/api/client/campaign/all_sku_promo/deactivate",
+      "operation_id": "DeactivateAllSkuPromoCampaign",
+      "deprecated": false,
+      "summary": "Выключить продвижение в оплате за заказ — все товары",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "GET /api/client/campaign/all_sku_promo/set_bid",
+      "http_method": "GET",
+      "fixed_path": "/api/client/campaign/all_sku_promo/set_bid",
+      "operation_id": "SetAllSkuPromoCampaignBid2",
+      "deprecated": false,
+      "summary": "Установить ставку для продвижения в Оплате за заказ — все товары",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /api/client/campaign/search_promo/carrots/enable",
+      "http_method": "POST",
+      "fixed_path": "/api/client/campaign/search_promo/carrots/enable",
+      "operation_id": "ExternalCampaign_BatchEnableCarrots4",
+      "deprecated": false,
+      "summary": "Включить продвижение товаров в акции «Морковск»",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /api/client/campaign/search_promo/carrots/disable",
+      "http_method": "POST",
+      "fixed_path": "/api/client/campaign/search_promo/carrots/disable",
+      "operation_id": "ExternalCampaign_BatchDisableCarrots4",
+      "deprecated": false,
+      "summary": "Отключить продвижение товаров в акции «Морковск»",
+      "step6_decision": "BLOCK_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /api/client/vendors/statistics",
+      "http_method": "POST",
+      "fixed_path": "/api/client/vendors/statistics",
+      "operation_id": "VendorStatisticsSubmitRequest",
+      "deprecated": false,
+      "summary": "Отчёт с аналитикой внешнего трафика",
+      "step6_decision": "BLOCK_ASYNC_REPORT_GENERATION"
+    },
+    {
+      "operation_key": "GET /api/client/vendors/statistics/list",
+      "http_method": "GET",
+      "fixed_path": "/api/client/vendors/statistics/list",
+      "operation_id": "VendorStatisticsListReports",
+      "deprecated": false,
+      "summary": "Список запрошенных отчётов с аналитикой внешнего трафика",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_vendor_statistics_list",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "GET /api/client/vendors/statistics/{UUID}",
+      "http_method": "GET",
+      "fixed_path": "/api/client/vendors/statistics/{UUID}",
+      "operation_id": "VendorStatisticsCheck",
+      "deprecated": false,
+      "summary": "Информация об отчёте по UUID",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_vendor_statistics_status",
+      "response_kind": "DIRECT_JSON"
+    },
+    {
+      "operation_key": "GET /api/client/organisation/vendor_tag",
+      "http_method": "GET",
+      "fixed_path": "/api/client/organisation/vendor_tag",
+      "operation_id": "GetVendorTag",
+      "deprecated": false,
+      "summary": "Метка организации для внешних рекламных кампаний",
+      "step6_decision": "READ_IMPLEMENT_STEP6",
+      "alias": "performance_vendor_tag",
+      "response_kind": "DIRECT_JSON"
+    }
+  ]
+}
