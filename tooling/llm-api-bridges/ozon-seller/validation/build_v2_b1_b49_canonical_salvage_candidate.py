@@ -30,6 +30,13 @@ KNOWN_EXACT_OVERLAPS = {
     "OZON_WAREHOUSE_TYPES",
 }
 
+CANONICAL_SECTION_OVERRIDES = {
+    "warehouse_fbs_return_mile_check": ("logistics_settings", "warehouse_diagnostics"),
+    "warehouse_fbs_return_mile_info": ("logistics_settings", "warehouse_diagnostics"),
+    "warehouse_operation_status": ("logistics_settings", "warehouse_diagnostics"),
+    "supplier_available_warehouses": ("warehouses", "ozon_warehouses"),
+}
+
 
 @dataclass(frozen=True)
 class ConstDecl:
@@ -145,7 +152,6 @@ def dedupe_exact_top_level_const_overlaps(path: Path) -> list[str]:
         deduped.append(name)
 
     for start, end in sorted(removals, reverse=True):
-        # Also remove one immediately following newline so the merge does not leave a growing blank-line artifact.
         if end < len(text) and text[end:end + 2] == "\r\n":
             end += 2
         elif end < len(text) and text[end] == "\n":
@@ -157,6 +163,95 @@ def dedupe_exact_top_level_const_overlaps(path: Path) -> list[str]:
     for name in deduped:
         print(f"V2_B1_B49_EXACT_TOP_LEVEL_CONST_OVERLAP_DEDUP_PASS {name}")
     return deduped
+
+
+def _find_object_property_block(text: str, key: str) -> tuple[int, int]:
+    pattern = re.compile(rf"(?m)^\s*(?:['\"])?{re.escape(key)}(?:['\"])?\s*:\s*\{{\s*$")
+    matches = list(pattern.finditer(text))
+    if len(matches) != 1:
+        raise AssertionError(f"expected exactly one object block for {key}, found {len(matches)}")
+    start = matches[0].start()
+    open_brace = text.find("{", matches[0].start(), matches[0].end())
+    if open_brace < 0:
+        raise AssertionError(f"missing opening brace for {key}")
+
+    depth = 0
+    quote: str | None = None
+    escaped = False
+    line_comment = False
+    block_comment = False
+    i = open_brace
+    while i < len(text):
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < len(text) else ""
+        if line_comment:
+            if ch == "\n":
+                line_comment = False
+            i += 1
+            continue
+        if block_comment:
+            if ch == "*" and nxt == "/":
+                block_comment = False
+                i += 2
+            else:
+                i += 1
+            continue
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == quote:
+                quote = None
+            i += 1
+            continue
+        if ch == "/" and nxt == "/":
+            line_comment = True
+            i += 2
+            continue
+        if ch == "/" and nxt == "*":
+            block_comment = True
+            i += 2
+            continue
+        if ch in ("'", '"', "`"):
+            quote = ch
+            i += 1
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return start, i + 1
+        i += 1
+    raise AssertionError(f"unterminated object block for {key}")
+
+
+def rewrite_operation_section(path: Path, alias: str, old: str, new: str) -> None:
+    text = path.read_text(encoding="utf-8")
+    start, end = _find_object_property_block(text, alias)
+    block = text[start:end]
+    patterns = [f"section: '{old}'", f'section: "{old}"']
+    count = sum(block.count(p) for p in patterns)
+    if count != 1:
+        raise AssertionError(f"{alias}: expected one section {old}, found {count}")
+    block = block.replace(f"section: '{old}'", f"section: '{new}'")
+    block = block.replace(f'section: "{old}"', f'section: "{new}"')
+    path.write_text(text[:start] + block + text[end:], encoding="utf-8")
+    print(f"V2_B1_B49_CANONICAL_SECTION_OVERRIDE_PASS {alias} {old}->{new}")
+
+
+def rewrite_supply_order_get_template(path: Path) -> None:
+    text = path.read_text(encoding="utf-8")
+    start, end = _find_object_property_block(text, "supply_order_get")
+    block = text[start:end]
+    pattern = re.compile(r"order_ids\s*:\s*\[\s*(['\"])1\1\s*\]")
+    matches = list(pattern.finditer(block))
+    if len(matches) != 1:
+        raise AssertionError(f"supply_order_get: expected one string order_ids template, found {len(matches)}")
+    block = pattern.sub("order_ids: [1]", block, count=1)
+    path.write_text(text[:start] + block + text[end:], encoding="utf-8")
+    print("V2_B1_B49_CANONICAL_SUPPLY_ORDER_GET_NUMERIC_TEMPLATE_PASS")
 
 
 def remove_legacy_cluster_block(text: str, key: str) -> str:
@@ -245,7 +340,11 @@ def main() -> None:
     if missing_known:
         raise AssertionError(f"expected proven exact overlaps not found: {missing_known}; actual={sorted(deduped)}")
 
-    reclassify_rating_registry(out / "shared/ozon_operation_registry.js")
+    registry = out / "shared/ozon_operation_registry.js"
+    for alias, (old, new) in CANONICAL_SECTION_OVERRIDES.items():
+        rewrite_operation_section(registry, alias, old, new)
+    rewrite_supply_order_get_template(registry)
+    reclassify_rating_registry(registry)
 
     # Hard boundary: only the three merge-authorized files may differ from canonical B1.
     canonical_files = sorted(p.relative_to(canonical) for p in canonical.rglob("*") if p.is_file())
