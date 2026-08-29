@@ -131,6 +131,14 @@ class RecommendationAPITests(unittest.TestCase):
         for content_type in (None, "text/plain", "application/problem+json"):
             self.assert_error(self.resolve(app, b'{}', content_type), "UNSUPPORTED_MEDIA_TYPE")
 
+    def test_unknown_fields_are_rejected_with_project_error_envelope(self):
+        app = create_app()
+        for payload in (
+            {"birth_day": 16, "birth_month": 1, "gender": "male", "channel": "vk"},
+            {"birth_day": 16, "birth_month": 1, "gender": "male", "availability": "AVAILABLE"},
+        ):
+            self.assert_error(self.resolve(app, json.dumps(payload).encode()), "INVALID_REQUEST")
+
     def test_exact_body_boundaries_and_optional_fields(self):
         app = create_app()
         valid = b'{"birth_day":16,"birth_month":1,"gender":"male"}'
@@ -141,10 +149,24 @@ class RecommendationAPITests(unittest.TestCase):
         self.assertEqual(self.resolve(app, at_limit).status_code, 200)
         self.assert_error(self.resolve(app, over_limit), "PAYLOAD_TOO_LARGE")
         omitted = self.resolve(app, valid).json()
+        year_only = self.resolve(app, b'{"birth_day":16,"birth_month":1,"birth_year":1986,"gender":"male"}').json()
         null_marketplace = self.resolve(app, b'{"birth_day":16,"birth_month":1,"gender":"male","marketplace":null}').json()
+        ozon_marketplace = self.resolve(app, b'{"birth_day":16,"birth_month":1,"gender":"male","marketplace":"ozon"}').json()
         self.assertNotIn("birth_year", omitted["input"])
         self.assertNotIn("marketplace", omitted["input"])
-        self.assertEqual(null_marketplace["input"]["marketplace"], None)
+        self.assertIsNone(omitted["birth_date"]["year"])
+        self.assertIsNone(omitted["marketplace"])
+        self.assertEqual(year_only["input"]["birth_year"], 1986)
+        self.assertNotIn("marketplace", year_only["input"])
+        self.assertEqual(year_only["birth_date"]["year"], 1986)
+        self.assertEqual(year_only["birth_date"]["display"], "16.01.1986")
+        self.assertIsNone(year_only["marketplace"])
+        self.assertNotIn("birth_year", null_marketplace["input"])
+        self.assertIn("marketplace", null_marketplace["input"])
+        self.assertIsNone(null_marketplace["input"]["marketplace"])
+        self.assertIsNone(null_marketplace["marketplace"])
+        self.assertEqual(ozon_marketplace["input"]["marketplace"], "ozon")
+        self.assertEqual(ozon_marketplace["marketplace"], "ozon")
 
     def test_exact_error_envelopes_routing_readiness_and_ids(self):
         app = create_app()
@@ -171,10 +193,33 @@ class RecommendationAPITests(unittest.TestCase):
         self.assert_error(self.resolve(create_app(service=_CoreErrorService()), b'{"birth_day":1,"birth_month":1,"gender":"male"}'), "CORE_ERROR")
         self.assert_error(self.resolve(create_app(service=_UnexpectedService()), b'{"birth_day":1,"birth_month":1,"gender":"male"}'), "INTERNAL_ERROR")
 
+    def test_request_ids_are_uuid4_unique_across_response_classes(self):
+        app = create_app()
+        health = [self.request(app, "GET", "/healthz") for _ in range(2)]
+        success = [self.resolve(app, b'{"birth_day":16,"birth_month":1,"gender":"male"}') for _ in range(2)]
+        malformed = self.resolve(app, b"{")
+        invalid = self.resolve(app, b'{"birth_day":16,"birth_month":1,"gender":"male","channel":"vk"}')
+        for response in health + success:
+            self.assertEqual(response.status_code, 200)
+        self.assert_error(malformed, "MALFORMED_JSON")
+        self.assert_error(invalid, "INVALID_REQUEST")
+        responses = health + success + [malformed, invalid]
+        request_ids = [response.headers["x-request-id"] for response in responses]
+        for request_id in request_ids:
+            self.assert_uuid4(request_id)
+        self.assertEqual(len(request_ids), len(set(request_ids)))
+        for response in health + [malformed, invalid]:
+            self.assertNotIn("x-result-id", response.headers)
+        for response in success:
+            self.assert_uuid4(response.headers["x-result-id"])
+
     def test_medved_and_voron_exact_contracts_and_unique_ids(self):
         app = create_app()
         medved = self.resolve(app, b'{"birth_day":16,"birth_month":1,"birth_year":1986,"gender":"male","marketplace":"ozon"}')
         self.assertEqual(medved.status_code, 200)
+        self.assertIn("Печать Велеса", medved.text)
+        self.assertNotIn("\\u041f", medved.text)
+        self.assertEqual(medved.headers["content-type"], "application/json; charset=utf-8")
         body = medved.json()
         self.assertEqual(set(body), {"api_version", "input", "versions", "birth_date", "chertog", "gender", "marketplace", "recommendation"})
         self.assertEqual(body["versions"], {
@@ -191,6 +236,10 @@ class RecommendationAPITests(unittest.TestCase):
         self.assertEqual(body["recommendation"]["relation_type"], "DIRECT_CHERTOG_SYMBOL")
         self.assertEqual(body["recommendation"]["selection_basis"], "SEMANTIC_DIRECT_SALES_PRIORITIZED")
         self.assertEqual(body["recommendation"]["reason_code"], "MEDVED_MALE")
+        self.assertEqual(body["birth_date"], {"day": 16, "month": 1, "year": 1986, "display": "16.01.1986"})
+        self.assertEqual(body["chertog"], {"id": "medved", "name": "Медведь", "patron_name": "Сварог"})
+        self.assertEqual(body["gender"], "male")
+        self.assertEqual(body["marketplace"], "ozon")
         for marketplace, product, reason, relation, basis in ((None, "kolyadnik", "VORON_MALE_KOLYADNIK", "DIRECT_DERIVED", "SEMANTIC_DIRECT"), ("ozon", "kolyadnik", "VORON_MALE_KOLYADNIK", "DIRECT_DERIVED", "SEMANTIC_DIRECT"), ("wildberries", "alatyr", "VORON_CHANGE_INNER_SUPPORT", "CURATED_MEANING_SUBSTITUTE", "MARKETPLACE_OVERRIDE_SALES_WEIGHTED")):
             payload = {"birth_day": 20, "birth_month": 12, "gender": "male"}
             if marketplace: payload["marketplace"] = marketplace
