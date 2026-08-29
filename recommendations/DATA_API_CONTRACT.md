@@ -2,7 +2,7 @@
 
 Версия: 0.2  
 Статус: **V2 SALES-WEIGHTED contract authority**  
-Revision: **2026-08-28 owner update**
+Revision: **2026-08-29 owner update**
 
 ## 1. Authority
 
@@ -36,7 +36,9 @@ recommendations/data/
 
 ## 4. Calendar schema
 
-Calendar stays V1. Exactly 16 Chertogs, no gaps/overlaps, 29.02 → Волк, year does not affect result.
+Calendar stays V1. Exactly 16 Chertogs, no gaps/overlaps, 29.02 → Волк.
+
+`birth_year` **does not affect Chertog selection**, but if the caller/customer supplied a year it must be preserved for customer-facing rendering.
 
 ## 5. Product policy V2
 
@@ -70,6 +72,7 @@ bear_paw.customer_label = "Печать Велеса"
 svarog.gender_policy = male
 chernobog.gender_policy = male
 mara.gender_policy = female
+zvezda_lady.gender_policy = female
 dazhdbog automatic matrix use = rasa only
 ```
 
@@ -77,41 +80,15 @@ dazhdbog automatic matrix use = rasa only
 
 Exactly one active base product per `chertog + gender`.
 
-Required owner rows:
+Required owner rows include:
 
 ```text
 medved + male   → bear_paw
 medved + female → bear_paw
 lisa + male     → chernobog
 lisa + female   → mara
-```
-
-Example:
-
-```json
-{
-  "matrix_version": "KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED",
-  "entries": [
-    {
-      "chertog_id": "lisa",
-      "gender": "male",
-      "product_key": "chernobog",
-      "relation_type": "CURATED_GENDER_SUBSTITUTE",
-      "selection_basis": "SEMANTIC_CURATED_GENDER_FIT",
-      "reason_code": "LISA_MALE_RESILIENCE_CHANGE",
-      "active": true
-    },
-    {
-      "chertog_id": "lisa",
-      "gender": "female",
-      "product_key": "mara",
-      "relation_type": "DIRECT_DERIVED",
-      "selection_basis": "SEMANTIC_DIRECT",
-      "reason_code": "LISA_MARENA_DERIVED",
-      "active": true
-    }
-  ]
-}
+orel + male     → perun
+orel + female   → zvezda_lady
 ```
 
 Base invariants:
@@ -171,12 +148,19 @@ Supported marketplaces: `ozon`, `wildberries`.
 type ResolveRecommendationInput = {
   birthDay: number;
   birthMonth: number;
+  birthYear?: number; // display/audit context only; MUST NOT affect selection
   gender: "male" | "female";
   marketplace?: "ozon" | "wildberries";
 };
 ```
 
-Year is not part of domain input.
+Rules:
+
+- `birthDay + birthMonth` determine the Chertog;
+- `birthYear`, when supplied, is preserved unchanged for copy/UI;
+- selection must be identical for the same day/month regardless of year;
+- do not drop a supplied year before the copy layer;
+- do not invent a year when it was not supplied.
 
 ## 10. Domain response
 
@@ -186,6 +170,12 @@ type RecommendationResult = {
   productPolicyVersion: string;
   matrixVersion: string;
   marketplaceOverrideVersion: string;
+  birthDate: {
+    day: number;
+    month: number;
+    year: number | null;
+    display: string; // DD.MM.YYYY when year exists, otherwise only supplied date parts
+  };
   chertog: {
     id: string;
     name: string;
@@ -224,6 +214,18 @@ POST /v1/recommendations/resolve
 Content-Type: application/json
 ```
 
+Example request with a full birth date:
+
+```json
+{
+  "birth_day": 16,
+  "birth_month": 1,
+  "birth_year": 1986,
+  "gender": "male",
+  "marketplace": "ozon"
+}
+```
+
 Success example for Медведь:
 
 ```json
@@ -231,8 +233,15 @@ Success example for Медведь:
   "input": {
     "birth_day": 16,
     "birth_month": 1,
+    "birth_year": 1986,
     "gender": "male",
     "marketplace": "ozon"
+  },
+  "birth_date": {
+    "day": 16,
+    "month": 1,
+    "year": 1986,
+    "display": "16.01.1986"
   },
   "chertog": {
     "id": "medved",
@@ -277,7 +286,7 @@ UI
 
 Customer-facing copy must not announce missing stock/card/link.
 
-## 14. Customer-label contract
+## 14. Customer-label and date-render contract
 
 The UI/copy layer must render `customerLabel`, not internal aliases or product keys.
 
@@ -288,6 +297,21 @@ rendered customer label == "Печать Велеса"
 ```
 
 No suffix, prefix, parenthetical clarification or secondary alias is allowed.
+
+Hard assertion for supplied full DOB:
+
+```text
+input.birth_year != null
+→ customer-facing first sentence contains birth_date.display in DD.MM.YYYY form
+```
+
+Example:
+
+```text
+19.11.1988 → "Дата 19.11.1988 относится к Чертогу Лебедя."
+```
+
+The renderer must not shorten this to `19.11`.
 
 ## 15. Validation gates
 
@@ -304,22 +328,27 @@ CI/startup must fail if:
 9. Сварог in female row;
 10. `lisa + male` is not Чернобог;
 11. `lisa + female` is not Мара;
-12. Чернобог in female row;
-13. Мара in male row;
-14. unapproved marketplace override exists;
-15. reserve product auto-appears without owner decision.
+12. `orel + male` is not Перун;
+13. `orel + female` is not Звезда Лады;
+14. Чернобог in female row;
+15. Мара in male row;
+16. supplied `birth_year` is lost before customer rendering;
+17. unapproved marketplace override exists;
+18. reserve product auto-appears without owner decision.
 
 ## 16. Contract tests
 
 ```text
-25.03 + male + ozon → lisa / Чернобог
-25.03 + female + ozon → lisa / Мара
-16.01 + male + ozon → medved / Печать Велеса
-16.01 + female + ozon → medved / Печать Велеса
-15.03 + male → volk / Велес
-15.03 + female → volk / Велес
-13.08 + male → rasa / Даждьбог
-13.08 + female → rasa / Даждьбог
+25.03.1993 + male + ozon → lisa / Чернобог; rendered date includes 1993
+25.03.1993 + female + ozon → lisa / Мара; rendered date includes 1993
+16.01.1986 + male + ozon → medved / Печать Велеса; rendered date includes 1986
+16.01.1990 + female + wildberries → medved / Печать Велеса; rendered date includes 1990
+19.07.1988 + male → orel / Перун
+19.07.1988 + female → orel / Звезда Лады
+15.03.1988 + male → volk / Велес
+15.03.1988 + female → volk / Велес
+13.08.1988 + male → rasa / Даждьбог
+13.08.1988 + female → rasa / Даждьбог
 ```
 
 Decision marker:
