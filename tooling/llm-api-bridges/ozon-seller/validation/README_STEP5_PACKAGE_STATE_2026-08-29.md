@@ -1,1 +1,0 @@
-Non-authoritative state note. Formal Step5 acceptance is pending exact-package CI and independent artifact verification.
