@@ -1,0 +1,82 @@
+name: Ozon full API master checklist
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-full-api-master-checklist.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/build_ozon_full_api_master_checklist.py
+
+permissions:
+  contents: write
+
+jobs:
+  build-master-checklist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Fetch pinned audited GitHub operation indexes
+        run: |
+          set -euo pipefail
+          commit=1953152c36955225b459cf55963a2c3a7a234661
+          curl -fsSL "https://raw.githubusercontent.com/MissiaL/ozon-api/${commit}/references/index.md" -o /tmp/ozon-seller-index.md
+          curl -fsSL "https://raw.githubusercontent.com/MissiaL/ozon-api/${commit}/references/index-performance.md" -o /tmp/ozon-performance-index.md
+
+      - name: Dump current canonical Bridge registry
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE' > /tmp/ozon-current-registry.json
+          await import('./tooling/llm-api-bridges/ozon-seller/shared/runtime_names.js');
+          await import('./tooling/llm-api-bridges/ozon-seller/shared/ozon_operation_registry.js');
+          const operations = globalThis.OzonOperationRegistry?.OPERATIONS;
+          if (!operations) throw new Error('OzonOperationRegistry.OPERATIONS unavailable');
+          process.stdout.write(JSON.stringify({operations}, null, 2));
+          NODE
+
+      - name: Build and verify 463 + 48 inventory
+        run: |
+          set -euo pipefail
+          base=tooling/llm-api-bridges/ozon-seller
+          validation="$base/validation"
+          python3 "$validation/build_ozon_full_api_master_checklist.py" \
+            --seller-index /tmp/ozon-seller-index.md \
+            --performance-index /tmp/ozon-performance-index.md \
+            --registry-json /tmp/ozon-current-registry.json \
+            --out-json "$validation/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.json" \
+            --out-csv "$validation/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.csv" \
+            --out-summary "$validation/OZON_FULL_API_MASTER_CHECKLIST_SUMMARY_2026-08-29.md"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('tooling/llm-api-bridges/ozon-seller/validation/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.json')
+          x=json.loads(p.read_text(encoding='utf-8'))
+          assert x['counts']['seller'] == 463
+          assert x['counts']['performance'] == 48
+          assert x['counts']['total'] == 511
+          assert len(x['rows']) == 511
+          assert len({(r['provider'],r['operation_key']) for r in x['rows']}) == 511
+          print(json.dumps(x['counts'], sort_keys=True))
+          PY
+
+      - name: Commit generated checklist to branch
+        run: |
+          set -euo pipefail
+          validation=tooling/llm-api-bridges/ozon-seller/validation
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add \
+            "$validation/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.json" \
+            "$validation/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.csv" \
+            "$validation/OZON_FULL_API_MASTER_CHECKLIST_SUMMARY_2026-08-29.md"
+          if git diff --cached --quiet; then
+            echo "Checklist unchanged"
+            exit 0
+          fi
+          git commit -m "validation(ozon): generate 463+48 master checklist"
+          git push origin HEAD:repair/ozon-v2-b1-stocks-warehouse-2026-08-29
