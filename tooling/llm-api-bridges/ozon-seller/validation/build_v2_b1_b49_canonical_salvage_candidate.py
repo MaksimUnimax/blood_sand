@@ -32,6 +32,25 @@ KNOWN_EXACT_OVERLAPS = {
 
 EXPECTED_CANONICAL_B1_ALIAS_COUNT = 42
 
+CANONICAL_CONTRACT_FUNCTION_OVERRIDES = {
+    "normalizeFboStockByWarehouseParams",
+    "normalizeFbsStockByWarehouseParams",
+    "normalizePostingFboListParams",
+    "normalizeSellerWarehouseListParams",
+    "normalizeStockAnalyticsParams",
+    "normalizeSupplyOrderDetailsParams",
+    "normalizeSupplyOrderGetParams",
+}
+
+HISTORICAL_SHARED_FUNCTION_OVERRIDES = {
+    "shouldRedactResultField",
+    "validateOperationMeta",
+}
+
+EXPECTED_COMMON_CONTRACT_FUNCTION_DIFFERENCES = (
+    CANONICAL_CONTRACT_FUNCTION_OVERRIDES | HISTORICAL_SHARED_FUNCTION_OVERRIDES
+)
+
 
 @dataclass(frozen=True)
 class ConstDecl:
@@ -51,11 +70,73 @@ class PropertyBlock:
     full_text: str
 
 
+@dataclass(frozen=True)
+class FunctionDecl:
+    name: str
+    start: int
+    core_end: int
+    full_end: int
+    core_text: str
+
+
 def merge_file(ours: Path, base: Path, theirs: Path) -> None:
     subprocess.run(
         ["git", "merge-file", "--ours", str(ours), str(base), str(theirs)],
         check=True,
     )
+
+
+def _scan_balanced_end(text: str, open_brace: int, label: str) -> int:
+    depth = 0
+    quote: str | None = None
+    escaped = False
+    line_comment = False
+    block_comment = False
+    i = open_brace
+    while i < len(text):
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < len(text) else ""
+        if line_comment:
+            if ch == "\n":
+                line_comment = False
+            i += 1
+            continue
+        if block_comment:
+            if ch == "*" and nxt == "/":
+                block_comment = False
+                i += 2
+            else:
+                i += 1
+            continue
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == quote:
+                quote = None
+            i += 1
+            continue
+        if ch == "/" and nxt == "/":
+            line_comment = True
+            i += 2
+            continue
+        if ch == "/" and nxt == "*":
+            block_comment = True
+            i += 2
+            continue
+        if ch in ("'", '"', "`"):
+            quote = ch
+            i += 1
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        i += 1
+    raise AssertionError(f"unterminated balanced block for {label}")
 
 
 def _find_decl_end(text: str, expr_start: int) -> int:
@@ -177,64 +258,22 @@ def dedupe_exact_top_level_const_overlaps(path: Path) -> list[str]:
     return deduped
 
 
-def _balanced_object_end(text: str, open_brace: int, key: str) -> int:
-    depth = 0
-    quote: str | None = None
-    escaped = False
-    line_comment = False
-    block_comment = False
-    i = open_brace
-    while i < len(text):
-        ch = text[i]
-        nxt = text[i + 1] if i + 1 < len(text) else ""
-        if line_comment:
-            if ch == "\n":
-                line_comment = False
-            i += 1
-            continue
-        if block_comment:
-            if ch == "*" and nxt == "/":
-                block_comment = False
-                i += 2
-            else:
-                i += 1
-            continue
-        if quote is not None:
-            if escaped:
-                escaped = False
-            elif ch == "\\":
-                escaped = True
-            elif ch == quote:
-                quote = None
-            i += 1
-            continue
-        if ch == "/" and nxt == "/":
-            line_comment = True
-            i += 2
-            continue
-        if ch == "/" and nxt == "*":
-            block_comment = True
-            i += 2
-            continue
-        if ch in ("'", '"', "`"):
-            quote = ch
-            i += 1
-            continue
-        if ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                return i + 1
-        i += 1
-    raise AssertionError(f"unterminated object block for {key}")
-
-
 def _extend_property_end(text: str, core_end: int) -> int:
     i = core_end
     while i < len(text) and text[i] in " \t":
         i += 1
     if i < len(text) and text[i] == ",":
+        i += 1
+    if text[i:i + 2] == "\r\n":
+        i += 2
+    elif i < len(text) and text[i] == "\n":
+        i += 1
+    return i
+
+
+def _extend_function_end(text: str, core_end: int) -> int:
+    i = core_end
+    while i < len(text) and text[i] in " \t":
         i += 1
     if text[i:i + 2] == "\r\n":
         i += 2
@@ -251,9 +290,8 @@ def _property_blocks_in_const(text: str, const_name: str) -> list[PropertyBlock]
         open_brace = text.find("{", match.start(), match.end())
         if open_brace < 0:
             continue
-        core_end = _balanced_object_end(text, open_brace, match.group(1))
+        core_end = _scan_balanced_end(text, open_brace, match.group(1))
         core_text = text[match.start():core_end]
-        # Direct operation records are the only property blocks in OPERATIONS with fixed provider/path/effect metadata.
         if "provider:" not in core_text or "path:" not in core_text or "effect:" not in core_text:
             continue
         full_end = _extend_property_end(text, core_end)
@@ -265,6 +303,27 @@ def _property_blocks_in_const(text: str, const_name: str) -> list[PropertyBlock]
                 full_end=full_end,
                 core_text=core_text,
                 full_text=text[match.start():full_end],
+            )
+        )
+    return out
+
+
+def scan_function_declarations(text: str) -> list[FunctionDecl]:
+    pattern = re.compile(r"(?m)^  function\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*\(")
+    out: list[FunctionDecl] = []
+    for match in pattern.finditer(text):
+        open_brace = text.find("{", match.end())
+        if open_brace < 0:
+            raise AssertionError(f"missing function body for {match.group(1)}")
+        core_end = _scan_balanced_end(text, open_brace, match.group(1))
+        full_end = _extend_function_end(text, core_end)
+        out.append(
+            FunctionDecl(
+                name=match.group(1),
+                start=match.start(),
+                core_end=core_end,
+                full_end=full_end,
+                core_text=text[match.start():core_end],
             )
         )
     return out
@@ -297,11 +356,8 @@ def restore_canonical_operation_overlaps(candidate_path: Path, canonical_path: P
         if len(merged) > 2:
             raise AssertionError(f"canonical B1 alias appears more than twice after merge: {alias} -> {len(merged)}")
         overlap_counts[alias] = len(merged)
-
-        # Replace only the property body. Preserve the merged first copy's existing comma/newline separator.
         first = merged[0]
         replacements.append((first.start, first.core_end, canonical_block.core_text))
-        # Any later historical duplicate is removed together with its own comma/newline separator.
         for extra in merged[1:]:
             replacements.append((extra.start, extra.full_end, ""))
 
@@ -312,6 +368,58 @@ def restore_canonical_operation_overlaps(candidate_path: Path, canonical_path: P
     duplicate_overlaps = sorted(alias for alias, count in overlap_counts.items() if count == 2)
     print(f"V2_B1_B49_CANONICAL_OPERATION_OVERLAY_COUNT_PASS {len(canonical_by_alias)}")
     print(f"V2_B1_B49_CANONICAL_DUPLICATE_OVERLAPS_COLLAPSED_PASS {len(duplicate_overlaps)}")
+
+
+def restore_contract_function_overlaps(candidate_path: Path, canonical_path: Path, historical_path: Path) -> None:
+    candidate_text = candidate_path.read_text(encoding="utf-8")
+    canonical_text = canonical_path.read_text(encoding="utf-8")
+    historical_text = historical_path.read_text(encoding="utf-8")
+
+    canonical_funcs = {decl.name: decl for decl in scan_function_declarations(canonical_text)}
+    historical_funcs = {decl.name: decl for decl in scan_function_declarations(historical_text)}
+    common = set(canonical_funcs) & set(historical_funcs)
+    differences = {name for name in common if canonical_funcs[name].core_text != historical_funcs[name].core_text}
+    if differences != EXPECTED_COMMON_CONTRACT_FUNCTION_DIFFERENCES:
+        raise AssertionError(
+            "unexpected corrected-B1/B49 common contract function differences: "
+            f"expected={sorted(EXPECTED_COMMON_CONTRACT_FUNCTION_DIFFERENCES)} actual={sorted(differences)}"
+        )
+
+    candidate_by_name: dict[str, list[FunctionDecl]] = {}
+    for decl in scan_function_declarations(candidate_text):
+        candidate_by_name.setdefault(decl.name, []).append(decl)
+
+    replacements: list[tuple[int, int, str]] = []
+    for name in sorted(EXPECTED_COMMON_CONTRACT_FUNCTION_DIFFERENCES):
+        merged = candidate_by_name.get(name, [])
+        if not merged:
+            raise AssertionError(f"contract overlap function missing from candidate: {name}")
+        if len(merged) > 2:
+            raise AssertionError(f"contract overlap function occurs more than twice: {name} -> {len(merged)}")
+        source = canonical_funcs[name] if name in CANONICAL_CONTRACT_FUNCTION_OVERRIDES else historical_funcs[name]
+        first = merged[0]
+        replacements.append((first.start, first.core_end, source.core_text))
+        for extra in merged[1:]:
+            replacements.append((extra.start, extra.full_end, ""))
+
+    for start, end, replacement in sorted(replacements, key=lambda item: item[0], reverse=True):
+        candidate_text = candidate_text[:start] + replacement + candidate_text[end:]
+
+    candidate_path.write_text(candidate_text, encoding="utf-8")
+
+    final_funcs: dict[str, list[FunctionDecl]] = {}
+    for decl in scan_function_declarations(candidate_text):
+        final_funcs.setdefault(decl.name, []).append(decl)
+    for name in sorted(EXPECTED_COMMON_CONTRACT_FUNCTION_DIFFERENCES):
+        decls = final_funcs.get(name, [])
+        if len(decls) != 1:
+            raise AssertionError(f"resolved contract function count {name} -> {len(decls)}")
+        expected = canonical_funcs[name].core_text if name in CANONICAL_CONTRACT_FUNCTION_OVERRIDES else historical_funcs[name].core_text
+        if decls[0].core_text != expected:
+            raise AssertionError(f"resolved contract function source mismatch: {name}")
+
+    print(f"V2_B1_B49_CANONICAL_CONTRACT_FUNCTION_OVERRIDES_PASS {len(CANONICAL_CONTRACT_FUNCTION_OVERRIDES)}")
+    print(f"V2_B1_B49_HISTORICAL_SHARED_SAFETY_FUNCTIONS_PRESERVED_PASS {len(HISTORICAL_SHARED_FUNCTION_OVERRIDES)}")
 
 
 def remove_legacy_cluster_block(text: str, key: str) -> str:
@@ -407,8 +515,6 @@ def main() -> None:
     for rel in MERGED_FILES:
         merge_file(out / rel, b0 / rel, historical / rel)
 
-    # Textual three-way merge can retain identical independent top-level const additions from both sides.
-    # Parse complete const declaration blocks and remove only exact duplicate pairs; any differing collision is fatal.
     deduped: list[str] = []
     for rel in MERGED_FILES:
         deduped.extend(dedupe_exact_top_level_const_overlaps(out / rel))
@@ -416,20 +522,21 @@ def main() -> None:
     if missing_known:
         raise AssertionError(f"expected proven exact overlaps not found: {missing_known}; actual={sorted(deduped)}")
 
-    # Corrected canonical B1 is authoritative for every alias it already implements.
-    # Replace any merged duplicate/modified operation records wholesale with the exact canonical B1 body.
     registry = out / "shared/ozon_operation_registry.js"
     restore_canonical_operation_overlaps(registry, canonical / "shared/ozon_operation_registry.js")
-
-    # Historical B10 operations are valid reads, but the old top-level seller_health taxonomy is not part of V2.
     reclassify_rating_registry(registry)
 
-    # Syntax is a builder postcondition, not something deferred to a later behavior gate.
+    contract = out / "shared/ozon_contract.js"
+    restore_contract_function_overlaps(
+        contract,
+        canonical / "shared/ozon_contract.js",
+        historical / "shared/ozon_contract.js",
+    )
+
     node_check(registry)
-    node_check(out / "shared/ozon_contract.js")
+    node_check(contract)
     node_check(out / "shared/ozon_entitlements.js")
 
-    # Hard boundary: only the three merge-authorized files may differ from canonical B1.
     canonical_files = sorted(p.relative_to(canonical) for p in canonical.rglob("*") if p.is_file())
     out_files = sorted(p.relative_to(out) for p in out.rglob("*") if p.is_file())
     if canonical_files != out_files:
