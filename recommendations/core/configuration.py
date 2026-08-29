@@ -34,6 +34,7 @@ RELATIONS = {"DIRECT_PATRON", "DIRECT_DERIVED", "DIRECT_CHERTOG_SYMBOL", "CURATE
 BASE_SELECTIONS = {"SEMANTIC_DIRECT", "SEMANTIC_DIRECT_SALES_PRIORITIZED", "SEMANTIC_CURATED_SALES_WEIGHTED", "SEMANTIC_CURATED_GENDER_FIT"}
 FORBIDDEN_SELECTION_FIELDS = {"secondary", "secondary_product", "rank2", "alternates", "fallback_products", "fallback_product"}
 FORBIDDEN_COPY_FIELDS = {"product_key", "sku", "relation_type", "selection_basis", "effective_product_key", "fallback_product"}
+NON_AUTOMATIC_ROLES = {"reserve", "inactive_auto_reserve"}
 
 
 def _fail(message: str) -> None:
@@ -151,7 +152,7 @@ def _validate_products(policy: Any, chertogs: set[str]) -> dict[str, dict[str, A
     if len(rows) != 25: _fail("product policy must contain exactly 25 products")
     products, skus = {}, set()
     allowed = {"product_key", "sku", "marketplace_name", "recommendation_identity", "customer_label", "gender_policy", "allowed_chertogs", "active_for_recommendation", "role"}
-    required = allowed - {"role"}
+    required = allowed
     for i, raw in enumerate(rows):
         row = _object(raw, f"products[{i}]"); _keys(row, allowed, required, f"products[{i}]")
         key = _string(row["product_key"], f"products[{i}].product_key")
@@ -162,9 +163,12 @@ def _validate_products(policy: Any, chertogs: set[str]) -> dict[str, dict[str, A
         for field in ("marketplace_name", "recommendation_identity", "customer_label"): _string(row[field], f"products[{i}].{field}")
         _string(row["gender_policy"], f"products[{i}].gender_policy")
         if row["gender_policy"] not in GENDERS | {"any"}: _fail(f"invalid gender_policy for {key}")
+        role = _string(row["role"], f"products[{i}].role")
         allowed_chertogs = _array(row["allowed_chertogs"], f"products[{i}].allowed_chertogs")
         if any(not isinstance(cid, str) or cid not in chertogs for cid in allowed_chertogs): _fail(f"unknown allowed_chertog for {key}")
-        _bool(row["active_for_recommendation"], f"products[{i}].active_for_recommendation")
+        active = _bool(row["active_for_recommendation"], f"products[{i}].active_for_recommendation")
+        if role in NON_AUTOMATIC_ROLES and active:
+            _fail(f"non-automatic product role cannot be active: {key}")
         products[key] = row
     bear = products.get("bear_paw")
     if not bear or (bear["recommendation_identity"], bear["customer_label"], bear["gender_policy"], bear["allowed_chertogs"], bear["active_for_recommendation"]) != ("Печать Велеса", "Печать Велеса", "any", ["medved"], True): _fail("bear_paw violates locked V2 policy")
@@ -195,6 +199,7 @@ def _validate_matrix(matrix: Any, chertogs: set[str], products: dict[str, dict[s
         if case in cases: _fail(f"duplicate base case: {case}")
         product = products.get(row["product_key"])
         if product is None: _fail(f"unknown matrix product_key: {row['product_key']}")
+        if product["role"] in NON_AUTOMATIC_ROLES: _fail(f"non-automatic matrix product role: {row['product_key']}")
         if not product["active_for_recommendation"]: _fail(f"inactive/reserve matrix product: {row['product_key']}")
         if product["gender_policy"] not in ("any", row["gender"]): _fail(f"matrix gender-policy conflict for {row['product_key']}")
         if row["chertog_id"] not in product["allowed_chertogs"]: _fail(f"matrix allowed_chertogs conflict for {row['product_key']}")
@@ -233,6 +238,7 @@ def _validate_overrides(overrides: Any, cases: dict[tuple[str, str], dict[str, A
         if row["base_product_key"] != cases[(row["chertog_id"], row["gender"])]["product_key"]: _fail("override base_product_key does not match base matrix")
         effective = products.get(row["effective_product_key"])
         if effective is None or not effective["active_for_recommendation"]: _fail("override effective product is unknown or inactive")
+        if effective["role"] in NON_AUTOMATIC_ROLES: _fail("override effective product has non-automatic role")
         if effective["gender_policy"] not in ("any", row["gender"]) or row["chertog_id"] not in effective["allowed_chertogs"]: _fail("override effective product is not allowed for case")
         _string(row["reason_code"], "override reason_code")
     expected = {"marketplace":"wildberries", "chertog_id":"voron", "gender":"male", "base_product_key":"kolyadnik", "effective_product_key":"alatyr", "relation_type":"CURATED_MEANING_SUBSTITUTE", "selection_basis":"MARKETPLACE_OVERRIDE_SALES_WEIGHTED", "reason_code":"VORON_CHANGE_INNER_SUPPORT"}

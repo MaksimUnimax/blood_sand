@@ -47,6 +47,7 @@ add_failure_test("test_missing_base_case_fails", lambda d: d["matrix"]["base_row
 add_failure_test("test_duplicate_base_case_fails", lambda d: d["matrix"]["base_rows"].__setitem__(-1, copy.deepcopy(d["matrix"]["base_rows"][0])))
 add_failure_test("test_unknown_matrix_product_key_fails", lambda d: row(d, "deva", "male").update(product_key="missing"))
 add_failure_test("test_inactive_reserve_matrix_product_fails", lambda d: row(d, "deva", "male").update(product_key="belobog"))
+add_failure_test("test_product_role_is_required", lambda d: product(d, "triglav").pop("role"))
 add_failure_test("test_matrix_gender_policy_conflict_fails", lambda d: row(d, "deva", "male").update(product_key="mara"))
 add_failure_test("test_product_allowed_chertogs_conflict_fails", lambda d: product(d, "svarog").update(allowed_chertogs=["kon"]))
 add_failure_test("test_bear_paw_outside_medved_fails", lambda d: row(d, "volk", "male").update(product_key="bear_paw"))
@@ -78,7 +79,21 @@ add_failure_test("test_voron_male_base_reason_becoming_ozon_scoped_fails", voron
 def extra_marketplace_reason(d):
     next(x for x in d["copy"]["records"] if x["reason_code"] == "DEVA_MALE")["marketplace"] = "ozon"
 add_failure_test("test_extra_marketplace_scoped_reason_fails", extra_marketplace_reason)
-add_failure_test("test_reserve_product_appearing_automatically_fails", lambda d: row(d, "deva", "male").update(product_key="triglav"))
+def reserve_role_matrix_bypass(d):
+    triglav = product(d, "triglav")
+    triglav.update(active_for_recommendation=True, allowed_chertogs=["vepr"], gender_policy="any")
+    row(d, "vepr", "male").update(product_key="triglav")
+add_failure_test("test_reserve_role_matrix_bypass_fails", reserve_role_matrix_bypass)
+def inactive_auto_role_matrix_bypass(d):
+    belobog = product(d, "belobog")
+    belobog.update(active_for_recommendation=True, allowed_chertogs=["vepr"], gender_policy="any")
+    row(d, "vepr", "male").update(product_key="belobog")
+add_failure_test("test_inactive_auto_role_matrix_bypass_fails", inactive_auto_role_matrix_bypass)
+def reserve_role_override_bypass(d):
+    triglav = product(d, "triglav")
+    triglav.update(active_for_recommendation=True, allowed_chertogs=["voron"], gender_policy="male")
+    d["overrides"]["overrides"][0]["effective_product_key"] = "triglav"
+add_failure_test("test_reserve_role_override_bypass_fails", reserve_role_override_bypass)
 def secondary_field(d): row(d, "deva", "male")["secondary_product"] = "alatyr"
 add_failure_test("test_secondary_rank_two_style_field_is_rejected", secondary_field)
 add_failure_test("test_full_dob_context_not_true_fails", lambda d: d["copy"].update(full_dob_supported_as_display_context=False))
