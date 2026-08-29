@@ -10,7 +10,7 @@ class Config:
     reference_dir: Path = field(default_factory=lambda: Path(os.getenv('REFERENCE_DIR', '/opt/marketplace-question-operator/references')))
     codex_executable: Path = field(default_factory=lambda: Path(os.getenv('CODEX_EXECUTABLE', '/root/.nvm/versions/node/v22.22.1/bin/codex')))
     retention_days: int = field(default_factory=lambda: int(os.getenv('TECHNICAL_RETENTION_DAYS', '5')))
-    poll_interval_seconds: int = field(default_factory=lambda: int(os.getenv('POLL_INTERVAL_SECONDS', '600')))
+    poll_interval_seconds: int = field(default_factory=lambda: int(os.getenv('POLL_INTERVAL_SECONDS', '300')))
     profiles: dict = None
 
     def __post_init__(self):
