@@ -5,7 +5,7 @@ Matrix version: `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`
 Calendar version: `KIP_CHERTOG_CALENDAR_V1`  
 Product policy: `KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED`  
 Marketplace override: `KIP_MARKETPLACE_OVERRIDE_V1`  
-Revision: **2026-08-28 owner update — Лиса male → Чернобог; customer name → Печать Велеса**
+Revision: **2026-08-29 owner update — Орёл female → Звезда Лады; Лиса male → Чернобог; customer name → Печать Велеса**
 
 Подробное коммерческое обоснование и customer-copy: `SALES_WEIGHTED_MATRIX_V2_AUDIT_2026-08-28.md`.
 
@@ -69,7 +69,7 @@ V2 даёт фактическим продажам высокий вес пос
 | Лось | **Родимич** | **Звезда Лады** | **Родимич** | **Звезда Лады** |
 | Финист | **Алатырь** | **Алатырь** | **Алатырь** | **Алатырь** |
 | Конь | **Сварог** | **Жива** | **Сварог** | **Жива** |
-| Орёл | **Перун** | **Перун** | **Перун** | **Перун** |
+| Орёл | **Перун** | **Звезда Лады** | **Перун** | **Звезда Лады** |
 | Раса | **Даждьбог** | **Даждьбог** | **Даждьбог** | **Даждьбог** |
 
 ## 5. Marketplace override
@@ -146,6 +146,19 @@ Owner-approved gender split:
 
 Причина: Мара воспринимается более женским символом. Для мужчины выбран Чернобог как близкий по линии внутренней стойкости, перемен и преодоления трудных периодов, при этом товар имеет заметные продажи и ранее не использовался в automatic matrix.
 
+### 6.6. Орёл
+
+Owner-approved gender split:
+
+```text
+Орёл + мужчина → Перун
+Орёл + женщина → Звезда Лады
+```
+
+`Перун` остаётся прямым выбором для мужчины. Для женщины выбран `Звезда Лады`: это женский активный SKU с более сильным commercial signal, чем Перун, и естественной связью через женскую силу, ответственность за близких, семейную защиту и сохранение домашней опоры.
+
+`Печать Велеса` для Орла **не используется**, несмотря на её очень высокие продажи: продаваемое исполнение визуально привязано к Медведю, поэтому перенос в Орла создавал бы явную смысловую и визуальную натяжку.
+
 ## 7. Нормализованные типы связи
 
 `relation_type`:
@@ -197,7 +210,7 @@ Owner-approved gender split:
 | kon | male | Сварог | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
 | kon | female | Жива | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
 | orel | male | Перун | DIRECT_PATRON | SEMANTIC_DIRECT |
-| orel | female | Перун | DIRECT_PATRON | SEMANTIC_DIRECT |
+| orel | female | Звезда Лады | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
 | rasa | male | Даждьбог | DIRECT_PATRON | SEMANTIC_DIRECT |
 | rasa | female | Даждьбог | DIRECT_PATRON | SEMANTIC_DIRECT |
 
@@ -211,6 +224,7 @@ Marketplace override:
 
 | Case | Previous | Current |
 |---|---|---|
+| Орёл female | Перун | **Звезда Лады** |
 | Лиса male | Мара | **Чернобог** |
 | Медведь customer label | extended label | **Печать Велеса** |
 
@@ -243,6 +257,8 @@ Reserve:
 - Волк = Велес;
 - Лиса male = Чернобог;
 - Лиса female = Мара;
+- Орёл male = Перун;
+- Орёл female = Звезда Лады;
 - Сварог не используется для женщин;
 - reserve SKU не попадают в automatic output без нового owner decision.
 

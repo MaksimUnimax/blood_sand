@@ -3,7 +3,7 @@
 Статус: **V2 SALES-WEIGHTED — current authority**  
 Product policy: `KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED`  
 Matrix: `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`  
-Revision: **2026-08-28 owner update**
+Revision: **2026-08-29 owner update**
 
 Источник ассортимента: нормализованный Ozon/Wildberries ассортимент проекта `blood_sand`. В семейство `slavic_symbols_oberegs` входят 25 SKU.
 
@@ -53,13 +53,13 @@ Owner decisions:
 | Родимич | Родимич | male | sales_weighted_fallback | Щука / мужчина; Лебедь / мужчина; Лось / мужчина | Активная мужская родовая линия |
 | Жива | Жива | female | direct/fallback | Дева / женщина; Конь / женщина | Прямая Дева; жизненная линия Коня |
 | Сварог | Сварог | male | sales_weighted_fallback | Дева / мужчина; Конь / мужчина | Не выдаётся Медведю |
-| Перун | Перун | any | direct | Орёл / оба | Прямой покровитель Орла |
+| Перун | Перун | any | direct | Орёл / мужчина | Прямой покровитель Орла; женская ветка переведена на Звезду Лады |
 | Стрибог | Стрибог | any | reserve | — | Automatic row не утверждён |
 | Макошь | Макошь | female | direct | Лебедь / женщина | Прямой покровитель Лебедя |
 | Семаргл | Семаргл | any | direct | Змей / оба | Прямой покровитель Змея |
 | Хорс | Хорс | any | reserve | — | Automatic row не утверждён |
 | Мара | Мара | female | direct_derived | Лиса / женщина | Женская ветка Лисы; мужчина переведён на Чернобога |
-| Звезда Лады | Звезда Лады | female | direct_derived / sales_weighted_fallback | Щука / женщина; Бусел / женщина; Лось / женщина | Активная женская семейная линия |
+| Звезда Лады | Звезда Лады | female | direct_derived / sales_weighted_fallback | Щука / женщина; Бусел / женщина; Лось / женщина; Орёл / женщина | Активная женская линия; для Орла — curated по женской силе, ответственности за близких и защите семейной опоры |
 | Даждьбог | Даждьбог | any | direct | Раса / оба | Только две base rows: Раса male + female |
 | Чур | Чур | any | sales_weighted_fallback | Тур / оба | Сильный seller и приемлемая защитная линия |
 
@@ -86,10 +86,11 @@ Marketplace name, recommendation identity и customer-facing label в V2 нор�
 
 ```text
 Волк → Печать Велеса
+Орёл → Печать Велеса
 любой другой Чертог → Печать Велеса
 ```
 
-Для Волка используется отдельный товар `Велес`.
+Для Волка используется отдельный товар `Велес`. Для Орла женская ветка использует `Звезда Лады`, а не визуально медвежью Печать Велеса.
 
 ## 5. Лиса — gender split
 
@@ -102,7 +103,18 @@ Marketplace name, recommendation identity и customer-facing label в V2 нор�
 
 Мара теперь `female` и остаётся direct-derived женской веткой Лисы.
 
-## 6. Даждьбог — owner-locked cap
+## 6. Орёл — gender split
+
+```text
+Орёл + мужчина → Перун
+Орёл + женщина → Звезда Лады
+```
+
+Перун остаётся прямым мужским result для Орла. Для женской ветки `Звезда Лады` выбрана как более подходящий gender-fit вариант с хорошим sales signal и естественной связью через женскую силу, заботу о близких, семейную защиту и сохранение опоры.
+
+`Печать Велеса` не допускается в Орла: её продаваемое исполнение визуально привязано к Медведю, поэтому коммерческий перевес не отменяет visual/semantic conflict.
+
+## 7. Даждьбог — owner-locked cap
 
 Automatic V2:
 
@@ -113,7 +125,7 @@ Automatic V2:
 
 Других строк с Даждьбогом нет.
 
-## 7. Active V2 inventory by role
+## 8. Active V2 inventory by role
 
 ### Direct / direct-derived / direct-symbol
 
@@ -125,7 +137,7 @@ Automatic V2:
 - Велес — Волк both;
 - Мара — Лиса female;
 - Звезда Лады — Лось female;
-- Перун — Орёл both;
+- Перун — Орёл male;
 - Даждьбог — Раса both.
 
 ### Curated / sales-weighted active
@@ -134,12 +146,12 @@ Automatic V2:
 - Сварог — Дева male; Конь male;
 - Алатырь — Вепрь both; Ворон female; Ворон male WB; Финист both;
 - Родимич — Щука male; Лебедь male; Лось male;
-- Звезда Лады — Щука female; Бусел female;
+- Звезда Лады — Щука female; Бусел female; Орёл female;
 - Молвинец — Бусел male;
 - Чур — Тур both;
 - Жива — Конь female.
 
-## 8. Removed / reserve V2
+## 9. Removed / reserve V2
 
 Inactive automatic:
 
@@ -158,16 +170,19 @@ Reserve:
 
 Чернобог больше не reserve.
 
-## 9. Hard validation rules
+## 10. Hard validation rules
 
 - exactly one effective product per `chertog + gender + marketplace`;
 - Даждьбог только Раса, ровно две base rows;
 - `bear_paw` только Медведь;
 - customer-facing label `bear_paw` product = ровно `Печать Велеса`;
 - Печать Велеса + Волк = FORBIDDEN;
+- Печать Велеса + Орёл = FORBIDDEN;
 - Сварог + female = FORBIDDEN;
 - Чернобог + female = FORBIDDEN;
 - Мара + male = FORBIDDEN;
+- Орёл + male = Перун;
+- Орёл + female = Звезда Лады;
 - Жива, Макошь, Звезда Лады не выдаются мужчинам;
 - Родимич, Колядник не выдаются женщинам;
 - reserve SKU не появляются автоматически без нового owner decision.
