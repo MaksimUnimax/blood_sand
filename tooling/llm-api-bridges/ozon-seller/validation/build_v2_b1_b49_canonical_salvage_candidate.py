@@ -28,18 +28,33 @@ def merge_file(ours: Path, base: Path, theirs: Path) -> None:
     )
 
 
-def dedupe_exact_single_line_const(path: Path, name: str) -> None:
+def dedupe_exact_top_level_const_overlaps(path: Path) -> list[str]:
     lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-    matches = [(i, line) for i, line in enumerate(lines) if re.match(rf"^\s*const\s+{re.escape(name)}\s*=.*;\s*$", line.rstrip("\r\n"))]
-    if len(matches) != 2:
-        raise AssertionError(f"expected exactly two merged declarations for {name}, found {len(matches)}")
-    first_i, first_line = matches[0]
-    second_i, second_line = matches[1]
-    if first_line.strip() != second_line.strip():
-        raise AssertionError(f"conflicting merged declarations for {name}: {first_line.strip()} != {second_line.strip()}")
-    del lines[second_i]
-    path.write_text("".join(lines), encoding="utf-8")
-    print(f"V2_B1_B49_EXACT_CONST_OVERLAP_DEDUP_PASS {name}")
+    by_name: dict[str, list[tuple[int, str]]] = {}
+    pattern = re.compile(r"^  const\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*=.*;\s*$")
+    for i, line in enumerate(lines):
+        m = pattern.match(line.rstrip("\r\n"))
+        if m:
+            by_name.setdefault(m.group(1), []).append((i, line))
+
+    remove_indexes: set[int] = set()
+    deduped: list[str] = []
+    for name, matches in sorted(by_name.items()):
+        if len(matches) == 1:
+            continue
+        stripped = {line.strip() for _, line in matches}
+        if len(matches) != 2 or len(stripped) != 1:
+            rendered = " | ".join(line.strip() for _, line in matches)
+            raise AssertionError(f"non-identical or non-pair top-level const overlap {name}: {rendered}")
+        remove_indexes.add(matches[1][0])
+        deduped.append(name)
+
+    if remove_indexes:
+        lines = [line for i, line in enumerate(lines) if i not in remove_indexes]
+        path.write_text("".join(lines), encoding="utf-8")
+    for name in deduped:
+        print(f"V2_B1_B49_EXACT_TOP_LEVEL_CONST_OVERLAP_DEDUP_PASS {name}")
+    return deduped
 
 
 def remove_legacy_cluster_block(text: str, key: str) -> str:
@@ -119,9 +134,14 @@ def main() -> None:
     for rel in MERGED_FILES:
         merge_file(out / rel, b0 / rel, historical / rel)
 
-    # Canonical B1 and historical B49 both independently add this identical warehouse/logistics enum.
-    # The textual three-way merge keeps both non-conflicting insertions; remove only the proven exact duplicate.
-    dedupe_exact_single_line_const(out / "shared/ozon_contract.js", "DELIVERY_METHOD_SORT_DIR")
+    # Textual three-way merge can retain identical independent top-level const additions from both sides.
+    # Remove only exact duplicate pairs at the IIFE top level; any non-identical collision remains fail-closed.
+    deduped: list[str] = []
+    for rel in MERGED_FILES:
+        deduped.extend(dedupe_exact_top_level_const_overlaps(out / rel))
+    if "DELIVERY_METHOD_SORT_DIR" not in deduped or "DELIVERY_METHOD_STATUSES" not in deduped:
+        raise AssertionError(f"expected proven warehouse/logistics const overlaps not found: {deduped}")
+
     reclassify_rating_registry(out / "shared/ozon_operation_registry.js")
 
     # Hard boundary: only the three merge-authorized files may differ from canonical B1.
