@@ -30,35 +30,20 @@ KNOWN_EXACT_OVERLAPS = {
     "OZON_WAREHOUSE_TYPES",
 }
 
-CANONICAL_SECTION_OVERRIDES = {
-    "warehouse_fbs_return_mile_check": (
-        "/v1/warehouse/fbs/return-mile/check",
-        "logistics_settings",
-        "warehouse_diagnostics",
-    ),
-    "warehouse_fbs_return_mile_info": (
-        "/v1/warehouse/fbs/return-mile/info",
-        "logistics_settings",
-        "warehouse_diagnostics",
-    ),
-    "warehouse_operation_status": (
-        "/v1/warehouse/operation/status",
-        "logistics_settings",
-        "warehouse_diagnostics",
-    ),
-    "supplier_available_warehouses": (
-        "/v1/supplier/available_warehouses",
-        "warehouses",
-        "ozon_warehouses",
-    ),
-}
-
-SUPPLY_ORDER_GET_PATH = "/v3/supply-order/get"
+EXPECTED_CANONICAL_B1_ALIAS_COUNT = 42
 
 
 @dataclass(frozen=True)
 class ConstDecl:
     name: str
+    start: int
+    end: int
+    text: str
+
+
+@dataclass(frozen=True)
+class PropertyBlock:
+    key: str
     start: int
     end: int
     text: str
@@ -149,6 +134,13 @@ def scan_top_level_const_declarations(text: str) -> list[ConstDecl]:
     return out
 
 
+def _top_level_const(text: str, name: str) -> ConstDecl:
+    matches = [decl for decl in scan_top_level_const_declarations(text) if decl.name == name]
+    if len(matches) != 1:
+        raise AssertionError(f"expected exactly one top-level const {name}, found {len(matches)}")
+    return matches[0]
+
+
 def dedupe_exact_top_level_const_overlaps(path: Path) -> list[str]:
     text = path.read_text(encoding="utf-8")
     by_name: dict[str, list[ConstDecl]] = {}
@@ -236,77 +228,76 @@ def _balanced_object_end(text: str, open_brace: int, key: str) -> int:
     raise AssertionError(f"unterminated object block for {key}")
 
 
-def _find_object_property_blocks(text: str, key: str) -> list[tuple[int, int]]:
-    pattern = re.compile(rf"(?m)^\s*(?:['\"])?{re.escape(key)}(?:['\"])?\s*:\s*\{{\s*$")
-    blocks: list[tuple[int, int]] = []
-    for match in pattern.finditer(text):
+def _extend_property_end(text: str, end: int) -> int:
+    i = end
+    while i < len(text) and text[i] in " \t":
+        i += 1
+    if i < len(text) and text[i] == ",":
+        i += 1
+    if text[i:i + 2] == "\r\n":
+        i += 2
+    elif i < len(text) and text[i] == "\n":
+        i += 1
+    return i
+
+
+def _property_blocks_in_const(text: str, const_name: str) -> list[PropertyBlock]:
+    decl = _top_level_const(text, const_name)
+    pattern = re.compile(r"(?m)^\s*(?:['\"])?([A-Za-z_$][A-Za-z0-9_$]*)(?:['\"])?\s*:\s*\{\s*$")
+    out: list[PropertyBlock] = []
+    for match in pattern.finditer(text, decl.start, decl.end):
         open_brace = text.find("{", match.start(), match.end())
         if open_brace < 0:
-            raise AssertionError(f"missing opening brace for {key}")
-        blocks.append((match.start(), _balanced_object_end(text, open_brace, key)))
-    return blocks
+            continue
+        end = _balanced_object_end(text, open_brace, match.group(1))
+        block = text[match.start():end]
+        # Direct operation records are the only property blocks in OPERATIONS with fixed provider/path/effect metadata.
+        if "provider:" not in block or "path:" not in block or "effect:" not in block:
+            continue
+        full_end = _extend_property_end(text, end)
+        out.append(PropertyBlock(match.group(1), match.start(), full_end, text[match.start():full_end]))
+    return out
 
 
-def _enclosing_top_level_const(text: str, offset: int) -> str | None:
-    matches = [decl.name for decl in scan_top_level_const_declarations(text) if decl.start <= offset < decl.end]
-    if len(matches) > 1:
-        raise AssertionError(f"offset {offset} is enclosed by multiple top-level const declarations: {matches}")
-    return matches[0] if matches else None
+def restore_canonical_operation_overlaps(candidate_path: Path, canonical_path: Path) -> None:
+    candidate_text = candidate_path.read_text(encoding="utf-8")
+    canonical_text = canonical_path.read_text(encoding="utf-8")
 
+    canonical_blocks = _property_blocks_in_const(canonical_text, "OPERATIONS")
+    if len(canonical_blocks) != EXPECTED_CANONICAL_B1_ALIAS_COUNT:
+        raise AssertionError(
+            f"corrected canonical B1 OPERATIONS count {len(canonical_blocks)} != {EXPECTED_CANONICAL_B1_ALIAS_COUNT}"
+        )
+    canonical_by_alias = {block.key: block for block in canonical_blocks}
+    if len(canonical_by_alias) != EXPECTED_CANONICAL_B1_ALIAS_COUNT:
+        raise AssertionError("corrected canonical B1 contains duplicate operation aliases")
 
-def _find_operation_block(text: str, key: str, expected_path: str) -> tuple[int, int]:
-    all_same_key = _find_object_property_blocks(text, key)
-    candidates: list[tuple[int, int, str | None]] = []
-    path_patterns = [f"path: '{expected_path}'", f'path: "{expected_path}"']
-    provider_patterns = ["provider: 'seller_api'", 'provider: "seller_api"']
-    for start, end in all_same_key:
-        block = text[start:end]
-        has_path = any(pattern in block for pattern in path_patterns)
-        has_provider = any(pattern in block for pattern in provider_patterns)
-        if has_path and has_provider:
-            candidates.append((start, end, _enclosing_top_level_const(text, start)))
+    candidate_blocks = _property_blocks_in_const(candidate_text, "OPERATIONS")
+    candidate_by_alias: dict[str, list[PropertyBlock]] = {}
+    for block in candidate_blocks:
+        candidate_by_alias.setdefault(block.key, []).append(block)
 
-    authoritative = [(start, end) for start, end, parent in candidates if parent == "OPERATIONS"]
-    if len(authoritative) == 1:
-        return authoritative[0]
-    if len(authoritative) > 1:
-        raise AssertionError(f"multiple OPERATIONS blocks for {key} {expected_path}: {len(authoritative)}")
-    if len(candidates) == 1:
-        start, end, _ = candidates[0]
-        return start, end
+    replacements: list[tuple[int, int, str]] = []
+    overlap_counts: dict[str, int] = {}
+    for alias, canonical_block in sorted(canonical_by_alias.items()):
+        merged = candidate_by_alias.get(alias, [])
+        if not merged:
+            raise AssertionError(f"canonical B1 alias missing from merged OPERATIONS: {alias}")
+        if len(merged) > 2:
+            raise AssertionError(f"canonical B1 alias appears more than twice after merge: {alias} -> {len(merged)}")
+        overlap_counts[alias] = len(merged)
+        first = merged[0]
+        replacements.append((first.start, first.end, canonical_block.text))
+        for extra in merged[1:]:
+            replacements.append((extra.start, extra.end, ""))
 
-    parents = [parent for _, _, parent in candidates]
-    raise AssertionError(
-        f"expected exactly one authoritative seller operation block for {key} {expected_path}; "
-        f"filtered={len(candidates)} same_key={len(all_same_key)} enclosing_consts={parents}"
-    )
+    for start, end, replacement in sorted(replacements, key=lambda item: item[0], reverse=True):
+        candidate_text = candidate_text[:start] + replacement + candidate_text[end:]
 
-
-def rewrite_operation_section(path: Path, alias: str, expected_path: str, old: str, new: str) -> None:
-    text = path.read_text(encoding="utf-8")
-    start, end = _find_operation_block(text, alias, expected_path)
-    block = text[start:end]
-    patterns = [f"section: '{old}'", f'section: "{old}"']
-    count = sum(block.count(p) for p in patterns)
-    if count != 1:
-        raise AssertionError(f"{alias}: expected one section {old}, found {count}")
-    block = block.replace(f"section: '{old}'", f"section: '{new}'")
-    block = block.replace(f'section: "{old}"', f'section: "{new}"')
-    path.write_text(text[:start] + block + text[end:], encoding="utf-8")
-    print(f"V2_B1_B49_CANONICAL_SECTION_OVERRIDE_PASS {alias} {old}->{new}")
-
-
-def rewrite_supply_order_get_template(path: Path) -> None:
-    text = path.read_text(encoding="utf-8")
-    start, end = _find_operation_block(text, "supply_order_get", SUPPLY_ORDER_GET_PATH)
-    block = text[start:end]
-    pattern = re.compile(r"order_ids\s*:\s*\[\s*(['\"])1\1\s*\]")
-    matches = list(pattern.finditer(block))
-    if len(matches) != 1:
-        raise AssertionError(f"supply_order_get: expected one string order_ids template, found {len(matches)}")
-    block = pattern.sub("order_ids: [1]", block, count=1)
-    path.write_text(text[:start] + block + text[end:], encoding="utf-8")
-    print("V2_B1_B49_CANONICAL_SUPPLY_ORDER_GET_NUMERIC_TEMPLATE_PASS")
+    candidate_path.write_text(candidate_text, encoding="utf-8")
+    duplicate_overlaps = sorted(alias for alias, count in overlap_counts.items() if count == 2)
+    print(f"V2_B1_B49_CANONICAL_OPERATION_OVERLAY_COUNT_PASS {len(canonical_by_alias)}")
+    print(f"V2_B1_B49_CANONICAL_DUPLICATE_OVERLAPS_COLLAPSED_PASS {len(duplicate_overlaps)}")
 
 
 def remove_legacy_cluster_block(text: str, key: str) -> str:
@@ -395,10 +386,12 @@ def main() -> None:
     if missing_known:
         raise AssertionError(f"expected proven exact overlaps not found: {missing_known}; actual={sorted(deduped)}")
 
+    # Corrected canonical B1 is authoritative for every alias it already implements.
+    # Replace any merged duplicate/modified operation records wholesale with the exact canonical B1 source block.
     registry = out / "shared/ozon_operation_registry.js"
-    for alias, (expected_path, old, new) in CANONICAL_SECTION_OVERRIDES.items():
-        rewrite_operation_section(registry, alias, expected_path, old, new)
-    rewrite_supply_order_get_template(registry)
+    restore_canonical_operation_overlaps(registry, canonical / "shared/ozon_operation_registry.js")
+
+    # Historical B10 operations are valid reads, but the old top-level seller_health taxonomy is not part of V2.
     reclassify_rating_registry(registry)
 
     # Hard boundary: only the three merge-authorized files may differ from canonical B1.
