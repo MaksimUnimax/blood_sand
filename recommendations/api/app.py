@@ -67,7 +67,7 @@ def create_app(
     app.state.vk_runtime = None
     if vk_config is not None:
         from recommendations.vk.storage import VKStorage
-        app.state.vk_runtime = {"config": vk_config, "storage": VKStorage(vk_config.state_db_path)}
+        app.state.vk_runtime = {"config": vk_config, "storage": VKStorage(vk_config.state_db_path, vk_config.claim_lease_seconds, vk_config.raw_payload_retention_seconds)}
 
     @app.middleware("http")
     async def request_metadata(request: Request, call_next: Callable) -> Response:

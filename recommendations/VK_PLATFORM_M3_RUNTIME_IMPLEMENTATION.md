@@ -22,5 +22,17 @@ terminal. The five-second retry delay is application policy.
 
 VK is disabled unless `KIP_VK_ENABLED` is true and all required `KIP_VK_*`
 configuration is supplied. No runtime calls or deployment occurred in this run.
-Next stage: controlled staging deployment and an end-to-end plain-text Bot
-conversation.
+```text
+IMPLEMENTATION_COMMIT = 86ea0e013a311e75525693baf44ca82a60e712ff
+LOCAL_ACCEPTANCE = BLOCKED
+TOTAL_TESTS = 75 (at acceptance audit time)
+RAW_CALLBACK_RETENTION = BOUNDED_CONFIGURABLE
+STALE_CLAIM_RECOVERY = PASS
+MALFORMED_VK_RESPONSE_FAIL_CLOSED = PASS
+MULTIPLE_DATE_AMBIGUITY_FAIL_CLOSED = PASS
+STAGING_DEPLOYMENT = PENDING
+REAL_E2E = PENDING
+```
+
+The local matrix is not yet exhaustive; see `VK_PLATFORM_M3_LOCAL_ACCEPTANCE.md`.
+The next stage is M3 local acceptance completion, not deployment.

@@ -32,7 +32,7 @@ class VKRuntimeTests(unittest.TestCase):
         event=normalize_callback(json.loads(FIXTURE.read_text()))
         self.assertEqual(event.event_type,"message_new"); self.assertEqual(event.text,"sanitized staging text"); self.assertIn('keyboard',event.client_info)
     def test_dates_and_gender_are_deterministic(self):
-        self.assertEqual(len(parse_dates('13.10 20.11')),2); self.assertEqual(parse_dates('29.02.2020')[0].year,2020)
+        self.assertEqual(parse_dates('13.10 20.11'),[]); self.assertEqual(parse_dates('29.02.2020')[0].year,2020)
         self.assertEqual(parse_gender('Мужчине'),'male'); self.assertIsNone(parse_gender('Иван'))
     def test_dedup_and_atomic_claim(self):
         p=self.payload();self.assertTrue(self.db.accept(p));self.assertFalse(self.db.accept(p));self.assertIsNotNone(self.db.claim_event());self.assertIsNone(self.db.claim_event())
@@ -49,4 +49,3 @@ class VKRuntimeTests(unittest.TestCase):
         self.assertEqual(classify(9),'NO_AUTOMATIC_RETRY_BUT_TRANSIENT_OR_THROTTLING');self.assertEqual(classify(940),'NO_AUTOMATIC_RETRY_BUT_TRANSIENT_OR_THROTTLING');self.assertEqual(classify(999),'UNKNOWN_FAIL_CLOSED')
     def test_bootstrap_is_idempotent_and_restart_persists(self):
         path=self.db.path;self.db.close();other=VKStorage(path);self.assertEqual(other.connection.execute('select version from vk_schema_migrations').fetchone()[0],1);other.close();self.db=VKStorage(path)
-
