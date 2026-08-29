@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/ozon-v2-b1-b49-canonical-salvage.yml
       - tooling/llm-api-bridges/ozon-seller/validation/build_v2_b1_b49_canonical_salvage_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/repair_v2_b1_b49_missing_salvage_records.py
       - tooling/llm-api-bridges/ozon-seller/validation/V2_B1_B49_CANONICAL_SALVAGE_REGRESSION_2026-08-29.mjs
       - tooling/llm-api-bridges/ozon-seller/validation/OZON_B1_B49_OPERATION_SALVAGE_MANIFEST_2026-08-29.json
 
@@ -54,6 +55,10 @@ jobs:
             --canonical-b1 /tmp/current-b1 \
             --historical-b49 /tmp/old-b49 \
             --out /tmp/canonical-salvage
+          python3 "$validation/repair_v2_b1_b49_missing_salvage_records.py" \
+            --candidate /tmp/canonical-salvage \
+            --canonical-b1 /tmp/current-b1 \
+            --historical-b49 /tmp/old-b49
 
       - name: Run canonical salvage behavior gates
         run: |
@@ -141,6 +146,8 @@ jobs:
         run: |
           $v='tooling/llm-api-bridges/ozon-seller/validation'
           python "$v/build_v2_b1_b49_canonical_salvage_candidate.py" --b0 C:\acceptedb0 --canonical-b1 C:\v2b1 --historical-b49 C:\oldb49 --out C:\salvage
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          python "$v/repair_v2_b1_b49_missing_salvage_records.py" --candidate C:\salvage --canonical-b1 C:\v2b1 --historical-b49 C:\oldb49
           if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
           node "$v/V2_B1_B49_CANONICAL_SALVAGE_REGRESSION_2026-08-29.mjs" C:\v2b1 C:\oldb49 C:\salvage "$v/OZON_B1_B49_OPERATION_SALVAGE_MANIFEST_2026-08-29.json"
           if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
