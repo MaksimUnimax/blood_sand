@@ -1,0 +1,77 @@
+name: Ozon Performance Step6 read coverage
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-performance-step6-read-coverage.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_performance_step6_read_coverage_package.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_PERFORMANCE_STEP6_READ_COVERAGE_2026-08-29.patch.gz.b64
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_PERFORMANCE_STEP6_READ_COVERAGE_2026-08-29_MANIFEST.json
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_READ_COVERAGE_REGRESSION_2026-08-29.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_EXACT_MATRIX_2026-08-29.json
+  workflow_dispatch:
+
+jobs:
+  linux-candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+      - name: Materialize exact Performance Step6 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          rm -rf /tmp/performance-step6-work /tmp/performance-step6-candidate
+          python3 "$v/materialize_performance_step6_read_coverage_package.py" \
+            --repo-root . \
+            --work-root /tmp/performance-step6-work \
+            --out /tmp/performance-step6-candidate
+      - name: Run Performance Step6 semantic regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          node "$v/OZON_PERFORMANCE_STEP6_READ_COVERAGE_REGRESSION_2026-08-29.mjs" \
+            /tmp/performance-step6-candidate \
+            "$v/OZON_PERFORMANCE_STEP6_EXACT_MATRIX_2026-08-29.json" \
+            /tmp/performance-step6-work/step5-base
+          find /tmp/performance-step6-candidate -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+          echo PERFORMANCE_STEP6_LINUX_ALL_NODE_CHECK_PASS
+      - name: Upload exact Performance Step6 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-performance-step6-read-coverage-exact-candidate
+          path: /tmp/performance-step6-candidate
+          if-no-files-found: error
+          retention-days: 7
+
+  windows-candidate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+      - name: Materialize exact Performance Step6 candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $v = 'tooling/llm-api-bridges/ozon-seller/validation'
+          $work = Join-Path $env:TEMP 'performance-step6-work'
+          $out = Join-Path $env:TEMP 'performance-step6-candidate'
+          if (Test-Path $work) { Remove-Item -Recurse -Force $work }
+          if (Test-Path $out) { Remove-Item -Recurse -Force $out }
+          python "$v/materialize_performance_step6_read_coverage_package.py" --repo-root . --work-root $work --out $out
+      - name: Run Performance Step6 semantic regression
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $v = 'tooling/llm-api-bridges/ozon-seller/validation'
+          $work = Join-Path $env:TEMP 'performance-step6-work'
+          $out = Join-Path $env:TEMP 'performance-step6-candidate'
+          node "$v/OZON_PERFORMANCE_STEP6_READ_COVERAGE_REGRESSION_2026-08-29.mjs" $out "$v/OZON_PERFORMANCE_STEP6_EXACT_MATRIX_2026-08-29.json" (Join-Path $work 'step5-base')
+          Get-ChildItem -Path $out -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { throw "node --check failed: $($_.FullName)" } }
+          Write-Host 'PERFORMANCE_STEP6_WINDOWS_ALL_NODE_CHECK_PASS'
