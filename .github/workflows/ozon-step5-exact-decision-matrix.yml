@@ -1,0 +1,85 @@
+name: Ozon Step5 exact decision matrix
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-step5-exact-decision-matrix.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/build_ozon_step5_exact_decision_matrix.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux-decision-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+      - name: Build exact Step5 decisions
+        shell: bash
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$v/build_ozon_step5_exact_decision_matrix.py" \
+            --inventory "$v/OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_2026-08-29.json" \
+            --out-json /tmp/step5-decisions.json \
+            --out-csv /tmp/step5-decisions.csv \
+            --out-summary /tmp/step5-decisions.md
+          python3 - <<'PY'
+          import json,pathlib
+          x=json.loads(pathlib.Path('/tmp/step5-decisions.json').read_text(encoding='utf-8'))
+          assert x['counts']['rows']==118
+          assert x['counts']['implement_reads']==28
+          assert x['counts']['REJECT_SERVER_SIDE_GENERATION_OR_CREATION']==60
+          assert x['counts']['REJECT_MUTATION_SIDE_EFFECT']==25
+          assert x['counts']['REJECT_SUNSET_REPLACED']==3
+          assert x['counts']['REJECT_DEPRECATED_REPLACED']==2
+          assert x['authority']['seller_swagger_sha256']=='39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40'
+          print('STEP5_EXACT_DECISION_LINUX_COUNTS_PASS')
+          PY
+
+  windows-decision-matrix:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+      - name: Build exact Step5 decisions
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $v = 'tooling/llm-api-bridges/ozon-seller/validation'
+          python "$v/build_ozon_step5_exact_decision_matrix.py" --inventory "$v/OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_2026-08-29.json" --out-json "$env:TEMP/step5-decisions.json" --out-csv "$env:TEMP/step5-decisions.csv" --out-summary "$env:TEMP/step5-decisions.md"
+          python -c "import json,pathlib; x=json.loads(pathlib.Path(r'$env:TEMP/step5-decisions.json').read_text(encoding='utf-8')); assert x['counts']['rows']==118 and x['counts']['implement_reads']==28; assert x['counts']['REJECT_SERVER_SIDE_GENERATION_OR_CREATION']==60 and x['counts']['REJECT_MUTATION_SIDE_EFFECT']==25; print('STEP5_EXACT_DECISION_WINDOWS_COUNTS_PASS')"
+
+  commit-decision-evidence:
+    needs: [linux-decision-matrix, windows-decision-matrix]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+      - name: Rebuild and commit deterministic evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$v/build_ozon_step5_exact_decision_matrix.py" \
+            --inventory "$v/OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_2026-08-29.json" \
+            --out-json "$v/OZON_STEP5_EXACT_DECISION_MATRIX_2026-08-29.json" \
+            --out-csv "$v/OZON_STEP5_EXACT_DECISION_MATRIX_2026-08-29.csv" \
+            --out-summary "$v/OZON_STEP5_EXACT_DECISION_MATRIX_SUMMARY_2026-08-29.md"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$v/OZON_STEP5_EXACT_DECISION_MATRIX_2026-08-29.json" "$v/OZON_STEP5_EXACT_DECISION_MATRIX_2026-08-29.csv" "$v/OZON_STEP5_EXACT_DECISION_MATRIX_SUMMARY_2026-08-29.md"
+          if git diff --cached --quiet; then
+            echo 'Step5 exact decision evidence unchanged'
+            exit 0
+          fi
+          git commit -m 'validation(ozon): freeze Step5 exact terminal decisions'
+          git push origin HEAD:repair/ozon-v2-b1-stocks-warehouse-2026-08-29
