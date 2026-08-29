@@ -1,0 +1,86 @@
+name: Ozon Step5 workflow report document candidate
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-step5-workflow-report-document-candidate.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/build_v2_step5_workflow_report_document_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_STEP5_WORKFLOW_REPORT_DOCUMENT_REGRESSION_2026-08-29.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_STEP5_EXACT_DECISION_MATRIX_2026-08-29.json
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_v2_b1_b49_canonical_salvage_candidate.py
+      - tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29.patch.gz
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+
+      - name: Materialize exact Step5 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          rm -rf /tmp/ozon-step5-work /tmp/ozon-step5-candidate
+          python3 "$v/build_v2_step5_workflow_report_document_candidate.py" \
+            --repo-root . \
+            --work-root /tmp/ozon-step5-work \
+            --out /tmp/ozon-step5-candidate
+
+      - name: Run Step5 semantic regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          node "$v/OZON_STEP5_WORKFLOW_REPORT_DOCUMENT_REGRESSION_2026-08-29.mjs" \
+            /tmp/ozon-step5-candidate \
+            "$v/OZON_STEP5_EXACT_DECISION_MATRIX_2026-08-29.json" \
+            /tmp/ozon-step5-work/step3-base
+          find /tmp/ozon-step5-candidate -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+          echo STEP5_LINUX_ALL_NODE_CHECK_PASS
+
+      - name: Upload exact Step5 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step5-workflow-report-document-candidate
+          path: /tmp/ozon-step5-candidate
+          if-no-files-found: error
+          retention-days: 7
+
+  windows-candidate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+
+      - name: Materialize exact Step5 candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $v = 'tooling/llm-api-bridges/ozon-seller/validation'
+          $work = Join-Path $env:TEMP 'ozon-step5-work'
+          $candidate = Join-Path $env:TEMP 'ozon-step5-candidate'
+          if (Test-Path $work) { Remove-Item -Recurse -Force $work }
+          if (Test-Path $candidate) { Remove-Item -Recurse -Force $candidate }
+          python "$v/build_v2_step5_workflow_report_document_candidate.py" --repo-root . --work-root $work --out $candidate
+
+      - name: Run Step5 semantic regression
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $v = 'tooling/llm-api-bridges/ozon-seller/validation'
+          $work = Join-Path $env:TEMP 'ozon-step5-work'
+          $candidate = Join-Path $env:TEMP 'ozon-step5-candidate'
+          $base = Join-Path $work 'step3-base'
+          node "$v/OZON_STEP5_WORKFLOW_REPORT_DOCUMENT_REGRESSION_2026-08-29.mjs" $candidate "$v/OZON_STEP5_EXACT_DECISION_MATRIX_2026-08-29.json" $base
+          Get-ChildItem -Path $candidate -Recurse -File -Filter '*.js' | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { throw "node --check failed: $($_.FullName)" } }
+          Write-Output 'STEP5_WINDOWS_ALL_NODE_CHECK_PASS'
