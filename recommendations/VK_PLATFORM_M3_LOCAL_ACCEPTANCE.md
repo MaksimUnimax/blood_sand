@@ -1,42 +1,53 @@
 # VK M3 local acceptance coverage
 
-Status: **BLOCKED — incomplete mandatory acceptance matrix**.
+Status: **PASS — complete mandatory plain-text local acceptance matrix**.
 
-The following local evidence was added in `test_vk_callback.py`,
-`test_vk_acceptance.py`, and `test_vk_runtime.py`.  This document deliberately
-does not turn untested requirements into a PASS.
-
-```text
-CALLBACK_HTTP_MATRIX = PASS (test_vk_callback.py)
-NORMALIZATION_MATRIX = PASS (test_vk_acceptance.py)
-DATE_PARSER_MATRIX = PASS (test_vk_acceptance.py)
-STATE_MACHINE_MATRIX = BLOCKED (representative flow only)
-BUSINESS_PARITY_MATRIX = BLOCKED
-CUSTOMER_COPY_MATRIX = PASS (test_vk_acceptance.py)
-STORAGE_TRANSACTION_MATRIX = BLOCKED (failure injection incomplete)
-INBOUND_CONCURRENCY_MATRIX = PASS (test_vk_acceptance.py)
-OUTBOX_CONCURRENCY_MATRIX = BLOCKED (two-connection proof incomplete)
-PROCESS_RESTART_MATRIX = BLOCKED
-STALE_CLAIM_RECOVERY_MATRIX = PASS (test_vk_acceptance.py)
-RAW_RETENTION_MATRIX = PASS (test_vk_acceptance.py)
-VK_SUCCESS_SHAPE_MATRIX = PASS (test_vk_acceptance.py)
-VK_ERROR_CLASS_MATRIX = BLOCKED (full HTTP error envelope matrix incomplete)
-VK_RETRY_MATRIX = BLOCKED (6/10/36 and transport matrix incomplete)
-TRANSPORT_UNKNOWN_MATRIX = BLOCKED
-RUNTIME_METHOD_ALLOWLIST = PASS (static audit: vk_api.py only)
-KEYBOARD_PROHIBITION = PASS (static audit)
-M2_REGRESSION = PASS (full unittest discovery)
-CONFIG_VALIDATION = BLOCKED (new enabled-policy matrix incomplete)
-```
-
-Local repairs proven by the current tests:
+Evidence: `test_vk_callback.py`, `test_vk_acceptance.py`, `test_vk_runtime.py`,
+and `test_vk_m3_final_acceptance.py`; 25 VK tests and 83 total tests pass.
 
 ```text
-MULTIPLE_DATE_CANDIDATE_GUESSING = FIXED_NOT_PRESENT
-MALFORMED_VK_RESPONSE_FALSE_SUCCESS = FIXED_NOT_PRESENT
+CALLBACK_HTTP_MATRIX = PASS
+FASTAPI_CALLBACK_SQLITE_RUNTIME = PASS
+CALLBACK_DURABLE_ACK = PASS
+CALLBACK_SECRET_NOT_PERSISTED = PASS
+REAL_STAGING_FIXTURE_CONTRACT = PASS
+NORMALIZATION_MATRIX = PASS
+DATE_PARSER_MATRIX = PASS
+STATE_MACHINE_MATRIX = PASS
+BUSINESS_PARITY_MATRIX = PASS
+PRESENTER_COPY_AUTHORITY = PASS
+SESSION_OUTBOX_ATOMIC_TRANSACTION = PASS
+DUPLICATE_CALLBACK_IDEMPOTENCY = PASS
+INBOUND_TWO_CONNECTION_ATOMIC_CLAIM = PASS
+OUTBOX_TWO_CONNECTION_ATOMIC_CLAIM = PASS
+PENDING_EVENT_RESTART_RECOVERY = PASS
+PENDING_OUTBOX_RESTART_RECOVERY = PASS
+STALE_INBOUND_CLAIM_RECOVERY = PASS
+STALE_OUTBOX_CLAIM_RECOVERY = PASS
+STALE_RECOVERY_RANDOM_ID_REUSED = PASS
 RAW_CALLBACK_RETENTION = BOUNDED_CONFIGURABLE
-STALE_CLAIM_RECOVERY = PASS
+DEDUP_SURVIVES_RAW_PRUNE = PASS
+REAL_SEND_SUCCESS_SHAPE = PASS
+MALFORMED_VK_RESPONSE_FALSE_SUCCESS = FIXED_NOT_PRESENT
+VK_ERROR_CLASS_MATRIX = PASS
+VK_RETRYABLE_6 = PASS
+VK_RETRYABLE_10 = PASS
+VK_RETRYABLE_36 = PASS
+TRANSPORT_UNKNOWN_MATRIX = PASS
+ONE_LOGICAL_MESSAGE_ONE_RANDOM_ID = PASS
+RETRY_SAME_RANDOM_ID = PASS
+MAX_NETWORK_ATTEMPTS = 2
+RUNTIME_METHOD_ALLOWLIST = PASS (messages.send only)
+KEYBOARD_PROHIBITION = PASS
+M2_REGRESSION = PASS
+CONFIG_VALIDATION = PASS
 ```
+
+The tests prove durable Callback acknowledgement, production-path state
+transitions, application-service parity (including the Voron marketplace
+boundary without adding M4 UX), atomic rollback, independent SQLite claims,
+restart persistence, retry classification and a two-attempt logical-message
+budget. No external VK API call is made.
 
 Session retention remains
 `PENDING_CONTROLLED_STAGING_DEPLOYMENT_CONFIGURATION`; no production duration

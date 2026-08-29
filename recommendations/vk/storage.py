@@ -90,6 +90,12 @@ class VKStorage:
     def session(self, g, p):
         return self._run(lambda c: c.execute("SELECT * FROM vk_bot_sessions WHERE vk_group_id=? AND peer_id=?", (g, p)).fetchone())
 
+    def _after_session_write(self, connection) -> None:
+        """Narrow failure-injection seam; production intentionally does nothing."""
+
+    def _before_outbox_insert(self, connection) -> None:
+        """Narrow failure-injection seam; production intentionally does nothing."""
+
     def transition_and_enqueue(self, event_id, g, p, state, fields, text):
         def run(c):
             c.execute("BEGIN IMMEDIATE")
@@ -99,8 +105,10 @@ class VKStorage:
                 if old: vals.update(dict(old))
                 vals.update(fields)
                 c.execute("INSERT INTO vk_bot_sessions(vk_group_id,peer_id,state,birth_day,birth_month,birth_year,gender,marketplace,last_result_id,state_version,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(vk_group_id,peer_id) DO UPDATE SET state=excluded.state,birth_day=excluded.birth_day,birth_month=excluded.birth_month,birth_year=excluded.birth_year,gender=excluded.gender,marketplace=excluded.marketplace,last_result_id=excluded.last_result_id,state_version=vk_bot_sessions.state_version+1,updated_at=excluded.updated_at", (g,p,state,vals['birth_day'],vals['birth_month'],vals['birth_year'],vals['gender'],vals['marketplace'],vals['last_result_id'],1,now()))
+                self._after_session_write(c)
                 rid = secrets.randbelow(2_000_000_000)+1
-                c.execute("INSERT OR IGNORE INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,random_id,status,created_at) VALUES(?,?,?,?,?,'PENDING',?)", (event_id,g,p,text,rid,now()))
+                self._before_outbox_insert(c)
+                c.execute("INSERT INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,random_id,status,created_at) VALUES(?,?,?,?,?,'PENDING',?)", (event_id,g,p,text,rid,now()))
                 c.commit()
             except Exception:
                 c.rollback(); raise
