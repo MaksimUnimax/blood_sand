@@ -1,0 +1,128 @@
+name: Ozon V2 B1-B49 canonical salvage exact candidate
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - tooling/llm-api-bridges/ozon-seller/validation/RUN_V2_B1_B49_EXACT_CANDIDATE_2026-08-29.txt
+
+permissions:
+  contents: read
+
+jobs:
+  linux-exact-candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair authority with all refs
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Verify package manifest and materialize exact candidate
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          test -f "$v/PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29.patch.gz"
+          test -f "$v/PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29_MANIFEST.json"
+          python3 "$v/materialize_v2_b1_b49_canonical_salvage_candidate.py" \
+            --repo-root . --work-root /tmp/exact-salvage-work --out /tmp/exact-salvage
+          python3 - <<'PY'
+          import gzip,hashlib,json
+          from pathlib import Path
+          v=Path('tooling/llm-api-bridges/ozon-seller/validation')
+          m=json.loads((v/'PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29_MANIFEST.json').read_text())
+          p=v/'PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29.patch.gz'
+          gz=p.read_bytes(); raw=gzip.decompress(gz)
+          assert hashlib.sha256(gz).hexdigest()==m['patch']['gzip_sha256']=='363724a309deb6a03b04c53131108d985e02863f42ada158d0129acd4e8c6c4b'
+          assert hashlib.sha256(raw).hexdigest()==m['patch']['raw_sha256']=='6f81a335f13b1a2a673763588e8aca85b1284598ccd6e267ca14beecca02d0bc'
+          assert len(gz)==m['patch']['gzip_bytes']==37278
+          assert len(raw)==m['patch']['raw_bytes']==332186
+          root=Path('/tmp/exact-salvage')
+          files=sorted((x for x in root.rglob('*') if x.is_file()), key=lambda x:x.relative_to(root).as_posix())
+          lines=[]
+          for x in files:
+              rel=x.relative_to(root).as_posix(); h=hashlib.sha256(x.read_bytes()).hexdigest(); lines.append(f'{rel}\0{h}\n')
+          tree=hashlib.sha256(''.join(lines).encode()).hexdigest()
+          assert tree==m['candidate']['production_tree_sha256']=='ae3f53084d7a9aff5de820503a44b2875ab0c63c6ffc14bf72d941e8d0dab24e'
+          assert len(files)==m['candidate']['production_files']==21
+          assert sum(x.suffix=='.js' for x in files)==m['candidate']['production_js_files']==18
+          for rel,h in m['candidate']['changed_core_sha256'].items(): assert hashlib.sha256((root/rel).read_bytes()).hexdigest()==h
+          print('V2_B1_B49_EXACT_PACKAGE_MANIFEST_IDENTITY_PASS')
+          PY
+
+      - name: Materialize semantic authorities
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$v/materialize_patch_v2_b1_stocks_warehouse_candidate.py" --repo-root . --work-root /tmp/current-b1-work --out /tmp/current-b1
+          node "$v/PATCH_V2_B1_STOCKS_WAREHOUSE_REGRESSION_2026-08-29.mjs" /tmp/current-b1
+          B49=59ce0cedf93e409f5988b16d5b569b4a5f229b1b
+          test "$(git rev-parse "$B49")" = "$B49"
+          git worktree add --detach /tmp/old-b49-repo "$B49"
+          hv=/tmp/old-b49-repo/tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$hv/materialize_patch_b49_fbs_posting_timeslot_change_restrictions_candidate.py" \
+            --repo-root /tmp/old-b49-repo --work-root /tmp/old-b49-work --out /tmp/old-b49
+          node "$hv/PATCH_B49_FBS_POSTING_TIMESLOT_CHANGE_RESTRICTIONS_REGRESSION_2026-08-28.mjs" /tmp/old-b49
+
+      - name: Run exact semantic and syntax gates
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          node "$v/V2_B1_B49_CANONICAL_SALVAGE_REGRESSION_2026-08-29.mjs" \
+            /tmp/current-b1 /tmp/old-b49 /tmp/exact-salvage "$v/OZON_B1_B49_OPERATION_SALVAGE_MANIFEST_2026-08-29.json"
+          find /tmp/exact-salvage -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+          echo V2_B1_B49_EXACT_CANDIDATE_ALL_JS_PASS
+
+      - name: Upload exact candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-v2-b1-b49-canonical-salvage-exact-candidate
+          path: /tmp/exact-salvage
+          if-no-files-found: error
+          retention-days: 7
+
+  windows-exact-candidate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repair authority with all refs
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --system core.longpaths true
+
+      - name: Materialize exact packaged candidate and authorities
+        shell: pwsh
+        run: |
+          $v='tooling/llm-api-bridges/ozon-seller/validation'
+          python "$v/materialize_v2_b1_b49_canonical_salvage_candidate.py" --repo-root . --work-root C:\exactw --out C:\exact
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          python "$v/materialize_patch_v2_b1_stocks_warehouse_candidate.py" --repo-root . --work-root C:\v2b1w --out C:\v2b1
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node "$v/PATCH_V2_B1_STOCKS_WAREHOUSE_REGRESSION_2026-08-29.mjs" C:\v2b1
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          $b49='59ce0cedf93e409f5988b16d5b569b4a5f229b1b'
+          if((git rev-parse $b49) -ne $b49){throw 'B49 identity mismatch'}
+          git worktree add --detach C:\oldb49repo $b49
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          $hv='C:\oldb49repo\tooling\llm-api-bridges\ozon-seller\validation'
+          python "$hv\materialize_patch_b49_fbs_posting_timeslot_change_restrictions_candidate.py" --repo-root C:\oldb49repo --work-root C:\oldb49w --out C:\oldb49
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          node "$hv\PATCH_B49_FBS_POSTING_TIMESLOT_CHANGE_RESTRICTIONS_REGRESSION_2026-08-28.mjs" C:\oldb49
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+
+      - name: Run exact semantic, manifest and syntax gates
+        shell: pwsh
+        run: |
+          $v='tooling/llm-api-bridges/ozon-seller/validation'
+          node "$v/V2_B1_B49_CANONICAL_SALVAGE_REGRESSION_2026-08-29.mjs" C:\v2b1 C:\oldb49 C:\exact "$v/OZON_B1_B49_OPERATION_SALVAGE_MANIFEST_2026-08-29.json"
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          python -c "import gzip,hashlib,json,pathlib;v=pathlib.Path(r'$v');m=json.loads((v/'PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29_MANIFEST.json').read_text());g=(v/'PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29.patch.gz').read_bytes();r=gzip.decompress(g);assert hashlib.sha256(g).hexdigest()==m['patch']['gzip_sha256']=='363724a309deb6a03b04c53131108d985e02863f42ada158d0129acd4e8c6c4b';assert hashlib.sha256(r).hexdigest()==m['patch']['raw_sha256']=='6f81a335f13b1a2a673763588e8aca85b1284598ccd6e267ca14beecca02d0bc';print('V2_B1_B49_WINDOWS_EXACT_PACKAGE_MANIFEST_IDENTITY_PASS')"
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem C:\exact -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE} }
+          Write-Output 'V2_B1_B49_WINDOWS_EXACT_CANDIDATE_ALL_JS_PASS'
