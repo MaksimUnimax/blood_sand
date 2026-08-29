@@ -62,10 +62,19 @@ function candidateReasons(row) {
   const tag = row.source_category_tag.toLowerCase();
   const reasons = [];
   if (tag === 'reportapi') reasons.push('REPORT_API_CATEGORY');
-  if (/report|отч[её]т/.test(`${p} ${purpose}`)) reasons.push('REPORT_SIGNAL');
-  if (/\/pdf(?:\/|$)|pdf|document|документ|акт(?:\s|$)|\/act(?:\/|$)|barcode|штрихкод|label|этикет|certificate|сертификат|invoice|накладн/.test(`${p} ${purpose}`)) reasons.push('DOCUMENT_SIGNAL');
-  if (/\/status(?:\/|$)|\/result(?:\/|$)|\/validation(?:\/|$)|\/info(?:\/|$)|\/download(?:\/|$)|\/file(?:\/|$)|\/task(?:\/|$)|статус|результат|скач|файл/.test(`${p} ${purpose}`)) reasons.push('WORKFLOW_RESULT_SIGNAL');
-  if (/\/create(?:\/|$)|создан|создать|сгенер|генерац|запуск/.test(`${p} ${purpose}`)) reasons.push('GENERATION_OR_START_SIGNAL');
+  if (p.includes('report') || /отч[её]т/.test(purpose)) reasons.push('REPORT_SIGNAL');
+  if (
+    /\/(?:pdf|act|document|barcode|label|certificate|invoice)(?:\/|$)/.test(p) ||
+    /pdf|документ|акт|barcode|штрихкод|label|этикет|certificate|сертификат|invoice|накладн/.test(purpose)
+  ) reasons.push('DOCUMENT_SIGNAL');
+  if (
+    /\/(?:status|result|validation|info|download|file|task)(?:\/|$)/.test(p) ||
+    /статус|результат|скач|файл/.test(purpose)
+  ) reasons.push('WORKFLOW_RESULT_SIGNAL');
+  if (
+    /\/create(?:\/|$)/.test(p) ||
+    /создан|создать|сгенер|генерац|запуск/.test(purpose)
+  ) reasons.push('GENERATION_OR_START_SIGNAL');
   return [...new Set(reasons)];
 }
 
