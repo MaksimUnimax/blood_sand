@@ -323,9 +323,12 @@ LEGACY_CALLBACK_SERVER_PRESENT = yes
 LEGACY_CALLBACK_SERVER_MUTATION_ALLOWED = no
 M3_WRITE_STAGING = PASS
 M3_CALLBACK_CONFIRMATION = PASS
-M3_REAL_MESSAGE_NEW_FIXTURE = PENDING
-M3_REAL_MESSAGES_SEND_FIXTURE = PENDING
-M3_CODE_GATE = BLOCKED (real message_new and controlled messages.send evidence pending)
+M3_REAL_MESSAGE_NEW_FIXTURE = PASS
+M3_REAL_MESSAGES_SEND_FIXTURE = PASS
+M3_CODE_GATE = BLOCKED
+M3_CODE_GATE_BLOCKERS =
+- FINAL_REQUIRED_PERMISSION_NAMES remains unresolved: staging proves that a token carrying `messages, manage` can send, not the runtime-minimal named permission set.
+- RETRY_ERROR_ALLOWLIST remains unresolved: the initial fail-closed policy is no automatic retry for explicit VK API errors and at most one retry for narrowly classified transport uncertainty with the same random_id, but no verified automatic VK API error-code allowlist is frozen.
 ```
 
 ---

@@ -1,6 +1,6 @@
 # VK Platform M3 staging provisioning
 
-Status: **PRE-M3 DEDICATED CALLBACK PROVISIONING — PASS; REAL EVENT PENDING**
+Status: **PRE-M3 DEDICATED CALLBACK PROVISIONING — PASS; REAL TRANSPORT EVIDENCE CAPTURED**
 Captured: 2026-08-29
 
 ```text
@@ -31,8 +31,33 @@ CONFIRMATION_CODE_STORED_SECURELY = yes
 CONFIRMATION_CODE_EXPOSED = no
 SECRETS_COMMITTED = no
 
-REAL_MESSAGE_NEW = PENDING_USER_ACTION
-MESSAGES_SEND_SUCCESS = NOT_RUN
+REAL_MESSAGE_NEW = PASS
+REAL_MESSAGE_NEW_SELECTION = UNAMBIGUOUS
+REAL_MESSAGE_NEW_SOURCE = real VK Callback after persistence repair
+REAL_MESSAGE_NEW_SHAPE = nested_current
+REAL_EVENT_PERSISTENCE = PASS
+DEDUP_STATE_PERSISTENCE = PASS
+VK_DELIVERY_DUPLICATES_OBSERVED = no
+LOGICAL_EVENT_RECORDS = 1
+REAL_MESSAGE_NEW_FIXTURE = tests/fixtures/vk/staging/message_new.v5_199.sanitized.json
+
+MESSAGES_SEND_CALLED = yes
+MESSAGES_SEND_SUCCESS = PASS
+MESSAGES_SEND_LOGICAL_MESSAGES = 1
+MESSAGES_SEND_RETRY_COUNT = 0
+MESSAGES_SEND_SUCCESS_FIXTURE = tests/fixtures/vk/staging/messages_send_success.v5_199.sanitized.json
+ONE_LOGICAL_MESSAGE_ONE_RANDOM_ID = VERIFIED_STAGING
+
+PROVISIONING_REQUIRED_PERMISSIONS = messages, manage (actual provisioning token permissions; minimum not proven)
+RUNTIME_REQUIRED_PERMISSIONS = messages present on the successful staging token; manage is not proven runtime-required
+RUNTIME_REQUIRED_PERMISSION_MINIMUM = UNRESOLVED
+FINAL_REQUIRED_PERMISSION_NAMES = UNRESOLVED
+
+TRANSPORT_UNKNOWN_RETRY_REUSES_RANDOM_ID = PROJECT_POLICY
+EXPLICIT_SUCCESS_IS_TERMINAL = PROJECT_POLICY
+EXPLICIT_DETERMINISTIC_ERROR_NO_BLIND_RETRY = PROJECT_POLICY
+RETRY_ERROR_ALLOWLIST = UNRESOLVED
+PERMANENT_ERROR_FIXTURE = PENDING_NON_BLOCKING
 ```
 
 The receiver is intentionally staging-only and separate from Recommendation
@@ -52,7 +77,16 @@ the authorized URL above.
 - `tests/fixtures/vk/staging/project_callback_server.v5_199.sanitized.json`
 - `tests/fixtures/vk/staging/project_callback_settings.v5_199.sanitized.json`
 
-Both fixtures are real VK staging responses at API `5.199` against schema
+All four fixtures are real VK staging responses at API `5.199` against schema
 commit `333481bd082ad747d4873ef4a77f9247097eeef0`; secrets and actor identity
-are removed. No real `message_new` has arrived after activation, so no inbound
-or `messages.send` fixture is claimed.
+are removed. The inbound fixture preserves the observed nested Callback shape
+and primitive types while replacing all identifiers and private text. The send
+fixture preserves the successful response shape while replacing its integer
+identifier with `0`.
+
+The controlled direct-text send used one random identifier persisted under the
+protected staging state root before the API call. It succeeded on the first
+attempt. This proves one logical message / one persisted random identifier in
+staging; it does not establish a VK error-code retry allowlist or token
+permission minimality. No permanent error was induced because safely
+reproducible error evidence is not mandatory under the current gate wording.
