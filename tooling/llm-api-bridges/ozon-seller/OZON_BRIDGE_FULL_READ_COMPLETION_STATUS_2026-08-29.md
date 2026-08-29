@@ -1,14 +1,14 @@
 # Ozon Bridge full-read completion — current status
 
 Date: 2026-08-29  
-Status authority after canonical B1 acceptance and full 463+48 operation-inventory acceptance.
+Status authority after canonical B1 acceptance, full 463+48 operation-inventory acceptance, and canonical B1–B49 salvage acceptance.
 
 ## Current roadmap
 
 1. ✅ Закрепить исправленную базу и formal acceptance canonical B1.
 2. ✅ Построить master-checklist всех 463 Seller + 48 Performance операций.
-3. 🔄 Восстановить полный Seller read-набор из полезной работы B1–B49 по правильным разделам.
-4. ⬜ Проверить существующий Personal Data gate на всём Seller read-наборе.
+3. ✅ Восстановить полезный Seller read-набор из принятой работы B1–B49 по правильным разделам.
+4. 🔄 Проверить существующий Personal Data gate на всём Seller read-наборе.
 5. ⬜ Реализовать все допустимые Seller read-workflow/report/document операции.
 6. ⬜ Завершить Performance API coverage по всем 48 операциям.
 7. ⬜ Финальная полнота Seller: 463/463 имеют окончательное решение.
@@ -67,10 +67,10 @@ Accepted inventory counts:
 - Seller: 463 current API rows;
 - Performance: 48 current API rows across 47 paths;
 - total current API rows: 511;
-- current canonical registry aliases: 42;
-- current registry rows matching current API inventory: 39;
+- current canonical registry aliases at Step 2: 42;
+- current registry rows matching current API inventory at Step 2: 39;
 - preserved compatibility routes outside current Performance inventory: 3;
-- rows still requiring semantic/exact-schema classification: 472.
+- rows still requiring semantic/exact-schema classification at Step 2: 472.
 
 The three preserved compatibility routes are:
 
@@ -117,7 +117,7 @@ Accepted B0 already defines the Personal Data gate:
 
 Accepted B9 keeps `review_list`, `review_info`, and `question_list` behind that existing gate. Accepted B17 preserves the same gate for extended review/question reads. These implementations remain valid salvage/reference material.
 
-Step 4 will verify that every Seller operation that needs Personal Data is correctly attached to this existing gate. Do not invent a replacement privacy mechanism merely because an operation can return personal data.
+Step 4 verifies that every Seller operation that needs Personal Data is correctly attached to this existing gate. Do not invent a replacement privacy mechanism merely because an operation can return personal data.
 
 ### Performance correction
 
@@ -145,23 +145,70 @@ Consequences:
 
 Do not delete B1–B49 wholesale. Use accepted/validated pieces as salvage/reference under the master checklist and fixed canonical business groups.
 
-## Step 3 — current action
+## Step 3 — closed
 
-Current task: reconstruct the useful Seller read implementation from historical B1–B49 and map it into the correct canonical business groups controlled by the 463-row Seller checklist.
+Formal acceptance:
 
-Do not start by choosing a new endpoint gap.
+`validation/OZON_V2_B1_B49_CANONICAL_SALVAGE_ACCEPTED_2026-08-29.md`
 
-First build a salvage map that records, for every useful historical implementation:
+Accepted deterministic package authority:
 
-- historical B-stage / branch / accepted commit;
-- aliases and exact Seller `method + path` operations contributed;
-- evidence/acceptance status;
-- canonical target group;
-- whether the implementation is reusable as-is, needs relocation/split, needs replacement, or is obsolete/deprecated;
-- Personal Data dependency to be audited later in Step 4;
-- workflow/report/document dependency to be completed later in Step 5;
-- conflicts or duplicate implementations across old B-stages.
+- package commit `bdcc86305746b0fccdedf567b470fcaeb85a3335`;
+- exact validation marker/head `926b08c5d3507a206e4b80f14108146afce93ed6`;
+- exact packaged candidate run `33239719039`: Linux PASS + Windows PASS;
+- exact artifact `9710978189`;
+- exact artifact ZIP SHA-256 `628cb9b9af220ee36202c53f09a9a6dea162bc361786f7aa750f91a8c35370c9`;
+- final production tree SHA-256 `ae3f53084d7a9aff5de820503a44b2875ab0c63c6ffc14bf72d941e8d0dab24e`;
+- 21 production files / 18 JavaScript files.
 
-The 463-row master checklist is the controlling inventory. Salvage must update/check against it rather than create new B50/B51/... stages.
+Deterministic patch transport:
 
-No fresh Seller or Performance business API requests are authorized for this reconstruction.
+- `validation/PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29.patch.gz`;
+- gzip SHA-256 `363724a309deb6a03b04c53131108d985e02863f42ada158d0129acd4e8c6c4b`;
+- raw patch SHA-256 `6f81a335f13b1a2a673763588e8aca85b1284598ccd6e267ca14beecca02d0bc`;
+- manifest `validation/PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29_MANIFEST.json`;
+- materializer `validation/materialize_v2_b1_b49_canonical_salvage_candidate.py`.
+
+Accepted salvage result:
+
+- 42 corrected canonical B1 aliases preserve canonical registry/request/entitlement semantics;
+- 191 historical Seller aliases are present;
+- 153 historical Seller aliases are salvaged beyond corrected canonical B1;
+- 10 accepted historical Performance aliases are preserved as separate-provider carry-forward;
+- 201 aliases total in the accepted salvage registry;
+- four B10 rating/error-index reads are reclassified into existing fixed `sales_analytics / delivery_returns_cancellations_metrics`;
+- unauthorized `seller_health` is absent;
+- protected runtime remains byte-identical to corrected canonical B1;
+- only `shared/ozon_operation_registry.js`, `shared/ozon_contract.js`, and `shared/ozon_entitlements.js` differ;
+- single-command/single-request and catalog validation gates pass;
+- no hidden pagination, automatic retry, polling, fanout or chaining was introduced.
+
+Independent verification of both the initial validated artifact and the final exact packaged artifact reproduced the expected ZIP identities, 21/18 file counts, production tree, changed-core hashes, and all 18 JavaScript `node --check` results.
+
+Step 3 does not claim Seller 463/463 completion or Performance 48/48 completion.
+
+No fresh Seller or Performance business API requests were made for salvage or acceptance.
+
+## Step 4 — current action
+
+Current task: audit the already accepted B0 Personal Data gate across the Seller read surface, beginning with the accepted Step 3 exact candidate and controlling the audit against the 463-row Seller master checklist.
+
+The gate behavior itself is not being redesigned. The accepted behavior to preserve is:
+
+- Personal Data OFF blocks before provider execution;
+- blocked execution produces zero physical business requests;
+- enabling Personal Data does not replay a blocked command;
+- explicit resubmit is required after enabling;
+- only that explicit resubmit may execute an otherwise allowed read.
+
+Audit requirements:
+
+- identify every accepted/salvaged Seller read whose existing metadata requires the Personal Data gate;
+- verify that the runtime gate is actually attached before provider execution for those reads;
+- verify that reads not requiring the Personal Data gate are not arbitrarily forced behind a new mechanism;
+- preserve accepted B9/B17 review/question behavior;
+- map the audit result back to Seller `method + path` rows in the 463-row master checklist;
+- distinguish `personal_data_gate` decisions from safe-projection/redaction behavior rather than conflating them;
+- record any uncovered operation as an explicit Step 4 audit gap for later classification, not as a new B50/B51 stage.
+
+No fresh Seller or Performance business API requests are authorized for this audit.
