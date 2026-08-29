@@ -1,0 +1,63 @@
+name: Ozon Step5 exact Swagger authority
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-step5-exact-swagger-authority.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recover-exact-seller-swagger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair authority
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+
+      - name: Fetch public Seller Swagger snapshot and require accepted byte identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_sha='39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40'
+          expected_bytes='3933043'
+          url='https://docs.ozon.ru/api/seller/swagger.json'
+          mkdir -p /tmp/ozon-step5-swagger
+          curl --fail --silent --show-error --location \
+            --connect-timeout 20 --max-time 90 \
+            -H 'Accept: application/json' \
+            "$url" -o /tmp/ozon-step5-swagger/seller-swagger.json
+          actual_sha="$(sha256sum /tmp/ozon-step5-swagger/seller-swagger.json | awk '{print $1}')"
+          actual_bytes="$(wc -c < /tmp/ozon-step5-swagger/seller-swagger.json | tr -d ' ')"
+          echo "accepted_sha=$expected_sha"
+          echo "actual_sha=$actual_sha"
+          echo "accepted_bytes=$expected_bytes"
+          echo "actual_bytes=$actual_bytes"
+          test "$actual_sha" = "$expected_sha"
+          test "$actual_bytes" = "$expected_bytes"
+          python3 - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('/tmp/ozon-step5-swagger/seller-swagger.json')
+          x=json.loads(p.read_text(encoding='utf-8'))
+          assert isinstance(x,dict)
+          assert isinstance(x.get('paths'),dict)
+          operations=sum(1 for item in x['paths'].values() for method in item if method.lower() in {'get','post','put','patch','delete','head','options','trace'})
+          assert operations == 463, operations
+          print('STEP5_EXACT_SWAGGER_463_OPERATIONS_PASS')
+          PY
+          printf '%s  %s\n' "$actual_sha" seller-swagger.json > /tmp/ozon-step5-swagger/seller-swagger.sha256
+          printf '%s\n' "$url" > /tmp/ozon-step5-swagger/seller-swagger.source-url.txt
+          echo STEP5_EXACT_SWAGGER_ACCEPTED_BYTE_IDENTITY_PASS
+
+      - name: Upload exact accepted Swagger authority
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step5-exact-seller-swagger-authority
+          path: /tmp/ozon-step5-swagger
+          if-no-files-found: error
+          retention-days: 7
