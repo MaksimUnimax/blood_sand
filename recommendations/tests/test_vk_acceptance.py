@@ -32,9 +32,9 @@ class AcceptanceTests(unittest.TestCase):
   with self.assertRaises(VKNormalizationError):normalize_callback(bad)
  def test_state_idempotency_and_customer_copy(self):
   worker=InboundWorker(self.s,BotOrchestrator(self.s,RecommendationApplicationService()))
-  self.s.accept(self.payload('16.01.1990'));worker.process_one();self.assertEqual(self.s.session(1,11)['state'],'WAITING_GENDER')
-  self.s.accept(self.payload('Мужчине','e2'));worker.process_one();self.assertEqual(self.s.session(1,11)['state'],'RESOLVED');message=self.s.connection.execute('select message_text from vk_outbox where source_event_id=2').fetchone()[0];self.assertIn('Печать Велеса',message);self.assertNotIn('bear_paw',message);self.assertNotIn('rank2',message)
-  self.s.accept(self.payload('anything','e3'));worker.process_one();self.assertEqual(self.s.connection.execute('select count(*) from vk_outbox').fetchone()[0],2)
+  self.s.accept(self.payload('Подобрать оберег','e0'));worker.process_one();self.s.accept(self.payload('16.01.1990'));worker.process_one();self.assertEqual(self.s.session(1,11)['state'],'WAITING_GENDER')
+  self.s.accept(self.payload('Мужчине','e2'));worker.process_one();self.assertEqual(self.s.session(1,11)['state'],'RESOLVED');message=self.s.connection.execute('select message_text from vk_outbox where source_event_id=3').fetchone()[0];self.assertIn('Печать Велеса',message);self.assertNotIn('bear_paw',message);self.assertNotIn('rank2',message)
+  self.s.accept(self.payload('anything','e3'));worker.process_one();self.assertEqual(self.s.connection.execute('select count(*) from vk_outbox').fetchone()[0],3)
  def test_two_connection_claims_and_restart_and_stale_recovery(self):
   self.s.accept(self.payload());other=VKStorage(self.path,1,1);self.assertIsNotNone(self.s.claim_event());self.assertIsNone(other.claim_event());self.s.connection.execute("update vk_inbound_events set claimed_at=?",((datetime.now(timezone.utc)-timedelta(seconds=2)).isoformat(),));claimed=other.claim_event();self.assertIsNotNone(claimed);other.finish_event(claimed['id'],'IGNORED');other.close()
   self.s.accept(self.payload(eid='e2'));row=self.s.claim_event();self.s.transition_and_enqueue(row['id'],1,11,'WAITING_DATE',{},'x');first=self.s.claim_outbox();rid=first['random_id'];self.s.connection.execute("update vk_outbox set claimed_at=?",((datetime.now(timezone.utc)-timedelta(seconds=2)).isoformat(),));again=self.s.claim_outbox();self.assertEqual(again['random_id'],rid)

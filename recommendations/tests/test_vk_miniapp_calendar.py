@@ -57,14 +57,14 @@ class CalendarAcceptanceTests(unittest.TestCase):
 
     def tearDown(self): self.storage.close(); self.tmp.cleanup()
 
-    def event(self, text, event_id):
-        return type("Event", (), {"event_type":"message_new", "group_id":TEST_GROUP_ID, "peer_id":TEST_PEER_ID, "from_id":TEST_USER_ID, "text":text, "payload":None})()
+    def event(self, text, event_id, payload=None):
+        return type("Event", (), {"event_type":"message_new", "group_id":TEST_GROUP_ID, "peer_id":TEST_PEER_ID, "from_id":TEST_USER_ID, "text":text, "payload":payload})()
 
     def start_calendar(self, event_id="calendar-start"):
         event_id = f"{event_id}-{self.storage.connection.execute('select count(*) from vk_inbound_events').fetchone()[0]}"
         self.storage.connection.execute("INSERT INTO vk_inbound_events(vk_group_id,transport,event_id,api_version,event_type,raw_payload_json,status,received_at) VALUES(?,?,?,?,?,?,?,?)", (TEST_GROUP_ID,"test",event_id,"x","message_new","{}","NEW",self.clock().isoformat()))
         inbound = self.storage.connection.execute("select id from vk_inbound_events where event_id=?", (event_id,)).fetchone()[0]
-        BotOrchestrator(self.storage, RecommendationApplicationService(), self.config).process(inbound, self.event("bad", event_id))
+        BotOrchestrator(self.storage, RecommendationApplicationService(), self.config).process(inbound, self.event("Подобрать оберег", event_id, '{"kip":"menu","value":"recommend","v":1}'))
         return self.storage.connection.execute("select * from vk_miniapp_handoffs").fetchone(), self.storage.connection.execute("select * from vk_outbox order by outbox_id desc").fetchone()
 
     def bootstrap(self):
@@ -101,7 +101,7 @@ class CalendarAcceptanceTests(unittest.TestCase):
     def test_disabled_path_keeps_typed_date_and_no_handoff(self):
         bot = BotOrchestrator(self.storage, RecommendationApplicationService(), VKMiniAppConfig(enabled=False))
         self.storage.connection.execute("INSERT INTO vk_inbound_events(vk_group_id,transport,event_id,api_version,event_type,raw_payload_json,status,received_at) VALUES(?,?,?,?,?,?,?,?)", (TEST_GROUP_ID,"test","disabled","x","message_new","{}","NEW",self.clock().isoformat()))
-        bot.process(1, self.event("bad", "disabled")); row = self.storage.session(TEST_GROUP_ID, TEST_PEER_ID)
+        bot.process(1, self.event("Подобрать оберег", "disabled", '{"kip":"menu","value":"recommend","v":1}')); row = self.storage.session(TEST_GROUP_ID, TEST_PEER_ID)
         self.assertEqual(row["state"], "WAITING_DATE"); self.assertEqual(self.storage.connection.execute("select count(*) from vk_miniapp_handoffs").fetchone()[0], 0)
         self.assertNotIn("open_app", self.storage.connection.execute("select keyboard_json from vk_outbox").fetchone()[0] or "")
         self.storage.connection.execute("INSERT INTO vk_inbound_events(vk_group_id,transport,event_id,api_version,event_type,raw_payload_json,status,received_at) VALUES(?,?,?,?,?,?,?,?)", (TEST_GROUP_ID,"test","typed","x","message_new","{}","NEW",self.clock().isoformat()))
@@ -198,9 +198,9 @@ class CalendarAcceptanceTests(unittest.TestCase):
         calendar = self.bot_snapshot()[0]
         self.tearDown(); self.setUp()
         bot = BotOrchestrator(self.storage, RecommendationApplicationService(), VKMiniAppConfig(enabled=False))
-        for event_id, text in (("typed-start", "bad"), ("typed-date", "13.10.1990")):
+        for event_id, text, payload in (("typed-start", "Подобрать оберег", '{"kip":"menu","value":"recommend","v":1}'), ("typed-date", "13.10.1990", None)):
             self.storage.connection.execute("INSERT INTO vk_inbound_events(vk_group_id,transport,event_id,api_version,event_type,raw_payload_json,status,received_at) VALUES(?,?,?,?,?,?,?,?)", (TEST_GROUP_ID,"test",event_id,"x","message_new","{}","NEW",self.clock().isoformat()))
-            bot.process(self.storage.connection.execute("select id from vk_inbound_events where event_id=?", (event_id,)).fetchone()[0], self.event(text, event_id))
+            bot.process(self.storage.connection.execute("select id from vk_inbound_events where event_id=?", (event_id,)).fetchone()[0], self.event(text, event_id, payload))
         typed = self.bot_snapshot()[0]
         for key in ("state", "birth_day", "birth_month", "birth_year", "gender"):
             self.assertEqual(calendar[key], typed[key])

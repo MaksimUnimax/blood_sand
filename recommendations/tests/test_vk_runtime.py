@@ -44,10 +44,10 @@ class VKRuntimeTests(unittest.TestCase):
     def test_dedup_and_atomic_claim(self):
         p=self.payload();self.assertTrue(self.db.accept(p));self.assertFalse(self.db.accept(p));self.assertIsNotNone(self.db.claim_event());self.assertIsNone(self.db.claim_event())
     def test_worker_transition_and_restart(self):
-        self.db.accept(self.payload()); worker=InboundWorker(self.db,BotOrchestrator(self.db,RecommendationApplicationService()));self.assertTrue(worker.process_one())
+        self.db.accept(self.payload('Подобрать оберег','start')); worker=InboundWorker(self.db,BotOrchestrator(self.db,RecommendationApplicationService()));self.assertTrue(worker.process_one()); self.db.accept(self.payload()); self.assertTrue(worker.process_one())
         s=self.db.session(1,10);self.assertEqual(s['state'],'WAITING_GENDER')
         self.db.accept(self.payload('Мужчине','e2'));worker.process_one();self.assertEqual(self.db.session(1,10)['state'],'RESOLVED')
-        rows=self.db.connection.execute('select * from vk_outbox').fetchall();self.assertEqual(len(rows),2);self.assertNotIn('bear_paw',rows[1]['message_text'])
+        rows=self.db.connection.execute('select * from vk_outbox').fetchall();self.assertEqual(len(rows),3);self.assertNotIn('bear_paw',rows[2]['message_text'])
     def test_outbox_success_and_retry_reuses_random_id(self):
         self.db.accept(self.payload()); e=self.db.claim_event(); self.db.transition_and_enqueue(e['id'],1,10,'WAITING_DATE',{},'x')
         api=FakeAPI(VKAPIResult(error_code=6));worker=OutboxWorker(self.db,api);worker.process_one(); row=self.db.connection.execute('select * from vk_outbox').fetchone();self.db.connection.execute("update vk_outbox set next_attempt_at=NULL where outbox_id=?",(row['outbox_id'],));worker.process_one()
@@ -62,6 +62,7 @@ class VKRuntimeTests(unittest.TestCase):
         current = [datetime(2026, 1, 1, tzinfo=timezone.utc)]
         self.db = VKStorage(self.db.path, session_retention_seconds=60, clock=lambda: current[0])
         worker = InboundWorker(self.db, BotOrchestrator(self.db, RecommendationApplicationService()))
+        self.assertTrue(self.db.accept(self.payload("Подобрать оберег", "retained-start"))); worker.process_one()
         first = self.payload("13.10.1990", "retained-date")
         self.assertTrue(self.db.accept(first)); worker.process_one()
         session = self.db.session(1, 10)
@@ -73,6 +74,6 @@ class VKRuntimeTests(unittest.TestCase):
         fresh = self.payload("Мужчине", "expired-gender")
         self.assertTrue(self.db.accept(fresh)); worker.process_one()
         reset = self.db.session(1, 10)
-        self.assertEqual(reset["state"], "WAITING_DATE")
+        self.assertEqual(reset["state"], "START")
         self.assertIsNone(reset["birth_day"])
         self.assertFalse(self.db.accept(first))

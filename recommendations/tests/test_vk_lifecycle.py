@@ -56,18 +56,20 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.fail("runtime did not process eligible work")
 
     async def test_autonomous_complete_flow_without_manual_process_one(self):
-        await self.post("13.10.1990", "date")
+        await self.post("Подобрать оберег", "start", '{"kip":"menu","value":"recommend","v":1}')
         await self.wait_for(lambda: len(self.api.calls) == 1)
-        self.assertEqual(self.api.calls[0][1], "Для кого подбираем оберег?")
-        self.assertIsNotNone(self.api.calls[0][3])
-        await self.post("Мужчине", "gender", '{"kip":"gender","value":"male","v":1}')
+        await self.post("13.10.1990", "date")
         await self.wait_for(lambda: len(self.api.calls) == 2)
-        self.assertIn("рекомендуем оберег", self.api.calls[1][1])
+        self.assertEqual(self.api.calls[1][1], "Для кого подбираем оберег?")
         self.assertIsNotNone(self.api.calls[1][3])
-        await self.post("Подобрать снова", "restart", '{"kip":"restart","v":1}')
+        await self.post("Мужчине", "gender", '{"kip":"gender","value":"male","v":1}')
         await self.wait_for(lambda: len(self.api.calls) == 3)
-        self.assertIn("ДД.ММ.ГГГГ", self.api.calls[2][1])
-        self.assertEqual(len({row[2] for row in self.api.calls}), 3)
+        self.assertIn("рекомендуем оберег", self.api.calls[2][1])
+        self.assertIsNotNone(self.api.calls[2][3])
+        await self.post("Подобрать снова", "restart", '{"kip":"restart","v":1}')
+        await self.wait_for(lambda: len(self.api.calls) == 4)
+        self.assertIn("ДД.ММ.ГГГГ", self.api.calls[3][1])
+        self.assertEqual(len({row[2] for row in self.api.calls}), 4)
 
     async def test_clean_shutdown_stops_tasks_and_closes_resources(self):
         controller = self.app.state.vk_runtime["controller"]

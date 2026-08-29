@@ -66,21 +66,21 @@ class M3FinalAcceptanceTests(unittest.TestCase):
                 async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url="http://test") as client:
                     return await client.post("/internal/vk/callback",content=json.dumps(payload),headers={"content-type":"application/json"})
             return asyncio.run(run())
-        for text,eid,state in (("13.10.1990","flow-date","WAITING_GENDER"),("Мужчине","flow-gender","RESOLVED"),("Подобрать снова","flow-restart","WAITING_DATE")):
+        for text,eid,state in (("Подобрать оберег","flow-start","WAITING_DATE"),("13.10.1990","flow-date","WAITING_GENDER"),("Мужчине","flow-gender","RESOLVED"),("Подобрать снова","flow-restart","WAITING_DATE")):
             self.assertEqual(post(text,eid).text,"ok"); self.assertTrue(InboundWorker(storage,BotOrchestrator(storage,RecommendationApplicationService())).process_one()); self.assertEqual(storage.session(1,11)["state"],state)
         rows=storage.connection.execute("select * from vk_outbox order by outbox_id").fetchall()
-        self.assertEqual(len(rows),3); self.assertEqual(len({r["source_event_id"] for r in rows}),3); self.assertNotIn("bear_paw",rows[1]["message_text"])
+        self.assertEqual(len(rows),4); self.assertEqual(len({r["source_event_id"] for r in rows}),4); self.assertNotIn("bear_paw",rows[2]["message_text"])
         storage.close()
 
     def test_state_machine_full_matrix_state_versions_and_full_callback_flow(self):
         w = self.worker()
-        cases = [("ordinary", "WAITING_DATE", None), ("13.10", "WAITING_GENDER", None), ("13.10.1990", "WAITING_GENDER", 1990), ("13.10 20.11", "WAITING_DATE", None), ("31.02", "WAITING_DATE", None)]
+        cases = [("ordinary", "START", None), ("13.10", "START", None), ("13.10.1990", "START", None), ("13.10 20.11", "START", None), ("31.02", "START", None)]
         for number, (text, state, year) in enumerate(cases):
             self.deliver(text, f"case-{number}"); row = self.s.session(1, 11); self.assertEqual(row["state"], state)
             if year: self.assertEqual(row["birth_year"], year)
             # reset peer state for independent START cases
             self.s.connection.execute("delete from vk_bot_sessions where vk_group_id=1 and peer_id=11")
-        self.deliver("bad", "wd-1"); self.deliver("13.10", "wd-2"); self.assertEqual(self.s.session(1,11)["state"], "WAITING_GENDER")
+        self.deliver("Подобрать оберег", "wd-start"); self.deliver("bad", "wd-1"); self.deliver("13.10", "wd-2"); self.assertEqual(self.s.session(1,11)["state"], "WAITING_GENDER")
         self.deliver("no", "wg-bad"); self.assertEqual(self.s.session(1,11)["state"], "WAITING_GENDER")
         before = len(self.outbox()); self.deliver("Мужчине", "wg-male"); resolved = self.s.session(1,11)
         self.assertEqual(resolved["state"], "RESOLVED"); self.assertEqual(resolved["gender"], "male"); self.assertEqual(len(self.outbox()), before + 1)
@@ -89,7 +89,7 @@ class M3FinalAcceptanceTests(unittest.TestCase):
         self.deliver("Подобрать снова", "restart"); reset = self.s.session(1,11)
         self.assertEqual(reset["state"], "WAITING_DATE"); self.assertEqual(tuple(reset[k] for k in ("birth_day","birth_month","birth_year","gender","last_result_id")), (None,)*5)
         self.s.connection.execute("delete from vk_bot_sessions where vk_group_id=1 and peer_id=11")
-        self.deliver("13.10", "female-date"); self.deliver("Женщине", "female-gender"); self.assertEqual(self.s.session(1,11)["gender"], "female")
+        self.deliver("Подобрать оберег", "female-start"); self.deliver("13.10", "female-date"); self.deliver("Женщине", "female-gender"); self.assertEqual(self.s.session(1,11)["gender"], "female")
         unsupported = self.payload("x", "unsupported", "wall_post_new"); unsupported["object"]["message"]["peer_id"] = 99
         self.assertTrue(self.s.accept(unsupported)); w.process_one(); self.assertEqual(self.s.connection.execute("select status from vk_inbound_events where event_id='unsupported'").fetchone()[0], "IGNORED"); self.assertIsNone(self.s.session(1,99))
 
@@ -133,6 +133,7 @@ class M3FinalAcceptanceTests(unittest.TestCase):
             day, month = dates[name]
             for gender, word in (("male", "Мужчине"), ("female", "Женщине")):
                 peer = 100 + index * 10 + (gender == "female"); self.s.connection.execute("delete from vk_bot_sessions where peer_id=?", (peer,))
+                p = self.payload("Подобрать оберег", f"parity-{index}-{gender}-start"); p["object"]["message"]["peer_id"] = peer; self.s.accept(p); self.worker(service).process_one()
                 p = self.payload(f"{day:02d}.{month:02d}.1990", f"parity-{index}-{gender}-date"); p["object"]["message"]["peer_id"] = peer; self.s.accept(p); self.worker(service).process_one()
                 p = self.payload(word, f"parity-{index}-{gender}"); p["object"]["message"]["peer_id"] = peer; self.s.accept(p); self.worker(service).process_one()
                 direct = service.real.resolve(service.calls[-1]).semantic_result; self.assertEqual(direct["chertog"]["name"], name); self.assertEqual(self.s.session(1,peer)["last_result_id"], service.results[-1].result_id)
