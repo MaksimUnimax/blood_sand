@@ -1,6 +1,6 @@
 # VK Implementation Gate Matrix
 
-Версия: 0.3  
+Версия: 0.4  
 Статус: **MANDATORY PRE-CODE GATE AUTHORITY**  
 Дата: 2026-08-29  
 Бренд: «Кровь и Песок»
@@ -79,7 +79,7 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 | Milestone | Purpose | Architecture status | Platform/setup status | Code gate |
 |---|---|---|---|---|
 | M1 | deterministic config/Core | CLOSED | n/a | PASS |
-| M2 | shared Recommendation API/backend foundation | documented + dependency policy frozen | local worktree sync + actual `pyproject.toml`/`uv.lock` setup/regression still required | **SETUP SLICE ALLOWED; APPLICATION CODE AFTER SETUP PASS** |
+| M2 | shared Recommendation API/backend foundation | documented + dependency policy frozen | locked environment setup committed and independently audited | **APPLICATION CODE OPEN** |
 | M3 | VK Community Bot | fully architected + PRE-M3 contract exists | real community/token/Callback fixtures still required | **BLOCKED** |
 | M4 | destinations/availability overlay | high-level architecture defined | concrete destination registry/availability source gate still required | **BLOCKED UNTIL M3/M4 AUTHORITY PASS** |
 | M5 | VK Mini App | fully architected + PRE-M5 contract exists | official deploy-tool conflict + app/security/client staging remain | **BLOCKED** |
@@ -97,7 +97,7 @@ Current dependency authority:
 M2_BACKEND_DEPENDENCY_ADR.md
 ```
 
-### Already satisfied
+### Dependency/setup baseline
 
 ```text
 M1 configuration/Core closed
@@ -117,20 +117,60 @@ production/CI automatic Python downloads disabled
 M2 does not require a VK token/community/App
 ```
 
-### Required setup slice before application code
+### Completed setup evidence
 
-1. Fast-forward local VK worktree to exact independently verified remote docs HEAD.
-2. Verify clean worktree; never reset unknown local work.
-3. Record `python3 --version`; require >=3.11.
-4. Install/verify exact `uv 0.12.7`; do not use moving `latest` without version check.
-5. Create `pyproject.toml` with `requires-python >=3.11` and exact direct pins from ADR.
-6. Generate and commit `uv.lock` with uv 0.12.7.
-7. Recreate clean environment using `UV_PYTHON_DOWNLOADS=never uv sync --locked` or equivalent exact current setting.
-8. Run all existing M1 tests through `uv run --locked`.
-9. Verify normal sync/test did not modify `uv.lock`.
-10. Independently audit the setup diff before any M2 application source is written.
+Setup commit:
 
-Only after setup PASS may M2 application code implement:
+```text
+7ac8a58710888835532f6c6f060415dc688c6aaa
+build(recommendations): freeze M2 locked Python environment
+```
+
+Parent/documentation authority HEAD:
+
+```text
+09408c0e059eff769b9016f43565f3e69a10e05d
+```
+
+Independent GitHub audit verifies the setup commit changes exactly:
+
+```text
+.gitignore
+pyproject.toml
+uv.lock
+```
+
+No recommendation Core/data/tests/docs/API/VK/Bot/Mini App runtime source changed in that setup commit.
+
+Committed `pyproject.toml` verifies:
+
+```text
+requires-python >=3.11
+fastapi==0.141.1
+uvicorn==0.52.4
+pydantic==2.13.5
+httpx==0.28.1
+```
+
+Committed `uv.lock` contains the same direct pins and a resolved transitive lock.
+
+The setup run reported locally:
+
+```text
+Python 3.12.3
+uv 0.12.7
+UV_PYTHON_DOWNLOADS disabled
+48/48 existing M1 tests PASS
+configuration validator exit 0
+uv.lock SHA unchanged by tests
+MQO HEAD unchanged
+```
+
+Repository-side audit cannot independently prove local shell execution in the absence of CI status/checks; those execution facts remain run evidence. The committed setup scope/dependency artifacts themselves are independently verified and satisfy the pre-code setup gate.
+
+### M2 application code now allowed
+
+M2 may implement only:
 
 ```text
 shared application service
@@ -158,11 +198,12 @@ Current status:
 ```text
 M2_ARCHITECTURE_GATE = PASS
 M2_DEPENDENCY_POLICY_GATE = PASS
-M2_LOCAL_SYNC_GATE = PENDING
-M2_LOCK_ARTIFACT_GATE = PENDING_SETUP
-M2_LOCKED_ENV_REGRESSION_GATE = PENDING_SETUP
-M2_SETUP_CODE_GATE = OPEN_FOR_SETUP_ONLY
-M2_APPLICATION_CODE_GATE = BLOCKED_UNTIL_SETUP_PASS
+M2_LOCAL_SYNC_GATE = PASS
+M2_LOCK_ARTIFACT_GATE = PASS
+M2_LOCKED_ENV_REGRESSION_GATE = PASS_RUN_EVIDENCE
+M2_SETUP_INDEPENDENT_GITHUB_AUDIT = PASS
+M2_SETUP_CODE_GATE = CLOSED_COMPLETE
+M2_APPLICATION_CODE_GATE = OPEN
 ```
 
 ---
@@ -397,8 +438,6 @@ Each value must be visible in configuration/ADR/tests rather than hidden in fram
 
 ## 10. Local worktree synchronization gate
 
-Documentation commits in this phase were made directly to the remote dev branch.
-
 Before any Codex/local implementation:
 
 ```text
@@ -438,17 +477,11 @@ Any unexplained failure blocks milestone closure.
 
 ## 12. Current next action
 
-Documentation architecture for M2/M3/M5/M6 is present and M2 dependency policy is frozen.
+M2 setup is complete and independently audited at repository level.
 
-The only code currently allowed is an **M2 setup-only slice** to synchronize the local worktree and create the reviewed dependency metadata/lock environment. No application endpoint code is allowed in that setup slice.
+The next code allowed is **M2 shared Recommendation API/application-service implementation only**, using the exact locked environment and current `DATA_API_CONTRACT.md` / `VK_IMPLEMENTATION_ARCHITECTURE.md`.
 
-After independent audit of that setup slice:
-
-```text
-M2_APPLICATION_CODE_GATE may open
-```
-
-M3 waits for real VK community staging/config evidence.
+M3 still waits for real VK community staging/config evidence.
 
 M5 waits for current-version/deploy-conflict resolution, registered app staging and explicit security policy.
 
@@ -457,5 +490,5 @@ M6 waits for Bot→App staging and resolution/exclusion of the Mini App→commun
 Decision marker:
 
 ```text
-KIP_VK_IMPLEMENTATION_GATE_MATRIX_V3
+KIP_VK_IMPLEMENTATION_GATE_MATRIX_V4
 ```
