@@ -1,0 +1,119 @@
+operation_key,http_method,fixed_path,source_category_tag,purpose,terminal_decision,alias,response_kind,privacy_policy,cluster,section
+GET /v1/cargoes-label/file/{file_guid},GET,/v1/cargoes-label/file/{file_guid},FboSupplyRequest,Получить PDF с этикетками грузовых мест,REJECT_SUNSET_REPLACED,,,,,
+GET /v1/product/certificate/accordance-types,GET,/v1/product/certificate/accordance-types,CertificationAPI,Список типов соответствия требованиям (версия 1),IMPLEMENT_READ,product_certificate_accordance_types_v1,DIRECT_JSON,safe_projection,catalog_products,certification
+POST /v1/barcode/add,POST,/v1/barcode/add,BarcodeAPI,Привязать штрихкод к товару,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/barcode/generate,POST,/v1/barcode/generate,BarcodeAPI,Создать штрихкод для товара,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/cargoes-label/create,POST,/v1/cargoes-label/create,FboSupplyRequest,Сгенерировать этикетки для грузомест,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/cargoes-label/get,POST,/v1/cargoes-label/get,FboSupplyRequest,Получить идентификатор этикетки для грузомест,IMPLEMENT_READ,cargoes_label_get,WORKFLOW_STATUS_URL,safe_projection,supplies_fbo,cargoes
+POST /v1/cargoes/create,POST,/v1/cargoes/create,FboSupplyRequest,Установка грузомест,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/cargoes/label/transport-by-order/create,POST,/v1/cargoes/label/transport-by-order/create,FBOTransport,Сгенерировать этикетки для транспортных грузомест по идентификатору поставки,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/cargoes/label/transport-by-order/status,POST,/v1/cargoes/label/transport-by-order/status,FBOTransport,Получить статус генерации этикеток для транспортных грузомеcт по идентификатору поставки,IMPLEMENT_READ,cargoes_label_transport_by_order_status,WORKFLOW_STATUS_URL,safe_projection,supplies_fbo,cargoes
+POST /v1/cargoes/label/transport/create,POST,/v1/cargoes/label/transport/create,FBOTransport,Сгенерировать этикетки транспортных грузомест по идентификатору грузоместа,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/cargoes/label/transport/status,POST,/v1/cargoes/label/transport/status,FBOTransport,Получить статус генерации этикеток транспортных грузомест по идентификатору грузоместа,IMPLEMENT_READ,cargoes_label_transport_status,WORKFLOW_STATUS_URL,safe_projection,supplies_fbo,cargoes
+POST /v1/cargoes/transport/create,POST,/v1/cargoes/transport/create,FBOTransport,Создать транспортное грузоместо,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/cargoes/transport/create/status,POST,/v1/cargoes/transport/create/status,FBOTransport,Получить статус создания транспортного грузоместа,IMPLEMENT_READ,cargoes_transport_create_status,DIRECT_JSON,safe_projection,supplies_fbo,cargoes
+POST /v1/carriage/act-discrepancy/pdf,POST,/v1/carriage/act-discrepancy/pdf,DeliveryFBS,Получить акт о расхождениях по отгрузке FBS,IMPLEMENT_READ,carriage_act_discrepancy_pdf,JSON_DOCUMENT_BYTES,operator_personal_data_gate,orders_postings,labels_documents
+POST /v1/carriage/container/create,POST,/v1/carriage/container/create,CarriageAPI,Создать грузоместо,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/carriage/container/document/get,POST,/v1/carriage/container/document/get,CarriageAPI,Получить документы по грузоместам — ТрН и лист отгрузки,IMPLEMENT_READ,carriage_container_document_get,JSON_DOCUMENT_BYTES,operator_personal_data_gate,orders_postings,labels_documents
+POST /v1/carriage/container/label/get,POST,/v1/carriage/container/label/get,CarriageAPI,Получить этикетку по грузоместам,IMPLEMENT_READ,carriage_container_label_get,JSON_DOCUMENT_BYTES,operator_personal_data_gate,orders_postings,labels_documents
+POST /v1/carriage/courier-contact/get,POST,/v1/carriage/courier-contact/get,DeliveryFBS,Получить контактные данные продавца для курьера,IMPLEMENT_READ,carriage_courier_contact_get,DIRECT_JSON,operator_personal_data_gate,orders_postings,assembly_carriage
+POST /v1/carriage/courier-contact/set,POST,/v1/carriage/courier-contact/set,DeliveryFBS,Добавить или обновить контактные данные продавца для курьера,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/carriage/create,POST,/v1/carriage/create,DeliveryFBS,Создание отгрузки,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/carriage/pass/create,POST,/v1/carriage/pass/create,Pass,Создать пропуск,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/chat/send/file,POST,/v1/chat/send/file,ChatAPI,Отправить файл,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/chat/start,POST,/v1/chat/start,Premium,Создать новый чат,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/delivery/point/info,POST,/v1/delivery/point/info,DeliveryAPI,Получить информацию о точке самовывоза,IMPLEMENT_READ,delivery_point_info,DIRECT_JSON,safe_projection,warehouse_logistics,delivery_methods
+POST /v1/draft/crossdock/create,POST,/v1/draft/crossdock/create,FboSupplyRequest,Создать черновик заявки на поставку кросс-докингом,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/draft/direct/create,POST,/v1/draft/direct/create,FboSupplyRequest,Создать черновик заявки на прямую поставку,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/draft/multi-cluster/create,POST,/v1/draft/multi-cluster/create,FboSupplyRequest,Создать черновик заявки на поставку для нескольких кластеров,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/fbp/act-from/create,POST,/v1/fbp/act-from/create,DeliveryFBP,Сгенерировать акт приёмки,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/fbp/act-from/get,POST,/v1/fbp/act-from/get,DeliveryFBP,Получить статус генерации акта приёмки,IMPLEMENT_READ,fbp_act_from_get,WORKFLOW_STATUS_URL,safe_projection,supplies_fbo,acts
+POST /v1/fbp/act-to/create,POST,/v1/fbp/act-to/create,DeliveryFBP,Сгенерировать транспортную накладную,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/fbp/act-to/get,POST,/v1/fbp/act-to/get,DeliveryFBP,Получить статус генерации транспортной накладной,IMPLEMENT_READ,fbp_act_to_get,WORKFLOW_STATUS_URL,safe_projection,supplies_fbo,acts
+POST /v1/fbp/draft/direct/create,POST,/v1/fbp/draft/direct/create,DraftDirectFBP,Создать черновик заявки на поставку без указания способа доставки,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/fbp/draft/direct/seller-dlv/create,POST,/v1/fbp/draft/direct/seller-dlv/create,DraftDirectFBP,Создать черновик с доставкой силами продавца,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/fbp/draft/direct/timeslot/edit,POST,/v1/fbp/draft/direct/timeslot/edit,DraftDirectFBP,Отредактировать таймслот в черновике,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/fbp/draft/direct/tpl-dlv/create,POST,/v1/fbp/draft/direct/tpl-dlv/create,DraftDirectFBP,Создать черновик заявки на доставку сторонней транспортной компанией,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/fbp/draft/direct/tpl-dlv/edit,POST,/v1/fbp/draft/direct/tpl-dlv/edit,DraftDirectFBP,Редактировать черновик поставки со способом доставки сторонней транспортной компанией,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/fbp/draft/drop-off/create,POST,/v1/fbp/draft/drop-off/create,DraftDropOffFBP,Создать черновик для доставки в drop-off пункт,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/fbp/draft/drop-off/dlv/edit,POST,/v1/fbp/draft/drop-off/dlv/edit,DraftDropOffFBP,Отредактировать детали доставки для drop-off черновика,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/fbp/draft/pick-up/create,POST,/v1/fbp/draft/pick-up/create,DraftPickupFBP,Создать черновик заявки на pick-up поставку,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/fbp/label/create,POST,/v1/fbp/label/create,DeliveryFBP,Cоздать задание на генерацию этикеток,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/fbp/label/get,POST,/v1/fbp/label/get,DeliveryFBP,Получить статус задания на генерацию этикеток,IMPLEMENT_READ,fbp_label_get,WORKFLOW_STATUS_URL,safe_projection,supplies_fbo,acts
+POST /v1/fbp/order/direct/timeslot/edit,POST,/v1/fbp/order/direct/timeslot/edit,OrderDirectFBP,Отредактировать таймслот в заявке на поставку,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/fbp/order/drop-off/dlv/edit,POST,/v1/fbp/order/drop-off/dlv/edit,OrderDropOffFBP,Отредактировать информацию о поставке на drop-off пункт,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/finance/compensation,POST,/v1/finance/compensation,FinanceAPI,Отчёт о компенсациях,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/finance/decompensation,POST,/v1/finance/decompensation,FinanceAPI,Отчёт о декомпенсациях,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/finance/mutual-settlement,POST,/v1/finance/mutual-settlement,FinanceAPI,Отчёт о взаиморасчётах,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/invoice/delete,POST,/v1/invoice/delete,SupplierAPI,Удалить ссылку на счёт-фактуру,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/invoice/file/upload,POST,/v1/invoice/file/upload,SupplierAPI,Загрузка счёта-фактуры,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/polygon/create,POST,/v1/polygon/create,PolygonAPI,Создайте полигон доставки,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/posting/fbs/package-label/create,POST,/v1/posting/fbs/package-label/create,FBS,Создать задание на выгрузку этикеток,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/posting/fbs/package-label/get,POST,/v1/posting/fbs/package-label/get,FBS,Получить файл с этикетками,IMPLEMENT_READ,posting_fbs_package_label_get_v1,WORKFLOW_STATUS_URL,safe_projection,orders_postings,labels_documents
+POST /v1/pricing-strategy/create,POST,/v1/pricing-strategy/create,PricingStrategyAPI,Создать стратегию,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/pricing-strategy/status,POST,/v1/pricing-strategy/status,PricingStrategyAPI,Изменить статус стратегии,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/product/action/timer/update,POST,/v1/product/action/timer/update,Prices&StocksAPI,Обновление таймера актуальности минимальной цены,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/product/attributes/update,POST,/v1/product/attributes/update,ProductAPI,Обновить характеристики товара,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/product/certificate/bind,POST,/v1/product/certificate/bind,CertificationAPI,Привязать сертификат к товару,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/product/certificate/create,POST,/v1/product/certificate/create,CertificationAPI,Добавить сертификаты для товаров ⚠️ deprecated,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/product/certificate/delete,POST,/v1/product/certificate/delete,CertificationAPI,Удалить сертификат,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/product/certificate/unbind,POST,/v1/product/certificate/unbind,CertificationAPI,Отвязать товар от сертификата,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/product/import-by-sku,POST,/v1/product/import-by-sku,ProductAPI,Создать товар по SKU,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/product/info/stocks-by-warehouse/fbs,POST,/v1/product/info/stocks-by-warehouse/fbs,Prices&StocksAPI,Информация об остатках на складах продавца (FBS и rFBS),IMPLEMENT_READ,fbs_stock_by_warehouse_v1,DIRECT_JSON,safe_projection,stocks_inventory,warehouse_fbs
+POST /v1/question/answer/create,POST,/v1/question/answer/create,Questions&Answers,Создать ответ на вопрос,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/question/change-status,POST,/v1/question/change-status,Questions&Answers,Изменить статус вопросов,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/receipts/get,POST,/v1/receipts/get,Receipt,Получить чек в формате PDF,IMPLEMENT_READ,receipts_get,JSON_DOCUMENT_BYTES,operator_personal_data_gate,finance,documents_reports
+POST /v1/report/discounted/create,POST,/v1/report/discounted/create,ReportAPI,Отчёт об уценённых товарах,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/report/marked-products-sales/create,POST,/v1/report/marked-products-sales/create,ReportAPI,Сгенерировать отчёт по продажам товаров с маркировкой,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/report/placement/by-products/create,POST,/v1/report/placement/by-products/create,ReportAPI,Получить отчёт о стоимости размещения по товарам,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/report/placement/by-supplies/create,POST,/v1/report/placement/by-supplies/create,ReportAPI,Получить отчёт о стоимости размещения по поставкам,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/report/postings/create,POST,/v1/report/postings/create,ReportAPI,Отчёт об отправлениях,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/report/products/create,POST,/v1/report/products/create,ReportAPI,Отчёт по товарам,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/report/realization/posting/create,POST,/v1/report/realization/posting/create,BetaMethod,Получить позаказный отчёт о реализации товаров,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/report/warehouse/stock,POST,/v1/report/warehouse/stock,ReportAPI,Отчёт об остатках на FBS-складе,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/return/giveout/barcode,POST,/v1/return/giveout/barcode,ReturnAPI,Значение штрихкода для возвратных отгрузок,IMPLEMENT_READ,return_giveout_barcode,DIRECT_JSON,safe_projection,returns_cancellations,return_giveout
+POST /v1/return/giveout/barcode-reset,POST,/v1/return/giveout/barcode-reset,ReturnAPI,Сгенерировать новый штрихкод,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/return/giveout/get-pdf,POST,/v1/return/giveout/get-pdf,ReturnAPI,Штрихкод для получения возвратной отгрузки в формате PDF,IMPLEMENT_READ,return_giveout_get_pdf,DIRECT_BINARY,operator_personal_data_gate,returns_cancellations,return_giveout
+POST /v1/return/giveout/get-png,POST,/v1/return/giveout/get-png,ReturnAPI,Штрихкод для получения возвратной отгрузки в формате PNG,IMPLEMENT_READ,return_giveout_get_png,DIRECT_BINARY,operator_personal_data_gate,returns_cancellations,return_giveout
+POST /v1/return/pass/create,POST,/v1/return/pass/create,Pass,Создать пропуск для возврата,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/review/change-status,POST,/v1/review/change-status,ReviewAPI,Изменить статус отзывов ⚠️ deprecated,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/review/comment/create,POST,/v1/review/comment/create,ReviewAPI,Оставить комментарий на отзыв,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/review/count,POST,/v1/review/count,ReviewAPI,Количество отзывов по статусам ⚠️ deprecated,REJECT_DEPRECATED_REPLACED,,,,,
+POST /v1/review/info,POST,/v1/review/info,ReviewAPI,Получить информацию об отзыве ⚠️ deprecated,REJECT_DEPRECATED_REPLACED,,,,,
+POST /v1/seller-actions/create/discount,POST,/v1/seller-actions/create/discount,SellerActions,Создать акцию с механикой «Скидка»,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/seller-actions/create/discount-with-condition,POST,/v1/seller-actions/create/discount-with-condition,SellerActions,Создать акцию с механикой «Скидка от суммы заказа»,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/seller-actions/create/installment,POST,/v1/seller-actions/create/installment,SellerActions,Создать акцию с механикой «Беспроцентная рассрочка»,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/seller-actions/create/multi-level-discount,POST,/v1/seller-actions/create/multi-level-discount,SellerActions,Создать акцию с механикой «Многоуровневая скидка от суммы»,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/seller-actions/create/voucher,POST,/v1/seller-actions/create/voucher,SellerActions,Создать акцию с механикой «Скидка по промокоду»,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/seller-actions/voucher/get,POST,/v1/seller-actions/voucher/get,SellerActions,Получить файл с промокодами в формате CSV,IMPLEMENT_READ,seller_actions_voucher_get,WORKFLOW_STATUS_URL,safe_projection,prices_promotions,actions_promotions
+POST /v1/supply-order/act/accept,POST,/v1/supply-order/act/accept,SupplyOrderAPI,Согласовать акт,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/supply-order/content/update,POST,/v1/supply-order/content/update,FboSupplyRequest,Редактирование товарного состава,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v1/supply-order/pass/create,POST,/v1/supply-order/pass/create,FBO,Указать данные о водителе и автомобиле,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/warehouse/erfbs/aggregator/create,POST,/v1/warehouse/erfbs/aggregator/create,rFBSWarehouseSetup,Создать склад с методом доставки «Партнёры Ozon»,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/warehouse/erfbs/non-integrated/create,POST,/v1/warehouse/erfbs/non-integrated/create,rFBSWarehouseSetup,Создать склад с методом доставки «Вы или сторонняя служба»,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/warehouse/fbs/create,POST,/v1/warehouse/fbs/create,FBSWarehouseSetup,Создать склад,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v1/warehouse/fbs/pickup/courier/create,POST,/v1/warehouse/fbs/pickup/courier/create,FBSWarehouseSetup,Создать вызов курьера на забор отгрузки pick-up,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v2/draft/supply/create,POST,/v2/draft/supply/create,FboSupplyRequest,Создать заявку на поставку по черновику,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v2/fbs/posting/delivered,POST,/v2/fbs/posting/delivered,DeliveryrFBS,Изменить статус на «Доставлено»,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v2/fbs/posting/delivering,POST,/v2/fbs/posting/delivering,DeliveryrFBS,Изменить статус на «Доставляется»,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v2/fbs/posting/last-mile,POST,/v2/fbs/posting/last-mile,DeliveryrFBS,Изменить статус на «Последняя миля»,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v2/invoice/create-or-update,POST,/v2/invoice/create-or-update,SupplierAPI,Создать или изменить счёт-фактуру,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v2/invoice/get,POST,/v2/invoice/get,SupplierAPI,Получить информацию о счёте-фактуре,IMPLEMENT_READ,invoice_get,DIRECT_JSON,safe_projection,finance,documents_reports
+POST /v2/order/create,POST,/v2/order/create,OrderAPI,Создать заказ,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v2/posting/fbs/act/create,POST,/v2/posting/fbs/act/create,DeliveryFBS,Подтвердить отгрузку и создать документы,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v2/posting/fbs/act/get-barcode,POST,/v2/posting/fbs/act/get-barcode,DeliveryFBS,Штрихкод для отгрузки отправления,IMPLEMENT_READ,posting_fbs_act_get_barcode,DIRECT_BINARY,operator_personal_data_gate,orders_postings,labels_documents
+POST /v2/posting/fbs/act/get-barcode/text,POST,/v2/posting/fbs/act/get-barcode/text,DeliveryFBS,Значение штрихкода для отгрузки отправления,IMPLEMENT_READ,posting_fbs_act_get_barcode_text,DIRECT_JSON,safe_projection,orders_postings,labels_documents
+POST /v2/posting/fbs/act/get-container-labels,POST,/v2/posting/fbs/act/get-container-labels,DeliveryFBS,Этикетки для грузового места,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v2/posting/fbs/act/get-pdf,POST,/v2/posting/fbs/act/get-pdf,DeliveryFBS,Получить PDF c документами,IMPLEMENT_READ,posting_fbs_act_get_pdf,DIRECT_BINARY,operator_personal_data_gate,orders_postings,labels_documents
+POST /v2/posting/fbs/digital/act/check-status,POST,/v2/posting/fbs/digital/act/check-status,DeliveryFBS,Статус формирования накладной ⚠️ deprecated,REJECT_SUNSET_REPLACED,,,,,
+POST /v2/posting/fbs/digital/act/get-pdf,POST,/v2/posting/fbs/digital/act/get-pdf,DeliveryFBS,Получить лист отгрузки по перевозке ⚠️ deprecated,REJECT_SUNSET_REPLACED,,,,,
+POST /v2/posting/fbs/get-by-barcode,POST,/v2/posting/fbs/get-by-barcode,FBS,Получить информацию об отправлении по штрихкоду,IMPLEMENT_READ,posting_fbs_get_by_barcode,DIRECT_JSON,safe_projection,orders_postings,fbs_postings
+POST /v2/posting/fbs/package-label,POST,/v2/posting/fbs/package-label,FBS,Напечатать этикетку,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v2/posting/fbs/package-label/create,POST,/v2/posting/fbs/package-label/create,FBS,Создать задание на формирование этикеток,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v2/product/certificate/create,POST,/v2/product/certificate/create,BetaMethod,Создать сертификат качества,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v2/product/certification/params,POST,/v2/product/certification/params,BetaMethod,Получить обязательные параметры для создания сертификата качества,IMPLEMENT_READ,product_certification_params_v2,DIRECT_JSON,safe_projection,catalog_products,certification
+POST /v2/report/returns/create,POST,/v2/report/returns/create,ReportAPI,Отчёт о возвратах,REJECT_SERVER_SIDE_GENERATION_OR_CREATION,,,,,
+POST /v2/review/change-status,POST,/v2/review/change-status,ReviewAPI,Изменить статус отзывов,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v3/product/import,POST,/v3/product/import,ProductAPI,Создать или обновить товар,REJECT_MUTATION_SIDE_EFFECT,,,,,
+POST /v5/fbs/posting/product/exemplar/status,POST,/v5/fbs/posting/product/exemplar/status,FBS&rFBSMarks,Получить статус добавления экземпляров,IMPLEMENT_READ,fbs_posting_product_exemplar_status_v5,DIRECT_JSON,safe_projection,orders_postings,fbs_postings
+POST /v6/fbs/posting/product/exemplar/create-or-get,POST,/v6/fbs/posting/product/exemplar/create-or-get,FBS&rFBSMarks,Получить данные созданных экземпляров,IMPLEMENT_READ,fbs_posting_product_exemplar_create_or_get_v6,DIRECT_JSON,safe_projection,orders_postings,fbs_postings

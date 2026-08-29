@@ -1,1 +1,1524 @@
-PLACEHOLDER
+{
+  "schema": "OZON_STEP5_EXACT_DECISION_MATRIX_V1",
+  "as_of": "2026-08-29",
+  "roadmap_step": 5,
+  "status": "STEP5_EXACT_DECISION_MATRIX_BUILT",
+  "authority": {
+    "seller_swagger_bytes": 3933043,
+    "seller_swagger_sha256": "39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40",
+    "openapi": "3.0.0",
+    "paths": 463,
+    "operations": 463,
+    "source": "original operator-supplied swagger.json; exact bytes recovered from Library and independently verified before freezing decisions"
+  },
+  "input_inventory": {
+    "step5_candidate_rows": 203,
+    "accepted_step3_candidate_rows": 85,
+    "pending_exact_schema_rows": 118
+  },
+  "invariants": [
+    "NO_HIDDEN_PAGINATION",
+    "NO_HIDDEN_RETRY",
+    "NO_HIDDEN_POLLING",
+    "NO_HIDDEN_FANOUT",
+    "NO_PROVIDER_CHAINING",
+    "ONE_EXPLICIT_COMMAND_ONE_BUSINESS_REQUEST",
+    "DOCUMENT_URL_IS_NEVER_AUTO_FETCHED",
+    "SERVER_SIDE_REPORT_GENERATION_IS_NOT_A_READ"
+  ],
+  "counts": {
+    "rows": 118,
+    "implement_reads": 28,
+    "IMPLEMENT_READ": 28,
+    "REJECT_DEPRECATED_REPLACED": 2,
+    "REJECT_MUTATION_SIDE_EFFECT": 25,
+    "REJECT_SERVER_SIDE_GENERATION_OR_CREATION": 60,
+    "REJECT_SUNSET_REPLACED": 3
+  },
+  "rows": [
+    {
+      "operation_key": "GET /v1/cargoes-label/file/{file_guid}",
+      "http_method": "GET",
+      "fixed_path": "/v1/cargoes-label/file/{file_guid}",
+      "source_category_tag": "FboSupplyRequest",
+      "purpose": "Получить PDF с этикетками грузовых мест",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SUNSET_REPLACED"
+    },
+    {
+      "operation_key": "GET /v1/product/certificate/accordance-types",
+      "http_method": "GET",
+      "fixed_path": "/v1/product/certificate/accordance-types",
+      "source_category_tag": "CertificationAPI",
+      "purpose": "Список типов соответствия требованиям (версия 1)",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "product_certificate_accordance_types_v1",
+      "response_kind": "DIRECT_JSON",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification"
+    },
+    {
+      "operation_key": "POST /v1/barcode/add",
+      "http_method": "POST",
+      "fixed_path": "/v1/barcode/add",
+      "source_category_tag": "BarcodeAPI",
+      "purpose": "Привязать штрихкод к товару",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/barcode/generate",
+      "http_method": "POST",
+      "fixed_path": "/v1/barcode/generate",
+      "source_category_tag": "BarcodeAPI",
+      "purpose": "Создать штрихкод для товара",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/cargoes-label/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes-label/create",
+      "source_category_tag": "FboSupplyRequest",
+      "purpose": "Сгенерировать этикетки для грузомест",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/cargoes-label/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes-label/get",
+      "source_category_tag": "FboSupplyRequest",
+      "purpose": "Получить идентификатор этикетки для грузомест",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "cargoes_label_get",
+      "response_kind": "WORKFLOW_STATUS_URL",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargoes"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/create",
+      "source_category_tag": "FboSupplyRequest",
+      "purpose": "Установка грузомест",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/label/transport-by-order/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/label/transport-by-order/create",
+      "source_category_tag": "FBOTransport",
+      "purpose": "Сгенерировать этикетки для транспортных грузомест по идентификатору поставки",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/label/transport-by-order/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/label/transport-by-order/status",
+      "source_category_tag": "FBOTransport",
+      "purpose": "Получить статус генерации этикеток для транспортных грузомеcт по идентификатору поставки",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "cargoes_label_transport_by_order_status",
+      "response_kind": "WORKFLOW_STATUS_URL",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargoes"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/label/transport/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/label/transport/create",
+      "source_category_tag": "FBOTransport",
+      "purpose": "Сгенерировать этикетки транспортных грузомест по идентификатору грузоместа",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/label/transport/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/label/transport/status",
+      "source_category_tag": "FBOTransport",
+      "purpose": "Получить статус генерации этикеток транспортных грузомест по идентификатору грузоместа",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "cargoes_label_transport_status",
+      "response_kind": "WORKFLOW_STATUS_URL",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargoes"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/transport/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/transport/create",
+      "source_category_tag": "FBOTransport",
+      "purpose": "Создать транспортное грузоместо",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/cargoes/transport/create/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/cargoes/transport/create/status",
+      "source_category_tag": "FBOTransport",
+      "purpose": "Получить статус создания транспортного грузоместа",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "cargoes_transport_create_status",
+      "response_kind": "DIRECT_JSON",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargoes"
+    },
+    {
+      "operation_key": "POST /v1/carriage/act-discrepancy/pdf",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/act-discrepancy/pdf",
+      "source_category_tag": "DeliveryFBS",
+      "purpose": "Получить акт о расхождениях по отгрузке FBS",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "carriage_act_discrepancy_pdf",
+      "response_kind": "JSON_DOCUMENT_BYTES",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "labels_documents"
+    },
+    {
+      "operation_key": "POST /v1/carriage/container/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/container/create",
+      "source_category_tag": "CarriageAPI",
+      "purpose": "Создать грузоместо",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/carriage/container/document/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/container/document/get",
+      "source_category_tag": "CarriageAPI",
+      "purpose": "Получить документы по грузоместам — ТрН и лист отгрузки",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "carriage_container_document_get",
+      "response_kind": "JSON_DOCUMENT_BYTES",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "labels_documents"
+    },
+    {
+      "operation_key": "POST /v1/carriage/container/label/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/container/label/get",
+      "source_category_tag": "CarriageAPI",
+      "purpose": "Получить этикетку по грузоместам",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "carriage_container_label_get",
+      "response_kind": "JSON_DOCUMENT_BYTES",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "labels_documents"
+    },
+    {
+      "operation_key": "POST /v1/carriage/courier-contact/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/courier-contact/get",
+      "source_category_tag": "DeliveryFBS",
+      "purpose": "Получить контактные данные продавца для курьера",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "carriage_courier_contact_get",
+      "response_kind": "DIRECT_JSON",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "assembly_carriage"
+    },
+    {
+      "operation_key": "POST /v1/carriage/courier-contact/set",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/courier-contact/set",
+      "source_category_tag": "DeliveryFBS",
+      "purpose": "Добавить или обновить контактные данные продавца для курьера",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/carriage/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/create",
+      "source_category_tag": "DeliveryFBS",
+      "purpose": "Создание отгрузки",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/carriage/pass/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/carriage/pass/create",
+      "source_category_tag": "Pass",
+      "purpose": "Создать пропуск",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/chat/send/file",
+      "http_method": "POST",
+      "fixed_path": "/v1/chat/send/file",
+      "source_category_tag": "ChatAPI",
+      "purpose": "Отправить файл",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/chat/start",
+      "http_method": "POST",
+      "fixed_path": "/v1/chat/start",
+      "source_category_tag": "Premium",
+      "purpose": "Создать новый чат",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/delivery/point/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/delivery/point/info",
+      "source_category_tag": "DeliveryAPI",
+      "purpose": "Получить информацию о точке самовывоза",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "delivery_point_info",
+      "response_kind": "DIRECT_JSON",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "delivery_methods"
+    },
+    {
+      "operation_key": "POST /v1/draft/crossdock/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/draft/crossdock/create",
+      "source_category_tag": "FboSupplyRequest",
+      "purpose": "Создать черновик заявки на поставку кросс-докингом",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/draft/direct/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/draft/direct/create",
+      "source_category_tag": "FboSupplyRequest",
+      "purpose": "Создать черновик заявки на прямую поставку",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/draft/multi-cluster/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/draft/multi-cluster/create",
+      "source_category_tag": "FboSupplyRequest",
+      "purpose": "Создать черновик заявки на поставку для нескольких кластеров",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/fbp/act-from/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/act-from/create",
+      "source_category_tag": "DeliveryFBP",
+      "purpose": "Сгенерировать акт приёмки",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/fbp/act-from/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/act-from/get",
+      "source_category_tag": "DeliveryFBP",
+      "purpose": "Получить статус генерации акта приёмки",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "fbp_act_from_get",
+      "response_kind": "WORKFLOW_STATUS_URL",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "acts"
+    },
+    {
+      "operation_key": "POST /v1/fbp/act-to/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/act-to/create",
+      "source_category_tag": "DeliveryFBP",
+      "purpose": "Сгенерировать транспортную накладную",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/fbp/act-to/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/act-to/get",
+      "source_category_tag": "DeliveryFBP",
+      "purpose": "Получить статус генерации транспортной накладной",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "fbp_act_to_get",
+      "response_kind": "WORKFLOW_STATUS_URL",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "acts"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/direct/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/direct/create",
+      "source_category_tag": "DraftDirectFBP",
+      "purpose": "Создать черновик заявки на поставку без указания способа доставки",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/direct/seller-dlv/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/direct/seller-dlv/create",
+      "source_category_tag": "DraftDirectFBP",
+      "purpose": "Создать черновик с доставкой силами продавца",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/direct/timeslot/edit",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/direct/timeslot/edit",
+      "source_category_tag": "DraftDirectFBP",
+      "purpose": "Отредактировать таймслот в черновике",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/direct/tpl-dlv/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/direct/tpl-dlv/create",
+      "source_category_tag": "DraftDirectFBP",
+      "purpose": "Создать черновик заявки на доставку сторонней транспортной компанией",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/direct/tpl-dlv/edit",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/direct/tpl-dlv/edit",
+      "source_category_tag": "DraftDirectFBP",
+      "purpose": "Редактировать черновик поставки со способом доставки сторонней транспортной компанией",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/drop-off/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/drop-off/create",
+      "source_category_tag": "DraftDropOffFBP",
+      "purpose": "Создать черновик для доставки в drop-off пункт",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/drop-off/dlv/edit",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/drop-off/dlv/edit",
+      "source_category_tag": "DraftDropOffFBP",
+      "purpose": "Отредактировать детали доставки для drop-off черновика",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/draft/pick-up/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/draft/pick-up/create",
+      "source_category_tag": "DraftPickupFBP",
+      "purpose": "Создать черновик заявки на pick-up поставку",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/fbp/label/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/label/create",
+      "source_category_tag": "DeliveryFBP",
+      "purpose": "Cоздать задание на генерацию этикеток",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/fbp/label/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/label/get",
+      "source_category_tag": "DeliveryFBP",
+      "purpose": "Получить статус задания на генерацию этикеток",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "fbp_label_get",
+      "response_kind": "WORKFLOW_STATUS_URL",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "acts"
+    },
+    {
+      "operation_key": "POST /v1/fbp/order/direct/timeslot/edit",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/order/direct/timeslot/edit",
+      "source_category_tag": "OrderDirectFBP",
+      "purpose": "Отредактировать таймслот в заявке на поставку",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/fbp/order/drop-off/dlv/edit",
+      "http_method": "POST",
+      "fixed_path": "/v1/fbp/order/drop-off/dlv/edit",
+      "source_category_tag": "OrderDropOffFBP",
+      "purpose": "Отредактировать информацию о поставке на drop-off пункт",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/finance/compensation",
+      "http_method": "POST",
+      "fixed_path": "/v1/finance/compensation",
+      "source_category_tag": "FinanceAPI",
+      "purpose": "Отчёт о компенсациях",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/finance/decompensation",
+      "http_method": "POST",
+      "fixed_path": "/v1/finance/decompensation",
+      "source_category_tag": "FinanceAPI",
+      "purpose": "Отчёт о декомпенсациях",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/finance/mutual-settlement",
+      "http_method": "POST",
+      "fixed_path": "/v1/finance/mutual-settlement",
+      "source_category_tag": "FinanceAPI",
+      "purpose": "Отчёт о взаиморасчётах",
+      "detection_reasons": [
+        "REPORT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/invoice/delete",
+      "http_method": "POST",
+      "fixed_path": "/v1/invoice/delete",
+      "source_category_tag": "SupplierAPI",
+      "purpose": "Удалить ссылку на счёт-фактуру",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/invoice/file/upload",
+      "http_method": "POST",
+      "fixed_path": "/v1/invoice/file/upload",
+      "source_category_tag": "SupplierAPI",
+      "purpose": "Загрузка счёта-фактуры",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/polygon/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/polygon/create",
+      "source_category_tag": "PolygonAPI",
+      "purpose": "Создайте полигон доставки",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/posting/fbs/package-label/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/posting/fbs/package-label/create",
+      "source_category_tag": "FBS",
+      "purpose": "Создать задание на выгрузку этикеток",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/posting/fbs/package-label/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/posting/fbs/package-label/get",
+      "source_category_tag": "FBS",
+      "purpose": "Получить файл с этикетками",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "posting_fbs_package_label_get_v1",
+      "response_kind": "WORKFLOW_STATUS_URL",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "labels_documents"
+    },
+    {
+      "operation_key": "POST /v1/pricing-strategy/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/pricing-strategy/create",
+      "source_category_tag": "PricingStrategyAPI",
+      "purpose": "Создать стратегию",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/pricing-strategy/status",
+      "http_method": "POST",
+      "fixed_path": "/v1/pricing-strategy/status",
+      "source_category_tag": "PricingStrategyAPI",
+      "purpose": "Изменить статус стратегии",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/product/action/timer/update",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/action/timer/update",
+      "source_category_tag": "Prices&StocksAPI",
+      "purpose": "Обновление таймера актуальности минимальной цены",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/product/attributes/update",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/attributes/update",
+      "source_category_tag": "ProductAPI",
+      "purpose": "Обновить характеристики товара",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/bind",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/bind",
+      "source_category_tag": "CertificationAPI",
+      "purpose": "Привязать сертификат к товару",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/create",
+      "source_category_tag": "CertificationAPI",
+      "purpose": "Добавить сертификаты для товаров ⚠️ deprecated",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/delete",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/delete",
+      "source_category_tag": "CertificationAPI",
+      "purpose": "Удалить сертификат",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/product/certificate/unbind",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/certificate/unbind",
+      "source_category_tag": "CertificationAPI",
+      "purpose": "Отвязать товар от сертификата",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/product/import-by-sku",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/import-by-sku",
+      "source_category_tag": "ProductAPI",
+      "purpose": "Создать товар по SKU",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/product/info/stocks-by-warehouse/fbs",
+      "http_method": "POST",
+      "fixed_path": "/v1/product/info/stocks-by-warehouse/fbs",
+      "source_category_tag": "Prices&StocksAPI",
+      "purpose": "Информация об остатках на складах продавца (FBS и rFBS)",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "fbs_stock_by_warehouse_v1",
+      "response_kind": "DIRECT_JSON",
+      "privacy_policy": "safe_projection",
+      "cluster": "stocks_inventory",
+      "section": "warehouse_fbs"
+    },
+    {
+      "operation_key": "POST /v1/question/answer/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/question/answer/create",
+      "source_category_tag": "Questions&Answers",
+      "purpose": "Создать ответ на вопрос",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/question/change-status",
+      "http_method": "POST",
+      "fixed_path": "/v1/question/change-status",
+      "source_category_tag": "Questions&Answers",
+      "purpose": "Изменить статус вопросов",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/receipts/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/receipts/get",
+      "source_category_tag": "Receipt",
+      "purpose": "Получить чек в формате PDF",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "receipts_get",
+      "response_kind": "JSON_DOCUMENT_BYTES",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "finance",
+      "section": "documents_reports"
+    },
+    {
+      "operation_key": "POST /v1/report/discounted/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/discounted/create",
+      "source_category_tag": "ReportAPI",
+      "purpose": "Отчёт об уценённых товарах",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/report/marked-products-sales/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/marked-products-sales/create",
+      "source_category_tag": "ReportAPI",
+      "purpose": "Сгенерировать отчёт по продажам товаров с маркировкой",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/report/placement/by-products/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/placement/by-products/create",
+      "source_category_tag": "ReportAPI",
+      "purpose": "Получить отчёт о стоимости размещения по товарам",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/report/placement/by-supplies/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/placement/by-supplies/create",
+      "source_category_tag": "ReportAPI",
+      "purpose": "Получить отчёт о стоимости размещения по поставкам",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/report/postings/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/postings/create",
+      "source_category_tag": "ReportAPI",
+      "purpose": "Отчёт об отправлениях",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/report/products/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/products/create",
+      "source_category_tag": "ReportAPI",
+      "purpose": "Отчёт по товарам",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/report/realization/posting/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/realization/posting/create",
+      "source_category_tag": "BetaMethod",
+      "purpose": "Получить позаказный отчёт о реализации товаров",
+      "detection_reasons": [
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/report/warehouse/stock",
+      "http_method": "POST",
+      "fixed_path": "/v1/report/warehouse/stock",
+      "source_category_tag": "ReportAPI",
+      "purpose": "Отчёт об остатках на FBS-складе",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/return/giveout/barcode",
+      "http_method": "POST",
+      "fixed_path": "/v1/return/giveout/barcode",
+      "source_category_tag": "ReturnAPI",
+      "purpose": "Значение штрихкода для возвратных отгрузок",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "return_giveout_barcode",
+      "response_kind": "DIRECT_JSON",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "return_giveout"
+    },
+    {
+      "operation_key": "POST /v1/return/giveout/barcode-reset",
+      "http_method": "POST",
+      "fixed_path": "/v1/return/giveout/barcode-reset",
+      "source_category_tag": "ReturnAPI",
+      "purpose": "Сгенерировать новый штрихкод",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/return/giveout/get-pdf",
+      "http_method": "POST",
+      "fixed_path": "/v1/return/giveout/get-pdf",
+      "source_category_tag": "ReturnAPI",
+      "purpose": "Штрихкод для получения возвратной отгрузки в формате PDF",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "return_giveout_get_pdf",
+      "response_kind": "DIRECT_BINARY",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "returns_cancellations",
+      "section": "return_giveout"
+    },
+    {
+      "operation_key": "POST /v1/return/giveout/get-png",
+      "http_method": "POST",
+      "fixed_path": "/v1/return/giveout/get-png",
+      "source_category_tag": "ReturnAPI",
+      "purpose": "Штрихкод для получения возвратной отгрузки в формате PNG",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "return_giveout_get_png",
+      "response_kind": "DIRECT_BINARY",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "returns_cancellations",
+      "section": "return_giveout"
+    },
+    {
+      "operation_key": "POST /v1/return/pass/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/return/pass/create",
+      "source_category_tag": "Pass",
+      "purpose": "Создать пропуск для возврата",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/review/change-status",
+      "http_method": "POST",
+      "fixed_path": "/v1/review/change-status",
+      "source_category_tag": "ReviewAPI",
+      "purpose": "Изменить статус отзывов ⚠️ deprecated",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/review/comment/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/review/comment/create",
+      "source_category_tag": "ReviewAPI",
+      "purpose": "Оставить комментарий на отзыв",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/review/count",
+      "http_method": "POST",
+      "fixed_path": "/v1/review/count",
+      "source_category_tag": "ReviewAPI",
+      "purpose": "Количество отзывов по статусам ⚠️ deprecated",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_DEPRECATED_REPLACED"
+    },
+    {
+      "operation_key": "POST /v1/review/info",
+      "http_method": "POST",
+      "fixed_path": "/v1/review/info",
+      "source_category_tag": "ReviewAPI",
+      "purpose": "Получить информацию об отзыве ⚠️ deprecated",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_DEPRECATED_REPLACED"
+    },
+    {
+      "operation_key": "POST /v1/seller-actions/create/discount",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller-actions/create/discount",
+      "source_category_tag": "SellerActions",
+      "purpose": "Создать акцию с механикой «Скидка»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/seller-actions/create/discount-with-condition",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller-actions/create/discount-with-condition",
+      "source_category_tag": "SellerActions",
+      "purpose": "Создать акцию с механикой «Скидка от суммы заказа»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/seller-actions/create/installment",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller-actions/create/installment",
+      "source_category_tag": "SellerActions",
+      "purpose": "Создать акцию с механикой «Беспроцентная рассрочка»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/seller-actions/create/multi-level-discount",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller-actions/create/multi-level-discount",
+      "source_category_tag": "SellerActions",
+      "purpose": "Создать акцию с механикой «Многоуровневая скидка от суммы»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/seller-actions/create/voucher",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller-actions/create/voucher",
+      "source_category_tag": "SellerActions",
+      "purpose": "Создать акцию с механикой «Скидка по промокоду»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/seller-actions/voucher/get",
+      "http_method": "POST",
+      "fixed_path": "/v1/seller-actions/voucher/get",
+      "source_category_tag": "SellerActions",
+      "purpose": "Получить файл с промокодами в формате CSV",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "seller_actions_voucher_get",
+      "response_kind": "WORKFLOW_STATUS_URL",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "actions_promotions"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/act/accept",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/act/accept",
+      "source_category_tag": "SupplyOrderAPI",
+      "purpose": "Согласовать акт",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/content/update",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/content/update",
+      "source_category_tag": "FboSupplyRequest",
+      "purpose": "Редактирование товарного состава",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v1/supply-order/pass/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/supply-order/pass/create",
+      "source_category_tag": "FBO",
+      "purpose": "Указать данные о водителе и автомобиле",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/erfbs/aggregator/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/erfbs/aggregator/create",
+      "source_category_tag": "rFBSWarehouseSetup",
+      "purpose": "Создать склад с методом доставки «Партнёры Ozon»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/erfbs/non-integrated/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/erfbs/non-integrated/create",
+      "source_category_tag": "rFBSWarehouseSetup",
+      "purpose": "Создать склад с методом доставки «Вы или сторонняя служба»",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/fbs/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/fbs/create",
+      "source_category_tag": "FBSWarehouseSetup",
+      "purpose": "Создать склад",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v1/warehouse/fbs/pickup/courier/create",
+      "http_method": "POST",
+      "fixed_path": "/v1/warehouse/fbs/pickup/courier/create",
+      "source_category_tag": "FBSWarehouseSetup",
+      "purpose": "Создать вызов курьера на забор отгрузки pick-up",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v2/draft/supply/create",
+      "http_method": "POST",
+      "fixed_path": "/v2/draft/supply/create",
+      "source_category_tag": "FboSupplyRequest",
+      "purpose": "Создать заявку на поставку по черновику",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v2/fbs/posting/delivered",
+      "http_method": "POST",
+      "fixed_path": "/v2/fbs/posting/delivered",
+      "source_category_tag": "DeliveryrFBS",
+      "purpose": "Изменить статус на «Доставлено»",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v2/fbs/posting/delivering",
+      "http_method": "POST",
+      "fixed_path": "/v2/fbs/posting/delivering",
+      "source_category_tag": "DeliveryrFBS",
+      "purpose": "Изменить статус на «Доставляется»",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v2/fbs/posting/last-mile",
+      "http_method": "POST",
+      "fixed_path": "/v2/fbs/posting/last-mile",
+      "source_category_tag": "DeliveryrFBS",
+      "purpose": "Изменить статус на «Последняя миля»",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v2/invoice/create-or-update",
+      "http_method": "POST",
+      "fixed_path": "/v2/invoice/create-or-update",
+      "source_category_tag": "SupplierAPI",
+      "purpose": "Создать или изменить счёт-фактуру",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v2/invoice/get",
+      "http_method": "POST",
+      "fixed_path": "/v2/invoice/get",
+      "source_category_tag": "SupplierAPI",
+      "purpose": "Получить информацию о счёте-фактуре",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "invoice_get",
+      "response_kind": "DIRECT_JSON",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "documents_reports"
+    },
+    {
+      "operation_key": "POST /v2/order/create",
+      "http_method": "POST",
+      "fixed_path": "/v2/order/create",
+      "source_category_tag": "OrderAPI",
+      "purpose": "Создать заказ",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/create",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/create",
+      "source_category_tag": "DeliveryFBS",
+      "purpose": "Подтвердить отгрузку и создать документы",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/get-barcode",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/get-barcode",
+      "source_category_tag": "DeliveryFBS",
+      "purpose": "Штрихкод для отгрузки отправления",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "posting_fbs_act_get_barcode",
+      "response_kind": "DIRECT_BINARY",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "labels_documents"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/get-barcode/text",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/get-barcode/text",
+      "source_category_tag": "DeliveryFBS",
+      "purpose": "Значение штрихкода для отгрузки отправления",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "posting_fbs_act_get_barcode_text",
+      "response_kind": "DIRECT_JSON",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "labels_documents"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/get-container-labels",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/get-container-labels",
+      "source_category_tag": "DeliveryFBS",
+      "purpose": "Этикетки для грузового места",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/act/get-pdf",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/act/get-pdf",
+      "source_category_tag": "DeliveryFBS",
+      "purpose": "Получить PDF c документами",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "posting_fbs_act_get_pdf",
+      "response_kind": "DIRECT_BINARY",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "labels_documents"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/digital/act/check-status",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/digital/act/check-status",
+      "source_category_tag": "DeliveryFBS",
+      "purpose": "Статус формирования накладной ⚠️ deprecated",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SUNSET_REPLACED"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/digital/act/get-pdf",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/digital/act/get-pdf",
+      "source_category_tag": "DeliveryFBS",
+      "purpose": "Получить лист отгрузки по перевозке ⚠️ deprecated",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SUNSET_REPLACED"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/get-by-barcode",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/get-by-barcode",
+      "source_category_tag": "FBS",
+      "purpose": "Получить информацию об отправлении по штрихкоду",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "posting_fbs_get_by_barcode",
+      "response_kind": "DIRECT_JSON",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_postings"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/package-label",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/package-label",
+      "source_category_tag": "FBS",
+      "purpose": "Напечатать этикетку",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v2/posting/fbs/package-label/create",
+      "http_method": "POST",
+      "fixed_path": "/v2/posting/fbs/package-label/create",
+      "source_category_tag": "FBS",
+      "purpose": "Создать задание на формирование этикеток",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v2/product/certificate/create",
+      "http_method": "POST",
+      "fixed_path": "/v2/product/certificate/create",
+      "source_category_tag": "BetaMethod",
+      "purpose": "Создать сертификат качества",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v2/product/certification/params",
+      "http_method": "POST",
+      "fixed_path": "/v2/product/certification/params",
+      "source_category_tag": "BetaMethod",
+      "purpose": "Получить обязательные параметры для создания сертификата качества",
+      "detection_reasons": [
+        "DOCUMENT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "product_certification_params_v2",
+      "response_kind": "DIRECT_JSON",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification"
+    },
+    {
+      "operation_key": "POST /v2/report/returns/create",
+      "http_method": "POST",
+      "fixed_path": "/v2/report/returns/create",
+      "source_category_tag": "ReportAPI",
+      "purpose": "Отчёт о возвратах",
+      "detection_reasons": [
+        "REPORT_API_CATEGORY",
+        "REPORT_SIGNAL",
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_SERVER_SIDE_GENERATION_OR_CREATION"
+    },
+    {
+      "operation_key": "POST /v2/review/change-status",
+      "http_method": "POST",
+      "fixed_path": "/v2/review/change-status",
+      "source_category_tag": "ReviewAPI",
+      "purpose": "Изменить статус отзывов",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v3/product/import",
+      "http_method": "POST",
+      "fixed_path": "/v3/product/import",
+      "source_category_tag": "ProductAPI",
+      "purpose": "Создать или обновить товар",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "REJECT_MUTATION_SIDE_EFFECT"
+    },
+    {
+      "operation_key": "POST /v5/fbs/posting/product/exemplar/status",
+      "http_method": "POST",
+      "fixed_path": "/v5/fbs/posting/product/exemplar/status",
+      "source_category_tag": "FBS&rFBSMarks",
+      "purpose": "Получить статус добавления экземпляров",
+      "detection_reasons": [
+        "WORKFLOW_RESULT_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "fbs_posting_product_exemplar_status_v5",
+      "response_kind": "DIRECT_JSON",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_postings"
+    },
+    {
+      "operation_key": "POST /v6/fbs/posting/product/exemplar/create-or-get",
+      "http_method": "POST",
+      "fixed_path": "/v6/fbs/posting/product/exemplar/create-or-get",
+      "source_category_tag": "FBS&rFBSMarks",
+      "purpose": "Получить данные созданных экземпляров",
+      "detection_reasons": [
+        "GENERATION_OR_START_SIGNAL"
+      ],
+      "terminal_decision": "IMPLEMENT_READ",
+      "alias": "fbs_posting_product_exemplar_create_or_get_v6",
+      "response_kind": "DIRECT_JSON",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_postings"
+    }
+  ]
+}
