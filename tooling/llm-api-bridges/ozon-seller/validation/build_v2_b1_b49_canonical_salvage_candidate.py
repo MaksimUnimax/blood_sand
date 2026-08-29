@@ -45,8 +45,10 @@ def reclassify_rating_registry(path: Path) -> None:
     text = text.replace("section: 'fbs_error_index'", "section: 'delivery_returns_cancellations_metrics'")
     text = text.replace('section: "fbs_error_index"', 'section: "delivery_returns_cancellations_metrics"')
 
-    if "seller_health" in text:
-        raise AssertionError("unauthorized seller_health taxonomy remains after reclassification")
+    residual = [(i, line.rstrip()) for i, line in enumerate(text.splitlines(), 1) if "seller_health" in line]
+    if residual:
+        details = "\n".join(f"line {i}: {line}" for i, line in residual)
+        raise AssertionError(f"unauthorized seller_health taxonomy remains after reclassification:\n{details}")
     for alias in RATING_ALIASES:
         if alias not in text:
             raise AssertionError(f"rating alias missing after merge: {alias}")
