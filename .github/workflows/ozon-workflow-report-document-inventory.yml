@@ -1,0 +1,127 @@
+name: Ozon workflow report document inventory
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-workflow-report-document-inventory.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/build_ozon_workflow_report_document_inventory.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  linux-inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair authority with all refs
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Verify historical accepted authorities
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse e296ff76b975470e8e12e566e2c4aff29adea00c)" = e296ff76b975470e8e12e566e2c4aff29adea00c
+          test "$(git rev-parse 972e0aeb039ae29660985296f410045dade5231c)" = 972e0aeb039ae29660985296f410045dade5231c
+          test "$(git rev-parse cfd9a4b695fafa56f91af59a3723eb56171a1794)" = cfd9a4b695fafa56f91af59a3723eb56171a1794
+          test "$(git rev-parse 2c3cae10d6c204628403e82c8c763b402970303a)" = 2c3cae10d6c204628403e82c8c763b402970303a
+          echo WORKFLOW_DOCUMENT_HISTORICAL_AUTHORITIES_IDENTITY_PASS
+
+      - name: Materialize accepted Step 3 exact candidate
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$v/materialize_v2_b1_b49_canonical_salvage_candidate.py" --repo-root . --work-root /tmp/wrd-step3-work --out /tmp/wrd-step3
+          find /tmp/wrd-step3 -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Build Step 5 candidate inventory
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          rm -rf /tmp/wrd-audit
+          node "$v/build_ozon_workflow_report_document_inventory.mjs" /tmp/wrd-step3 "$v/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.json" /tmp/wrd-audit
+          python3 - <<'PY'
+          import csv,json,pathlib
+          root=pathlib.Path('/tmp/wrd-audit')
+          a=json.loads((root/'OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_2026-08-29.json').read_text(encoding='utf-8'))
+          c=a['counts']
+          assert c['seller_master_rows']==463
+          assert c['accepted_step3_seller_aliases']==191
+          assert c['step5_candidate_rows']>0
+          assert c['accepted_step3_candidate_rows']>0
+          assert c['pending_exact_schema_candidate_rows']>0
+          assert c['accepted_step3_candidate_rows']+c['pending_exact_schema_candidate_rows']==c['step5_candidate_rows']
+          assert len(a['historical_carry_forward_rows'])==16
+          with (root/'OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_2026-08-29.csv').open(newline='',encoding='utf-8') as f:
+            assert sum(1 for _ in csv.DictReader(f))==c['step5_candidate_rows']
+          print('WORKFLOW_DOCUMENT_INVENTORY_GENERATED_EVIDENCE_PASS')
+          PY
+
+      - name: Upload Linux inventory evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-workflow-report-document-inventory-linux
+          path: /tmp/wrd-audit
+          if-no-files-found: error
+          retention-days: 7
+
+  windows-inventory:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repair authority with all refs
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Enable Git long paths
+        shell: pwsh
+        run: git config --system core.longpaths true
+
+      - name: Materialize Step 3 and run Step 5 inventory
+        shell: pwsh
+        run: |
+          $v='tooling/llm-api-bridges/ozon-seller/validation'
+          python "$v/materialize_v2_b1_b49_canonical_salvage_candidate.py" --repo-root . --work-root C:\wrdw --out C:\wrdstep3
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          Get-ChildItem C:\wrdstep3 -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName; if($LASTEXITCODE-ne 0){exit $LASTEXITCODE} }
+          if(Test-Path C:\wrdaudit){Remove-Item C:\wrdaudit -Recurse -Force}
+          node "$v/build_ozon_workflow_report_document_inventory.mjs" C:\wrdstep3 "$v/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.json" C:\wrdaudit
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+          python -c "import json,pathlib;a=json.loads(pathlib.Path(r'C:\wrdaudit\OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_2026-08-29.json').read_text(encoding='utf-8'));c=a['counts'];assert c['seller_master_rows']==463 and c['accepted_step3_seller_aliases']==191 and c['step5_candidate_rows']==c['accepted_step3_candidate_rows']+c['pending_exact_schema_candidate_rows'] and len(a['historical_carry_forward_rows'])==16;print('WORKFLOW_DOCUMENT_INVENTORY_WINDOWS_EVIDENCE_PASS')"
+          if($LASTEXITCODE-ne 0){exit $LASTEXITCODE}
+
+  commit-inventory-evidence:
+    needs: [linux-inventory, windows-inventory]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair authority
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+
+      - name: Regenerate deterministic Step 5 inventory evidence
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$v/materialize_v2_b1_b49_canonical_salvage_candidate.py" --repo-root . --work-root /tmp/wrd-final-work --out /tmp/wrd-final-step3
+          rm -rf /tmp/wrd-final
+          node "$v/build_ozon_workflow_report_document_inventory.mjs" /tmp/wrd-final-step3 "$v/OZON_FULL_API_MASTER_CHECKLIST_2026-08-29.json" /tmp/wrd-final
+          cp /tmp/wrd-final/OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_2026-08-29.json "$v/"
+          cp /tmp/wrd-final/OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_2026-08-29.csv "$v/"
+          cp /tmp/wrd-final/OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_SUMMARY_2026-08-29.md "$v/"
+
+      - name: Commit Step 5 inventory evidence
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$v/OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_2026-08-29.json" "$v/OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_2026-08-29.csv" "$v/OZON_WORKFLOW_REPORT_DOCUMENT_INVENTORY_SUMMARY_2026-08-29.md"
+          git diff --cached --quiet && { echo 'inventory evidence already committed'; exit 0; }
+          git commit -m 'validation(ozon): record workflow report document inventory'
+          git push origin HEAD:repair/ozon-v2-b1-stocks-warehouse-2026-08-29
