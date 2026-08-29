@@ -1,0 +1,95 @@
+name: Ozon Performance Step6 exact matrix
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-performance-step6-exact-matrix.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/build_ozon_performance_step6_exact_matrix.py
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_MATRIX_REGRESSION_2026-08-29.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+      - name: Materialize accepted Step5 exact package
+        shell: bash
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          rm -rf /tmp/perf-step6-base-work /tmp/perf-step6-base
+          python3 "$v/materialize_v2_step5_workflow_report_document_package.py" \
+            --repo-root . \
+            --work-root /tmp/perf-step6-base-work \
+            --out /tmp/perf-step6-base
+      - name: Build and validate Performance 48-operation matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$v/build_ozon_performance_step6_exact_matrix.py" \
+            --out-json /tmp/performance-step6-matrix.json \
+            --out-csv /tmp/performance-step6-matrix.csv \
+            --out-summary /tmp/performance-step6-matrix.md
+          node "$v/OZON_PERFORMANCE_STEP6_MATRIX_REGRESSION_2026-08-29.mjs" \
+            /tmp/perf-step6-base \
+            /tmp/performance-step6-matrix.json
+          echo PERFORMANCE_STEP6_LINUX_MATRIX_PASS
+
+  windows-matrix:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+      - name: Materialize accepted Step5 exact package and validate matrix
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $v = 'tooling/llm-api-bridges/ozon-seller/validation'
+          $work = Join-Path $env:TEMP 'perf-step6-base-work'
+          $base = Join-Path $env:TEMP 'perf-step6-base'
+          $json = Join-Path $env:TEMP 'performance-step6-matrix.json'
+          $csv = Join-Path $env:TEMP 'performance-step6-matrix.csv'
+          $summary = Join-Path $env:TEMP 'performance-step6-matrix.md'
+          if (Test-Path $work) { Remove-Item -Recurse -Force $work }
+          if (Test-Path $base) { Remove-Item -Recurse -Force $base }
+          python "$v/materialize_v2_step5_workflow_report_document_package.py" --repo-root . --work-root $work --out $base
+          python "$v/build_ozon_performance_step6_exact_matrix.py" --out-json $json --out-csv $csv --out-summary $summary
+          node "$v/OZON_PERFORMANCE_STEP6_MATRIX_REGRESSION_2026-08-29.mjs" $base $json
+          Write-Host 'PERFORMANCE_STEP6_WINDOWS_MATRIX_PASS'
+
+  commit-matrix-evidence:
+    needs: [linux-matrix, windows-matrix]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+      - name: Freeze deterministic Performance Step6 evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          python3 "$v/build_ozon_performance_step6_exact_matrix.py" \
+            --out-json "$v/OZON_PERFORMANCE_STEP6_EXACT_MATRIX_2026-08-29.json" \
+            --out-csv "$v/OZON_PERFORMANCE_STEP6_EXACT_MATRIX_2026-08-29.csv" \
+            --out-summary "$v/OZON_PERFORMANCE_STEP6_EXACT_MATRIX_SUMMARY_2026-08-29.md"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$v/OZON_PERFORMANCE_STEP6_EXACT_MATRIX_2026-08-29.json" "$v/OZON_PERFORMANCE_STEP6_EXACT_MATRIX_2026-08-29.csv" "$v/OZON_PERFORMANCE_STEP6_EXACT_MATRIX_SUMMARY_2026-08-29.md"
+          if git diff --cached --quiet; then
+            echo 'Performance Step6 matrix evidence unchanged'
+            exit 0
+          fi
+          git commit -m 'validation(ozon): freeze Performance Step6 exact matrix'
+          git push origin HEAD:repair/ozon-v2-b1-stocks-warehouse-2026-08-29
