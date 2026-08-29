@@ -1,0 +1,94 @@
+name: Ozon Step5 Swagger provenance scan
+
+on:
+  push:
+    branches:
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-step5-swagger-provenance.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan-all-git-refs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout all reachable history
+        uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Fetch every remote branch and scan reachable blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_sha='39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40'
+          expected_bytes='3933043'
+          out=/tmp/ozon-step5-provenance
+          mkdir -p "$out"
+
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          git for-each-ref --format='%(refname) %(objectname)' refs/remotes/origin refs/tags | sort > "$out/all-refs.txt"
+          git rev-list --objects --all > "$out/all-reachable-objects.txt"
+
+          cut -d' ' -f1 "$out/all-reachable-objects.txt" | \
+            git cat-file --batch-check='%(objectname) %(objecttype) %(objectsize)' > "$out/all-object-types-sizes.txt"
+
+          awk -v n="$expected_bytes" '$2=="blob" && $3==n {print $1}' "$out/all-object-types-sizes.txt" > "$out/exact-size-blob-ids.txt"
+          size_count="$(grep -c . "$out/exact-size-blob-ids.txt" || true)"
+          echo "EXACT_SIZE_REACHABLE_BLOB_COUNT=$size_count"
+
+          : > "$out/exact-size-blob-sha256.txt"
+          found=''
+          while IFS= read -r blob; do
+            [ -n "$blob" ] || continue
+            sha="$(git cat-file blob "$blob" | sha256sum | awk '{print $1}')"
+            printf '%s %s\n' "$blob" "$sha" >> "$out/exact-size-blob-sha256.txt"
+            if [ "$sha" = "$expected_sha" ]; then
+              found="$blob"
+              git cat-file blob "$blob" > "$out/seller-swagger.json"
+              printf '%s\n' "$blob" > "$out/matching-git-blob-id.txt"
+            fi
+          done < "$out/exact-size-blob-ids.txt"
+
+          git log --all --oneline --decorate -- . ':!node_modules' | grep -Ei 'swagger|openapi|contract|schema' > "$out/relevant-commit-subjects.txt" || true
+          git rev-list --objects --all | grep -Ei 'swagger|openapi' > "$out/named-swagger-openapi-objects.txt" || true
+
+          refs="$(git for-each-ref --format='%(refname)' refs/remotes/origin refs/tags)"
+          if [ -n "$refs" ]; then
+            git grep -n -F "$expected_sha" $refs > "$out/accepted-sha-occurrences.txt" || true
+          else
+            : > "$out/accepted-sha-occurrences.txt"
+          fi
+
+          if [ -n "$found" ]; then
+            actual_bytes="$(wc -c < "$out/seller-swagger.json" | tr -d ' ')"
+            actual_sha="$(sha256sum "$out/seller-swagger.json" | awk '{print $1}')"
+            test "$actual_bytes" = "$expected_bytes"
+            test "$actual_sha" = "$expected_sha"
+            python3 - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('/tmp/ozon-step5-provenance/seller-swagger.json')
+          x=json.loads(p.read_text(encoding='utf-8'))
+          assert isinstance(x.get('paths'),dict)
+          methods={'get','post','put','patch','delete','head','options','trace'}
+          count=sum(1 for item in x['paths'].values() for method in item if method.lower() in methods)
+          assert count==463,count
+          print('STEP5_GIT_PROVENANCE_EXACT_SWAGGER_463_PASS')
+          PY
+            echo 'STEP5_GIT_PROVENANCE_EXACT_SWAGGER_FOUND_PASS'
+          else
+            echo 'STEP5_GIT_PROVENANCE_EXACT_SWAGGER_NOT_FOUND_IN_REACHABLE_REFS'
+          fi
+
+      - name: Upload provenance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step5-swagger-provenance
+          path: /tmp/ozon-step5-provenance
+          if-no-files-found: error
+          retention-days: 7
