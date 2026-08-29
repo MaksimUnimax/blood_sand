@@ -1,0 +1,24 @@
+{
+  "_fixture": {
+    "source": "VK staging API",
+    "vk_api_version": "5.199",
+    "schema_commit": "333481bd082ad747d4873ef4a77f9247097eeef0",
+    "sanitized": true,
+    "secrets_present": false
+  },
+  "response": {
+    "groups": [
+      {
+        "id": 35722386,
+        "name": "Кровь и песок",
+        "screen_name": "bllod_and_sand",
+        "is_closed": 0,
+        "type": "group",
+        "photo_50": "https://sun9-70.userapi.com/s/v1/ig2/cM3aoFVA2wfsR4sa3wbDTOCtwgeeG7mTUmv1TNuFe65C_YRlK_NdQRkRB6w32S_De2yFhgaOgSMq4CF9cHHZ6DjJ.jpg?quality=95&crop=0,0,1024,1024&as=32x32,48x48,72x72,108x108,160x160,240x240,360x360,480x480,540x540,640x640,720x720&ava=1&cs=50x50",
+        "photo_100": "https://sun9-70.userapi.com/s/v1/ig2/cM3aoFVA2wfsR4sa3wbDTOCtwgeeG7mTUmv1TNuFe65C_YRlK_NdQRkRB6w32S_De2yFhgaOgSMq4CF9cHHZ6DjJ.jpg?quality=95&crop=0,0,1024,1024&as=32x32,48x48,72x72,108x108,160x160,240x240,360x360,480x480,540x540,640x640,720x720&ava=1&cs=100x100",
+        "photo_200": "https://sun9-70.userapi.com/s/v1/ig2/cM3aoFVA2wfsR4sa3wbDTOCtwgeeG7mTUmv1TNuFe65C_YRlK_NdQRkRB6w32S_De2yFhgaOgSMq4CF9cHHZ6DjJ.jpg?quality=95&crop=0,0,1024,1024&as=32x32,48x48,72x72,108x108,160x160,240x240,360x360,480x480,540x540,640x640,720x720&ava=1&cs=200x200"
+      }
+    ],
+    "profiles": []
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "_fixture": {
+    "source": "VK staging API",
+    "vk_api_version": "5.199",
+    "schema_commit": "333481bd082ad747d4873ef4a77f9247097eeef0",
+    "sanitized": true,
+    "secrets_present": false
+  },
+  "response": {
+    "mask": 266240,
+    "permissions": [
+      {
+        "name": "messages",
+        "setting": 4096
+      },
+      {
+        "name": "manage",
+        "setting": 262144
+      }
+    ]
+  }
+}
