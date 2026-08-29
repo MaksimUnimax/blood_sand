@@ -1,0 +1,48 @@
+{
+  "schema": "OZON_PERFORMANCE_STEP6_READ_COVERAGE_PATCH_PACKAGE_V1",
+  "as_of": "2026-08-29",
+  "roadmap_step": 6,
+  "base": {
+    "label": "accepted Step5 workflow/report/document exact package",
+    "production_tree_sha256": "3c0412d640343e00b5a08f3419a3e6fdb7b1c327d694c8ad3351729af5c4d7ce",
+    "production_files": 21,
+    "javascript_files": 18
+  },
+  "transport": {
+    "file": "PATCH_PERFORMANCE_STEP6_READ_COVERAGE_2026-08-29.patch.gz.b64",
+    "base64_text_bytes": 6289,
+    "base64_text_sha256": "b3e44e97549effa82088053113ca8d386c74922837f9c645ddfc1943780da71f",
+    "decoded_gzip_bytes": 4715,
+    "decoded_gzip_sha256": "1bbbb53c55d4326e3904dfdec04ea62c2559141e1474ec1d8dc8a0ca3380d727",
+    "raw_patch_bytes": 25696,
+    "raw_patch_sha256": "4cee07da92b9a90960205a5eb573da6a0289769029de2e59054b138b9a711dc2"
+  },
+  "candidate": {
+    "production_tree_sha256": "1f8001b6b9ca3d247f0d199de592f2b6ed2ec9a7b7f7d90ec10388ee8a82813f",
+    "production_files": 21,
+    "javascript_files": 18,
+    "seller_aliases": 219,
+    "performance_aliases": 25,
+    "current_performance_reads": 21,
+    "new_performance_reads": 15,
+    "direct_binary_performance_reads": 5
+  },
+  "changed_production_files": {
+    "shared/ozon_operation_registry.js": "0909734578868978132720f1df6f3d79341bb32ac7432b6ea7ff76e6e47ebeae",
+    "shared/ozon_contract.js": "05c0d2ac2e074de861c219e029f24cc9407163ca7868e31a159ea6e65771cd22",
+    "shared/provider_transport_core.js": "fc104e5d0bd6ea836c066f8144f642c0666c0e270cbdbf8c3b1ec3a25071969e"
+  },
+  "protected_production_files": {
+    "shared/ozon_entitlements.js": "5f31664e1a0fbb7cada89c0d7673a7720c72ee2ce60fa27a7294ddec9ad30ad3",
+    "shared/ozon_provider.js": "16e8f85303e7a6a57d0fc76a6ea0e2e9dd8537341fa57397b38b0c0d52dda97b",
+    "service_worker.js": "a85b0d47b14065266221d9b3fcf3194cbaa78d96ead792fbe20834f8ee7a54a3",
+    "content_script.js": "a95b0be6bdd92e6a2caad82c9cbbed79df72e21991eae89affc8bb5bcad824bd",
+    "popup.js": "9f6ec207f4bed3bae0de912fca2f3347cc286ced9ca310369f10269400819070"
+  },
+  "evidence": {
+    "exact_matrix_commit": "67e505af3ae4a434fe41bf6423ff178e9656c644",
+    "exact_matrix_run": 33248945436,
+    "performance_swagger_bytes": 304771,
+    "performance_swagger_sha256": "7436e4a3e40b4d5bf926a887d7891c1db264cbb6582266299a2df10f67592fec"
+  }
+}
