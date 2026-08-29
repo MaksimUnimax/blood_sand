@@ -27,6 +27,8 @@ Current VK documents:
 - `VK_PLATFORM_ARCHITECTURE.md` — обязательная pre-implementation архитектура VK Bot + Mini App, построенная по официальным VK contracts;
 - `VK_PLATFORM_OFFICIAL_CONTRACT_LEDGER.md` — реестр подтверждённых официальных VK contracts, разрешённых implementation surfaces и `UNRESOLVED` gaps;
 - `VK_PLATFORM_PRE_M3_CONTRACT.md` — официальный PRE-M3 transport/configuration baseline, provisioning/preflight contracts и staging requirements;
+- `VK_PLATFORM_PRE_M5_CONTRACT.md` — официальный PRE-M5 Mini App/Bridge/auth/hosting baseline, dependency conflict ledger и staging/security gates;
+- `VK_PLATFORM_PRE_M6_CONTRACT.md` — официальный PRE-M6 Bot ↔ Mini App cross-channel boundary, verified transitions и unresolved App→community-dialog contract;
 - `VK_IMPLEMENTATION_ARCHITECTURE.md` — полная pre-code implementation architecture backend/Bot/Mini App, persistence, inbox/outbox, auth, handoff, failure isolation и test strategy;
 - `VK_IMPLEMENTATION_GATE_MATRIX.md` — обязательная матрица разрешённых/заблокированных milestone implementation gates;
 - `VK_UX_FLOW.md` — consumer Bot / Mini App UX authority;
@@ -66,9 +68,21 @@ VK_IMPLEMENTATION_GATE_MATRIX.md
 VK_PLATFORM_PRE_M3_CONTRACT.md
 ```
 
-Для M5/M6 до кода должны быть созданы и проверены соответствующие current PRE-M5/PRE-M6 contract/ADR artifacts после повторной проверки официальной документации VK и необходимого staging behavior.
+Для M5 дополнительно обязательно:
 
-`UNRESOLVED`, `STAGING_REQUIRED` или `REVALIDATE` нельзя молча превращать в guessed implementation.
+```text
+VK_PLATFORM_PRE_M5_CONTRACT.md
+```
+
+Для M6 дополнительно обязательно:
+
+```text
+VK_PLATFORM_PRE_M6_CONTRACT.md
+```
+
+Наличие PRE-document не отменяет его `STAGING_REQUIRED`, `OFFICIAL_CONFLICT`, `REVALIDATE` или `UNRESOLVED` gates. Эти статусы должны быть разрешены или feature явно исключена до соответствующего production implementation.
+
+`UNRESOLVED`, `STAGING_REQUIRED`, `OFFICIAL_CONFLICT` или `REVALIDATE` нельзя молча превращать в guessed implementation.
 
 Milestone code gate:
 
