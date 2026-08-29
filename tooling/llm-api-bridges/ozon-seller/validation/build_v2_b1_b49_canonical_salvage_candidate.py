@@ -28,6 +28,20 @@ def merge_file(ours: Path, base: Path, theirs: Path) -> None:
     )
 
 
+def dedupe_exact_single_line_const(path: Path, name: str) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    matches = [(i, line) for i, line in enumerate(lines) if re.match(rf"^\s*const\s+{re.escape(name)}\s*=.*;\s*$", line.rstrip("\r\n"))]
+    if len(matches) != 2:
+        raise AssertionError(f"expected exactly two merged declarations for {name}, found {len(matches)}")
+    first_i, first_line = matches[0]
+    second_i, second_line = matches[1]
+    if first_line.strip() != second_line.strip():
+        raise AssertionError(f"conflicting merged declarations for {name}: {first_line.strip()} != {second_line.strip()}")
+    del lines[second_i]
+    path.write_text("".join(lines), encoding="utf-8")
+    print(f"V2_B1_B49_EXACT_CONST_OVERLAP_DEDUP_PASS {name}")
+
+
 def remove_legacy_cluster_block(text: str, key: str) -> str:
     lines = text.splitlines(keepends=True)
     starts = [i for i, line in enumerate(lines) if re.match(rf"^\s*{re.escape(key)}\s*:\s*\{{\s*$", line.rstrip("\r\n"))]
@@ -105,6 +119,9 @@ def main() -> None:
     for rel in MERGED_FILES:
         merge_file(out / rel, b0 / rel, historical / rel)
 
+    # Canonical B1 and historical B49 both independently add this identical warehouse/logistics enum.
+    # The textual three-way merge keeps both non-conflicting insertions; remove only the proven exact duplicate.
+    dedupe_exact_single_line_const(out / "shared/ozon_contract.js", "DELIVERY_METHOD_SORT_DIR")
     reclassify_rating_registry(out / "shared/ozon_operation_registry.js")
 
     # Hard boundary: only the three merge-authorized files may differ from canonical B1.
