@@ -1,1 +1,0 @@
-Step5 exact package runbook: validate the deterministic Step3→Step5 patch on Linux and Windows, run the frozen semantic regression, upload the Linux package artifact, independently verify the downloaded artifact, then create formal acceptance. This file is informational only and not an acceptance marker.
