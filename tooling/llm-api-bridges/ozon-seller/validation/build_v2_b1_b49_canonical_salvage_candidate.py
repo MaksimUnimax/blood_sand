@@ -5,6 +5,7 @@ import argparse
 import re
 import shutil
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 
 MERGED_FILES = [
@@ -20,6 +21,23 @@ RATING_ALIASES = [
     "seller_fbs_error_postings",
 ]
 
+KNOWN_EXACT_OVERLAPS = {
+    "DELIVERY_METHOD_SORT_DIR",
+    "DELIVERY_METHOD_STATUSES",
+    "STOCK_ITEM_TAGS",
+    "STOCK_PLACEMENT_ZONES",
+    "STOCK_TURNOVER_GRADES",
+    "OZON_WAREHOUSE_TYPES",
+}
+
+
+@dataclass(frozen=True)
+class ConstDecl:
+    name: str
+    start: int
+    end: int
+    text: str
+
 
 def merge_file(ours: Path, base: Path, theirs: Path) -> None:
     subprocess.run(
@@ -28,30 +46,114 @@ def merge_file(ours: Path, base: Path, theirs: Path) -> None:
     )
 
 
-def dedupe_exact_top_level_const_overlaps(path: Path) -> list[str]:
-    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-    by_name: dict[str, list[tuple[int, str]]] = {}
-    pattern = re.compile(r"^  const\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*=.*;\s*$")
-    for i, line in enumerate(lines):
-        m = pattern.match(line.rstrip("\r\n"))
-        if m:
-            by_name.setdefault(m.group(1), []).append((i, line))
+def _find_decl_end(text: str, expr_start: int) -> int:
+    paren = bracket = brace = 0
+    quote: str | None = None
+    escaped = False
+    line_comment = False
+    block_comment = False
+    i = expr_start
+    while i < len(text):
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < len(text) else ""
 
-    remove_indexes: set[int] = set()
-    deduped: list[str] = []
-    for name, matches in sorted(by_name.items()):
-        if len(matches) == 1:
+        if line_comment:
+            if ch == "\n":
+                line_comment = False
+            i += 1
             continue
-        stripped = {line.strip() for _, line in matches}
-        if len(matches) != 2 or len(stripped) != 1:
-            rendered = " | ".join(line.strip() for _, line in matches)
-            raise AssertionError(f"non-identical or non-pair top-level const overlap {name}: {rendered}")
-        remove_indexes.add(matches[1][0])
+        if block_comment:
+            if ch == "*" and nxt == "/":
+                block_comment = False
+                i += 2
+            else:
+                i += 1
+            continue
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == quote:
+                quote = None
+            i += 1
+            continue
+
+        if ch == "/" and nxt == "/":
+            line_comment = True
+            i += 2
+            continue
+        if ch == "/" and nxt == "*":
+            block_comment = True
+            i += 2
+            continue
+        if ch in ("'", '"', "`"):
+            quote = ch
+            i += 1
+            continue
+
+        if ch == "(":
+            paren += 1
+        elif ch == ")":
+            paren -= 1
+        elif ch == "[":
+            bracket += 1
+        elif ch == "]":
+            bracket -= 1
+        elif ch == "{":
+            brace += 1
+        elif ch == "}":
+            brace -= 1
+        elif ch == ";" and paren == 0 and bracket == 0 and brace == 0:
+            return i + 1
+
+        if min(paren, bracket, brace) < 0:
+            raise AssertionError(f"unbalanced top-level const expression near byte {i}")
+        i += 1
+
+    raise AssertionError("unterminated top-level const declaration")
+
+
+def scan_top_level_const_declarations(text: str) -> list[ConstDecl]:
+    pattern = re.compile(r"(?m)^  const\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*=")
+    out: list[ConstDecl] = []
+    for match in pattern.finditer(text):
+        line_start = match.start()
+        end = _find_decl_end(text, match.end())
+        out.append(ConstDecl(match.group(1), line_start, end, text[line_start:end]))
+    return out
+
+
+def dedupe_exact_top_level_const_overlaps(path: Path) -> list[str]:
+    text = path.read_text(encoding="utf-8")
+    by_name: dict[str, list[ConstDecl]] = {}
+    for decl in scan_top_level_const_declarations(text):
+        by_name.setdefault(decl.name, []).append(decl)
+
+    removals: list[tuple[int, int]] = []
+    deduped: list[str] = []
+    for name, decls in sorted(by_name.items()):
+        if len(decls) == 1:
+            continue
+        if len(decls) != 2:
+            raise AssertionError(f"top-level const overlap {name} occurs {len(decls)} times, expected exactly 2")
+        if decls[0].text != decls[1].text:
+            raise AssertionError(
+                "non-identical top-level const overlap " + name + ":\n--- first ---\n" + decls[0].text + "\n--- second ---\n" + decls[1].text
+            )
+        removals.append((decls[1].start, decls[1].end))
         deduped.append(name)
 
-    if remove_indexes:
-        lines = [line for i, line in enumerate(lines) if i not in remove_indexes]
-        path.write_text("".join(lines), encoding="utf-8")
+    for start, end in sorted(removals, reverse=True):
+        # Also remove one immediately following newline so the merge does not leave a growing blank-line artifact.
+        if end < len(text) and text[end:end + 2] == "\r\n":
+            end += 2
+        elif end < len(text) and text[end] == "\n":
+            end += 1
+        text = text[:start] + text[end:]
+
+    if removals:
+        path.write_text(text, encoding="utf-8")
     for name in deduped:
         print(f"V2_B1_B49_EXACT_TOP_LEVEL_CONST_OVERLAP_DEDUP_PASS {name}")
     return deduped
@@ -135,12 +237,13 @@ def main() -> None:
         merge_file(out / rel, b0 / rel, historical / rel)
 
     # Textual three-way merge can retain identical independent top-level const additions from both sides.
-    # Remove only exact duplicate pairs at the IIFE top level; any non-identical collision remains fail-closed.
+    # Parse complete const declaration blocks and remove only exact duplicate pairs; any differing collision is fatal.
     deduped: list[str] = []
     for rel in MERGED_FILES:
         deduped.extend(dedupe_exact_top_level_const_overlaps(out / rel))
-    if "DELIVERY_METHOD_SORT_DIR" not in deduped or "DELIVERY_METHOD_STATUSES" not in deduped:
-        raise AssertionError(f"expected proven warehouse/logistics const overlaps not found: {deduped}")
+    missing_known = sorted(KNOWN_EXACT_OVERLAPS - set(deduped))
+    if missing_known:
+        raise AssertionError(f"expected proven exact overlaps not found: {missing_known}; actual={sorted(deduped)}")
 
     reclassify_rating_registry(out / "shared/ozon_operation_registry.js")
 
