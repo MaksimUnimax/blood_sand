@@ -80,7 +80,7 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 |---|---|---|---|---|
 | M1 | deterministic config/Core | CLOSED | n/a | PASS |
 | M2 | shared Recommendation API/backend foundation | architecture + exact HTTP contract + dependency policy frozen | locked environment setup committed and independently audited | **CLOSED / PASS** |
-| M3 | VK Community Bot | fully architected + final PRE-M3 authority frozen | real staging evidence complete; plain-text slice authorized | **PASS — PLAIN_TEXT_ONLY** |
+| M3 | VK Community Bot | fully architected + final PRE-M3 authority frozen | text-keyboard send is evidenced; click evidence is pending user action | **KEYBOARD CODE BLOCKED** |
 | M4 | destinations/availability overlay | high-level architecture defined | concrete destination registry/availability source gate still required | **BLOCKED UNTIL M3/M4 AUTHORITY PASS** |
 | M5 | VK Mini App | fully architected + PRE-M5 contract exists | official deploy-tool conflict + app/security/client staging remain | **BLOCKED** |
 | M6 | Bot ↔ Mini App continuity | fully architected + PRE-M6 contract exists | Mini App → community-dialog primitive unresolved; cross-client staging required | **BLOCKED** |
@@ -98,11 +98,19 @@ M3_PLAIN_TEXT_RUNTIME_LOCAL_ACCEPTANCE = PASS
 M3_DEPLOYABLE_WORKER_LIFECYCLE = PASS
 M3_PLAIN_TEXT_RUNTIME_STAGING_DEPLOYMENT = PASS
 M3_REAL_E2E_LEG_1_DATE_TO_GENDER_PROMPT = PASS
-M3_PLAIN_TEXT_RUNTIME_REAL_E2E = IN_PROGRESS
-M3_REAL_E2E_LEG_2_GENDER_TO_RECOMMENDATION = PENDING_USER_ACTION
-M3_KEYBOARD_CODE_GATE = BLOCKED_PENDING_REAL_TEXT_KEYBOARD_STAGING_FIXTURE
-NEXT_M3_GATE = REAL_E2E_GENDER_TO_RECOMMENDATION
+M3_REAL_E2E_LEG_2_GENDER_TO_RECOMMENDATION = PAUSED_PRODUCT_DIRECTION_CHANGE
+M3_PLAIN_TEXT_RUNTIME_REAL_E2E = PAUSED_FOR_KEYBOARD_UX_UPGRADE
+M3_TEXT_KEYBOARD_UX_DECISION = PASS
+M3_TEXT_KEYBOARD_SEND_STAGING_FIXTURE = PASS
+M3_TEXT_KEYBOARD_CLICK_STAGING_FIXTURE = PENDING_USER_ACTION
+M3_KEYBOARD_CODE_GATE = BLOCKED_PENDING_REAL_TEXT_KEYBOARD_CLICK_FIXTURE
+NEXT_M3_GATE = REAL_TEXT_KEYBOARD_CLICK_EVIDENCE
 ```
+
+The formerly plain-text Leg 2 is not keyboard-compliant acceptance evidence:
+the observed manual-text interaction is retained only as compatibility context,
+not recorded as a final UX PASS. The real staging text-keyboard send fixture is
+`tests/fixtures/vk/staging/messages_send_text_keyboard_success.v5_199.sanitized.json`.
 
 ---
 

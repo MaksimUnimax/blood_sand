@@ -1,0 +1,24 @@
+{
+  "api_version": "5.199",
+  "method": "messages.send",
+  "keyboard_contract": {
+    "message": "KIP keyboard staging probe",
+    "keyboard": {
+      "one_time": true,
+      "inline": false,
+      "buttons": [
+        [
+          {
+            "action": {
+              "type": "text",
+              "label": "Подобрать снова",
+              "payload": "{\"kip\":\"restart\",\"v\":1}"
+            },
+            "color": "primary"
+          }
+        ]
+      ]
+    }
+  },
+  "response": 0
+}
