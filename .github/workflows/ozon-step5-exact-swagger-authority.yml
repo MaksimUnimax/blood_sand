@@ -35,7 +35,7 @@ jobs:
           test -n "$chrome"
           npm install --no-save puppeteer-core@24
 
-          cat > /tmp/recover-step5-swagger.mjs <<'JS'
+          cat > recover-step5-swagger.mjs <<'JS'
           import fs from 'node:fs';
           import puppeteer from 'puppeteer-core';
 
@@ -80,8 +80,8 @@ jobs:
           JS
 
           CHROME_BIN="$chrome" ROOT_URL="$root_url" SPEC_URL="$spec_url" OUT_DIR="$out" \
-            xvfb-run -a node /tmp/recover-step5-swagger.mjs
-          rm -f /tmp/recover-step5-swagger.mjs
+            xvfb-run -a node ./recover-step5-swagger.mjs
+          rm -f recover-step5-swagger.mjs
 
           actual_sha="$(sha256sum "$out/seller-swagger.json" | awk '{print $1}')"
           actual_bytes="$(wc -c < "$out/seller-swagger.json" | tr -d ' ')"
