@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { pathToFileURL } from 'node:url';
 
 const canonicalRoot = path.resolve(process.argv[2]);
@@ -141,12 +142,32 @@ const canonicalOps = canonical.R.OPERATIONS;
 const historicalOps = historical.R.OPERATIONS;
 const candidateOps = candidate.R.OPERATIONS;
 
+const canonicalMismatches = [];
 for (const [alias, meta] of Object.entries(canonicalOps)) {
-  assert(candidateOps[alias], `canonical alias missing from candidate: ${alias}`);
-  assert.deepEqual(candidateOps[alias], meta, `canonical B1 registry semantics changed: ${alias}`);
-  assert.deepEqual(captureRequest(candidate, candidateOps[alias]), captureRequest(canonical, meta), `canonical B1 request semantics changed: ${alias}`);
-  assert.deepEqual(captureEntitlement(candidate, candidateOps[alias]), captureEntitlement(canonical, meta), `canonical B1 entitlement semantics changed: ${alias}`);
+  const candMeta = candidateOps[alias];
+  if (!candMeta) {
+    canonicalMismatches.push({ alias, kind: 'missing_alias' });
+    continue;
+  }
+  if (!isDeepStrictEqual(candMeta, meta)) {
+    canonicalMismatches.push({ alias, kind: 'registry', actual: stable(candMeta), expected: stable(meta) });
+  }
+  const actualRequest = captureRequest(candidate, candMeta);
+  const expectedRequest = captureRequest(canonical, meta);
+  if (!isDeepStrictEqual(actualRequest, expectedRequest)) {
+    canonicalMismatches.push({ alias, kind: 'request', actual: actualRequest, expected: expectedRequest });
+  }
+  const actualEntitlement = captureEntitlement(candidate, candMeta);
+  const expectedEntitlement = captureEntitlement(canonical, meta);
+  if (!isDeepStrictEqual(actualEntitlement, expectedEntitlement)) {
+    canonicalMismatches.push({ alias, kind: 'entitlement', actual: actualEntitlement, expected: expectedEntitlement });
+  }
 }
+if (canonicalMismatches.length) {
+  console.error('V2_B1_B49_CANONICAL_OVERLAP_MISMATCH_REPORT');
+  console.error(JSON.stringify(canonicalMismatches, null, 2));
+}
+assert.equal(canonicalMismatches.length, 0, `canonical B1 overlap mismatches: ${canonicalMismatches.length}`);
 console.log('V2_B1_B49_CANONICAL_B1_ALIAS_REQUEST_ENTITLEMENT_PRESERVATION_PASS');
 
 const historicalSellerAliases = Object.entries(historicalOps).filter(([, meta]) => meta?.provider === 'seller_api');
