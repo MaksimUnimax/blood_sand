@@ -1,6 +1,6 @@
 # VK M3 calendar handoff authority
 
-Decision: `KIP_VK_M3_CALENDAR_HANDOFF_V1`  
+Decision: `KIP_VK_M3_CALENDAR_HANDOFF_V1`
 Date: 2026-08-29
 
 ## Frozen contract
