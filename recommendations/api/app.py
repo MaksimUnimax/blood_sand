@@ -210,7 +210,7 @@ def create_app(
     @app.post('/vk-miniapp-api/v1/birth-date')
     async def mini_birth_date(request: Request) -> Response:
         auth=request.headers.get('authorization','');
-        if not auth.startswith('Bearer ') or not auth[7:]: raise APIError(401,'MINIAPP_AUTH_REJECTED','Mini App session is not accepted.')
+        if not auth.startswith('Bearer ') or not auth[7:] or any(char.isspace() for char in auth[7:]): raise APIError(401,'MINIAPP_AUTH_REJECTED','Mini App session is not accepted.')
         try: model=BirthDate.model_validate(json.loads((await _bounded_body(request)).decode('utf-8')))
         except (UnicodeDecodeError, json.JSONDecodeError, ValidationError): raise APIError(422,'INVALID_REQUEST','Request body is invalid.')
         storage=mini_storage(request)

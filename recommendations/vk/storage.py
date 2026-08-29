@@ -205,7 +205,6 @@ class VKStorage:
             try:
                 h=c.execute("SELECT * FROM vk_miniapp_handoffs WHERE token_hash=?",(digest,)).fetchone()
                 if not h or h['purpose']!='birth_date' or h['used_at'] or h['expires_at']<=created or h['expected_vk_user_id'] != vk_user_id: raise ValueError('HANDOFF_REJECTED')
-                if c.execute("SELECT 1 FROM vk_miniapp_sessions WHERE handoff_id=?", (h['handoff_id'],)).fetchone(): raise ValueError('HANDOFF_REPLAYED')
                 bot=c.execute("SELECT * FROM vk_bot_sessions WHERE vk_group_id=? AND peer_id=?",(h['vk_group_id'],h['peer_id'])).fetchone()
                 if not bot or bot['state'] != h['expected_state'] or bot['state_version'] != h['expected_state_version']: raise ValueError('STALE_HANDOFF')
                 c.execute("INSERT INTO vk_miniapp_sessions VALUES(?,?,?,?,?,?,?,?,NULL)",(self.token_hash(bearer),h['handoff_id'],app_id,vk_user_id,h['vk_group_id'],h['peer_id'],created,expires)); c.commit(); return bearer
@@ -225,7 +224,7 @@ class VKStorage:
                 h=c.execute('SELECT * FROM vk_miniapp_handoffs WHERE handoff_id=?',(s['handoff_id'],)).fetchone()
                 if not h or h['used_at'] or h['expires_at']<=stamp: raise ValueError('HANDOFF_REJECTED')
                 bot=c.execute('SELECT * FROM vk_bot_sessions WHERE vk_group_id=? AND peer_id=?',(h['vk_group_id'],h['peer_id'])).fetchone()
-                if not bot or bot['state']!='WAITING_DATE' or bot['state_version']!=h['expected_state_version']: raise ValueError('STALE_HANDOFF')
+                if not bot or bot['state'] != h['expected_state'] or bot['state_version'] != h['expected_state_version']: raise ValueError('STALE_HANDOFF')
                 c.execute('UPDATE vk_miniapp_handoffs SET used_at=? WHERE handoff_id=? AND used_at IS NULL',(stamp,h['handoff_id']))
                 c.execute('UPDATE vk_miniapp_sessions SET completed_at=? WHERE session_token_hash=?',(stamp,self.token_hash(bearer)))
                 c.execute("UPDATE vk_bot_sessions SET state='WAITING_GENDER',birth_day=?,birth_month=?,birth_year=?,gender=NULL,state_version=state_version+1,updated_at=? WHERE vk_group_id=? AND peer_id=?",(date.day,date.month,date.year,stamp,h['vk_group_id'],h['peer_id']))
