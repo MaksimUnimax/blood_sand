@@ -2,101 +2,107 @@
 
 Статус: рабочая продуктовая и техническая документация.
 
-Директория `recommendations/` является общей базой знаний для двух **раздельных** контуров:
+Директория `recommendations/` является общей базой знаний для двух раздельных контуров:
 
-1. детерминированная система подбора славянских оберегов по дате рождения и полу для будущих VK Community Bot + VK Mini App;
-2. отдельный операторский сервис Ozon/Wildberries: marketplace question → Telegram operator first → manual answer или optional Codex → Telegram review → публикация только после ручного подтверждения.
+1. deterministic recommendation system по дате рождения, полу и marketplace;
+2. Marketplace Question Operator: Ozon/Wildberries → Telegram operator → manual/optional Codex → review → explicit marketplace send.
 
-## Область deterministic recommendation system
+## Current recommendation authority
 
-- В подборе участвуют только товары семейства `slavic_symbols_oberegs`.
-- Зодиакальные, скандинавские, универсальные, православные, патриотические и автомобильные товары не участвуют.
-- Основа календарного шага — 16 Чертогов Сварожьего круга в зафиксированной для продукта календарной конвенции.
-- Год рождения для расчёта Чертога не используется: достаточно дня и месяца.
-- Пол используется как фильтр при выборе товара внутри Чертога.
-- Клиенту показывается один товар по умолчанию и не более двух товаров в исключительном случае, когда есть два самостоятельных сильных основания.
-- Продажи, популярность SKU и коммерческий приоритет не могут переопределять смысловую рекомендацию.
-- Recommendation Core является единым источником результата для всех будущих VK-интерфейсов.
+Для любых текущих решений по подбору использовать в таком порядке:
 
-## Документы
+1. `RECOMMENDATION_MATRIX.md` — current effective matrix;
+2. `PRODUCT_CLASSIFICATION.md` — current product/gender policy;
+3. `SALES_WEIGHTED_MATRIX_V2_AUDIT_2026-08-28.md` — фактические sales signals и owner-approved обоснования замен;
+4. `CUSTOMER_RECOMMENDATION_COPY_GUIDE.md` — обязательный customer-facing copy;
+5. `OZON_PRODUCT_LINKS.md` / `WILDBERRIES_PRODUCT_LINKS.md` — destination registry;
+6. `DATA_API_CONTRACT.md` и `ARCHITECTURE.md` — current implementation contract.
 
-### Product/domain
+`RECOMMENDATION_SYSTEM_TZ.md` и `M0_DOMAIN_FREEZE_AUDIT.md` являются **superseded V1 historical records** и не должны переопределять V2.
 
-- `RECOMMENDATION_SYSTEM_TZ.md` — продуктово-техническое ТЗ: входы, правила, ограничения, data model, алгоритм и acceptance criteria.
-- `RECOMMENDATION_MATRIX.md` — утверждаемая матрица `Чертог × пол → рекомендация`, календарные границы и тип основания.
-- `PRODUCT_CLASSIFICATION.md` — классификация всех 25 славянских SKU: гендерная политика, роль в V1 и ограничения.
-- `M0_DOMAIN_FREEZE_AUDIT.md` — итоговый аудит всех direct/curated строк V1; фиксирует `DOMAIN_MATRIX_FREEZE_PASS` и список слабых fallback-связей для будущего пересмотра.
-- `CUSTOMER_RECOMMENDATION_COPY_GUIDE.md` — живой гайд клиентского ответа по подбору: порядок `Чертог → объяснение → оберег → ссылка`, стиль, гендерные ветки, маркетплейсы и актуальные формулировки.
-- `MARKETPLACE_QUESTION_REPLY_GUIDE.md` — живой общий гайд черновиков ответов на вопросы покупателей Ozon/WB; prompt может ссылаться на него вместе с recommendation-документами.
-- `OZON_PRODUCT_LINKS.md` — реестр публичных Ozon-ссылок для текущих товаров.
-- `WILDBERRIES_PRODUCT_LINKS.md` — реестр публичных Wildberries-ссылок для карточек категории `Обереги`.
+## Current V2 recommendation rules
 
-### Architecture/implementation design — recommendation/VK
+- Только семейство `slavic_symbols_oberegs`.
+- 16 Чертогов по `KIP_CHERTOG_CALENDAR_V1`.
+- Day/month определяют Чертог; год не влияет на selection.
+- Если покупатель указал год, customer-facing ответ обязан сохранить полную дату `DD.MM.YYYY`.
+- Пол является частью matrix selection; его нельзя угадывать по имени/аватару.
+- Каждый `Чертог × пол × marketplace` возвращает ровно один товар.
+- Secondary recommendation отсутствует.
+- Реальные продажи имеют высокий вес **при owner-approved offline rebuild матрицы**, но не являются live runtime input.
+- Bestseller не используется, если есть явный semantic/visual conflict.
+- Marketplace-specific результат разрешён только explicit versioned override.
 
-- `ARCHITECTURE.md` — целевая архитектура `Recommendation Core + VK Bot + VK Mini App`, security boundaries, availability и deployment units.
-- `DATA_API_CONTRACT.md` — versioned data model, JSON-конфиги, Recommendation API, session/analytics contracts и validation gates.
-- `VK_UX_FLOW.md` — клиентские сценарии бота и Mini App, parsing, validation, handoff и unavailable UX.
-- `ROADMAP.md` — последовательность реализации deterministic recommendation system от domain freeze до VK-бота, Mini App и controlled launch.
-
-### Architecture/implementation design — Marketplace Question Operator
-
-- `MARKETPLACE_QUESTION_OPERATOR_BOT.md` — краткий актуальный overview Telegram-first operator workflow.
-- `MARKETPLACE_QUESTION_OPERATOR_A0_ARCHITECTURE.md` — implementation authority V1: runtime topology, Telegram-first gate, optional Codex, profile control, review/send gate, retention и security.
-- `MARKETPLACE_QUESTION_OPERATOR_A1_API_CONTRACTS.md` — точные Ozon/WB question read/write contracts, auth fields, pagination, send/reconciliation and live-credential acceptance gate.
-- `MARKETPLACE_QUESTION_OPERATOR_A2_STATE_TELEGRAM_CONTRACT.md` — SQLite schema, answer revisions, Q-ID correlation, corrected state transitions, callback/input contract and stale/double-send protection.
-- `MARKETPLACE_QUESTION_OPERATOR_TELEGRAM_UX_CONTRACT.md` — **самый точный authority для Telegram меню и кнопок**: `Сменить Codex` в каждом меню, manual/Codex review, отсутствие successful-review regeneration и специальный CODEX_ERROR switch → confirmation → `Перегенерировать` flow.
-- `SERVER_CAPACITY_AUDIT_2026-08-27.md` — исходный pre-deployment аудит shared-сервера.
-
-Если старый MQO prompt/doc противоречит `MARKETPLACE_QUESTION_OPERATOR_TELEGRAM_UX_CONTRACT.md` по меню, кнопкам или смене Codex, **Telegram UX Contract имеет приоритет**.
-
-## Контур 1 — deterministic VK recommendation system
+Текущие special cases:
 
 ```text
-VK Community Bot ─┐
-                  ├─→ Recommendation API/Core ─→ versioned recommendation data
-VK Mini App ──────┘
+Медведь male/female → Печать Велеса
+Волк male/female    → Велес
+Лиса male           → Чернобог
+Лиса female         → Мара
+Орёл male           → Перун
+Орёл female         → Звезда Лады
+Раса male/female    → Даждьбог
 ```
 
-Bot и Mini App не имеют собственной независимой матрицы.
+Для `Печать Велеса` customer-facing имя всегда **ровно** `Печать Велеса`; internal aliases не рендерятся.
 
-Текущий domain gate:
+Текущий marketplace override:
 
 ```text
-DOMAIN_MATRIX_FREEZE_PASS
+Ворон + male:
+Ozon        → Колядник
+Wildberries → Алатырь
 ```
 
-M1 Recommendation Core пока не является текущим приоритетом.
+## Sales evidence
 
-## Контур 2 — Ozon/WB Marketplace Question Operator
+Current sales-weighted audit использует два независимых сигнала:
 
-Текущий V1 workflow:
+- Wildberries: `Выкупили, шт.`, период `2026-01-01 — 2026-08-28`;
+- Ozon: `ordered_units`, период `2026-06-01 — 2026-08-28`.
+
+Периоды и метрики различаются; значения не складываются в один формальный total. Они используются как независимые ranking signals при owner review.
+
+## Customer copy
+
+Для date-based recommendations обязательный порядок:
 
 ```text
-Ozon questions ───────┐
-                      ├─→ poll/normalize → SQLite → Telegram operator FIRST
-Wildberries questions ┘                         ↓
-                                      ┌──────────┼─────────────┐
-                                      │          │             │
-                                  Manual       Codex         Ignore
-                                      │          │
-                                      ▼          ▼
-                                  input text   Codex run
-                                      │          │
-                                      │      ┌───┴────┐
-                                      │      │        │
-                                      │   success   error
-                                      │      │        │
-                                      ▼      ▼        ▼
-                                    REVIEW REVIEW  CODEX_ERROR
-                                      │      │        │
-                                      └──┬───┘        ├─ Repeat
-                                         │            └─ Switch Codex
-                                         ▼
-                              Send / Edit / Ignore
-                                         │
-                                  explicit Send
-                                         ↓
-                              marketplace API reply
+полная указанная дата → Чертог → темы Чертога → оберег → почему подходит → marketplace link
+```
+
+Hard rule:
+
+```text
+Input: 19.11.1988
+Correct: Дата 19.11.1988 относится к Чертогу Лебедя.
+Forbidden: Дата 19.11 относится к Чертогу Лебедя.
+```
+
+Продажи, ranking, отсутствие товара/карточки/остатка, fallback terminology и внутренние relation types клиенту не сообщаются.
+
+## Marketplace Question Operator
+
+Current overview: `MARKETPLACE_QUESTION_OPERATOR_BOT.md`.
+
+Implementation authorities:
+
+- `MARKETPLACE_QUESTION_OPERATOR_A0_ARCHITECTURE.md`;
+- `MARKETPLACE_QUESTION_OPERATOR_A1_API_CONTRACTS.md`;
+- `MARKETPLACE_QUESTION_OPERATOR_A2_STATE_TELEGRAM_CONTRACT.md`;
+- `MARKETPLACE_QUESTION_OPERATOR_TELEGRAM_UX_CONTRACT.md`;
+- `MARKETPLACE_QUESTION_REPLY_GUIDE.md`.
+
+Главный workflow:
+
+```text
+marketplace question
+→ Telegram operator FIRST
+→ manual answer / optional Codex / ignore
+→ REVIEW
+→ explicit Send only
+→ marketplace reply
 ```
 
 Hard rules:
@@ -106,143 +112,22 @@ TELEGRAM_FIRST_GATE
 NO_HUMAN_SEND_ACTION -> NO_MARKETPLACE_REPLY
 ```
 
-Codex является только optional `prompt -> answer text` engine. Новый вопрос не отправляется Codex автоматически.
+Codex готовит только draft text. Он не публикует ответ сам.
 
-Каждому вопросу присваивается внутренний ID вида `Q-000184`; исходный вопрос и этот ID показываются вместе с manual/Codex/edited ответом или ошибкой.
+Для вопросов по подбору по дате `MARKETPLACE_QUESTION_REPLY_GUIDE.md` обязан использовать current V2 recommendation authorities выше; V1 historical docs не должны попадать в semantic decision.
 
-### NEW menu
+## Runtime/service notes
 
-```text
-[✍️ Ответить самому]
-[🤖 Отправить в Codex]
-[🚫 Игнорировать]
-[🤖 Сменить Codex]
-```
-
-### Manual
-
-```text
-Ответить самому
- -> ввод текста для exact Q-ID
- -> immutable manual revision
- -> REVIEW
- -> [✅ Отправить] [✏️ Редактировать] [🚫 Игнорировать] [🤖 Сменить Codex]
-```
-
-Ручной текст не отправляется автоматически. Marketplace write возможен только после `✅ Отправить`.
-
-### Codex success
-
-```text
-Отправить в Codex
- -> CODEX_RUNNING
- -> success
- -> REVIEW
- -> [✅ Отправить] [✏️ Редактировать] [🚫 Игнорировать] [🤖 Сменить Codex]
-```
-
-В успешном REVIEW **нет** `Сгенерировать`, `Сгенерировать заново` или `Перегенерировать`.
-
-### Codex error
-
-```text
-CODEX_ERROR
- -> [🔄 Повторить]
- -> [✍️ Ответить самому]
- -> [🚫 Игнорировать]
- -> [🤖 Сменить Codex]
-```
-
-`Повторить` запускает новый attempt того же Q-ID профилем, активным при нажатии.
-
-Если из CODEX_ERROR нажать `🤖 Сменить Codex`:
-
-```text
-выбор codex1/codex2/codex3
- -> сохранить active profile
- -> НЕ запускать Codex
- -> confirmation menu:
-    [🔄 Перегенерировать]
-    [✍️ Ответить самому]
-    [🚫 Игнорировать]
-    [🤖 Сменить Codex]
-```
-
-Только `🔄 Перегенерировать` после этого запускает новый attempt выбранным профилем.
-
-## Codex profiles for operator service
-
-Зафиксированы три существующие авторизации:
-
-```text
-codex1 -> /root/.codex
-codex2 -> /root/.codex_second
-codex3 -> /root/.codex_third
-```
-
-Hard UX invariant:
-
-```text
-EVERY QUESTION MENU -> [🤖 Сменить Codex]
-```
-
-Кнопка должна быть доступна в NEW, MANUAL_INPUT, CODEX_RUNNING, CODEX_ERROR, REVIEW, EDITING, IGNORED, SENDING, SENT, SEND_FAILED и SEND_UNKNOWN.
-
-В обычном состоянии выбор нового профиля меняет только `active_codex_profile` и возвращает в то же меню. Автоматического failover/генерации нет.
-
-Пользовательский UX смены профиля **не зависит от `/codex`**.
-
-## Send-state UI
-
-```text
-IGNORED:
-[🤖 Сменить Codex]
-
-SENDING:
-[🤖 Сменить Codex]
-
-SENT:
-[🤖 Сменить Codex]
-
-SEND_FAILED:
-[🔄 Повторить отправку]
-[🤖 Сменить Codex]
-
-SEND_UNKNOWN:
-[🤖 Сменить Codex]
-```
-
-`SEND_UNKNOWN` не retry-ится вслепую: сначала marketplace-specific reconciliation по A1.
-
-## Server checkout/runtime policy
-
-Runtime Marketplace Question Operator — отдельный standalone project:
+Marketplace Question Operator — отдельный standalone runtime project:
 
 ```text
 /opt/marketplace-question-operator
 ```
 
-Recommendation/reference documents нужны сервису локально, но полный checkout остального `blood_sand` для runtime не требуется.
+Reference documents могут синхронизироваться в runtime, но продуктовый source of truth остаётся в этой директории.
 
-История Codex attempts/job traces хранится не более 5 суток; минимальные question identity rows сохраняются для дедупликации.
-
-## Текущий server status
-
-После очистки Avito и восстановления OpenDesign сервер имеет достаточный запас для разработки. Сохраняемые рабочие сервисы: APM, OpenScript/AI Starter, OpenDesign, Business Bridge, Codex и серверная инфраструктура.
-
-OpenDesign repair завершён с `OPENDESIGN_REPAIR_PASS`.
-
-## Текущая последовательность Marketplace Question Operator
-
-Архитектурные A0/A1/A2 документы уже существуют; Telegram UX был отдельно скорректирован и заморожен 2026-08-28.
-
-Текущий gate перед продолжением live Telegram acceptance:
+Decision marker текущей recommendation policy:
 
 ```text
-runtime implementation
- -> align with MARKETPLACE_QUESTION_OPERATOR_TELEGRAM_UX_CONTRACT.md
- -> offline exact-menu/state tests
- -> only then resume T4 live acceptance
+KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED_APPROVED
 ```
-
-Codex writes code only from the frozen implementation contracts. It is not responsible for inventing product architecture or button semantics.
