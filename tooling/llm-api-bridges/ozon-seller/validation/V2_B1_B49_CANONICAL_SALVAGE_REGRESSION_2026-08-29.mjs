@@ -173,21 +173,40 @@ console.log('V2_B1_B49_CANONICAL_B1_ALIAS_REQUEST_ENTITLEMENT_PRESERVATION_PASS'
 const historicalSellerAliases = Object.entries(historicalOps).filter(([, meta]) => meta?.provider === 'seller_api');
 assert.equal(historicalSellerAliases.length, 191, 'historical B49 Seller alias count changed');
 let historicalSellerSalvaged = 0;
+const historicalSellerMismatches = [];
 for (const [alias, historicalMeta] of historicalSellerAliases) {
-  const candMeta = candidateOps[alias];
-  assert(candMeta, `historical Seller alias missing from candidate: ${alias}`);
   if (canonicalOps[alias]) continue;
+  const candMeta = candidateOps[alias];
+  if (!candMeta) {
+    historicalSellerMismatches.push({ alias, kind: 'missing_alias' });
+    continue;
+  }
 
   const expectedMeta = structuredClone(historicalMeta);
   if (RATING_ALIASES.has(alias)) {
     expectedMeta.cluster = 'sales_analytics';
     expectedMeta.section = 'delivery_returns_cancellations_metrics';
   }
-  assert.deepEqual(candMeta, expectedMeta, `historical Seller registry semantics changed unexpectedly: ${alias}`);
-  assert.deepEqual(captureRequest(candidate, candMeta), captureRequest(historical, historicalMeta), `historical Seller request semantics changed: ${alias}`);
-  assert.deepEqual(captureEntitlement(candidate, candMeta), captureEntitlement(historical, historicalMeta), `historical Seller entitlement semantics changed: ${alias}`);
+  if (!isDeepStrictEqual(candMeta, expectedMeta)) {
+    historicalSellerMismatches.push({ alias, kind: 'registry', actual: stable(candMeta), expected: stable(expectedMeta) });
+  }
+  const actualRequest = captureRequest(candidate, candMeta);
+  const expectedRequest = captureRequest(historical, historicalMeta);
+  if (!isDeepStrictEqual(actualRequest, expectedRequest)) {
+    historicalSellerMismatches.push({ alias, kind: 'request', actual: actualRequest, expected: expectedRequest });
+  }
+  const actualEntitlement = captureEntitlement(candidate, candMeta);
+  const expectedEntitlement = captureEntitlement(historical, historicalMeta);
+  if (!isDeepStrictEqual(actualEntitlement, expectedEntitlement)) {
+    historicalSellerMismatches.push({ alias, kind: 'entitlement', actual: actualEntitlement, expected: expectedEntitlement });
+  }
   historicalSellerSalvaged += 1;
 }
+if (historicalSellerMismatches.length) {
+  console.error('V2_B1_B49_HISTORICAL_SELLER_MISMATCH_REPORT');
+  console.error(JSON.stringify(historicalSellerMismatches, null, 2));
+}
+assert.equal(historicalSellerMismatches.length, 0, `historical Seller salvage mismatches: ${historicalSellerMismatches.length}`);
 assert(historicalSellerSalvaged > 0);
 console.log('V2_B1_B49_HISTORICAL_SELLER_READ_CONTRACT_SALVAGE_PASS');
 
