@@ -1,0 +1,42 @@
+{
+  "base": {
+    "authority": "accepted_corrected_canonical_b1",
+    "production_tree_sha256": "c007f650cb46c0575561532d11a2aa4355f650dfb37be4396c6e8065c1f3276f"
+  },
+  "candidate": {
+    "changed_core_sha256": {
+      "shared/ozon_contract.js": "18dde6b56894bcd3d7f3ad3a597d4f7f3dc16d0464ba4078f6122aecf32699c4",
+      "shared/ozon_entitlements.js": "ff53866ce2b2c33a1e270d9c50371641a55bac63d4d02b79f5f3d8fcd1b890f8",
+      "shared/ozon_operation_registry.js": "e2fb7e8437a34ffa345825ee4cac9547cbcdfd3f14bb3b42289d9a57f5eb9cdb"
+    },
+    "production_files": 21,
+    "production_js_files": 18,
+    "production_tree_sha256": "ae3f53084d7a9aff5de820503a44b2875ab0c63c6ffc14bf72d941e8d0dab24e"
+  },
+  "date": "2026-08-29",
+  "historical_authority": {
+    "accepted_b49_commit": "59ce0cedf93e409f5988b16d5b569b4a5f229b1b"
+  },
+  "patch": {
+    "file": "PATCH_V2_B1_B49_CANONICAL_SALVAGE_2026-08-29.patch.gz",
+    "gzip_bytes": 37278,
+    "gzip_sha256": "363724a309deb6a03b04c53131108d985e02863f42ada158d0129acd4e8c6c4b",
+    "raw_bytes": 332186,
+    "raw_sha256": "6f81a335f13b1a2a673763588e8aca85b1284598ccd6e267ca14beecca02d0bc"
+  },
+  "salvage": {
+    "candidate_registry_aliases": 201,
+    "canonical_aliases_preserved": 42,
+    "historical_performance_aliases_preserved": 10,
+    "historical_seller_aliases": 191,
+    "historical_seller_aliases_salvaged_beyond_canonical": 153,
+    "legacy_seller_health_cluster_removed": true,
+    "rating_aliases_reclassified": 4
+  },
+  "schema": "ozon-v2-b1-b49-canonical-salvage-package-v1",
+  "validated_source": {
+    "artifact_id": 9710920643,
+    "artifact_zip_sha256": "46ef1125860c810059783daccccc4318569949d373d750191c0390263ab0d80d",
+    "workflow_run": 33239516701
+  }
+}
