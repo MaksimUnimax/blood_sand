@@ -31,6 +31,7 @@ Current VK documents:
 - `VK_PLATFORM_PRE_M6_CONTRACT.md` — официальный PRE-M6 Bot ↔ Mini App cross-channel boundary, verified transitions и unresolved App→community-dialog contract;
 - `VK_IMPLEMENTATION_ARCHITECTURE.md` — полная pre-code implementation architecture backend/Bot/Mini App, persistence, inbox/outbox, auth, handoff, failure isolation и test strategy;
 - `VK_IMPLEMENTATION_GATE_MATRIX.md` — обязательная матрица разрешённых/заблокированных milestone implementation gates;
+- `M2_BACKEND_DEPENDENCY_ADR.md` — обязательная M2 backend/dependency/uv-lock authority;
 - `VK_UX_FLOW.md` — consumer Bot / Mini App UX authority;
 - `ROADMAP.md` — V2 implementation sequence;
 - `DATA_API_CONTRACT.md` — shared Recommendation API transport contract;
@@ -60,6 +61,12 @@ VK_PLATFORM_ARCHITECTURE.md
 VK_PLATFORM_OFFICIAL_CONTRACT_LEDGER.md
 VK_IMPLEMENTATION_ARCHITECTURE.md
 VK_IMPLEMENTATION_GATE_MATRIX.md
+```
+
+Для M2 дополнительно обязательно:
+
+```text
+M2_BACKEND_DEPENDENCY_ADR.md
 ```
 
 Для M3 дополнительно обязательно:
