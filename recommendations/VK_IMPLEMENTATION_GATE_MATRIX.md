@@ -115,6 +115,17 @@ M3_CALENDAR_LIVE_STAGING_GATE = BLOCKED_PENDING_REGISTERED_MINI_APP_IDENTITY
 NEXT_M3_GATE = REGISTERED_MINI_APP_IDENTITY_THEN_CALENDAR_HANDOFF_IMPLEMENTATION
 ```
 
+Calendar backend acceptance closure (test-only, 2026-08-29):
+
+```text
+M3_CALENDAR_BACKEND_CODE_GATE = PASS
+CALENDAR_BACKEND_DETERMINISTIC_MATRIX = PASS
+VK_CALENDAR_TEST_METHODS = 10
+TOTAL_VK_TEST_METHODS = 45
+TOTAL_PYTHON_TEST_METHODS = 102
+M3_CALENDAR_LIVE_OPEN_APP_GATE = BLOCKED_PENDING_PROTECTED_KEY_AND_OPEN_APP_OWNER_ID
+```
+
 The formerly plain-text Leg 2 is not keyboard-compliant acceptance evidence:
 the observed manual-text interaction is retained only as compatibility context,
 not recorded as a final UX PASS. The real staging text-keyboard send fixture is

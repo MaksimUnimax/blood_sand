@@ -6,7 +6,10 @@ from urllib.parse import parse_qsl, urlencode
 class MiniAppError(ValueError): pass
 
 def verify_launch(raw: str, protected_key: str, expected_app_id: int) -> dict[str, str]:
-    pairs=parse_qsl(raw, keep_blank_values=True, strict_parsing=True)
+    try:
+        pairs=parse_qsl(raw, keep_blank_values=True, strict_parsing=True)
+    except ValueError as exc:
+        raise MiniAppError('INVALID_LAUNCH') from exc
     keys=[k for k,_ in pairs]
     if len(keys)!=len(set(keys)): raise MiniAppError('DUPLICATE_LAUNCH_KEY')
     values=dict(pairs); sign=values.pop('sign',None)

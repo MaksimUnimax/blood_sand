@@ -121,3 +121,18 @@ project statement was stale.
 derived from the app ID, bot community ID, or each other. `VK_TS` has no
 established VK-required TTL here; staging policy is
 `SIGNED_LAUNCH_PLUS_10_MINUTE_SINGLE_USE_HANDOFF_BOUNDARY`.
+
+## Backend acceptance closure
+
+```text
+M3_CALENDAR_BACKEND_CODE_GATE = PASS
+CALENDAR_BACKEND_DETERMINISTIC_MATRIX = PASS
+VK_CALENDAR_TEST_METHODS = 10
+TOTAL_VK_TEST_METHODS = 45
+TOTAL_PYTHON_TEST_METHODS = 102
+M3_CALENDAR_LIVE_OPEN_APP_GATE = BLOCKED_PENDING_PROTECTED_KEY_AND_OPEN_APP_OWNER_ID
+```
+
+The deterministic matrix uses only synthetic identities and keys. It does not
+enable the Mini App, install a protected key, set an `open_app` owner context,
+or change live VK/nginx configuration.
