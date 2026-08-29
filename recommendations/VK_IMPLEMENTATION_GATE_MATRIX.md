@@ -1,6 +1,6 @@
 # VK Implementation Gate Matrix
 
-Версия: 0.4  
+Версия: 0.5  
 Статус: **MANDATORY PRE-CODE GATE AUTHORITY**  
 Дата: 2026-08-29  
 Бренд: «Кровь и Песок»
@@ -79,7 +79,7 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 | Milestone | Purpose | Architecture status | Platform/setup status | Code gate |
 |---|---|---|---|---|
 | M1 | deterministic config/Core | CLOSED | n/a | PASS |
-| M2 | shared Recommendation API/backend foundation | documented + dependency policy frozen | locked environment setup committed and independently audited | **APPLICATION CODE OPEN** |
+| M2 | shared Recommendation API/backend foundation | architecture + exact HTTP contract + dependency policy frozen | locked environment setup committed and independently audited | **APPLICATION CODE OPEN** |
 | M3 | VK Community Bot | fully architected + PRE-M3 contract exists | real community/token/Callback fixtures still required | **BLOCKED** |
 | M4 | destinations/availability overlay | high-level architecture defined | concrete destination registry/availability source gate still required | **BLOCKED UNTIL M3/M4 AUTHORITY PASS** |
 | M5 | VK Mini App | fully architected + PRE-M5 contract exists | official deploy-tool conflict + app/security/client staging remain | **BLOCKED** |
@@ -91,9 +91,11 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 
 ## 4. M2 gate — shared Recommendation API
 
-Current dependency authority:
+Current authorities:
 
 ```text
+DATA_API_CONTRACT.md
+VK_IMPLEMENTATION_ARCHITECTURE.md
 M2_BACKEND_DEPENDENCY_ADR.md
 ```
 
@@ -101,7 +103,6 @@ M2_BACKEND_DEPENDENCY_ADR.md
 
 ```text
 M1 configuration/Core closed
-DATA_API_CONTRACT corrected/aligned
 hybrid one-product roadmap fixed
 VK platform architecture documented
 full implementation architecture documented
@@ -168,6 +169,43 @@ MQO HEAD unchanged
 
 Repository-side audit cannot independently prove local shell execution in the absence of CI status/checks; those execution facts remain run evidence. The committed setup scope/dependency artifacts themselves are independently verified and satisfy the pre-code setup gate.
 
+### Exact HTTP contract freeze
+
+Exact M2 HTTP transport/error/readiness/correlation contract was frozen before application code in:
+
+```text
+5188e3d83e5df7db3e3ad93fe0e19162582652dd
+docs(recommendations): freeze exact M2 HTTP API contract
+```
+
+That authority now fixes before code:
+
+```text
+POST /v1/recommendations/resolve
+GET /healthz
+GET /readyz
+strict request fields/non-coercion
+16384-byte body limit
+exact success JSON
+X-Request-Id / X-Result-Id
+health/readiness behavior
+400 MALFORMED_JSON
+413 PAYLOAD_TOO_LARGE
+415 UNSUPPORTED_MEDIA_TYPE
+422 INVALID_REQUEST
+503 CONFIGURATION_UNAVAILABLE
+500 CORE_ERROR
+500 INTERNAL_ERROR
+404 NOT_FOUND
+405 METHOD_NOT_ALLOWED
+one project error envelope
+application-service/Core parity
+structured request-completion logging
+locked Uvicorn runtime command
+```
+
+No framework default error body/status may silently override this authority.
+
 ### M2 application code now allowed
 
 M2 may implement only:
@@ -179,6 +217,7 @@ GET /healthz
 GET /readyz
 typed transport/error handling
 correlation
+structured M2 request logging
 API/Core parity tests
 ```
 
@@ -202,6 +241,7 @@ M2_LOCAL_SYNC_GATE = PASS
 M2_LOCK_ARTIFACT_GATE = PASS
 M2_LOCKED_ENV_REGRESSION_GATE = PASS_RUN_EVIDENCE
 M2_SETUP_INDEPENDENT_GITHUB_AUDIT = PASS
+M2_EXACT_HTTP_CONTRACT_GATE = PASS
 M2_SETUP_CODE_GATE = CLOSED_COMPLETE
 M2_APPLICATION_CODE_GATE = OPEN
 ```
@@ -239,11 +279,8 @@ RETRY_POLICY = explicit bounded allowlist/classification
 ```
 
 No guessed token permission names/bitmasks.
-
 No guessed Callback numeric timeout.
-
 No historic flat `message_new` parser without a current fixture.
-
 No automatic remote provisioning on runtime startup.
 
 Current status:
@@ -449,7 +486,6 @@ verify status clean
 ```
 
 Never reset/force over unknown local work.
-
 The implementation prompt must name the exact expected starting HEAD.
 
 ---
@@ -478,17 +514,16 @@ Any unexplained failure blocks milestone closure.
 ## 12. Current next action
 
 M2 setup is complete and independently audited at repository level.
+M2 exact HTTP contract is frozen before code.
 
 The next code allowed is **M2 shared Recommendation API/application-service implementation only**, using the exact locked environment and current `DATA_API_CONTRACT.md` / `VK_IMPLEMENTATION_ARCHITECTURE.md`.
 
 M3 still waits for real VK community staging/config evidence.
-
 M5 waits for current-version/deploy-conflict resolution, registered app staging and explicit security policy.
-
 M6 waits for Bot→App staging and resolution/exclusion of the Mini App→community-dialog feature.
 
 Decision marker:
 
 ```text
-KIP_VK_IMPLEMENTATION_GATE_MATRIX_V4
+KIP_VK_IMPLEMENTATION_GATE_MATRIX_V5
 ```
