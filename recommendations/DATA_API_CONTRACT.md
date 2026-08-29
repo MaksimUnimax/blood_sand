@@ -170,6 +170,7 @@ type RecommendationResult = {
   productPolicyVersion: string;
   matrixVersion: string;
   marketplaceOverrideVersion: string;
+  copyVersion: string;
   birthDate: {
     day: number;
     month: number;
@@ -207,6 +208,11 @@ type RecommendationResult = {
 
 Exactly one `recommendation` is returned.
 
+The TypeScript-style camelCase notation in this section is conceptual domain
+documentation. Python/domain implementations may use internal snake_case
+dictionaries. Section 11 is authoritative for M2 HTTP JSON field names and
+uses snake_case only.
+
 ## 11. HTTP API
 
 ```text
@@ -226,10 +232,23 @@ Example request with a full birth date:
 }
 ```
 
+Required request fields: `birth_day`, `birth_month`, `gender`.
+
+Optional request fields: `birth_year`, `marketplace`. `gender` supports
+`male` and `female`; `marketplace` supports `ozon`, `wildberries`, or
+omitted/`null`. `channel` is not semantic input, and availability is not an
+input.
+
+The following is the exact owner-approved M2 HTTP success response shape.
+It returns the semantic recommendation only; it contains exactly one
+`recommendation` and no `availability` or `destination` fields.
+
 Success example for Медведь:
 
 ```json
 {
+  "api_version": "v1",
+
   "input": {
     "birth_day": 16,
     "birth_month": 1,
@@ -237,6 +256,15 @@ Success example for Медведь:
     "gender": "male",
     "marketplace": "ozon"
   },
+
+  "versions": {
+    "calendar_version": "KIP_CHERTOG_CALENDAR_V1",
+    "product_policy_version": "KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED",
+    "matrix_version": "KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED",
+    "marketplace_override_version": "KIP_MARKETPLACE_OVERRIDE_V1",
+    "copy_version": "KIP_REASON_COPY_V2_SALES_WEIGHTED"
+  },
+
   "birth_date": {
     "day": 16,
     "month": 1,
@@ -248,6 +276,10 @@ Success example for Медведь:
     "name": "Медведь",
     "patron_name": "Сварог"
   },
+
+  "gender": "male",
+  "marketplace": "ozon",
+
   "recommendation": {
     "product_key": "bear_paw",
     "sku": "1636048691",
@@ -255,20 +287,33 @@ Success example for Медведь:
     "customer_label": "Печать Велеса",
     "relation_type": "DIRECT_CHERTOG_SYMBOL",
     "selection_basis": "SEMANTIC_DIRECT_SALES_PRIORITIZED",
-    "reason_code": "MEDVED_DIRECT_SYMBOL",
-    "availability": "UNKNOWN",
-    "destination": null
+    "reason_code": "MEDVED_MALE"
   }
 }
 ```
+
+The `input` object preserves whether optional values were supplied:
+
+- when `birth_year` was supplied, `input.birth_year` is present with that integer;
+- when it was omitted, `input.birth_year` may be omitted and `birth_date.year` is `null`;
+- when `marketplace` was supplied, `input.marketplace` is present;
+- when it was omitted, `input.marketplace` may be omitted and top-level `marketplace` is `null`.
+
+Do not invent a birth year or assume Ozon.
 
 `patron_name` is calendar metadata and does not force selection of the patron product.
 
 ## 12. Channel vs marketplace
 
-`channel` is telemetry/UI only. `marketplace` may change a result only through explicit override config.
+`channel` is telemetry/UI only and is not semantic input. `marketplace` may
+change a result only through explicit override config.
 
 ## 13. Availability
+
+M2 Recommendation API returns the semantic recommendation only:
+`availability` and `destination` are not present yet. The later M4 product
+destinations / availability overlay may enrich an API/channel-facing result,
+but it must never change semantic product selection.
 
 Availability is post-processing and never causes hidden replacement.
 
@@ -286,7 +331,34 @@ UI
 
 Customer-facing copy must not announce missing stock/card/link.
 
-## 14. Customer-label and date-render contract
+## 14. M2 error contract boundary
+
+M2 must define deterministic HTTP error mapping for:
+
+- malformed JSON/request shape;
+- `RecommendationInputError`;
+- `ConfigurationValidationError` / unavailable valid configuration;
+- unexpected internal `RecommendationCoreError`.
+
+The exact HTTP status and error-envelope contract will be implemented and
+documented as part of M2. This authority correction does not define status
+codes or error JSON.
+
+## 15. Semantic serialization invariants
+
+HTTP serialization must not change Core semantics:
+
+```text
+voron + male + marketplace omitted/null → kolyadnik → VORON_MALE_KOLYADNIK
+voron + male + ozon                   → kolyadnik → VORON_MALE_KOLYADNIK
+voron + male + wildberries            → alatyr    → VORON_CHANGE_INNER_SUPPORT
+medved + male/female                  → customer_label exactly "Печать Велеса"
+```
+
+There is no secondary result, hidden fallback, or selection effect from year;
+year remains display/audit context only.
+
+## 16. Customer-label and date-render contract
 
 The UI/copy layer must render `customerLabel`, not internal aliases or product keys.
 
@@ -313,7 +385,7 @@ Example:
 
 The renderer must not shorten this to `19.11`.
 
-## 15. Validation gates
+## 17. Validation gates
 
 CI/startup must fail if:
 
@@ -336,7 +408,7 @@ CI/startup must fail if:
 17. unapproved marketplace override exists;
 18. reserve product auto-appears without owner decision.
 
-## 16. Contract tests
+## 18. Contract tests
 
 ```text
 25.03.1993 + male + ozon → lisa / Чернобог; rendered date includes 1993
