@@ -1,0 +1,4 @@
+Trigger exact packaged canonical B1-B49 salvage validation on Linux and Windows.
+Package authority commit: bdcc86305746b0fccdedf567b470fcaeb85a3335
+Expected production tree: ae3f53084d7a9aff5de820503a44b2875ab0c63c6ffc14bf72d941e8d0dab24e
+Expected patch gzip SHA-256: 363724a309deb6a03b04c53131108d985e02863f42ada158d0129acd4e8c6c4b
