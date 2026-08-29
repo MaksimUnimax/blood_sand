@@ -10,8 +10,8 @@ const outDir = path.resolve(process.argv[4]);
 
 const EXPECTED_STEP3_TREE = 'ae3f53084d7a9aff5de820503a44b2875ab0c63c6ffc14bf72d941e8d0dab24e';
 const EXPECTED_GATE_ALIASES = new Set([
-  'posting_fbs_list','posting_fbs_get','posting_fbs_get_v2','return_rfbs_list',
-  'review_list','review_info','question_list','review_list_v2','review_info_v2','question_info',
+  'fbs_posting_list','fbs_unfulfilled_list','posting_fbs_get','rfbs_returns_list',
+  'review_list','review_info','review_comment_list','question_list','question_answer_list','question_info',
 ]);
 const B0_ACCEPTED_HEAD = 'a48e06b331bb959856808aff0b8697cb9834807c';
 const B0_INDEPENDENT_RESULT = 'cc6413d25dd794a12fd61b71728aaac9702bc6de';
@@ -61,8 +61,9 @@ function extractCase(text,label){
 }
 function csvEscape(v){const s=String(v??'');return /[",\n]/.test(s)?`"${s.replaceAll('"','""')}"`:s;}
 
-assert.equal(listFiles(candidateRoot).length,21,'Step3 production file count changed');
-assert.equal(listFiles(candidateRoot).filter(f=>f.endsWith('.js')).length,18,'Step3 JS file count changed');
+const productionFiles=listFiles(candidateRoot);
+assert.equal(productionFiles.length,21,'Step3 production file count changed');
+assert.equal(productionFiles.filter(f=>f.endsWith('.js')).length,18,'Step3 JS file count changed');
 assert.equal(treeDigest(candidateRoot),EXPECTED_STEP3_TREE,'Step3 exact tree changed');
 console.log('PERSONAL_DATA_AUDIT_STEP3_EXACT_TREE_IDENTITY_PASS');
 
@@ -81,7 +82,7 @@ for(const [alias,m] of sellerOps){
   if(m.privacy_policy==='operator_personal_data_gate'){
     assert.equal(m.policy_group,'personal_data_read',`${alias}.policy_group`);
     assert.equal(m.default_allowed,false,`${alias}.default_allowed`);
-    assert.equal(m.safety_class,'personal_data',`${alias}.safety_class`);
+    assert.equal(m.safety_class,'PERSONAL_DATA_READ_GATED',`${alias}.safety_class`);
     gated.push(base);
   } else if(m.privacy_policy==='safe_projection') {
     assert.notEqual(m.policy_group,'personal_data_read',`${alias}.policy_group`);
@@ -146,11 +147,11 @@ for(const caseName of ['OZ_SAVE_GLOBAL_SETTINGS','OZ_SAVE_SETTINGS']){
 }
 console.log('PERSONAL_DATA_AUDIT_SETTING_ENABLE_NO_REPLAY_SOURCE_PASS');
 
-for(const alias of ['review_list','review_info','question_list','review_list_v2','review_info_v2','question_info'])assert(gated.some(x=>x.alias===alias),`${alias} B9/B17 gate lost`);
+for(const alias of ['review_list','review_info','review_comment_list','question_list','question_answer_list','question_info'])assert(gated.some(x=>x.alias===alias),`${alias} B9/B17 gate lost`);
 console.log('PERSONAL_DATA_AUDIT_B9_B17_REVIEW_QUESTION_GATE_CARRY_FORWARD_PASS');
 
 fs.mkdirSync(outDir,{recursive:true});
-const audit={schema:'OZON_PERSONAL_DATA_GATE_AUDIT_V1',as_of:'2026-08-29',roadmap_step:4,status:'CURRENT_ACCEPTED_SELLER_READ_SURFACE_GATE_ATTACHMENT_AUDITED',authorities:{step3_exact_production_tree_sha256:EXPECTED_STEP3_TREE,seller_master_operation_count:463,seller_exact_swagger_sha256:'39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40',b0_personal_data_gate:{accepted_head:B0_ACCEPTED_HEAD,independent_result_commit:B0_INDEPENDENT_RESULT,preserved_semantics:['OFF_BLOCKS_BEFORE_PROVIDER','ZERO_PHYSICAL_BUSINESS_REQUESTS_WHEN_BLOCKED','ENABLE_DOES_NOT_REPLAY','EXPLICIT_RESUBMIT_REQUIRED']}},counts:{seller_master_rows:463,accepted_step3_seller_aliases:191,accepted_personal_data_gate_aliases:10,accepted_safe_projection_aliases:181,master_rows_without_accepted_step3_alias:272},runtime:{registry_driven:true,policy_before_capability_planning:true,policy_before_query_planning:true,policy_before_provider_execution:true,policy_error_local_result:true,blocked_external_request_executed:false,settings_enable_replay:false},gated_aliases:gated.sort((a,b)=>a.alias.localeCompare(b.alias)),accepted_safe_projection_aliases:safe.sort((a,b)=>a.alias.localeCompare(b.alias)),rows:auditedRows,caveat:'Rows without an accepted Step3 alias are not declared privacy-safe. Their Personal Data requirement remains pending later exact-schema classification. safe_projection is distinct from the operator Personal Data gate and must not be conflated with it.',final_action:'USE_THIS_ATTACHMENT_MATRIX_AS_STEP4_AUTHORITY; DO_NOT INVENT A SECOND PRIVACY MECHANISM'};
+const audit={schema:'OZON_PERSONAL_DATA_GATE_AUDIT_V1',as_of:'2026-08-29',roadmap_step:4,status:'CURRENT_ACCEPTED_SELLER_READ_SURFACE_GATE_ATTACHMENT_AUDITED',authorities:{step3_exact_production_tree_sha256:EXPECTED_STEP3_TREE,seller_master_operation_count:463,seller_exact_swagger_sha256:'39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40',b0_personal_data_gate:{accepted_head:B0_ACCEPTED_HEAD,independent_result_commit:B0_INDEPENDENT_RESULT,preserved_semantics:['OFF_BLOCKS_BEFORE_PROVIDER','ZERO_PHYSICAL_BUSINESS_REQUESTS_WHEN_BLOCKED','ENABLE_DOES_NOT_REPLAY','EXPLICIT_RESUBMIT_REQUIRED']}},counts:{seller_master_rows:463,accepted_step3_seller_aliases:191,accepted_personal_data_gate_aliases:10,accepted_safe_projection_aliases:181,master_rows_without_accepted_step3_alias:272},runtime:{registry_driven:true,policy_before_capability_planning:true,policy_before_query_planning:true,policy_before_provider_execution:true,policy_error_local_result:true,blocked_external_request_executed:false,settings_enable_replay:false},gated_aliases:gated.sort((a,b)=>a.alias.localeCompare(b.alias)),accepted_safe_projection_aliases:safe.sort((a,b)=>a.alias.localeCompare(b.alias)),rows:auditedRows,caveat:'Rows without an accepted Step3 alias are not declared privacy-safe. Their Personal Data requirement remains pending later exact-schema classification. safe_projection is distinct from the operator Personal Data gate and must not be conflated with it.',final_action:'USE_THIS_ATTACHMENT_MATRIX_AS_STEP4_AUTHORITY; DO NOT INVENT A SECOND PRIVACY MECHANISM'};
 fs.writeFileSync(path.join(outDir,'OZON_PERSONAL_DATA_GATE_AUDIT_2026-08-29.json'),JSON.stringify(audit,null,2)+'\n');
 
 const headers=['operation_key','http_method','fixed_path','source_category_tag','purpose','accepted_step3_alias','accepted_step3_privacy_policy','accepted_step3_policy_group','step4_attachment_status','step4_gate_attached','final_privacy_decision'];
