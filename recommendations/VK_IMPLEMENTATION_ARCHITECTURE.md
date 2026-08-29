@@ -1897,3 +1897,16 @@ Decision marker:
 ```text
 KIP_VK_HYBRID_IMPLEMENTATION_ARCHITECTURE_PRE_CODE_V1
 ```
+# Root menu and human chat mode (2026-08-29)
+
+`BOT_MODE_ENTRY = explicit menu action`. `START` does not parse arbitrary text:
+it responds with a concise route prompt and the root menu. Global menu actions
+are evaluated before date/gender parsing in every state.
+
+`HUMAN_CHAT_STATE = HUMAN_HANDOFF`. Entering it clears transient recommendation
+fields and atomically enqueues one acknowledgement with the root menu.
+`HUMAN_CHAT_AUTOREPLY = disabled`: ordinary messages are persisted and remain
+available in the VK community conversation, but create no Bot outbox row and do
+not call recommendation parsing or resolution. A repeated human menu action is
+idempotent. `Подобрать оберег` exits the mode and atomically begins a fresh
+`WAITING_DATE` flow (including normal Mini App handoff when enabled).

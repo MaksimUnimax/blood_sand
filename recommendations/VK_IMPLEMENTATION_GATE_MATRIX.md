@@ -615,3 +615,13 @@ KIP_VK_IMPLEMENTATION_GATE_MATRIX_V5
 | frontend code | PASS (build/test) |
 | static staging deployment | BLOCKED pending controlled nginx deployment |
 | live open_app | BLOCKED_PENDING_PROTECTED_KEY_AND_OPEN_APP_OWNER_ID |
+# Root menu / human-chat gate policy (2026-08-29)
+
+Deterministic code acceptance covers the strict versioned menu payloads,
+non-inline `one_time=false` root menu, inline gender keyboard, legacy restart
+input compatibility, atomic transition/outbox rollback, and human autoreply
+suppression. `VK_ROOT_MENU_LIVE_GATE` and
+`VK_HUMAN_CHAT_SUPPRESSION_LIVE_GATE` remain staging acceptance gates.
+
+`M3_CALENDAR_LIVE_OPEN_APP_GATE` remains paused until the owner completes the
+real Mini App flow under this persistent-menu architecture.

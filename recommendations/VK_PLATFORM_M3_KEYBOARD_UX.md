@@ -90,3 +90,19 @@ the exact input contract.
 Payload must not select a `product_key`, marketplace override, method name, or
 arbitrary command. The visible text labels remain compatibility fallbacks, not
 the instructed primary interaction.
+# Persistent root conversation menu (2026-08-29)
+
+`ROOT_MENU_PERSISTENCE_POLICY = NON_INLINE_ONE_TIME_FALSE_CURRENT_KEYBOARD`.
+The only permanent non-inline Bot keyboard is `main_menu_keyboard()` with two
+text actions: `Подобрать оберег` (`{"kip":"menu","value":"recommend","v":1}`)
+and `Задать вопрос` (`{"kip":"menu","value":"human","v":1}`). It is
+laid out in two rows for mobile readability.
+
+`one_time=false` means it remains the current VK keyboard under the schema
+contract; it is not a guarantee that a VK client renders it physically expanded.
+`ROOT_MENU_ALWAYS_EXPANDED_BY_CLIENT = NOT_GUARANTEED_BY_OFFICIAL_SCHEMA` and
+`PERSISTENT_ROOT_MENU_CLIENT_RENDER = STAGING_REQUIRED`.
+
+Flow-specific buttons are inline: the calendar uses `open_app`, and gender uses
+inline text buttons. `Подобрать снова` and its restart payload remain accepted
+only as historic input compatibility; no new restart keyboard is emitted.
