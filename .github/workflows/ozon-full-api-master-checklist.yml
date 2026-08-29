@@ -28,12 +28,21 @@ jobs:
           curl -fsSL "https://raw.githubusercontent.com/MissiaL/ozon-api/${commit}/references/index.md" -o /tmp/ozon-seller-index.md
           curl -fsSL "https://raw.githubusercontent.com/MissiaL/ozon-api/${commit}/references/index-performance.md" -o /tmp/ozon-performance-index.md
 
+      - name: Materialize accepted canonical B1
+        run: |
+          set -euo pipefail
+          python3 -c "import gzip,hashlib,pathlib;p=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_STOCKS_WAREHOUSE_2026-08-29.patch.gz');c=p.read_bytes();assert hashlib.sha256(c).hexdigest()=='e02d68c233067c258b3a115132296a4b25bdd1ab43ed061a030843fbbf475261';assert hashlib.sha256(gzip.decompress(c)).hexdigest()=='5485652cb41ea68d27285ba1678a23a4325037f1909426c933c60bdeabacf11f'"
+          python3 tooling/llm-api-bridges/ozon-seller/validation/materialize_patch_v2_b1_stocks_warehouse_candidate.py --repo-root . --work-root /tmp/v2b1-work --out /tmp/v2b1-exact
+          node tooling/llm-api-bridges/ozon-seller/validation/PATCH_V2_B1_STOCKS_WAREHOUSE_REGRESSION_2026-08-29.mjs /tmp/v2b1-exact
+
       - name: Dump current canonical Bridge registry
         run: |
           set -euo pipefail
           node --input-type=module <<'NODE' > /tmp/ozon-current-registry.json
-          await import('./tooling/llm-api-bridges/ozon-seller/shared/runtime_names.js');
-          await import('./tooling/llm-api-bridges/ozon-seller/shared/ozon_operation_registry.js');
+          import { pathToFileURL } from 'node:url';
+          const root = '/tmp/v2b1-exact';
+          await import(pathToFileURL(`${root}/shared/runtime_names.js`).href);
+          await import(pathToFileURL(`${root}/shared/ozon_operation_registry.js`).href);
           const operations = globalThis.OzonOperationRegistry?.OPERATIONS;
           if (!operations) throw new Error('OzonOperationRegistry.OPERATIONS unavailable');
           process.stdout.write(JSON.stringify({operations}, null, 2));
