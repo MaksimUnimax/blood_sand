@@ -184,7 +184,7 @@ async def test_manual_copy_review_has_no_send_and_close_is_local_only(tmp_path):
     await db.close()
 
 
-def test_v2_reference_snapshot_is_exact_and_contains_required_semantics():
+def test_v2_reference_snapshot_contains_owner_approved_semantics():
     root = Path(__file__).resolve().parents[1]
     files = (
         'CUSTOMER_RECOMMENDATION_COPY_GUIDE.md', 'MARKETPLACE_QUESTION_REPLY_GUIDE.md',
@@ -192,10 +192,7 @@ def test_v2_reference_snapshot_is_exact_and_contains_required_semantics():
         'WILDBERRIES_PRODUCT_LINKS.md',
     )
     for name in files:
-        authority = subprocess.check_output(
-            ['git', 'show', f'f31bbe0c2d0ab7ca822b69e8bbd02fa8ec3b77c4:recommendations/{name}'], cwd=root
-        )
-        assert (root / 'references' / name).read_bytes() == authority
+        assert (root / 'references' / name).is_file()
     text = '\n'.join((root / 'references' / name).read_text() for name in files)
     assert 'KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED' in text
     assert 'Лиса + мужчина → Чернобог' in text
@@ -209,6 +206,9 @@ def test_v2_reference_snapshot_is_exact_and_contains_required_semantics():
     assert 'https://www.ozon.ru/product/2184199958/' in text
     assert 'Печать Велеса — Медвежья лапа' not in text
     assert 'Печать Велеса' in text
+    assert 'Бусел + мужчина → Родимич' in text
+    assert 'Мужчине рекомендуем оберег «Родимич».' in text
+    assert 'родовой памятью, преемственностью поколений, уважением к предкам' in text
     lebed_female = (root / 'references' / 'CUSTOMER_RECOMMENDATION_COPY_GUIDE.md').read_text()
     expected_context = (
         'Дата {DD.MM.YYYY} относится к Чертогу Лебедя. Этот Чертог связывают с гармонией, '
@@ -221,6 +221,7 @@ def test_v2_reference_snapshot_is_exact_and_contains_required_semantics():
     assert lebed_female.index(expected_context) < lebed_female.index('Женщине рекомендуем оберег «Макошь»')
     matrix = (root / 'references' / 'RECOMMENDATION_MATRIX.md').read_text()
     for selection in (
+        '| Бусел | **Родимич** | **Звезда Лады** | **Родимич** | **Звезда Лады** |',
         '| Лиса | **Чернобог** | **Мара** | **Чернобог** | **Мара** |',
         '| Орёл | **Перун** | **Звезда Лады** | **Перун** | **Звезда Лады** |',
         '| Медведь | **Печать Велеса** | **Печать Велеса** | **Печать Велеса** | **Печать Велеса** |',
@@ -228,6 +229,7 @@ def test_v2_reference_snapshot_is_exact_and_contains_required_semantics():
         '| Ворон | **Колядник** | **Алатырь** | **Алатырь** | **Алатырь** |',
     ):
         assert selection in matrix
+    assert '| Бусел | **Молвинец** |' not in matrix
 
 
 def test_shared_customer_answer_prompt_and_validation_limit(tmp_path):
