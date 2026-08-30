@@ -90,8 +90,10 @@ READLIKE_MUTATION_KEYS = {
 HTTP = {"get","post","put","patch","delete"}
 READLIKE_RE = re.compile(r"Get|List|Info|Check|Validate|Status|Получить|Список|Информац|Провер|Валидац|Статус|Сумм|маркиров", re.I)
 
+
 def sha256(data):
     return hashlib.sha256(data).hexdigest()
+
 
 def operation_rows(swagger):
     rows=[]
@@ -111,6 +113,18 @@ def operation_rows(swagger):
             })
     return rows
 
+
+def load_step5(path):
+    p=Path(path)
+    if p.suffix.lower()=='.csv':
+        rows=list(csv.DictReader(p.open(encoding='utf-8')))
+    else:
+        rows=json.loads(p.read_text(encoding='utf-8'))['rows']
+    if len(rows)!=118:
+        raise SystemExit(f"SELLER_STEP7_STEP5_DECISION_COUNT_FAIL:{len(rows)}")
+    return {r['operation_key']:r['terminal_decision'] for r in rows}
+
+
 def is_generation(row):
     if row["operation_key"] in GENERATION_OVERRIDE_KEYS:
         return True
@@ -125,44 +139,50 @@ def is_generation(row):
         ])
     )
 
+
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--swagger", required=True)
     ap.add_argument("--registry-json", required=True)
+    ap.add_argument("--step5-decisions", required=True)
     ap.add_argument("--out-json", required=True)
     ap.add_argument("--out-csv", required=True)
     ap.add_argument("--out-summary", required=True)
     args=ap.parse_args()
 
     swagger_bytes=Path(args.swagger).read_bytes()
-    if len(swagger_bytes) != SELLER_SWAGGER_BYTES or sha256(swagger_bytes) != SELLER_SWAGGER_SHA256:
+    if len(swagger_bytes)!=SELLER_SWAGGER_BYTES or sha256(swagger_bytes)!=SELLER_SWAGGER_SHA256:
         raise SystemExit("SELLER_STEP7_EXACT_SWAGGER_IDENTITY_FAIL")
     swagger=json.loads(swagger_bytes)
     rows=operation_rows(swagger)
-    if swagger.get("openapi") != "3.0.0" or len(rows) != SELLER_OPERATIONS or len(swagger.get("paths",{})) != SELLER_OPERATIONS:
+    if swagger.get("openapi")!="3.0.0" or len(rows)!=SELLER_OPERATIONS or len(swagger.get("paths",{}))!=SELLER_OPERATIONS:
         raise SystemExit("SELLER_STEP7_EXACT_SWAGGER_SHAPE_FAIL")
     keys=[r["operation_key"] for r in rows]
-    if len(keys) != len(set(keys)):
+    if len(keys)!=len(set(keys)):
         raise SystemExit("SELLER_STEP7_DUPLICATE_METHOD_PATH_FAIL")
 
     registry=json.loads(Path(args.registry_json).read_text(encoding="utf-8"))
     seller={}
     for alias,meta in registry.items():
-        if str(meta.get("provider","seller_api")) != "seller_api":
+        if str(meta.get("provider","seller_api"))!="seller_api":
             continue
         key=f'{str(meta["method"]).upper()} {meta["path"]}'
         if key in seller:
             raise SystemExit(f"SELLER_STEP7_DUPLICATE_ACCEPTED_METHOD_PATH_FAIL:{key}")
         seller[key]=(alias,meta)
-    if len(seller) != ACCEPTED_SELLER_READS:
+    if len(seller)!=ACCEPTED_SELLER_READS:
         raise SystemExit(f"SELLER_STEP7_ACCEPTED_BASE_COUNT_FAIL:{len(seller)}")
     if not set(seller).issubset(set(keys)):
         raise SystemExit("SELLER_STEP7_ACCEPTED_BASE_OUTSIDE_SWAGGER_FAIL")
 
+    step5=load_step5(args.step5_decisions)
+    if not set(step5).issubset(set(keys)):
+        raise SystemExit("SELLER_STEP7_STEP5_OUTSIDE_SWAGGER_FAIL")
+
     output=[]
     for row in rows:
         key=row["operation_key"]
-        out={k:v for k,v in row.items() if k != "description"}
+        out={k:v for k,v in row.items() if k!="description"}
         if key in seller:
             alias,meta=seller[key]
             out.update({
@@ -172,6 +192,16 @@ def main():
                 "privacy_policy":meta.get("privacy_policy"),
                 "cluster":meta.get("cluster"),
                 "section":meta.get("section"),
+            })
+            if key in step5 and step5[key]!="IMPLEMENT_READ":
+                raise SystemExit(f"SELLER_STEP7_STEP5_REJECT_BECAME_ACCEPTED_FAIL:{key}:{step5[key]}")
+        elif key in step5:
+            d=step5[key]
+            if d=="IMPLEMENT_READ":
+                raise SystemExit(f"SELLER_STEP7_STEP5_READ_MISSING_FROM_ACCEPTED_BASE_FAIL:{key}")
+            out.update({
+                "terminal_decision":d,
+                "decision_reason":"preserved accepted Step5 exact terminal decision",
             })
         elif row["deprecated"]:
             out.update({
@@ -215,27 +245,27 @@ def main():
     expected={
         "ACCEPTED_IMPLEMENTED_READ":219,
         "IMPLEMENT_READ_STEP7":26,
-        "REJECT_DEPRECATED_REPLACED":12,
+        "REJECT_DEPRECATED_REPLACED":8,
         "REJECT_SUNSET_REPLACED":12,
-        "REJECT_SERVER_SIDE_GENERATION_OR_CREATION":63,
-        "REJECT_MUTATION_SIDE_EFFECT":129,
+        "REJECT_SERVER_SIDE_GENERATION_OR_CREATION":64,
+        "REJECT_MUTATION_SIDE_EFFECT":132,
         "REJECT_SENSITIVE_UNSTRUCTURED_CONTENT":1,
         "REJECT_NON_READ_EXTERNAL_EFFECT_CONTROL":1,
     }
-    if dict(counts) != expected:
+    if dict(counts)!=expected:
         raise SystemExit(f"SELLER_STEP7_TERMINAL_COUNTS_FAIL:{dict(counts)}")
-    if len(output) != 463 or sum(counts.values()) != 463:
+    if len(output)!=463 or sum(counts.values())!=463:
         raise SystemExit("SELLER_STEP7_463_EXHAUSTIVE_FAIL")
-    if any("PENDING" in r["terminal_decision"] or "UNKNOWN" in r["terminal_decision"] or "UNRESOLVED" in r["terminal_decision"] for r in output):
+    if any(x in r["terminal_decision"] for r in output for x in ["PENDING","UNKNOWN","UNRESOLVED"]):
         raise SystemExit("SELLER_STEP7_NONTERMINAL_DECISION_FAIL")
 
     new_privacy=Counter(r.get("privacy_policy") for r in output if r["terminal_decision"]=="IMPLEMENT_READ_STEP7")
-    if new_privacy != Counter({"safe_projection":13,"operator_personal_data_gate":13}):
+    if new_privacy!=Counter({"safe_projection":13,"operator_personal_data_gate":13}):
         raise SystemExit(f"SELLER_STEP7_NEW_READ_PRIVACY_COUNTS_FAIL:{dict(new_privacy)}")
 
     payload={
-        "schema":"OZON_SELLER_STEP7_TERMINAL_MATRIX_V1",
-        "as_of":"2026-08-29",
+        "schema":"OZON_SELLER_STEP7_TERMINAL_MATRIX_V2",
+        "as_of":"2026-08-30",
         "roadmap_step":7,
         "authority":{
             "swagger_bytes":SELLER_SWAGGER_BYTES,
@@ -243,6 +273,7 @@ def main():
             "openapi":"3.0.0",
             "paths":463,
             "operations":463,
+            "step5_terminal_decisions_preserved":118,
         },
         "base":{"accepted_step6_seller_reads":219},
         "counts":{
@@ -257,6 +288,7 @@ def main():
         },
         "invariants":[
             "ALL_463_CURRENT_SELLER_OPERATIONS_EXACTLY_ONCE",
+            "ALL_118_ACCEPTED_STEP5_TERMINAL_DECISIONS_PRESERVED",
             "ZERO_UNKNOWN_PENDING_UNRESOLVED",
             "ONE_EXPLICIT_COMMAND_ONE_BUSINESS_REQUEST",
             "NO_HIDDEN_PAGINATION_RETRY_POLLING_FANOUT_CHAINING",
@@ -273,14 +305,14 @@ def main():
     fields=["operation_key","http_method","fixed_path","operation_id","source_category_tag","purpose","deprecated","terminal_decision","decision_reason","alias","privacy_policy","cluster","section"]
     with Path(args.out_csv).open("w",encoding="utf-8",newline="") as f:
         w=csv.DictWriter(f,fieldnames=fields,extrasaction="ignore")
-        w.writeheader()
-        for r in output: w.writerow(r)
+        w.writeheader(); w.writerows(output)
     summary=[
         "# Ozon Seller Step 7 — 463/463 terminal decision matrix",
         "",
         f"- Exact Seller Swagger: `{SELLER_SWAGGER_BYTES}` bytes / `{SELLER_SWAGGER_SHA256}`.",
         "- Current operations: **463/463 classified exactly once**.",
         "- Accepted Step 6 Seller reads carried forward: **219**.",
+        "- Accepted Step 5 terminal decisions preserved: **118/118**.",
         "- New admissible reads to implement in Step 7: **26**.",
         "- Final admissible Seller read surface after implementation: **245**.",
         "- Final non-read/unavailable operations: **218**.",
@@ -288,21 +320,19 @@ def main():
         "## Terminal decisions",
         "",
     ]
-    for name,count in sorted(expected.items()):
-        summary.append(f"- `{name}`: **{count}**")
+    for name,count in sorted(expected.items()): summary.append(f"- `{name}`: **{count}**")
     summary += [
-        "",
-        "## New read privacy",
-        "",
+        "", "## New read privacy", "",
         "- `safe_projection`: **13**",
         "- `operator_personal_data_gate`: **13**",
         "",
         "There are no `UNKNOWN`, `PENDING`, or `UNRESOLVED` rows.",
-        "This matrix classifies Step 7; production acceptance still requires implementation of all 26 `IMPLEMENT_READ_STEP7` rows and cross-platform artifact verification.",
+        "Production acceptance still requires implementation of all 26 `IMPLEMENT_READ_STEP7` rows and cross-platform artifact verification.",
     ]
     Path(args.out_summary).write_text("\n".join(summary)+"\n",encoding="utf-8")
     print("SELLER_STEP7_EXACT_SWAGGER_IDENTITY_PASS")
     print("SELLER_STEP7_ACCEPTED_219_BASE_RECONCILIATION_PASS")
+    print("SELLER_STEP7_STEP5_118_TERMINAL_DECISIONS_PRESERVED_PASS")
     print("SELLER_STEP7_463_EXHAUSTIVE_TERMINAL_MATRIX_PASS")
     print("SELLER_STEP7_NEW_READS_26_PASS")
     print("SELLER_STEP7_NEW_READ_PRIVACY_13_GATE_13_SAFE_PASS")
