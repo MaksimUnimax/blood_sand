@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from .vk_api import VKTransportUnknown, VKProtocolError
+import json
 RETRYABLE={6,10,36}; PERMANENT={900,901,902,917,936,945,946,950,985,987,988,1012}; AUTH={5,7,15,925,103}; INVALID={8,100,911,914,921,943,944}
 def classify(code):
  if code in RETRYABLE:return 'TRANSIENT_RATE_OR_SERVICE'
@@ -14,7 +15,14 @@ class OutboxWorker:
  def process_one(self):
   row=self.storage.claim_outbox()
   if not row:return False
-  try: result=self.api.messages_send(row['peer_id'],row['message_text'],row['random_id'], row['keyboard_json']) if row.get('keyboard_json') is not None else self.api.messages_send(row['peer_id'],row['message_text'],row['random_id'])
+  try:
+   attachments=json.loads(row['attachment_json']) if row.get('attachment_json') else None
+   if attachments:
+    result=self.api.messages_send(row['peer_id'],row['message_text'],row['random_id'],row.get('keyboard_json'),attachments)
+   elif row.get('keyboard_json') is not None:
+    result=self.api.messages_send(row['peer_id'],row['message_text'],row['random_id'],row['keyboard_json'])
+   else:
+    result=self.api.messages_send(row['peer_id'],row['message_text'],row['random_id'])
   except (VKTransportUnknown, VKProtocolError):
    if row['attempt_count']<2:self.storage.outbox_result(row['outbox_id'],'RETRY_WAIT',klass='TRANSPORT_UNKNOWN',next_at=(datetime.now(timezone.utc)+timedelta(seconds=self.delay)).isoformat())
    else:self.storage.outbox_result(row['outbox_id'],'FAILED_TERMINAL',klass='TRANSPORT_UNKNOWN')

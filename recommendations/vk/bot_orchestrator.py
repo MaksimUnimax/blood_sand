@@ -18,8 +18,8 @@ PICKER_FIELDS = {
 
 
 class BotOrchestrator:
-    def __init__(self, storage, service: RecommendationApplicationService, miniapp_config=None):
-        self.storage, self.service = storage, service
+    def __init__(self, storage, service: RecommendationApplicationService, miniapp_config=None, illustrations=None):
+        self.storage, self.service, self.illustrations = storage, service, dict(illustrations or {})
 
     def _today(self):
         return self.storage.clock().date()
@@ -81,6 +81,8 @@ class BotOrchestrator:
                 self.storage.transition_and_enqueue(eid, event.group_id, event.peer_id, "WAITING_GENDER", {}, GENDER_PROMPT, gender_keyboard())
                 return "PROCESSED"
             result = self.service.resolve(ApplicationRecommendationInput(old["birth_day"], old["birth_month"], gender, old["birth_year"], old["marketplace"]))
-            self.storage.transition_and_enqueue(eid, event.group_id, event.peer_id, "RESOLVED", {"gender": gender, "last_result_id": result.result_id}, present(result.semantic_result), main_menu_keyboard())
+            product_key = result.semantic_result["recommendation"]["product_key"]
+            attachment = self.illustrations.get(product_key)
+            self.storage.transition_and_enqueue(eid, event.group_id, event.peer_id, "RESOLVED", {"gender": gender, "last_result_id": result.result_id}, present(result.semantic_result), main_menu_keyboard(), attachments=[attachment] if attachment else None)
             return "PROCESSED"
         return "IGNORED"

@@ -51,6 +51,9 @@ class VKRuntimeConfig:
     raw_payload_retention_seconds: int = 86400
     session_retention_seconds: int = 86400
     worker_poll_seconds: float = 1.0
+    recommendation_images_enabled: bool = False
+    product_illustrations_path: str | None = None
+    product_illustrations: dict[str, str] | None = None
 
     @classmethod
     def from_environment(cls) -> "VKRuntimeConfig | None":
@@ -80,4 +83,15 @@ class VKRuntimeConfig:
             raise VKConfigurationError("VK runtime policies must be integers") from exc
         if lease <= 0 or retention <= 0 or session_retention <= 0 or poll <= 0 or poll > 60:
             raise VKConfigurationError("VK runtime policies must be positive")
-        return cls(group_id, values["VK_GROUP_TOKEN"], values["VK_CALLBACK_SECRET"], values["VK_CALLBACK_CONFIRMATION_CODE"], values["VK_STATE_DB_PATH"], version, 65536, 5, lease, retention, session_retention, poll)
+        images_enabled = os.environ.get("KIP_VK_RECOMMENDATION_IMAGES_ENABLED", "false").lower() in {"1", "true", "yes"}
+        illustrations_path = os.environ.get("KIP_VK_PRODUCT_ILLUSTRATIONS_PATH")
+        attachments = None
+        if images_enabled:
+            if not illustrations_path:
+                raise VKConfigurationError("enabled recommendation images require an illustration registry path")
+            from .illustrations import VKIllustrationConfigurationError, load_runtime_attachments
+            try:
+                attachments = load_runtime_attachments(illustrations_path)
+            except VKIllustrationConfigurationError as exc:
+                raise VKConfigurationError("recommendation illustration registry is invalid") from exc
+        return cls(group_id, values["VK_GROUP_TOKEN"], values["VK_CALLBACK_SECRET"], values["VK_CALLBACK_CONFIRMATION_CODE"], values["VK_STATE_DB_PATH"], version, 65536, 5, lease, retention, session_retention, poll, images_enabled, illustrations_path, attachments)

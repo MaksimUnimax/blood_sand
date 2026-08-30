@@ -116,7 +116,7 @@ class VKStorage:
     def _insert_transition_audit(self, c, event_id, old, state, state_version, kind):
         c.execute("INSERT INTO vk_transition_audit(source_event_id,from_state,to_state,from_state_version,to_state_version,transition_kind,created_at) VALUES(?,?,?,?,?,?,?)", (event_id, old['state'] if old else 'START', state, old['state_version'] if old else 0, state_version, kind, self._now()))
 
-    def transition_and_enqueue(self, event_id, g, p, state, fields, text, keyboard=None, transition_kind='standard'):
+    def transition_and_enqueue(self, event_id, g, p, state, fields, text, keyboard=None, transition_kind='standard', attachments=None):
         if keyboard is not None and keyboard.get('inline'):
             from .keyboard import validate_inline_keyboard
             validate_inline_keyboard(keyboard)
@@ -139,7 +139,9 @@ class VKStorage:
                 self._before_outbox_insert(c)
                 keyboard_json = json.dumps(keyboard, ensure_ascii=False, separators=(',', ':')) if keyboard is not None else None
                 audit_json = json.dumps(sanitize_keyboard_audit(keyboard), ensure_ascii=False, separators=(',', ':')) if keyboard is not None else None
-                c.execute("INSERT INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,keyboard_json,keyboard_audit_json,random_id,status,created_at) VALUES(?,?,?,?,?,?,?,'PENDING',?)", (event_id,g,p,text,keyboard_json,audit_json,rid,now()))
+                attachment_json = json.dumps(attachments, ensure_ascii=False, separators=(',', ':')) if attachments else None
+                attachment_audit = None if not attachments else json.dumps({"attachment_present": True, "attachment_type": "photo", "attachment_count": len(attachments)}, separators=(',', ':'))
+                c.execute("INSERT INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,keyboard_json,keyboard_audit_json,attachment_json,attachment_audit_json,random_id,status,created_at) VALUES(?,?,?,?,?,?,?,?,?,'PENDING',?)", (event_id,g,p,text,keyboard_json,audit_json,attachment_json,attachment_audit,rid,now()))
                 c.commit()
             except Exception:
                 c.rollback(); raise
