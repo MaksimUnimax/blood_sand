@@ -79,7 +79,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.migrate-authority.outputs.commit_sha }}
+          ref: ${{ needs['migrate-authority'].outputs.commit_sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -123,7 +123,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.migrate-authority.outputs.commit_sha }}
+          ref: ${{ needs['migrate-authority'].outputs.commit_sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify v2 authority and build Seller terminal matrix on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $v = 'tooling/llm-api-bridges/ozon-seller/validation'
+          $root = "$v/step7-authority-v2"
+          $auth = Join-Path $env:RUNNER_TEMP 'seller-swagger.json'
+          $out = Join-Path $env:RUNNER_TEMP 'step7-windows'
+          $work = Join-Path $env:RUNNER_TEMP 'step7-work'
+          $step6 = Join-Path $env:RUNNER_TEMP 'step7-step6'
+          foreach ($p in @($out,$work,$step6)) { if (Test-Path $p) { Remove-Item -Recurse -Force $p } }
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          python "$root/reconstruct_exact_swagger.py" --output $auth
+          python "$root/test_fail_closed.py" --root $root
+          python "$v/materialize_performance_step6_read_coverage_package.py" --repo-root . --work-root $work --out $step6
+          $registry = Join-Path $out 'registry.json'
+          node -e "require(process.argv[1]); const fs=require('fs'); fs.writeFileSync(process.argv[2], JSON.stringify(globalThis.OzonOperationRegistry.OPERATIONS,null,2)+'\n')" (Join-Path $step6 'shared/ozon_operation_registry.js') $registry
+          python "$v/build_ozon_seller_step7_terminal_matrix.py" --swagger $auth --registry-json $registry --step5-decisions "$v/OZON_STEP5_EXACT_DECISION_MATRIX_2026-08-29.json" --out-json (Join-Path $out 'OZON_SELLER_STEP7_TERMINAL_MATRIX_2026-08-30.json') --out-csv (Join-Path $out 'OZON_SELLER_STEP7_TERMINAL_MATRIX_2026-08-30.csv') --out-summary (Join-Path $out 'OZON_SELLER_STEP7_TERMINAL_MATRIX_SUMMARY_2026-08-30.md')
+          Remove-Item $registry
+          python -c "from pathlib import Path; import sys; root=Path(sys.argv[1]); [p.write_bytes(p.read_bytes().replace(b'\r\n',b'\n')) for p in root.iterdir() if p.is_file()]" "$out"
+          sha256sum "$out"/*
+          echo SELLER_STEP7_LINUX_MATRIX_PASS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-linux-matrix
+          path: ${{ runner.temp }}/step7-linux
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-matrix:
+    needs: migrate-authority
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs['migrate-authority'].outputs.commit_sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -172,7 +211,7 @@ jobs:
         with:
           name: seller-step7-windows-matrix
           path: /tmp/step7-windows
-      - name: Require byte identity and freezfRozen Step 7 evidence
+      - name: Require byte identity and freeze Step 7 evidence
         shell: bash
         run: |
           set -euo pipefail
