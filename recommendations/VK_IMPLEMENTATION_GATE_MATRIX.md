@@ -145,6 +145,20 @@ the observed manual-text interaction is retained only as compatibility context,
 not recorded as a final UX PASS. The real staging text-keyboard send fixture is
 `tests/fixtures/vk/staging/messages_send_text_keyboard_success.v5_199.sanitized.json`.
 
+### M5 owner pause status — 2026-08-30
+
+This dated status note is a documentation-only owner pause checkpoint. It does
+not change the historical PASS/BLOCKED evidence above.
+
+```text
+M5_WORK_STATUS=PAUSED_BY_OWNER
+M5_BACKEND_STAGING_DEPLOYED=yes
+M5_BACKEND_REAL_ACCEPTANCE=WAITING_OWNER_RETRY
+M5_RESUME_ENTRYPOINT=REAL_BOOTSTRAP_A_SANITIZED_RETRY
+M5_FRONTEND_IMPLEMENTATION=NOT_STARTED
+CURRENT_ACTIVE_WORKSTREAM=VK_BOT_ILLUSTRATION_INTEGRATION
+```
+
 ---
 
 ## 4. M2 gate — shared Recommendation API
