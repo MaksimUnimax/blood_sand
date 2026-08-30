@@ -6,7 +6,6 @@ import json
 import lzma
 from pathlib import Path
 
-CARRIER_FILE = "OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64"
 MANIFEST_FILE = "OZON_SELLER_EXACT_SWAGGER_TRANSPORT_2026-08-30_MANIFEST.json"
 CARRIER_BYTES = 303673
 CARRIER_SHA256 = "6da7d7e5bfdcc9d52643ffe3824d4399584f3c44c61d60a2062b8146d9879cc0"
@@ -14,6 +13,12 @@ XZ_BYTES = 227752
 XZ_SHA256 = "c7916a68ef192702fdb27c45d3571409e2d39c8697e164be04532063ea6cc267"
 RAW_BYTES = 3933043
 RAW_SHA256 = "39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40"
+PARTS = [
+    ("OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part1", 75918, "641ff03e6ac22afd64d8dfa1d831b5a2a0de3387b75d87dc06cda766af2eeda1"),
+    ("OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part2", 75918, "2a0263091c09c3a0024f5119278723879b59d9bba47616a0b7b036b4198c9e3e"),
+    ("OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part3", 75918, "ebbca02ba07e376516370ca030c93858e1609014ea5edd931ec86e4578f8bbd1"),
+    ("OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part4", 75918, "f01d97e3259cdb124ab9fbaaf6842888d34d7c3bf282f953b61477289df5d0c8"),
+]
 
 
 def digest(data: bytes) -> str:
@@ -35,8 +40,23 @@ def main():
     if manifest["carrier"]["canonical_lf_bytes"] != CARRIER_BYTES or manifest["carrier"]["canonical_lf_sha256"] != CARRIER_SHA256:
         raise SystemExit("SELLER_SWAGGER_TRANSPORT_MANIFEST_CARRIER_IDENTITY_FAIL")
 
-    carrier_checkout = (validation_dir / CARRIER_FILE).read_bytes()
-    canonical = carrier_checkout.replace(b"\r\n", b"\n")
+    manifest_parts = manifest["carrier"].get("parts", [])
+    if len(manifest_parts) != len(PARTS):
+        raise SystemExit("SELLER_SWAGGER_TRANSPORT_MANIFEST_PART_COUNT_FAIL")
+    chunks = []
+    for idx, (name, expected_bytes, expected_sha) in enumerate(PARTS):
+        m = manifest_parts[idx]
+        if m.get("file") != name or m.get("bytes") != expected_bytes or m.get("sha256") != expected_sha:
+            raise SystemExit(f"SELLER_SWAGGER_TRANSPORT_MANIFEST_PART_IDENTITY_FAIL:{idx + 1}")
+        data = (validation_dir / name).read_bytes()
+        if b"\r" in data or b"\n" in data:
+            raise SystemExit(f"SELLER_SWAGGER_TRANSPORT_PART_LINE_ENDING_FAIL:{idx + 1}")
+        if len(data) != expected_bytes or digest(data) != expected_sha:
+            raise SystemExit(f"SELLER_SWAGGER_TRANSPORT_PART_IDENTITY_FAIL:{idx + 1}:{len(data)}:{digest(data)}")
+        chunks.append(data)
+        print(f"SELLER_SWAGGER_TRANSPORT_PART_{idx + 1}_IDENTITY_PASS")
+
+    canonical = b"".join(chunks) + b"\n"
     if len(canonical) != CARRIER_BYTES or digest(canonical) != CARRIER_SHA256:
         raise SystemExit(f"SELLER_SWAGGER_TRANSPORT_CANONICAL_CARRIER_IDENTITY_FAIL:{len(canonical)}:{digest(canonical)}")
     print("SELLER_SWAGGER_TRANSPORT_CANONICAL_CARRIER_IDENTITY_PASS")
