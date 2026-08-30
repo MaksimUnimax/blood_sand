@@ -1,15 +1,6 @@
 name: Ozon Seller Step7 463 terminal matrix
 
 on:
-  push:
-    branches:
-      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
-    paths:
-      - .github/workflows/ozon-seller-step7-terminal-matrix.yml
-      - tooling/llm-api-bridges/ozon-seller/validation/build_ozon_seller_step7_terminal_matrix.py
-      - tooling/llm-api-bridges/ozon-seller/validation/materialize_ozon_seller_exact_swagger_transport.py
-      - tooling/llm-api-bridges/ozon-seller/validation/OZON_SELLER_EXACT_SWAGGER_TRANSPORT_2026-08-30_MANIFEST.json
-      - 'tooling/llm-api-bridges/ozon-seller/validation/OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part*'
   workflow_dispatch:
 
 permissions:
