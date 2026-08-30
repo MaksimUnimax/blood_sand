@@ -793,3 +793,12 @@ M5_CODE_GATE=BLOCKED
 Blockers are registered-app/origin/static-host staging proof, real signed-launch
 evidence, owner-approved M5 security policies, frozen standalone authenticated
 M5 HTTP transport, and frozen product-action presentation.
+
+## 2026-08-30 owner-policy and standalone-contract freeze
+
+`VK_PLATFORM_M5_OWNER_POLICY_FREEZE_2026-08-30.md` closes project-owned policy:
+S1, S2, S4–S7 are owner-approved; S3 is deferred to M6; M5 HTTP and product
+actions are frozen. It does not alter VK facts:
+`VK_MANDATED_FRESHNESS_TTL=UNRESOLVED`, `VK_TS_UNIT=STAGING_REQUIRED`, and
+registered-origin/control-plane/real-launch proof remains staging-required.
+`M5_CODE_GATE=BLOCKED` pending those external checks.

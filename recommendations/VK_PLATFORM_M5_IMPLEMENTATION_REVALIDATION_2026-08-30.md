@@ -375,3 +375,13 @@ the six boolean outcomes specified by this ADR.  It must not persist raw query,
 signature, user ID, or protected key.
 
 No runtime/UI/package/hosting/Bot/Telegram/database change was made.
+
+## Owner-policy freeze follow-up (2026-08-30)
+
+`VK_PLATFORM_M5_OWNER_POLICY_FREEZE_2026-08-30.md` now supplies the missing
+owner decisions: S1, S2, S4–S7 are `OWNER_APPROVED`; S3 is `DEFER_TO_M6`; the
+standalone authenticated routes and product-action contract are `FROZEN`.
+The 300-second, 60-second, and 900-second values are `OUR_SECURITY_POLICY`,
+not VK requirements. `VK_TS_UNIT`, registered-origin/control-plane/config
+proof, and real registered-app launch/signature/client evidence remain
+`STAGING_REQUIRED`; `M5_CODE_GATE=BLOCKED`.

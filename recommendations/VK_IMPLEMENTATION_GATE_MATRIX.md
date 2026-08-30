@@ -679,3 +679,27 @@ M5_CODE_GATE=BLOCKED
 
 The retired Bot calendar handoff remains inactive. Its `open_app` staging
 evidence belongs to M6 and is not a standalone-M5 prerequisite.
+
+## M5 owner-policy/HTTP/product freeze — 2026-08-30
+
+Authority: `VK_PLATFORM_M5_OWNER_POLICY_FREEZE_2026-08-30.md`.
+
+```text
+S1_LAUNCH_POLICY=OWNER_APPROVED
+S1_RUNTIME_ENABLEMENT=STAGING_REQUIRED
+S2_SESSION_TTL_POLICY=OWNER_APPROVED
+S3_HANDOFF_POLICY=DEFER_TO_M6
+S4_TOKEN_POLICY=OWNER_APPROVED
+S5_ALLOWED_ORIGIN_RULE=OWNER_APPROVED
+S5_ALLOWED_ORIGIN_VALUES=STAGING_REQUIRED
+S6_SESSION_LIFECYCLE_POLICY=OWNER_APPROVED
+S7_RAW_LAUNCH_RETENTION_POLICY=OWNER_APPROVED
+M5_HTTP_CONTRACT=FROZEN
+MINIAPP_PRODUCT_ACTION_CONTRACT=FROZEN
+M5_CODE_GATE=BLOCKED
+```
+
+Only current external staging evidence remains: control-plane registration,
+enabled/protected-key config, registered origins, real Bridge/launch/signature
+fixtures, proven `vk_ts` unit, and selected-client launches. Owner 300/60/900
+second values are not VK requirements.

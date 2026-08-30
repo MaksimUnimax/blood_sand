@@ -429,3 +429,16 @@ VK_FULL_DOB_PRESERVATION_PASS
 VK_NO_SECONDARY_RECOMMENDATION_PASS
 VK_MINIAPP_RECOMMENDATION_PARITY_PASS
 ```
+
+## 17. M5 standalone product-action freeze (2026-08-30)
+
+Authority: `VK_PLATFORM_M5_OWNER_POLICY_FREEZE_2026-08-30.md`. M5 resolves one
+semantic result with `marketplace = null`. Result offers `Посмотреть оберег`
+and `Подобрать снова`; the first opens a separate Product-action screen with
+the same product's links in order **VK → Ozon → Wildberries**. Frontend owns no
+link registry and does not re-resolve or select a marketplace-specific product.
+
+A Wildberries click after marketplace-neutral Voron/male does not activate the
+`kolyadnik → alatyr` override. Missing links hide only that destination; if all
+are unavailable, retain result, show neutral temporary-unavailability copy, and
+retain restart. No catalogue, secondary result, or semantic fallback.
