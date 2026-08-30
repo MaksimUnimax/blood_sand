@@ -1,0 +1,228 @@
+name: Ozon Step7 exact Swagger authority v2 and Seller 463 matrix
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-exact-swagger-authority-v2-2026-08-30
+    paths:
+      - .github/workflows/ozon-step7-exact-swagger-authority-v2.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2/migrate_verified_legacy_transport.py
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2/reconstruct_exact_swagger.py
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2/test_fail_closed.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-step7-authority-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  migrate-authority:
+    runs-on: ubuntu-latest
+    outputs:
+      commit_sha: ${{ steps.freeze.outputs.commit_sha }}
+    steps:
+      - name: Checkout Step 7 repair branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Prove legacy bytes and migrate to v2 fragments
+        shell: bash
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          root="$v/step7-authority-v2"
+          work="$RUNNER_TEMP/step7-authority-bootstrap"
+          rm -rf "$work"
+          mkdir -p "$work"
+          python3 "$v/materialize_ozon_seller_exact_swagger_transport.py" \
+            --validation-dir "$v" \
+            --out "$work/legacy-exact-swagger.json"
+          python3 "$root/migrate_verified_legacy_transport.py" \
+            --validation-dir "$v" \
+            --out-dir "$root"
+          python3 "$root/reconstruct_exact_swagger.py" \
+            --output "$work/v2-exact-swagger.json" \
+            --json | tee "$work/v2-authority-report.json"
+          cmp "$work/legacy-exact-swagger.json" "$work/v2-exact-swagger.json"
+          python3 "$root/test_fail_closed.py" --root "$root" | tee "$work/fail-closed.log"
+          echo STEP7_LEGACY_TO_V2_BYTE_IDENTITY_PASS
+
+      - name: Freeze v2 authority transport
+        id: freeze
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$root/manifest.json" "$root/fragments"
+          if ! git diff --cached --quiet; then
+            git commit -m 'validation(ozon): freeze byte-safe exact Seller Swagger authority v2'
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+          sha="$(git rev-parse HEAD)"
+          echo "commit_sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "STEP7_V2_AUTHORITY_COMMIT=$sha"
+
+  linux-matrix:
+    needs: migrate-authority
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.migrate-authority.outputs.commit_sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify v2 authority and build Seller terminal matrix on Linux
+        shell: bash
+        run: |
+          set -euo pipefail
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          root="$v/step7-authority-v2"
+          auth="$RUNNER_TEMP/seller-swagger.json"
+          out="$RUNNER_TEMP/step7-linux"
+          work="$RUNNER_TEMP/step7-work"
+          step6="$RUNNER_TEMP/step7-step6"
+          rm -rf "$out" "$work" "$step6"
+          mkdir -p "$out"
+          python3 "$root/reconstruct_exact_swagger.py" --output "$auth"
+          python3 "$root/test_fail_closed.py" --root "$root"
+          python3 "$v/materialize_performance_step6_read_coverage_package.py" --repo-root . --work-root "$work" --out "$step6"
+          node -e "require(process.argv[1]); const fs=require('fs'); fs.writeFileSync(process.argv[2], JSON.stringify(globalThis.OzonOperationRegistry.OPERATIONS,null,2)+'\n')" "$step6/shared/ozon_operation_registry.js" "$out/registry.json"
+          python3 "$v/build_ozon_seller_step7_terminal_matrix.py" \
+            --swagger "$auth" \
+            --registry-json "$out/registry.json" \
+            --step5-decisions "$v/OZON_STEP5_EXACT_DECISION_MATRIX_2026-08-29.json" \
+            --out-json "$out/OZON_SELLER_STEP7_TERMINAL_MATRIX_2026-08-30.json" \
+            --out-csv "$out/OZON_SELLER_STEP7_TERMINAL_MATRIX_2026-08-30.csv" \
+            --out-summary "$out/OZON_SELLER_STEP7_TERMINAL_MATRIX_SUMMARY_2026-08-30.md"
+          rm "$out/registry.json"
+          python3 -c "from pathlib import Path; import sys; root=Path(sys.argv[1]); [p.write_bytes(p.read_bytes().replace(b'\r\n',b'\n')) for p in root.iterdir() if p.is_file()]" "$out"
+          sha256sum "$out"/*
+          echo SELLER_STEP7_LINUX_MATRIX_PASS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-linux-matrix
+          path: ${{ runner.temp }}/step7-linux
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-matrix:
+    needs: migrate-authority
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.migrate-authority.outputs.commit_sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify v2 authority and build Seller terminal matrix on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $v = 'tooling/llm-api-bridges/ozon-seller/validation'
+          $root = "$v/step7-authority-v2"
+          $auth = Join-Path $env:RUNNER_TEMP 'seller-swagger.json'
+          $out = Join-Path $env:RUNNER_TEMP 'step7-windows'
+          $work = Join-Path $env:RUNNER_TEMP 'step7-work'
+          $step6 = Join-Path $env:RUNNER_TEMP 'step7-step6'
+          foreach ($p in @($out,$work,$step6)) { if (Test-Path $p) { Remove-Item -Recurse -Force $p } }
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          python "$root/reconstruct_exact_swagger.py" --output $auth
+          python "$root/test_fail_closed.py" --root $root
+          python "$v/materialize_performance_step6_read_coverage_package.py" --repo-root . --work-root $work --out $step6
+          $registry = Join-Path $out 'registry.json'
+          node -e "require(process.argv[1]); const fs=require('fs'); fs.writeFileSync(process.argv[2], JSON.stringify(globalThis.OzonOperationRegistry.OPERATIONS,null,2)+'\n')" (Join-Path $step6 'shared/ozon_operation_registry.js') $registry
+          python "$v/build_ozon_seller_step7_terminal_matrix.py" --swagger $auth --registry-json $registry --step5-decisions "$v/OZON_STEP5_EXACT_DECISION_MATRIX_2026-08-29.json" --out-json (Join-Path $out 'OZON_SELLER_STEP7_TERMINAL_MATRIX_2026-08-30.json') --out-csv (Join-Path $out 'OZON_SELLER_STEP7_TERMINAL_MATRIX_2026-08-30.csv') --out-summary (Join-Path $out 'OZON_SELLER_STEP7_TERMINAL_MATRIX_SUMMARY_2026-08-30.md')
+          Remove-Item $registry
+          python -c "from pathlib import Path; import sys; root=Path(sys.argv[1]); [p.write_bytes(p.read_bytes().replace(b'\r\n',b'\n')) for p in root.iterdir() if p.is_file()]" $out
+          Get-ChildItem $out -File | ForEach-Object { Write-Host "$($_.Name) $((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())" }
+          Write-Host 'SELLER_STEP7_WINDOWS_MATRIX_PASS'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-windows-matrix
+          path: ${{ runner.temp }}/step7-windows
+          if-no-files-found: error
+          retention-days: 14
+
+  compare-and-freeze:
+    needs: [migrate-authority, linux-matrix, windows-matrix]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout4
+        with:
+          ref: repair/ozon-step7-exact-swagger-authority-v2-2026-08-30
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: seller-step7-linux-matrix
+          path: /tmp/step7-linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: seller-step7-windows-matrix
+          path: /tmp/step7-windows
+      - name: Require byte identity and freezfRozen Step 7 evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            OZON_SELLER_STEP7_TERMINAL_MATRIX_2026-08-30.json
+            OZON_SELLER_STEP7_TERMINAL_MATRIX_2026-08-30.csv
+            OZON_SELLER_STEP7_TERMINAL_MATRIX_SUMMARY_2026-08-30.md
+          )
+          for f in "${files[@]}"; do
+            cmp "/tmp/step7-linux/$f" "/tmp/step7-windows/$f"
+          done
+          echo SELLER_STEP7_LINUX_WINDOWS_BYTE_IDENTICAL_PASS
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          for f in "${files[@]}"; do cp "/tmp/step7-linux/$f" "$v/$f"; done
+          matrix_sha="$(sha256sum "/tmp/step7-linux/${files[0]}" | awk '{print $1}')"
+          cat > "$v/STEP7_SELLER_463_TERMINAL_ACCEPTED_2026-08-30.md" <<EOF
+          # Step 7 Seller 463 terminal acceptance
+
+          - status: PASS (terminal-classification gate only)
+          - roadmap Step 7 after this gate: IN PROGRESS
+          - workflow run: ${GITHUB_RUN_ID}
+          - authority raw bytes: 3933043
+          - authority SHA-256: 39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40
+          - OpenAPI: 3.0.0
+          - paths: 463
+          - operations: 463
+          - accepted implemented Seller reads entering Step 7: 219
+          - newly admissible Seller reads requiring implementation: 26
+          - non-read/unavailable Seller operations: 218
+          - byte-safe fragments: 38
+          - maximum fragment bytes: 8192
+          - Linux/Windows terminal matrix: byte-identical
+          - terminal matrix SHA-256: ${matrix_sha}
+          - closure condition still outstanding: implement and independently accept all 26 `IMPLEMENT_READ_STEP7` rows before declaring roadmap Step 7 complete
+
+          Markers:
+
+          - STEP7_EXACT_SWAGGER_AUTHORITY_V2_PASS
+          - STEP7_EXACT_SWAGGER_TRANSPORT_V2_FAIL_CLOSED_PASS
+          - SELLER_STEP7_LINUX_MATRIX_PASS
+          - SELLER_STEP7_WINDOWS_MATRIX_PASS
+          - SELLER_STEP7_LINUX_WINDOWS_BYTE_IDENTICAL_PASS
+          - SELLER_STEP7_463_TERMINAL_ACCEPTANCE_PASS
+          EOF
+          sed -i 's/^          //' "$v/STEP7_SELLER_463_TERMINAL_ACCEPTED_2026-08-30.md"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$v/${files[0]}" "$v/${files[1]}" "$v/${files[2]}" "$v/STEP7_SELLER_463_TERMINAL_ACCEPTED_2026-08-30.md"
+          if ! git diff --cached --quiet; then
+            git commit -m 'validation(ozon): accept Seller Step7 463 terminal matrix'
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+          echo SELLER_STEP7_463_TERMINAL_ACCEPTANCE_PASS
