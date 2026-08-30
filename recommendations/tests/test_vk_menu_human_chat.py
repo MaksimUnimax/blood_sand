@@ -38,11 +38,11 @@ class MenuHumanChatTests(unittest.TestCase):
         self.assertEqual(self.session()["state"], "START")
         row = self.outbox()[-1]; self.assertEqual(row["message_text"], ROUTING_PROMPT); self.assertEqual(json.loads(row["keyboard_json"]), main_menu_keyboard())
 
-    def test_menu_recommend_starts_calendar_handoff_and_invalid_payload_fails_closed(self):
+    def test_menu_recommend_starts_chat_picker_and_invalid_payload_fails_closed(self):
         self.deliver("Подобрать оберег", "recommend", '{"kip":"menu","value":"recommend","v":1}', miniapp=True)
         self.assertEqual(self.session()["state"], "WAITING_DATE"); self.assertEqual(len(self.outbox()), 1)
-        self.assertEqual(json.loads(self.outbox()[0]["keyboard_json"])["buttons"][0][0]["action"]["type"], "open_app")
-        self.assertEqual(self.s.connection.execute("select count(*) from vk_miniapp_handoffs").fetchone()[0], 1)
+        self.assertEqual(json.loads(self.outbox()[0]["keyboard_json"])["buttons"][0][0]["action"]["type"], "text")
+        self.assertEqual(self.s.connection.execute("select count(*) from vk_miniapp_handoffs").fetchone()[0], 0)
         self.deliver("Задать вопрос", "bad", '{"kip":"menu","value":"human","v":2}')
         self.assertEqual(self.session()["state"], "WAITING_DATE")
 
