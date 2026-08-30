@@ -94,9 +94,20 @@ class CalendarAcceptanceTests(unittest.TestCase):
         INSERT INTO vk_schema_migrations VALUES(1,'x'); INSERT INTO vk_schema_migrations VALUES(2,'x');
         CREATE TABLE vk_outbox(outbox_id INTEGER PRIMARY KEY,source_event_id INTEGER NOT NULL,sequence_no INTEGER NOT NULL DEFAULT 1,vk_group_id INTEGER NOT NULL,peer_id INTEGER NOT NULL,message_text TEXT NOT NULL,random_id INTEGER NOT NULL,status TEXT NOT NULL,attempt_count INTEGER NOT NULL DEFAULT 0,next_attempt_at TEXT,created_at TEXT NOT NULL,claimed_at TEXT,sent_at TEXT,last_error_code TEXT,last_error_class TEXT,last_error_detail TEXT,vk_message_id INTEGER,keyboard_json TEXT,UNIQUE(source_event_id,sequence_no));
         INSERT INTO vk_outbox(outbox_id,source_event_id,vk_group_id,peer_id,message_text,random_id,status,created_at) VALUES(1,9,1,2,'old',3,'PENDING','x');"""); c.commit(); c.close()
-        migrated = VKStorage(path); self.assertEqual([r[0] for r in migrated.connection.execute("select version from vk_schema_migrations order by version")], [1,2,3])
+        migrated = VKStorage(path); self.assertEqual([r[0] for r in migrated.connection.execute("select version from vk_schema_migrations order by version")], [1,2,3,4])
         self.assertEqual(migrated.connection.execute("select message_text from vk_outbox").fetchone()[0], "old")
         self.assertEqual({r[0] for r in migrated.connection.execute("select name from sqlite_master where type='table'") } >= {"vk_miniapp_handoffs", "vk_miniapp_sessions"}, True); migrated.close()
+
+    def test_schema_v3_to_v4_preserves_existing_runtime_rows(self):
+        path = str(Path(self.tmp.name) / "v3.sqlite"); c = sqlite3.connect(path)
+        c.executescript("""CREATE TABLE vk_schema_migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL); INSERT INTO vk_schema_migrations VALUES(1,'x'); INSERT INTO vk_schema_migrations VALUES(2,'x'); INSERT INTO vk_schema_migrations VALUES(3,'x');
+        CREATE TABLE vk_inbound_events(id INTEGER PRIMARY KEY,vk_group_id INTEGER,transport TEXT,event_id TEXT,api_version TEXT,event_type TEXT,raw_payload_json TEXT,normalized_payload_json TEXT,status TEXT,attempt_count INTEGER,next_attempt_at TEXT,received_at TEXT,claimed_at TEXT,processed_at TEXT,last_error_code TEXT,last_error_detail TEXT);
+        CREATE TABLE vk_bot_sessions(vk_group_id INTEGER,peer_id INTEGER,state TEXT,birth_day INTEGER,birth_month INTEGER,birth_year INTEGER,gender TEXT,marketplace TEXT,last_result_id TEXT,state_version INTEGER,updated_at TEXT,expires_at TEXT);
+        CREATE TABLE vk_outbox(outbox_id INTEGER PRIMARY KEY,source_event_id INTEGER,sequence_no INTEGER,vk_group_id INTEGER,peer_id INTEGER,message_text TEXT,random_id INTEGER,status TEXT,attempt_count INTEGER,next_attempt_at TEXT,created_at TEXT,claimed_at TEXT,sent_at TEXT,last_error_code TEXT,last_error_class TEXT,last_error_detail TEXT,vk_message_id INTEGER,keyboard_json TEXT);
+        CREATE TABLE vk_miniapp_handoffs(handoff_id TEXT,token_hash TEXT,vk_group_id INTEGER,peer_id INTEGER,expected_vk_user_id INTEGER,expected_state TEXT,expected_state_version INTEGER,purpose TEXT,created_at TEXT,expires_at TEXT,used_at TEXT);
+        CREATE TABLE vk_miniapp_sessions(session_token_hash TEXT,handoff_id TEXT,vk_app_id INTEGER,vk_user_id INTEGER,vk_group_id INTEGER,peer_id INTEGER,created_at TEXT,expires_at TEXT,completed_at TEXT);
+        INSERT INTO vk_inbound_events VALUES(9,1,'test','old','x','message','{}',NULL,'NEW',0,NULL,'x',NULL,NULL,NULL,NULL); INSERT INTO vk_bot_sessions VALUES(1,2,'WAITING_DATE',NULL,NULL,NULL,NULL,NULL,NULL,4,'x',NULL); INSERT INTO vk_outbox VALUES(1,9,1,1,2,'old',3,'PENDING',0,NULL,'x',NULL,NULL,NULL,NULL,NULL,NULL,'{}'); INSERT INTO vk_miniapp_handoffs VALUES('h','digest',1,2,3,'WAITING_DATE',4,'birth_date','x','z',NULL); INSERT INTO vk_miniapp_sessions VALUES('bearer','h',1,3,1,2,'x','z',NULL);"""); c.commit(); c.close()
+        migrated = VKStorage(path); self.assertEqual([r[0] for r in migrated.connection.execute("select version from vk_schema_migrations order by version")], [1,2,3,4]); self.assertEqual(migrated.connection.execute("select state_version from vk_bot_sessions").fetchone()[0], 4); self.assertEqual(migrated.connection.execute("select keyboard_audit_json from vk_outbox").fetchone()[0], None); self.assertIsNotNone(migrated.connection.execute("select name from sqlite_master where name='vk_transition_audit'").fetchone()); migrated.close()
 
     def test_disabled_path_keeps_typed_date_and_no_handoff(self):
         bot = BotOrchestrator(self.storage, RecommendationApplicationService(), VKMiniAppConfig(enabled=False))
@@ -116,6 +127,22 @@ class CalendarAcceptanceTests(unittest.TestCase):
         self.assertEqual(keyboard, {"inline":True,"one_time":False,"buttons":[[{"action":{"type":"open_app","app_id":TEST_APP_ID,"owner_id":TEST_OWNER_ID,"label":"📅 Выбрать дату","hash":action["hash"]}}]]})
         for forbidden in map(str, (TEST_PEER_ID, TEST_USER_ID)): self.assertNotIn(forbidden, action["hash"])
         self.assertEqual(handoff["token_hash"], hashlib.sha256(action["hash"].encode()).hexdigest()); self.assertNotIn(action["hash"], "".join(str(x) for x in handoff))
+
+    def test_open_app_safe_audit_survives_terminal_scrub(self):
+        _, outbox = self.start_calendar(); raw = json.loads(outbox["keyboard_json"])["buttons"][0][0]["action"]["hash"]
+        audit = json.loads(outbox["keyboard_audit_json"])
+        self.assertEqual(audit, {"inline":True,"one_time":False,"actions":[{"type":"open_app","label":"📅 Выбрать дату","app_id":TEST_APP_ID,"owner_id":TEST_OWNER_ID,"hash_present":True}]})
+        self.assertNotIn(raw, outbox["keyboard_audit_json"])
+        OutboxWorker(self.storage, FakeAPI([VKAPIResult(message_id=1)])).process_one()
+        row = self.storage.connection.execute("select status,keyboard_json,keyboard_audit_json from vk_outbox where outbox_id=?", (outbox["outbox_id"],)).fetchone()
+        self.assertEqual((row["status"], row["keyboard_json"]), ("SENT", '{"redacted":"terminal_open_app"}')); self.assertEqual(row["keyboard_audit_json"], outbox["keyboard_audit_json"]); self.assertNotIn(raw, row["keyboard_audit_json"])
+
+    def test_calendar_and_miniapp_transition_audit_is_atomic(self):
+        _, outbox = self.start_calendar(); audit = self.storage.connection.execute("select * from vk_transition_audit where source_event_id=?", (outbox["source_event_id"],)).fetchone()
+        self.assertEqual((audit["from_state"],audit["from_state_version"],audit["to_state"],audit["to_state_version"],audit["transition_kind"]), ("START",0,"WAITING_DATE",1,"calendar"))
+        _, _, bearer = self.bootstrap(); self.storage.submit_miniapp_birth_date(bearer, "1990-10-13", "gender", gender_keyboard())
+        audit = self.storage.connection.execute("select a.* from vk_transition_audit a join vk_inbound_events e on e.id=a.source_event_id where e.transport='miniapp'").fetchone()
+        self.assertEqual((audit["from_state"],audit["to_state"],audit["transition_kind"]), ("WAITING_DATE","WAITING_GENDER","miniapp_birth_date"))
 
     def test_outbox_retry_and_terminal_scrub_do_not_damage_normal_keyboard(self):
         _, outbox = self.start_calendar(); raw = json.loads(outbox["keyboard_json"])["buttons"][0][0]["action"]["hash"]
