@@ -3,7 +3,8 @@ from __future__ import annotations
 from recommendations.application import ApplicationRecommendationInput, RecommendationApplicationService
 from recommendations.core import RecommendationInputError, validate_birth_date
 from .bot_parser import is_restart, menu_text_action, parse_birth_date, parse_gender, parse_keyboard_payload
-from .keyboard import gender_keyboard, main_menu_keyboard
+from .keyboard import gender_keyboard, main_menu_keyboard, recommendation_marketplace_keyboard
+from .product_links import product_links
 from .presenter import GENDER_PROMPT, present
 
 HUMAN_HANDOFF_ACK = "Напишите ваш вопрос сообщением — вам ответит человек."
@@ -83,6 +84,7 @@ class BotOrchestrator:
             result = self.service.resolve(ApplicationRecommendationInput(old["birth_day"], old["birth_month"], gender, old["birth_year"], old["marketplace"]))
             product_key = result.semantic_result["recommendation"]["product_key"]
             attachment = self.illustrations.get(product_key)
-            self.storage.transition_and_enqueue(eid, event.group_id, event.peer_id, "RESOLVED", {"gender": gender, "last_result_id": result.result_id}, present(result.semantic_result), main_menu_keyboard(), attachments=[attachment] if attachment else None)
+            keyboard = recommendation_marketplace_keyboard(product_key, product_links(product_key))
+            self.storage.transition_and_enqueue(eid, event.group_id, event.peer_id, "RESOLVED", {"gender": gender, "last_result_id": result.result_id}, present(result.semantic_result), keyboard, attachments=[attachment] if attachment else None)
             return "PROCESSED"
         return "IGNORED"

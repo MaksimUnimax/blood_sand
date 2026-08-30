@@ -63,6 +63,16 @@ def main_menu_keyboard() -> dict:
 
 def restart_keyboard() -> dict: return {"one_time":True,"inline":False,"buttons":[[_button("Подобрать снова", {"kip":"restart","v":1}, "primary")]]}
 
+def recommendation_marketplace_keyboard(product_key: str, links: dict) -> dict:
+    """One-row URL keyboard; links are resolved once before the outbox insert."""
+    wb_label = "🟣 Wildberries · Алатырь" if product_key == "kolyadnik" else "🟣 Wildberries"
+    keyboard = {"one_time": False, "inline": True, "buttons": [[
+        {"action": {"type": "open_link", "label": "🔵 VK", "link": links["vk"]}},
+        {"action": {"type": "open_link", "label": "🔵 Ozon", "link": links["ozon"]}},
+        {"action": {"type": "open_link", "label": wb_label, "link": links["wildberries"]}},
+    ]]}
+    return validate_inline_keyboard(keyboard)
+
 def calendar_keyboard(app_id: int, owner_id: int, handoff_token: str) -> dict:
     if not isinstance(app_id, int) or isinstance(app_id, bool) or app_id <= 0: raise ValueError("calendar app_id is required")
     if not isinstance(owner_id, int) or isinstance(owner_id, bool) or owner_id == 0: raise ValueError("calendar owner_id is required")

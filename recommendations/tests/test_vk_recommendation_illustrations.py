@@ -22,6 +22,12 @@ class API:
         return VKAPIResult(message_id=1)
 
 
+class RetryAPI(API):
+    def messages_send(self, peer, message, random_id, keyboard=None, attachments=None):
+        self.calls.append((peer, message, random_id, keyboard, attachments))
+        return VKAPIResult(error_code=6 if len(self.calls) == 1 else None, message_id=1)
+
+
 class VKRecommendationIllustrationTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -60,3 +66,15 @@ class VKRecommendationIllustrationTests(unittest.TestCase):
         self.storage.transition_and_enqueue(event["id"], 1, 2, "WAITING_DATE", {}, "prompt")
         row = self.storage.connection.execute("select attachment_json, attachment_audit_json from vk_outbox").fetchone()
         self.assertEqual(tuple(row), (None, None))
+
+    def test_result_retry_reuses_persisted_keyboard_attachment_and_random_id(self):
+        from recommendations.vk.keyboard import recommendation_marketplace_keyboard
+        from recommendations.vk.product_links import product_links
+        self.storage.accept({"group_id": 1, "event_id": "retry-result", "v": "5.199", "type": "message_new", "object": {"message": {"peer_id": 2, "from_id": 2, "text": "x"}}})
+        event = self.storage.claim_event(); keyboard = recommendation_marketplace_keyboard("svarog", product_links("svarog"))
+        self.storage.transition_and_enqueue(event["id"], 1, 2, "RESOLVED", {}, "result", keyboard, attachments=[PHOTO])
+        row = self.storage.connection.execute("select * from vk_outbox").fetchone(); api = RetryAPI()
+        OutboxWorker(self.storage, api, 0).process_one(); self.storage.connection.execute("update vk_outbox set next_attempt_at=null")
+        OutboxWorker(self.storage, api, 0).process_one()
+        self.assertEqual(api.calls[0], api.calls[1])
+        self.assertEqual(api.calls[0][2:], (row["random_id"], row["keyboard_json"], [PHOTO]))

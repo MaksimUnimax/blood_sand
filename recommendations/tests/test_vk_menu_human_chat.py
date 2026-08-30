@@ -76,10 +76,10 @@ class MenuHumanChatTests(unittest.TestCase):
             self.assertIsNone(other.session(3, 33)); self.assertEqual(other.connection.execute("select count(*) from vk_miniapp_handoffs").fetchone()[0], 0)
         finally: other.close()
 
-    def test_legacy_restart_and_completion_use_root_menu_not_restart(self):
+    def test_legacy_restart_completion_uses_marketplace_keyboard(self):
         self.deliver("Подобрать снова", "legacy")
         self.assertEqual(self.session()["state"], "WAITING_DATE")
         self.deliver("13.10.1990", "date")
         self.deliver("Мужчине", "gender", '{"kip":"gender","value":"male","v":1}')
         self.assertEqual(self.session()["state"], "RESOLVED")
-        self.assertEqual(json.loads(self.outbox()[-1]["keyboard_json"]), main_menu_keyboard())
+        self.assertTrue(json.loads(self.outbox()[-1]["keyboard_json"])["inline"])

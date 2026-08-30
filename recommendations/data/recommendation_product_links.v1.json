@@ -1,0 +1,21 @@
+{
+  "authority": "KIP_RECOMMENDATION_PRODUCT_LINKS_V1",
+  "version": 1,
+  "products": {
+    "svarog": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotsvarogquot-139561282-11604209","ozon":"https://www.ozon.ru/product/2183921966/","wildberries":"https://www.wildberries.ru/catalog/428237614/detail.aspx"},
+    "zhiva": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotzhivaquot-139561282-11604216","ozon":"https://www.ozon.ru/product/2183808182/","wildberries":"https://www.wildberries.ru/catalog/428230545/detail.aspx"},
+    "alatyr": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotalatyr-krest-svarogaquot-139561282-11604231","ozon":"https://www.ozon.ru/product/1640251697/","wildberries":"https://www.wildberries.ru/catalog/267696742/detail.aspx"},
+    "rodimich": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotrodimichquot-139561282-11604271","ozon":"https://www.ozon.ru/product/1842444165/","wildberries":"https://www.wildberries.ru/catalog/267829272/detail.aspx"},
+    "zvezda_lady": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotzvezda-ladyquot-139561282-11604246","ozon":"https://www.ozon.ru/product/2184234912/","wildberries":"https://www.wildberries.ru/catalog/428267039/detail.aspx"},
+    "makosh": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotmakoshquot-139561282-11604252","ozon":"https://www.ozon.ru/product/2184133137/","wildberries":"https://www.wildberries.ru/catalog/428251291/detail.aspx"},
+    "semargl": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotsemarglquot-139561282-11604203","ozon":"https://www.ozon.ru/product/2184153852/","wildberries":"https://www.wildberries.ru/catalog/428253224/detail.aspx"},
+    "kolyadnik": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotkolyadnikquot-139561282-11604232","ozon":"https://www.ozon.ru/product/1640326205/","wildberries":"https://www.wildberries.ru/catalog/267696742/detail.aspx"},
+    "bear_paw": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotpechat-velesaquot-139561282-11604213","ozon":"https://www.ozon.ru/product/1636048691/","wildberries":"https://www.wildberries.ru/catalog/267696739/detail.aspx"},
+    "veles": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotvelesquot-139561282-11604207","ozon":"https://www.ozon.ru/product/1636041142/","wildberries":"https://www.wildberries.ru/catalog/267696740/detail.aspx"},
+    "chernobog": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotchernobogquot-139561282-11604256","ozon":"https://www.ozon.ru/product/1630040194/","wildberries":"https://www.wildberries.ru/catalog/267822360/detail.aspx"},
+    "mara": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotmaraquot-139561282-11604210","ozon":"https://www.ozon.ru/product/2184199958/","wildberries":"https://www.wildberries.ru/catalog/428260533/detail.aspx"},
+    "chur": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotchurquot-139561282-11640404","ozon":"https://www.ozon.ru/product/2559437928/","wildberries":"https://www.wildberries.ru/catalog/481133505/detail.aspx"},
+    "perun": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotperunquot-139561282-11604239","ozon":"https://www.ozon.ru/product/2183985513/","wildberries":"https://www.wildberries.ru/catalog/428244941/detail.aspx"},
+    "dazhdbog": {"vk":"https://vk.ru/market/product/slavyanskiy-obereg-podveska-na-zerkalo-v-mashinu-quotdazhdbogquot-139561282-11604236","ozon":"https://www.ozon.ru/product/2184932293/","wildberries":"https://www.wildberries.ru/catalog/428241264/detail.aspx"}
+  }
+}
