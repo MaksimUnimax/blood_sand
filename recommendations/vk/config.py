@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+from urllib.parse import urlsplit
 
 
 class VKConfigurationError(ValueError):
@@ -19,22 +20,52 @@ class VKMiniAppConfig:
     handoff_ttl_seconds: int = 600
     session_ttl_seconds: int = 900
     public_url: str | None = None
+    allowed_origins: tuple[str, ...] = ()
+    launch_max_age_seconds: int = 300
+    launch_future_clock_skew_seconds: int = 60
+
+    @staticmethod
+    def _origin(value: str, *, allow_http: bool = False) -> str:
+        try:
+            parsed = urlsplit(value)
+            if (parsed.scheme not in ({"https", "http"} if allow_http else {"https"}) or not parsed.netloc
+                    or parsed.path not in ("", "/") or parsed.query or parsed.fragment
+                    or parsed.username or parsed.password):
+                raise ValueError
+            host = parsed.hostname
+            if not host or "*" in host:
+                raise ValueError
+            port = parsed.port
+            if (parsed.scheme == "https" and port == 443) or (parsed.scheme == "http" and port == 80):
+                port = None
+            return f"{parsed.scheme}://{host}" + (f":{port}" if port else "")
+        except (TypeError, ValueError):
+            raise VKConfigurationError("Mini App allowed origin is invalid") from None
 
     @classmethod
     def from_environment(cls) -> "VKMiniAppConfig":
         enabled = os.environ.get("KIP_VK_MINIAPP_ENABLED", "false").lower() in {"1", "true", "yes"}
-        raw = {name: os.environ.get("KIP_VK_MINIAPP_" + name) for name in ("APP_ID", "OWNER_ID", "PROTECTED_KEY", "HANDOFF_SECRET", "HANDOFF_TTL_SECONDS", "SESSION_TTL_SECONDS", "PUBLIC_URL")}
+        raw = {name: os.environ.get("KIP_VK_MINIAPP_" + name) for name in ("APP_ID", "OWNER_ID", "PROTECTED_KEY", "HANDOFF_SECRET", "HANDOFF_TTL_SECONDS", "SESSION_TTL_SECONDS", "PUBLIC_URL", "ALLOWED_ORIGINS", "LAUNCH_MAX_AGE_SECONDS", "LAUNCH_FUTURE_CLOCK_SKEW_SECONDS")}
         if not enabled:
             return cls(enabled=False, app_id=int(raw["APP_ID"] or 54743026), handoff_ttl_seconds=int(raw["HANDOFF_TTL_SECONDS"] or 600), session_ttl_seconds=int(raw["SESSION_TTL_SECONDS"] or 900), public_url=raw["PUBLIC_URL"])
-        if any(not raw[name] for name in raw):
-            raise VKConfigurationError("enabled Mini App requires all Mini App security and identity values")
+        required = ("APP_ID", "PROTECTED_KEY", "SESSION_TTL_SECONDS", "ALLOWED_ORIGINS", "LAUNCH_MAX_AGE_SECONDS", "LAUNCH_FUTURE_CLOCK_SKEW_SECONDS")
+        if any(not raw[name] for name in required):
+            raise VKConfigurationError("enabled Mini App requires standalone security configuration")
         try:
-            app_id, owner_id, handoff_ttl, session_ttl = int(raw["APP_ID"]), int(raw["OWNER_ID"]), int(raw["HANDOFF_TTL_SECONDS"]), int(raw["SESSION_TTL_SECONDS"])
+            app_id = int(raw["APP_ID"])
+            session_ttl = int(raw["SESSION_TTL_SECONDS"])
+            max_age = int(raw["LAUNCH_MAX_AGE_SECONDS"])
+            skew = int(raw["LAUNCH_FUTURE_CLOCK_SKEW_SECONDS"])
+            owner_id = int(raw["OWNER_ID"]) if raw["OWNER_ID"] else None
+            handoff_ttl = int(raw["HANDOFF_TTL_SECONDS"] or 600)
         except ValueError as exc:
             raise VKConfigurationError("Mini App identity and TTL values must be integers") from exc
-        if app_id != 54743026 or owner_id == 0 or handoff_ttl <= 0 or session_ttl <= 0:
+        if app_id != 54743026 or session_ttl != 900 or max_age != 300 or skew != 60 or handoff_ttl <= 0:
             raise VKConfigurationError("Mini App configuration is invalid")
-        return cls(True, app_id, owner_id, raw["PROTECTED_KEY"], raw["HANDOFF_SECRET"], handoff_ttl, session_ttl, raw["PUBLIC_URL"])
+        origins = tuple(cls._origin(item.strip()) for item in raw["ALLOWED_ORIGINS"].split(",") if item.strip())
+        if not origins or len(origins) != len(set(origins)):
+            raise VKConfigurationError("Mini App allowed origins are invalid")
+        return cls(True, app_id, owner_id, raw["PROTECTED_KEY"], raw["HANDOFF_SECRET"], handoff_ttl, session_ttl, raw["PUBLIC_URL"], origins, max_age, skew)
 
 
 @dataclass(frozen=True)

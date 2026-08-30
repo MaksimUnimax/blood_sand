@@ -54,6 +54,48 @@ class VKStorage:
         finally:
             connection.close()
 
+    def initialize_standalone_miniapp_runtime(self) -> None:
+        """V1 conservative rotation policy: a fresh enabled runtime revokes old M5 sessions."""
+        stamp = self._now()
+        self._run(lambda c: c.execute("UPDATE vk_miniapp_standalone_sessions SET revoked_at=? WHERE revoked_at IS NULL", (stamp,)))
+
+    def create_standalone_miniapp_session(self, fingerprint: str, app_id: int, user_id: int, session_ttl: int, launch_expires_at: datetime) -> str:
+        token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        created = self.clock().astimezone(timezone.utc)
+        expires = created + timedelta(seconds=session_ttl)
+        def run(c):
+            c.execute("BEGIN IMMEDIATE")
+            try:
+                # Retain active sessions but remove their operational fingerprint after its horizon.
+                c.execute("UPDATE vk_miniapp_standalone_sessions SET launch_fingerprint=NULL WHERE launch_fingerprint IS NOT NULL AND launch_expires_at <= ?", (created.isoformat(),))
+                c.execute("UPDATE vk_miniapp_standalone_sessions SET revoked_at=? WHERE launch_fingerprint=? AND revoked_at IS NULL", (created.isoformat(), fingerprint))
+                c.execute("INSERT INTO vk_miniapp_standalone_sessions VALUES(?,?,?,?,?,?,?,?,NULL,NULL)", (str(uuid.uuid4()), token_hash, fingerprint, app_id, user_id, created.isoformat(), expires.isoformat(), launch_expires_at.astimezone(timezone.utc).isoformat()))
+                c.commit()
+            except Exception:
+                c.rollback(); raise
+        self._run(run)
+        return token
+
+    def authenticate_standalone_miniapp_session(self, token: str):
+        digest = hashlib.sha256(token.encode()).hexdigest()
+        current = self._now()
+        def run(c):
+            c.execute("BEGIN IMMEDIATE")
+            c.execute("UPDATE vk_miniapp_standalone_sessions SET launch_fingerprint=NULL WHERE launch_fingerprint IS NOT NULL AND launch_expires_at <= ?", (current,))
+            row = c.execute("SELECT * FROM vk_miniapp_standalone_sessions WHERE session_token_hash=?", (digest,)).fetchone()
+            if not row or row["revoked_at"] is not None or row["expires_at"] <= current:
+                c.commit(); return None
+            c.execute("UPDATE vk_miniapp_standalone_sessions SET last_used_at=? WHERE session_id=?", (current, row["session_id"]))
+            c.commit(); return dict(row)
+        return self._run(run)
+
+    def revoke_standalone_miniapp_session(self, session_id: str) -> None:
+        self._run(lambda c: c.execute("UPDATE vk_miniapp_standalone_sessions SET revoked_at=? WHERE session_id=? AND revoked_at IS NULL", (self._now(), session_id)))
+
+    def revoke_all_standalone_miniapp_sessions(self) -> None:
+        self._run(lambda c: c.execute("UPDATE vk_miniapp_standalone_sessions SET revoked_at=? WHERE revoked_at IS NULL", (self._now(),)))
+
     def accept(self, payload: dict) -> bool:
         clean = redact_callback(payload)
         def run(c):

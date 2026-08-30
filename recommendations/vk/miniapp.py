@@ -1,9 +1,31 @@
-"""VK Mini App launch verification and narrow calendar API helpers."""
+"""VK Mini App official launch verification and bounded transport helpers."""
 from __future__ import annotations
 import base64, hashlib, hmac
+import re
 from urllib.parse import parse_qsl, urlencode
 
 class MiniAppError(ValueError): pass
+
+MAX_LAUNCH_BYTES = 16384
+_BASE64URL = re.compile(r"^[A-Za-z0-9_-]+$")
+
+def decode_launch_authorization(value: str | None) -> str:
+    """Decode our VKLaunch envelope without retaining or reporting its contents."""
+    if not value or not value.startswith("VKLaunch ") or value.count(" ") != 1:
+        raise MiniAppError("INVALID_LAUNCH")
+    encoded = value[9:]
+    if not encoded or len(encoded) > MAX_LAUNCH_BYTES * 2 or not _BASE64URL.fullmatch(encoded):
+        raise MiniAppError("INVALID_LAUNCH")
+    try:
+        raw = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+        if not raw or len(raw) > MAX_LAUNCH_BYTES:
+            raise ValueError
+        query = raw.decode("utf-8")
+    except (ValueError, UnicodeDecodeError):
+        raise MiniAppError("INVALID_LAUNCH") from None
+    if not query or query.startswith("?"):
+        raise MiniAppError("INVALID_LAUNCH")
+    return query
 
 def verify_launch(raw: str, protected_key: str, expected_app_id: int) -> dict[str, str]:
     try:

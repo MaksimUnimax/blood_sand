@@ -21,7 +21,7 @@ from recommendations.core import RecommendationCoreError, RecommendationInputErr
 from recommendations.core.configuration import ConfigurationValidationError
 
 from .errors import APIError, ContractJSONResponse, error_response, project_error
-from .models import ResolveRequest
+from .models import ResolveRequest, MiniAppResolveRequest
 from .serialization import serialize_success
 
 MAX_BODY_BYTES = 16384
@@ -54,6 +54,8 @@ def create_app(
     vk_config=None,
     miniapp_config=None,
     vk_runtime_factory=None,
+    miniapp_storage=None,
+    legacy_miniapp_transport: bool = False,
 ) -> FastAPI:
     """Create an independently testable M2 app, optionally with an injected service."""
     @asynccontextmanager
@@ -64,6 +66,9 @@ def create_app(
             controller = (vk_runtime_factory or VKRuntimeController)(application.state.vk_config)
             await controller.start()
             application.state.vk_runtime = {"config": application.state.vk_config, "storage": controller.storage, "controller": controller}
+            if application.state.miniapp_config.enabled and application.state.miniapp_storage is None:
+                # OUR_V1_IMPLEMENTATION_DETAIL: a newly initialized enabled runtime revokes old M5 sessions.
+                controller.storage.initialize_standalone_miniapp_runtime()
         try:
             yield
         finally:
@@ -87,10 +92,15 @@ def create_app(
         from recommendations.vk.config import VKMiniAppConfig
         miniapp_config = VKMiniAppConfig.from_environment()
     app.state.miniapp_config = miniapp_config
+    app.state.miniapp_storage = miniapp_storage
     app.state.vk_runtime = None
     if vk_config is not None:
         # State and workers are deliberately opened only inside lifespan.
         app.state.vk_runtime = {"config": vk_config}
+
+    if miniapp_config.enabled and app.state.miniapp_storage is not None:
+        # OUR_V1_IMPLEMENTATION_DETAIL: restart/initialization conservatively rotates M5 sessions.
+        app.state.miniapp_storage.initialize_standalone_miniapp_runtime()
 
     @app.middleware("http")
     async def request_metadata(request: Request, call_next: Callable) -> Response:
@@ -177,6 +187,105 @@ def create_app(
             serialize_success(model, result.semantic_result), headers={"X-Result-Id": result.result_id}
         )
 
+    def _m5_unavailable(request: Request):
+        return error_response(request, 503, "MINIAPP_UNAVAILABLE", "Mini App service is unavailable.")
+
+    def _m5_storage(request: Request):
+        config = request.app.state.miniapp_config
+        if not config.enabled or not config.protected_key or not config.allowed_origins:
+            return None
+        storage = request.app.state.miniapp_storage
+        if storage is None and request.app.state.vk_runtime:
+            storage = request.app.state.vk_runtime.get("storage")
+        return storage
+
+    def _m5_origin(request: Request) -> bool:
+        return request.headers.get("origin") in request.app.state.miniapp_config.allowed_origins
+
+    def _m5_cors(request: Request, response: Response) -> Response:
+        if _m5_origin(request):
+            response.headers["Access-Control-Allow-Origin"] = request.headers["origin"]
+            response.headers["Vary"] = "Origin"
+            response.headers["Access-Control-Expose-Headers"] = "X-Request-Id, X-Result-Id"
+        return response
+
+    @app.options("/v1/vk/miniapp/{path:path}")
+    async def miniapp_preflight(request: Request, path: str) -> Response:
+        if _m5_storage(request) is None or not _m5_origin(request):
+            return Response(status_code=401)
+        return Response(status_code=204, headers={
+            "Access-Control-Allow-Origin": request.headers["origin"], "Vary": "Origin",
+            "Access-Control-Allow-Methods": "POST",
+            "Access-Control-Allow-Headers": "Authorization, Content-Type",
+            "Access-Control-Expose-Headers": "X-Request-Id, X-Result-Id",
+        })
+
+    @app.post("/v1/vk/miniapp/session")
+    async def standalone_miniapp_session(request: Request) -> Response:
+        storage = _m5_storage(request)
+        if storage is None:
+            return _m5_unavailable(request)
+        if not _m5_origin(request):
+            return error_response(request, 401, "MINIAPP_AUTH_INVALID", "Mini App authentication failed.")
+        from datetime import datetime, timedelta, timezone
+        from recommendations.vk.miniapp import decode_launch_authorization, verify_launch, MiniAppError
+        import hashlib
+        try:
+            raw = decode_launch_authorization(request.headers.get("authorization"))
+            launch = verify_launch(raw, request.app.state.miniapp_config.protected_key, request.app.state.miniapp_config.app_id)
+            timestamp = int(launch.get("vk_ts", ""))
+            if timestamp < 0:
+                raise ValueError
+            current = storage.clock().astimezone(timezone.utc)
+            issued = datetime.fromtimestamp(timestamp, timezone.utc)
+            config = request.app.state.miniapp_config
+            if current - issued > timedelta(seconds=config.launch_max_age_seconds) or issued - current > timedelta(seconds=config.launch_future_clock_skew_seconds):
+                raise ValueError
+            token = storage.create_standalone_miniapp_session(hashlib.sha256(raw.encode("utf-8")).hexdigest(), config.app_id, int(launch["vk_user_id"]), config.session_ttl_seconds, issued + timedelta(seconds=config.launch_max_age_seconds))
+        except (ValueError, KeyError, MiniAppError, OverflowError, OSError):
+            return error_response(request, 401, "MINIAPP_AUTH_INVALID", "Mini App authentication failed.")
+        return _m5_cors(request, ContractJSONResponse({"api_version": "v1", "session": {"token_type": "Bearer", "session_token": token, "expires_in": request.app.state.miniapp_config.session_ttl_seconds}}))
+
+    @app.post("/v1/vk/miniapp/recommendations/resolve")
+    async def standalone_miniapp_resolve(request: Request) -> Response:
+        storage = _m5_storage(request)
+        if storage is None:
+            return _m5_unavailable(request)
+        if not _m5_origin(request):
+            return error_response(request, 401, "MINIAPP_SESSION_INVALID", "Mini App session is invalid.")
+        auth = request.headers.get("authorization", "")
+        if not auth.startswith("Bearer ") or auth.count(" ") != 1 or not auth[7:] or any(ch.isspace() for ch in auth[7:]):
+            return error_response(request, 401, "MINIAPP_SESSION_INVALID", "Mini App session is invalid.")
+        if storage.authenticate_standalone_miniapp_session(auth[7:]) is None:
+            return error_response(request, 401, "MINIAPP_SESSION_INVALID", "Mini App session is invalid.")
+        if not _is_json_content_type(request):
+            raise APIError(415, "UNSUPPORTED_MEDIA_TYPE", "Content-Type must be application/json.")
+        raw_body = await _bounded_body(request)
+        try:
+            parsed = json.loads(raw_body.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            raise APIError(400, "MALFORMED_JSON", "Request body must be valid JSON.")
+        try:
+            model = MiniAppResolveRequest.model_validate(parsed)
+        except ValidationError:
+            raise APIError(422, "INVALID_REQUEST", "Request body is invalid.")
+        if request.app.state.configuration_unavailable or request.app.state.service is None:
+            return _configuration_unavailable(request)
+        try:
+            result = request.app.state.service.resolve(ApplicationRecommendationInput(**model.model_dump(), marketplace=None))
+        except ConfigurationValidationError:
+            return _configuration_unavailable(request)
+        except RecommendationInputError:
+            raise APIError(422, "INVALID_REQUEST", "Request body is invalid.")
+        except RecommendationCoreError:
+            raise APIError(500, "CORE_ERROR", "Recommendation core failed.")
+        request.state.result_id = result.result_id
+        # The M2 serializer sees an omitted marketplace, preserving its exclude-unset input shape.
+        m2_model = ResolveRequest.model_validate(model.model_dump(exclude_unset=True))
+        from recommendations.vk.product_links import miniapp_product_actions
+        response = ContractJSONResponse({"result": serialize_success(m2_model, result.semantic_result), "product_actions": miniapp_product_actions(result.semantic_result["recommendation"]["product_key"])}, headers={"X-Result-Id": result.result_id})
+        return _m5_cors(request, response)
+
     if app.state.vk_runtime is not None:
         from recommendations.vk.callback import callback
         # Application decision: mount behind HTTPS only during later deployment.
@@ -195,8 +304,9 @@ def create_app(
         if not runtime or not request.app.state.miniapp_config.enabled: raise APIError(503,'MINIAPP_DISABLED','Mini App is disabled.')
         return runtime['storage']
 
-    @app.post('/vk-miniapp-api/v1/bootstrap')
-    async def mini_bootstrap(request: Request) -> Response:
+    if legacy_miniapp_transport:
+      @app.post('/vk-miniapp-api/v1/bootstrap')
+      async def mini_bootstrap(request: Request) -> Response:
         try: model=Bootstrap.model_validate(json.loads((await _bounded_body(request)).decode('utf-8')))
         except (UnicodeDecodeError, json.JSONDecodeError, ValidationError): raise APIError(422,'INVALID_REQUEST','Request body is invalid.')
         config=request.app.state.miniapp_config; storage=mini_storage(request)
@@ -207,8 +317,8 @@ def create_app(
         except (ValueError,MiniAppError,KeyError): raise APIError(403,'MINIAPP_AUTH_REJECTED','Mini App launch is not accepted.')
         return ContractJSONResponse({'session_token':token,'expires_in':config.session_ttl_seconds,'purpose':'birth_date'})
 
-    @app.post('/vk-miniapp-api/v1/birth-date')
-    async def mini_birth_date(request: Request) -> Response:
+      @app.post('/vk-miniapp-api/v1/birth-date')
+      async def mini_birth_date(request: Request) -> Response:
         auth=request.headers.get('authorization','');
         if not auth.startswith('Bearer ') or not auth[7:] or any(char.isspace() for char in auth[7:]): raise APIError(401,'MINIAPP_AUTH_REJECTED','Mini App session is not accepted.')
         try: model=BirthDate.model_validate(json.loads((await _bounded_body(request)).decode('utf-8')))

@@ -41,3 +41,15 @@ def load_product_links(path=REGISTRY):
 
 def product_links(product_key):
     return load_product_links()[product_key]
+
+
+def miniapp_product_actions(product_key, path=REGISTRY):
+    """Best-effort M5 presentation overlay; never changes the semantic product."""
+    try:
+        links = json.loads(Path(path).read_text(encoding="utf-8")).get("products", {}).get(product_key, {})
+    except (OSError, ValueError):
+        return []
+    hosts = {"vk": "vk.ru", "ozon": "www.ozon.ru", "wildberries": "www.wildberries.ru"}
+    labels = {"vk": "VK", "ozon": "Ozon", "wildberries": "Wildberries"}
+    return [{"destination": key, "label": labels[key], "url": links[key]}
+            for key in ("vk", "ozon", "wildberries") if _valid_url(links.get(key), hosts[key])]

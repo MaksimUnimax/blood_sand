@@ -84,7 +84,7 @@ class CalendarAcceptanceTests(unittest.TestCase):
 
     def enabled_app(self):
         runtime = VKRuntimeConfig(TEST_GROUP_ID, "synthetic-token", "synthetic-callback", "synthetic-confirm", self.path)
-        app = create_app(vk_config=runtime, miniapp_config=self.config)
+        app = create_app(vk_config=runtime, miniapp_config=self.config, legacy_miniapp_transport=True)
         app.state.vk_runtime = {"config": runtime, "storage": self.storage}
         return app
 
@@ -94,7 +94,7 @@ class CalendarAcceptanceTests(unittest.TestCase):
         INSERT INTO vk_schema_migrations VALUES(1,'x'); INSERT INTO vk_schema_migrations VALUES(2,'x');
         CREATE TABLE vk_outbox(outbox_id INTEGER PRIMARY KEY,source_event_id INTEGER NOT NULL,sequence_no INTEGER NOT NULL DEFAULT 1,vk_group_id INTEGER NOT NULL,peer_id INTEGER NOT NULL,message_text TEXT NOT NULL,random_id INTEGER NOT NULL,status TEXT NOT NULL,attempt_count INTEGER NOT NULL DEFAULT 0,next_attempt_at TEXT,created_at TEXT NOT NULL,claimed_at TEXT,sent_at TEXT,last_error_code TEXT,last_error_class TEXT,last_error_detail TEXT,vk_message_id INTEGER,keyboard_json TEXT,UNIQUE(source_event_id,sequence_no));
         INSERT INTO vk_outbox(outbox_id,source_event_id,vk_group_id,peer_id,message_text,random_id,status,created_at) VALUES(1,9,1,2,'old',3,'PENDING','x');"""); c.commit(); c.close()
-        migrated = VKStorage(path); self.assertEqual([r[0] for r in migrated.connection.execute("select version from vk_schema_migrations order by version")], [1,2,3,4,5,6,7])
+        migrated = VKStorage(path); self.assertEqual([r[0] for r in migrated.connection.execute("select version from vk_schema_migrations order by version")], [1,2,3,4,5,6,7,8])
         self.assertEqual(migrated.connection.execute("select message_text from vk_outbox").fetchone()[0], "old")
         self.assertEqual({r[0] for r in migrated.connection.execute("select name from sqlite_master where type='table'") } >= {"vk_miniapp_handoffs", "vk_miniapp_sessions"}, True); migrated.close()
 
@@ -107,7 +107,7 @@ class CalendarAcceptanceTests(unittest.TestCase):
         CREATE TABLE vk_miniapp_handoffs(handoff_id TEXT,token_hash TEXT,vk_group_id INTEGER,peer_id INTEGER,expected_vk_user_id INTEGER,expected_state TEXT,expected_state_version INTEGER,purpose TEXT,created_at TEXT,expires_at TEXT,used_at TEXT);
         CREATE TABLE vk_miniapp_sessions(session_token_hash TEXT,handoff_id TEXT,vk_app_id INTEGER,vk_user_id INTEGER,vk_group_id INTEGER,peer_id INTEGER,created_at TEXT,expires_at TEXT,completed_at TEXT);
         INSERT INTO vk_inbound_events VALUES(9,1,'test','old','x','message','{}',NULL,'NEW',0,NULL,'x',NULL,NULL,NULL,NULL); INSERT INTO vk_bot_sessions VALUES(1,2,'WAITING_DATE',NULL,NULL,NULL,NULL,NULL,NULL,4,'x',NULL); INSERT INTO vk_outbox VALUES(1,9,1,1,2,'old',3,'PENDING',0,NULL,'x',NULL,NULL,NULL,NULL,NULL,NULL,'{}'); INSERT INTO vk_miniapp_handoffs VALUES('h','digest',1,2,3,'WAITING_DATE',4,'birth_date','x','z',NULL); INSERT INTO vk_miniapp_sessions VALUES('bearer','h',1,3,1,2,'x','z',NULL);"""); c.commit(); c.close()
-        migrated = VKStorage(path); self.assertEqual([r[0] for r in migrated.connection.execute("select version from vk_schema_migrations order by version")], [1,2,3,4,5,6,7]); self.assertEqual(migrated.connection.execute("select state_version from vk_bot_sessions").fetchone()[0], 4); self.assertEqual(migrated.connection.execute("select keyboard_audit_json from vk_outbox").fetchone()[0], None); self.assertIsNotNone(migrated.connection.execute("select name from sqlite_master where name='vk_transition_audit'").fetchone()); self.assertIn('date_picker_step', [r[1] for r in migrated.connection.execute('pragma table_info(vk_bot_sessions)')]); migrated.close()
+        migrated = VKStorage(path); self.assertEqual([r[0] for r in migrated.connection.execute("select version from vk_schema_migrations order by version")], [1,2,3,4,5,6,7,8]); self.assertEqual(migrated.connection.execute("select state_version from vk_bot_sessions").fetchone()[0], 4); self.assertEqual(migrated.connection.execute("select keyboard_audit_json from vk_outbox").fetchone()[0], None); self.assertIsNotNone(migrated.connection.execute("select name from sqlite_master where name='vk_transition_audit'").fetchone()); self.assertIn('date_picker_step', [r[1] for r in migrated.connection.execute('pragma table_info(vk_bot_sessions)')]); migrated.close()
 
     def test_disabled_path_keeps_typed_date_and_no_handoff(self):
         bot = BotOrchestrator(self.storage, RecommendationApplicationService(), VKMiniAppConfig(enabled=False))
@@ -277,10 +277,10 @@ class CalendarAcceptanceTests(unittest.TestCase):
 
     def test_http_api_disabled_and_extra_fields_fail_closed(self):
         runtime = VKRuntimeConfig(TEST_GROUP_ID, "synthetic-token", "synthetic-callback", "synthetic-confirm", self.path)
-        disabled = create_app(vk_config=runtime, miniapp_config=VKMiniAppConfig(enabled=False)); disabled.state.vk_runtime={"config":runtime,"storage":self.storage}
+        disabled = create_app(vk_config=runtime, miniapp_config=VKMiniAppConfig(enabled=False), legacy_miniapp_transport=True); disabled.state.vk_runtime={"config":runtime,"storage":self.storage}
         self.assertEqual(self.post(disabled,"/vk-miniapp-api/v1/bootstrap",{"launch_params":signed(),"handoff_token":"x"}).status_code,503)
         self.assertEqual(self.post(disabled,"/vk-miniapp-api/v1/birth-date",{"birth_date":"1990-10-13"},{"authorization":"Bearer x","content-type":"application/json"}).status_code,503)
-        enabled = create_app(vk_config=runtime, miniapp_config=self.config); enabled.state.vk_runtime={"config":runtime,"storage":self.storage}
+        enabled = create_app(vk_config=runtime, miniapp_config=self.config, legacy_miniapp_transport=True); enabled.state.vk_runtime={"config":runtime,"storage":self.storage}
         self.assertEqual(self.post(enabled,"/vk-miniapp-api/v1/bootstrap",{"launch_params":signed(),"handoff_token":"x","x":"y"}).status_code,422)
         self.assertEqual(self.post(enabled,"/vk-miniapp-api/v1/birth-date",{"birth_date":"1990-10-13","x":"y"},{"authorization":"Bearer x","content-type":"application/json"}).status_code,422)
         self.assertEqual(self.post(enabled,"/vk-miniapp-api/v1/birth-date",{}, {"authorization":"Bearer x","content-type":"application/json"}).status_code,422)
