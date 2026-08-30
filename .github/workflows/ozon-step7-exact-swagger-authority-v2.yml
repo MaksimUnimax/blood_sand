@@ -1,0 +1,83 @@
+name: Ozon Step7 exact Swagger authority v2
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-authority-materializer-2026-08-30
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-step7-exact-swagger-authority-v2.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/build_ozon_seller_step7_exact_authority_v2.py
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  materialize-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Recover accepted public Seller Swagger
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=/tmp/ozon-step7-authority
+          mkdir -p "$out"
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$chrome"
+          npm install --no-save puppeteer-core@24
+          cat > /tmp/recover-step7-swagger.mjs <<'JS'
+          import fs from 'node:fs';
+          import puppeteer from 'puppeteer-core';
+          const browser = await puppeteer.launch({executablePath: process.env.CHROME_BIN, headless: false, args: ['--no-sandbox','--disable-dev-shm-usage']});
+          try {
+            const page = await browser.newPage();
+            await page.setViewport({width: 1280, height: 900});
+            await page.setExtraHTTPHeaders({'Accept-Language':'ru-RU,ru;q=0.9,en;q=0.8','Accept':'application/json,text/plain,*/*'});
+            await page.goto('https://docs.ozon.ru/api/seller/', {waitUntil:'domcontentloaded', timeout:60000});
+            const response = await page.goto('https://docs.ozon.ru/api/seller/swagger.json', {waitUntil:'domcontentloaded', timeout:60000});
+            if (!response) throw new Error('Swagger navigation produced no response');
+            const text = await response.text();
+            JSON.parse(text);
+            fs.writeFileSync('/tmp/ozon-step7-authority/seller-swagger.json', text, {encoding:'utf8'});
+            console.log('SPEC_STATUS', response.status());
+            console.log('SPEC_BYTES_UTF8', Buffer.byteLength(text, 'utf8'));
+          } finally { await browser.close(); }
+          JS
+          CHROME_BIN="$chrome" xvfb-run -a node /tmp/recover-step7-swagger.mjs
+
+      - name: Build deterministic transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tooling/llm-api-bridges/ozon-seller/validation/build_ozon_seller_step7_exact_authority_v2.py \
+            --input /tmp/ozon-step7-authority/seller-swagger.json \
+            --root tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2
+          python3 tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2/reconstruct_exact_swagger.py
+
+      - name: Commit materialized authority on bootstrap branch only
+        if: github.ref_name == 'repair/ozon-step7-authority-materializer-2026-08-30'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2
+          if git diff --cached --quiet; then
+            echo STEP7_AUTHORITY_ALREADY_MATERIALIZED_PASS
+            exit 0
+          fi
+          git config user.name MaksimUnimax
+          git config user.email 36834459+MaksimUnimax@users.noreply.github.com
+          git commit -m "validation(ozon): materialize exact Seller Swagger authority v2"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
