@@ -18,10 +18,17 @@
   },
   "carrier": {
     "parts": [
-      {"file": "OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part1", "bytes": 75918, "sha256": "641ff03e6ac22afd64d8dfa1d831b5a2a0de3387b75d87dc06cda766af2eeda1"},
-      {"file": "OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part2", "bytes": 75918, "sha256": "2a0263091c09c3a0024f5119278723879b59d9bba47616a0b7b036b4198c9e3e"},
-      {"file": "OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part3", "bytes": 75918, "sha256": "ebbca02ba07e376516370ca030c93858e1609014ea5edd931ec86e4578f8bbd1"},
-      {"file": "OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part4", "bytes": 75918, "sha256": "f01d97e3259cdb124ab9fbaaf6842888d34d7c3bf282f953b61477289df5d0c8"}
+      {"file":"OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part1","bytes":75918,"sha256":"641ff03e6ac22afd64d8dfa1d831b5a2a0de3387b75d87dc06cda766af2eeda1"},
+      {"file":"OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part2","bytes":75918,"sha256":"2a0263091c09c3a0024f5119278723879b59d9bba47616a0b7b036b4198c9e3e"},
+      {"file":"OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part3","bytes":75918,"sha256":"ebbca02ba07e376516370ca030c93858e1609014ea5edd931ec86e4578f8bbd1"},
+      {"file":"OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part4.1","bytes":9490,"sha256":"d6cae098b260e24e5ce10bab5a015711918e669bec8e8320d420859fecefef1a"},
+      {"file":"OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part4.2","bytes":9490,"sha256":"62ab53cec7333626e2e73f835879f6d442b9b3e700ede2392126a0ed6f67fe11"},
+      {"file":"OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part4.3","bytes":9490,"sha256":"0368e0e2423d5c63b43fcf6035daac2131cd0a44f61b2c0d085b3e75137f55e9"},
+      {"file":"OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part4.4","bytes":9490,"sha256":"82101858486144ce516ce60c9997207634880a117e2db740f36f3ff9d22067a1"},
+      {"file":"OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part4.5","bytes":9490,"sha256":"843064565e934dd238a5bb0c42b0eedd0714992b51f3a91304c7b4d3d8a63ced"},
+      {"file":"OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part4.6","bytes":9490,"sha256":"f827c045cda26f5cd9d605bbdd3d856b8f88ebc1dc6adfd3ae2c755de9f491a8"},
+      {"file":"OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part4.7","bytes":9489,"sha256":"d86bce1fc5859dad6133107e791e5233716053d1bd9869282a7dd648e036b737"},
+      {"file":"OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part4.8","bytes":9489,"sha256":"b037669c585eaef12d43050a6ea55d55fce444a0b39dcebb9fb853ee67922275"}
     ],
     "part_encoding": "ASCII base64 fragments without line endings; concatenate in listed order",
     "encoding": "concatenated base64 with one canonical trailing LF",
