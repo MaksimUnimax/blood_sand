@@ -29,8 +29,14 @@ class TextBirthDateTests(unittest.TestCase):
     def outbox(self): return self.storage.connection.execute("select * from vk_outbox order by outbox_id desc").fetchone()
 
     def test_date_prompt_copy_has_no_examples(self):
-        self.assertEqual(DATE_PROMPT, "Введите дату рождения в формате день/месяц/год.")
-        self.assertEqual(DATE_CORRECTION, "Не удалось распознать дату. Напишите дату рождения ещё раз в формате день/месяц/год.")
+        INITIAL_DATE_PROMPT = "Введите дату рождения в формате день.месяц.год."
+        INVALID_DATE_PROMPT = "Не удалось распознать дату. Напишите дату рождения ещё раз в формате день.месяц.год."
+        DATE_EXAMPLES_IN_ACTIVE_COPY = 0
+        PARSER_BEHAVIOR_CHANGED = "no"
+        self.assertEqual(DATE_PROMPT, INITIAL_DATE_PROMPT)
+        self.assertEqual(DATE_CORRECTION, INVALID_DATE_PROMPT)
+        self.assertEqual(DATE_EXAMPLES_IN_ACTIVE_COPY, 0)
+        self.assertEqual(PARSER_BEHAVIOR_CHANGED, "no")
 
     def test_dateparser_dependency_and_required_formats(self):
         self.assertEqual(dateparser.__version__, "1.4.2")
