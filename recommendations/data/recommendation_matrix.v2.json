@@ -1,17 +1,293 @@
-{"matrix_version":"KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED","base_rows":[
-{"chertog_id":"deva","gender":"male","product_key":"svarog","relation_type":"CURATED_GENDER_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"DEVA_MALE","active":true},{"chertog_id":"deva","gender":"female","product_key":"zhiva","relation_type":"DIRECT_PATRON","selection_basis":"SEMANTIC_DIRECT","reason_code":"DEVA_FEMALE","active":true},
-{"chertog_id":"vepr","gender":"male","product_key":"alatyr","relation_type":"CURATED_MEANING_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"VEPR_MALE","active":true},{"chertog_id":"vepr","gender":"female","product_key":"alatyr","relation_type":"CURATED_MEANING_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"VEPR_FEMALE","active":true},
-{"chertog_id":"shchuka","gender":"male","product_key":"rodimich","relation_type":"CURATED_GENDER_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"SHCHUKA_MALE","active":true},{"chertog_id":"shchuka","gender":"female","product_key":"zvezda_lady","relation_type":"CURATED_GENDER_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"SHCHUKA_FEMALE","active":true},
-{"chertog_id":"lebed","gender":"male","product_key":"rodimich","relation_type":"CURATED_GENDER_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"LEBED_MALE","active":true},{"chertog_id":"lebed","gender":"female","product_key":"makosh","relation_type":"DIRECT_PATRON","selection_basis":"SEMANTIC_DIRECT","reason_code":"LEBED_FEMALE","active":true},
-{"chertog_id":"zmei","gender":"male","product_key":"semargl","relation_type":"DIRECT_PATRON","selection_basis":"SEMANTIC_DIRECT","reason_code":"ZMEI_MALE","active":true},{"chertog_id":"zmei","gender":"female","product_key":"semargl","relation_type":"DIRECT_PATRON","selection_basis":"SEMANTIC_DIRECT","reason_code":"ZMEI_FEMALE","active":true},
-{"chertog_id":"voron","gender":"male","product_key":"kolyadnik","relation_type":"DIRECT_DERIVED","selection_basis":"SEMANTIC_DIRECT","reason_code":"VORON_MALE_KOLYADNIK","active":true},{"chertog_id":"voron","gender":"female","product_key":"alatyr","relation_type":"CURATED_MEANING_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"VORON_FEMALE","active":true},
-{"chertog_id":"medved","gender":"male","product_key":"bear_paw","relation_type":"DIRECT_CHERTOG_SYMBOL","selection_basis":"SEMANTIC_DIRECT_SALES_PRIORITIZED","reason_code":"MEDVED_MALE","active":true},{"chertog_id":"medved","gender":"female","product_key":"bear_paw","relation_type":"DIRECT_CHERTOG_SYMBOL","selection_basis":"SEMANTIC_DIRECT_SALES_PRIORITIZED","reason_code":"MEDVED_FEMALE","active":true},
-{"chertog_id":"busel","gender":"male","product_key":"molvinets","relation_type":"CURATED_MEANING_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"BUSEL_MALE","active":true},{"chertog_id":"busel","gender":"female","product_key":"zvezda_lady","relation_type":"CURATED_GENDER_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"BUSEL_FEMALE","active":true},
-{"chertog_id":"volk","gender":"male","product_key":"veles","relation_type":"DIRECT_PATRON","selection_basis":"SEMANTIC_DIRECT","reason_code":"VOLK_MALE","active":true},{"chertog_id":"volk","gender":"female","product_key":"veles","relation_type":"DIRECT_PATRON","selection_basis":"SEMANTIC_DIRECT","reason_code":"VOLK_FEMALE","active":true},
-{"chertog_id":"lisa","gender":"male","product_key":"chernobog","relation_type":"CURATED_GENDER_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_GENDER_FIT","reason_code":"LISA_MALE","active":true},{"chertog_id":"lisa","gender":"female","product_key":"mara","relation_type":"DIRECT_DERIVED","selection_basis":"SEMANTIC_DIRECT","reason_code":"LISA_FEMALE","active":true},
-{"chertog_id":"tur","gender":"male","product_key":"chur","relation_type":"CURATED_MEANING_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"TUR_MALE","active":true},{"chertog_id":"tur","gender":"female","product_key":"chur","relation_type":"CURATED_MEANING_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"TUR_FEMALE","active":true},
-{"chertog_id":"los","gender":"male","product_key":"rodimich","relation_type":"CURATED_GENDER_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"LOS_MALE","active":true},{"chertog_id":"los","gender":"female","product_key":"zvezda_lady","relation_type":"DIRECT_DERIVED","selection_basis":"SEMANTIC_DIRECT","reason_code":"LOS_FEMALE","active":true},
-{"chertog_id":"finist","gender":"male","product_key":"alatyr","relation_type":"CURATED_MEANING_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"FINIST_MALE","active":true},{"chertog_id":"finist","gender":"female","product_key":"alatyr","relation_type":"CURATED_MEANING_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"FINIST_FEMALE","active":true},
-{"chertog_id":"kon","gender":"male","product_key":"svarog","relation_type":"CURATED_GENDER_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"KON_MALE","active":true},{"chertog_id":"kon","gender":"female","product_key":"zhiva","relation_type":"CURATED_GENDER_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"KON_FEMALE","active":true},
-{"chertog_id":"orel","gender":"male","product_key":"perun","relation_type":"DIRECT_PATRON","selection_basis":"SEMANTIC_DIRECT","reason_code":"OREL_MALE","active":true},{"chertog_id":"orel","gender":"female","product_key":"zvezda_lady","relation_type":"CURATED_GENDER_SUBSTITUTE","selection_basis":"SEMANTIC_CURATED_SALES_WEIGHTED","reason_code":"OREL_FEMALE","active":true},
-{"chertog_id":"rasa","gender":"male","product_key":"dazhdbog","relation_type":"DIRECT_PATRON","selection_basis":"SEMANTIC_DIRECT","reason_code":"RASA_MALE","active":true},{"chertog_id":"rasa","gender":"female","product_key":"dazhdbog","relation_type":"DIRECT_PATRON","selection_basis":"SEMANTIC_DIRECT","reason_code":"RASA_FEMALE","active":true}]}
+{
+  "matrix_version": "KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED",
+  "base_rows": [
+    {
+      "chertog_id": "deva",
+      "gender": "male",
+      "product_key": "svarog",
+      "relation_type": "CURATED_GENDER_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "DEVA_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "deva",
+      "gender": "female",
+      "product_key": "zhiva",
+      "relation_type": "DIRECT_PATRON",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "DEVA_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "vepr",
+      "gender": "male",
+      "product_key": "alatyr",
+      "relation_type": "CURATED_MEANING_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "VEPR_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "vepr",
+      "gender": "female",
+      "product_key": "alatyr",
+      "relation_type": "CURATED_MEANING_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "VEPR_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "shchuka",
+      "gender": "male",
+      "product_key": "rodimich",
+      "relation_type": "CURATED_GENDER_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "SHCHUKA_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "shchuka",
+      "gender": "female",
+      "product_key": "zvezda_lady",
+      "relation_type": "CURATED_GENDER_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "SHCHUKA_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "lebed",
+      "gender": "male",
+      "product_key": "rodimich",
+      "relation_type": "CURATED_GENDER_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "LEBED_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "lebed",
+      "gender": "female",
+      "product_key": "makosh",
+      "relation_type": "DIRECT_PATRON",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "LEBED_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "zmei",
+      "gender": "male",
+      "product_key": "semargl",
+      "relation_type": "DIRECT_PATRON",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "ZMEI_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "zmei",
+      "gender": "female",
+      "product_key": "semargl",
+      "relation_type": "DIRECT_PATRON",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "ZMEI_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "voron",
+      "gender": "male",
+      "product_key": "kolyadnik",
+      "relation_type": "DIRECT_DERIVED",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "VORON_MALE_KOLYADNIK",
+      "active": true
+    },
+    {
+      "chertog_id": "voron",
+      "gender": "female",
+      "product_key": "alatyr",
+      "relation_type": "CURATED_MEANING_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "VORON_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "medved",
+      "gender": "male",
+      "product_key": "bear_paw",
+      "relation_type": "DIRECT_CHERTOG_SYMBOL",
+      "selection_basis": "SEMANTIC_DIRECT_SALES_PRIORITIZED",
+      "reason_code": "MEDVED_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "medved",
+      "gender": "female",
+      "product_key": "bear_paw",
+      "relation_type": "DIRECT_CHERTOG_SYMBOL",
+      "selection_basis": "SEMANTIC_DIRECT_SALES_PRIORITIZED",
+      "reason_code": "MEDVED_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "busel",
+      "gender": "male",
+      "product_key": "rodimich",
+      "relation_type": "DIRECT_DERIVED",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "BUSEL_ROD_LINEAGE_DIRECT",
+      "active": true
+    },
+    {
+      "chertog_id": "busel",
+      "gender": "female",
+      "product_key": "zvezda_lady",
+      "relation_type": "CURATED_GENDER_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "BUSEL_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "volk",
+      "gender": "male",
+      "product_key": "veles",
+      "relation_type": "DIRECT_PATRON",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "VOLK_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "volk",
+      "gender": "female",
+      "product_key": "veles",
+      "relation_type": "DIRECT_PATRON",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "VOLK_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "lisa",
+      "gender": "male",
+      "product_key": "chernobog",
+      "relation_type": "CURATED_GENDER_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_GENDER_FIT",
+      "reason_code": "LISA_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "lisa",
+      "gender": "female",
+      "product_key": "mara",
+      "relation_type": "DIRECT_DERIVED",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "LISA_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "tur",
+      "gender": "male",
+      "product_key": "chur",
+      "relation_type": "CURATED_MEANING_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "TUR_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "tur",
+      "gender": "female",
+      "product_key": "chur",
+      "relation_type": "CURATED_MEANING_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "TUR_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "los",
+      "gender": "male",
+      "product_key": "rodimich",
+      "relation_type": "CURATED_GENDER_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "LOS_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "los",
+      "gender": "female",
+      "product_key": "zvezda_lady",
+      "relation_type": "DIRECT_DERIVED",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "LOS_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "finist",
+      "gender": "male",
+      "product_key": "alatyr",
+      "relation_type": "CURATED_MEANING_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "FINIST_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "finist",
+      "gender": "female",
+      "product_key": "alatyr",
+      "relation_type": "CURATED_MEANING_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "FINIST_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "kon",
+      "gender": "male",
+      "product_key": "svarog",
+      "relation_type": "CURATED_GENDER_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "KON_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "kon",
+      "gender": "female",
+      "product_key": "zhiva",
+      "relation_type": "CURATED_GENDER_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "KON_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "orel",
+      "gender": "male",
+      "product_key": "perun",
+      "relation_type": "DIRECT_PATRON",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "OREL_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "orel",
+      "gender": "female",
+      "product_key": "zvezda_lady",
+      "relation_type": "CURATED_GENDER_SUBSTITUTE",
+      "selection_basis": "SEMANTIC_CURATED_SALES_WEIGHTED",
+      "reason_code": "OREL_FEMALE",
+      "active": true
+    },
+    {
+      "chertog_id": "rasa",
+      "gender": "male",
+      "product_key": "dazhdbog",
+      "relation_type": "DIRECT_PATRON",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "RASA_MALE",
+      "active": true
+    },
+    {
+      "chertog_id": "rasa",
+      "gender": "female",
+      "product_key": "dazhdbog",
+      "relation_type": "DIRECT_PATRON",
+      "selection_basis": "SEMANTIC_DIRECT",
+      "reason_code": "RASA_FEMALE",
+      "active": true
+    }
+  ]
+}

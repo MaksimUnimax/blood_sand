@@ -175,6 +175,12 @@ def _validate_products(policy: Any, chertogs: set[str]) -> dict[str, dict[str, A
     for key, gender in {"svarog":"male", "chernobog":"male", "mara":"female", "zvezda_lady":"female"}.items():
         if products.get(key, {}).get("gender_policy") != gender: _fail(f"{key} must have gender_policy {gender}")
     if products.get("dazhdbog", {}).get("allowed_chertogs") != ["rasa"]: _fail("dazhdbog allowed_chertogs must be exactly ['rasa']")
+    molvinets = products.get("molvinets", {})
+    if molvinets.get("active_for_recommendation") is not False or molvinets.get("role") != "reserve" or molvinets.get("allowed_chertogs") != []:
+        _fail("molvinets must be an inactive reserve with no automatic Chertogs")
+    rodimich = products.get("rodimich", {})
+    if rodimich.get("gender_policy") != "male" or "busel" not in rodimich.get("allowed_chertogs", []):
+        _fail("rodimich must be male and allowed for busel")
     return products
 
 
@@ -206,7 +212,7 @@ def _validate_matrix(matrix: Any, chertogs: set[str], products: dict[str, dict[s
         cases[case] = row
     expected = {(cid, gender) for cid in chertogs for gender in GENDERS}
     if set(cases) != expected: _fail("matrix has missing base case(s)")
-    locked = {("medved","male"):"bear_paw", ("medved","female"):"bear_paw", ("volk","male"):"veles", ("volk","female"):"veles", ("lisa","male"):"chernobog", ("lisa","female"):"mara", ("orel","male"):"perun", ("orel","female"):"zvezda_lady", ("rasa","male"):"dazhdbog", ("rasa","female"):"dazhdbog"}
+    locked = {("medved","male"):"bear_paw", ("medved","female"):"bear_paw", ("volk","male"):"veles", ("volk","female"):"veles", ("lisa","male"):"chernobog", ("lisa","female"):"mara", ("orel","male"):"perun", ("orel","female"):"zvezda_lady", ("rasa","male"):"dazhdbog", ("rasa","female"):"dazhdbog", ("busel","male"):"rodimich", ("busel","female"):"zvezda_lady"}
     for case, key in locked.items():
         if cases[case]["product_key"] != key: _fail(f"locked base result invalid for {case}: expected {key}")
     for case, row in cases.items():
@@ -216,6 +222,10 @@ def _validate_matrix(matrix: Any, chertogs: set[str], products: dict[str, dict[s
         if key in {"svarog", "chernobog"} and case[1] == "female": _fail(f"{key} must never appear in a female row")
         if key in {"mara", "zvezda_lady"} and case[1] == "male": _fail(f"{key} must never appear in a male row")
     if sum(row["product_key"] == "dazhdbog" for row in cases.values()) != 2: _fail("dazhdbog must occur in exactly two base rows")
+    if any(row["product_key"] == "molvinets" for row in cases.values()): _fail("molvinets must not appear in automatic matrix rows")
+    busel_male = cases[("busel", "male")]
+    if (busel_male["relation_type"], busel_male["selection_basis"], busel_male["reason_code"]) != ("DIRECT_DERIVED", "SEMANTIC_DIRECT", "BUSEL_ROD_LINEAGE_DIRECT"):
+        _fail("busel male must be the direct Rodimich lineage result")
     return cases
 
 
