@@ -93,6 +93,11 @@ rejection, wrong app ID rejection, one outbox row, and typed/calendar parity.
 
 ## Owner action
 
+> Superseded for active birth-date entry on 2026-08-30. The Mini App handoff
+> infrastructure is retained and security-tested, but the active Bot uses the
+> chat-native `message_new` + inline text-button picker. `open_app` and
+> handoff creation are not part of the active date flow.
+
 In VK's developer/application management UI, create/register a Mini App for
 this community, bind the intended community, and set the approved staging and
 production HTTPS URLs. Report only these non-secret facts: `app_id`, app owner

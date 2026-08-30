@@ -625,3 +625,23 @@ suppression. `VK_ROOT_MENU_LIVE_GATE` and
 
 `M3_CALENDAR_LIVE_OPEN_APP_GATE` remains paused until the owner completes the
 real Mini App flow under this persistent-menu architecture.
+
+## Chat-native birth-date picker product decision (2026-08-30)
+
+```text
+BIRTH_DATE_PRIMARY_TEXT_INPUT = supported
+BIRTH_DATE_CHAT_BUTTON_PICKER = ACTIVE
+BIRTH_DATE_MINIAPP_PICKER = RETIRED_FROM_ACTIVE_UX
+MINIAPP_INFRASTRUCTURE = RETAINED_FOR_FUTURE_PRODUCT_USE
+ACTIVE_DATE_OPEN_APP = no
+ACTIVE_DATE_HANDOFF = no
+CHAT_DATE_PICKER_TRANSPORT = message_new + text buttons
+CHAT_DATE_PICKER_INLINE = yes
+ROOT_MENU_PERSISTENT = yes
+M3_CALENDAR_LIVE_OPEN_APP_GATE = NOT_APPLICABLE_PRODUCT_DECISION
+VK_CHAT_DATE_PICKER_CODE_GATE = PASS
+VK_CHAT_DATE_PICKER_LIVE_GATE = NOT_YET_EXERCISED
+```
+
+The historical Mini App investigation and its security regression coverage
+remain valid, but are no longer a release gate for the birth-date UX.
