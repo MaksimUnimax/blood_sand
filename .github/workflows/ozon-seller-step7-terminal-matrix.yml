@@ -7,6 +7,9 @@ on:
     paths:
       - .github/workflows/ozon-seller-step7-terminal-matrix.yml
       - tooling/llm-api-bridges/ozon-seller/validation/build_ozon_seller_step7_terminal_matrix.py
+      - tooling/llm-api-bridges/ozon-seller/validation/materialize_ozon_seller_exact_swagger_transport.py
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_SELLER_EXACT_SWAGGER_TRANSPORT_2026-08-30_MANIFEST.json
+      - 'tooling/llm-api-bridges/ozon-seller/validation/OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part*'
   workflow_dispatch:
 
 permissions:
@@ -19,58 +22,21 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
-      - name: Recover exact accepted Seller Swagger
+      - name: Materialize immutable exact accepted Seller Swagger
         shell: bash
         run: |
           set -euo pipefail
-          expected_sha='39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40'
-          expected_bytes='3933043'
-          root_url='https://docs.ozon.ru/api/seller/'
-          spec_url='https://docs.ozon.ru/api/seller/swagger.json'
-          out='/tmp/seller-step7-swagger'
+          v=tooling/llm-api-bridges/ozon-seller/validation
+          out=/tmp/seller-step7-swagger
+          rm -rf "$out"
           mkdir -p "$out"
-          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          test -n "$chrome"
-          npm install --no-save puppeteer-core@24
-          cat > recover-step7-swagger.mjs <<'JS'
-          import fs from 'node:fs';
-          import puppeteer from 'puppeteer-core';
-          const browser = await puppeteer.launch({
-            executablePath: process.env.CHROME_BIN,
-            headless: false,
-            args: ['--no-sandbox', '--disable-dev-shm-usage'],
-          });
-          try {
-            const page = await browser.newPage();
-            await page.setExtraHTTPHeaders({
-              'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
-              'Accept': 'application/json,text/plain,*/*',
-            });
-            await page.goto(process.env.ROOT_URL, {waitUntil: 'domcontentloaded', timeout: 60000});
-            const response = await page.goto(process.env.SPEC_URL, {waitUntil: 'domcontentloaded', timeout: 60000});
-            if (!response) throw new Error('Swagger navigation produced no response');
-            const text = await response.text();
-            const parsed = JSON.parse(text);
-            if (!parsed?.paths || typeof parsed.paths !== 'object') throw new Error('invalid Swagger object');
-            fs.writeFileSync(`${process.env.OUT_DIR}/seller-swagger.json`, text, 'utf8');
-          } finally {
-            await browser.close();
-          }
-          JS
-          CHROME_BIN="$chrome" ROOT_URL="$root_url" SPEC_URL="$spec_url" OUT_DIR="$out" xvfb-run -a node recover-step7-swagger.mjs
+          python3 "$v/materialize_ozon_seller_exact_swagger_transport.py" \
+            --validation-dir "$v" \
+            --out "$out/seller-swagger.json"
           actual_sha="$(sha256sum "$out/seller-swagger.json" | awk '{print $1}')"
           actual_bytes="$(wc -c < "$out/seller-swagger.json" | tr -d ' ')"
-          test "$actual_sha" = "$expected_sha"
-          test "$actual_bytes" = "$expected_bytes"
-          python3 - <<'PY'
-          import json,pathlib
-          x=json.loads(pathlib.Path('/tmp/seller-step7-swagger/seller-swagger.json').read_text(encoding='utf-8'))
-          ops=sum(1 for item in x['paths'].values() for m in item if m.lower() in {'get','post','put','patch','delete'})
-          assert x.get('openapi') == '3.0.0'
-          assert len(x['paths']) == 463
-          assert ops == 463
-          print('SELLER_STEP7_EXACT_SWAGGER_463_PASS')
-          PY
+          test "$actual_sha" = '39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40'
+          test "$actual_bytes" = '3933043'
           echo SELLER_STEP7_EXACT_SWAGGER_BYTE_IDENTITY_PASS
       - uses: actions/upload-artifact@v4
         with:
@@ -98,7 +64,7 @@ jobs:
           rm -rf /tmp/step7-work /tmp/step7-step6 /tmp/step7-linux
           mkdir -p /tmp/step7-linux
           python3 "$v/materialize_performance_step6_read_coverage_package.py" --repo-root . --work-root /tmp/step7-work --out /tmp/step7-step6
-          node -e "require(process.argv[1]); const fs=require('fs'); fs.writeFileSync(process.argv[2], JSON.stringify(globalThis.OzonOperationRegistry.OPERATIONS,null,2)+'\\n')" /tmp/step7-step6/shared/ozon_operation_registry.js /tmp/step7-linux/registry.json
+          node -e "require(process.argv[1]); const fs=require('fs'); fs.writeFileSync(process.argv[2], JSON.stringify(globalThis.OzonOperationRegistry.OPERATIONS,null,2)+'\n')" /tmp/step7-step6/shared/ozon_operation_registry.js /tmp/step7-linux/registry.json
           python3 "$v/build_ozon_seller_step7_terminal_matrix.py" \
             --swagger /tmp/seller-step7-swagger/seller-swagger.json \
             --registry-json /tmp/step7-linux/registry.json \
