@@ -87,6 +87,19 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 | M7 | hardening/operator/analytics | architecture boundaries defined | depends on preceding runtime evidence | **BLOCKED** |
 | M8 | controlled launch | roadmap defined | production gates not yet executed | **BLOCKED** |
 
+### M5 pre-deployment hardening status — 2026-08-30
+
+```text
+M5_BACKEND_FOUNDATION_IMPLEMENTATION=PASS_LOCAL_HARDENED
+M5_REAL_STAGING_ENV_CONFIG_COMPATIBILITY=PASS
+M5_REAL_STAGING_DB_V8_DRY_RUN=PASS
+M5_CANONICAL_REPLAY_FINGERPRINT=PASS
+M5_REPLAY_300S_BOUNDARY=PASS
+M5_ERROR_CORS=PASS
+M5_BACKEND_DEPLOYMENT=PENDING
+NEXT_IMPLEMENTATION_SLICE=M5_BACKEND_STAGING_DEPLOYMENT_AND_REAL_SESSION_BOOTSTRAP_ACCEPTANCE
+```
+
 ### M5 current control-plane evidence addendum — 2026-08-30
 
 `VK_PLATFORM_M5_CONTROL_PLANE_STAGING_EVIDENCE_2026-08-30.md` recovers a

@@ -68,7 +68,7 @@ class VKStorage:
             c.execute("BEGIN IMMEDIATE")
             try:
                 # Retain active sessions but remove their operational fingerprint after its horizon.
-                c.execute("UPDATE vk_miniapp_standalone_sessions SET launch_fingerprint=NULL WHERE launch_fingerprint IS NOT NULL AND launch_expires_at <= ?", (created.isoformat(),))
+                c.execute("UPDATE vk_miniapp_standalone_sessions SET launch_fingerprint=NULL WHERE launch_fingerprint IS NOT NULL AND launch_expires_at < ?", (created.isoformat(),))
                 c.execute("UPDATE vk_miniapp_standalone_sessions SET revoked_at=? WHERE launch_fingerprint=? AND revoked_at IS NULL", (created.isoformat(), fingerprint))
                 c.execute("INSERT INTO vk_miniapp_standalone_sessions VALUES(?,?,?,?,?,?,?,?,NULL,NULL)", (str(uuid.uuid4()), token_hash, fingerprint, app_id, user_id, created.isoformat(), expires.isoformat(), launch_expires_at.astimezone(timezone.utc).isoformat()))
                 c.commit()
@@ -82,7 +82,7 @@ class VKStorage:
         current = self._now()
         def run(c):
             c.execute("BEGIN IMMEDIATE")
-            c.execute("UPDATE vk_miniapp_standalone_sessions SET launch_fingerprint=NULL WHERE launch_fingerprint IS NOT NULL AND launch_expires_at <= ?", (current,))
+            c.execute("UPDATE vk_miniapp_standalone_sessions SET launch_fingerprint=NULL WHERE launch_fingerprint IS NOT NULL AND launch_expires_at < ?", (current,))
             row = c.execute("SELECT * FROM vk_miniapp_standalone_sessions WHERE session_token_hash=?", (digest,)).fetchone()
             if not row or row["revoked_at"] is not None or row["expires_at"] <= current:
                 c.commit(); return None

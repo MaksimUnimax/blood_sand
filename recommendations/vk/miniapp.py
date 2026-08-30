@@ -9,6 +9,10 @@ class MiniAppError(ValueError): pass
 MAX_LAUNCH_BYTES = 16384
 _BASE64URL = re.compile(r"^[A-Za-z0-9_-]+$")
 
+def canonical_verified_material(values: dict[str, str]) -> str:
+    """Canonical signed VK material shared by verification and replay identity."""
+    return urlencode(sorted((key, value) for key, value in values.items() if key.startswith("vk_")))
+
 def decode_launch_authorization(value: str | None) -> str:
     """Decode our VKLaunch envelope without retaining or reporting its contents."""
     if not value or not value.startswith("VKLaunch ") or value.count(" ") != 1:
@@ -40,7 +44,7 @@ def verify_launch(raw: str, protected_key: str, expected_app_id: int) -> dict[st
     try:
         if int(values['vk_app_id']) != expected_app_id or int(values['vk_user_id']) <= 0: raise MiniAppError('INVALID_LAUNCH')
     except ValueError as exc: raise MiniAppError('INVALID_LAUNCH') from exc
-    data=urlencode(sorted((k,v) for k,v in values.items() if k.startswith('vk_')))
+    data=canonical_verified_material(values)
     digest=hmac.new(protected_key.encode(),data.encode(),hashlib.sha256).digest()
     expected=base64.urlsafe_b64encode(digest).decode().rstrip('=')
     if not hmac.compare_digest(expected,sign): raise MiniAppError('INVALID_LAUNCH')

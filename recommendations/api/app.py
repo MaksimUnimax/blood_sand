@@ -112,6 +112,13 @@ def create_app(
             # The registered exception handlers normally convert errors; retain the
             # envelope if middleware sees an exception before they can do so.
             response = error_response(request, 500, "INTERNAL_ERROR", "Internal server error.")
+        # M5 is intentionally the only CORS surface.  Applying this after route
+        # and exception handling keeps the frozen error envelopes readable to an
+        # exact allowed origin without affecting M2.
+        if request.url.path.startswith("/v1/vk/miniapp/") and request.headers.get("origin") in request.app.state.miniapp_config.allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = request.headers["origin"]
+            response.headers["Vary"] = "Origin"
+            response.headers["Access-Control-Expose-Headers"] = "X-Request-Id, X-Result-Id"
         response.headers["X-Request-Id"] = request.state.request_id
         fields = {
             "event": "http_request_completed", "request_id": request.state.request_id,
@@ -228,7 +235,7 @@ def create_app(
         if not _m5_origin(request):
             return error_response(request, 401, "MINIAPP_AUTH_INVALID", "Mini App authentication failed.")
         from datetime import datetime, timedelta, timezone
-        from recommendations.vk.miniapp import decode_launch_authorization, verify_launch, MiniAppError
+        from recommendations.vk.miniapp import canonical_verified_material, decode_launch_authorization, verify_launch, MiniAppError
         import hashlib
         try:
             raw = decode_launch_authorization(request.headers.get("authorization"))
@@ -241,7 +248,8 @@ def create_app(
             config = request.app.state.miniapp_config
             if current - issued > timedelta(seconds=config.launch_max_age_seconds) or issued - current > timedelta(seconds=config.launch_future_clock_skew_seconds):
                 raise ValueError
-            token = storage.create_standalone_miniapp_session(hashlib.sha256(raw.encode("utf-8")).hexdigest(), config.app_id, int(launch["vk_user_id"]), config.session_ttl_seconds, issued + timedelta(seconds=config.launch_max_age_seconds))
+            fingerprint = hashlib.sha256(canonical_verified_material(launch).encode("utf-8")).hexdigest()
+            token = storage.create_standalone_miniapp_session(fingerprint, config.app_id, int(launch["vk_user_id"]), config.session_ttl_seconds, issued + timedelta(seconds=config.launch_max_age_seconds))
         except (ValueError, KeyError, MiniAppError, OverflowError, OSError):
             return error_response(request, 401, "MINIAPP_AUTH_INVALID", "Mini App authentication failed.")
         return _m5_cors(request, ContractJSONResponse({"api_version": "v1", "session": {"token_type": "Bearer", "session_token": token, "expires_in": request.app.state.miniapp_config.session_ttl_seconds}}))

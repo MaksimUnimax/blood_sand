@@ -45,9 +45,14 @@ class VKMiniAppConfig:
     @classmethod
     def from_environment(cls) -> "VKMiniAppConfig":
         enabled = os.environ.get("KIP_VK_MINIAPP_ENABLED", "false").lower() in {"1", "true", "yes"}
-        raw = {name: os.environ.get("KIP_VK_MINIAPP_" + name) for name in ("APP_ID", "OWNER_ID", "PROTECTED_KEY", "HANDOFF_SECRET", "HANDOFF_TTL_SECONDS", "SESSION_TTL_SECONDS", "PUBLIC_URL", "ALLOWED_ORIGINS", "LAUNCH_MAX_AGE_SECONDS", "LAUNCH_FUTURE_CLOCK_SKEW_SECONDS")}
         if not enabled:
-            return cls(enabled=False, app_id=int(raw["APP_ID"] or 54743026), handoff_ttl_seconds=int(raw["HANDOFF_TTL_SECONDS"] or 600), session_ttl_seconds=int(raw["SESSION_TTL_SECONDS"] or 900), public_url=raw["PUBLIC_URL"])
+            # Disabled M5 deliberately has no configuration dependency, including
+            # on malformed historical M6 handoff values.
+            return cls(enabled=False)
+        raw = {name: os.environ.get("KIP_VK_MINIAPP_" + name) for name in (
+            "APP_ID", "PROTECTED_KEY", "SESSION_TTL_SECONDS", "ALLOWED_ORIGINS",
+            "LAUNCH_MAX_AGE_SECONDS", "LAUNCH_FUTURE_CLOCK_SKEW_SECONDS",
+        )}
         required = ("APP_ID", "PROTECTED_KEY", "SESSION_TTL_SECONDS", "ALLOWED_ORIGINS", "LAUNCH_MAX_AGE_SECONDS", "LAUNCH_FUTURE_CLOCK_SKEW_SECONDS")
         if any(not raw[name] for name in required):
             raise VKConfigurationError("enabled Mini App requires standalone security configuration")
@@ -56,16 +61,16 @@ class VKMiniAppConfig:
             session_ttl = int(raw["SESSION_TTL_SECONDS"])
             max_age = int(raw["LAUNCH_MAX_AGE_SECONDS"])
             skew = int(raw["LAUNCH_FUTURE_CLOCK_SKEW_SECONDS"])
-            owner_id = int(raw["OWNER_ID"]) if raw["OWNER_ID"] else None
-            handoff_ttl = int(raw["HANDOFF_TTL_SECONDS"] or 600)
         except ValueError as exc:
             raise VKConfigurationError("Mini App identity and TTL values must be integers") from exc
-        if app_id != 54743026 or session_ttl != 900 or max_age != 300 or skew != 60 or handoff_ttl <= 0:
+        if app_id != 54743026 or session_ttl != 900 or max_age != 300 or skew != 60:
             raise VKConfigurationError("Mini App configuration is invalid")
         origins = tuple(cls._origin(item.strip()) for item in raw["ALLOWED_ORIGINS"].split(",") if item.strip())
         if not origins or len(origins) != len(set(origins)):
             raise VKConfigurationError("Mini App allowed origins are invalid")
-        return cls(True, app_id, owner_id, raw["PROTECTED_KEY"], raw["HANDOFF_SECRET"], handoff_ttl, session_ttl, raw["PUBLIC_URL"], origins, max_age, skew)
+        # OWNER_ID and handoff values remain constructor fields for historical
+        # M6-compatible callers, but are never read by standalone M5.
+        return cls(True, app_id, None, raw["PROTECTED_KEY"], None, 600, session_ttl, None, origins, max_age, skew)
 
 
 @dataclass(frozen=True)
