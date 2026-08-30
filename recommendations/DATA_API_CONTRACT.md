@@ -2,7 +2,7 @@
 
 Версия: 0.2  
 Статус: **V2 SALES-WEIGHTED contract authority**  
-Revision: **2026-08-29 owner update**
+Revision: **2026-08-30 owner update — Бусел male → Родимич**
 
 ## 1. Authority
 
@@ -38,7 +38,7 @@ recommendations/data/
 
 Calendar stays V1. Exactly 16 Chertogs, no gaps/overlaps, 29.02 → Волк.
 
-`birth_year` **does not affect Chertog selection**, but if the caller/customer supplied a year it must be preserved for customer-facing rendering.
+`birth_year` does not affect Chertog selection, but if supplied it must be preserved for customer-facing rendering.
 
 ## 5. Product policy V2
 
@@ -46,19 +46,14 @@ Example `Печать Велеса` record:
 
 ```json
 {
-  "product_policy_version": "KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED",
-  "products": [
-    {
-      "product_key": "bear_paw",
-      "sku": "1636048691",
-      "marketplace_name": "Печать Велеса",
-      "recommendation_identity": "Печать Велеса",
-      "customer_label": "Печать Велеса",
-      "gender_policy": "any",
-      "allowed_chertogs": ["medved"],
-      "active_for_recommendation": true
-    }
-  ]
+  "product_key": "bear_paw",
+  "sku": "1636048691",
+  "marketplace_name": "Печать Велеса",
+  "recommendation_identity": "Печать Велеса",
+  "customer_label": "Печать Велеса",
+  "gender_policy": "any",
+  "allowed_chertogs": ["medved"],
+  "active_for_recommendation": true
 }
 ```
 
@@ -73,6 +68,8 @@ svarog.gender_policy = male
 chernobog.gender_policy = male
 mara.gender_policy = female
 zvezda_lady.gender_policy = female
+rodimich.gender_policy = male
+molvinets.active_for_recommendation = false
 dazhdbog automatic matrix use = rasa only
 ```
 
@@ -85,11 +82,15 @@ Required owner rows include:
 ```text
 medved + male   → bear_paw
 medved + female → bear_paw
+busel + male    → rodimich
+busel + female  → zvezda_lady
 lisa + male     → chernobog
 lisa + female   → mara
 orel + male     → perun
 orel + female   → zvezda_lady
 ```
+
+For `busel + male`, `molvinets` is explicitly not an automatic result. The approved base row is `rodimich` because the cleaner Rod/lineage relation outweighs the modest historical sales advantage of Molvinets.
 
 Base invariants:
 
@@ -122,6 +123,19 @@ MARKETPLACE_OVERRIDE_SALES_WEIGHTED
 ```
 
 Sales figures are approval evidence, not runtime inputs.
+
+The approved `busel + male` row is:
+
+```json
+{
+  "chertog_id": "busel",
+  "gender": "male",
+  "product_key": "rodimich",
+  "relation_type": "DIRECT_DERIVED",
+  "selection_basis": "SEMANTIC_DIRECT",
+  "reason_code": "BUSEL_ROD_LINEAGE_DIRECT"
+}
+```
 
 ## 8. Marketplace override V1
 
@@ -174,7 +188,7 @@ type RecommendationResult = {
     day: number;
     month: number;
     year: number | null;
-    display: string; // DD.MM.YYYY when year exists, otherwise only supplied date parts
+    display: string;
   };
   chertog: {
     id: string;
@@ -214,55 +228,46 @@ POST /v1/recommendations/resolve
 Content-Type: application/json
 ```
 
-Example request with a full birth date:
+Example request:
 
 ```json
 {
-  "birth_day": 16,
-  "birth_month": 1,
-  "birth_year": 1986,
+  "birth_day": 9,
+  "birth_month": 2,
+  "birth_year": 1996,
   "gender": "male",
   "marketplace": "ozon"
 }
 ```
 
-Success example for Медведь:
+Expected Busel response core:
 
 ```json
 {
-  "input": {
-    "birth_day": 16,
-    "birth_month": 1,
-    "birth_year": 1986,
-    "gender": "male",
-    "marketplace": "ozon"
-  },
   "birth_date": {
-    "day": 16,
-    "month": 1,
-    "year": 1986,
-    "display": "16.01.1986"
+    "day": 9,
+    "month": 2,
+    "year": 1996,
+    "display": "09.02.1996"
   },
   "chertog": {
-    "id": "medved",
-    "name": "Медведь",
-    "patron_name": "Сварог"
+    "id": "busel",
+    "name": "Бусел",
+    "patron_name": "Род"
   },
   "recommendation": {
-    "product_key": "bear_paw",
-    "sku": "1636048691",
-    "recommendation_identity": "Печать Велеса",
-    "customer_label": "Печать Велеса",
-    "relation_type": "DIRECT_CHERTOG_SYMBOL",
-    "selection_basis": "SEMANTIC_DIRECT_SALES_PRIORITIZED",
-    "reason_code": "MEDVED_DIRECT_SYMBOL",
-    "availability": "UNKNOWN",
-    "destination": null
+    "product_key": "rodimich",
+    "sku": "1842444165",
+    "recommendation_identity": "Родимич",
+    "customer_label": "Родимич",
+    "relation_type": "DIRECT_DERIVED",
+    "selection_basis": "SEMANTIC_DIRECT",
+    "reason_code": "BUSEL_ROD_LINEAGE_DIRECT"
   }
 }
 ```
 
-`patron_name` is calendar metadata and does not force selection of the patron product.
+`patron_name` is calendar metadata and does not force selection of the exact patron product.
 
 ## 12. Channel vs marketplace
 
@@ -296,8 +301,6 @@ Hard assertion for `product_key = bear_paw`:
 rendered customer label == "Печать Велеса"
 ```
 
-No suffix, prefix, parenthetical clarification or secondary alias is allowed.
-
 Hard assertion for supplied full DOB:
 
 ```text
@@ -305,13 +308,7 @@ input.birth_year != null
 → customer-facing first sentence contains birth_date.display in DD.MM.YYYY form
 ```
 
-Example:
-
-```text
-19.11.1988 → "Дата 19.11.1988 относится к Чертогу Лебедя."
-```
-
-The renderer must not shorten this to `19.11`.
+The renderer must not shorten a supplied full date to day/month only.
 
 ## 15. Validation gates
 
@@ -326,23 +323,28 @@ CI/startup must fail if:
 7. rendered label for `bear_paw` differs from `Печать Велеса`;
 8. Даждьбог outside Раса or not exactly twice;
 9. Сварог in female row;
-10. `lisa + male` is not Чернобог;
-11. `lisa + female` is not Мара;
-12. `orel + male` is not Перун;
-13. `orel + female` is not Звезда Лады;
-14. Чернобог in female row;
-15. Мара in male row;
-16. supplied `birth_year` is lost before customer rendering;
-17. unapproved marketplace override exists;
-18. reserve product auto-appears without owner decision.
+10. `busel + male` is not Родимич;
+11. `busel + female` is not Звезда Лады;
+12. Молвинец appears in an automatic row;
+13. `lisa + male` is not Чернобог;
+14. `lisa + female` is not Мара;
+15. `orel + male` is not Перун;
+16. `orel + female` is not Звезда Лады;
+17. Чернобог in female row;
+18. Мара in male row;
+19. supplied `birth_year` is lost before customer rendering;
+20. unapproved marketplace override exists;
+21. reserve product auto-appears without owner decision.
 
 ## 16. Contract tests
 
 ```text
-25.03.1993 + male + ozon → lisa / Чернобог; rendered date includes 1993
-25.03.1993 + female + ozon → lisa / Мара; rendered date includes 1993
-16.01.1986 + male + ozon → medved / Печать Велеса; rendered date includes 1986
-16.01.1990 + female + wildberries → medved / Печать Велеса; rendered date includes 1990
+09.02.1996 + male + ozon → busel / Родимич; rendered date includes 1996
+09.02.1996 + female + ozon → busel / Звезда Лады; rendered date includes 1996
+25.03.1993 + male + ozon → lisa / Чернобог
+25.03.1993 + female + ozon → lisa / Мара
+16.01.1986 + male + ozon → medved / Печать Велеса
+16.01.1990 + female + wildberries → medved / Печать Велеса
 19.07.1988 + male → orel / Перун
 19.07.1988 + female → orel / Звезда Лады
 15.03.1988 + male → volk / Велес
