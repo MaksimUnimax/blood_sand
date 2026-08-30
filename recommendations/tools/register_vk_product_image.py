@@ -28,19 +28,25 @@ def _runtime_path() -> Path:
     return Path(raw)
 
 
-def _config() -> tuple[int, str, int | None]:
+def _config() -> tuple[str, int]:
     try:
         group_id = int(os.environ["KIP_VK_GROUP_ID"])
     except (KeyError, ValueError) as exc:
         raise ValueError("protected VK group configuration is required") from exc
-    token = os.environ.get("KIP_VK_GROUP_TOKEN")
+    # The staging EnvironmentFile maps its protected community credential to
+    # KIP_VK_GROUP_TOKEN.  VK_STAGING_GROUP_TOKEN remains a compatible alias
+    # for running this operational command from that protected source.
+    token = os.environ.get("KIP_VK_GROUP_TOKEN") or os.environ.get("VK_STAGING_GROUP_TOKEN")
     if group_id <= 0 or not token:
         raise ValueError("protected VK group configuration is invalid")
     raw_peer = os.environ.get("KIP_VK_IMAGE_REGISTRATION_PEER_ID")
-    peer = int(raw_peer) if raw_peer else None
+    try:
+        peer = int(raw_peer) if raw_peer else 0
+    except ValueError as exc:
+        raise ValueError("image registration peer is invalid") from exc
     if peer == 0:
         raise ValueError("image registration peer is invalid")
-    return group_id, token, peer
+    return token, peer
 
 
 def _api(client: httpx.Client, method: str, token: str, payload: dict) -> dict:
@@ -55,18 +61,25 @@ def _api(client: httpx.Client, method: str, token: str, payload: dict) -> dict:
 
 
 def register(file_path: Path) -> str:
-    group_id, token, peer_id = _config()
+    token, peer_id = _config()
     if not file_path.is_file() or not mimetypes.guess_type(file_path.name)[0] in {"image/png", "image/jpeg", "image/webp"}:
         raise ValueError("file must be an existing PNG, JPEG, or WebP image")
     with httpx.Client(timeout=20) as client:
-        upload = _api(client, "photos.getMessagesUploadServer", token, {"group_id": group_id, **({"peer_id": peer_id} if peer_id else {})})
+        # API 5.199 defines peer_id, but not group_id, for this method.
+        upload = _api(client, "photos.getMessagesUploadServer", token, {"peer_id": peer_id})
         if not isinstance(upload, dict) or not isinstance(upload.get("upload_url"), str):
             raise RuntimeError("VK upload server response is invalid")
         try:
             uploaded = client.post(upload["upload_url"], files={"photo": (file_path.name, file_path.read_bytes(), mimetypes.guess_type(file_path.name)[0])}).json()
         except (httpx.HTTPError, ValueError) as exc:
             raise RuntimeError("VK image upload failed") from exc
-        if not isinstance(uploaded, dict) or not all(isinstance(uploaded.get(key), str) for key in ("photo", "server", "hash")):
+        # VK's documented message-photo upload response is photo/hash strings
+        # plus an integer server identifier.  Preserve that native type.
+        if not isinstance(uploaded, dict) or not (
+            isinstance(uploaded.get("photo"), str) and bool(uploaded["photo"])
+            and isinstance(uploaded.get("hash"), str) and bool(uploaded["hash"])
+            and type(uploaded.get("server")) is int
+        ):
             raise RuntimeError("VK image upload response is invalid")
         saved = _api(client, "photos.saveMessagesPhoto", token, {"photo": uploaded["photo"], "server": uploaded["server"], "hash": uploaded["hash"]})
     if not isinstance(saved, list) or len(saved) != 1 or not isinstance(saved[0], dict):
