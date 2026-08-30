@@ -38,7 +38,7 @@ jobs:
           chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
           test -n "$chrome"
           npm install --no-save puppeteer-core@24
-          cat > /tmp/recover-step7-swagger.mjs <<'JS'
+          cat > recover-step7-swagger.mjs <<'JS'
           import fs from 'node:fs';
           import puppeteer from 'puppeteer-core';
           const browser = await puppeteer.launch({executablePath: process.env.CHROME_BIN, headless: false, args: ['--no-sandbox','--disable-dev-shm-usage']});
@@ -56,7 +56,8 @@ jobs:
             console.log('SPEC_BYTES_UTF8', Buffer.byteLength(text, 'utf8'));
           } finally { await browser.close(); }
           JS
-          CHROME_BIN="$chrome" xvfb-run -a node /tmp/recover-step7-swagger.mjs
+          CHROME_BIN="$chrome" xvfb-run -a node ./recover-step7-swagger.mjs
+          rm -f recover-step7-swagger.mjs
 
       - name: Build deterministic transport
         shell: bash
