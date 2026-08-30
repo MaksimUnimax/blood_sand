@@ -714,3 +714,24 @@ Only current external staging evidence remains: control-plane registration,
 enabled/protected-key config, registered origins, real Bridge/launch/signature
 fixtures, proven `vk_ts` unit, and selected-client launches. Owner 300/60/900
 second values are not VK requirements.
+
+### M5 current owner-UI registration supersession — 2026-08-30
+
+`OWNER_UI_CURRENT_CONTROL_PLANE_EVIDENCE`, recorded in
+`VK_PLATFORM_M5_CONTROL_PLANE_STAGING_EVIDENCE_2026-08-30.md`, supersedes the
+former registration/origin gaps only:
+
+```text
+CONTROL_PLANE_APP_ID=54743026
+CONTROL_PLANE_APP_ID_MATCH=yes
+REGISTERED_M5_ORIGIN=https://api.autopostmanager.ru
+REGISTERED_M5_ORIGIN_PROVEN=yes
+S5_ALLOWED_ORIGIN_VALUES=https://api.autopostmanager.ru
+VK_REGISTERED_DEVELOPMENT_URL=NONE_CURRENTLY_ACTIVE
+```
+
+All visible placement URLs are exactly `https://api.autopostmanager.ru/vk-miniapp/`.
+Development mode is off for mobile app, desktop, and mobile web. Remaining M5
+entry blockers are real registered launch, Init/GetLaunchParams, app-ID/sign
+presence, signature verification, `vk_ts` unit, and S1 runtime enablement;
+`M5_CODE_GATE=BLOCKED`.

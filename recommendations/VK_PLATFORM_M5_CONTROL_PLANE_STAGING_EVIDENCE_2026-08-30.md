@@ -173,3 +173,40 @@ Mandatory missing evidence is current VK control-plane App-ID corroboration,
 registered M5 origin, real registered launch, Bridge Init/GetLaunchParams,
 signature verification, and real `vk_ts` unit semantics.  No product runtime,
 M2, Bot, Telegram, schema, or package-lock code changed in this pass.
+
+## Current owner-UI control-plane evidence — 2026-08-30
+
+Evidence class: `OWNER_UI_CURRENT_CONTROL_PLANE_EVIDENCE`. The owner opened
+the current VK application-management UI for App `54743026`, under Settings →
+Placement / «Размещение». This is owner-supplied control-plane evidence, not
+an inference from source code. The capture exposed no protected key, service
+key, access token, password, launch query, or `sign`. Disabled Development URL
+inputs showed only placeholder text; `https://example.com` is not a registered
+URL.
+
+```text
+CONTROL_PLANE_APP_ID=54743026
+CONTROL_PLANE_APP_ID_MATCH=yes
+CONTROL_PLANE_APP_TITLE=Твой Оберег
+CONTROL_PLANE_USER_STATE=ENABLED
+CONTROL_PLANE_REVIEW_STATE=UNVERIFIED_APP_LINK_ONLY
+VK_REGISTERED_MOBILE_APP_URL=https://api.autopostmanager.ru/vk-miniapp/
+VK_REGISTERED_DESKTOP_URL=https://api.autopostmanager.ru/vk-miniapp/
+VK_REGISTERED_MOBILE_WEB_URL=https://api.autopostmanager.ru/vk-miniapp/
+REGISTERED_M5_ORIGIN=https://api.autopostmanager.ru
+REGISTERED_M5_ORIGIN_PROVEN=yes
+MOBILE_APP_DEVELOPMENT_MODE=off
+DESKTOP_SITE_DEVELOPMENT_MODE=off
+MOBILE_SITE_DEVELOPMENT_MODE=off
+VK_REGISTERED_DEVELOPMENT_URL=NONE_CURRENTLY_ACTIVE
+S5_ALLOWED_ORIGIN_VALUES=https://api.autopostmanager.ru
+```
+
+`S5_ALLOWED_ORIGIN_VALUES` is an
+`OUR_SECURITY_POLICY_VALUE_DERIVED_FROM_CURRENT_OWNER_CONTROL_PLANE_EVIDENCE`.
+It is an exact Origin, without `/vk-miniapp/`, wildcards, localhost, or
+unrelated VK domains. This supersedes only the earlier staging-required
+control-plane App-ID/match/origin/S5-value statuses. It does not prove a real
+launch, Bridge result, signature verification, `vk_ts` unit, or S1 runtime
+enablement. The corresponding non-secret fixture is
+`tests/fixtures/vk/staging/miniapp_control_plane_54743026_2026-08-30.sanitized.json`.

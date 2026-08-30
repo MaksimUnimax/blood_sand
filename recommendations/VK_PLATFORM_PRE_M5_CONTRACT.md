@@ -811,3 +811,15 @@ actions are frozen. It does not alter VK facts:
 `VK_MANDATED_FRESHNESS_TTL=UNRESOLVED`, `VK_TS_UNIT=STAGING_REQUIRED`, and
 registered-origin/control-plane/real-launch proof remains staging-required.
 `M5_CODE_GATE=BLOCKED` pending those external checks.
+
+## Current owner-UI registration evidence (2026-08-30)
+
+The dated control-plane ADR now records
+`OWNER_UI_CURRENT_CONTROL_PLANE_EVIDENCE` for App `54743026`: «Твой Оберег» is
+enabled and its visible mobile-app, desktop, and mobile-web placement URLs are
+all `https://api.autopostmanager.ru/vk-miniapp/`. Thus
+`REGISTERED_M5_ORIGIN=https://api.autopostmanager.ru` and
+`REGISTERED_M5_ORIGIN_PROVEN=yes`; the exact S5 policy value is that Origin.
+Development mode is off on all three placement surfaces, so no Development URL
+is currently active. This does not alter policy freezes or establish a real
+launch, Bridge outcome, signature outcome, `vk_ts` unit, or S1 enablement.

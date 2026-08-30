@@ -396,3 +396,17 @@ The 300-second, 60-second, and 900-second values are `OUR_SECURITY_POLICY`,
 not VK requirements. `VK_TS_UNIT`, registered-origin/control-plane/config
 proof, and real registered-app launch/signature/client evidence remain
 `STAGING_REQUIRED`; `M5_CODE_GATE=BLOCKED`.
+
+## Current owner-UI registration supersession (2026-08-30)
+
+The later current control-plane ADR now contains
+`OWNER_UI_CURRENT_CONTROL_PLANE_EVIDENCE`. It proves current control-plane
+App-ID `54743026` (`CONTROL_PLANE_APP_ID_MATCH=yes`) and the exact registered
+origin `https://api.autopostmanager.ru` for mobile-app, desktop, and mobile-web
+URLs, each `https://api.autopostmanager.ru/vk-miniapp/`.
+`S5_ALLOWED_ORIGIN_VALUES=https://api.autopostmanager.ru` is an
+`OUR_SECURITY_POLICY_VALUE_DERIVED_FROM_CURRENT_OWNER_CONTROL_PLANE_EVIDENCE`.
+Development mode is off on every visible surface and no Development URL is
+active. This supersedes only the prior unproven registration/origin statuses;
+real registered launch, Init/GetLaunchParams, signature verification, `vk_ts`
+unit, and S1 runtime enablement remain `STAGING_REQUIRED`; `M5_CODE_GATE=BLOCKED`.

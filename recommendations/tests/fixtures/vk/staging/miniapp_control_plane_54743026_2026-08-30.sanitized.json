@@ -1,0 +1,21 @@
+{
+  "evidence_type": "owner_ui_current_control_plane",
+  "capture_date": "2026-08-30",
+  "app_id": 54743026,
+  "app_id_match": true,
+  "title": "Твой Оберег",
+  "user_state": "enabled",
+  "review_state": "unverified_app_link_only",
+  "registered_urls": {
+    "mobile_app": "https://api.autopostmanager.ru/vk-miniapp/",
+    "desktop": "https://api.autopostmanager.ru/vk-miniapp/",
+    "mobile_web": "https://api.autopostmanager.ru/vk-miniapp/"
+  },
+  "registered_origin": "https://api.autopostmanager.ru",
+  "development_mode": {
+    "mobile_app": false,
+    "desktop": false,
+    "mobile_web": false
+  },
+  "secret_fields_retained": false
+}
