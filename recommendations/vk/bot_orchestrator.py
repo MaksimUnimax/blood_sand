@@ -8,8 +8,8 @@ from .presenter import GENDER_PROMPT, present
 
 HUMAN_HANDOFF_ACK = "Напишите ваш вопрос сообщением — вам ответит человек."
 ROUTING_PROMPT = "Выберите, что хотите сделать:"
-DATE_PROMPT = "Введите дату рождения в формате день/месяц/год.\nНапример: 13.01.1987 или 13 января 1987."
-DATE_CORRECTION = "Не удалось распознать дату.\nНапишите дату рождения ещё раз в формате день/месяц/год.\nНапример: 13.01.1987."
+DATE_PROMPT = "Введите дату рождения в формате день/месяц/год."
+DATE_CORRECTION = "Не удалось распознать дату. Напишите дату рождения ещё раз в формате день/месяц/год."
 PICKER_FIELDS = {
     "date_picker_step": None, "date_picker_page": None,
     "date_picker_range_start": None, "date_picker_range_end": None,

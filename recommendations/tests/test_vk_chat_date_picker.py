@@ -28,6 +28,10 @@ class TextBirthDateTests(unittest.TestCase):
         self.bot.process(eid, self.event(text, payload))
     def outbox(self): return self.storage.connection.execute("select * from vk_outbox order by outbox_id desc").fetchone()
 
+    def test_date_prompt_copy_has_no_examples(self):
+        self.assertEqual(DATE_PROMPT, "Введите дату рождения в формате день/месяц/год.")
+        self.assertEqual(DATE_CORRECTION, "Не удалось распознать дату. Напишите дату рождения ещё раз в формате день/месяц/год.")
+
     def test_dateparser_dependency_and_required_formats(self):
         self.assertEqual(dateparser.__version__, "1.4.2")
         forms = ("13.01.1987", "13/01/1987", "13-01-1987", "13 01 1987", "13.01.87", "13 01 87", "13 января 1987", "13 янв. 1987", "13 January 1987", "January 13, 1987")
