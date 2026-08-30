@@ -758,3 +758,29 @@ KIP_VK_PLATFORM_PRE_M5_OFFICIAL_CONTRACT_V1
 Frozen frontend versions: `@vkontakte/vk-bridge 3.0.2`, `@vkontakte/vkui
 8.3.0`, React 19.2.0, and Vite 6.2.4. No router or vk-miniapps-deploy package
 is installed for the single-screen calendar slice.
+
+---
+
+## 2026-08-30 M5 implementation revalidation
+
+The dated evidence and exact source commits are recorded in
+`VK_PLATFORM_M5_IMPLEMENTATION_REVALIDATION_2026-08-30.md`. Revalidated
+official values are: create-vk-mini-app 3.0.0 (Node >=18), Bridge 3.0.2, VKUI
+8.4.0, router 1.8.6, and deploy 1.0.2. The generator template still declares
+deploy ^0.1.6 while the current official deploy repository calls every <1.0.0
+version unsupported; future dependency freezing must follow the current deploy
+package source, not the stale template declaration.
+
+Current Developer launch/signature documentation now takes precedence over the
+archived `vk-apps-launch-params` repository. It verifies signed launch
+parameters and HMAC-SHA256 construction, but supplies no mandated freshness
+TTL or proven `vk_ts` unit. Those are not silently converted into a VK
+requirement.
+
+```text
+M5_CODE_GATE=BLOCKED
+```
+
+Blockers are registered-app/origin/static-host staging proof, real signed-launch
+evidence, owner-approved M5 security policies, frozen standalone authenticated
+M5 HTTP transport, and frozen product-action presentation.

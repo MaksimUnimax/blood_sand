@@ -655,3 +655,27 @@ M3_CALENDAR_LIVE_OPEN_APP_GATE = NOT_APPLICABLE_PRODUCT_DECISION
 
 The historical Mini App investigation and its security regression coverage
 remain valid, but are no longer a release gate for the birth-date UX.
+
+---
+
+## M5 implementation revalidation — 2026-08-30
+
+Evidence ADR: `VK_PLATFORM_M5_IMPLEMENTATION_REVALIDATION_2026-08-30.md`.
+
+| Gate | Status | Revalidated evidence |
+|---|---|---|
+| official package baseline | PASS | exact current official commits/versions in ADR |
+| generator/deploy conflict | PASS | generator ^0.1.6; official deploy 1.0.2; <1.0.0 unsupported |
+| Bridge init/launch/capability | PASS | current Bridge source and current Developer documentation |
+| registered app/static origin | STAGING_REQUIRED | Mini App disabled; static route 404; no registration proof |
+| real signed launch | STAGING_REQUIRED | no sanitized registered-app fixture |
+| security policies | OWNER_POLICY_REQUIRED | freshness, session, token, origins, retention unfrozen |
+| standalone M5 HTTP contract | UNRESOLVED | public M2 is frozen; M5 transport is proposal only |
+| product action | PARTIAL | one action approved; destination/presentation unfrozen |
+
+```text
+M5_CODE_GATE=BLOCKED
+```
+
+The retired Bot calendar handoff remains inactive. Its `open_app` staging
+evidence belongs to M6 and is not a standalone-M5 prerequisite.
