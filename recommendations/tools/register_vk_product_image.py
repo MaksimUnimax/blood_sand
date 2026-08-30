@@ -73,12 +73,16 @@ def register(file_path: Path) -> str:
             uploaded = client.post(upload["upload_url"], files={"photo": (file_path.name, file_path.read_bytes(), mimetypes.guess_type(file_path.name)[0])}).json()
         except (httpx.HTTPError, ValueError) as exc:
             raise RuntimeError("VK image upload failed") from exc
-        # VK's documented message-photo upload response is photo/hash strings
-        # plus an integer server identifier.  Preserve that native type.
+        # VK's message-photo upload response has photo/hash strings.  VK
+        # deployments return the server identifier as either its JSON number
+        # or decimal string; preserve that native type for saveMessagesPhoto.
         if not isinstance(uploaded, dict) or not (
             isinstance(uploaded.get("photo"), str) and bool(uploaded["photo"])
             and isinstance(uploaded.get("hash"), str) and bool(uploaded["hash"])
-            and type(uploaded.get("server")) is int
+            and (
+                type(uploaded.get("server")) is int
+                or (isinstance(uploaded.get("server"), str) and bool(uploaded["server"]))
+            )
         ):
             raise RuntimeError("VK image upload response is invalid")
         saved = _api(client, "photos.saveMessagesPhoto", token, {"photo": uploaded["photo"], "server": uploaded["server"], "hash": uploaded["hash"]})

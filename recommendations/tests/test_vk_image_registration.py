@@ -48,6 +48,21 @@ class VKImageRegistrationTests(unittest.TestCase):
         self.assertEqual(save_call[1]["server"], 123456)
         self.assertIs(type(save_call[1]["server"]), int)
 
+    def test_decimal_string_server_response_is_saved_without_coercion(self):
+        class StringServerClient(Client):
+            def post(self, url, data=None, files=None):
+                response = super().post(url, data=data, files=files)
+                if url == "https://upload.invalid":
+                    return Response({"photo": "uploaded-photo", "hash": "uploaded-hash", "server": "123456"})
+                return response
+
+        client = StringServerClient()
+        with patch.dict(os.environ, self.environment, clear=True), patch.object(registration.httpx, "Client", return_value=client), patch.object(registration.mimetypes, "guess_type", return_value=("image/png", None)):
+            registration.register(self.image)
+        save_call = client.calls[2]
+        self.assertEqual(save_call[1]["server"], "123456")
+        self.assertIsInstance(save_call[1]["server"], str)
+
     def test_upload_server_method_uses_peer_id_only(self):
         client = Client()
         with patch.dict(os.environ, self.environment, clear=True), patch.object(registration.httpx, "Client", return_value=client), patch.object(registration.mimetypes, "guess_type", return_value=("image/png", None)):
