@@ -117,18 +117,21 @@ class VKStorage:
         c.execute("INSERT INTO vk_transition_audit(source_event_id,from_state,to_state,from_state_version,to_state_version,transition_kind,created_at) VALUES(?,?,?,?,?,?,?)", (event_id, old['state'] if old else 'START', state, old['state_version'] if old else 0, state_version, kind, self._now()))
 
     def transition_and_enqueue(self, event_id, g, p, state, fields, text, keyboard=None, transition_kind='standard'):
+        if keyboard is not None and keyboard.get('inline'):
+            from .keyboard import validate_inline_keyboard
+            validate_inline_keyboard(keyboard)
         def run(c):
             c.execute("BEGIN IMMEDIATE")
             try:
                 old = c.execute("SELECT * FROM vk_bot_sessions WHERE vk_group_id=? AND peer_id=?", (g, p)).fetchone()
                 if self._expired(old):
                     old = None
-                vals = {"birth_day":None,"birth_month":None,"birth_year":None,"gender":None,"marketplace":None,"last_result_id":None,"date_picker_step":None,"date_picker_range_start":None,"date_picker_range_end":None}
+                vals = {"birth_day":None,"birth_month":None,"birth_year":None,"gender":None,"marketplace":None,"last_result_id":None,"date_picker_step":None,"date_picker_page":None,"date_picker_range_start":None,"date_picker_range_end":None,"date_picker_day_start":None,"date_picker_day_end":None}
                 if old: vals.update(dict(old))
                 vals.update(fields)
                 updated_at = self._now()
                 expires_at = (self.clock().astimezone(timezone.utc) + timedelta(seconds=self.session_retention_seconds)).isoformat()
-                c.execute("INSERT INTO vk_bot_sessions(vk_group_id,peer_id,state,birth_day,birth_month,birth_year,gender,marketplace,last_result_id,date_picker_step,date_picker_range_start,date_picker_range_end,state_version,updated_at,expires_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(vk_group_id,peer_id) DO UPDATE SET state=excluded.state,birth_day=excluded.birth_day,birth_month=excluded.birth_month,birth_year=excluded.birth_year,gender=excluded.gender,marketplace=excluded.marketplace,last_result_id=excluded.last_result_id,date_picker_step=excluded.date_picker_step,date_picker_range_start=excluded.date_picker_range_start,date_picker_range_end=excluded.date_picker_range_end,state_version=vk_bot_sessions.state_version+1,updated_at=excluded.updated_at,expires_at=excluded.expires_at", (g,p,state,vals['birth_day'],vals['birth_month'],vals['birth_year'],vals['gender'],vals['marketplace'],vals['last_result_id'],vals['date_picker_step'],vals['date_picker_range_start'],vals['date_picker_range_end'],1,updated_at,expires_at))
+                c.execute("INSERT INTO vk_bot_sessions(vk_group_id,peer_id,state,birth_day,birth_month,birth_year,gender,marketplace,last_result_id,date_picker_step,date_picker_page,date_picker_range_start,date_picker_range_end,date_picker_day_start,date_picker_day_end,state_version,updated_at,expires_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(vk_group_id,peer_id) DO UPDATE SET state=excluded.state,birth_day=excluded.birth_day,birth_month=excluded.birth_month,birth_year=excluded.birth_year,gender=excluded.gender,marketplace=excluded.marketplace,last_result_id=excluded.last_result_id,date_picker_step=excluded.date_picker_step,date_picker_page=excluded.date_picker_page,date_picker_range_start=excluded.date_picker_range_start,date_picker_range_end=excluded.date_picker_range_end,date_picker_day_start=excluded.date_picker_day_start,date_picker_day_end=excluded.date_picker_day_end,state_version=vk_bot_sessions.state_version+1,updated_at=excluded.updated_at,expires_at=excluded.expires_at", (g,p,state,vals['birth_day'],vals['birth_month'],vals['birth_year'],vals['gender'],vals['marketplace'],vals['last_result_id'],vals['date_picker_step'],vals['date_picker_page'],vals['date_picker_range_start'],vals['date_picker_range_end'],vals['date_picker_day_start'],vals['date_picker_day_end'],1,updated_at,expires_at))
                 self._after_session_write(c)
                 state_version = c.execute("SELECT state_version FROM vk_bot_sessions WHERE vk_group_id=? AND peer_id=?", (g, p)).fetchone()[0]
                 self._insert_transition_audit(c, event_id, old, state, state_version, transition_kind)

@@ -43,11 +43,14 @@ def parse_keyboard_payload(payload, text: str | None):
     if value.get("kip") != "date" or value.get("v") != 1: return None
     step = value.get("step")
     if step == "year_range" and set(value) == {"kip","step","start","end","v"} and all(isinstance(value[x], int) and not isinstance(value[x], bool) for x in ("start","end")) and text == f"{value['start']}–{value['end']}": return ("date", value)
+    if step == "year_range_page" and set(value) == {"kip","step","page","v"} and value.get("page") in {0,1}:
+        return ("date", value) if text == ({0:"← Новее",1:"Раньше →"}[value['page']]) else None
+    if step == "month_page" and set(value) == {"kip","step","page","v"} and value.get("page") in {0,1}:
+        return ("date", value) if text == ({0:"← Январь–Июнь",1:"Июль–Декабрь →"}[value['page']]) else None
+    if step == "day_band" and set(value) == {"kip","step","start","end","v"} and all(isinstance(value[x], int) and not isinstance(value[x], bool) for x in ("start","end")) and text == f"{value['start']}–{value['end']}": return ("date", value)
     if step in {"year","month","day"} and set(value) == {"kip","step","value","v"} and isinstance(value.get("value"), int) and not isinstance(value.get("value"), bool):
         labels = {"year":str(value['value']), "month": ("Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"), "day":str(value['value'])}
         expected = labels[step][value['value'] - 1] if step == "month" and 1 <= value['value'] <= 12 else labels[step] if step != "month" else None
         return ("date", value) if expected == text else None
-    if step == "day_tail" and set(value) == {"kip","step","last","v"} and isinstance(value.get("last"),int) and not isinstance(value.get("last"),bool) and text == f"21–{value['last']}": return ("date", value)
-    if step == "day_tail" and set(value) == {"kip","step","value","v"} and isinstance(value.get("value"),int) and not isinstance(value.get("value"),bool) and text == str(value['value']): return ("date", value)
     if step == "back" and set(value) == {"kip","step","to","v"} and value.get("to") in {"year_range","year","month","day"} and text == "← Назад": return ("date", value)
     return None

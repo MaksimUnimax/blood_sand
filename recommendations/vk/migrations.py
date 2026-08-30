@@ -1,7 +1,7 @@
 from __future__ import annotations
 import sqlite3
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 DDL = """
 CREATE TABLE IF NOT EXISTS vk_schema_migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS vk_inbound_events(id INTEGER PRIMARY KEY, vk_group_id INTEGER NOT NULL, transport TEXT NOT NULL, event_id TEXT NOT NULL, api_version TEXT NOT NULL, event_type TEXT NOT NULL, raw_payload_json TEXT NOT NULL, normalized_payload_json TEXT, status TEXT NOT NULL, attempt_count INTEGER NOT NULL DEFAULT 0, next_attempt_at TEXT, received_at TEXT NOT NULL, claimed_at TEXT, processed_at TEXT, last_error_code TEXT, last_error_detail TEXT, UNIQUE(vk_group_id,transport,event_id));
@@ -54,6 +54,12 @@ def initialize(connection: sqlite3.Connection) -> None:
                 if column not in columns:
                     connection.execute(f"ALTER TABLE vk_bot_sessions ADD COLUMN {column} {kind} NULL")
             connection.execute("INSERT INTO vk_schema_migrations(version,applied_at) VALUES(5,datetime('now'))")
+        if 6 not in versions:
+            columns = {row[1] for row in connection.execute("PRAGMA table_info(vk_bot_sessions)")}
+            for column, kind in (("date_picker_page", "INTEGER"), ("date_picker_day_start", "INTEGER"), ("date_picker_day_end", "INTEGER")):
+                if column not in columns:
+                    connection.execute(f"ALTER TABLE vk_bot_sessions ADD COLUMN {column} {kind} NULL")
+            connection.execute("INSERT INTO vk_schema_migrations(version,applied_at) VALUES(6,datetime('now'))")
         connection.commit()
     except Exception:
         connection.rollback(); raise
