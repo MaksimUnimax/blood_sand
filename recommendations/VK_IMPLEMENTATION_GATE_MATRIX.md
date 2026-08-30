@@ -82,7 +82,7 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 | M2 | shared Recommendation API/backend foundation | architecture + exact HTTP contract + dependency policy frozen | locked environment setup committed and independently audited | **CLOSED / PASS** |
 | M3 | VK Community Bot | fully architected + final PRE-M3 authority frozen | real text-keyboard send/click round trip is evidenced; calendar authority remains pending | **TEXT KEYBOARD CODE GATE PASS** |
 | M4 | destinations/availability overlay | high-level architecture defined | concrete destination registry/availability source gate still required | **BLOCKED UNTIL M3/M4 AUTHORITY PASS** |
-| M5 | VK Mini App | fully architected + PRE-M5 contract exists | official deploy-tool conflict + app/security/client staging remain | **BLOCKED** |
+| M5 | VK Mini App | authenticated HTTP proposal is ready but owner approval remains required; PRE-M5 contract exists | repository owner-registration evidence identifies app `54743026`; current VK control-plane/origin/key/real-launch evidence and security/product decisions remain | **BLOCKED** |
 | M6 | Bot ↔ Mini App continuity | fully architected + PRE-M6 contract exists | Mini App → community-dialog primitive unresolved; cross-client staging required | **BLOCKED** |
 | M7 | hardening/operator/analytics | architecture boundaries defined | depends on preceding runtime evidence | **BLOCKED** |
 | M8 | controlled launch | roadmap defined | production gates not yet executed | **BLOCKED** |

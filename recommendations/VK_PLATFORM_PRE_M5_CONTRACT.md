@@ -36,6 +36,15 @@ contract не найден
 
 Business recommendation semantics не меняются.
 
+## Addendum — recovered registered-app repository evidence (2026-08-30)
+
+Commit `703b3f9fae5d5802b4063401d4c5d10e038bce62` explicitly records
+`VK_MINIAPP_APP_ID = 54743026` as an owner-registered ID.  Its exact authority
+classification is `OWNER_REGISTERED_EVIDENCE`, not a mere implementation
+default.  It does **not** prove current VK control-plane registration, protected
+key/enabled state, registered dev/prod origins, or a real launch.  Those remain
+`STAGING_REQUIRED`; never derive owner/community binding from this app ID.
+
 ---
 
 ## 2. Current official ecosystem baseline
