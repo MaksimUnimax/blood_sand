@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .migrations import initialize
 from .normalization import redact_callback
+from .audit import sanitize_keyboard_audit
 
 
 def now() -> str:
@@ -112,7 +113,10 @@ class VKStorage:
     def _before_outbox_insert(self, connection) -> None:
         """Narrow failure-injection seam; production intentionally does nothing."""
 
-    def transition_and_enqueue(self, event_id, g, p, state, fields, text, keyboard=None):
+    def _insert_transition_audit(self, c, event_id, old, state, state_version, kind):
+        c.execute("INSERT INTO vk_transition_audit(source_event_id,from_state,to_state,from_state_version,to_state_version,transition_kind,created_at) VALUES(?,?,?,?,?,?,?)", (event_id, old['state'] if old else 'START', state, old['state_version'] if old else 0, state_version, kind, self._now()))
+
+    def transition_and_enqueue(self, event_id, g, p, state, fields, text, keyboard=None, transition_kind='standard'):
         def run(c):
             c.execute("BEGIN IMMEDIATE")
             try:
@@ -126,10 +130,13 @@ class VKStorage:
                 expires_at = (self.clock().astimezone(timezone.utc) + timedelta(seconds=self.session_retention_seconds)).isoformat()
                 c.execute("INSERT INTO vk_bot_sessions(vk_group_id,peer_id,state,birth_day,birth_month,birth_year,gender,marketplace,last_result_id,state_version,updated_at,expires_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(vk_group_id,peer_id) DO UPDATE SET state=excluded.state,birth_day=excluded.birth_day,birth_month=excluded.birth_month,birth_year=excluded.birth_year,gender=excluded.gender,marketplace=excluded.marketplace,last_result_id=excluded.last_result_id,state_version=vk_bot_sessions.state_version+1,updated_at=excluded.updated_at,expires_at=excluded.expires_at", (g,p,state,vals['birth_day'],vals['birth_month'],vals['birth_year'],vals['gender'],vals['marketplace'],vals['last_result_id'],1,updated_at,expires_at))
                 self._after_session_write(c)
+                state_version = c.execute("SELECT state_version FROM vk_bot_sessions WHERE vk_group_id=? AND peer_id=?", (g, p)).fetchone()[0]
+                self._insert_transition_audit(c, event_id, old, state, state_version, transition_kind)
                 rid = secrets.randbelow(2_000_000_000)+1
                 self._before_outbox_insert(c)
                 keyboard_json = json.dumps(keyboard, ensure_ascii=False, separators=(',', ':')) if keyboard is not None else None
-                c.execute("INSERT INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,keyboard_json,random_id,status,created_at) VALUES(?,?,?,?,?,?,'PENDING',?)", (event_id,g,p,text,keyboard_json,rid,now()))
+                audit_json = json.dumps(sanitize_keyboard_audit(keyboard), ensure_ascii=False, separators=(',', ':')) if keyboard is not None else None
+                c.execute("INSERT INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,keyboard_json,keyboard_audit_json,random_id,status,created_at) VALUES(?,?,?,?,?,?,?,'PENDING',?)", (event_id,g,p,text,keyboard_json,audit_json,rid,now()))
                 c.commit()
             except Exception:
                 c.rollback(); raise
@@ -158,8 +165,9 @@ class VKStorage:
                 c.execute("INSERT INTO vk_miniapp_handoffs VALUES(?,?,?,?,?,?,?,?,?,?,NULL)", (handoff_id, self.token_hash(token), g, p, expected_vk_user_id, 'WAITING_DATE', state_version, 'birth_date', updated_at, handoff_expires))
                 self._after_session_write(c)
                 keyboard = calendar_keyboard(app_id, owner_id, token)
+                self._insert_transition_audit(c, event_id, old, 'WAITING_DATE', state_version, 'calendar')
                 self._before_outbox_insert(c)
-                c.execute("INSERT INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,keyboard_json,random_id,status,created_at) VALUES(?,?,?,?,?,?,'PENDING',?)", (event_id,g,p,text,json.dumps(keyboard,ensure_ascii=False,separators=(',',':')),secrets.randbelow(2_000_000_000)+1,updated_at))
+                c.execute("INSERT INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,keyboard_json,keyboard_audit_json,random_id,status,created_at) VALUES(?,?,?,?,?,?,?,'PENDING',?)", (event_id,g,p,text,json.dumps(keyboard,ensure_ascii=False,separators=(',',':')),json.dumps(sanitize_keyboard_audit(keyboard),ensure_ascii=False,separators=(',',':')),secrets.randbelow(2_000_000_000)+1,updated_at))
                 c.commit()
             except Exception:
                 c.rollback(); raise
@@ -231,8 +239,9 @@ class VKStorage:
                 synthetic='miniapp:'+h['handoff_id']
                 c.execute("INSERT INTO vk_inbound_events(vk_group_id,transport,event_id,api_version,event_type,raw_payload_json,status,received_at) VALUES(?,?,?,?,?,?,?,?)",(h['vk_group_id'],'miniapp',synthetic,'5.199','miniapp.birth_date','{}','PROCESSED',stamp))
                 event_id=c.execute('SELECT id FROM vk_inbound_events WHERE vk_group_id=? AND transport=? AND event_id=?',(h['vk_group_id'],'miniapp',synthetic)).fetchone()['id']
+                self._insert_transition_audit(c, event_id, bot, 'WAITING_GENDER', bot['state_version'] + 1, 'miniapp_birth_date')
                 self._before_outbox_insert(c)
-                c.execute("INSERT INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,keyboard_json,random_id,status,created_at) VALUES(?,?,?,?,?,?,'PENDING',?)",(event_id,h['vk_group_id'],h['peer_id'],gender_prompt,json.dumps(gender_keyboard,ensure_ascii=False,separators=(',',':')),secrets.randbelow(2_000_000_000)+1,stamp))
+                c.execute("INSERT INTO vk_outbox(source_event_id,vk_group_id,peer_id,message_text,keyboard_json,keyboard_audit_json,random_id,status,created_at) VALUES(?,?,?,?,?,?,?,'PENDING',?)",(event_id,h['vk_group_id'],h['peer_id'],gender_prompt,json.dumps(gender_keyboard,ensure_ascii=False,separators=(',',':')),json.dumps(sanitize_keyboard_audit(gender_keyboard),ensure_ascii=False,separators=(',',':')),secrets.randbelow(2_000_000_000)+1,stamp))
                 c.commit()
             except Exception: c.rollback(); raise
         return self._run(run)
