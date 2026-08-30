@@ -66,7 +66,7 @@ class BotOrchestrator:
             except RecommendationInputError:
                 self._date_prompt(eid, event, correction=True, kind="date_text_invalid")
                 return "PROCESSED"
-            if parsed > self._today():
+            if parsed >= self._today():
                 self._date_prompt(eid, event, correction=True, kind="date_text_invalid")
                 return "PROCESSED"
             self.storage.transition_and_enqueue(

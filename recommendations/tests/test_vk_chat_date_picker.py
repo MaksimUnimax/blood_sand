@@ -29,7 +29,7 @@ class TextBirthDateTests(unittest.TestCase):
     def outbox(self): return self.storage.connection.execute("select * from vk_outbox order by outbox_id desc").fetchone()
 
     def test_dateparser_dependency_and_required_formats(self):
-        self.assertEqual(dateparser.__version__, "1.2.2")
+        self.assertEqual(dateparser.__version__, "1.4.2")
         forms = ("13.01.1987", "13/01/1987", "13-01-1987", "13 01 1987", "13.01.87", "13 01 87", "13 января 1987", "13 янв. 1987", "13 January 1987", "January 13, 1987")
         for form in forms: self.assertEqual(parse_birth_date(form, today=date(2026,8,29)), date(1987,1,13), form)
         self.assertEqual(parse_birth_date("01/02/1987", today=date(2026,8,29)), date(1987,2,1))
@@ -39,7 +39,7 @@ class TextBirthDateTests(unittest.TestCase):
     def test_invalid_incomplete_relative_future_and_unsupported_retry_without_mutation(self):
         self.send("Подобрать оберег", '{"kip":"menu","value":"recommend","v":1}')
         self.assertEqual(self.outbox()["message_text"], DATE_PROMPT); self.assertIsNone(self.outbox()["keyboard_json"])
-        for value in ("31.02.1987", "29.02.2023", "13.13.2020", "13.10", "random text", "today", "сегодня", "tomorrow", "11023", "100187", "30.08.2027"):
+        for value in ("31.02.1987", "29.02.2023", "13.13.2020", "13.10", "random text", "29.08.2026", "today", "сегодня", "tomorrow", "11023", "100187", "30.08.2027"):
             self.send(value); row = self.storage.session(1,2)
             self.assertEqual(row["state"], "WAITING_DATE", value); self.assertEqual((row["birth_day"], row["birth_month"], row["birth_year"]), (None,None,None), value)
             self.assertEqual(self.outbox()["message_text"], DATE_CORRECTION, value)
