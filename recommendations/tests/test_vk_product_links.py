@@ -32,9 +32,9 @@ class VKProductLinksTests(unittest.TestCase):
             path = Path(directory) / "links.json"; path.write_text(json.dumps(data))
             with self.assertRaises(ProductLinkConfigurationError): load_product_links(path)
 
-    def test_one_row_open_link_keyboard_and_kolyadnik_label(self):
+    def test_live_compatible_three_row_open_link_keyboard_and_kolyadnik_label(self):
         for key in load_product_links():
             keyboard = recommendation_marketplace_keyboard(key, product_links(key))
-            self.assertEqual((keyboard["one_time"], keyboard["inline"], len(keyboard["buttons"]), len(keyboard["buttons"][0])), (False, True, 1, 3))
-            self.assertEqual([button["action"]["type"] for button in keyboard["buttons"][0]], ["open_link"] * 3)
-        self.assertEqual(recommendation_marketplace_keyboard("kolyadnik", product_links("kolyadnik"))["buttons"][0][2]["action"]["label"], "🟣 Wildberries · Алатырь")
+            self.assertEqual((keyboard["one_time"], keyboard["inline"], len(keyboard["buttons"]), [len(row) for row in keyboard["buttons"]]), (False, True, 3, [1, 1, 1]))
+            self.assertEqual([row[0]["action"]["type"] for row in keyboard["buttons"]], ["open_link"] * 3)
+        self.assertEqual(recommendation_marketplace_keyboard("kolyadnik", product_links("kolyadnik"))["buttons"][2][0]["action"]["label"], "🟣 Wildberries · Алатырь")

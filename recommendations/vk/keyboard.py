@@ -64,13 +64,15 @@ def main_menu_keyboard() -> dict:
 def restart_keyboard() -> dict: return {"one_time":True,"inline":False,"buttons":[[_button("Подобрать снова", {"kip":"restart","v":1}, "primary")]]}
 
 def recommendation_marketplace_keyboard(product_key: str, links: dict) -> dict:
-    """One-row URL keyboard; links are resolved once before the outbox insert."""
+    """One-link-per-row URL keyboard; links are resolved once before the outbox insert."""
     wb_label = "🟣 Wildberries · Алатырь" if product_key == "kolyadnik" else "🟣 Wildberries"
-    keyboard = {"one_time": False, "inline": True, "buttons": [[
-        {"action": {"type": "open_link", "label": "🔵 VK", "link": links["vk"]}},
-        {"action": {"type": "open_link", "label": "🔵 Ozon", "link": links["ozon"]}},
-        {"action": {"type": "open_link", "label": wb_label, "link": links["wildberries"]}},
-    ]]}
+    # Live VK API 5.199 probe: a row containing three open_link buttons is
+    # rejected with error 911; the identical three buttons on separate rows pass.
+    keyboard = {"one_time": False, "inline": True, "buttons": [
+        [{"action": {"type": "open_link", "label": "🔵 VK", "link": links["vk"]}}],
+        [{"action": {"type": "open_link", "label": "🔵 Ozon", "link": links["ozon"]}}],
+        [{"action": {"type": "open_link", "label": wb_label, "link": links["wildberries"]}}],
+    ]}
     return validate_inline_keyboard(keyboard)
 
 def calendar_keyboard(app_id: int, owner_id: int, handoff_token: str) -> dict:
