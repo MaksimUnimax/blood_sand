@@ -45,6 +45,15 @@ default.  It does **not** prove current VK control-plane registration, protected
 key/enabled state, registered dev/prod origins, or a real launch.  Those remain
 `STAGING_REQUIRED`; never derive owner/community binding from this app ID.
 
+## Addendum — current staging control-plane evidence (2026-08-30)
+
+`VK_PLATFORM_M5_CONTROL_PLANE_STAGING_EVIDENCE_2026-08-30.md` is the current
+sanitized operational record.  It establishes only protected-key presence,
+configured (not registered) app ID/public URL, disabled state, and current
+static-host reachability.  It does not change the requirement for authenticated
+VK owner UI evidence of registered development/production/test URLs, nor does
+it permit a real-launch claim or activate S1.
+
 ---
 
 ## 2. Current official ecosystem baseline

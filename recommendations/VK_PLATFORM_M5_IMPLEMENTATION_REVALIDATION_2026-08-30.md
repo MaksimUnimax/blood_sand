@@ -4,6 +4,17 @@ Status: **BLOCKED — documentation-only entry gate**
 Required start commit: `9beffb147adad03e7782e10de13fcd67a6cc8fee`
 Evidence retrieved: 2026-08-30 (UTC+02:00)
 
+## Addendum — current local control-plane/staging inspection
+
+The later same-day sanitized inspection is recorded in
+`VK_PLATFORM_M5_CONTROL_PLANE_STAGING_EVIDENCE_2026-08-30.md`.  It recovers
+the active staging service and shows configured App ID `54743026`, protected
+key presence, configured public URL, and a reachable static host; it also
+proves that the feature is currently disabled and that the historical config
+couples M5 and M6 handoff requirements.  It does **not** prove a VK-registered
+origin or current VK control-plane identity, so all real-launch and `vk_ts`
+gates remain `STAGING_REQUIRED` and `M5_CODE_GATE` remains `BLOCKED`.
+
 ## Decision and source hierarchy
 
 This ADR applies the repository rule: current VK Developer documentation is

@@ -87,6 +87,17 @@ VK_PLATFORM_PRE_M6_CONTRACT.md
 | M7 | hardening/operator/analytics | architecture boundaries defined | depends on preceding runtime evidence | **BLOCKED** |
 | M8 | controlled launch | roadmap defined | production gates not yet executed | **BLOCKED** |
 
+### M5 current control-plane evidence addendum — 2026-08-30
+
+`VK_PLATFORM_M5_CONTROL_PLANE_STAGING_EVIDENCE_2026-08-30.md` recovers a
+sanitized local staging configuration observation: App ID `54743026` and
+protected-key presence are configured, the feature is disabled, and the served
+static origin is reachable.  This is not VK control-plane evidence.  No
+authorized user/service token, owner-management UI session, registered URL, or
+real launch fixture was available.  Therefore the M5 row remains **BLOCKED**:
+registered origin, real Bridge evidence, signature verification, and real
+`vk_ts` unit semantics are still required before code entry.
+
 M3 local runtime record:
 
 ```text
