@@ -210,3 +210,79 @@ control-plane App-ID/match/origin/S5-value statuses. It does not prove a real
 launch, Bridge result, signature verification, `vk_ts` unit, or S1 runtime
 enablement. The corresponding non-secret fixture is
 `tests/fixtures/vk/staging/miniapp_control_plane_54743026_2026-08-30.sanitized.json`.
+
+## Real desktop registered-launch evidence — 2026-08-30
+
+The owner had already supplied the control-plane registration evidence above.
+For this one-time capture, desktop development mode was temporarily directed to
+the randomized evidence harness and the owner reported `EVIDENCE CAPTURED`.
+The server-side verifier then wrote the sanitized record at
+`/var/lib/kip-vk-miniapp-evidence-584ea14ca900c3c7390d0789cff113a5/registered_launch.sanitized.json`.
+
+The record is valid JSON and contains no raw launch query, `sign` value,
+`vk_user_id`, protected key, or other secret. It records only non-secret
+outcomes. Its derived timestamp evidence has a 10-digit `vk_ts`, a
+seconds-interpretation delta of 30 seconds, and a milliseconds-interpretation
+delta of 1786304539 seconds; this proves `VK_TS_UNIT=SECONDS` for this launch.
+It does not establish a VK-mandated freshness TTL.
+
+```text
+REAL_REGISTERED_APP_LAUNCH=PASS
+REAL_VKWEBAPP_INIT=PASS
+REAL_VKWEBAPP_GET_LAUNCH_PARAMS=PASS
+REAL_LAUNCH_APP_ID_PRESENT=yes
+REAL_LAUNCH_APP_ID_MATCH=yes
+REAL_LAUNCH_SIGN_PRESENT=yes
+REAL_LAUNCH_VK_TS_PRESENT=yes
+REAL_SIGNATURE_VERIFICATION=PASS
+REAL_LAUNCH_CLIENT=desktop_web
+BRIDGE_APP_ID_MATCH=yes
+BRIDGE_SIGN_PRESENT=yes
+BRIDGE_VK_TS_PRESENT=yes
+VK_TS_UNIT=SECONDS
+VK_MANDATED_FRESHNESS_TTL=UNRESOLVED
+S1_RUNTIME_ENABLEMENT=PASS_FOR_IMPLEMENTATION
+SANITIZED_REAL_LAUNCH_FIXTURE=tests/fixtures/vk/staging/miniapp_registered_launch_54743026_2026-08-30.sanitized.json
+RAW_LAUNCH_RETAINED=no
+SIGN_RETAINED=no
+VK_USER_ID_RETAINED=no
+SECRET_RETAINED=no
+```
+
+Temporary resources used for the capture were:
+
+```text
+EVIDENCE_HARNESS_URL=https://api.autopostmanager.ru/vk-miniapp-evidence-584ea14ca900c3c7390d0789cff113a5/
+EVIDENCE_VERIFIER_URL=https://api.autopostmanager.ru/vk-miniapp-evidence-584ea14ca900c3c7390d0789cff113a5/verify
+EVIDENCE_VERIFIER_LOCAL_BIND=127.0.0.1:18789
+TEMP_SYSTEMD_UNIT=kip-vk-miniapp-evidence-584ea14ca900c3c7390d0789cff113a5.service
+TEMP_NGINX_CONFIG=/etc/nginx/apm_locations.d/vk-miniapp-evidence-584ea14ca900c3c7390d0789cff113a5.conf
+TEMP_STATIC_DIRECTORY=/var/www/vk-miniapp-evidence-584ea14ca900c3c7390d0789cff113a5
+```
+
+The fixture is now durable; the temporary resources are to be removed in this
+same pass before the resulting gate decision is finalized.
+
+### Cleanup and post-cleanup checks
+
+After the fixture and this evidence record were created, the temporary systemd
+unit was stopped and removed, the temporary nginx configuration was removed,
+and `nginx -t` passed before nginx was reloaded. The temporary static directory
+and verifier output directory were then removed. The evidence URL now returns
+HTTP 404; the production `/vk-miniapp/` route still returns HTTP 200; the
+deployed M2 resolve route on its bound service contract still returns HTTP 200;
+and the existing Bot callback service remains active.
+
+```text
+EPHEMERAL_HARNESS_REMOVED=yes
+TEMP_INFRA_CHANGE_REVERTED=yes
+TEMP_SYSTEMD_UNIT_REMOVED=yes
+TEMP_NGINX_CONFIG_REMOVED=yes
+TEMP_STATIC_DIRECTORY_REMOVED=yes
+TEMP_EVIDENCE_OUTPUT_REMOVED=yes
+PRODUCTION_MINIAPP_ROUTE_UNCHANGED=yes
+M2_HEALTH_UNCHANGED=yes
+BOT_SERVICE_UNCHANGED=yes
+M5_CODE_GATE=PASS
+NEXT_IMPLEMENTATION_SLICE=M5_STANDALONE_BACKEND_SESSION_AND_AUTHENTICATED_RESOLVE_FOUNDATION
+```

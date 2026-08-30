@@ -735,3 +735,27 @@ Development mode is off for mobile app, desktop, and mobile web. Remaining M5
 entry blockers are real registered launch, Init/GetLaunchParams, app-ID/sign
 presence, signature verification, `vk_ts` unit, and S1 runtime enablement;
 `M5_CODE_GATE=BLOCKED`.
+
+### M5 real registered desktop-launch evidence — 2026-08-30
+
+The sanitized real-launch fixture is
+`tests/fixtures/vk/staging/miniapp_registered_launch_54743026_2026-08-30.sanitized.json`.
+It proves a desktop-web registered launch for App `54743026` with successful
+`VKWebAppInit`, `VKWebAppGetLaunchParams`, matching Bridge App ID, present
+Bridge `sign` and `vk_ts`, and successful server-side signature verification.
+Derived non-secret timestamp evidence proves `VK_TS_UNIT=SECONDS`; no raw
+launch query, signature value, user ID, or secret is retained.
+
+```text
+REAL_VKWEBAPP_INIT=PASS
+REAL_VKWEBAPP_GET_LAUNCH_PARAMS=PASS
+REAL_LAUNCH_APP_ID_MATCH=yes
+REAL_SIGNATURE_VERIFICATION=PASS
+VK_TS_UNIT=SECONDS
+S1_RUNTIME_ENABLEMENT=PASS_FOR_IMPLEMENTATION
+VK_MANDATED_FRESHNESS_TTL=UNRESOLVED
+M5_CODE_GATE=PASS
+NEXT_IMPLEMENTATION_SLICE=M5_STANDALONE_BACKEND_SESSION_AND_AUTHENTICATED_RESOLVE_FOUNDATION
+```
+
+The timestamp freshness policy values remain owner policy, not VK requirements.

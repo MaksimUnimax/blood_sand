@@ -410,3 +410,19 @@ Development mode is off on every visible surface and no Development URL is
 active. This supersedes only the prior unproven registration/origin statuses;
 real registered launch, Init/GetLaunchParams, signature verification, `vk_ts`
 unit, and S1 runtime enablement remain `STAGING_REQUIRED`; `M5_CODE_GATE=BLOCKED`.
+
+## Real registered desktop launch supersession (2026-08-30)
+
+The later sanitized registered-launch fixture,
+`tests/fixtures/vk/staging/miniapp_registered_launch_54743026_2026-08-30.sanitized.json`,
+now proves a real desktop-web launch for App `54743026`. `VKWebAppInit` and
+`VKWebAppGetLaunchParams` both passed; Bridge app ID, `sign` presence, and
+`vk_ts` presence matched; server-side signature verification passed. Derived,
+non-secret timestamp evidence proves `VK_TS_UNIT=SECONDS`. The fixture retains
+no raw launch material, signature, user ID, or secret.
+
+`S1_RUNTIME_ENABLEMENT=PASS_FOR_IMPLEMENTATION`. The 300-second maximum age
+and 60-second future skew remain our policy, and
+`VK_MANDATED_FRESHNESS_TTL=UNRESOLVED`. With the owner-policy and contract
+freezes plus the previously recorded control-plane/origin/key evidence, the
+pre-code M5 entry gate is now `M5_CODE_GATE=PASS`.

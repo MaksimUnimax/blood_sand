@@ -823,3 +823,16 @@ all `https://api.autopostmanager.ru/vk-miniapp/`. Thus
 Development mode is off on all three placement surfaces, so no Development URL
 is currently active. This does not alter policy freezes or establish a real
 launch, Bridge outcome, signature outcome, `vk_ts` unit, or S1 enablement.
+
+## Real registered desktop-launch evidence (2026-08-30)
+
+The sanitized fixture
+`tests/fixtures/vk/staging/miniapp_registered_launch_54743026_2026-08-30.sanitized.json`
+now supplies the missing registered desktop-web launch evidence: Init and
+GetLaunchParams passed, App ID `54743026` matched, `sign` and `vk_ts` were
+present, and server-side signature verification passed. Its non-secret derived
+timestamp deltas prove `VK_TS_UNIT=SECONDS`; `S1_RUNTIME_ENABLEMENT` is
+therefore `PASS_FOR_IMPLEMENTATION`. No raw query, signature value, user ID,
+or secret is retained. `VK_MANDATED_FRESHNESS_TTL=UNRESOLVED`; the 300/60/900
+second values remain our policy. The M5 pre-code gate is `PASS` and the next
+slice is `M5_STANDALONE_BACKEND_SESSION_AND_AUTHENTICATED_RESOLVE_FOUNDATION`.

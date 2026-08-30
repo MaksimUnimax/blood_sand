@@ -1,0 +1,19 @@
+{
+  "evidence_type": "registered_miniapp_launch",
+  "capture_date": "2026-08-30",
+  "app_id_expected": 54743026,
+  "app_id_match": true,
+  "vkwebapp_init": true,
+  "get_launch_params": true,
+  "bridge_app_id_match": true,
+  "bridge_sign_present": true,
+  "bridge_vk_ts_present": true,
+  "signature_verified": true,
+  "vk_ts_present": true,
+  "vk_ts_unit": "seconds",
+  "client": "desktop_web",
+  "raw_launch_retained": false,
+  "vk_user_id_retained": false,
+  "sign_retained": false,
+  "secret_retained": false
+}
