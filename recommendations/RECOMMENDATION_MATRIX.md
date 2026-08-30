@@ -62,7 +62,7 @@ V2 даёт фактическим продажам высокий вес пос
 | Змей | **Семаргл** | **Семаргл** | **Семаргл** | **Семаргл** |
 | Ворон | **Колядник** | **Алатырь** | **Алатырь** | **Алатырь** |
 | Медведь | **Печать Велеса** | **Печать Велеса** | **Печать Велеса** | **Печать Велеса** |
-| Бусел | **Молвинец** | **Звезда Лады** | **Молвинец** | **Звезда Лады** |
+| Бусел | **Родимич** | **Звезда Лады** | **Родимич** | **Звезда Лады** |
 | Волк | **Велес** | **Велес** | **Велес** | **Велес** |
 | Лиса | **Чернобог** | **Мара** | **Чернобог** | **Мара** |
 | Тур | **Чур** | **Чур** | **Чур** | **Чур** |
@@ -195,7 +195,7 @@ Owner-approved gender split:
 | voron | female | Алатырь | CURATED_MEANING_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
 | medved | male | Печать Велеса | DIRECT_CHERTOG_SYMBOL | SEMANTIC_DIRECT_SALES_PRIORITIZED |
 | medved | female | Печать Велеса | DIRECT_CHERTOG_SYMBOL | SEMANTIC_DIRECT_SALES_PRIORITIZED |
-| busel | male | Молвинец | CURATED_MEANING_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
+| busel | male | Родимич | DIRECT_DERIVED | SEMANTIC_DIRECT |
 | busel | female | Звезда Лады | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
 | volk | male | Велес | DIRECT_PATRON | SEMANTIC_DIRECT |
 | volk | female | Велес | DIRECT_PATRON | SEMANTIC_DIRECT |

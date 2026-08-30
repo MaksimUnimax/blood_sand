@@ -20,7 +20,7 @@ CASES = {
     "zmei": ((24, 11), {"male": "semargl", "female": "semargl"}),
     "voron": ((20, 12), {"male": "kolyadnik", "female": "alatyr"}),
     "medved": ((16, 1), {"male": "bear_paw", "female": "bear_paw"}),
-    "busel": ((1, 2), {"male": "molvinets", "female": "zvezda_lady"}),
+    "busel": ((1, 2), {"male": "rodimich", "female": "zvezda_lady"}),
     "volk": ((15, 3), {"male": "veles", "female": "veles"}),
     "lisa": ((25, 3), {"male": "chernobog", "female": "mara"}),
     "tur": ((20, 4), {"male": "chur", "female": "chur"}),
