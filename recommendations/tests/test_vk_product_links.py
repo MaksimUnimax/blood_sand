@@ -37,5 +37,9 @@ class VKProductLinksTests(unittest.TestCase):
             keyboard = recommendation_marketplace_keyboard(key, product_links(key))
             self.assertEqual((keyboard["one_time"], keyboard["inline"], len(keyboard["buttons"]), [len(row) for row in keyboard["buttons"]]), (False, True, 3, [1, 1, 1]))
             self.assertEqual([row[0]["action"]["type"] for row in keyboard["buttons"]], ["open_link"] * 3)
-            self.assertEqual([row[0]["action"]["label"] for row in keyboard["buttons"]], ["VK ↗", "Ozon ↗", "Wildberries ↗"])
+            labels = [row[0]["action"]["label"] for row in keyboard["buttons"]]
+            self.assertEqual(labels, ["VK", "Ozon", "Wildberries"])
+            for label in labels:
+                for forbidden in ("↗", "↗️", "🔗", "🔵", "🟣"):
+                    self.assertNotIn(forbidden, label)
             self.assertEqual([row[0]["action"]["link"] for row in keyboard["buttons"]], [product_links(key)["vk"], product_links(key)["ozon"], product_links(key)["wildberries"]])
