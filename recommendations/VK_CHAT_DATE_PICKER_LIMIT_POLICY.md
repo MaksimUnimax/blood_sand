@@ -1,15 +1,15 @@
 # VK chat date-picker inline keyboard policy
 
-Status: `STAGING_PROBE_REQUIRED` before release.
+Status: `STAGING_VERIFIED_10` (2026-08-30).
 
 The live historical owner event at 07:50 reached `WAITING_DATE/YEAR_RANGE`,
 but VK `messages.send` rejected its oversized keyboard with error `911`
 (`Keyboard format is invalid`).  The outbox correctly classified it terminal;
 the application builder was the defect.
 
-The application policy is `VK_INLINE_MAX_BUTTONS = 10`, pending the required
-direct transport-only staging boundary capture: 10 ordinary text buttons must
-be accepted and 11 must return error 911.  If the factual boundary differs,
+The application policy is `VK_INLINE_MAX_BUTTONS = 10`.  Direct transport-only
+staging verification accepted 10 ordinary text buttons and rejected an otherwise
+identical 11-button keyboard with error `911`.  If the factual boundary changes,
 this policy and release are blocked for revision.
 
 - `ERROR_911 = KEYBOARD_FORMAT_INVALID`
