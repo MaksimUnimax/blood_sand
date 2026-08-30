@@ -1,0 +1,31 @@
+{
+  "schema": "OZON_SELLER_EXACT_SWAGGER_TRANSPORT_V1",
+  "as_of": "2026-08-30",
+  "role": "validation-only immutable transport for the already accepted exact Seller Swagger bytes; never production input",
+  "raw": {
+    "file_name": "seller-swagger.json",
+    "bytes": 3933043,
+    "sha256": "39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40",
+    "openapi": "3.0.0",
+    "paths": 463,
+    "operations": 463
+  },
+  "xz": {
+    "format": "XZ",
+    "compression": "Python lzma FORMAT_XZ preset=9|PRESET_EXTREME",
+    "bytes": 227752,
+    "sha256": "c7916a68ef192702fdb27c45d3571409e2d39c8697e164be04532063ea6cc267"
+  },
+  "carrier": {
+    "file": "OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64",
+    "encoding": "base64 with one canonical trailing LF",
+    "canonical_lf_bytes": 303673,
+    "canonical_lf_sha256": "6da7d7e5bfdcc9d52643ffe3824d4399584f3c44c61d60a2062b8146d9879cc0",
+    "checkout_portability": "CRLF is normalized to LF before carrier identity; decoded XZ and raw Swagger remain strict byte identities"
+  },
+  "authority": {
+    "seller_exact_contract_bytes": 3933043,
+    "seller_exact_contract_sha256": "39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40",
+    "note": "This carrier does not redefine Seller Swagger authority. It transports the already verified accepted exact bytes after live docs recovery became non-deterministic on GitHub runners."
+  }
+}
