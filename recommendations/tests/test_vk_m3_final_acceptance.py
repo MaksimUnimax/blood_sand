@@ -80,7 +80,8 @@ class M3FinalAcceptanceTests(unittest.TestCase):
             if year: self.assertEqual(row["birth_year"], year)
             # reset peer state for independent START cases
             self.s.connection.execute("delete from vk_bot_sessions where vk_group_id=1 and peer_id=11")
-        self.deliver("Подобрать оберег", "wd-start"); self.deliver("bad", "wd-1"); self.deliver("13.10", "wd-2"); self.assertEqual(self.s.session(1,11)["state"], "WAITING_GENDER")
+        self.deliver("Подобрать оберег", "wd-start"); self.deliver("bad", "wd-1"); self.deliver("13.10", "wd-2"); self.assertEqual(self.s.session(1,11)["state"], "WAITING_DATE")
+        self.deliver("13.10.1990", "wd-valid"); self.assertEqual(self.s.session(1,11)["state"], "WAITING_GENDER")
         self.deliver("no", "wg-bad"); self.assertEqual(self.s.session(1,11)["state"], "WAITING_GENDER")
         before = len(self.outbox()); self.deliver("Мужчине", "wg-male"); resolved = self.s.session(1,11)
         self.assertEqual(resolved["state"], "RESOLVED"); self.assertEqual(resolved["gender"], "male"); self.assertEqual(len(self.outbox()), before + 1)
@@ -89,7 +90,7 @@ class M3FinalAcceptanceTests(unittest.TestCase):
         self.deliver("Подобрать снова", "restart"); reset = self.s.session(1,11)
         self.assertEqual(reset["state"], "WAITING_DATE"); self.assertEqual(tuple(reset[k] for k in ("birth_day","birth_month","birth_year","gender","last_result_id")), (None,)*5)
         self.s.connection.execute("delete from vk_bot_sessions where vk_group_id=1 and peer_id=11")
-        self.deliver("Подобрать оберег", "female-start"); self.deliver("13.10", "female-date"); self.deliver("Женщине", "female-gender"); self.assertEqual(self.s.session(1,11)["gender"], "female")
+        self.deliver("Подобрать оберег", "female-start"); self.deliver("13.10.1990", "female-date"); self.deliver("Женщине", "female-gender"); self.assertEqual(self.s.session(1,11)["gender"], "female")
         unsupported = self.payload("x", "unsupported", "wall_post_new"); unsupported["object"]["message"]["peer_id"] = 99
         self.assertTrue(self.s.accept(unsupported)); w.process_one(); self.assertEqual(self.s.connection.execute("select status from vk_inbound_events where event_id='unsupported'").fetchone()[0], "IGNORED"); self.assertIsNone(self.s.session(1,99))
 

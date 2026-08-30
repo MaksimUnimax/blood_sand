@@ -68,7 +68,7 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(self.api.calls[2][3])
         await self.post("Подобрать снова", "restart", '{"kip":"restart","v":1}')
         await self.wait_for(lambda: len(self.api.calls) == 4)
-        self.assertIn("ДД.ММ.ГГГГ", self.api.calls[3][1])
+        self.assertIn("день/месяц/год", self.api.calls[3][1])
         self.assertEqual(len({row[2] for row in self.api.calls}), 4)
 
     async def test_clean_shutdown_stops_tasks_and_closes_resources(self):

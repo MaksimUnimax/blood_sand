@@ -1,37 +1,69 @@
 from __future__ import annotations
-import re
+
 import json
 from dataclasses import dataclass
-from recommendations.core import validate_birth_date, RecommendationInputError
+from datetime import date, datetime, time, timezone
 
-DATE = re.compile(r"(?<!\d)(\d{2})([./-])(\d{2})(?:\2(\d{4}))?(?!\d)")
+from dateparser import parse as dateparser_parse
+
+DATEPARSER_SETTINGS = {
+    "DATE_ORDER": "DMY",
+    "PREFER_LOCALE_DATE_ORDER": False,
+    "STRICT_PARSING": True,
+    "REQUIRE_PARTS": ["day", "month", "year"],
+    "PARSERS": ["absolute-time"],
+}
+
+
+def parse_birth_date(text: str | None, *, today: date) -> date | None:
+    """Parse only a complete absolute date using dateparser's strict configuration."""
+    if not isinstance(text, str) or not text.strip():
+        return None
+    try:
+        result = dateparser_parse(
+            text, languages=["ru", "en"],
+            settings={**DATEPARSER_SETTINGS, "RELATIVE_BASE": datetime.combine(today, time.min, tzinfo=timezone.utc)},
+        )
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return result.date() if result is not None else None
+
+
 @dataclass(frozen=True)
-class ParsedDate: day: int; month: int; year: int | None
+class ParsedDate:
+    day: int
+    month: int
+    year: int
+
+
 def parse_dates(text: str | None) -> list[ParsedDate]:
-    # Count lexical candidates before Gregorian validation.  Otherwise an
-    # invalid first candidate could make a later valid one look unambiguous.
-    matches = list(DATE.finditer(text or ""))
-    if len(matches) != 1:
-        return []
-    results=[]
-    for match in matches:
-        day, month, year = int(match[1]), int(match[3]), int(match[4]) if match[4] else None
-        try: validate_birth_date(day, month, year)
-        except RecommendationInputError: continue
-        results.append(ParsedDate(day, month, year))
-    return results
+    """Compatibility helper for tests; production injects its reference date."""
+    result = parse_birth_date(text, today=date.today())
+    return [] if result is None else [ParsedDate(result.day, result.month, result.year)]
+
+
 def parse_gender(text: str | None) -> str | None:
-    return {"мужчине":"male", "male":"male", "женщине":"female", "female":"female"}.get((text or "").strip().lower())
-def is_restart(text: str | None) -> bool: return (text or "").strip().lower() == "подобрать снова"
+    return {"мужчине": "male", "male": "male", "женщине": "female", "female": "female"}.get((text or "").strip().lower())
+
+
+def is_restart(text: str | None) -> bool:
+    return (text or "").strip().lower() == "подобрать снова"
+
+
 def menu_text_action(text: str | None):
     return {"Подобрать оберег": ("menu", "recommend"), "Задать вопрос": ("menu", "human")}.get(text)
 
+
 def parse_keyboard_payload(payload, text: str | None):
-    """Return a whitelisted semantic tuple, or None.  Never infer from bad payload."""
-    if not isinstance(payload, str): return None
-    try: value = json.loads(payload)
-    except (TypeError, json.JSONDecodeError): return None
-    if not isinstance(value, dict): return None
+    """Return a whitelisted active semantic tuple, or None."""
+    if not isinstance(payload, str):
+        return None
+    try:
+        value = json.loads(payload)
+    except (TypeError, json.JSONDecodeError):
+        return None
+    if not isinstance(value, dict):
+        return None
     if set(value) == {"kip", "value", "v"} and value.get("kip") == "gender" and value.get("v") == 1 and value.get("value") in {"male", "female"}:
         expected = {"male": "Мужчине", "female": "Женщине"}[value["value"]]
         return ("gender", value["value"]) if text == expected else None
@@ -40,17 +72,4 @@ def parse_keyboard_payload(payload, text: str | None):
     if set(value) == {"kip", "value", "v"} and value.get("kip") == "menu" and value.get("v") == 1 and value.get("value") in {"recommend", "human"}:
         expected = {"recommend": "Подобрать оберег", "human": "Задать вопрос"}[value["value"]]
         return ("menu", value["value"]) if text == expected else None
-    if value.get("kip") != "date" or value.get("v") != 1: return None
-    step = value.get("step")
-    if step == "year_range" and set(value) == {"kip","step","start","end","v"} and all(isinstance(value[x], int) and not isinstance(value[x], bool) for x in ("start","end")) and text == f"{value['start']}–{value['end']}": return ("date", value)
-    if step == "year_range_page" and set(value) == {"kip","step","page","v"} and value.get("page") in {0,1}:
-        return ("date", value) if text == ({0:"← Новее",1:"Раньше →"}[value['page']]) else None
-    if step == "month_page" and set(value) == {"kip","step","page","v"} and value.get("page") in {0,1}:
-        return ("date", value) if text == ({0:"← Январь–Июнь",1:"Июль–Декабрь →"}[value['page']]) else None
-    if step == "day_band" and set(value) == {"kip","step","start","end","v"} and all(isinstance(value[x], int) and not isinstance(value[x], bool) for x in ("start","end")) and text == f"{value['start']}–{value['end']}": return ("date", value)
-    if step in {"year","month","day"} and set(value) == {"kip","step","value","v"} and isinstance(value.get("value"), int) and not isinstance(value.get("value"), bool):
-        labels = {"year":str(value['value']), "month": ("Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"), "day":str(value['value'])}
-        expected = labels[step][value['value'] - 1] if step == "month" and 1 <= value['value'] <= 12 else labels[step] if step != "month" else None
-        return ("date", value) if expected == text else None
-    if step == "back" and set(value) == {"kip","step","to","v"} and value.get("to") in {"year_range","year","month","day"} and text == "← Назад": return ("date", value)
     return None

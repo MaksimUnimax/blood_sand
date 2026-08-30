@@ -41,7 +41,7 @@ class MenuHumanChatTests(unittest.TestCase):
     def test_menu_recommend_starts_chat_picker_and_invalid_payload_fails_closed(self):
         self.deliver("Подобрать оберег", "recommend", '{"kip":"menu","value":"recommend","v":1}', miniapp=True)
         self.assertEqual(self.session()["state"], "WAITING_DATE"); self.assertEqual(len(self.outbox()), 1)
-        self.assertEqual(json.loads(self.outbox()[0]["keyboard_json"])["buttons"][0][0]["action"]["type"], "text")
+        self.assertIsNone(self.outbox()[0]["keyboard_json"])
         self.assertEqual(self.s.connection.execute("select count(*) from vk_miniapp_handoffs").fetchone()[0], 0)
         self.deliver("Задать вопрос", "bad", '{"kip":"menu","value":"human","v":2}')
         self.assertEqual(self.session()["state"], "WAITING_DATE")

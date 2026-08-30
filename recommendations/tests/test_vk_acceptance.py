@@ -24,8 +24,8 @@ class AcceptanceTests(unittest.TestCase):
   p=json.loads(FIXTURE.read_text());p.update(group_id=1,event_id=eid);p['object']['message'].update(peer_id=11,from_id=11,text=text);return p
  def test_normalizer_and_parser_matrix(self):
   e=normalize_callback(json.loads(FIXTURE.read_text()));self.assertEqual((e.event_id,e.group_id,e.api_version,e.peer_id,e.from_id,e.message_id,e.conversation_message_id),('sanitized',0,'5.199',0,0,0,0));self.assertEqual(e.text,'sanitized staging text')
-  for form in ('13.10','13.10.1990','13/10','13/10/1990','13-10','13-10-1990'):self.assertEqual(len(parse_dates(form)),1)
-  self.assertEqual(parse_dates('31.02 13.10'),[]);self.assertEqual(parse_dates('13.10 20.11'),[]);self.assertEqual(parse_dates('31.02'),[]);self.assertEqual(parse_dates('29.02.2020')[0].year,2020)
+  for form in ('13.10.1990','13/10/1990','13-10-1990'):self.assertEqual(len(parse_dates(form)),1)
+  self.assertEqual(parse_dates('13.10'),[]);self.assertEqual(parse_dates('31.02 13.10'),[]);self.assertEqual(parse_dates('13.10 20.11'),[]);self.assertEqual(parse_dates('31.02'),[]);self.assertEqual(parse_dates('29.02.2020')[0].year,2020)
   for value in ('Мужчине',' женщине ','male','FEMALE'):self.assertIsNotNone(parse_gender(value))
   for value in ('Иван','мужчина','она','м','ж'):self.assertIsNone(parse_gender(value))
   bad=self.payload();bad['object'].pop('message');

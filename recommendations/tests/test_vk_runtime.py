@@ -44,7 +44,7 @@ class VKRuntimeTests(unittest.TestCase):
     def test_dedup_and_atomic_claim(self):
         p=self.payload();self.assertTrue(self.db.accept(p));self.assertFalse(self.db.accept(p));self.assertIsNotNone(self.db.claim_event());self.assertIsNone(self.db.claim_event())
     def test_worker_transition_and_restart(self):
-        self.db.accept(self.payload('Подобрать оберег','start')); worker=InboundWorker(self.db,BotOrchestrator(self.db,RecommendationApplicationService()));self.assertTrue(worker.process_one()); self.db.accept(self.payload()); self.assertTrue(worker.process_one())
+        self.db.accept(self.payload('Подобрать оберег','start')); worker=InboundWorker(self.db,BotOrchestrator(self.db,RecommendationApplicationService()));self.assertTrue(worker.process_one()); self.db.accept(self.payload('13.10.1990')); self.assertTrue(worker.process_one())
         s=self.db.session(1,10);self.assertEqual(s['state'],'WAITING_GENDER')
         self.db.accept(self.payload('Мужчине','e2'));worker.process_one();self.assertEqual(self.db.session(1,10)['state'],'RESOLVED')
         rows=self.db.connection.execute('select * from vk_outbox').fetchall();self.assertEqual(len(rows),3);self.assertNotIn('bear_paw',rows[2]['message_text'])
