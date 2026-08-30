@@ -17,11 +17,17 @@
     "sha256": "c7916a68ef192702fdb27c45d3571409e2d39c8697e164be04532063ea6cc267"
   },
   "carrier": {
-    "file": "OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64",
-    "encoding": "base64 with one canonical trailing LF",
+    "parts": [
+      {"file": "OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part1", "bytes": 75918, "sha256": "641ff03e6ac22afd64d8dfa1d831b5a2a0de3387b75d87dc06cda766af2eeda1"},
+      {"file": "OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part2", "bytes": 75918, "sha256": "2a0263091c09c3a0024f5119278723879b59d9bba47616a0b7b036b4198c9e3e"},
+      {"file": "OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part3", "bytes": 75918, "sha256": "ebbca02ba07e376516370ca030c93858e1609014ea5edd931ec86e4578f8bbd1"},
+      {"file": "OZON_SELLER_EXACT_SWAGGER_2026-08-30.json.xz.b64.part4", "bytes": 75918, "sha256": "f01d97e3259cdb124ab9fbaaf6842888d34d7c3bf282f953b61477289df5d0c8"}
+    ],
+    "part_encoding": "ASCII base64 fragments without line endings; concatenate in listed order",
+    "encoding": "concatenated base64 with one canonical trailing LF",
     "canonical_lf_bytes": 303673,
     "canonical_lf_sha256": "6da7d7e5bfdcc9d52643ffe3824d4399584f3c44c61d60a2062b8146d9879cc0",
-    "checkout_portability": "CRLF is normalized to LF before carrier identity; decoded XZ and raw Swagger remain strict byte identities"
+    "checkout_portability": "Each part contains no line endings. Materializer concatenates exact part bytes and appends one LF before carrier identity. Decoded XZ and raw Swagger remain strict byte identities."
   },
   "authority": {
     "seller_exact_contract_bytes": 3933043,
