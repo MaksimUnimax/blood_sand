@@ -106,7 +106,7 @@ class M3FinalAcceptanceTests(unittest.TestCase):
         self.s._before_outbox_insert = lambda c: None
         self.s.transition_and_enqueue(event["id"], 1, 11, "WAITING_DATE", {}, "x")
         self.assertEqual(len(self.outbox()), 1); self.assertEqual(self.s.session(1,11)["state"], "WAITING_DATE")
-        self.assertEqual(self.s.connection.execute("select count(*) from vk_schema_migrations").fetchone()[0], 6)
+        self.assertEqual(self.s.connection.execute("select count(*) from vk_schema_migrations").fetchone()[0], 7)
 
     def test_two_connection_outbox_claim_and_pending_restart_recovery(self):
         self.s.accept(self.payload(eid="restart")); event = self.s.claim_event(); self.s.transition_and_enqueue(event["id"],1,11,"WAITING_DATE",{},"x")
