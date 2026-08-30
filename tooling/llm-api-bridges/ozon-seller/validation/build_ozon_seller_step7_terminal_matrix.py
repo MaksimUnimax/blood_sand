@@ -162,7 +162,7 @@ def main():
     output=[]
     for row in rows:
         key=row["operation_key"]
-        out=dict(row)
+        out={k:v for k,v in row.items() if k != "description"}
         if key in seller:
             alias,meta=seller[key]
             out.update({
