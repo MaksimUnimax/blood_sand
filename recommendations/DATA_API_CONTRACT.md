@@ -2,7 +2,7 @@
 
 Версия: 0.2  
 Статус: **V2 SALES-WEIGHTED contract authority**  
-Revision: **2026-08-31 owner update — Волк female → Алатырь; Змей female → Жива**
+Revision: **2026-08-31 owner update — Волк female → Алатырь; Змей female → Мара**
 
 ## 1. Authority
 
@@ -67,6 +67,7 @@ bear_paw.customer_label = "Печать Велеса"
 svarog.gender_policy = male
 chernobog.gender_policy = male
 mara.gender_policy = female
+mara allowed automatic rows = lisa + female; zmei + female
 zvezda_lady.gender_policy = female
 zhiva.gender_policy = female
 rodimich.gender_policy = male
@@ -82,7 +83,7 @@ Required owner rows include:
 
 ```text
 zmei + male     → semargl
-zmei + female   → zhiva
+zmei + female   → mara
 medved + male   → bear_paw
 medved + female → bear_paw
 busel + male    → rodimich
@@ -144,12 +145,14 @@ Approved gender-split rows:
 {
   "chertog_id": "zmei",
   "gender": "female",
-  "product_key": "zhiva",
+  "product_key": "mara",
   "relation_type": "CURATED_GENDER_SUBSTITUTE",
   "selection_basis": "SEMANTIC_CURATED_GENDER_FIT",
-  "reason_code": "ZMEI_FEMALE_LIFE_ENERGY"
+  "reason_code": "ZMEI_FEMALE_TRANSITION_RESILIENCE"
 }
 ```
+
+For `zmei + female`, `mara` is **not** a direct patron relation. Its `DIRECT_DERIVED` role remains `lisa + female`; the Snake row is an explicit curated gender-fit use.
 
 ## 8. Marketplace override V1
 
@@ -299,33 +302,34 @@ CI/startup must fail if:
 8. Даждьбог outside Раса or not exactly twice;
 9. Сварог in female row;
 10. `zmei + male` is not Семаргл;
-11. `zmei + female` is not Жива;
-12. `volk + male` is not Велес;
-13. `volk + female` is not Алатырь;
-14. `busel + male` is not Родимич;
-15. `busel + female` is not Звезда Лады;
-16. Молвинец appears in an automatic row;
-17. `lisa + male` is not Чернобог;
-18. `lisa + female` is not Мара;
-19. `orel + male` is not Перун;
-20. `orel + female` is not Звезда Лады;
-21. Чернобог in female row;
-22. Мара in male row;
-23. supplied `birth_year` is lost before customer rendering;
-24. unapproved marketplace override exists;
-25. reserve product auto-appears without owner decision.
+11. `zmei + female` is not Мара;
+12. `zmei + female` uses a DIRECT relation type;
+13. `volk + male` is not Велес;
+14. `volk + female` is not Алатырь;
+15. `busel + male` is not Родимич;
+16. `busel + female` is not Звезда Лады;
+17. Молвинец appears in an automatic row;
+18. `lisa + male` is not Чернобог;
+19. `lisa + female` is not Мара;
+20. `orel + male` is not Перун;
+21. `orel + female` is not Звезда Лады;
+22. Чернобог in female row;
+23. Мара in male row;
+24. supplied `birth_year` is lost before customer rendering;
+25. unapproved marketplace override exists;
+26. reserve product auto-appears without owner decision.
 
 ## 16. Contract tests
 
 ```text
 01.12.1988 + male + ozon → zmei / Семаргл
-01.12.1988 + female + ozon → zmei / Жива
+01.12.1988 + female + ozon → zmei / Мара / CURATED_GENDER_SUBSTITUTE
 09.02.1996 + male + ozon → busel / Родимич
 09.02.1996 + female + ozon → busel / Звезда Лады
 15.03.1988 + male + ozon → volk / Велес
 15.03.1988 + female + ozon → volk / Алатырь
 25.03.1993 + male + ozon → lisa / Чернобог
-25.03.1993 + female + ozon → lisa / Мара
+25.03.1993 + female + ozon → lisa / Мара / DIRECT_DERIVED
 16.01.1986 + male + ozon → medved / Печать Велеса
 16.01.1990 + female + wildberries → medved / Печать Велеса
 19.07.1988 + male → orel / Перун
