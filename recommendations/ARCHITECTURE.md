@@ -94,6 +94,8 @@ owner approval
 versioned matrix
 ```
 
+Direct patron relation is strong but not absolute across genders: an owner-approved gender substitute may replace a direct symbol in the female branch when the product image/identity reads too masculine and the replacement preserves a natural semantic line.
+
 ## 5. Marketplace-aware result
 
 Current explicit override:
@@ -113,11 +115,16 @@ All other rows currently match between Ozon and Wildberries.
 Печать Велеса → only Медведь male + female
 Печать Велеса → Волк FORBIDDEN
 Печать Велеса → Орёл FORBIDDEN
-Волк → Велес
+Змей male → Семаргл
+Змей female → Жива
+Волк male → Велес
+Волк female → Алатырь
 Лиса male → Чернобог
 Лиса female → Мара
 Орёл male → Перун
 Орёл female → Звезда Лады
+Бусел male → Родимич
+Бусел female → Звезда Лады
 Сварог → male only
 secondary recommendation → forbidden
 ```
@@ -158,15 +165,21 @@ Startup/CI must fail if:
 7. customer label for `bear_paw` is not exactly `Печать Велеса`;
 8. Даждьбог outside Раса or count != 2;
 9. Сварог in female row;
-10. Лиса male != Чернобог;
-11. Лиса female != Мара;
-12. Орёл male != Перун;
-13. Орёл female != Звезда Лады;
-14. Чернобог in female row;
-15. Мара in male row;
-16. supplied birth year is lost before customer rendering;
-17. unapproved marketplace override;
-18. reserve product appears automatically.
+10. Змей male != Семаргл;
+11. Змей female != Жива;
+12. Волк male != Велес;
+13. Волк female != Алатырь;
+14. Бусел male != Родимич;
+15. Бусел female != Звезда Лады;
+16. Лиса male != Чернобог;
+17. Лиса female != Мара;
+18. Орёл male != Перун;
+19. Орёл female != Звезда Лады;
+20. Чернобог in female row;
+21. Мара in male row;
+22. supplied birth year is lost before customer rendering;
+23. unapproved marketplace override;
+24. reserve product appears automatically.
 
 ## 9. API
 
@@ -211,13 +224,7 @@ Hard date rule:
 → первая фраза customer-facing ответа повторяет DD.MM.YYYY полностью
 ```
 
-Например:
-
-```text
-19.11.1988 → "Дата 19.11.1988 относится к Чертогу Лебедя."
-```
-
-Нельзя сокращать до `19.11`. Год не влияет на recommendation, но обязан сохраняться в copy. Если год не был дан, его не придумывать.
+Нельзя сокращать до day/month. Год не влияет на recommendation, но обязан сохраняться в copy. Если год не был дан, его не придумывать.
 
 Copy must not expose:
 
@@ -241,9 +248,24 @@ product_key = bear_paw
 
 Both genders → `Печать Велеса` only.
 
+### Змей
+
+- male → `Семаргл`;
+- female → `Жива`.
+
+Женская ветка отделена по gender fit: Жива сохраняет линию жизненной силы и энергии, но воспринимается естественнее для женщины.
+
 ### Волк
 
-Both genders → `Велес`.
+- male → `Велес`;
+- female → `Алатырь`.
+
+Велес остаётся прямым мужским покровителем. Алатырь в женской ветке сохраняет темы внутреннего центра, равновесия, самостоятельности и опоры и при этом не выглядит выраженно мужским.
+
+### Бусел
+
+- male → `Родимич`;
+- female → `Звезда Лады`.
 
 ### Лиса
 
