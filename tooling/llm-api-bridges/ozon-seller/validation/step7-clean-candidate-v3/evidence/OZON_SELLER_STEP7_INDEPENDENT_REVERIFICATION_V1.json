@@ -1,0 +1,43 @@
+{
+  "schema": "OZON_SELLER_STEP7_INDEPENDENT_ARTIFACT_REVERIFICATION_V1",
+  "schema_version": 1,
+  "status": "PASS",
+  "marker": "OZON_SELLER_STEP7_INDEPENDENT_REVERIFICATION_PASS",
+  "candidate_commit": "b567b7fc481b2baff964ce96b9a9a334d841ae30",
+  "workflow_run_id": 33384683868,
+  "artifacts": [
+    "ozon-step7-clean-Linux-v3",
+    "ozon-step7-clean-Windows-v3",
+    "ozon-step7-clean-cross-platform-v3",
+    "ozon-step7-clean-repository-freeze-v3"
+  ],
+  "checks": {
+    "artifact_zip_integrity": "PASS",
+    "linux_windows_extracted_byte_identity": "PASS",
+    "candidate_tree_identity": "PASS",
+    "release_package_identity": "PASS",
+    "runtime_invariants": "PASS",
+    "privacy_invariants": "PASS",
+    "terminal_matrix": "PASS",
+    "repository_freeze": "PASS"
+  },
+  "linux_windows_byte_identical": true,
+  "candidate_tree_sha256": "f605c2645e3a7a429facaab1bbb4b1252c7ee39d601b50d0480c4006b689d974",
+  "package_sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574",
+  "package_bytes": 1146084,
+  "seller_reads": 245,
+  "new_step7_reads": 26,
+  "runtime_operations": 26,
+  "physical_business_requests": 26,
+  "all_one_operation_one_request": true,
+  "privacy_denied_requests": 0,
+  "privacy_explicit_resubmit_requests": 13,
+  "privacy_replayed_commands": 0,
+  "privacy_delayed_replayed_commands": 0,
+  "terminal_rows": 463,
+  "unknown": 0,
+  "pending": 0,
+  "unresolved": 0,
+  "repository_frozen_candidate_match": true,
+  "canonical_modified": false
+}
