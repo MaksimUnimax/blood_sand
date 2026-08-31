@@ -1,0 +1,42 @@
+name: Ozon Step7 export verification kit
+run-name: Ozon Step7 verification kit · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-245-read-candidate-2026-08-31
+    paths:
+      - .github/workflows/ozon-step7-export-verification-kit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required kit inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d tooling/llm-api-bridges/ozon-seller/dist-step6-accepted
+          test -d tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2
+          test -d tooling/llm-api-bridges/ozon-seller/validation/step7-runtime-v1
+          test -d tooling/llm-api-bridges/ozon-seller/validation/step7-privacy-v1
+          test -d tooling/llm-api-bridges/ozon-seller/validation/step7-regression-v1
+          echo STEP7_VERIFICATION_KIT_INPUTS_PASS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step7-verification-kit
+          path: |
+            tooling/llm-api-bridges/ozon-seller/dist-step6-accepted
+            tooling/llm-api-bridges/ozon-seller/OZON_STEP7_ACCEPTED_STEP6_MATERIALIZATION.json
+            tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2
+            tooling/llm-api-bridges/ozon-seller/validation/step7-runtime-v1
+            tooling/llm-api-bridges/ozon-seller/validation/step7-privacy-v1
+            tooling/llm-api-bridges/ozon-seller/validation/step7-regression-v1
+            .github/workflows/ozon-step7-*.yml
+          if-no-files-found: error
+          retention-days: 14
