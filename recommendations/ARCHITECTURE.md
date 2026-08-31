@@ -96,6 +96,8 @@ versioned matrix
 
 Direct patron relation is strong but not absolute across genders: an owner-approved gender substitute may replace a direct symbol in the female branch when the product image/identity reads too masculine and the replacement preserves a natural semantic line.
 
+A product can have different relation types in different Chertogs. Example: `Мара` is `DIRECT_DERIVED` for `Лиса + female`, but `CURATED_GENDER_SUBSTITUTE` for `Змей + female`. The renderer must never flatten these into the same semantic claim.
+
 ## 5. Marketplace-aware result
 
 Current explicit override:
@@ -116,7 +118,7 @@ All other rows currently match between Ozon and Wildberries.
 Печать Велеса → Волк FORBIDDEN
 Печать Велеса → Орёл FORBIDDEN
 Змей male → Семаргл
-Змей female → Жива
+Змей female → Мара
 Волк male → Велес
 Волк female → Алатырь
 Лиса male → Чернобог
@@ -166,20 +168,21 @@ Startup/CI must fail if:
 8. Даждьбог outside Раса or count != 2;
 9. Сварог in female row;
 10. Змей male != Семаргл;
-11. Змей female != Жива;
-12. Волк male != Велес;
-13. Волк female != Алатырь;
-14. Бусел male != Родимич;
-15. Бусел female != Звезда Лады;
-16. Лиса male != Чернобог;
-17. Лиса female != Мара;
-18. Орёл male != Перун;
-19. Орёл female != Звезда Лады;
-20. Чернобог in female row;
-21. Мара in male row;
-22. supplied birth year is lost before customer rendering;
-23. unapproved marketplace override;
-24. reserve product appears automatically.
+11. Змей female != Мара;
+12. relation for Змей female is direct instead of curated;
+13. Волк male != Велес;
+14. Волк female != Алатырь;
+15. Бусел male != Родимич;
+16. Бусел female != Звезда Лады;
+17. Лиса male != Чернобог;
+18. Лиса female != Мара;
+19. Орёл male != Перун;
+20. Орёл female != Звезда Лады;
+21. Чернобог in female row;
+22. Мара in male row;
+23. supplied birth year is lost before customer rendering;
+24. unapproved marketplace override;
+25. reserve product appears automatically.
 
 ## 9. API
 
@@ -251,9 +254,9 @@ Both genders → `Печать Велеса` only.
 ### Змей
 
 - male → `Семаргл`;
-- female → `Жива`.
+- female → `Мара`.
 
-Женская ветка отделена по gender fit: Жива сохраняет линию жизненной силы и энергии, но воспринимается естественнее для женщины.
+Семаргл остаётся прямым мужским покровителем. Для женской ветки Мара используется как curated gender-fit символ: внутренняя стойкость, прохождение сложных периодов, переходы и перемены. Важно: для Змея Мара не объявляется покровительницей и не получает direct relation. Её direct-derived ветка остаётся у Лисы.
 
 ### Волк
 
@@ -271,6 +274,8 @@ Both genders → `Печать Велеса` only.
 
 - male → `Чернобог`;
 - female → `Мара`.
+
+Здесь Мара остаётся direct-derived женской веткой через Марену.
 
 ### Орёл
 
