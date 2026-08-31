@@ -1,0 +1,166 @@
+name: Ozon Step7 admitted reads runtime 26/26
+run-name: Ozon Step7 runtime 26/26 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-exact-swagger-authority-v2-clean-2026-08-31
+      - repair/ozon-seller-step7-runtime-26-2026-08-31
+    paths:
+      - .github/workflows/ozon-step7-runtime-26.yml
+      - tooling/llm-api-bridges/ozon-seller/dist/ozon-seller-mcp-nodebundle.js
+      - tooling/llm-api-bridges/ozon-seller/inventory/OZON_SELLER_EXACT_READ_REGISTRY.json
+      - tooling/llm-api-bridges/ozon-seller/OZON_STEP7_RUNTIME_TEST_ARTIFACT_2026-08-30.json
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-runtime-v1/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: '1'
+  RUNTIME_ROOT: tooling/llm-api-bridges/ozon-seller/validation/step7-runtime-v1
+  BUNDLE: tooling/llm-api-bridges/ozon-seller/dist/ozon-seller-mcp-nodebundle.js
+  REGISTRY: tooling/llm-api-bridges/ozon-seller/inventory/OZON_SELLER_EXACT_READ_REGISTRY.json
+  CONTRACT: tooling/llm-api-bridges/ozon-seller/OZON_STEP7_RUNTIME_TEST_ARTIFACT_2026-08-30.json
+
+jobs:
+  linux-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Execute admitted Seller reads on Linux
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/step7-runtime-linux"
+          rm -rf "$out"
+          mkdir -p "$out"
+          node --check "$BUNDLE"
+          python "$RUNTIME_ROOT/run_step7_runtime.py" \
+            --bundle "$BUNDLE" \
+            --preload "$RUNTIME_ROOT/mock_fetch.cjs" \
+            --registry "$REGISTRY" \
+            --contract "$CONTRACT" \
+            --fetch-log "$out/fetch.jsonl" \
+            --stderr-output "$out/server.stderr.log" \
+            --output "$out/runtime-proof.json" \
+            --source-commit "$GITHUB_SHA" \
+            | tee "$out/run.log"
+          grep -Fx STEP7_READ_RUNTIME_26_PASS "$out/run.log"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-runtime-linux
+          path: ${{ runner.temp }}/step7-runtime-linux
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-runtime:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Execute admitted Seller reads on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'step7-runtime-windows'
+          if (Test-Path $out) { Remove-Item -Recurse -Force $out }
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          node --check $env:BUNDLE
+          if ($LASTEXITCODE -ne 0) { throw 'bundle syntax check failed' }
+          python "$env:RUNTIME_ROOT/run_step7_runtime.py" `
+            --bundle $env:BUNDLE `
+            --preload "$env:RUNTIME_ROOT/mock_fetch.cjs" `
+            --registry $env:REGISTRY `
+            --contract $env:CONTRACT `
+            --fetch-log (Join-Path $out 'fetch.jsonl') `
+            --stderr-output (Join-Path $out 'server.stderr.log') `
+            --output (Join-Path $out 'runtime-proof.json') `
+            --source-commit $env:GITHUB_SHA `
+            | Tee-Object -FilePath (Join-Path $out 'run.log')
+          if ($LASTEXITCODE -ne 0) { throw 'runtime harness failed' }
+          if (-not (Select-String -Path (Join-Path $out 'run.log') -Pattern '^STEP7_READ_RUNTIME_26_PASS$' -Quiet)) {
+            throw 'runtime pass marker missing'
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-runtime-windows
+          path: ${{ runner.temp }}/step7-runtime-windows
+          if-no-files-found: error
+          retention-days: 14
+
+  compare-runtime:
+    needs: [linux-runtime, windows-runtime]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: seller-step7-runtime-linux
+          path: /tmp/runtime-linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: seller-step7-runtime-windows
+          path: /tmp/runtime-windows
+      - name: Require Linux/Windows byte-identical proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmp /tmp/runtime-linux/runtime-proof.json /tmp/runtime-windows/runtime-proof.json
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          proof_path = Path('/tmp/runtime-linux/runtime-proof.json')
+          proof = json.loads(proof_path.read_text(encoding='utf-8'))
+          assert proof['result'] == 'PASS'
+          assert proof['marker'] == 'STEP7_READ_RUNTIME_26_PASS'
+          assert proof['source_commit'] == '${{ github.sha }}'
+          execution = proof['execution']
+          assert execution['operation_count'] == 26
+          assert execution['physical_business_request_count'] == 26
+          assert execution['all_operations_ok'] is True
+          assert execution['all_one_request'] is True
+          assert execution['all_external_request_executed'] is True
+          assert execution['all_expected_method_path_payload'] is True
+          assert execution['all_credential_headers_present'] is True
+          assert len(proof['operations']) == 26
+          digest = hashlib.sha256(proof_path.read_bytes()).hexdigest()
+          out = Path('/tmp/runtime-cross-platform')
+          out.mkdir(parents=True, exist_ok=True)
+          (out / 'runtime-proof.json').write_bytes(proof_path.read_bytes())
+          (out / 'evidence.txt').write_text(
+              '\n'.join([
+                  f'workflow_run=${{ github.run_id }}',
+                  f'source_commit=${{ github.sha }}',
+                  f'runtime_proof_sha256={digest}',
+                  'operation_count=26',
+                  'physical_business_request_count=26',
+                  'linux_windows_runtime_proof_byte_identical=true',
+                  'STEP7_READ_RUNTIME_26_PASS',
+                  'STEP7_READ_RUNTIME_26_CROSS_PLATFORM_PASS',
+                  '',
+              ]),
+              encoding='utf-8',
+              newline='\n',
+          )
+          PY
+          echo STEP7_READ_RUNTIME_26_CROSS_PLATFORM_PASS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-runtime-cross-platform
+          path: /tmp/runtime-cross-platform
+          if-no-files-found: error
+          retention-days: 14
