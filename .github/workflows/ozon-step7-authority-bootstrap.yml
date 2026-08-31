@@ -1,0 +1,85 @@
+name: Ozon Step7 exact authority bootstrap
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-exact-swagger-authority-v2-upload-staging-2026-08-31
+    paths:
+      - .github/workflows/ozon-step7-authority-bootstrap.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2/upload-parts/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-step7-authority-bootstrap-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  assemble-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    env:
+      AUTHORITY_ROOT: tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2
+      EXPECTED_RAW_SHA256: 39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assemble fragments 30-38 and require exact identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$AUTHORITY_ROOT"
+          fragments="$root/fragments"
+          upload="$root/upload-parts"
+
+          declare -A expected=(
+            [30]=9180024c7b5d401ee4f489dbbdcef3506a37cd85
+            [31]=6c6eebc70a8e41fc5d8d59506c889eb8009800ba
+            [32]=1f31dd3e2f67e7fcf8d374f0a24e5e8ae5694c52
+            [33]=76fc02de37d7756909efabfc3c17c7957a9dafa3
+            [34]=fa3ee641f638e618136557611160dc10110abc68
+            [35]=77f67601078f21651ef25abcf07ad1585dc40fab
+            [36]=c22e92435cfa213567f3355f6853ba4dd02245ca
+            [37]=638fded1f35628d770a79ddd5d7998f80252f46e
+            [38]=789130e5fa5c817af6cbf057be39649bfae1cc12
+          )
+
+          for n in $(seq 30 37); do
+            id=$(printf '%04d' "$n")
+            test -f "$upload/part${id}.a"
+            test -f "$upload/part${id}.b"
+            cat "$upload/part${id}.a" "$upload/part${id}.b" > "$fragments/seller-swagger-2026-08-25.json.xz.b64.part${id}.txt"
+          done
+          test -f "$upload/part0038.a"
+          cat "$upload/part0038.a" > "$fragments/seller-swagger-2026-08-25.json.xz.b64.part0038.txt"
+
+          for n in $(seq 30 38); do
+            id=$(printf '%04d' "$n")
+            file="$fragments/seller-swagger-2026-08-25.json.xz.b64.part${id}.txt"
+            actual=$(git hash-object "$file")
+            test "$actual" = "${expected[$n]}"
+          done
+
+          out="$RUNNER_TEMP/step7-bootstrap"
+          rm -rf "$out"
+          mkdir -p "$out"
+          python3 "$root/reconstruct_exact_swagger.py" --output "$out/seller-swagger.json" --json-output "$out/authority-report.json"
+          python3 "$root/test_fail_closed.py" --root "$root" | tee "$out/fail-closed.log"
+          test "$(stat -c%s "$out/seller-swagger.json")" = 3933043
+          test "$(sha256sum "$out/seller-swagger.json" | awk '{print $1}')" = "$EXPECTED_RAW_SHA256"
+          grep -q '"operations": 463' "$out/authority-report.json"
+          grep -q '"paths": 463' "$out/authority-report.json"
+
+          rm -rf "$upload"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A "$root"
+          git commit -m 'chore(ozon): assemble exact Step7 authority fragments 30-38'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          echo STEP7_AUTHORITY_BOOTSTRAP_PASS
