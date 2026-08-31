@@ -1,0 +1,170 @@
+name: Ozon Step7 privacy 13 denied plus 13 authorized
+run-name: Ozon Step7 privacy 13x2 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-exact-swagger-authority-v2-clean-2026-08-31
+      - repair/ozon-seller-step7-privacy-13x2-2026-08-31
+    paths:
+      - .github/workflows/ozon-step7-privacy-13x2.yml
+      - tooling/llm-api-bridges/ozon-seller/dist/ozon-seller-mcp-nodebundle.js
+      - tooling/llm-api-bridges/ozon-seller/inventory/OZON_SELLER_EXACT_READ_REGISTRY.json
+      - tooling/llm-api-bridges/ozon-seller/OZON_STEP7_RUNTIME_TEST_ARTIFACT_2026-08-30.json
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-runtime-v1/**
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-privacy-v1/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: '1'
+  SELLER_ROOT: tooling/llm-api-bridges/ozon-seller
+  RUNTIME_ROOT: tooling/llm-api-bridges/ozon-seller/validation/step7-runtime-v1
+  PRIVACY_ROOT: tooling/llm-api-bridges/ozon-seller/validation/step7-privacy-v1
+
+jobs:
+  linux-privacy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Execute privacy vectors on Linux
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/step7-privacy-linux"
+          rm -rf "$out"
+          mkdir -p "$out"
+          python "$PRIVACY_ROOT/run_step7_privacy.py" \
+            --runtime-harness "$RUNTIME_ROOT/run_step7_runtime.py" \
+            --bundle "$SELLER_ROOT/dist/ozon-seller-mcp-nodebundle.js" \
+            --preload "$RUNTIME_ROOT/mock_fetch.cjs" \
+            --registry "$SELLER_ROOT/inventory/OZON_SELLER_EXACT_READ_REGISTRY.json" \
+            --contract "$SELLER_ROOT/OZON_STEP7_RUNTIME_TEST_ARTIFACT_2026-08-30.json" \
+            --work-dir "$out/work" \
+            --output "$out/privacy-proof.json" \
+            --source-commit "$GITHUB_SHA" \
+            | tee "$out/run.log"
+          grep -Fx STEP7_PRIVACY_DENIAL_13_PASS "$out/run.log"
+          grep -Fx STEP7_PRIVACY_AUTHORIZED_13_PASS "$out/run.log"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-privacy-linux
+          path: ${{ runner.temp }}/step7-privacy-linux
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-privacy:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Execute privacy vectors on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'step7-privacy-windows'
+          if (Test-Path $out) { Remove-Item -Recurse -Force $out }
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          python "$env:PRIVACY_ROOT/run_step7_privacy.py" `
+            --runtime-harness "$env:RUNTIME_ROOT/run_step7_runtime.py" `
+            --bundle "$env:SELLER_ROOT/dist/ozon-seller-mcp-nodebundle.js" `
+            --preload "$env:RUNTIME_ROOT/mock_fetch.cjs" `
+            --registry "$env:SELLER_ROOT/inventory/OZON_SELLER_EXACT_READ_REGISTRY.json" `
+            --contract "$env:SELLER_ROOT/OZON_STEP7_RUNTIME_TEST_ARTIFACT_2026-08-30.json" `
+            --work-dir (Join-Path $out 'work') `
+            --output (Join-Path $out 'privacy-proof.json') `
+            --source-commit $env:GITHUB_SHA `
+            | Tee-Object -FilePath (Join-Path $out 'run.log')
+          if ($LASTEXITCODE -ne 0) { throw 'privacy harness failed' }
+          if (-not (Select-String -Path (Join-Path $out 'run.log') -Pattern '^STEP7_PRIVACY_DENIAL_13_PASS$' -Quiet)) {
+            throw 'privacy denial marker missing'
+          }
+          if (-not (Select-String -Path (Join-Path $out 'run.log') -Pattern '^STEP7_PRIVACY_AUTHORIZED_13_PASS$' -Quiet)) {
+            throw 'privacy authorized marker missing'
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-privacy-windows
+          path: ${{ runner.temp }}/step7-privacy-windows
+          if-no-files-found: error
+          retention-days: 14
+
+  compare-privacy:
+    needs: [linux-privacy, windows-privacy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: seller-step7-privacy-linux
+          path: /tmp/privacy-linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: seller-step7-privacy-windows
+          path: /tmp/privacy-windows
+      - name: Require Linux/Windows byte-identical privacy proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmp /tmp/privacy-linux/privacy-proof.json /tmp/privacy-windows/privacy-proof.json
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          proof_path = Path('/tmp/privacy-linux/privacy-proof.json')
+          proof = json.loads(proof_path.read_text(encoding='utf-8'))
+          assert proof['result'] == 'PASS'
+          assert proof['source_commit'] == '${{ github.sha }}'
+          assert proof['denied']['operation_count'] == 13
+          assert proof['denied']['physical_business_request_count'] == 0
+          assert proof['denied']['all_fail_closed'] is True
+          assert proof['denied']['marker'] == 'STEP7_PRIVACY_DENIAL_13_PASS'
+          assert proof['authorized']['operation_count'] == 13
+          assert proof['authorized']['physical_business_request_count'] == 13
+          assert proof['authorized']['all_one_request'] is True
+          assert proof['authorized']['all_expected_method_path_payload'] is True
+          assert proof['authorized']['all_credential_headers_present'] is True
+          assert proof['authorized']['marker'] == 'STEP7_PRIVACY_AUTHORIZED_13_PASS'
+          digest = hashlib.sha256(proof_path.read_bytes()).hexdigest()
+          out = Path('/tmp/privacy-cross-platform')
+          out.mkdir(parents=True, exist_ok=True)
+          (out / 'privacy-proof.json').write_bytes(proof_path.read_bytes())
+          (out / 'evidence.txt').write_text(
+              '\n'.join([
+                  f'workflow_run=${{ github.run_id }}',
+                  f'source_commit=${{ github.sha }}',
+                  f'privacy_proof_sha256={digest}',
+                  'denied_operation_count=13',
+                  'denied_physical_business_request_count=0',
+                  'authorized_operation_count=13',
+                  'authorized_physical_business_request_count=13',
+                  'linux_windows_privacy_proof_byte_identical=true',
+                  'STEP7_PRIVACY_DENIAL_13_PASS',
+                  'STEP7_PRIVACY_AUTHORIZED_13_PASS',
+                  'STEP7_PRIVACY_13X2_CROSS_PLATFORM_PASS',
+                  '',
+              ]),
+              encoding='utf-8',
+              newline='\n',
+          )
+          PY
+          echo STEP7_PRIVACY_13X2_CROSS_PLATFORM_PASS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-privacy-cross-platform
+          path: /tmp/privacy-cross-platform
+          if-no-files-found: error
+          retention-days: 14
