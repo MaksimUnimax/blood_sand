@@ -1,0 +1,116 @@
+{
+  "schema": "ozon.seller.step7.accepted-step6-materialization",
+  "schema_version": 1,
+  "source_acceptance_commit": "1f51eb74bb7b83bcc3356e3fe3422b2702227c2f",
+  "expected_production_tree_sha256": "1f8001b6b9ca3d247f0d199de592f2b6ed2ec9a7b7f7d90ec10388ee8a82813f",
+  "actual_production_tree_sha256": "1f8001b6b9ca3d247f0d199de592f2b6ed2ec9a7b7f7d90ec10388ee8a82813f",
+  "file_count": 21,
+  "javascript_file_count": 18,
+  "files": [
+    {
+      "path": "content_script.js",
+      "bytes": 126878,
+      "sha256": "a95b0be6bdd92e6a2caad82c9cbbed79df72e21991eae89affc8bb5bcad824bd"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 1519,
+      "sha256": "f170949e9f972ecbc8c685a3cb753151c3363afa7664a3df76e67f413a396fc1"
+    },
+    {
+      "path": "popup.css",
+      "bytes": 5195,
+      "sha256": "1befabf8a3650dfe01a5980b0d5ff2fcd34666d507baad8e79f3873358d7a726"
+    },
+    {
+      "path": "popup.html",
+      "bytes": 14314,
+      "sha256": "a36539a6b16e423d1a91fff518af140b37934281ba2d2be8c4c1091ba32d72a3"
+    },
+    {
+      "path": "popup.js",
+      "bytes": 38208,
+      "sha256": "9f6ec207f4bed3bae0de912fca2f3347cc286ced9ca310369f10269400819070"
+    },
+    {
+      "path": "service_worker.js",
+      "bytes": 304036,
+      "sha256": "a85b0d47b14065266221d9b3fcf3194cbaa78d96ead792fbe20834f8ee7a54a3"
+    },
+    {
+      "path": "shared/ai_adapters.js",
+      "bytes": 8307,
+      "sha256": "5a7307557998d4281d12fb750fb0d05fa787d2a4550281d006ebbc6a2006e4e9"
+    },
+    {
+      "path": "shared/bridge_autorun_model.js",
+      "bytes": 12012,
+      "sha256": "c248915a64ea0d9e2db014d66ab27a4bc182553cc24c5d6d0c9f43729e6e20b5"
+    },
+    {
+      "path": "shared/composer_send.js",
+      "bytes": 8267,
+      "sha256": "3e9421e8e1bc209af635e2b90d957e558301763572a42875b95c8973ca75b736"
+    },
+    {
+      "path": "shared/conversation_identity.js",
+      "bytes": 4027,
+      "sha256": "939036acd95ccb3dfe00f05b5d49568615f6d798a023a0ec995e38267fb68f57"
+    },
+    {
+      "path": "shared/manual_controls.js",
+      "bytes": 10269,
+      "sha256": "81f302487da7b5ff7c1b746298353438b2cfec100a5bb8f7fa2c80d1e033c81e"
+    },
+    {
+      "path": "shared/ozon_contract.js",
+      "bytes": 264469,
+      "sha256": "05c0d2ac2e074de861c219e029f24cc9407163ca7868e31a159ea6e65771cd22"
+    },
+    {
+      "path": "shared/ozon_credentials.js",
+      "bytes": 4085,
+      "sha256": "286c6021f958e41912842569bcfa0d0dfe920eed8ce1646014899a1de064415d"
+    },
+    {
+      "path": "shared/ozon_entitlements.js",
+      "bytes": 54073,
+      "sha256": "5f31664e1a0fbb7cada89c0d7673a7720c72ee2ce60fa27a7294ddec9ad30ad3"
+    },
+    {
+      "path": "shared/ozon_guidance.js",
+      "bytes": 10641,
+      "sha256": "8de69833524c569bed09d5799479f2a0cd8f1844a2cf5d7d460caa3b1bb74508"
+    },
+    {
+      "path": "shared/ozon_operation_registry.js",
+      "bytes": 186000,
+      "sha256": "0909734578868978132720f1df6f3d79341bb32ac7432b6ea7ff76e6e47ebeae"
+    },
+    {
+      "path": "shared/ozon_provider.js",
+      "bytes": 15391,
+      "sha256": "16e8f85303e7a6a57d0fc76a6ea0e2e9dd8537341fa57397b38b0c0d52dda97b"
+    },
+    {
+      "path": "shared/proven_writing_block_capture.js",
+      "bytes": 14614,
+      "sha256": "5b0eaac9619cb827d1e74c61f53e2755c084a1d4b60c64d23f5fd4a5354c3aef"
+    },
+    {
+      "path": "shared/provider_transport_core.js",
+      "bytes": 9095,
+      "sha256": "fc104e5d0bd6ea836c066f8144f642c0666c0e270cbdbf8c3b1ec3a25071969e"
+    },
+    {
+      "path": "shared/runtime_names.js",
+      "bytes": 5076,
+      "sha256": "a94bef6a25e83170ded3416bdca39a2921fa67d7a9c93504d001beebebc24a59"
+    },
+    {
+      "path": "shared/work_session_model.js",
+      "bytes": 1985,
+      "sha256": "11e91d850a3d69711fefdaadb6617b825350d9382b9bc55cabdbbc9b255c9855"
+    }
+  ]
+}
