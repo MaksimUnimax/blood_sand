@@ -1,4 +1,5 @@
 name: Ozon Step7 exact Swagger authority v2 cross-platform
+run-name: Ozon Step7 authority v2 · ${{ github.ref_name }} · ${{ github.sha }}
 
 on:
   push:
