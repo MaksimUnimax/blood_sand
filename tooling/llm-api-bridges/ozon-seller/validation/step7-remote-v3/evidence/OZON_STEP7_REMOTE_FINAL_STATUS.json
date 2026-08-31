@@ -1,0 +1,15 @@
+{
+  "schema": "ozon.seller.step7.remote-finalization",
+  "schema_version": 1,
+  "status": "BLOCKED",
+  "reason": "linux=failure windows=failure",
+  "source_commit": "05bd83e00d8554b2dee3119e6a434f89c02d7808",
+  "linux": "failure",
+  "windows": "failure",
+  "canonical_modified": false,
+  "seller_operations": 463,
+  "seller_reads": 245,
+  "new_reads": 26,
+  "personal_data_new": 13,
+  "safe_projection_new": 13
+}
