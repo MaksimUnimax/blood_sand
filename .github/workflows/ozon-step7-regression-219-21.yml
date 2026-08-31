@@ -1,0 +1,179 @@
+name: Ozon Step7 executable regression 219 Seller plus 21 Performance
+run-name: Ozon Step7 regression 219+21 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-exact-swagger-authority-v2-clean-2026-08-31
+      - repair/ozon-seller-step7-regression-219-21-2026-08-31
+    paths:
+      - .github/workflows/ozon-step7-regression-219-21.yml
+      - tooling/llm-api-bridges/ozon-seller/**
+      - tooling/llm-api-bridges/ozon-performance/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ozon-step7-regression-219-21-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUTF8: '1'
+  SELLER_ROOT: tooling/llm-api-bridges/ozon-seller
+  REGRESSION_ROOT: tooling/llm-api-bridges/ozon-seller/validation/step7-regression-v1
+
+jobs:
+  linux-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Execute Seller 219 and Performance 21 on Linux
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/step7-regression-linux"
+          rm -rf "$out"
+          mkdir -p "$out"
+          python "$REGRESSION_ROOT/run_step7_regression.py" \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --seller-root "$SELLER_ROOT" \
+            --network-guard "$REGRESSION_ROOT/network_guard.cjs" \
+            --output-dir "$out" \
+            --source-commit "$GITHUB_SHA" \
+            | tee "$out/console.log"
+          grep -Fx STEP7_SELLER_REGRESSION_219_PASS "$out/run.log"
+          grep -Fx STEP7_PERFORMANCE_REGRESSION_21_PASS "$out/run.log"
+          grep -Fx STEP7_REGRESSION_240_PASS "$out/run.log"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-regression-linux
+          path: ${{ runner.temp }}/step7-regression-linux
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-regression:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Execute Seller 219 and Performance 21 on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'step7-regression-windows'
+          if (Test-Path $out) { Remove-Item -Recurse -Force $out }
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          python "$env:REGRESSION_ROOT/run_step7_regression.py" `
+            --repo-root $env:GITHUB_WORKSPACE `
+            --seller-root $env:SELLER_ROOT `
+            --network-guard "$env:REGRESSION_ROOT/network_guard.cjs" `
+            --output-dir $out `
+            --source-commit $env:GITHUB_SHA `
+            | Tee-Object -FilePath (Join-Path $out 'console.log')
+          if ($LASTEXITCODE -ne 0) { throw 'regression harness failed' }
+          foreach ($marker in @('STEP7_SELLER_REGRESSION_219_PASS','STEP7_PERFORMANCE_REGRESSION_21_PASS','STEP7_REGRESSION_240_PASS')) {
+            if (-not (Select-String -Path (Join-Path $out 'run.log') -Pattern "^$marker$" -Quiet)) {
+              throw "missing marker: $marker"
+            }
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-regression-windows
+          path: ${{ runner.temp }}/step7-regression-windows
+          if-no-files-found: error
+          retention-days: 14
+
+  compare-regression:
+    needs: [linux-regression, windows-regression]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: seller-step7-regression-linux
+          path: /tmp/regression-linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: seller-step7-regression-windows
+          path: /tmp/regression-windows
+      - name: Require cross-platform semantic identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmp /tmp/regression-linux/semantic-proof.json /tmp/regression-windows/semantic-proof.json
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          linux = Path('/tmp/regression-linux')
+          windows = Path('/tmp/regression-windows')
+          semantic_path = linux / 'semantic-proof.json'
+          semantic = json.loads(semantic_path.read_text(encoding='utf-8'))
+          assert semantic['result'] == 'PASS'
+          assert semantic['source_commit'] == '${{ github.sha }}'
+          assert semantic['seller']['case_count'] == 219
+          assert semantic['seller']['covered_case_count'] == 219
+          assert semantic['seller']['all_cases_executed'] is True
+          assert len(semantic['seller']['case_identities']) == 219
+          assert semantic['performance']['case_count'] == 21
+          assert semantic['performance']['covered_case_count'] == 21
+          assert semantic['performance']['all_cases_executed'] is True
+          assert len(semantic['performance']['case_identities']) == 21
+          assert semantic['execution_contract'] == {
+              'network_guard': True,
+              'all_selected_evidence_exit_zero': True,
+              'seller_cases_executed': 219,
+              'performance_cases_executed': 21,
+          }
+          assert semantic['total_case_count'] == 240
+          assert semantic['marker'] == 'STEP7_REGRESSION_240_PASS'
+          for root in (linux, windows):
+              full = json.loads((root / 'regression-proof.json').read_text(encoding='utf-8'))
+              assert full['result'] == 'PASS'
+              assert full['source_commit'] == '${{ github.sha }}'
+              assert full['seller']['case_set_sha256'] == semantic['seller']['case_set_sha256']
+              assert full['performance']['case_set_sha256'] == semantic['performance']['case_set_sha256']
+              assert full['total_case_count'] == 240
+          digest = hashlib.sha256(semantic_path.read_bytes()).hexdigest()
+          out = Path('/tmp/regression-cross-platform')
+          out.mkdir(parents=True, exist_ok=True)
+          (out / 'semantic-proof.json').write_bytes(semantic_path.read_bytes())
+          (out / 'evidence.txt').write_text(
+              '\n'.join([
+                  f'workflow_run=${{ github.run_id }}',
+                  f'source_commit=${{ github.sha }}',
+                  f'semantic_proof_sha256={digest}',
+                  'seller_regression_cases=219',
+                  'performance_regression_cases=21',
+                  'total_regression_cases=240',
+                  'linux_windows_semantic_proof_byte_identical=true',
+                  'STEP7_SELLER_REGRESSION_219_PASS',
+                  'STEP7_PERFORMANCE_REGRESSION_21_PASS',
+                  'STEP7_REGRESSION_240_PASS',
+                  'STEP7_REGRESSION_240_CROSS_PLATFORM_PASS',
+                  '',
+              ]),
+              encoding='utf-8',
+              newline='\n',
+          )
+          PY
+          echo STEP7_REGRESSION_240_CROSS_PLATFORM_PASS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-regression-cross-platform
+          path: /tmp/regression-cross-platform
+          if-no-files-found: error
+          retention-days: 14
