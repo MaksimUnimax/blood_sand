@@ -2,7 +2,7 @@
 
 Версия: 0.2  
 Статус: **V2 SALES-WEIGHTED contract authority**  
-Revision: **2026-08-30 owner update — Бусел male → Родимич**
+Revision: **2026-08-31 owner update — Волк female → Алатырь; Змей female → Жива**
 
 ## 1. Authority
 
@@ -68,6 +68,7 @@ svarog.gender_policy = male
 chernobog.gender_policy = male
 mara.gender_policy = female
 zvezda_lady.gender_policy = female
+zhiva.gender_policy = female
 rodimich.gender_policy = male
 molvinets.active_for_recommendation = false
 dazhdbog automatic matrix use = rasa only
@@ -80,17 +81,19 @@ Exactly one active base product per `chertog + gender`.
 Required owner rows include:
 
 ```text
+zmei + male     → semargl
+zmei + female   → zhiva
 medved + male   → bear_paw
 medved + female → bear_paw
 busel + male    → rodimich
 busel + female  → zvezda_lady
+volk + male     → veles
+volk + female   → alatyr
 lisa + male     → chernobog
 lisa + female   → mara
 orel + male     → perun
 orel + female   → zvezda_lady
 ```
-
-For `busel + male`, `molvinets` is explicitly not an automatic result. The approved base row is `rodimich` because the cleaner Rod/lineage relation outweighs the modest historical sales advantage of Molvinets.
 
 Base invariants:
 
@@ -98,7 +101,7 @@ Base invariants:
 - no secondary entries;
 - product key exists and is active;
 - gender policy allows row;
-- allowed_chertogs allows row.
+- allowed Chertog policy allows row.
 
 ## 7. Semantic and commercial fields
 
@@ -124,16 +127,27 @@ MARKETPLACE_OVERRIDE_SALES_WEIGHTED
 
 Sales figures are approval evidence, not runtime inputs.
 
-The approved `busel + male` row is:
+Approved gender-split rows:
 
 ```json
 {
-  "chertog_id": "busel",
-  "gender": "male",
-  "product_key": "rodimich",
-  "relation_type": "DIRECT_DERIVED",
-  "selection_basis": "SEMANTIC_DIRECT",
-  "reason_code": "BUSEL_ROD_LINEAGE_DIRECT"
+  "chertog_id": "volk",
+  "gender": "female",
+  "product_key": "alatyr",
+  "relation_type": "CURATED_GENDER_SUBSTITUTE",
+  "selection_basis": "SEMANTIC_CURATED_GENDER_FIT",
+  "reason_code": "VOLK_FEMALE_INNER_CENTER"
+}
+```
+
+```json
+{
+  "chertog_id": "zmei",
+  "gender": "female",
+  "product_key": "zhiva",
+  "relation_type": "CURATED_GENDER_SUBSTITUTE",
+  "selection_basis": "SEMANTIC_CURATED_GENDER_FIT",
+  "reason_code": "ZMEI_FEMALE_LIFE_ENERGY"
 }
 ```
 
@@ -162,7 +176,7 @@ Supported marketplaces: `ozon`, `wildberries`.
 type ResolveRecommendationInput = {
   birthDay: number;
   birthMonth: number;
-  birthYear?: number; // display/audit context only; MUST NOT affect selection
+  birthYear?: number;
   gender: "male" | "female";
   marketplace?: "ozon" | "wildberries";
 };
@@ -228,45 +242,6 @@ POST /v1/recommendations/resolve
 Content-Type: application/json
 ```
 
-Example request:
-
-```json
-{
-  "birth_day": 9,
-  "birth_month": 2,
-  "birth_year": 1996,
-  "gender": "male",
-  "marketplace": "ozon"
-}
-```
-
-Expected Busel response core:
-
-```json
-{
-  "birth_date": {
-    "day": 9,
-    "month": 2,
-    "year": 1996,
-    "display": "09.02.1996"
-  },
-  "chertog": {
-    "id": "busel",
-    "name": "Бусел",
-    "patron_name": "Род"
-  },
-  "recommendation": {
-    "product_key": "rodimich",
-    "sku": "1842444165",
-    "recommendation_identity": "Родимич",
-    "customer_label": "Родимич",
-    "relation_type": "DIRECT_DERIVED",
-    "selection_basis": "SEMANTIC_DIRECT",
-    "reason_code": "BUSEL_ROD_LINEAGE_DIRECT"
-  }
-}
-```
-
 `patron_name` is calendar metadata and does not force selection of the exact patron product.
 
 ## 12. Channel vs marketplace
@@ -323,32 +298,38 @@ CI/startup must fail if:
 7. rendered label for `bear_paw` differs from `Печать Велеса`;
 8. Даждьбог outside Раса or not exactly twice;
 9. Сварог in female row;
-10. `busel + male` is not Родимич;
-11. `busel + female` is not Звезда Лады;
-12. Молвинец appears in an automatic row;
-13. `lisa + male` is not Чернобог;
-14. `lisa + female` is not Мара;
-15. `orel + male` is not Перун;
-16. `orel + female` is not Звезда Лады;
-17. Чернобог in female row;
-18. Мара in male row;
-19. supplied `birth_year` is lost before customer rendering;
-20. unapproved marketplace override exists;
-21. reserve product auto-appears without owner decision.
+10. `zmei + male` is not Семаргл;
+11. `zmei + female` is not Жива;
+12. `volk + male` is not Велес;
+13. `volk + female` is not Алатырь;
+14. `busel + male` is not Родимич;
+15. `busel + female` is not Звезда Лады;
+16. Молвинец appears in an automatic row;
+17. `lisa + male` is not Чернобог;
+18. `lisa + female` is not Мара;
+19. `orel + male` is not Перун;
+20. `orel + female` is not Звезда Лады;
+21. Чернобог in female row;
+22. Мара in male row;
+23. supplied `birth_year` is lost before customer rendering;
+24. unapproved marketplace override exists;
+25. reserve product auto-appears without owner decision.
 
 ## 16. Contract tests
 
 ```text
-09.02.1996 + male + ozon → busel / Родимич; rendered date includes 1996
-09.02.1996 + female + ozon → busel / Звезда Лады; rendered date includes 1996
+01.12.1988 + male + ozon → zmei / Семаргл
+01.12.1988 + female + ozon → zmei / Жива
+09.02.1996 + male + ozon → busel / Родимич
+09.02.1996 + female + ozon → busel / Звезда Лады
+15.03.1988 + male + ozon → volk / Велес
+15.03.1988 + female + ozon → volk / Алатырь
 25.03.1993 + male + ozon → lisa / Чернобог
 25.03.1993 + female + ozon → lisa / Мара
 16.01.1986 + male + ozon → medved / Печать Велеса
 16.01.1990 + female + wildberries → medved / Печать Велеса
 19.07.1988 + male → orel / Перун
 19.07.1988 + female → orel / Звезда Лады
-15.03.1988 + male → volk / Велес
-15.03.1988 + female → volk / Велес
 13.08.1988 + male → rasa / Даждьбог
 13.08.1988 + female → rasa / Даждьбог
 ```
