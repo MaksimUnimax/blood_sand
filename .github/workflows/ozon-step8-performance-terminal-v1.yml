@@ -1,0 +1,246 @@
+name: Ozon Step8 Performance terminal gate v1
+run-name: Ozon Step8 Performance terminal gate v1 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step8-performance-48-terminal-2026-08-31
+    paths:
+      - .github/workflows/ozon-step8-performance-terminal-v1.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/build_step8_performance_terminal_matrix.py
+      - tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/generated/OZON_PERFORMANCE_STEP8_REMAINING_QUEUE_V1.json
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_MATRIX_REGRESSION_2026-08-29.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_READ_COVERAGE_REGRESSION_2026-08-29.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-step8-performance-terminal-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUTF8: '1'
+  PYTHONIOENCODING: utf-8
+  BUILDER: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/build_step8_performance_terminal_matrix.py
+  MATRIX_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_MATRIX_REGRESSION_2026-08-29.mjs
+  READ_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_READ_COVERAGE_REGRESSION_2026-08-29.mjs
+  BRANCH: repair/ozon-step8-performance-48-terminal-2026-08-31
+
+jobs:
+  platform-terminal-gate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Disable Git line-ending conversion
+        shell: bash
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build exhaustive terminal matrix and run accepted regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/step8-performance-terminal"
+          python "$BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$out"
+          node "$MATRIX_REGRESSION"
+          node "$READ_REGRESSION"
+          python - "$out/OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX_V1.json" "$out/OZON_PERFORMANCE_STEP8_REGRESSION_PROOF_V1.json" "$MATRIX_REGRESSION" "$READ_REGRESSION" "$GITHUB_SHA" "$RUNNER_OS" <<'PY'
+          import hashlib,json,sys
+          from pathlib import Path
+          matrix_path,output,matrix_regression,read_regression,source_commit,runner_os=map(Path,sys.argv[1:5])+[sys.argv[5],sys.argv[6]] if False else (Path(sys.argv[1]),Path(sys.argv[2]),Path(sys.argv[3]),Path(sys.argv[4]),sys.argv[5],sys.argv[6])
+          matrix=json.loads(matrix_path.read_text(encoding='utf-8'))
+          assert matrix['status']=='TERMINAL_MATRIX_READY'
+          assert matrix['counts']['rows']==48
+          assert matrix['counts']['already_accepted_current_reads']==21
+          assert matrix['counts']['remaining_source_terminal_decisions']==27
+          assert matrix['counts']['unknown']==matrix['counts']['pending']==matrix['counts']['unresolved']==0
+          assert matrix['counts']['implementation_candidates']==0
+          proof={
+              'schema':'OZON_PERFORMANCE_STEP8_REGRESSION_PROOF_V1',
+              'schema_version':1,
+              'status':'PASS',
+              'source_commit':source_commit,
+              'terminal_matrix_sha256':hashlib.sha256(matrix_path.read_bytes()).hexdigest(),
+              'matrix_regression':{
+                  'path':matrix_regression.as_posix(),
+                  'sha256':hashlib.sha256(matrix_regression.read_bytes()).hexdigest(),
+                  'status':'PASS',
+              },
+              'read_coverage_regression':{
+                  'path':read_regression.as_posix(),
+                  'sha256':hashlib.sha256(read_regression.read_bytes()).hexdigest(),
+                  'status':'PASS',
+              },
+              'seller_step7_candidate_tree_sha256':'f605c2645e3a7a429facaab1bbb4b1252c7ee39d601b50d0480c4006b689d974',
+              'seller_step7_package_sha256':'f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574',
+              'performance_existing_current_reads':21,
+              'new_runtime_implementation_count':0,
+              'markers':[
+                  'PERFORMANCE_STEP8_EXISTING_MATRIX_REGRESSION_PASS',
+                  'PERFORMANCE_STEP8_EXISTING_READ_COVERAGE_REGRESSION_PASS',
+                  'PERFORMANCE_STEP8_NO_NEW_RUNTIME_IMPLEMENTATION_REQUIRED_PASS',
+                  'PERFORMANCE_STEP8_PLATFORM_TERMINAL_GATE_PASS',
+              ],
+          }
+          output.write_text(json.dumps(proof,ensure_ascii=False,indent=2)+'\n',encoding='utf-8',newline='\n')
+          print(f"PERFORMANCE_STEP8_{runner_os.upper()}_TERMINAL_GATE_PASS")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step8-performance-terminal-${{ runner.os }}-v1
+          path: ${{ runner.temp }}/step8-performance-terminal
+          if-no-files-found: error
+          retention-days: 14
+
+  compare-cross-platform:
+    needs: platform-terminal-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step8-performance-terminal-Linux-v1
+          path: ${{ runner.temp }}/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step8-performance-terminal-Windows-v1
+          path: ${{ runner.temp }}/windows
+      - name: Prove terminal evidence byte identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/cross"
+          python - "$RUNNER_TEMP/linux" "$RUNNER_TEMP/windows" "$RUNNER_TEMP/cross/OZON_PERFORMANCE_STEP8_TERMINAL_CROSS_PLATFORM_PROOF_V1.json" "$GITHUB_SHA" "$GITHUB_RUN_ID" <<'PY'
+          import hashlib,json,sys
+          from pathlib import Path
+          linux,windows=Path(sys.argv[1]),Path(sys.argv[2])
+          output,source_commit,run_id=Path(sys.argv[3]),sys.argv[4],int(sys.argv[5])
+          def files(root):
+              return {p.relative_to(root).as_posix():p for p in root.rglob('*') if p.is_file()}
+          lf,wf=files(linux),files(windows)
+          assert set(lf)==set(wf),(sorted(set(lf)-set(wf)),sorted(set(wf)-set(lf)))
+          rows=[]
+          for rel in sorted(lf):
+              lb,wb=lf[rel].read_bytes(),wf[rel].read_bytes()
+              assert lb==wb,rel
+              rows.append({'path':rel,'bytes':len(lb),'sha256':hashlib.sha256(lb).hexdigest()})
+          matrix=json.loads((linux/'OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX_V1.json').read_text(encoding='utf-8'))
+          assert matrix['status']=='TERMINAL_MATRIX_READY'
+          proof={
+              'schema':'OZON_PERFORMANCE_STEP8_TERMINAL_CROSS_PLATFORM_PROOF_V1',
+              'schema_version':1,
+              'status':'PASS',
+              'source_commit':source_commit,
+              'workflow_run_id':run_id,
+              'platforms':['ubuntu-latest','windows-latest'],
+              'byte_identical':True,
+              'file_count':len(rows),
+              'terminal_counts':matrix['counts'],
+              'files':rows,
+              'markers':[
+                  'PERFORMANCE_STEP8_LINUX_TERMINAL_GATE_PASS',
+                  'PERFORMANCE_STEP8_WINDOWS_TERMINAL_GATE_PASS',
+                  'PERFORMANCE_STEP8_LINUX_WINDOWS_BYTE_IDENTICAL_PASS',
+                  'PERFORMANCE_STEP8_FULL_CROSS_PLATFORM_PASS',
+              ],
+          }
+          output.write_text(json.dumps(proof,ensure_ascii=False,indent=2)+'\n',encoding='utf-8',newline='\n')
+          print('PERFORMANCE_STEP8_LINUX_WINDOWS_BYTE_IDENTICAL_PASS')
+          print('PERFORMANCE_STEP8_FULL_CROSS_PLATFORM_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step8-performance-terminal-cross-platform-v1
+          path: ${{ runner.temp }}/cross/OZON_PERFORMANCE_STEP8_TERMINAL_CROSS_PLATFORM_PROOF_V1.json
+          if-no-files-found: error
+          retention-days: 14
+
+  freeze-terminal-matrix:
+    needs: compare-cross-platform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step8-performance-terminal-Linux-v1
+          path: ${{ runner.temp }}/terminal
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step8-performance-terminal-cross-platform-v1
+          path: ${{ runner.temp }}/cross
+      - name: Freeze terminal matrix and proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          target=tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/generated
+          mkdir -p "$target"
+          cp "$RUNNER_TEMP/terminal/OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX_V1.json" "$target/"
+          cp "$RUNNER_TEMP/terminal/OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX_V1.csv" "$target/"
+          cp "$RUNNER_TEMP/terminal/OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX_V1.md" "$target/"
+          cp "$RUNNER_TEMP/terminal/OZON_PERFORMANCE_STEP8_REGRESSION_PROOF_V1.json" "$target/"
+          cp "$RUNNER_TEMP/cross/OZON_PERFORMANCE_STEP8_TERMINAL_CROSS_PLATFORM_PROOF_V1.json" "$target/"
+          python - "$target/OZON_PERFORMANCE_STEP8_TERMINAL_STATUS_V1.json" "$GITHUB_SHA" "$GITHUB_RUN_ID" <<'PY'
+          import json,sys
+          from pathlib import Path
+          output=Path(sys.argv[1])
+          proof={
+              'schema':'OZON_PERFORMANCE_STEP8_TERMINAL_STATUS_V1',
+              'schema_version':1,
+              'status':'PASS',
+              'source_commit':sys.argv[2],
+              'workflow_run_id':int(sys.argv[3]),
+              'performance_operations_terminal':48,
+              'performance_operations_total':48,
+              'current_reads':21,
+              'source_terminal_non_current_operations':27,
+              'new_runtime_implementation_count':0,
+              'unknown':0,
+              'pending':0,
+              'unresolved':0,
+              'linux_windows_byte_identical':True,
+              'canonical_modified':False,
+              'next_stage':'STEP8_FORMAL_ACCEPTANCE',
+              'markers':[
+                  'PERFORMANCE_STEP8_48_EXHAUSTIVE_TERMINAL_MATRIX_PASS',
+                  'PERFORMANCE_STEP8_UNKNOWN_0_PASS',
+                  'PERFORMANCE_STEP8_PENDING_0_PASS',
+                  'PERFORMANCE_STEP8_UNRESOLVED_0_PASS',
+                  'PERFORMANCE_STEP8_EXISTING_MATRIX_REGRESSION_PASS',
+                  'PERFORMANCE_STEP8_EXISTING_READ_COVERAGE_REGRESSION_PASS',
+                  'PERFORMANCE_STEP8_NO_NEW_RUNTIME_IMPLEMENTATION_REQUIRED_PASS',
+                  'PERFORMANCE_STEP8_LINUX_WINDOWS_BYTE_IDENTICAL_PASS',
+                  'PERFORMANCE_STEP8_TERMINAL_MATRIX_FROZEN_PASS',
+              ],
+          }
+          output.write_text(json.dumps(proof,ensure_ascii=False,indent=2)+'\n',encoding='utf-8',newline='\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$target"
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo PERFORMANCE_STEP8_TERMINAL_MATRIX_ALREADY_FROZEN_PASS
+          else
+            git commit -m 'validation(ozon): freeze exhaustive Performance Step8 terminal matrix'
+            git pull --rebase origin "$BRANCH"
+            git push origin HEAD:"$BRANCH"
+            echo PERFORMANCE_STEP8_TERMINAL_MATRIX_FROZEN_PASS
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step8-performance-terminal-frozen-v1
+          path: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/generated
+          if-no-files-found: error
+          retention-days: 30
