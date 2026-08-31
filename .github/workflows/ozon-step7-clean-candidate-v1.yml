@@ -1,0 +1,190 @@
+name: Ozon Step7 clean 245-read candidate v1
+run-name: Ozon Step7 clean candidate v1 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-245-read-final-candidate-2026-08-31
+    paths:
+      - .github/workflows/ozon-step7-clean-candidate-v1.yml
+      - tooling/llm-api-bridges/ozon-seller/dist-step6-accepted/**
+      - tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/**
+      - tooling/llm-api-bridges/ozon-seller/dist/ozon-seller-mcp-nodebundle.js
+      - tooling/llm-api-bridges/ozon-seller/inventory/OZON_SELLER_EXACT_READ_REGISTRY.json
+      - tooling/llm-api-bridges/ozon-seller/OZON_STEP7_RUNTIME_TEST_ARTIFACT_2026-08-30.json
+      - tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_STEP7_245_READS_CANDIDATE_2026-08-31.zip
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2/**
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-runtime-v1/**
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-privacy-v1/**
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-regression-v1/**
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-remote-v2-upload/**
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-clean-candidate-v1/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ozon-step7-clean-candidate-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUTF8: '1'
+  PYTHONIOENCODING: utf-8
+  RESTORER: tooling/llm-api-bridges/ozon-seller/validation/step7-remote-v2-upload/restore_multipart_source.py
+  PORTABILITY: tooling/llm-api-bridges/ozon-seller/validation/step7-remote-v2-upload/apply_windows_utf8_portability.py
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/step7-remote-v2/run_full_gate.py
+  FREEZE: tooling/llm-api-bridges/ozon-seller/validation/step7-clean-candidate-v1/verify_frozen_repository.py
+
+jobs:
+  platform-full-gate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Disable Git line-ending conversion
+        shell: bash
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore exact gate sources and run complete Step 7 gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$RESTORER" --repo-root "$GITHUB_WORKSPACE"
+          python "$PORTABILITY" --repo-root "$GITHUB_WORKSPACE"
+          out="$RUNNER_TEMP/ozon-step7-clean-output"
+          python "$GATE" --repo-root "$GITHUB_WORKSPACE" --out "$out" --source-commit "$GITHUB_SHA"
+          python - "$out/semantic-proof.json" "$RUNNER_OS" <<'PY'
+          import json, sys
+          proof = json.load(open(sys.argv[1], encoding='utf-8'))
+          assert proof['result'] == 'PASS'
+          assert proof['source_commit']
+          assert 'STEP7_FULL_PLATFORM_GATE_PASS' in proof['markers']
+          assert proof['production']['candidate_tree_sha256'] == 'f605c2645e3a7a429facaab1bbb4b1252c7ee39d601b50d0480c4006b689d974'
+          assert proof['production']['seller_reads'] == 245
+          assert proof['production']['new_seller_reads'] == 26
+          assert proof['runtime']['operation_count'] == 26
+          assert proof['runtime']['physical_business_request_count'] == 26
+          assert proof['runtime']['all_one_request'] is True
+          assert proof['privacy']['denied']['physical_business_request_count'] == 0
+          assert proof['privacy']['setting_transition']['replayed_command_count'] == 0
+          assert proof['privacy']['setting_transition']['delayed_replayed_command_count'] == 0
+          assert proof['privacy']['explicit_resubmit']['physical_business_request_count'] == 13
+          assert proof['terminal']['rows'] == 463
+          assert proof['terminal']['unknown'] == proof['terminal']['pending'] == proof['terminal']['unresolved'] == 0
+          assert proof['package']['zip_sha256'] == 'f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574'
+          assert proof['package']['zip_bytes'] == 1146084
+          print(f"STEP7_CLEAN_{sys.argv[2].upper()}_FULL_GATE_PASS")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step7-clean-${{ runner.os }}-v1
+          path: |
+            ${{ runner.temp }}/ozon-step7-clean-output/candidate
+            ${{ runner.temp }}/ozon-step7-clean-output/generated
+            ${{ runner.temp }}/ozon-step7-clean-output/proofs
+            ${{ runner.temp }}/ozon-step7-clean-output/package
+            ${{ runner.temp }}/ozon-step7-clean-output/semantic-proof.json
+          if-no-files-found: error
+          retention-days: 14
+
+  compare-cross-platform:
+    needs: platform-full-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step7-clean-Linux-v1
+          path: ${{ runner.temp }}/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step7-clean-Windows-v1
+          path: ${{ runner.temp }}/windows
+      - name: Prove Linux and Windows byte identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/cross"
+          python - "$RUNNER_TEMP/linux" "$RUNNER_TEMP/windows" "$RUNNER_TEMP/cross/cross-platform-proof.json" "$GITHUB_SHA" "$GITHUB_RUN_ID" <<'PY'
+          import hashlib, json, sys
+          from pathlib import Path
+          linux, windows = Path(sys.argv[1]), Path(sys.argv[2])
+          output, source_commit, run_id = Path(sys.argv[3]), sys.argv[4], int(sys.argv[5])
+          def files(root):
+              return {p.relative_to(root).as_posix(): p for p in root.rglob('*') if p.is_file()}
+          lf, wf = files(linux), files(windows)
+          assert set(lf) == set(wf), (sorted(set(lf)-set(wf)), sorted(set(wf)-set(lf)))
+          rows = []
+          for rel in sorted(lf):
+              lb, wb = lf[rel].read_bytes(), wf[rel].read_bytes()
+              assert lb == wb, rel
+              rows.append({'path': rel, 'bytes': len(lb), 'sha256': hashlib.sha256(lb).hexdigest()})
+          semantic = json.loads((linux / 'semantic-proof.json').read_text(encoding='utf-8'))
+          assert semantic['result'] == 'PASS' and semantic['source_commit'] == source_commit
+          assert semantic['production']['candidate_tree_sha256'] == 'f605c2645e3a7a429facaab1bbb4b1252c7ee39d601b50d0480c4006b689d974'
+          assert semantic['package']['zip_sha256'] == 'f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574'
+          proof = {
+              'schema':'OZON_SELLER_STEP7_CLEAN_CROSS_PLATFORM_PROOF_V1','schema_version':1,'result':'PASS',
+              'source_commit':source_commit,'workflow_run_id':run_id,'platforms':['ubuntu-latest','windows-latest'],
+              'byte_identical':True,'file_count':len(rows),
+              'candidate_tree_sha256':semantic['production']['candidate_tree_sha256'],
+              'package_sha256':semantic['package']['zip_sha256'],'package_bytes':semantic['package']['zip_bytes'],
+              'files':rows,
+              'markers':['STEP7_CLEAN_LINUX_FULL_GATE_PASS','STEP7_CLEAN_WINDOWS_FULL_GATE_PASS','STEP7_CLEAN_LINUX_WINDOWS_BYTE_IDENTICAL_PASS','STEP7_CLEAN_FULL_CROSS_PLATFORM_PASS'],
+          }
+          output.write_text(json.dumps(proof, ensure_ascii=False, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8', newline='\n')
+          print('STEP7_CLEAN_LINUX_WINDOWS_BYTE_IDENTICAL_PASS')
+          print('STEP7_CLEAN_FULL_CROSS_PLATFORM_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step7-clean-cross-platform-v1
+          path: ${{ runner.temp }}/cross/cross-platform-proof.json
+          if-no-files-found: error
+          retention-days: 14
+
+  verify-repository-freeze:
+    needs: compare-cross-platform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step7-clean-Linux-v1
+          path: ${{ runner.temp }}/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step7-clean-cross-platform-v1
+          path: ${{ runner.temp }}/cross
+      - name: Verify fresh gate output equals repository-frozen candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/freeze"
+          python "$FREEZE" \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --fresh-output "$RUNNER_TEMP/linux" \
+            --cross-proof "$RUNNER_TEMP/cross/cross-platform-proof.json" \
+            --source-commit "$GITHUB_SHA" \
+            --workflow-run-id "$GITHUB_RUN_ID" \
+            --output "$RUNNER_TEMP/freeze/repository-freeze-proof.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step7-clean-repository-freeze-v1
+          path: ${{ runner.temp }}/freeze/repository-freeze-proof.json
+          if-no-files-found: error
+          retention-days: 14
