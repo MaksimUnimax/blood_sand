@@ -1,0 +1,282 @@
+{
+  "authority": {
+    "bytes": 3933043,
+    "capture_date": "2026-08-25",
+    "http_methods": [
+      "delete",
+      "get",
+      "head",
+      "options",
+      "patch",
+      "post",
+      "put",
+      "trace"
+    ],
+    "info_title": "Документация Ozon Seller API",
+    "info_version": 2.1,
+    "openapi": "3.0.0",
+    "operation_count": 463,
+    "path_count": 463,
+    "raw_filename": "seller-swagger-2026-08-25.json",
+    "server_urls": [
+      "//api-seller.ozon.ru"
+    ],
+    "sha256": "39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40",
+    "source_url": "https://docs.ozon.ru/api/seller/swagger.json"
+  },
+  "created_on": "2026-08-30",
+  "schema": "ozon.seller.exact-swagger.transport.v2",
+  "schema_version": 1,
+  "transport": {
+    "compression": {
+      "bytes": 227752,
+      "check": "crc64",
+      "format": "xz",
+      "preset_label": "9e",
+      "python_lzma_preset": 2147483657,
+      "sha256": "c7916a68ef192702fdb27c45d3571409e2d39c8697e164be04532063ea6cc267"
+    },
+    "encoding": {
+      "bytes": 303672,
+      "format": "base64",
+      "line_wrapping": "none",
+      "sha256": "c0960c97716423077e0825b3445254801fdaf077f33538c3088615e2be13dc27"
+    },
+    "fragments": {
+      "count": 38,
+      "directory": "fragments",
+      "entries": [
+        {
+          "bytes": 8192,
+          "index": 1,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0001.txt",
+          "sha256": "2175c49e22d035178221262a94331258903acb6d0f294ebc7720f11c8ce1fa63"
+        },
+        {
+          "bytes": 8192,
+          "index": 2,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0002.txt",
+          "sha256": "3bb3af54e59b22d668459dfee77a5a0dd9ed2eac6092557a4082301e19a8d39b"
+        },
+        {
+          "bytes": 8192,
+          "index": 3,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0003.txt",
+          "sha256": "6b57da1db23962c0fbaf89d2549b6b5dbe46123fe92521442d640920d604aa46"
+        },
+        {
+          "bytes": 8192,
+          "index": 4,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0004.txt",
+          "sha256": "d7ed23aebfeecf29e440b9e6e996d66ae818ff40491d33753b532f1c01189278"
+        },
+        {
+          "bytes": 8192,
+          "index": 5,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0005.txt",
+          "sha256": "af9e6a3f6b4e93ae895c26ac5fcdc7f1cd7a72613c53f1d5bb8dd7080a8a2a9c"
+        },
+        {
+          "bytes": 8192,
+          "index": 6,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0006.txt",
+          "sha256": "33f0f5d528e272b46bc09ba8fb080545ca861fe089ccf7635bf14a5be7797c8d"
+        },
+        {
+          "bytes": 8192,
+          "index": 7,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0007.txt",
+          "sha256": "7254c7e312c39d75c86eeb8e84278a9154fc6ab6854d434dce5f4f27215ef511"
+        },
+        {
+          "bytes": 8192,
+          "index": 8,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0008.txt",
+          "sha256": "27db93ed213dba1a250b79e1e1badb40b02ab0c03634d175e240e78c9b74e9dd"
+        },
+        {
+          "bytes": 8192,
+          "index": 9,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0009.txt",
+          "sha256": "be90df5b312b0486eec6ff3cfca253993633da570c86424ee3bea1f42de91b7a"
+        },
+        {
+          "bytes": 8192,
+          "index": 10,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0010.txt",
+          "sha256": "baef4a7dedf58a15d443926e2e3413f6fc80b10904e0f775873b672baf2f3c24"
+        },
+        {
+          "bytes": 8192,
+          "index": 11,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0011.txt",
+          "sha256": "db499b9a1142f51d51e1944ac5a4f4fc65882b1acaaa7f290e3fa1de6c448d44"
+        },
+        {
+          "bytes": 8192,
+          "index": 12,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0012.txt",
+          "sha256": "ed0cd909ca9dafc157ebd2b7d063197875718d7cdc9261ddac0badb440d215b6"
+        },
+        {
+          "bytes": 8192,
+          "index": 13,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0013.txt",
+          "sha256": "64d7cfcd4abd30e1fe1b62338a3abc4d6bb26cd9334ec223e7aa098e9a52fbf4"
+        },
+        {
+          "bytes": 8192,
+          "index": 14,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0014.txt",
+          "sha256": "f0208da887c95544a9bfb97fce853e597b35c8003bc61ff225673e40421e00cb"
+        },
+        {
+          "bytes": 8192,
+          "index": 15,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0015.txt",
+          "sha256": "88b66d7f4f6815da5b6f2c5a5230fe135878941d05283037011639e52443f536"
+        },
+        {
+          "bytes": 8192,
+          "index": 16,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0016.txt",
+          "sha256": "4583de1d9e0874f4ff52794a5efce797bb7d10c127fcfaa54438b4c981d56db4"
+        },
+        {
+          "bytes": 8192,
+          "index": 17,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0017.txt",
+          "sha256": "e90e343c0106ffcc0cad536c0190ce572cba57df35795656ae5ddab535a8c346"
+        },
+        {
+          "bytes": 8192,
+          "index": 18,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0018.txt",
+          "sha256": "01d613dfe2d9d176a01d6106c3f592725723a547da434547a5d3b1eb0e6a7369"
+        },
+        {
+          "bytes": 8192,
+          "index": 19,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0019.txt",
+          "sha256": "26fc94ef23546eba6013f471f724b5cdb591b752c7b2ca19453053c7954938a2"
+        },
+        {
+          "bytes": 8192,
+          "index": 20,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0020.txt",
+          "sha256": "c92f66a3e8c85ae74eb018f5e645735ccdb3a481b328868eb022283c519cb44e"
+        },
+        {
+          "bytes": 8192,
+          "index": 21,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0021.txt",
+          "sha256": "87c0674198ef11c1b3bfed7f1d7f26ea0f4f689e5aefeb6f8dc54e00e8cf0c43"
+        },
+        {
+          "bytes": 8192,
+          "index": 22,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0022.txt",
+          "sha256": "e6e7935721454c5af7f4ee8ce12c8611f7ea907a1f3345a81efa6be947e91317"
+        },
+        {
+          "bytes": 8192,
+          "index": 23,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0023.txt",
+          "sha256": "f7d4a6e022caffe8b87bd880a1b761beee8f4ead3d0354d5bbea4d69763f27a0"
+        },
+        {
+          "bytes": 8192,
+          "index": 24,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0024.txt",
+          "sha256": "b72fece184d67c6fd479fd32b07de10cf68ba822553de582b743495647878859"
+        },
+        {
+          "bytes": 8192,
+          "index": 25,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0025.txt",
+          "sha256": "7cb1ab21a61aa58892efa073942c94d1b17e1398a0cebd3086743df50254819d"
+        },
+        {
+          "bytes": 8192,
+          "index": 26,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0026.txt",
+          "sha256": "304e22414441b1c742b2459b27524eebb76f1acf16bf8497d08eb4319d34bae5"
+        },
+        {
+          "bytes": 8192,
+          "index": 27,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0027.txt",
+          "sha256": "1e6afca595ebbb788245dd739227b69a249a8306bf20028f436db9b30a95a75a"
+        },
+        {
+          "bytes": 8192,
+          "index": 28,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0028.txt",
+          "sha256": "36270a7cfb49b572986a417d6f0dc879119fa53d9c240cb3968da23af896e13f"
+        },
+        {
+          "bytes": 8192,
+          "index": 29,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0029.txt",
+          "sha256": "41fb7b81b796c3627c1f903999b5ce9a55ad5cbbabd74684b7b18807eb85035c"
+        },
+        {
+          "bytes": 8192,
+          "index": 30,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0030.txt",
+          "sha256": "1353058a8e3cb1966e1b43169158bfe74c91586f4dac8580f2ed78c29d46b648"
+        },
+        {
+          "bytes": 8192,
+          "index": 31,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0031.txt",
+          "sha256": "db288b2d2f9747cec7f502fd2226988b706f706c3a48b861796b48ef08d677f6"
+        },
+        {
+          "bytes": 8192,
+          "index": 32,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0032.txt",
+          "sha256": "25bfb34275ece382f78430cda31573b67a5d2b71c3ba080c9d1a02fb4186876d"
+        },
+        {
+          "bytes": 8192,
+          "index": 33,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0033.txt",
+          "sha256": "04bcd9dded5dc18e5a36595951b5c951ca099377665132949ca1aec984c40170"
+        },
+        {
+          "bytes": 8192,
+          "index": 34,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0034.txt",
+          "sha256": "7bc12d7d2b5810e49665d7f75c0c4bdba08e41018ac3e778c1cdf6aae017d0e5"
+        },
+        {
+          "bytes": 8192,
+          "index": 35,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0035.txt",
+          "sha256": "92de7a998f1dd69ebb24836af6c5cdfae91a006a746f1223f13670694749c854"
+        },
+        {
+          "bytes": 8192,
+          "index": 36,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0036.txt",
+          "sha256": "8beee87fe2ca4624ef7fc056af908466193cfa050db8a8bc691e1b1397de8356"
+        },
+        {
+          "bytes": 8192,
+          "index": 37,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0037.txt",
+          "sha256": "7c0f00de1b0d6f060ec2df1a8a804dd9dbeddac0da9c411ec5188a6d5940d7fb"
+        },
+        {
+          "bytes": 568,
+          "index": 38,
+          "name": "fragments/seller-swagger-2026-08-25.json.xz.b64.part0038.txt",
+          "sha256": "9b1fb0a10d051082b6db71d216e1f05e478ff6c56779ece3ec8a91a1747dbf6c"
+        }
+      ],
+      "filename_pattern": "seller-swagger-2026-08-25.json.xz.b64.partNNNN.txt",
+      "max_bytes": 8192
+    }
+  }
+}

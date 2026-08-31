@@ -1,0 +1,129 @@
+name: Ozon Step7 exact Swagger authority v2 cross-platform
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-exact-swagger-authority-v2-2026-08-30
+      - repair/ozon-step7-exact-swagger-authority-v2-clean-2026-08-31
+      - repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+    paths:
+      - .github/workflows/ozon-step7-exact-swagger-authority-v2.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ozon-step7-authority-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUTF8: '1'
+  AUTHORITY_ROOT: tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2
+  EXPECTED_RAW_SHA256: 39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40
+
+jobs:
+  linux-authority:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify authority and fail-closed transport on Linux
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/step7-authority-linux"
+          rm -rf "$out"
+          mkdir -p "$out"
+          python3 "$AUTHORITY_ROOT/reconstruct_exact_swagger.py" --output "$out/seller-swagger.json" --json-output "$out/authority-report.json"
+          python3 "$AUTHORITY_ROOT/test_fail_closed.py" --root "$AUTHORITY_ROOT" | tee "$out/fail-closed.log"
+          test "$(stat -c%s "$out/seller-swagger.json")" = 3933043
+          test "$(sha256sum "$out/seller-swagger.json" | awk '{print $1}')" = "$EXPECTED_RAW_SHA256"
+          echo STEP7_EXACT_SWAGGER_AUTHORITY_V2_LINUX_PASS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-authority-linux
+          path: ${{ runner.temp }}/step7-authority-linux
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-authority:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify authority and fail-closed transport on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'step7-authority-windows'
+          if (Test-Path $out) { Remove-Item -Recurse -Force $out }
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $raw = Join-Path $out 'seller-swagger.json'
+          $report = Join-Path $out 'authority-report.json'
+          python "$env:AUTHORITY_ROOT/reconstruct_exact_swagger.py" --output $raw --json-output $report
+          if ($LASTEXITCODE -ne 0) { throw 'authority reconstruction failed' }
+          python "$env:AUTHORITY_ROOT/test_fail_closed.py" --root "$env:AUTHORITY_ROOT" | Tee-Object -FilePath (Join-Path $out 'fail-closed.log')
+          if ($LASTEXITCODE -ne 0) { throw 'fail-closed suite failed' }
+          $item = Get-Item $raw
+          if ($item.Length -ne 3933043) { throw "raw byte count mismatch: $($item.Length)" }
+          $hash = (Get-FileHash $raw -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne $env:EXPECTED_RAW_SHA256) { throw "raw SHA mismatch: $hash" }
+          Write-Host 'STEP7_EXACT_SWAGGER_AUTHORITY_V2_WINDOWS_PASS'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-authority-windows
+          path: ${{ runner.temp }}/step7-authority-windows
+          if-no-files-found: error
+          retention-days: 14
+
+  compare-authority:
+    needs: [linux-authority, windows-authority]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: seller-step7-authority-linux
+          path: /tmp/step7-authority-linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: seller-step7-authority-windows
+          path: /tmp/step7-authority-windows
+      - name: Require cross-platform byte identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmp /tmp/step7-authority-linux/seller-swagger.json /tmp/step7-authority-windows/seller-swagger.json
+          cmp /tmp/step7-authority-linux/authority-report.json /tmp/step7-authority-windows/authority-report.json
+          test "$(stat -c%s /tmp/step7-authority-linux/seller-swagger.json)" = 3933043
+          test "$(sha256sum /tmp/step7-authority-linux/seller-swagger.json | awk '{print $1}')" = "$EXPECTED_RAW_SHA256"
+          mkdir -p /tmp/step7-authority-cross-platform
+          cp /tmp/step7-authority-linux/seller-swagger.json /tmp/step7-authority-cross-platform/
+          cp /tmp/step7-authority-linux/authority-report.json /tmp/step7-authority-cross-platform/
+          cat > /tmp/step7-authority-cross-platform/evidence.txt <<EOF
+          workflow_run=${GITHUB_RUN_ID}
+          source_commit=${GITHUB_SHA}
+          raw_bytes=3933043
+          raw_sha256=${EXPECTED_RAW_SHA256}
+          openapi=3.0.0
+          paths=463
+          operations=463
+          fragments=38
+          max_fragment_bytes=8192
+          linux_windows_raw_byte_identical=true
+          linux_windows_report_byte_identical=true
+          STEP7_EXACT_SWAGGER_AUTHORITY_V2_CROSS_PLATFORM_PASS
+          EOF
+          sed -i 's/^          //' /tmp/step7-authority-cross-platform/evidence.txt
+          echo STEP7_EXACT_SWAGGER_AUTHORITY_V2_CROSS_PLATFORM_PASS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seller-step7-authority-cross-platform
+          path: /tmp/step7-authority-cross-platform
+          if-no-files-found: error
+          retention-days: 14
