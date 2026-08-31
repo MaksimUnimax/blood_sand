@@ -1,0 +1,44 @@
+name: Ozon Step7 export materialized Step6 base
+run-name: Ozon Step7 export materialized base · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-245-read-candidate-2026-08-31
+    paths:
+      - .github/workflows/ozon-step7-export-materialized-base.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact accepted materialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          root = Path('tooling/llm-api-bridges/ozon-seller/dist-step6-accepted')
+          manifest = json.loads(Path('tooling/llm-api-bridges/ozon-seller/OZON_STEP7_ACCEPTED_STEP6_MATERIALIZATION.json').read_text(encoding='utf-8'))
+          rows=[]
+          for p in sorted((x for x in root.rglob('*') if x.is_file()), key=lambda x:x.relative_to(root).as_posix()):
+              rows.append(f"{p.relative_to(root).as_posix()}\0{hashlib.sha256(p.read_bytes()).hexdigest()}\n")
+          digest=hashlib.sha256(''.join(rows).encode()).hexdigest()
+          assert digest == manifest['actual_production_tree_sha256'] == '1f8001b6b9ca3d247f0d199de592f2b6ed2ec9a7b7f7d90ec10388ee8a82813f'
+          assert len([p for p in root.rglob('*') if p.is_file()]) == 21
+          print('STEP7_EXPORT_ACCEPTED_STEP6_BASE_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step7-materialized-step6-base
+          path: |
+            tooling/llm-api-bridges/ozon-seller/dist-step6-accepted
+            tooling/llm-api-bridges/ozon-seller/OZON_STEP7_ACCEPTED_STEP6_MATERIALIZATION.json
+          if-no-files-found: error
+          retention-days: 14
