@@ -1,0 +1,148 @@
+{
+  "artifacts": [
+    {
+      "bytes": 501976,
+      "id": 9755093936,
+      "name": "ozon-step7-clean-Linux-v3",
+      "sha256": "f161c50041b7760c7b16629ee0b16839c258aee4372ab6ab7d5ca13bd492194b"
+    },
+    {
+      "bytes": 501976,
+      "id": 9755100405,
+      "name": "ozon-step7-clean-Windows-v3",
+      "sha256": "d47e202b63d52370ab15ae6bdd4270ed29e431efdbe750d67c06179c597c43d8"
+    },
+    {
+      "bytes": 2511,
+      "id": 9755106342,
+      "name": "ozon-step7-clean-cross-platform-v3",
+      "sha256": "9b64a00585d14989a4c35a7540e3e1494c83803a21618c1fa7cb623f02902ab3"
+    },
+    {
+      "bytes": 956,
+      "id": 9755113202,
+      "name": "ozon-step7-clean-repository-freeze-v3",
+      "sha256": "188f1becc64909aa5fb7b6528316a9834e46122ca2078a9c5f4060c89951fba3"
+    }
+  ],
+  "authority": {
+    "exact_openapi_operations": 463,
+    "exact_openapi_paths": 463,
+    "pending": 0,
+    "seller_operations": 463,
+    "terminal_rows": 463,
+    "unknown": 0,
+    "unresolved": 0
+  },
+  "canonical": {
+    "branch": "repair/ozon-v2-b1-stocks-warehouse-2026-08-29",
+    "commit": "8ee16f38bf2ec60e4b2e42192c2f41d87021b214",
+    "modified": false,
+    "promotion_performed": false
+  },
+  "cross_platform": {
+    "cross_proof_exactly_matches_recalculated_payload": true,
+    "file_count": 34,
+    "linux_windows_byte_identical": true
+  },
+  "decision": "FORMALLY_ACCEPTED",
+  "identities": {
+    "bundle_git_blob_sha1": "6d5e129f31b40c3ce7e9e7cb7409a03c3fa3c718",
+    "bundle_sha256": "b961f7b0b7c080dfa13df197acdfd4e38b69dc3e6ff5141d696828274a242947",
+    "candidate_file_count": 21,
+    "candidate_git_blob_match_count": 21,
+    "candidate_git_tree_sha1": "fe4c88b243ee31f2bc5b30d98ee4884614e1c669",
+    "candidate_shared_git_tree_sha1": "56159227d876713b05c9545cf1d7289f68af35ef",
+    "candidate_tree_sha256": "f605c2645e3a7a429facaab1bbb4b1252c7ee39d601b50d0480c4006b689d974",
+    "package_bytes": 1146084,
+    "package_candidate_byte_identical": true,
+    "package_file_count": 21,
+    "package_git_blob_sha1": "826caa4558c67b6b3c35d47f5c0359043eac73c8",
+    "package_sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574"
+  },
+  "independent_verification": {
+    "all_candidate_git_blob_ids_reconstructed": true,
+    "all_platform_payload_files_recalculated": true,
+    "artifact_outer_digests_recalculated": true,
+    "candidate_git_tree_reconstructed": true,
+    "check_count": 149,
+    "failed_check_count": 0,
+    "json_file": "step7-clean-candidate-v3/evidence/OZON_SELLER_STEP7_INDEPENDENT_VERIFICATION_V1.json",
+    "json_sha256": "6d7514f4ba9e2de847f3ec89c1edb2db9c0fdce9707da4b7eff09084b2b2b0b7",
+    "markdown_file": "step7-clean-candidate-v3/evidence/OZON_SELLER_STEP7_INDEPENDENT_VERIFICATION_V1.md",
+    "markdown_sha256": "4289b39184a8fda517664aad7a1d5c67987a0a1f4ae27618e6868d85a6958a80",
+    "package_contents_recalculated": true,
+    "proof_invariants_reparsed": true,
+    "status": "PASS"
+  },
+  "markers": [
+    "SELLER_STEP7_463_EXHAUSTIVE_TERMINAL_MATRIX_PASS",
+    "STEP7_READ_RUNTIME_26_PASS",
+    "STEP7_PRIVACY_DENIAL_13_PASS",
+    "STEP7_PRIVACY_ENABLE_NO_REPLAY_PASS",
+    "STEP7_PRIVACY_AUTHORIZED_13_PASS",
+    "STEP7_SELLER_REGRESSION_219_PASS",
+    "STEP7_PERFORMANCE_REGRESSION_21_PASS",
+    "STEP7_CLEAN_LINUX_FULL_GATE_PASS",
+    "STEP7_CLEAN_WINDOWS_FULL_GATE_PASS",
+    "STEP7_CLEAN_LINUX_WINDOWS_BYTE_IDENTICAL_PASS",
+    "STEP7_CLEAN_REPOSITORY_FREEZE_PASS",
+    "OZON_SELLER_STEP7_INDEPENDENT_VERIFICATION_PASS",
+    "OZON_SELLER_STEP7_FORMALLY_ACCEPTED"
+  ],
+  "next_step": {
+    "id": 8,
+    "name": "Performance 48-operation exhaustive terminal acceptance",
+    "ready": true,
+    "recommended_branch": "repair/ozon-step8-performance-48-terminal-2026-08-31"
+  },
+  "privacy": {
+    "authorized_operation_count": 13,
+    "authorized_physical_business_request_count": 13,
+    "denied_operation_count": 13,
+    "denied_physical_business_request_count": 0,
+    "explicit_resubmit_physical_business_request_count": 13,
+    "setting_transition_delayed_replayed_command_count": 0,
+    "setting_transition_replayed_command_count": 0
+  },
+  "production": {
+    "combined_current_read_surface": 266,
+    "new_personal_data_guarded_reads": 13,
+    "new_safe_projection_reads": 13,
+    "new_seller_reads": 26,
+    "preserved_current_performance_reads": 21,
+    "previously_accepted_seller_reads": 219,
+    "seller_reads": 245
+  },
+  "repository_freeze": {
+    "contract_operational_payload_matches_after_source_commit_normalization": true,
+    "fresh_contract_sha256": "c781d5e290c3aadbce15b8a707764fb699d7f79dd7b3a889a02ad5eace044e55",
+    "fresh_full_gate_matches_repository_frozen_candidate": true,
+    "fresh_registry_sha256": "e49437cb45c9fb7262a2fc45070aa20198b903cc256569f981d9aee6858cb165",
+    "frozen_contract_sha256": "350a47001ecd81d5d8f3fbb236ee6ac765a99b57d69777ca35b139a6d6a4f0e6",
+    "frozen_registry_sha256": "d4aebbee67e67c6bac2ad74d50795b7858175150fbddf4b419c3dca63704583c",
+    "registry_operational_payload_matches_after_source_commit_normalization": true,
+    "status": "PASS"
+  },
+  "runtime": {
+    "all_credential_headers_present": true,
+    "all_expected_method_path_payload": true,
+    "all_one_request": true,
+    "all_operations_ok": true,
+    "operation_count": 26,
+    "physical_business_request_count": 26
+  },
+  "schema": "OZON_SELLER_STEP7_FORMAL_ACCEPTANCE_V1",
+  "schema_version": 1,
+  "scope": "Ozon Seller Step 7 exhaustive terminal authority and 245-read production candidate",
+  "status": "PASS",
+  "validated_branch": "repair/ozon-step7-245-read-final-candidate-v3-2026-08-31",
+  "validated_source_commit": "b567b7fc481b2baff964ce96b9a9a334d841ae30",
+  "workflow_jobs": {
+    "compare-cross-platform": "success",
+    "platform-full-gate (ubuntu-latest)": "success",
+    "platform-full-gate (windows-latest)": "success",
+    "verify-repository-freeze": "success"
+  },
+  "workflow_run_id": 33384683868
+}

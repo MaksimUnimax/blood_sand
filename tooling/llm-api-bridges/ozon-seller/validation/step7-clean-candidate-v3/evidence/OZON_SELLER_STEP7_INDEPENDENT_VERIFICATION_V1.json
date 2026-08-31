@@ -1,0 +1,228 @@
+{
+  "artifacts": {
+    "cross": {
+      "artifact_id": 9755106342,
+      "bytes": 2511,
+      "extracted_file_count": 1,
+      "file_name": "ozon-step7-clean-cross-platform-v3-run33384683868.zip",
+      "sha256": "9b64a00585d14989a4c35a7540e3e1494c83803a21618c1fa7cb623f02902ab3"
+    },
+    "freeze": {
+      "artifact_id": 9755113202,
+      "bytes": 956,
+      "extracted_file_count": 1,
+      "file_name": "ozon-step7-clean-repository-freeze-v3-run33384683868.zip",
+      "sha256": "188f1becc64909aa5fb7b6528316a9834e46122ca2078a9c5f4060c89951fba3"
+    },
+    "linux": {
+      "artifact_id": 9755093936,
+      "bytes": 501976,
+      "extracted_file_count": 34,
+      "file_name": "ozon-step7-clean-Linux-v3-run33384683868.zip",
+      "sha256": "f161c50041b7760c7b16629ee0b16839c258aee4372ab6ab7d5ca13bd492194b"
+    },
+    "windows": {
+      "artifact_id": 9755100405,
+      "bytes": 501976,
+      "extracted_file_count": 34,
+      "file_name": "ozon-step7-clean-Windows-v3-run33384683868.zip",
+      "sha256": "d47e202b63d52370ab15ae6bdd4270ed29e431efdbe750d67c06179c597c43d8"
+    }
+  },
+  "candidate": {
+    "all_git_blob_ids_match_github_tree": true,
+    "file_count": 21,
+    "git_blobs": {
+      "content_script.js": {
+        "bytes": 126878,
+        "git_blob_sha1": "536a09cd02a28964101735de7e6e56d5690de68e",
+        "sha256": "a95b0be6bdd92e6a2caad82c9cbbed79df72e21991eae89affc8bb5bcad824bd"
+      },
+      "manifest.json": {
+        "bytes": 1519,
+        "git_blob_sha1": "7a8a7015b20085b2a2ecfde0e0022516e00fabb8",
+        "sha256": "f170949e9f972ecbc8c685a3cb753151c3363afa7664a3df76e67f413a396fc1"
+      },
+      "popup.css": {
+        "bytes": 5195,
+        "git_blob_sha1": "8c6e4e6b87af0644c7b41368b4f9cd53dc107185",
+        "sha256": "1befabf8a3650dfe01a5980b0d5ff2fcd34666d507baad8e79f3873358d7a726"
+      },
+      "popup.html": {
+        "bytes": 14314,
+        "git_blob_sha1": "ee97a3bc0dfaf01640e5cc13937cff6c776e5d71",
+        "sha256": "a36539a6b16e423d1a91fff518af140b37934281ba2d2be8c4c1091ba32d72a3"
+      },
+      "popup.js": {
+        "bytes": 38208,
+        "git_blob_sha1": "138f71fe2117af3d0f6bde7ab94c5f9cb2c06a3d",
+        "sha256": "9f6ec207f4bed3bae0de912fca2f3347cc286ced9ca310369f10269400819070"
+      },
+      "service_worker.js": {
+        "bytes": 304036,
+        "git_blob_sha1": "e8d8b2c6ef328f6f645d0b1ece102d4318c3a3a6",
+        "sha256": "a85b0d47b14065266221d9b3fcf3194cbaa78d96ead792fbe20834f8ee7a54a3"
+      },
+      "shared/ai_adapters.js": {
+        "bytes": 8307,
+        "git_blob_sha1": "c72dea0f9df5d01d563100a659ccd45c59333f0c",
+        "sha256": "5a7307557998d4281d12fb750fb0d05fa787d2a4550281d006ebbc6a2006e4e9"
+      },
+      "shared/bridge_autorun_model.js": {
+        "bytes": 12012,
+        "git_blob_sha1": "06eef61f6d9c809d6d4e7afb98181899e18d582a",
+        "sha256": "c248915a64ea0d9e2db014d66ab27a4bc182553cc24c5d6d0c9f43729e6e20b5"
+      },
+      "shared/composer_send.js": {
+        "bytes": 8267,
+        "git_blob_sha1": "9c1737863b10779cb825e648b95ef1648a937f5d",
+        "sha256": "3e9421e8e1bc209af635e2b90d957e558301763572a42875b95c8973ca75b736"
+      },
+      "shared/conversation_identity.js": {
+        "bytes": 4027,
+        "git_blob_sha1": "3fe3b99d42eeccc729d003733daac8b377df4066",
+        "sha256": "939036acd95ccb3dfe00f05b5d49568615f6d798a023a0ec995e38267fb68f57"
+      },
+      "shared/manual_controls.js": {
+        "bytes": 10269,
+        "git_blob_sha1": "116e226ad6a6b0d898a4224319a6222e6a3f64e6",
+        "sha256": "81f302487da7b5ff7c1b746298353438b2cfec100a5bb8f7fa2c80d1e033c81e"
+      },
+      "shared/ozon_contract.js": {
+        "bytes": 289457,
+        "git_blob_sha1": "767a637c0b924e80d72764187fc4849bc6c06b2c",
+        "sha256": "2db9822de8d8644f3bb63a00bcad7c193253dac7f7d498302e30819382dc9870"
+      },
+      "shared/ozon_credentials.js": {
+        "bytes": 4085,
+        "git_blob_sha1": "e74d2a130771a2d3f769a01a4f9e892f89f81b13",
+        "sha256": "286c6021f958e41912842569bcfa0d0dfe920eed8ce1646014899a1de064415d"
+      },
+      "shared/ozon_entitlements.js": {
+        "bytes": 54073,
+        "git_blob_sha1": "93e83f8fdf7d695b1d27fbb23b4fdb4e6e543d44",
+        "sha256": "5f31664e1a0fbb7cada89c0d7673a7720c72ee2ce60fa27a7294ddec9ad30ad3"
+      },
+      "shared/ozon_guidance.js": {
+        "bytes": 10641,
+        "git_blob_sha1": "cfcf303b5a88b4215f65edeae27de7cbe12d0bb8",
+        "sha256": "8de69833524c569bed09d5799479f2a0cd8f1844a2cf5d7d460caa3b1bb74508"
+      },
+      "shared/ozon_operation_registry.js": {
+        "bytes": 206055,
+        "git_blob_sha1": "19fb272574839785d1f7594a0c14bbde2ca9d69e",
+        "sha256": "2b6031af9a378b682bdfcf5a907be32b93b44289c2e4d9fd8ea1f034f663cad5"
+      },
+      "shared/ozon_provider.js": {
+        "bytes": 15391,
+        "git_blob_sha1": "d8b0d673fc67a933a0d6530a17fc2947dca4611b",
+        "sha256": "16e8f85303e7a6a57d0fc76a6ea0e2e9dd8537341fa57397b38b0c0d52dda97b"
+      },
+      "shared/proven_writing_block_capture.js": {
+        "bytes": 14614,
+        "git_blob_sha1": "067ebaf093ae4199b3c134baca0e30ac42a94d15",
+        "sha256": "5b0eaac9619cb827d1e74c61f53e2755c084a1d4b60c64d23f5fd4a5354c3aef"
+      },
+      "shared/provider_transport_core.js": {
+        "bytes": 9095,
+        "git_blob_sha1": "a23c92d3669f77b29ff2dabf27d8970a25cd243f",
+        "sha256": "fc104e5d0bd6ea836c066f8144f642c0666c0e270cbdbf8c3b1ec3a25071969e"
+      },
+      "shared/runtime_names.js": {
+        "bytes": 5076,
+        "git_blob_sha1": "fd51b3da371cf6074d1f08a2b571922008653c44",
+        "sha256": "a94bef6a25e83170ded3416bdca39a2921fa67d7a9c93504d001beebebc24a59"
+      },
+      "shared/work_session_model.js": {
+        "bytes": 1985,
+        "git_blob_sha1": "e696ae6d7ee061723c75bd02d9f994d6951861bc",
+        "sha256": "11e91d850a3d69711fefdaadb6617b825350d9382b9bc55cabdbbc9b255c9855"
+      }
+    },
+    "git_tree_sha1": "fe4c88b243ee31f2bc5b30d98ee4884614e1c669",
+    "shared_git_tree_sha1": "56159227d876713b05c9545cf1d7289f68af35ef",
+    "tree_sha256": "f605c2645e3a7a429facaab1bbb4b1252c7ee39d601b50d0480c4006b689d974"
+  },
+  "canonical_modified": false,
+  "check_categories": {
+    "archive_path_safety": "PASS",
+    "artifact_integrity": "PASS",
+    "candidate_git_blob_reconstruction": "PASS",
+    "candidate_git_tree_reconstruction": "PASS",
+    "candidate_sha256_tree_reconstruction": "PASS",
+    "cross_proof_recalculation": "PASS",
+    "deterministic_package_validation": "PASS",
+    "linux_windows_payload_identity": "PASS",
+    "repository_freeze_proof": "PASS",
+    "semantic_runtime_privacy_regression_terminal_proofs": "PASS"
+  },
+  "check_summary": {
+    "failed": 0,
+    "passed": 149,
+    "total": 149
+  },
+  "full_local_report": {
+    "file_name": "OZON_SELLER_STEP7_INDEPENDENT_VERIFICATION_V1.full-local.json",
+    "note": "Full 149-check execution report retained as the independently generated session artifact; this repository record contains the terminal identities and category results required for acceptance.",
+    "sha256": "458ddac5ca074929fcfe785384127c0ffbf51bdb0210ce0a7398206eb08bbf65"
+  },
+  "markers": [
+    "STEP7_INDEPENDENT_ARTIFACT_DIGESTS_PASS",
+    "STEP7_INDEPENDENT_LINUX_WINDOWS_BYTE_IDENTITY_PASS",
+    "STEP7_INDEPENDENT_CROSS_PROOF_RECALCULATION_PASS",
+    "STEP7_INDEPENDENT_CANDIDATE_TREE_SHA256_PASS",
+    "STEP7_INDEPENDENT_GITHUB_BLOB_IDENTITY_PASS",
+    "STEP7_INDEPENDENT_GITHUB_TREE_IDENTITY_PASS",
+    "STEP7_INDEPENDENT_PACKAGE_CONTENT_IDENTITY_PASS",
+    "STEP7_INDEPENDENT_SEMANTIC_PROOFS_PASS",
+    "STEP7_INDEPENDENT_REPOSITORY_FREEZE_PROOF_PASS",
+    "OZON_SELLER_STEP7_INDEPENDENT_VERIFICATION_PASS"
+  ],
+  "package": {
+    "bytes": 1146084,
+    "candidate_byte_identical": true,
+    "compression": "stored",
+    "file_count": 21,
+    "fixed_timestamp": "1980-01-01T00:00:00",
+    "git_blob_sha1": "826caa4558c67b6b3c35d47f5c0359043eac73c8",
+    "sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574"
+  },
+  "platform": {
+    "cross_proof_exactly_matches_recalculated_files": true,
+    "file_count": 34,
+    "linux_windows_byte_identical": true
+  },
+  "repository_freeze": {
+    "contract_normalized_match": true,
+    "fresh_contract_sha256": "c781d5e290c3aadbce15b8a707764fb699d7f79dd7b3a889a02ad5eace044e55",
+    "fresh_matches_frozen": true,
+    "fresh_registry_sha256": "e49437cb45c9fb7262a2fc45070aa20198b903cc256569f981d9aee6858cb165",
+    "frozen_contract_sha256": "350a47001ecd81d5d8f3fbb236ee6ac765a99b57d69777ca35b139a6d6a4f0e6",
+    "frozen_registry_sha256": "d4aebbee67e67c6bac2ad74d50795b7858175150fbddf4b419c3dca63704583c",
+    "registry_normalized_match": true,
+    "status": "PASS"
+  },
+  "runtime": {
+    "new_seller_reads": 26,
+    "personal_data_authorized_requests": 13,
+    "personal_data_denied_requests": 0,
+    "physical_business_requests": 26,
+    "runtime_operations": 26,
+    "seller_authority_operations": 463,
+    "seller_reads": 245,
+    "terminal_pending": 0,
+    "terminal_unknown": 0,
+    "terminal_unresolved": 0
+  },
+  "schema": "OZON_SELLER_STEP7_INDEPENDENT_VERIFICATION_V1",
+  "schema_version": 1,
+  "source_commit": "b567b7fc481b2baff964ce96b9a9a334d841ae30",
+  "status": "PASS",
+  "verification_basis": {
+    "artifact_metadata": "GitHub Actions artifact API for workflow run 33384683868",
+    "candidate_repository_identity": "GitHub Git tree/blob metadata at commit b567b7fc481b2baff964ce96b9a9a334d841ae30",
+    "network_trust_boundary": "artifact and repository metadata retrieved through GitHub connector; payload calculations performed independently",
+    "payload_validation": "independent local extraction, hashing, Git object reconstruction, proof parsing and consistency checks"
+  },
+  "workflow_run_id": 33384683868
+}
