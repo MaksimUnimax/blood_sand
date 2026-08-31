@@ -1,0 +1,86 @@
+{
+  "schema": "OZON_SELLER_STEP7_FORMAL_ACCEPTANCE_V1",
+  "schema_version": 1,
+  "status": "ACCEPTED",
+  "repository": "MaksimUnimax/blood_sand",
+  "candidate_branch": "repair/ozon-step7-245-read-final-candidate-v3-2026-08-31",
+  "source_commit": "b567b7fc481b2baff964ce96b9a9a334d841ae30",
+  "workflow_run_id": 33384683868,
+  "canonical": {
+    "branch": "repair/ozon-v2-b1-stocks-warehouse-2026-08-29",
+    "commit": "8ee16f38bf2ec60e4b2e42192c2f41d87021b214",
+    "modified": false
+  },
+  "seller_authority": {
+    "terminal_operations": 463,
+    "terminal_total": 463,
+    "unknown": 0,
+    "pending": 0,
+    "unresolved": 0
+  },
+  "production_read_surface": {
+    "seller_reads": 245,
+    "previously_accepted_reads": 219,
+    "new_step7_reads": 26,
+    "new_safe_projection_reads": 13,
+    "new_personal_data_guarded_reads": 13
+  },
+  "runtime_acceptance": {
+    "operations": 26,
+    "physical_business_requests": 26,
+    "one_operation_one_request": true
+  },
+  "privacy_acceptance": {
+    "guarded_operations": 13,
+    "denied_physical_business_requests": 0,
+    "authorized_explicit_resubmit_requests": 13,
+    "replayed_commands": 0,
+    "delayed_replayed_commands": 0
+  },
+  "regression_acceptance": {
+    "previously_accepted_seller_reads": 219,
+    "performance_reads": 21
+  },
+  "cross_platform_acceptance": {
+    "linux": "PASS",
+    "windows": "PASS",
+    "file_count": 34,
+    "byte_identical": true
+  },
+  "repository_freeze_acceptance": {
+    "status": "PASS",
+    "independently_reproduced": true,
+    "ci_proof_reproduced_byte_identically": true,
+    "candidate_tree_sha256": "f605c2645e3a7a429facaab1bbb4b1252c7ee39d601b50d0480c4006b689d974",
+    "bundle_sha256": "b961f7b0b7c080dfa13df197acdfd4e38b69dc3e6ff5141d696828274a242947",
+    "registry_sha256": "d4aebbee67e67c6bac2ad74d50795b7858175150fbddf4b419c3dca63704583c",
+    "runtime_contract_sha256": "350a47001ecd81d5d8f3fbb236ee6ac765a99b57d69777ca35b139a6d6a4f0e6",
+    "package_sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574",
+    "package_bytes": 1146084
+  },
+  "evidence": {
+    "workflow": ".github/workflows/ozon-step7-clean-candidate-v3.yml",
+    "repository_freeze_verifier": "tooling/llm-api-bridges/ozon-seller/validation/step7-clean-candidate-v3/verify_frozen_repository.py",
+    "independent_reverification_json": "tooling/llm-api-bridges/ozon-seller/validation/step7-clean-candidate-v3/evidence/OZON_SELLER_STEP7_INDEPENDENT_REVERIFICATION_V1.json",
+    "independent_reverification_markdown": "tooling/llm-api-bridges/ozon-seller/validation/step7-clean-candidate-v3/evidence/OZON_SELLER_STEP7_INDEPENDENT_REVERIFICATION_V1.md",
+    "artifacts": [
+      "ozon-step7-clean-Linux-v3",
+      "ozon-step7-clean-Windows-v3",
+      "ozon-step7-clean-cross-platform-v3",
+      "ozon-step7-clean-repository-freeze-v3"
+    ]
+  },
+  "markers": [
+    "SELLER_STEP7_463_EXHAUSTIVE_TERMINAL_MATRIX_PASS",
+    "STEP7_READ_RUNTIME_26_PASS",
+    "STEP7_PRIVACY_DENIAL_13_PASS",
+    "STEP7_PRIVACY_AUTHORIZED_13_PASS",
+    "STEP7_SELLER_REGRESSION_219_PASS",
+    "STEP7_PERFORMANCE_REGRESSION_21_PASS",
+    "STEP7_LINUX_WINDOWS_BYTE_IDENTICAL_PASS",
+    "STEP7_CLEAN_REPOSITORY_FREEZE_PASS",
+    "OZON_SELLER_STEP7_FORMALLY_ACCEPTED"
+  ],
+  "next_roadmap_stage": "STEP8_PERFORMANCE_48_TERMINAL_ACCEPTANCE",
+  "step8_may_start": true
+}
