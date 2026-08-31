@@ -73,8 +73,8 @@ jobs:
           python3 "$root/test_fail_closed.py" --root "$root" | tee "$out/fail-closed.log"
           test "$(stat -c%s "$out/seller-swagger.json")" = 3933043
           test "$(sha256sum "$out/seller-swagger.json" | awk '{print $1}')" = "$EXPECTED_RAW_SHA256"
-          grep -q '"operations": 463' "$out/authority-report.json"
-          grep -q '"paths": 463' "$out/authority-report.json"
+          grep -q '"operation_count": 463' "$out/authority-report.json"
+          grep -q '"path_count": 463' "$out/authority-report.json"
 
           rm -rf "$upload"
           git config user.name 'github-actions[bot]'
