@@ -1,0 +1,364 @@
+name: Ozon Step8 Performance formal acceptance v1
+run-name: Ozon Step8 formal acceptance · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step8-performance-48-terminal-2026-08-31
+    paths:
+      - .github/workflows/ozon-step8-performance-formal-acceptance-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-step8-performance-formal-acceptance-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUTF8: '1'
+  PYTHONIOENCODING: utf-8
+  BRANCH: repair/ozon-step8-performance-48-terminal-2026-08-31
+  STEP9_BRANCH: repair/ozon-step9-full-integration-266-reads-2026-08-31
+  CANONICAL_BRANCH: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+  CANONICAL_SHA: 8ee16f38bf2ec60e4b2e42192c2f41d87021b214
+  ROOT: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1
+  BASELINE_BUILDER: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/build_step8_performance_inventory.py
+  QUEUE_BUILDER: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/build_step8_performance_remaining_queue.py
+  TERMINAL_BUILDER: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/build_step8_performance_terminal_matrix.py
+  MATRIX_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_MATRIX_REGRESSION_2026-08-29.mjs
+  READ_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_READ_COVERAGE_REGRESSION_2026-08-29.mjs
+
+jobs:
+  formal-acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Freshly reproduce and verify all frozen Step 8 evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          fresh="$RUNNER_TEMP/step8-formal"
+          rm -rf "$fresh"
+          mkdir -p "$fresh/baseline" "$fresh/queue" "$fresh/terminal"
+
+          python "$BASELINE_BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$fresh/baseline"
+          python "$QUEUE_BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$fresh/queue"
+          python "$TERMINAL_BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$fresh/terminal"
+          node "$MATRIX_REGRESSION"
+          node "$READ_REGRESSION"
+
+          frozen="$ROOT/generated"
+          for name in \
+            OZON_PERFORMANCE_STEP8_TERMINAL_INVENTORY_V1.json \
+            OZON_PERFORMANCE_STEP8_TERMINAL_INVENTORY_V1.csv \
+            OZON_PERFORMANCE_STEP8_TERMINAL_INVENTORY_V1.md; do
+            cmp "$fresh/baseline/$name" "$frozen/$name"
+          done
+          for name in \
+            OZON_PERFORMANCE_STEP8_REMAINING_QUEUE_V1.json \
+            OZON_PERFORMANCE_STEP8_REMAINING_QUEUE_V1.csv \
+            OZON_PERFORMANCE_STEP8_REMAINING_QUEUE_V1.md; do
+            cmp "$fresh/queue/$name" "$frozen/$name"
+          done
+          for name in \
+            OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX_V1.json \
+            OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX_V1.csv \
+            OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX_V1.md; do
+            cmp "$fresh/terminal/$name" "$frozen/$name"
+          done
+
+          canonical_actual="$(git ls-remote origin "refs/heads/$CANONICAL_BRANCH" | awk '{print $1}')"
+          test "$canonical_actual" = "$CANONICAL_SHA"
+
+          evidence="$ROOT/evidence"
+          mkdir -p "$evidence"
+          python - \
+            "$fresh/baseline/OZON_PERFORMANCE_STEP8_TERMINAL_INVENTORY_V1.json" \
+            "$fresh/queue/OZON_PERFORMANCE_STEP8_REMAINING_QUEUE_V1.json" \
+            "$fresh/terminal/OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX_V1.json" \
+            "$frozen" "$evidence" "$GITHUB_SHA" "$GITHUB_RUN_ID" \
+            "$CANONICAL_BRANCH" "$CANONICAL_SHA" "$STEP9_BRANCH" <<'PY'
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+
+          baseline_path = Path(sys.argv[1])
+          queue_path = Path(sys.argv[2])
+          terminal_path = Path(sys.argv[3])
+          frozen = Path(sys.argv[4])
+          evidence = Path(sys.argv[5])
+          source_commit = sys.argv[6]
+          workflow_run_id = int(sys.argv[7])
+          canonical_branch = sys.argv[8]
+          canonical_sha = sys.argv[9]
+          step9_branch = sys.argv[10]
+
+          def load(path):
+              return json.loads(Path(path).read_text(encoding='utf-8'))
+
+          baseline = load(baseline_path)
+          queue = load(queue_path)
+          terminal = load(terminal_path)
+          independent_path = evidence / 'OZON_PERFORMANCE_STEP8_INDEPENDENT_REVERIFICATION_V1.json'
+          independent = load(independent_path)
+
+          assert baseline['status'] == 'BASELINE_READY'
+          assert baseline['counts'] == {
+              'performance_operations_total': 48,
+              'already_accepted_current_reads': 21,
+              'step8_remaining_operations': 27,
+          }
+          assert len(baseline['operations']) == 48
+
+          assert queue['status'] == 'QUEUE_READY'
+          assert queue['counts'] == {
+              'performance_operations_total': 48,
+              'already_accepted_current_reads': 21,
+              'remaining_terminal_queue': 27,
+          }
+          accepted = {row['identity'] for row in queue['accepted_current_reads']}
+          remaining = {row['identity'] for row in queue['remaining_terminal_queue']}
+          assert len(accepted) == 21
+          assert len(remaining) == 27
+          assert not accepted.intersection(remaining)
+          assert len(accepted.union(remaining)) == 48
+
+          assert terminal['status'] == 'TERMINAL_MATRIX_READY'
+          assert terminal['counts']['rows'] == 48
+          assert terminal['counts']['already_accepted_current_reads'] == 21
+          assert terminal['counts']['remaining_source_terminal_decisions'] == 27
+          assert terminal['counts']['implementation_candidates'] == 0
+          assert terminal['counts']['unknown'] == 0
+          assert terminal['counts']['pending'] == 0
+          assert terminal['counts']['unresolved'] == 0
+          assert len(terminal['rows']) == 48
+          assert len({row['identity'] for row in terminal['rows']}) == 48
+          assert terminal['implementation_candidates'] == []
+
+          proof_names = [
+              'OZON_PERFORMANCE_STEP8_INVENTORY_CROSS_PLATFORM_PROOF_V1.json',
+              'OZON_PERFORMANCE_STEP8_BASELINE_STATUS_V1.json',
+              'OZON_PERFORMANCE_STEP8_QUEUE_CROSS_PLATFORM_PROOF_V1.json',
+              'OZON_PERFORMANCE_STEP8_QUEUE_STATUS_V1.json',
+              'OZON_PERFORMANCE_STEP8_REGRESSION_PROOF_V1.json',
+              'OZON_PERFORMANCE_STEP8_TERMINAL_CROSS_PLATFORM_PROOF_V1.json',
+              'OZON_PERFORMANCE_STEP8_TERMINAL_STATUS_V1.json',
+          ]
+          frozen_proofs = {name: load(frozen / name) for name in proof_names}
+          for name, proof in frozen_proofs.items():
+              assert proof['status'] == 'PASS', (name, proof)
+          for name in (
+              'OZON_PERFORMANCE_STEP8_INVENTORY_CROSS_PLATFORM_PROOF_V1.json',
+              'OZON_PERFORMANCE_STEP8_QUEUE_CROSS_PLATFORM_PROOF_V1.json',
+              'OZON_PERFORMANCE_STEP8_TERMINAL_CROSS_PLATFORM_PROOF_V1.json',
+          ):
+              assert frozen_proofs[name]['byte_identical'] is True
+
+          regression = frozen_proofs['OZON_PERFORMANCE_STEP8_REGRESSION_PROOF_V1.json']
+          assert regression['matrix_regression']['status'] == 'PASS'
+          assert regression['read_coverage_regression']['status'] == 'PASS'
+          assert regression['new_runtime_implementation_count'] == 0
+          assert regression['seller_step7_candidate_tree_sha256'] == 'f605c2645e3a7a429facaab1bbb4b1252c7ee39d601b50d0480c4006b689d974'
+          assert regression['seller_step7_package_sha256'] == 'f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574'
+
+          terminal_status = frozen_proofs['OZON_PERFORMANCE_STEP8_TERMINAL_STATUS_V1.json']
+          assert terminal_status['performance_operations_terminal'] == 48
+          assert terminal_status['performance_operations_total'] == 48
+          assert terminal_status['current_reads'] == 21
+          assert terminal_status['source_terminal_non_current_operations'] == 27
+          assert terminal_status['new_runtime_implementation_count'] == 0
+          assert terminal_status['unknown'] == 0
+          assert terminal_status['pending'] == 0
+          assert terminal_status['unresolved'] == 0
+          assert terminal_status['canonical_modified'] is False
+
+          assert independent['status'] == 'PASS'
+          assert independent['performed_outside_github_actions'] is True
+          assert independent['counts']['performance_operations_total'] == 48
+          assert independent['counts']['already_accepted_current_reads'] == 21
+          assert independent['counts']['remaining_source_terminal_decisions'] == 27
+          assert independent['counts']['new_runtime_implementation_count'] == 0
+          assert independent['counts']['unknown'] == 0
+          assert independent['counts']['pending'] == 0
+          assert independent['counts']['unresolved'] == 0
+          assert independent['invariants']['canonical_modified'] is False
+          assert 'OZON_PERFORMANCE_STEP8_INDEPENDENT_REVERIFICATION_PASS' in independent['markers']
+
+          def sha256(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          markers = [
+              'PERFORMANCE_STEP8_48_EXHAUSTIVE_TERMINAL_MATRIX_PASS',
+              'PERFORMANCE_STEP8_UNKNOWN_0_PASS',
+              'PERFORMANCE_STEP8_PENDING_0_PASS',
+              'PERFORMANCE_STEP8_UNRESOLVED_0_PASS',
+              'PERFORMANCE_STEP8_EXISTING_MATRIX_REGRESSION_PASS',
+              'PERFORMANCE_STEP8_EXISTING_READ_COVERAGE_REGRESSION_PASS',
+              'PERFORMANCE_STEP8_NO_NEW_RUNTIME_IMPLEMENTATION_REQUIRED_PASS',
+              'PERFORMANCE_STEP8_LINUX_WINDOWS_BYTE_IDENTICAL_PASS',
+              'OZON_PERFORMANCE_STEP8_INDEPENDENT_REVERIFICATION_PASS',
+              'OZON_PERFORMANCE_STEP8_FORMALLY_ACCEPTED',
+          ]
+          payload = {
+              'schema': 'OZON_PERFORMANCE_STEP8_FORMAL_ACCEPTANCE_V1',
+              'schema_version': 1,
+              'status': 'ACCEPTED',
+              'source_commit': source_commit,
+              'workflow_run_id': workflow_run_id,
+              'scope': {
+                  'performance_operations_terminal': 48,
+                  'performance_operations_total': 48,
+                  'current_production_reads': 21,
+                  'source_terminal_non_current_operations': 27,
+                  'new_runtime_implementation_count': 0,
+                  'unknown': 0,
+                  'pending': 0,
+                  'unresolved': 0,
+              },
+              'seller_step7_dependency': {
+                  'production_reads': 245,
+                  'candidate_tree_sha256': 'f605c2645e3a7a429facaab1bbb4b1252c7ee39d601b50d0480c4006b689d974',
+                  'package_sha256': 'f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574',
+              },
+              'combined_current_read_surface': {
+                  'seller_reads': 245,
+                  'performance_reads': 21,
+                  'total_reads': 266,
+              },
+              'fresh_reproduction': {
+                  'baseline_sha256': sha256(baseline_path),
+                  'exact_queue_sha256': sha256(queue_path),
+                  'terminal_matrix_sha256': sha256(terminal_path),
+                  'matches_repository_freeze': True,
+              },
+              'regression': {
+                  'existing_performance_matrix': 'PASS',
+                  'existing_performance_read_coverage': 'PASS',
+                  'seller_step7_identity_preserved': True,
+              },
+              'cross_platform': {
+                  'baseline_linux_windows_byte_identical': True,
+                  'queue_linux_windows_byte_identical': True,
+                  'terminal_linux_windows_byte_identical': True,
+              },
+              'independent_reverification': {
+                  'status': 'PASS',
+                  'performed_outside_github_actions': True,
+                  'marker': 'OZON_PERFORMANCE_STEP8_INDEPENDENT_REVERIFICATION_PASS',
+              },
+              'canonical': {
+                  'branch': canonical_branch,
+                  'commit': canonical_sha,
+                  'modified': False,
+              },
+              'decision': {
+                  'step8_formally_closed': True,
+                  'canonical_promotion_performed': False,
+                  'next_branch': step9_branch,
+                  'next_stage': 'STEP9_FULL_INTEGRATION_266_CURRENT_READS',
+              },
+              'markers': markers,
+          }
+          acceptance_json = evidence / 'OZON_PERFORMANCE_STEP8_FORMAL_ACCEPTANCE_V1.json'
+          acceptance_json.write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8',
+              newline='\n',
+          )
+
+          acceptance_md = evidence / 'OZON_PERFORMANCE_STEP8_FORMAL_ACCEPTANCE_V1.md'
+          acceptance_md.write_text(
+              '# Ozon Performance Step 8 — formal acceptance\n\n'
+              '**Status:** `ACCEPTED`\n\n'
+              '## Accepted authority\n\n'
+              '- Performance operations terminal: `48 / 48`.\n'
+              '- Current production Performance reads: `21`.\n'
+              '- Source-terminal non-current operations: `27`.\n'
+              '- New runtime implementations required: `0`.\n'
+              '- Unknown / pending / unresolved: `0 / 0 / 0`.\n\n'
+              '## Regression and reproducibility\n\n'
+              '- Existing Performance matrix regression: `PASS`.\n'
+              '- Existing Performance read-coverage regression: `PASS`.\n'
+              '- Fresh baseline, exact queue and terminal matrix equal the repository freeze.\n'
+              '- Linux and Windows evidence is byte-identical.\n'
+              '- Independent fresh-checkout reverification: `PASS`.\n\n'
+              '## Combined current-read surface\n\n'
+              '- Seller reads: `245`.\n'
+              '- Performance reads: `21`.\n'
+              '- Combined reads entering Step 9: `266`.\n\n'
+              '## Canonical protection\n\n'
+              f'- Canonical branch: `{canonical_branch}`.\n'
+              f'- Canonical commit: `{canonical_sha}`.\n'
+              '- Canonical modified: `false`.\n\n'
+              '## Decision\n\n'
+              '`OZON_PERFORMANCE_STEP8_FORMALLY_ACCEPTED`\n\n'
+              f'Next branch: `{step9_branch}`.\n\n'
+              '## Markers\n\n```text\n' + '\n'.join(markers) + '\n```\n',
+              encoding='utf-8',
+              newline='\n',
+          )
+
+          (evidence / 'OZON_PERFORMANCE_STEP8_ACCEPTANCE_MARKERS.txt').write_text(
+              '\n'.join(markers) + '\n',
+              encoding='utf-8',
+              newline='\n',
+          )
+          (evidence / 'OZON_PERFORMANCE_STEP8_FORMAL_ACCEPTANCE_STATUS_V1.json').write_text(
+              json.dumps({
+                  'schema': 'OZON_PERFORMANCE_STEP8_FORMAL_ACCEPTANCE_STATUS_V1',
+                  'schema_version': 1,
+                  'status': 'PASS',
+                  'source_commit': source_commit,
+                  'workflow_run_id': workflow_run_id,
+                  'formal_acceptance': 'ACCEPTED',
+                  'performance_operations_terminal': 48,
+                  'combined_current_reads_for_step9': 266,
+                  'canonical_modified': False,
+                  'next_branch': step9_branch,
+                  'marker': 'OZON_PERFORMANCE_STEP8_FORMALLY_ACCEPTED',
+              }, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8',
+              newline='\n',
+          )
+
+          print('PERFORMANCE_STEP8_FRESH_FROZEN_EVIDENCE_MATCH_PASS')
+          print('PERFORMANCE_STEP8_FORMAL_ACCEPTANCE_PAYLOAD_PASS')
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$evidence"
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo OZON_PERFORMANCE_STEP8_FORMAL_ACCEPTANCE_ALREADY_FROZEN
+          else
+            git commit -m 'accept(ozon): formally close Performance Step8 48 of 48'
+            git pull --rebase origin "$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          fi
+
+          if git ls-remote --exit-code --heads origin "$STEP9_BRANCH" >/dev/null 2>&1; then
+            echo OZON_STEP9_BRANCH_ALREADY_EXISTS
+          else
+            git push origin HEAD:"refs/heads/$STEP9_BRANCH"
+            echo OZON_STEP9_BRANCH_CREATED
+          fi
+          echo OZON_PERFORMANCE_STEP8_FORMALLY_ACCEPTED
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step8-performance-formal-acceptance-v1
+          path: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/evidence
+          if-no-files-found: error
+          retention-days: 30
