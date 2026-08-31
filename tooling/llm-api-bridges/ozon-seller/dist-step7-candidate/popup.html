@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ozon Bridge</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header><div><h1>Ozon Bridge</h1><p class="lead">ChatGPT / Alice ↔ Ozon Seller + Performance API: read-only, explicit binding, независимые вкладки/диалоги, manual и autorun.</p></div><span class="badge" id="versionBadge">v0.1.19</span></header>
+    <div id="status" class="status">Загрузка…</div>
+    <section class="priority-section" id="workSessionControls">
+      <h2>Работа с текущим диалогом</h2>
+      <div class="action-grid work-action-grid"><button id="workStart" class="primary">Начать работу / Отправить начальный prompt</button><button id="workRefresh" class="secondary">Обновить</button><button id="workShowHide" class="secondary">Показать кнопку</button><button id="workFinish" class="danger">Завершить работу</button></div>
+      <p id="workSessionMeta" class="meta">Сессия не активна.</p>
+    </section>
+    <section class="priority-section">
+      <h2>AI adapter</h2>
+      <label for="aiMode">Adapter этой вкладки</label>
+      <select id="aiMode">
+        <option value="auto">Автоматически</option>
+        <option value="chatgpt">ChatGPT</option>
+        <option value="alice">Алиса</option>
+      </select>
+      <p id="aiModeMeta" class="meta">Adapter выбирается только для текущей вкладки; Auto определяется по hostname. Другие вкладки не изменяются.</p>
+    </section>
+    <section class="priority-section">
+      <div class="binding-banner unbound" id="bindingBanner"><div><span class="eyebrow">Привязка</span><strong id="bindingState">Проверяю привязку…</strong><div id="bindingMeta" class="meta compact">Manual и Autorun требуют явной привязки текущего AI-диалога.</div></div><button id="bindConversation" class="primary">Привязать диалог</button></div>
+      <h2>Управление run</h2>
+      <div class="action-grid action-grid-four"><button id="startAuto" class="primary">▶ Авторежим</button><button id="pauseAuto" class="secondary">Ⅱ Пауза</button><button id="resumeAuto" class="secondary">▶ Продолжить</button><button id="finishAuto" class="danger">■ Завершить</button></div>
+      <div class="run-summary"><div class="row"><span>Run текущего диалога</span><strong id="runState">Не запущен</strong></div><div class="row"><span>Итерация</span><strong id="runSequence">0</strong></div><div class="row"><span>Последняя operation</span><strong id="lastCommand">—</strong></div></div>
+      <p class="warning">Autorun сканирует весь завершённый assistant message, находит все <code>OZON_API_V1</code>, выполняет их строго по одному и доставляет один объединённый результат. Одна команда = максимум один business request. Для Performance API перед ним может потребоваться отдельный auth token request; business retry/pagination/fan-out скрыто не выполняются.</p>
+      <p id="manualModeMeta" class="meta">Кнопка Ozon управляется только блоком «Работа с текущим диалогом» выше. Autorun остаётся отдельным режимом.</p>
+      <p class="meta">Работа через кнопку Ozon и Autorun взаимоисключаются. Provider выполняет только фиксированный read-only allowlist; произвольные URL/method/headers из AI запрещены.</p>
+    </section>
+    <section>
+      <h2>Provider gate</h2>
+      <div class="row"><span>Execution gate</span><strong id="providerGate">—</strong></div>
+      <div class="row"><span>Bridge operations</span><strong id="providerOperations">0 / 0</strong></div>
+      <p id="providerGateMeta" class="warning">Проверяю operation registry…</p>
+    </section>
+    <section>
+      <h2>Приватные данные</h2>
+      <label class="switch-row" for="personalDataEnabled"><span><strong>Показывать личные данные</strong><small>OFF: запросы с личными данными не уходят в Ozon, а AI получает просьбу включить разрешение. ON: это постоянное разрешение оператора для таких READ-запросов.</small></span><span class="switch"><input id="personalDataEnabled" type="checkbox"><span class="slider"></span></span></label>
+      <p id="personalDataMeta" class="meta">По умолчанию выключено. После включения ранее заблокированный запрос автоматически не повторяется.</p>
+    </section>
+    <section>
+      <h2>Правила Ozon API</h2>
+      <div class="row"><span>Источник</span><strong id="sellerMetadataSource">Bundled LKG</strong></div>
+      <div class="row"><span>Операций в snapshot</span><strong id="sellerMetadataOperations">—</strong></div>
+      <div class="row"><span>Premium-правил</span><strong id="sellerMetadataRules">—</strong></div>
+      <div class="row"><span>Не разобрано</span><strong id="sellerMetadataUnresolved">—</strong></div>
+      <p id="sellerMetadataMeta" class="meta">Bridge использует последний полностью проверенный snapshot. Ошибка обновления не стирает рабочие правила.</p>
+      <div class="buttons single-row"><button id="refreshSellerMetadata" class="secondary wide">Обновить правила Ozon API</button></div>
+    </section>
+    <section><h2>Стартовый prompt Autorun</h2><p class="warning">Этот текст отправляется один раз при нажатии «▶ Авторежим».</p><label for="autoStartPromptText">Текст стартового prompt</label><textarea id="autoStartPromptText" rows="14" spellcheck="true"></textarea><div class="buttons single-row"><button id="resetAutoStartPrompt" class="secondary wide">Вернуть стартовый prompt по умолчанию</button></div><p class="meta">Хранится отдельно для текущего AI-диалога.</p></section>
+    <section><h2>Префикс результата Ozon</h2><label class="switch-row" for="reportPrefixEnabled"><span><strong>Добавлять префикс только перед результатом API</strong><small>Чистый OZON_RESULT_V1 внутри не изменяется.</small></span><span class="switch"><input id="reportPrefixEnabled" type="checkbox"><span class="slider"></span></span></label><label for="reportPrefixText">Текст префикса</label><textarea id="reportPrefixText" rows="7" placeholder="Например: Продолжай Ozon diagnostic, сохрани raw evidence и выбери следующий read-only запрос."></textarea><label>Добавлять раз в N подтверждённых результатов<input id="reportPrefixInterval" type="number" min="1" max="999" value="1"></label><p id="reportPrefixHint" class="meta">N = 1 — перед каждым подтверждённо доставленным результатом.</p><div class="row"><span>Доставлено результатов</span><strong id="prefixDelivered">0</strong></div></section>
+    <section><h2>Ozon API credentials</h2>
+      <p class="meta"><strong>Seller API</strong> — существующий контур. Его роли и проверка через <code>/v1/roles</code> не изменены.</p>
+      <label>Seller Client-Id<input id="clientId" type="password" autocomplete="off" placeholder="Вставьте Seller Client-Id; сохранённое значение не показывается"></label>
+      <label>Seller Api-Key<input id="apiKey" type="password" autocomplete="off" placeholder="Вставьте Seller Api-Key; сохранённый ключ не показывается"></label>
+      <div id="credentialState" class="meta"></div>
+      <hr>
+      <p class="meta"><strong>Performance API</strong> — отдельный сервисный аккаунт для рекламы. Bridge использует только READ allowlist; mutation endpoints блокируются кодом независимо от возможностей ключа.</p>
+      <label>Performance Client ID<input id="performanceClientId" type="password" autocomplete="off" placeholder="Вставьте Performance Client ID"></label>
+      <label>Performance Client Secret<input id="performanceClientSecret" type="password" autocomplete="off" placeholder="Вставьте Performance Client Secret"></label>
+      <div id="performanceCredentialState" class="meta"></div>
+      <label class="check"><input id="autoSend" type="checkbox" checked> В manual-режиме автоматически отправлять полученный результат в текущий AI</label>
+      <div class="buttons"><button id="save" class="primary">Сохранить всё</button><button id="test" class="secondary">Проверить API</button><button id="exportCredentials" class="secondary">Экспортировать всё</button><button id="chooseCredentialImport" class="secondary">Импортировать всё</button><button id="clearCredentials" class="danger wide">Удалить все credentials</button></div>
+      <input id="credentialImportFile" type="file" accept="application/json,.json" hidden>
+      <div id="credentialBackupMeta" class="meta">Backup v2 содержит Seller Client-Id/Api-Key и Performance Client ID/Client Secret и является секретом. Старые Seller-only backup v1 продолжают импортироваться.</div>
+      <p class="security">Обе пары credentials хранятся только в <code>chrome.storage.local</code>, не передаются content script и не включаются в результаты/диагностику. Performance Bearer token хранится только в памяти service worker. Исключение — явный локальный export backup по кнопке пользователя.</p>
+    </section>
+    <section><h2>Кнопка Ozon в code block</h2><p class="meta">Manual-режим использует собственную extension-owned кнопку <strong>Ozon</strong> для каждого структурно найденного code block. Native Copy не перехватывается и не используется как execution control.</p><div class="row"><span>Поддерживаемые adapters</span><strong>ChatGPT · Алиса</strong></div><p class="meta">Raw code читается только при клике через provider-specific adapter; поиск code block не зависит от текста <code>OZON_API_V1</code>.</p></section>
+    <section><h2>Диагностика Autorun / Send</h2><p class="meta">Локальный журнал не содержит Seller/Performance Client ID, Api-Key, Client Secret, Bearer token, Authorization, полного OZON_API_V1 или customer PII.</p><div class="row"><span>Событий в журнале</span><strong id="diagnosticsCount">0</strong></div><label for="diagnosticsFilter">Показывать</label><select id="diagnosticsFilter"><option value="current">Текущий run и общие события</option><option value="send">Только composer / Send</option><option value="errors">Только ошибки и предупреждения</option><option value="all">Все события</option></select><div class="action-grid action-grid-four"><button id="loadDiagnostics" class="secondary">Обновить</button><button id="copyDiagnostics" class="secondary">Скопировать</button><button id="downloadDiagnostics" class="secondary">Скачать JSON</button><button id="clearDiagnostics" class="secondary">Очистить</button></div><p id="diagnosticsMeta" class="meta">Журнал обновляется автоматически, пока popup открыт.</p><pre id="diagnostics"></pre></section>
+    <details><summary>Как работает</summary><ol><li><strong>Привязка:</strong> сначала явно привяжите текущий AI-диалог.</li><li><strong>Manual:</strong> собственная кнопка Ozon у структурно найденного code block передаёт его актуальный raw text bridge parser и может инициировать ровно один allowlisted business request; для Performance API допускается отдельный token bootstrap.</li><li><strong>Autorun:</strong> расширение сканирует полный завершённый assistant message, структурно извлекает все OZON_API_V1, выполняет provider requests строго последовательно, сохраняет результаты временно и затем делает одну финальную доставку.</li><li><strong>Gate:</strong> разрешены только фиксированные READ-контракты из operation registry. READ-запросы с личными данными управляются настройкой «Показывать личные данные» и не являются постоянным запретом.</li><li><strong>Recovery:</strong> неизвестный исход уже начатого provider request никогда не replay-ится автоматически.</li></ol></details>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
