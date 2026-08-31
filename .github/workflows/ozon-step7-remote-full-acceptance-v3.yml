@@ -1,0 +1,179 @@
+name: Ozon Step7 remote full acceptance v3
+run-name: Ozon Step7 remote full acceptance v3 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-245-read-candidate-2026-08-31
+    paths:
+      - .github/workflows/ozon-step7-remote-full-acceptance-v3.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/step7-remote-v3/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  STEP7_BRANCH: repair/ozon-step7-245-read-candidate-2026-08-31
+  STEP8_BRANCH: repair/ozon-step8-performance-48-terminal-2026-08-31
+  REMOTE_SCRIPT: tooling/llm-api-bridges/ozon-seller/validation/step7-remote-v3/run_step7_remote.py
+
+concurrency:
+  group: ozon-step7-remote-full-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.STEP7_BRANCH }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run full Step7 acceptance on Linux
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/step7-linux-work" "$RUNNER_TEMP/step7-linux-out"
+          python "$REMOTE_SCRIPT" --repo "$GITHUB_WORKSPACE" --work "$RUNNER_TEMP/step7-linux-work" --out "$RUNNER_TEMP/step7-linux-out" --source-commit "$GITHUB_SHA"
+          python - "$RUNNER_TEMP/step7-linux-out/remote-os-proof.json" <<'PY'
+          import json,sys
+          assert json.load(open(sys.argv[1],encoding='utf-8'))['status']=='PASS'
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step7-linux-full
+          path: ${{ runner.temp }}/step7-linux-out
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.STEP7_BRANCH }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run full Step7 acceptance on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $work = Join-Path $env:RUNNER_TEMP 'step7-windows-work'
+          $out = Join-Path $env:RUNNER_TEMP 'step7-windows-out'
+          foreach ($p in @($work,$out)) { if (Test-Path $p) { Remove-Item -Recurse -Force $p } }
+          python $env:REMOTE_SCRIPT --repo $env:GITHUB_WORKSPACE --work $work --out $out --source-commit $env:GITHUB_SHA
+          $proof = Get-Content (Join-Path $out 'remote-os-proof.json') -Raw | ConvertFrom-Json
+          if ($proof.status -ne 'PASS') { throw 'Windows Step7 proof is not PASS' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step7-windows-full
+          path: ${{ runner.temp }}/step7-windows-out
+          if-no-files-found: error
+          retention-days: 14
+
+  finalize:
+    if: always()
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.STEP7_BRANCH }}
+          fetch-depth: 0
+      - name: Download Linux evidence
+        if: needs.linux.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: ozon-step7-linux-full
+          path: /tmp/step7-linux
+      - name: Download Windows evidence
+        if: needs.windows.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: ozon-step7-windows-full
+          path: /tmp/step7-windows
+      - name: Freeze PASS or BLOCKED checkpoint
+        shell: bash
+        env:
+          LINUX_RESULT: ${{ needs.linux.result }}
+          WINDOWS_RESULT: ${{ needs.windows.result }}
+        run: |
+          set -euo pipefail
+          evidence=tooling/llm-api-bridges/ozon-seller/validation/step7-remote-v3/evidence
+          mkdir -p "$evidence"
+          status=BLOCKED
+          reason="linux=$LINUX_RESULT windows=$WINDOWS_RESULT"
+          if [[ "$LINUX_RESULT" == success && "$WINDOWS_RESULT" == success ]]; then
+            for f in remote-os-proof.json runtime-proof.json privacy-proof.json regression-proof.json terminal-matrix-proof.json OZON_BRIDGE_v0.1.19_STEP7_245_READS_REMOTE_CANDIDATE.zip; do
+              cmp "/tmp/step7-linux/$f" "/tmp/step7-windows/$f"
+            done
+            cp /tmp/step7-linux/remote-os-proof.json "$evidence/linux-windows-byte-identical-proof.json"
+            cp /tmp/step7-linux/runtime-proof.json "$evidence/runtime-proof.json"
+            cp /tmp/step7-linux/privacy-proof.json "$evidence/privacy-proof.json"
+            cp /tmp/step7-linux/regression-proof.json "$evidence/regression-proof.json"
+            cp /tmp/step7-linux/terminal-matrix-proof.json "$evidence/terminal-matrix-proof.json"
+            cp /tmp/step7-linux/OZON_BRIDGE_v0.1.19_STEP7_245_READS_REMOTE_CANDIDATE.zip "$evidence/"
+            status=PASS
+            reason="Linux and Windows full acceptance passed; all evidence and candidate package are byte-identical."
+          fi
+          python - "$status" "$reason" "$LINUX_RESULT" "$WINDOWS_RESULT" "$GITHUB_SHA" "$evidence" <<'PY'
+          import hashlib,json,sys
+          from pathlib import Path
+          status,reason,linux,windows,source,evidence=sys.argv[1:]
+          root=Path(evidence)
+          proof={'schema':'ozon.seller.step7.remote-finalization','schema_version':1,'status':status,'reason':reason,'source_commit':source,'linux':linux,'windows':windows,'canonical_modified':False,'seller_operations':463,'seller_reads':245,'new_reads':26,'personal_data_new':13,'safe_projection_new':13}
+          package=root/'OZON_BRIDGE_v0.1.19_STEP7_245_READS_REMOTE_CANDIDATE.zip'
+          if package.exists():
+            proof['candidate_package_sha256']=hashlib.sha256(package.read_bytes()).hexdigest(); proof['candidate_package_bytes']=package.stat().st_size
+            proof['production_tree_sha256']=json.loads((root/'linux-windows-byte-identical-proof.json').read_text(encoding='utf-8'))['production_tree_sha256']
+          (root/'OZON_STEP7_REMOTE_FINAL_STATUS.json').write_text(json.dumps(proof,ensure_ascii=False,indent=2)+'\n',encoding='utf-8',newline='\n')
+          (root/'OZON_STEP7_REMOTE_FINAL_STATUS.md').write_text(f"# Ozon Seller Step 7 — remote final status\n\n**Status:** `{status}`\n\n- Linux: `{linux}`\n- Windows: `{windows}`\n- Canonical modified: `false`\n- Reason: {reason}\n",encoding='utf-8',newline='\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$evidence"
+          git diff --cached --check
+          git commit -m "validation(ozon): freeze Step7 remote ${status,,} evidence" || true
+          git pull --rebase origin "$STEP7_BRANCH"
+          git push origin HEAD:"$STEP7_BRANCH"
+          if [[ "$status" == PASS ]]; then
+            cat > tooling/llm-api-bridges/ozon-seller/validation/OZON_SELLER_STEP7_463_FORMAL_ACCEPTANCE_2026-08-31.md <<'EOF'
+          # Ozon Seller Step 7 — formal acceptance
+
+          `SELLER_STEP7_463_EXHAUSTIVE_TERMINAL_MATRIX_PASS`
+          `STEP7_READ_RUNTIME_26_PASS`
+          `STEP7_PRIVACY_DENIAL_13_PASS`
+          `STEP7_PRIVACY_AUTHORIZED_13_PASS`
+          `STEP7_SELLER_REGRESSION_219_PASS`
+          `STEP7_PERFORMANCE_REGRESSION_21_PASS`
+          `STEP7_LINUX_WINDOWS_BYTE_IDENTICAL_PASS`
+          `OZON_SELLER_STEP7_FORMALLY_ACCEPTED`
+
+          Seller authority is terminal for all 463 operations. Production read surface is 245 operations: 219 previously accepted reads plus 26 Step 7 reads. The new reads are split into 13 safe-projection operations and 13 operations guarded by the existing Personal Data authorization mechanism. Linux and Windows independently reproduced byte-identical evidence and package output. Canonical was not modified during candidate validation.
+          EOF
+            git add tooling/llm-api-bridges/ozon-seller/validation/OZON_SELLER_STEP7_463_FORMAL_ACCEPTANCE_2026-08-31.md
+            git commit -m 'accept(ozon): formally close Seller Step7 463 of 463'
+            git push origin HEAD:"$STEP7_BRANCH"
+            if ! git ls-remote --exit-code --heads origin "$STEP8_BRANCH" >/dev/null 2>&1; then git push origin HEAD:"$STEP8_BRANCH"; fi
+            echo OZON_SELLER_STEP7_FORMALLY_ACCEPTED
+            echo OZON_STEP8_BRANCH_CREATED
+          else
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-step7-remote-final-status
+          path: tooling/llm-api-bridges/ozon-seller/validation/step7-remote-v3/evidence
+          if-no-files-found: error
+          retention-days: 30
