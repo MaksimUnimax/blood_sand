@@ -1,0 +1,111 @@
+name: Ozon Step7 repair exact authority fragments
+run-name: Ozon Step7 repair fragments 0005+0017 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-245-read-candidate-2026-08-31
+    paths:
+      - .github/workflows/ozon-step7-repair-authority-fragments.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-step7-repair-authority-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  repair-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply exact byte repairs and prove full authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+
+          root = Path('tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2/fragments')
+          repairs = [
+              {
+                  'name': 'seller-swagger-2026-08-25.json.xz.b64.part0005.txt',
+                  'before_sha256': '5e7f18615c0236371faa3a5a6641118b23f36c05d88a325dbf7e2a3fa293ac0f',
+                  'offset': 3657,
+                  'before': b'a',
+                  'after': b'e',
+                  'after_sha256': 'af9e6a3f6b4e93ae895c26ac5fcdc7f1cd7a72613c53f1d5bb8dd7080a8a2a9c',
+                  'after_bytes': 8192,
+              },
+              {
+                  'name': 'seller-swagger-2026-08-25.json.xz.b64.part0017.txt',
+                  'before_sha256': 'fe450b838f82496aa2f1f1abbeed1b96c2a09dfde4e7eb9b6b953a7283814ca3',
+                  'offset': 4213,
+                  'before': b'',
+                  'after': b'z',
+                  'after_sha256': 'e90e343c0106ffcc0cad536c0190ce572cba57df35795656ae5ddab535a8c346',
+                  'after_bytes': 8192,
+              },
+          ]
+
+          for repair in repairs:
+              path = root / repair['name']
+              data = path.read_bytes()
+              actual_before = hashlib.sha256(data).hexdigest()
+              if actual_before == repair['after_sha256']:
+                  print(f"already repaired: {repair['name']}")
+                  continue
+              assert actual_before == repair['before_sha256'], (repair['name'], actual_before)
+              offset = repair['offset']
+              before = repair['before']
+              assert data[offset:offset + len(before)] == before
+              fixed = data[:offset] + repair['after'] + data[offset + len(before):]
+              assert len(fixed) == repair['after_bytes']
+              assert hashlib.sha256(fixed).hexdigest() == repair['after_sha256']
+              path.write_bytes(fixed)
+              print(f"repaired: {repair['name']}")
+          PY
+          authority=tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2
+          python "$authority/reconstruct_exact_swagger.py" \
+            --root "$authority" \
+            --output "$RUNNER_TEMP/seller-swagger.json" \
+            --json-output "$RUNNER_TEMP/authority-proof.json"
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          raw = Path('${{ runner.temp }}/seller-swagger.json').read_bytes()
+          proof = json.loads(Path('${{ runner.temp }}/authority-proof.json').read_text(encoding='utf-8'))
+          assert len(raw) == 3933043
+          assert hashlib.sha256(raw).hexdigest() == '39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40'
+          assert proof['status'] == 'PASS'
+          assert proof['operation_count'] == 463
+          assert proof['fragment_count'] == 38
+          print('STEP7_EXACT_SWAGGER_AUTHORITY_V2_PASS')
+          print('STEP7_AUTHORITY_FRAGMENTS_38_OF_38_PASS')
+          PY
+      - name: Commit repaired authority to isolated candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2/fragments/seller-swagger-2026-08-25.json.xz.b64.part0005.txt \
+            tooling/llm-api-bridges/ozon-seller/validation/step7-authority-v2/fragments/seller-swagger-2026-08-25.json.xz.b64.part0017.txt
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo STEP7_AUTHORITY_REPAIR_ALREADY_COMMITTED
+            exit 0
+          fi
+          git commit -m 'fix(ozon): restore exact Step7 authority fragments 0005 and 0017'
+          git push origin HEAD:${{ github.ref_name }}
+          echo STEP7_AUTHORITY_REPAIR_COMMITTED_PASS
