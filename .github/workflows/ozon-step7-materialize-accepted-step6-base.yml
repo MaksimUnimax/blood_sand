@@ -1,0 +1,91 @@
+name: Ozon Step7 materialize accepted Step6 production base
+run-name: Ozon Step7 materialize Step6 base · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-245-read-candidate-2026-08-31
+    paths:
+      - .github/workflows/ozon-step7-materialize-accepted-step6-base.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-step7-materialize-step6-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  materialize-and-commit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Materialize exact accepted Step6 production tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_WORKSPACE"
+          work="$RUNNER_TEMP/ozon-step7-step6-work"
+          out="$RUNNER_TEMP/ozon-step7-step6-production"
+          dest="$repo/tooling/llm-api-bridges/ozon-seller/dist-step6-accepted"
+          rm -rf "$work" "$out" "$dest"
+          python "$repo/tooling/llm-api-bridges/ozon-seller/validation/materialize_performance_step6_read_coverage_package.py" \
+            --repo-root "$repo" \
+            --work-root "$work" \
+            --out "$out" \
+            | tee "$RUNNER_TEMP/materialize.log"
+          mkdir -p "$dest"
+          cp -a "$out/." "$dest/"
+          python - "$dest" <<'PY'
+          import hashlib, json, sys
+          from pathlib import Path
+
+          root = Path(sys.argv[1]).resolve()
+          rows = []
+          for path in sorted((p for p in root.rglob('*') if p.is_file()), key=lambda p: p.relative_to(root).as_posix()):
+              rel = path.relative_to(root).as_posix()
+              data = path.read_bytes()
+              rows.append({'path': rel, 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()})
+          tree_material = ''.join(f"{row['path']}\0{row['sha256']}\n" for row in rows).encode()
+          manifest = {
+              'schema': 'ozon.seller.step7.accepted-step6-materialization',
+              'schema_version': 1,
+              'source_acceptance_commit': '1f51eb74bb7b83bcc3356e3fe3422b2702227c2f',
+              'expected_production_tree_sha256': '1f8001b6b9ca3d247f0d199de592f2b6ed2ec9a7b7f7d90ec10388ee8a82813f',
+              'actual_production_tree_sha256': hashlib.sha256(tree_material).hexdigest(),
+              'file_count': len(rows),
+              'javascript_file_count': sum(row['path'].endswith('.js') for row in rows),
+              'files': rows,
+          }
+          assert manifest['actual_production_tree_sha256'] == manifest['expected_production_tree_sha256']
+          assert manifest['file_count'] == 21
+          assert manifest['javascript_file_count'] == 18
+          target = root.parent / 'OZON_STEP7_ACCEPTED_STEP6_MATERIALIZATION.json'
+          target.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8', newline='\n')
+          print('STEP7_ACCEPTED_STEP6_PRODUCTION_TREE_MATERIALIZED_PASS')
+          print('\n'.join(row['path'] for row in rows))
+          PY
+          grep -Fx PERFORMANCE_STEP6_PACKAGE_TREE_MANIFEST_SHA256_PASS "$RUNNER_TEMP/materialize.log"
+      - name: Commit deterministic materialization to isolated branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tooling/llm-api-bridges/ozon-seller/dist-step6-accepted \
+                  tooling/llm-api-bridges/ozon-seller/OZON_STEP7_ACCEPTED_STEP6_MATERIALIZATION.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo STEP7_ACCEPTED_STEP6_MATERIALIZATION_ALREADY_PRESENT
+            exit 0
+          fi
+          git commit -m 'build(ozon): materialize accepted Step6 base for Step7'
+          git push origin HEAD:${{ github.ref_name }}
+          echo STEP7_ACCEPTED_STEP6_MATERIALIZATION_COMMITTED_PASS
