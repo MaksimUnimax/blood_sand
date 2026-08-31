@@ -1,0 +1,230 @@
+name: Ozon Step7 remote acceptance v6
+run-name: Ozon Step7 remote acceptance v6 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step7-245-read-candidate-2026-08-31
+    paths:
+      - .github/workflows/ozon-step7-245-read-bootstrap-and-accept-v6.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-step7-remote-accept-v6-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUTF8: '1'
+  PYTHONIOENCODING: utf-8
+  RESTORER: tooling/llm-api-bridges/ozon-seller/validation/step7-remote-v2-upload/restore_multipart_source.py
+  PORTABILITY: tooling/llm-api-bridges/ozon-seller/validation/step7-remote-v2-upload/apply_windows_utf8_portability.py
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/step7-remote-v2/run_full_gate.py
+
+jobs:
+  platform-full-gate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Disable Git line-ending conversion
+        shell: bash
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore sources, patch cross-platform UTF-8, run full gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$RESTORER" --repo-root "$GITHUB_WORKSPACE"
+          python "$PORTABILITY" --repo-root "$GITHUB_WORKSPACE"
+          out="$RUNNER_TEMP/ozon-step7-output"
+          python "$GATE" --repo-root "$GITHUB_WORKSPACE" --out "$out" --source-commit "$GITHUB_SHA"
+          python - "$out/semantic-proof.json" "$RUNNER_OS" <<'PY'
+          import json, sys
+          proof = json.load(open(sys.argv[1], encoding='utf-8'))
+          assert proof['result'] == 'PASS'
+          assert 'STEP7_FULL_PLATFORM_GATE_PASS' in proof['markers']
+          assert proof['production']['candidate_tree_sha256'] == 'f605c2645e3a7a429facaab1bbb4b1252c7ee39d601b50d0480c4006b689d974'
+          assert proof['package']['zip_sha256'] == 'f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574'
+          assert proof['package']['zip_bytes'] == 1146084
+          print(f"STEP7_{sys.argv[2].upper()}_FULL_GATE_PASS")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step7-${{ runner.os }}-full-v6
+          path: |
+            ${{ runner.temp }}/ozon-step7-output/candidate
+            ${{ runner.temp }}/ozon-step7-output/generated
+            ${{ runner.temp }}/ozon-step7-output/proofs
+            ${{ runner.temp }}/ozon-step7-output/package
+            ${{ runner.temp }}/ozon-step7-output/semantic-proof.json
+          if-no-files-found: error
+          retention-days: 14
+
+  compare-cross-platform:
+    needs: platform-full-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step7-Linux-full-v6
+          path: ${{ runner.temp }}/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step7-Windows-full-v6
+          path: ${{ runner.temp }}/windows
+      - name: Prove Linux and Windows byte identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/cross"
+          python - "$RUNNER_TEMP/linux" "$RUNNER_TEMP/windows" "$RUNNER_TEMP/cross/cross-platform-proof.json" "$GITHUB_SHA" "$GITHUB_RUN_ID" <<'PY'
+          import hashlib, json, sys
+          from pathlib import Path
+
+          linux, windows = Path(sys.argv[1]), Path(sys.argv[2])
+          output, source_commit, run_id = Path(sys.argv[3]), sys.argv[4], sys.argv[5]
+          def files(root):
+              return {p.relative_to(root).as_posix(): p for p in root.rglob('*') if p.is_file()}
+          lf, wf = files(linux), files(windows)
+          assert set(lf) == set(wf), (sorted(set(lf)-set(wf)), sorted(set(wf)-set(lf)))
+          rows = []
+          for rel in sorted(lf):
+              lb, wb = lf[rel].read_bytes(), wf[rel].read_bytes()
+              assert lb == wb, rel
+              rows.append({'path': rel, 'bytes': len(lb), 'sha256': hashlib.sha256(lb).hexdigest()})
+          semantic = json.loads((linux / 'semantic-proof.json').read_text(encoding='utf-8'))
+          assert semantic['result'] == 'PASS' and semantic['source_commit'] == source_commit
+          assert semantic['production']['candidate_tree_sha256'] == 'f605c2645e3a7a429facaab1bbb4b1252c7ee39d601b50d0480c4006b689d974'
+          assert semantic['production']['seller_reads'] == 245 and semantic['production']['new_seller_reads'] == 26
+          assert semantic['runtime']['operation_count'] == 26 and semantic['runtime']['physical_business_request_count'] == 26
+          assert semantic['privacy']['denied']['physical_business_request_count'] == 0
+          assert semantic['privacy']['setting_transition']['replayed_command_count'] == 0
+          assert semantic['privacy']['setting_transition']['delayed_replayed_command_count'] == 0
+          assert semantic['privacy']['explicit_resubmit']['physical_business_request_count'] == 13
+          assert semantic['terminal']['rows'] == 463
+          assert semantic['terminal']['unknown'] == semantic['terminal']['pending'] == semantic['terminal']['unresolved'] == 0
+          assert semantic['package']['zip_sha256'] == 'f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574'
+          assert semantic['package']['zip_bytes'] == 1146084
+          proof = {
+              'schema':'ozon.seller.step7.cross-platform-acceptance-proof','schema_version':1,'result':'PASS',
+              'source_commit':source_commit,'workflow_run_id':int(run_id),'platforms':['ubuntu-latest','windows-latest'],
+              'byte_identical':True,'file_count':len(rows),'candidate_tree_sha256':semantic['production']['candidate_tree_sha256'],
+              'package_sha256':semantic['package']['zip_sha256'],'package_bytes':semantic['package']['zip_bytes'],'files':rows,
+              'markers':['STEP7_LINUX_FULL_GATE_PASS','STEP7_WINDOWS_FULL_GATE_PASS','STEP7_LINUX_WINDOWS_BYTE_IDENTICAL_PASS','STEP7_FULL_CROSS_PLATFORM_PASS'],
+          }
+          output.write_text(json.dumps(proof, ensure_ascii=False, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8', newline='\n')
+          print('STEP7_LINUX_WINDOWS_BYTE_IDENTICAL_PASS')
+          print('STEP7_FULL_CROSS_PLATFORM_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step7-cross-platform-v6
+          path: ${{ runner.temp }}/cross/cross-platform-proof.json
+          if-no-files-found: error
+          retention-days: 14
+
+  finalize-isolated-branch:
+    needs: compare-cross-platform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore permanent sources with UTF-8 portability fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$RESTORER" --repo-root "$GITHUB_WORKSPACE"
+          python "$PORTABILITY" --repo-root "$GITHUB_WORKSPACE"
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step7-Linux-full-v6
+          path: ${{ runner.temp }}/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step7-cross-platform-v6
+          path: ${{ runner.temp }}/cross
+      - name: Freeze verified candidate and evidence in isolated branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="tooling/llm-api-bridges/ozon-seller"
+          evidence="$root/validation/step7-remote-acceptance-v2/run-$GITHUB_RUN_ID"
+          rm -rf "$root/dist-step7-candidate"
+          mkdir -p "$root/dist-step7-candidate" "$root/dist" "$root/inventory" "$root/artifacts" "$evidence/proofs"
+          cp -a "$RUNNER_TEMP/linux/candidate/." "$root/dist-step7-candidate/"
+          cp "$RUNNER_TEMP/linux/generated/ozon-seller-mcp-nodebundle.js" "$root/dist/ozon-seller-mcp-nodebundle.js"
+          cp "$RUNNER_TEMP/linux/generated/OZON_SELLER_EXACT_READ_REGISTRY.json" "$root/inventory/OZON_SELLER_EXACT_READ_REGISTRY.json"
+          cp "$RUNNER_TEMP/linux/generated/OZON_STEP7_RUNTIME_TEST_ARTIFACT_2026-08-30.json" "$root/OZON_STEP7_RUNTIME_TEST_ARTIFACT_2026-08-30.json"
+          cp "$RUNNER_TEMP/linux/package/OZON_BRIDGE_v0.1.19_STEP7_245_READS_CANDIDATE_2026-08-31.zip" "$root/artifacts/"
+          cp "$RUNNER_TEMP/linux/semantic-proof.json" "$evidence/"
+          cp -a "$RUNNER_TEMP/linux/proofs/." "$evidence/proofs/"
+          cp "$RUNNER_TEMP/cross/cross-platform-proof.json" "$evidence/"
+          python - "$RUNNER_TEMP/linux/semantic-proof.json" "$RUNNER_TEMP/cross/cross-platform-proof.json" "$root/OZON_STEP7_245_READ_CANDIDATE_MANIFEST.json" <<'PY'
+          import json, sys
+          from pathlib import Path
+          semantic = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+          cross = json.loads(Path(sys.argv[2]).read_text(encoding='utf-8'))
+          assert semantic['result'] == cross['result'] == 'PASS'
+          manifest = {
+              'schema':'ozon.seller.step7.245-read-candidate-manifest','schema_version':1,'result':'PASS',
+              'source_commit':semantic['source_commit'],'workflow_run_id':cross['workflow_run_id'],
+              'candidate_tree_sha256':semantic['production']['candidate_tree_sha256'],
+              'package_sha256':semantic['package']['zip_sha256'],'package_bytes':semantic['package']['zip_bytes'],
+              'seller_reads':245,'new_seller_reads':26,'new_safe_projection':13,'new_personal_data_gate':13,
+              'terminal_operations':463,'terminal_unavailable':218,'runtime_operations':26,
+              'markers':['STEP7_REMOTE_FINALIZATION_PASS'],
+          }
+          Path(sys.argv[3]).write_text(json.dumps(manifest, ensure_ascii=False, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8', newline='\n')
+          PY
+          git rm -rf --ignore-unmatch \
+            .github/workflows/ozon-step7-245-read-bootstrap-and-accept-v2.yml \
+            .github/workflows/ozon-step7-245-read-bootstrap-and-accept-v3.yml \
+            .github/workflows/ozon-step7-245-read-bootstrap-and-accept-v4.yml \
+            .github/workflows/ozon-step7-245-read-bootstrap-and-accept-v5.yml \
+            .github/workflows/ozon-step7-245-read-bootstrap-and-accept-v6.yml \
+            .github/workflows/ozon-step7-materialize-accepted-step6-base.yml \
+            .github/workflows/ozon-step7-export-materialized-base.yml \
+            .github/workflows/ozon-step7-export-verification-kit.yml \
+            .github/workflows/ozon-step7-repair-authority-fragments.yml \
+            "$root/validation/step7-remote-v2-upload"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'feat(ozon): freeze verified Step7 245-read candidate'
+          git push origin "HEAD:$GITHUB_REF_NAME"
+          final_commit="$(git rev-parse HEAD)"
+          mkdir -p "$RUNNER_TEMP/finalization"
+          python - "$RUNNER_TEMP/finalization/finalization-proof.json" "$final_commit" "$GITHUB_SHA" "$GITHUB_RUN_ID" <<'PY'
+          import json, sys
+          from pathlib import Path
+          proof = {
+              'schema':'ozon.seller.step7.remote-finalization-proof','schema_version':1,'result':'PASS',
+              'source_commit':sys.argv[3],'finalization_commit':sys.argv[2],'workflow_run_id':int(sys.argv[4]),
+              'canonical_modified':False,'candidate_branch':'repair/ozon-step7-245-read-candidate-2026-08-31',
+              'marker':'STEP7_REMOTE_FINALIZATION_PASS',
+          }
+          Path(sys.argv[1]).write_text(json.dumps(proof, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8', newline='\n')
+          PY
+          echo STEP7_REMOTE_FINALIZATION_PASS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step7-finalization-v6
+          path: ${{ runner.temp }}/finalization/finalization-proof.json
+          if-no-files-found: error
+          retention-days: 14
