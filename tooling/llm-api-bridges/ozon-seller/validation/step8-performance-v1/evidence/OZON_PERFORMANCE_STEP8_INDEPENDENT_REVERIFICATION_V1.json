@@ -1,0 +1,50 @@
+{
+  "schema": "OZON_PERFORMANCE_STEP8_INDEPENDENT_REVERIFICATION_V1",
+  "schema_version": 1,
+  "status": "PASS",
+  "verified_on_date_utc": "2026-08-31",
+  "performed_outside_github_actions": true,
+  "repository": "MaksimUnimax/blood_sand",
+  "branch": "repair/ozon-step8-performance-48-terminal-2026-08-31",
+  "canonical": {
+    "branch": "repair/ozon-v2-b1-stocks-warehouse-2026-08-29",
+    "expected_commit": "8ee16f38bf2ec60e4b2e42192c2f41d87021b214",
+    "modified": false
+  },
+  "fresh_checkout": {
+    "baseline_builder": "PASS",
+    "exact_queue_builder": "PASS",
+    "terminal_matrix_builder": "PASS",
+    "existing_matrix_regression": "PASS",
+    "existing_read_coverage_regression": "PASS"
+  },
+  "byte_comparison_against_repository_freeze": {
+    "baseline_json_csv_markdown": "PASS",
+    "exact_queue_json_csv_markdown": "PASS",
+    "terminal_matrix_json_csv_markdown": "PASS"
+  },
+  "counts": {
+    "performance_operations_total": 48,
+    "already_accepted_current_reads": 21,
+    "remaining_source_terminal_decisions": 27,
+    "new_runtime_implementation_count": 0,
+    "unknown": 0,
+    "pending": 0,
+    "unresolved": 0
+  },
+  "invariants": {
+    "accepted_and_remaining_sets_are_disjoint": true,
+    "accepted_and_remaining_union_is_complete": true,
+    "operation_identities_are_unique": true,
+    "linux_windows_frozen_evidence_is_byte_identical": true,
+    "canonical_modified": false
+  },
+  "markers": [
+    "STEP8_PERFORMANCE_INDEPENDENT_FRESH_CHECKOUT_PASS",
+    "STEP8_PERFORMANCE_INDEPENDENT_BASELINE_MATCH_PASS",
+    "STEP8_PERFORMANCE_INDEPENDENT_EXACT_QUEUE_MATCH_PASS",
+    "STEP8_PERFORMANCE_INDEPENDENT_TERMINAL_MATRIX_MATCH_PASS",
+    "STEP8_PERFORMANCE_INDEPENDENT_REGRESSION_PASS",
+    "OZON_PERFORMANCE_STEP8_INDEPENDENT_REVERIFICATION_PASS"
+  ]
+}
