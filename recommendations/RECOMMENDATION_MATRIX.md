@@ -5,7 +5,7 @@ Matrix version: `KIP_RECOMMENDATION_MATRIX_V2_SALES_WEIGHTED`
 Calendar version: `KIP_CHERTOG_CALENDAR_V1`  
 Product policy: `KIP_PRODUCT_POLICY_V2_SALES_WEIGHTED`  
 Marketplace override: `KIP_MARKETPLACE_OVERRIDE_V1`  
-Revision: **2026-08-31 owner update — Волк female → Алатырь; Змей female → Жива**
+Revision: **2026-08-31 owner update — Волк female → Алатырь; Змей female → Мара**
 
 Подробное коммерческое обоснование и customer-copy: `SALES_WEIGHTED_MATRIX_V2_AUDIT_2026-08-28.md`.
 
@@ -61,7 +61,7 @@ V2 даёт фактическим продажам высокий вес пос
 | Вепрь | **Алатырь** | **Алатырь** | **Алатырь** | **Алатырь** |
 | Щука | **Родимич** | **Звезда Лады** | **Родимич** | **Звезда Лады** |
 | Лебедь | **Родимич** | **Макошь** | **Родимич** | **Макошь** |
-| Змей | **Семаргл** | **Жива** | **Семаргл** | **Жива** |
+| Змей | **Семаргл** | **Мара** | **Семаргл** | **Мара** |
 | Ворон | **Колядник** | **Алатырь** | **Алатырь** | **Алатырь** |
 | Медведь | **Печать Велеса** | **Печать Велеса** | **Печать Велеса** | **Печать Велеса** |
 | Бусел | **Родимич** | **Звезда Лады** | **Родимич** | **Звезда Лады** |
@@ -157,10 +157,12 @@ Customer-facing название всегда ровно `Печать Веле�
 
 ```text
 Змей + мужчина → Семаргл
-Змей + женщина → Жива
+Змей + женщина → Мара
 ```
 
-Семаргл остаётся прямым мужским выбором как покровитель Чертога Змея. Для женской ветки owner-approved `Жива`: она сохраняет ключевую линию жизненной силы и энергии, но воспринимается как более естественный женский символ. Это gender-fit решение, а не sales uplift: исторический snapshot — Семаргл WB 16 / Ozon 7, Жива WB 9 / Ozon 7.
+Семаргл остаётся прямым мужским выбором как покровитель Чертога Змея. Для женской ветки owner-approved `Мара`: она воспринимается как выраженно женский символ и лучше поддерживает характерную для Змея линию внутренней стойкости, прохождения сложных периодов, переходов и перемен. Это curated gender-fit связь; Мара остаётся прямой женской веткой Лисы и дополнительно разрешена для женщины Змея как отдельный owner-approved case.
+
+Коммерческий сигнал также заметно сильнее прежней Живы: исторический snapshot — Мара WB 41 / Ozon 29, Жива WB 9 / Ozon 7, Семаргл WB 16 / Ozon 7.
 
 ## 7. Нормализованные типы связи
 
@@ -193,7 +195,7 @@ Customer-facing название всегда ровно `Печать Веле�
 | lebed | male | Родимич | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
 | lebed | female | Макошь | DIRECT_PATRON | SEMANTIC_DIRECT |
 | zmei | male | Семаргл | DIRECT_PATRON | SEMANTIC_DIRECT |
-| zmei | female | Жива | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_GENDER_FIT |
+| zmei | female | Мара | CURATED_GENDER_SUBSTITUTE | SEMANTIC_CURATED_GENDER_FIT |
 | voron | male | Колядник | DIRECT_DERIVED | SEMANTIC_DIRECT |
 | voron | female | Алатырь | CURATED_MEANING_SUBSTITUTE | SEMANTIC_CURATED_SALES_WEIGHTED |
 | medved | male | Печать Велеса | DIRECT_CHERTOG_SYMBOL | SEMANTIC_DIRECT_SALES_PRIORITIZED |
@@ -227,8 +229,8 @@ Marketplace override:
 
 | Case | Previous | Current |
 |---|---|---|
+| Змей female | Жива | **Мара** |
 | Волк female | Велес | **Алатырь** |
-| Змей female | Семаргл | **Жива** |
 | Бусел male | Молвинец | **Родимич** |
 | Орёл female | Перун | **Звезда Лады** |
 | Лиса male | Мара | **Чернобог** |
@@ -262,7 +264,7 @@ Reserve:
 - Печать Велеса = только Медведь, оба пола;
 - customer-facing label этого SKU = ровно `Печать Велеса`;
 - Волк male = Велес; female = Алатырь;
-- Змей male = Семаргл; female = Жива;
+- Змей male = Семаргл; female = Мара;
 - Лиса male = Чернобог; female = Мара;
 - Орёл male = Перун; female = Звезда Лады;
 - Бусел male = Родимич; female = Звезда Лады;
