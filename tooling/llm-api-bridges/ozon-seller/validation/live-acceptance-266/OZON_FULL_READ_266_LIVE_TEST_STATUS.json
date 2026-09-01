@@ -6,7 +6,7 @@
   "delivery_mode": "sequential_batch_single_delivery",
   "source_branch": "repair/ozon-step7-245-read-final-candidate-v3-2026-08-31",
   "live_test_branch": "test/ozon-v0.1.19-full-read-266-live-2026-09-01",
-  "runs_completed": 5,
+  "runs_completed": 6,
   "existing_seller_regression_smoke": {
     "passed": 1,
     "total": 1,
@@ -22,18 +22,25 @@
     "safe_projection_live_dispatched": 13,
     "personal_data_gate_total": 13,
     "personal_data_gate_policy_denial_tested": 13,
+    "personal_data_gate_authorized_live_dispatched": 13,
     "all_26_aliases_exercised_in_owner_browser": true,
-    "provider_live_dispatched": 13,
-    "provider_live_not_yet_dispatched": 13,
-    "passed_live": 5,
-    "provider_permission_blocked": 8,
+    "all_26_provider_live_dispatched": true,
+    "provider_live_dispatched": 26,
+    "provider_live_not_yet_dispatched": 0,
+    "passed_live": 9,
+    "provider_permission_blocked": 13,
+    "provider_request_rejected_test_fixture": 4,
     "needs_diagnostic": 0,
     "passed_operations": [
       "notification_list",
       "notification_push_type_list",
       "carriage_delivery_list_v2",
       "chat_list_v3",
-      "posting_global_etgb"
+      "posting_global_etgb",
+      "arrival_pass_list",
+      "conditional_cancellation_list",
+      "finance_b2b_sales_json",
+      "discount_task_list_v2"
     ],
     "permission_blocked_operations": [
       "receipts_seller_list",
@@ -43,7 +50,18 @@
       "fbs_product_exemplar_validate",
       "posting_fbs_pickup_code_verify",
       "order_cancel_check",
-      "posting_marks"
+      "posting_marks",
+      "fbp_archive_get",
+      "fbp_draft_get",
+      "fbp_order_get",
+      "delivery_check",
+      "delivery_checkout_v2"
+    ],
+    "provider_request_rejected_operations": [
+      "rfbs_returns_get",
+      "fbp_archive_list",
+      "fbp_draft_list",
+      "fbp_order_list"
     ],
     "diagnostic_pending_operations": []
   },
@@ -60,32 +78,43 @@
       "all_automatic_retry_false": true
     },
     "enable_without_replay": {
-      "status": "PENDING"
+      "status": "UNCONFIRMED_BY_OWNER_MESSAGE",
+      "reason": "Run 006 result was supplied without the requested explicit NO_REPLAY attestation; absence of an intervening result is not treated as proof."
     },
     "authorized_explicit_resubmit": {
-      "status": "PENDING"
+      "status": "PASS",
+      "operations_tested": 13,
+      "logical_business_result_count": 13,
+      "physical_business_request_count": 13,
+      "all_external_request_executed": true,
+      "all_one_physical_request_per_explicit_command": true,
+      "automatic_retries": 0,
+      "http_200": 4,
+      "http_400_provider_request": 4,
+      "http_403_permission": 5
     }
   },
   "accounting": {
-    "submitted_commands_total": 29,
-    "provider_planned_logical_business_commands": 16,
+    "submitted_commands_total": 42,
+    "provider_planned_logical_business_commands": 29,
     "policy_blocked_commands": 13,
-    "physical_business_requests": 16,
+    "physical_business_requests": 29,
     "capability_probes": 0
   },
   "last_run": {
-    "run_number": 5,
-    "status": "PERSONAL_DATA_OFF_FAIL_CLOSED_PASS",
+    "run_number": 6,
+    "status": "AUTHORIZED_EXPLICIT_RESUBMIT_13_ONE_REQUEST_EACH_PASS",
     "result_count": 13,
-    "query_planner_status": "pending",
-    "logical_business_result_count": 0,
-    "physical_business_request_count": 0,
-    "operations_recognized": 13,
-    "operations_policy_blocked": 13,
-    "external_requests_executed": 0,
+    "query_planner_status": "complete",
+    "logical_business_result_count": 13,
+    "physical_business_request_count": 13,
+    "external_requests_executed": 13,
     "automatic_retries": 0,
-    "outcome": "PRIVACY_DENIAL_13_LIVE_PASS"
+    "http_200": 4,
+    "http_400": 4,
+    "http_403": 5,
+    "outcome": "PRIVACY_AUTHORIZED_RESUBMIT_13_LIVE_PASS"
   },
-  "last_run_record": "tooling/llm-api-bridges/ozon-seller/validation/live-acceptance-266/runs/RUN_005_PERSONAL_DATA_OFF.md",
-  "next_action": "Enable Personal Data only and verify no automatic replay occurs. After that, explicitly resubmit all 13 gated reads in a new owner run."
+  "last_run_record": "tooling/llm-api-bridges/ozon-seller/validation/live-acceptance-266/runs/RUN_006_PERSONAL_DATA_AUTHORIZED_EXPLICIT_RESUBMIT.md",
+  "next_action": "Obtain explicit owner NO_REPLAY attestation for the Personal Data setting transition, then optionally investigate four provider_request HTTP 400 fixture cases if successful business-semantic responses are required rather than live routing proof."
 }
