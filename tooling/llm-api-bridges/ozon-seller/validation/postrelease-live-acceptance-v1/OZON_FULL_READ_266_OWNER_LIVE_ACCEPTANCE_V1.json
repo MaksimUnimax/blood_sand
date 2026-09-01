@@ -1,0 +1,61 @@
+{
+  "schema": "OZON_FULL_READ_266_OWNER_LIVE_ACCEPTANCE_V1",
+  "schema_version": 1,
+  "status": "PASS",
+  "scope": "API_ONLY_POSTRELEASE_OWNER_LIVE_ACCEPTANCE",
+  "bridge": "ozon-llm-api-bridge",
+  "bridge_version": "0.1.19",
+  "release_commit": "9cb1017b9ea234c2f4002f360db62502176f98b2",
+  "release_package": {
+    "name": "OZON_BRIDGE_v0.1.19_FULL_READ_266_INSTALLABLE.zip",
+    "sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574",
+    "bytes": 1146084
+  },
+  "live_test_source": {
+    "branch": "test/ozon-v0.1.19-full-read-266-live-2026-09-01",
+    "conclusion_commit": "23b0428b809d6adfcac7fca5df93b2d6d208313c",
+    "status_commit": "957eef45f8876037f54183462523cbebb8aea6ac",
+    "runs_completed": 6
+  },
+  "coverage": {
+    "seller_existing_regression_smoke": ["stocks_current"],
+    "seller_helper_operations": ["assembly_fbs_posting_list"],
+    "new_seller_read_aliases_total": 26,
+    "new_seller_read_aliases_exercised": 26,
+    "new_seller_read_aliases_provider_dispatched_when_authorized": 26,
+    "http_200": 9,
+    "http_403_permission": 13,
+    "http_400_test_fixture_or_missing_entity": 4,
+    "diagnostic_blockers": 0
+  },
+  "privacy": {
+    "personal_data_off_operations": 13,
+    "personal_data_off_policy_blocked": 13,
+    "personal_data_off_physical_requests": 0,
+    "authorized_explicit_resubmit_operations": 13,
+    "authorized_explicit_resubmit_physical_requests": 13,
+    "automatic_retries": 0,
+    "setting_transition_note": "No separate automatic batch was reported before the owner explicitly submitted the authorized batch; zero-replay is also covered by the formal automated Step 7 acceptance gate."
+  },
+  "request_accounting": {
+    "submitted_commands_total": 42,
+    "policy_blocked_commands": 13,
+    "provider_planned_logical_business_commands": 29,
+    "physical_business_requests": 29,
+    "capability_probes": 0,
+    "one_explicit_command_at_most_one_physical_business_request": true,
+    "automatic_retry_observed": false,
+    "hidden_pagination_observed": false,
+    "fan_out_observed": false
+  },
+  "non_blocking_followups": [
+    "rfbs_returns_get can be retried with a real return_id if business-semantic HTTP 200 evidence is desired.",
+    "fbp_archive_list, fbp_draft_list, and fbp_order_list can be retried if the account later contains matching FBP entities."
+  ],
+  "markers": [
+    "OZON_FULL_READ_266_OWNER_LIVE_API_SCOPE_PASS",
+    "OZON_FULL_READ_266_PRIVACY_OFF_ZERO_REQUEST_PASS",
+    "OZON_FULL_READ_266_AUTHORIZED_13_ONE_REQUEST_EACH_PASS",
+    "OZON_FULL_READ_266_OWNER_LIVE_ACCEPTED"
+  ]
+}
