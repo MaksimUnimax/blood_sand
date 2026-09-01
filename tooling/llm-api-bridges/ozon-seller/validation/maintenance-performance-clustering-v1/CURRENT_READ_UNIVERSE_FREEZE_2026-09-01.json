@@ -1,0 +1,86 @@
+{
+  "schema": "OZON_CURRENT_READ_UNIVERSE_FREEZE_V1",
+  "schema_version": 1,
+  "date": "2026-09-01",
+  "scope": "OZON_API_ONLY",
+  "status": "FROZEN_FOR_CLUSTERING_AND_ADVERTISING_PATCH",
+  "swagger": {
+    "seller": {
+      "operation_universe": 465,
+      "sha256": "b323a83c3ae8746e2d545b1ad194cfa0fe269dc82667e07cf7ba2ffe798d5d72"
+    },
+    "performance": {
+      "operation_universe": 48,
+      "sha256": "7436e4a3e40b4d5bf926a887d7891c1db264cbb6582266299a2df10f67592fec"
+    }
+  },
+  "current_read_authority": {
+    "seller": 245,
+    "performance": 21,
+    "total": 266
+  },
+  "executable_command_aliases": {
+    "seller": 245,
+    "performance": 25,
+    "total": 270,
+    "note": "Performance has 21 authority read endpoints plus 4 documented JSON-form aliases for existing statistics endpoints."
+  },
+  "seller_refresh_delta": {
+    "added_current_reads": [
+      {
+        "alias": "description_category_dependent_attributes",
+        "method": "POST",
+        "path": "/v1/description-category/dependent-attributes",
+        "cluster": "catalog_products",
+        "section": "attributes_categories"
+      },
+      {
+        "alias": "description_category_dependent_attribute_values",
+        "method": "POST",
+        "path": "/v1/description-category/dependent-attributes/values",
+        "cluster": "catalog_products",
+        "section": "attributes_categories",
+        "pagination": "explicit_cursor_only"
+      }
+    ],
+    "retired_from_current_surface": [
+      {
+        "alias": "fbs_stock_by_warehouse_v1",
+        "method": "POST",
+        "path": "/v1/product/info/stocks-by-warehouse/fbs",
+        "replacement": "POST /v2/product/info/stocks-by-warehouse/fbs",
+        "evidence": "past Swagger shutdown date + legacy HTTP 400 + same explicit SKU replacement HTTP 200"
+      },
+      {
+        "alias": "fbs_carriage_available_list",
+        "method": "POST",
+        "path": "/v1/posting/carriage-available/list",
+        "replacement": "POST /v2/carriage/delivery/list",
+        "evidence": "past Swagger shutdown date + replacement HTTP 200 with real delivery fixture + legacy real-fixture HTTP 400 code 9"
+      }
+    ],
+    "net_current_read_change": 0
+  },
+  "scheduled_currentness_watch": [
+    {
+      "alias": "finance_transaction_list_v3",
+      "method": "POST",
+      "path": "/v3/finance/transaction/list",
+      "documented_shutdown_date": "2026-09-08",
+      "status_on_freeze_date": "CURRENT_UNTIL_SHUTDOWN_DATE",
+      "replacement_family": "accrual endpoints already implemented"
+    }
+  ],
+  "invariants": {
+    "hidden_pagination": false,
+    "automatic_business_retry": false,
+    "guidance_executes_provider_request": false,
+    "one_explicit_command_max_one_business_request": true
+  },
+  "source_evidence": [
+    "CURRENT_SWAGGER_DELTA_AUDIT_2026-09-01.md",
+    "LEGACY_CURRENTNESS_LIVE_CHECK_RUN_001_2026-09-01.json",
+    "LEGACY_CURRENTNESS_LIVE_CHECK_RUN_002_2026-09-01.json",
+    "LEGACY_CURRENTNESS_LIVE_CHECK_RUN_003_2026-09-01.json"
+  ]
+}
