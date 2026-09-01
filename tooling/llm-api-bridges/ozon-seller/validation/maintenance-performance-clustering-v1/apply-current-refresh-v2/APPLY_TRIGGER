@@ -1,3 +1,5 @@
 apply=true
+attempt=2
 expected_patch_sha256=4b95a2e1160a91150009824942d0a763abdf0d9a8828f299904dd2b6dd7f1530
 expected_aliases=270
+all_parts=00..10
