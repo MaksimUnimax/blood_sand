@@ -1,0 +1,39 @@
+{
+  "schema": "OZON_LEGACY_CURRENTNESS_LIVE_CHECK_V1",
+  "schema_version": 1,
+  "date": "2026-09-01",
+  "scope": "OZON_API_ONLY",
+  "privacy": {
+    "provider_payload_persisted": false,
+    "business_identifiers_persisted": false,
+    "note": "Sanitized outcome only; the live delivery_method_id and provider payload values are intentionally not persisted."
+  },
+  "batch": {
+    "delivery_mode": "sequential_batch_single_delivery",
+    "result_count": 1,
+    "capability_probe_performed": false,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1,
+    "coalesced_group_count": 0
+  },
+  "result": {
+    "operation": "fbs_carriage_available_list",
+    "entitlement_key": "POST /v1/posting/carriage-available/list",
+    "fixture": "REAL_DELIVERY_METHOD_ID_FROM_PRECEDING_V2_RESPONSE",
+    "external_request_executed": true,
+    "http_status": 400,
+    "provider_error_code": "9",
+    "automatic_retry": false,
+    "exact_request_preserved": true,
+    "command_transformed": false,
+    "classification": "LEGACY_ENDPOINT_RETIREMENT_CONFIRMED_WITH_REAL_FIXTURE"
+  },
+  "evidence": [
+    "Current Swagger carries a shutdown date in the past for POST /v1/posting/carriage-available/list.",
+    "Documented replacement POST /v2/carriage/delivery/list returned HTTP 200 and exposed a real delivery-method fixture.",
+    "Legacy v1 was then called with that real fixture and still returned provider HTTP 400 code 9.",
+    "No automatic retry or hidden pagination occurred."
+  ],
+  "decision": "RETIRE_FBS_CARRIAGE_AVAILABLE_LIST_FROM_CURRENT_USER_VISIBLE_READ_SURFACE",
+  "next_action": "Refresh the operation registry: add the two new Seller reads discovered in current Swagger, retire both expired legacy reads from current guidance, rebuild the current operation inventory, then revise clustering before the advertising result-bounding/sorting patch."
+}
