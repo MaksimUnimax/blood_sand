@@ -1,31 +1,21 @@
 # Ozon Bridge — Performance clustering, command inventory and bounded-response plan
 
-Date: 2026-09-01
-Status: `WAITING_FOR_OWNER_COMMAND_INVENTORY_REVIEW`
+Date: 2026-09-01  
+Status: `SWAGGER_DELTA_FOUND_REFRESH_CURRENT_SURFACE_BEFORE_AD_PATCH`  
 Scope: Ozon API behavior and command guidance only. UI excluded.
 
 ## Owner-ordered sequence — do not reorder
 
-1. Keep the existing intended behavior for advertising requests:
-   - generic `campaigns` request -> use explicit `page` / `pageSize` (bounded result, e.g. 100);
-   - `latest` / `newest` campaigns -> choose a command/path that allows deterministic newest-first behavior without hidden Ozon requests; where Ozon provides no server sort, local deterministic sorting may be used only after the single provider response and must be explicit in result metadata;
-   - campaigns/statistics by product -> use product-oriented Performance endpoints rather than dumping all campaigns;
-   - concrete campaigns -> use `campaignIds`;
-   - active campaigns -> use `state`.
-2. Before implementing the advertising sorting/bounded-response patch, inspect the project documentation and current clustering implementation.
-3. Determine exactly why clustering exists, how a request moves from AI -> Bridge guidance -> AI command selection -> Bridge -> Ozon, and preserve that workflow.
-4. Audit whether every current operation added by the latest patches is present in the operation registry / cluster guidance. Do not assume coverage.
-5. Propose a revised clustering model consistent with the expanded command surface. Reuse existing clusters where semantically correct; add/restructure clusters only where needed.
-6. Advertising guidance must behave as a two-step explicit command selection flow when the initial intent is underspecified:
-   - AI sends an advertising intent/request to the extension;
-   - Bridge returns the matching available command choices / sort-filter alternatives to the AI, without a hidden business request when a command still needs to be selected;
-   - AI reads the guidance, chooses one exact command and sends a new explicit command;
-   - Bridge executes that exact command and returns the Ozon result;
-   - no hidden pagination, fan-out, retry, or autonomous follow-up provider calls.
-7. Produce/export one JSON inventory containing all current operations and the fields needed for manual coverage review, including at minimum alias, provider, method, path, effect, currentness, safety/privacy, cluster, section, guidance visibility, workflow role, purpose and template.
-8. Give the owner a direct way to obtain/download that JSON and manually verify that all current commands are present.
-9. ONLY AFTER the command JSON is reviewed/accepted, implement the advertising sorting/bounded-response patch.
-10. Persist findings, proposed clustering and later patch evidence in GitHub so the task survives chat/network interruption.
+1. Generic advertising `campaigns` request -> use explicit `page` / `pageSize` and return a bounded result.
+2. `latest` / `newest` -> deterministic local newest-first ordering only after the single provider response when Ozon has no server sort; report this fact in result metadata.
+3. Campaigns/statistics by product -> use product-oriented Performance endpoints instead of dumping all campaigns.
+4. Concrete campaigns -> use `campaignIds`.
+5. Active campaigns -> use `state`.
+6. Preserve clustering as AI -> local Bridge guidance -> NEW exact AI command -> one Ozon business request; guidance itself performs zero provider requests.
+7. Audit all current operations and latest Swagger before production clustering changes.
+8. Produce/review a complete current operation inventory.
+9. ONLY AFTER the current operation surface is refreshed and owner-reviewed, implement advertising sorting/bounded-response behavior.
+10. Persist each gate in GitHub.
 
 ## Invariants
 
@@ -33,64 +23,104 @@ Scope: Ozon API behavior and command guidance only. UI excluded.
 - No hidden pagination.
 - No hidden retry.
 - No hidden fan-out.
-- No autonomous multi-command workflow after guidance.
-- Guidance may suggest exact next commands but execution requires a new explicit AI command.
+- No autonomous follow-up provider chain.
+- Guidance/refinement choices never execute themselves.
 - Personal Data gate semantics remain unchanged.
 - Seller and Performance provider isolation remains unchanged.
-- Existing accepted operations must not disappear during clustering refactor.
+- Current operations must not silently disappear during clustering refactor.
 
-## Required deliverables before advertising patch
+## Completed gates
 
-- `CLUSTERING_CURRENT_STATE_AUDIT`: current cluster/section/guidance architecture and purpose.
-- `CURRENT_OPERATION_CLUSTER_COVERAGE`: exact current-operation coverage, including latest Seller + Performance additions, with missing/orphaned/hidden mismatches enumerated.
-- `PROPOSED_CLUSTERING_V2`: proposed cluster and section structure plus migration map from existing cluster IDs.
-- `CURRENT_OPERATIONS_EXPORT.json`: machine-readable complete current command inventory for owner review.
-- Owner download/export path for that JSON.
-- Owner confirmation that inventory is complete.
-
-## Progress
-
-### Completed before production patch
-
-- [x] Current clustering/guidance implementation inspected from production package.
+- [x] Current clustering/guidance implementation inspected.
 - [x] Purpose and AI -> guidance -> AI exact command -> provider flow documented.
-- [x] Full production registry counted and contract-aligned: `270/270`, validation errors `0`.
-- [x] Latest 26 Seller aliases checked: present `26`, missing `0`.
-- [x] Performance alias accounting resolved: `25` command aliases represent `21` authority reads plus `4` documented JSON variants.
+- [x] Production registry before Swagger refresh counted: `270` aliases = `245 Seller + 25 Performance`.
+- [x] Latest pre-refresh 26 Seller aliases checked: `26/26` present.
 - [x] Current cluster distribution audited: `13` top-level clusters, `50` sections.
-- [x] Stale startup guidance found: only 6 clusters advertised although registry has 13; startup still instructs V1 although section-aware V2 exists.
-- [x] Advertising under-clustering identified: 25 aliases are currently split into only 2 sections.
+- [x] Stale startup guidance found: only six clusters advertised; runtime already has section-aware `OZON_HELP_V2`.
+- [x] Advertising under-clustering identified: 25 Performance aliases are currently split into only two sections.
 - [x] `PROPOSED_CLUSTERING_V2_2026-09-01.md` created.
-- [x] Reproducible `export_current_operations.js` created.
-- [x] Full current operations export generated from the accepted production installable.
-- [x] Export manifest recorded: `270` aliases, SHA-256 `1e278312cc1878e4edf9013f9ee9f38e1801c8ae3dadd13d0cbebace914e985f`.
+- [x] Reproducible operation exporter created.
+- [x] Owner supplied fresh Seller and Performance Swagger files.
+- [x] Fresh Swagger comparison completed and persisted in `CURRENT_SWAGGER_DELTA_AUDIT_2026-09-01.md/.json`.
 
-### Current gate
+## Fresh Swagger gate result
 
-- [ ] Owner manually reviews the current operations JSON and confirms whether all expected commands are present.
+### Performance
 
-### Explicitly blocked until owner review
+- current uploaded Swagger operations: `48`;
+- frozen 2026-08-29 authority operations: `48`;
+- files are byte-for-byte identical;
+- new operation keys: `0`;
+- removed operation keys: `0`;
+- terminal universe remains `21 read / 9 server-side generation / 16 mutation / 2 deprecated`;
+- no newly discovered Performance read endpoint.
+
+### Seller
+
+- frozen 2026-08-25 authority operations: `463`;
+- current uploaded Swagger operations: `465`;
+- added operation keys: `2`;
+- removed operation keys: `0`;
+- existing 463 operation objects changed: `0`;
+- existing component schemas changed: `0`;
+- seven schemas were added only for the two new operations.
+
+New reads missing from current production:
+
+1. `POST /v1/description-category/dependent-attributes`
+   - proposed alias: `description_category_dependent_attributes`
+   - cluster/section: `catalog_products / attributes_categories`
+   - classification candidate: `READ_SAFE`, `safe_projection`.
+
+2. `POST /v1/description-category/dependent-attributes/values`
+   - proposed alias: `description_category_dependent_attribute_values`
+   - cluster/section: `catalog_products / attributes_categories`
+   - classification candidate: `READ_SAFE`, `safe_projection`
+   - explicit caller-controlled `cursor`; no hidden pagination.
+
+## Currentness cleanup discovered
+
+Two currently exposed read aliases remain present in current Swagger but their operation descriptions carry past shutdown dates:
+
+- `fbs_stock_by_warehouse_v1` -> replacement `/v2/product/info/stocks-by-warehouse/fbs` is already implemented.
+- `fbs_carriage_available_list` -> replacement `/v2/carriage/delivery/list` is already implemented.
+
+Do not silently remove or count them as current. Resolve terminal/currentness status explicitly before freezing new counts.
+
+Upcoming:
+- `finance_transaction_list_v3` is documented for shutdown 2026-09-08; accrual replacements are already implemented.
+
+## Current gate
+
+Before any advertising production patch:
+
+- [ ] Add/classify the two new Seller dependent-attribute reads.
+- [ ] Resolve the two past-shutdown exposed read aliases as current vs sunset/replaced.
+- [ ] Regenerate the complete operation inventory and cluster coverage from the refreshed surface.
+- [ ] Owner reviews/accepts the refreshed inventory.
+
+## Explicitly blocked until refreshed inventory review
 
 - [ ] Production clustering refactor.
-- [ ] Advertising post-result refinement choices.
-- [ ] Generic `performance_campaigns` bounded default behavior.
+- [ ] Advertising post-result `refinement_choices`.
+- [ ] Generic `performance_campaigns` bounded default.
 - [ ] `latest/newest` local-sort result-view behavior.
-- [ ] Targeted advertising regression/live retest.
+- [ ] Advertising targeted regression/live retest.
 
-## Advertising patch — blocked until owner inventory review
+## Planned advertising behavior after unblock
 
-Patch is explicitly BLOCKED until the owner reviews `CURRENT_OPERATIONS_EXPORT.json`.
+For a broad/underspecified advertising request Bridge returns guidance or, after one broad provider response, a bounded result plus explicit choices. AI must send a NEW exact command to execute a choice.
 
-Planned behavior after unblock:
+Supported refinement intentions:
 
-- Generic campaigns: explicit bounded page/pageSize default/recommendation.
-- Latest/newest: deterministic newest-first selection/sort semantics, with metadata describing whether sorting occurred provider-side or locally after one provider response.
-- By product: route guidance to product-oriented Performance reads.
-- Concrete campaigns: `campaignIds`.
-- Active campaigns: `state`.
-- Underspecified advertising intent: Bridge guidance returns available exact command alternatives first; AI sends a second explicit command; only then is a provider request executed.
-- Broad valid advertising result: Bridge may return bounded data plus `refinement_choices`, but must not auto-execute any refinement.
+- page: `performance_campaigns` + `page/pageSize`;
+- active: `performance_campaigns` + `state`;
+- specific: `performance_campaigns` + `campaignIds`;
+- by product: product-oriented Performance reads;
+- latest/newest: local ordering by documented response date fields after a single provider response, explicitly marked as local.
 
-## Current live finding motivating the work
+No refinement may trigger an automatic second Ozon request.
 
-`performance_campaigns` returned 1128 full campaign objects in one successful provider response. The model-visible batch was approximately 1.35 MB and ChatGPT displayed a connection-interrupted message. Provider/API correctness passed; bounded result/guidance behavior requires maintenance.
+## Live reliability finding motivating advertising maintenance
+
+`performance_campaigns` returned 1128 full campaign objects in one successful provider response. The model-visible batch was ~1.35 MB and ChatGPT displayed a connection-interrupted message. Provider correctness passed; bounded model-visible result behavior is still required.
