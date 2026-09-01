@@ -15,7 +15,7 @@
     }
   },
   "status": "IN_PROGRESS",
-  "runs_completed": 2,
+  "runs_completed": 3,
   "runs": [
     {
       "run_number": 1,
@@ -43,6 +43,23 @@
         "seller_rating_summary"
       ],
       "record": "tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_002_REPRESENTATIVE_SELLER_BATCH_2026-09-01.json"
+    },
+    {
+      "run_number": 3,
+      "name": "Representative Performance API and CSV batch",
+      "status": "PASS_WITH_DELIVERY_SIZE_OBSERVATION",
+      "logical_business_result_count": 6,
+      "physical_business_request_count": 6,
+      "http_200": 6,
+      "operations": [
+        "performance_campaigns",
+        "performance_bid_limits",
+        "performance_search_promo_products",
+        "performance_expense",
+        "performance_expense_csv",
+        "performance_statistics_list_api"
+      ],
+      "record": "tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_003_PERFORMANCE_BATCH_2026-09-01.json"
     }
   ],
   "verified": {
@@ -59,28 +76,41 @@
     "representative_seller_rating_read": true,
     "analytics_prefetch_preserved_single_request": true,
     "seller_sensitive_addresses_redacted": true,
+    "performance_credentials_and_transport": true,
+    "performance_provider_routing": true,
+    "representative_performance_campaign_read": true,
+    "representative_performance_bid_limits_read": true,
+    "representative_performance_product_read": true,
+    "representative_performance_statistics_json_read": true,
+    "performance_statistics_list_read": true,
+    "performance_csv_binary_transport": true,
+    "performance_csv_base64_decodes_to_declared_byte_length": true,
+    "performance_bearer_token_not_exposed": true,
     "hidden_pagination_not_observed": true,
     "automatic_retry_not_observed": true,
     "credentials_not_exposed": true
   },
   "accounting": {
-    "submitted_commands": 7,
-    "logical_business_results": 7,
-    "physical_business_requests": 7,
-    "http_200": 7,
+    "submitted_commands": 13,
+    "logical_business_results": 13,
+    "physical_business_requests": 13,
+    "http_200": 13,
     "capability_probes": 0,
     "automatic_retries_observed": 0,
     "hidden_pagination_requests_observed": 0
   },
+  "delivery_observations": {
+    "oversized_model_visible_batch_count": 1,
+    "last_observation": "Run 003 contained approximately 1.35 MB of pasted result data because performance_campaigns returned 1128 full campaign objects. ChatGPT displayed a connection-interrupted message, while the attached batch result remained complete. This is tracked separately from Ozon provider/API status."
+  },
   "remaining_required_groups": [
-    "Performance API authentication and representative read batch",
     "Personal Data OFF fail-closed and explicit ON execution",
-    "binary transport: one PDF, one PNG and one CSV",
+    "binary transport: one PDF and one PNG where an eligible return giveout exists",
     "provider error/no-retry sample",
     "final request accounting"
   ],
   "next_run": {
-    "run_number": 3,
-    "goal": "Combined Performance API authentication and representative read batch."
+    "run_number": 4,
+    "goal": "Combined Personal Data OFF fail-closed check plus safe return-giveout discovery for the subsequent PDF/PNG binary run."
   }
 }
