@@ -1,0 +1,130 @@
+{
+  "schema": "OZON_CURRENT_SWAGGER_DELTA_AUDIT_V1",
+  "date": "2026-09-01",
+  "production_build": {
+    "version": "0.1.19",
+    "sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574"
+  },
+  "sources": {
+    "seller_current_uploaded": {
+      "title": "Документация Ozon Seller API",
+      "version": 2.1,
+      "operations": 465,
+      "sha256": "b323a83c3ae8746e2d545b1ad194cfa0fe269dc82667e07cf7ba2ffe798d5d72"
+    },
+    "seller_frozen_2026_08_25": {
+      "operations": 463,
+      "sha256": "39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40"
+    },
+    "performance_current_uploaded": {
+      "title": "Документация Ozon Performance API",
+      "version": "2.0",
+      "operations": 48,
+      "sha256": "7436e4a3e40b4d5bf926a887d7891c1db264cbb6582266299a2df10f67592fec"
+    },
+    "performance_frozen_2026_08_29": {
+      "operations": 48,
+      "sha256": "7436e4a3e40b4d5bf926a887d7891c1db264cbb6582266299a2df10f67592fec"
+    }
+  },
+  "seller_delta": {
+    "added_operation_count": 2,
+    "removed_operation_count": 0,
+    "existing_operation_objects_changed": 0,
+    "existing_component_schemas_changed": 0,
+    "added_component_schemas": 7,
+    "added_operations": [
+      {
+        "method": "POST",
+        "path": "/v1/description-category/dependent-attributes",
+        "operation_id": "DescriptionCategoryDependentAttributes",
+        "summary": "Получить зависимые характеристики",
+        "tags": ["BetaMethod"],
+        "deprecated": false
+      },
+      {
+        "method": "POST",
+        "path": "/v1/description-category/dependent-attributes/values",
+        "operation_id": "DescriptionCategoryDependentAttributesValues",
+        "summary": "Получить возможные значения дочерней характеристики",
+        "tags": ["BetaMethod"],
+        "deprecated": false
+      }
+    ],
+    "classification": [
+      {
+        "method": "POST",
+        "path": "/v1/description-category/dependent-attributes",
+        "proposed_alias": "description_category_dependent_attributes",
+        "terminal_candidate": "CURRENT_READ_ACCEPTED",
+        "safety_class": "READ_SAFE",
+        "privacy_policy": "safe_projection",
+        "cluster": "catalog_products",
+        "section": "attributes_categories",
+        "request_contract": {
+          "required": ["description_category_id"],
+          "optional": ["type_id"]
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/v1/description-category/dependent-attributes/values",
+        "proposed_alias": "description_category_dependent_attribute_values",
+        "terminal_candidate": "CURRENT_READ_ACCEPTED",
+        "safety_class": "READ_SAFE",
+        "privacy_policy": "safe_projection",
+        "cluster": "catalog_products",
+        "section": "attributes_categories",
+        "request_contract": {
+          "required": ["parent_attribute_id", "child_attribute_id"],
+          "optional": ["description_category_id", "type_id", "limit", "cursor"],
+          "limit": {"min": 1, "max": 1000, "default": 100},
+          "pagination": "explicit_cursor_only_no_hidden_pagination"
+        }
+      }
+    ],
+    "current_registry_vs_frozen_accepted": {
+      "frozen_accepted_reads": 245,
+      "current_registry_seller_aliases": 245,
+      "exact_pair_set_equal": true
+    },
+    "projected_counts_if_both_new_reads_added_without_other_reclassification": {
+      "seller_read_authority": 247,
+      "total_read_authority_seller_plus_performance": 268,
+      "executable_aliases_seller_plus_25_performance": 272
+    },
+    "currentness_warnings_in_currently_exposed_reads": [
+      {
+        "alias": "fbs_stock_by_warehouse_v1",
+        "method": "POST",
+        "path": "/v1/product/info/stocks-by-warehouse/fbs",
+        "warning": "Swagger says the method was to be disabled 2026-04-07; replacement /v2/product/info/stocks-by-warehouse/fbs is already implemented."
+      },
+      {
+        "alias": "fbs_carriage_available_list",
+        "method": "POST",
+        "path": "/v1/posting/carriage-available/list",
+        "warning": "Swagger says the method was to be disabled 2026-03-20; replacement /v2/carriage/delivery/list is already implemented."
+      }
+    ],
+    "currentness_note": "The two legacy paths remain present in the current Swagger despite past shutdown dates in their descriptions. Resolve as current vs sunset/replaced before refreshing formal counts."
+  },
+  "performance_delta": {
+    "current_vs_frozen_byte_identical": true,
+    "operation_count_current": 48,
+    "operation_key_set_vs_step8_matrix_equal": true,
+    "new_operation_count_vs_step8": 0,
+    "removed_operation_count_vs_step8": 0,
+    "terminal_categories": {
+      "implemented_read": 21,
+      "mutation_state_change": 16,
+      "server_side_generation": 9,
+      "deprecated": 2
+    },
+    "accepted_read_authority": 21,
+    "executable_performance_aliases": 25,
+    "documented_json_variant_aliases": 4
+  },
+  "decision": "SWAGGER_DELTA_FOUND_TWO_NEW_SELLER_READS_PERFORMANCE_UNCHANGED",
+  "advertising_patch_gate": "BLOCKED_UNTIL_CURRENT_OPERATION_SURFACE_IS_REFRESHED_AND_OWNER_REVIEWS_UPDATED_INVENTORY"
+}
