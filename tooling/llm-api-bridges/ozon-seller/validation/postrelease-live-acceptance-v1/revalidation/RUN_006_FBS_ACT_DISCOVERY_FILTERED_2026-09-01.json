@@ -1,0 +1,72 @@
+{
+  "schema": "OZON_CURRENT_BUILD_REVALIDATION_RUN_V1",
+  "schema_version": 1,
+  "run_number": 6,
+  "date": "2026-09-01",
+  "scope": "OZON_API_ONLY",
+  "build": {
+    "bridge": "ozon-llm-api-bridge",
+    "version": "0.1.19",
+    "installable_zip_sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574"
+  },
+  "status": "PROVIDER_400_NO_RETRY_FIXTURE_DISCOVERY_UNRESOLVED",
+  "decision": "FBS_ACT_LIST_FILTERED_REQUEST_REACHED_PROVIDER_BUT_DID_NOT_YIELD_ACT_ID",
+  "batch": {
+    "delivery_mode": "sequential_batch_single_delivery",
+    "result_count": 1,
+    "capability_probe": {
+      "performed": false,
+      "status": "not_needed",
+      "subscription_type": "UNKNOWN",
+      "http_status": 0,
+      "error_code": null
+    },
+    "query_planner": {
+      "status": "complete",
+      "coalesced_group_count": 0,
+      "coalesced_logical_count": 0,
+      "logical_business_result_count": 1,
+      "physical_business_request_count": 1
+    }
+  },
+  "result": {
+    "operation": "fbs_act_list",
+    "request_id": "e7ffdeba-fb18-4c9d-9b0e-aa9cb5ba3c31",
+    "command_fingerprint": "b2c2c4b2",
+    "physical_command_fingerprint": "b2c2c4b2",
+    "command_transformed": false,
+    "host_alias": "seller_api",
+    "http_method": "POST",
+    "entitlement_key": "POST /v2/posting/fbs/act/list",
+    "external_request_executed": true,
+    "http_status": 400,
+    "provider_error_category": "provider_request",
+    "provider_error_code": "3",
+    "automatic_retry": false,
+    "submitted_filter": {
+      "date_from": "2026-08-01T00:00:00Z",
+      "date_to": "2026-09-02T00:00:00Z"
+    },
+    "submitted_limit": 50
+  },
+  "assertions": {
+    "operation_recognized": true,
+    "correct_seller_provider": true,
+    "correct_endpoint_entitlement": true,
+    "external_request_executed": true,
+    "one_physical_business_request": true,
+    "http_400": true,
+    "automatic_retry_false": true,
+    "command_not_transformed": true,
+    "capability_probe_not_executed": true,
+    "real_fbs_act_id_obtained": false
+  },
+  "interpretation": {
+    "bridge_transport_failure_proven": false,
+    "provider_reached": true,
+    "fixture_discovery_complete": false,
+    "binary_pdf_png_success_test_blocked_by_missing_real_act_id": true,
+    "note": "A second provider-level 400 was returned even with the locally accepted explicit date filter. Do not keep retrying parameter guesses. Re-check exact source Swagger/provider semantics before deciding whether a live binary fixture is obtainable in this account."
+  },
+  "next_action": "Inspect the exact source Swagger for POST /v2/posting/fbs/act/list and determine whether the provider expects different date semantics or whether act discovery is unavailable for this account. Personal Data ON review_list can proceed independently."
+}
