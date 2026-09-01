@@ -7,6 +7,14 @@
   "source_branch": "repair/ozon-step7-245-read-final-candidate-v3-2026-08-31",
   "live_test_branch": "test/ozon-v0.1.19-full-read-266-live-2026-09-01",
   "runs_completed": 6,
+  "api_live_test_scope": {
+    "scope": "OZON_API_ONLY",
+    "status": "COMPLETE",
+    "decision": "API_ONLY_LIVE_TEST_SCOPE_COMPLETE",
+    "ui_work_manual_lifecycle_excluded_by_owner": true,
+    "blocking_tests_remaining": 0,
+    "optional_diagnostics_remaining": 4
+  },
   "existing_seller_regression_smoke": {
     "passed": 1,
     "total": 1,
@@ -78,8 +86,8 @@
       "all_automatic_retry_false": true
     },
     "enable_without_replay": {
-      "status": "UNCONFIRMED_BY_OWNER_MESSAGE",
-      "reason": "Run 006 result was supplied without the requested explicit NO_REPLAY attestation; absence of an intervening result is not treated as proof."
+      "status": "OUT_OF_CURRENT_API_ONLY_SCOPE",
+      "reason": "Owner explicitly excluded UI / setting lifecycle behavior from this live pass; this observation does not block API-only acceptance."
     },
     "authorized_explicit_resubmit": {
       "status": "PASS",
@@ -116,5 +124,6 @@
     "outcome": "PRIVACY_AUTHORIZED_RESUBMIT_13_LIVE_PASS"
   },
   "last_run_record": "tooling/llm-api-bridges/ozon-seller/validation/live-acceptance-266/runs/RUN_006_PERSONAL_DATA_AUTHORIZED_EXPLICIT_RESUBMIT.md",
-  "next_action": "Obtain explicit owner NO_REPLAY attestation for the Personal Data setting transition, then optionally investigate four provider_request HTTP 400 fixture cases if successful business-semantic responses are required rather than live routing proof."
+  "conclusion_record": "tooling/llm-api-bridges/ozon-seller/validation/live-acceptance-266/OZON_FULL_READ_266_API_LIVE_TEST_CONCLUSION.md",
+  "next_action": "Return to the main project roadmap. The four HTTP 400 cases are optional entity/fixture diagnostics only and do not block the completed API-only live test scope."
 }
