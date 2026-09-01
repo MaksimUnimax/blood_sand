@@ -1,0 +1,30 @@
+{
+  "schema": "OZON_SELLER_2026_09_01_TWO_NEW_READS_LOCAL_VALIDATION_V1",
+  "date": "2026-09-01",
+  "source_swagger_sha256": "b323a83c3ae8746e2d545b1ad194cfa0fe269dc82667e07cf7ba2ffe798d5d72",
+  "candidate_aliases": [
+    "description_category_dependent_attributes",
+    "description_category_dependent_attribute_values"
+  ],
+  "local_candidate_dir": "/mnt/data/ozon_swagger_refresh",
+  "checks": {
+    "normalized_diff_only_contains_intended_additions": true,
+    "node_check_operation_registry": "PASS",
+    "node_check_contract": "PASS",
+    "registry_alias_count": 272,
+    "contract_alias_count": 272,
+    "catalog_validation_ok": true,
+    "catalog_validation_errors": [],
+    "guidance_catalog_products_attributes_categories_contains_new_alias_1": true,
+    "guidance_catalog_products_attributes_categories_contains_new_alias_2": true,
+    "op1_valid_required_fields": "PASS",
+    "op1_missing_description_category_id": "INVALID_OPERATION_PARAMS",
+    "op2_valid_limit_1000_and_cursor_preserved": "PASS",
+    "op2_limit_1001": "OZON_LIMIT_VIOLATION",
+    "op2_hidden_cursor_follow": false,
+    "provider": "seller_api",
+    "physical_request_model": "one_explicit_command_at_most_one_business_request"
+  },
+  "code_commit_state": "PATCH_DIFF_STAGED_NOT_YET_APPLIED_TO_PRODUCTION_SOURCE",
+  "reason": "Advertising production patch remains blocked. First resolve currentness of two legacy Seller reads, then refresh/freeze the complete operation inventory and obtain owner review."
+}
