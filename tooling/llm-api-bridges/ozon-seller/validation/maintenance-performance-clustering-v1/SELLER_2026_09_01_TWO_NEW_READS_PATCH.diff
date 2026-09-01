@@ -1,0 +1,49 @@
+--- a/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_operation_registry.js
++++ b/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_operation_registry.js
+@@
+     description_category_attribute_values_search: {
+       provider: "seller_api", method: "POST", path: "/v1/description-category/attribute/values/search", effect: "READ", request_style: "json_body",
+       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
+       cluster: "catalog_products", section: "attributes_categories", guidance_visibility: "user", entitlement_key: "POST /v1/description-category/attribute/values/search", workflow_role: "single_read",
+       purpose: "Найти справочные значения характеристики по тексту без скрытой автопагинации.", template: { operation: "description_category_attribute_values_search", params: { attribute_id: 1, description_category_id: 1, limit: 100, type_id: 1, value: "Name" } }
++    },
++    description_category_dependent_attributes: {
++      provider: "seller_api", method: "POST", path: "/v1/description-category/dependent-attributes", effect: "READ", request_style: "json_body",
++      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
++      cluster: "catalog_products", section: "attributes_categories", guidance_visibility: "user", entitlement_key: "POST /v1/description-category/dependent-attributes", workflow_role: "single_read",
++      purpose: "Получить пары родительских и дочерних зависимых характеристик категории.", template: { operation: "description_category_dependent_attributes", params: { description_category_id: 1 } }
++    },
++    description_category_dependent_attribute_values: {
++      provider: "seller_api", method: "POST", path: "/v1/description-category/dependent-attributes/values", effect: "READ", request_style: "json_body",
++      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
++      cluster: "catalog_products", section: "attributes_categories", guidance_visibility: "user", entitlement_key: "POST /v1/description-category/dependent-attributes/values", workflow_role: "single_read",
++      purpose: "Получить возможные значения дочерней характеристики для значений родительской с явным cursor/limit без скрытой автопагинации.", template: { operation: "description_category_dependent_attribute_values", params: { parent_attribute_id: 1, child_attribute_id: 1, limit: 100 } }
+     },
+--- a/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_contract.js
++++ b/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_contract.js
+@@
++  function normalizeDescriptionCategoryDependentAttributesParams(params) {
++    const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["description_category_id", "type_id"]);
++    requireSafeInt64Number(requireField(normalized, "description_category_id"), "params.description_category_id");
++    if (Object.prototype.hasOwnProperty.call(normalized, "type_id")) requireSafeInt64Number(normalized.type_id, "params.type_id");
++    return normalized;
++  }
++
++  function normalizeDescriptionCategoryDependentAttributeValuesParams(params) {
++    const normalized = requirePlainObject(params, "params");
++    assertAllowedFields(normalized, ["parent_attribute_id", "child_attribute_id", "description_category_id", "type_id", "limit", "cursor"]);
++    requireSafeInt64Number(requireField(normalized, "parent_attribute_id"), "params.parent_attribute_id");
++    requireSafeInt64Number(requireField(normalized, "child_attribute_id"), "params.child_attribute_id");
++    if (Object.prototype.hasOwnProperty.call(normalized, "description_category_id")) requireSafeInt64Number(normalized.description_category_id, "params.description_category_id");
++    if (Object.prototype.hasOwnProperty.call(normalized, "type_id")) requireSafeInt64Number(normalized.type_id, "params.type_id");
++    if (Object.prototype.hasOwnProperty.call(normalized, "limit")) requireInteger(normalized.limit, "params.limit", { minimum: 1, maximum: 1000 });
++    if (Object.prototype.hasOwnProperty.call(normalized, "cursor")) requireString(normalized.cursor, "params.cursor", { nonEmpty: false });
++    return normalized;
++  }
+@@
+     description_category_attributes: { normalizeParams: normalizeDescriptionCategoryAttributesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b15" },
+     description_category_attribute_values: { normalizeParams: normalizeDescriptionCategoryAttributeValuesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b15_explicit_pagination" },
+     description_category_attribute_values_search: { normalizeParams: normalizeDescriptionCategoryAttributeValuesSearchParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b15" },
++    description_category_dependent_attributes: { normalizeParams: normalizeDescriptionCategoryDependentAttributesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_09_01_beta_read" },
++    description_category_dependent_attribute_values: { normalizeParams: normalizeDescriptionCategoryDependentAttributeValuesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_09_01_beta_read_explicit_cursor" },
