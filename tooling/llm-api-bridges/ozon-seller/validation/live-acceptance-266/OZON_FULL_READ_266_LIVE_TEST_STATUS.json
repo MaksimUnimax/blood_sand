@@ -6,7 +6,7 @@
   "delivery_mode": "sequential_batch_single_delivery",
   "source_branch": "repair/ozon-step7-245-read-final-candidate-v3-2026-08-31",
   "live_test_branch": "test/ozon-v0.1.19-full-read-266-live-2026-09-01",
-  "runs_completed": 4,
+  "runs_completed": 5,
   "existing_seller_regression_smoke": {
     "passed": 1,
     "total": 1,
@@ -18,12 +18,13 @@
   },
   "new_seller_reads": {
     "total": 26,
-    "attempted_live": 13,
-    "untested_live": 13,
     "safe_projection_total": 13,
-    "safe_projection_attempted_live": 13,
+    "safe_projection_live_dispatched": 13,
     "personal_data_gate_total": 13,
-    "personal_data_gate_attempted_live": 0,
+    "personal_data_gate_policy_denial_tested": 13,
+    "all_26_aliases_exercised_in_owner_browser": true,
+    "provider_live_dispatched": 13,
+    "provider_live_not_yet_dispatched": 13,
     "passed_live": 5,
     "provider_permission_blocked": 8,
     "needs_diagnostic": 0,
@@ -46,59 +47,45 @@
     ],
     "diagnostic_pending_operations": []
   },
+  "privacy_gate": {
+    "personal_data_off": {
+      "status": "PASS",
+      "operations_tested": 13,
+      "policy_blocked": 13,
+      "external_requests_executed": 0,
+      "physical_business_requests": 0,
+      "all_error_code": "OPERATION_DISABLED_BY_USER",
+      "all_error_stage": "personal_data_policy",
+      "all_entitlement_reason": "personal_data_setting_off",
+      "all_automatic_retry_false": true
+    },
+    "enable_without_replay": {
+      "status": "PENDING"
+    },
+    "authorized_explicit_resubmit": {
+      "status": "PENDING"
+    }
+  },
   "accounting": {
-    "logical_business_commands": 16,
+    "submitted_commands_total": 29,
+    "provider_planned_logical_business_commands": 16,
+    "policy_blocked_commands": 13,
     "physical_business_requests": 16,
     "capability_probes": 0
   },
   "last_run": {
-    "run_number": 4,
-    "status": "PROVIDER_PERMISSION_BLOCKED_4_OF_4_WITH_CORRECT_DISPATCH",
-    "result_count": 4,
-    "logical_business_result_count": 4,
-    "physical_business_request_count": 4,
-    "operations": [
-      {
-        "operation": "fbs_product_exemplar_validate",
-        "http_status": 403,
-        "external_request_executed": true,
-        "provider_category": "auth_or_permission",
-        "provider_code": "7",
-        "automatic_retry": false,
-        "command_transformed": true,
-        "outcome": "PROVIDER_PERMISSION_BLOCKED"
-      },
-      {
-        "operation": "posting_fbs_pickup_code_verify",
-        "http_status": 403,
-        "external_request_executed": true,
-        "provider_category": "auth_or_permission",
-        "provider_code": "7",
-        "automatic_retry": false,
-        "command_transformed": true,
-        "outcome": "PROVIDER_PERMISSION_BLOCKED"
-      },
-      {
-        "operation": "order_cancel_check",
-        "http_status": 403,
-        "external_request_executed": true,
-        "provider_category": "auth_or_permission",
-        "provider_code": "7",
-        "automatic_retry": false,
-        "command_transformed": false,
-        "outcome": "PROVIDER_PERMISSION_BLOCKED"
-      },
-      {
-        "operation": "posting_marks",
-        "http_status": 403,
-        "external_request_executed": true,
-        "provider_category": "auth_or_permission",
-        "provider_code": "7",
-        "automatic_retry": false,
-        "command_transformed": false,
-        "outcome": "PROVIDER_PERMISSION_BLOCKED"
-      }
-    ]
+    "run_number": 5,
+    "status": "PERSONAL_DATA_OFF_FAIL_CLOSED_PASS",
+    "result_count": 13,
+    "query_planner_status": "pending",
+    "logical_business_result_count": 0,
+    "physical_business_request_count": 0,
+    "operations_recognized": 13,
+    "operations_policy_blocked": 13,
+    "external_requests_executed": 0,
+    "automatic_retries": 0,
+    "outcome": "PRIVACY_DENIAL_13_LIVE_PASS"
   },
-  "next_action": "Run all 13 new personal-data-gated reads with Personal Data disabled; expect zero physical provider requests, then enable Personal Data without replay and explicitly resubmit."
+  "last_run_record": "tooling/llm-api-bridges/ozon-seller/validation/live-acceptance-266/runs/RUN_005_PERSONAL_DATA_OFF.md",
+  "next_action": "Enable Personal Data only and verify no automatic replay occurs. After that, explicitly resubmit all 13 gated reads in a new owner run."
 }
