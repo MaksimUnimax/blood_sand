@@ -1,0 +1,92 @@
+{
+  "schema": "OZON_LEGACY_CURRENTNESS_LIVE_CHECK_V1",
+  "schema_version": 1,
+  "date": "2026-09-01",
+  "scope": "OZON_API_ONLY",
+  "privacy": {
+    "provider_payload_persisted": false,
+    "business_identifiers_persisted": false,
+    "note": "Sanitized outcome only; product, warehouse, delivery-method, location and provider payload values are not persisted."
+  },
+  "batch": {
+    "delivery_mode": "sequential_batch_single_delivery",
+    "result_count": 3,
+    "capability_probe_performed": false,
+    "logical_business_result_count": 3,
+    "physical_business_request_count": 3,
+    "coalesced_group_count": 0
+  },
+  "results": [
+    {
+      "operation": "fbs_stock_by_warehouse",
+      "entitlement_key": "POST /v2/product/info/stocks-by-warehouse/fbs",
+      "external_request_executed": true,
+      "http_status": 200,
+      "automatic_retry": false,
+      "command_transformed": true,
+      "response_shape": {
+        "products_empty": true,
+        "has_next": false,
+        "cursor_empty": true
+      },
+      "classification": "CURRENT_REPLACEMENT_ENDPOINT_PASS",
+      "comparison": "The same explicit SKU scenario that returned provider HTTP 400 on legacy v1 returned HTTP 200 on documented v2 replacement."
+    },
+    {
+      "operation": "carriage_delivery_list_v2",
+      "entitlement_key": "POST /v2/carriage/delivery/list",
+      "external_request_executed": true,
+      "http_status": 200,
+      "automatic_retry": false,
+      "command_transformed": false,
+      "response_shape": {
+        "method_fixture_available": true,
+        "has_next": false,
+        "cursor_empty": true
+      },
+      "classification": "CURRENT_REPLACEMENT_ENDPOINT_PASS_REAL_FIXTURE_AVAILABLE",
+      "reason": "A real delivery-method fixture is available for one final legacy carriage check; the identifier itself is intentionally not persisted."
+    },
+    {
+      "operation": "fbs_carriage_available_list",
+      "entitlement_key": "POST /v1/posting/carriage-available/list",
+      "external_request_executed": true,
+      "http_status": 400,
+      "provider_error_code": "9",
+      "automatic_retry": false,
+      "exact_request_preserved": true,
+      "command_transformed": false,
+      "classification": "LEGACY_ENDPOINT_WITH_SYNTHETIC_FIXTURE_PROVIDER_400",
+      "reason": "This request used a synthetic diagnostic delivery_method_id and therefore is not the terminal currentness check. A real fixture was discovered in the preceding v2 response and must be used in one final explicit command."
+    }
+  ],
+  "currentness_decisions": {
+    "fbs_stock_by_warehouse_v1": {
+      "status": "RETIREMENT_STRONGLY_CONFIRMED",
+      "evidence": [
+        "Current Swagger carries a past shutdown date for v1.",
+        "Documented v2 replacement is present.",
+        "Legacy v1 returned provider HTTP 400 for the explicit SKU scenario.",
+        "v2 replacement returned HTTP 200 for the same explicit SKU scenario."
+      ],
+      "next_action": "Reclassify legacy v1 out of current user-visible read surface during the refresh patch."
+    },
+    "fbs_carriage_available_list": {
+      "status": "ONE_FINAL_REAL_FIXTURE_CHECK_REQUIRED",
+      "evidence": [
+        "Current Swagger carries a past shutdown date for v1.",
+        "Documented v2 replacement returned HTTP 200.",
+        "A real delivery-method fixture is now available."
+      ],
+      "next_action": "Submit one explicit legacy v1 request using the real delivery_method_id discovered in the live v2 response; do not persist that identifier."
+    }
+  },
+  "accounting_assertions": {
+    "three_logical_commands": true,
+    "three_physical_business_requests": true,
+    "no_capability_probe": true,
+    "no_hidden_retry_observed": true,
+    "no_hidden_pagination_observed": true
+  },
+  "decision": "RUN_PASS_REPLACEMENTS_CONFIRMED_ONE_FINAL_LEGACY_CARRIAGE_CHECK_REQUIRED"
+}
