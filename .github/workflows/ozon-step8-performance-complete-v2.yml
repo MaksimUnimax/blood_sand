@@ -7,6 +7,9 @@ on:
       - repair/ozon-step8-performance-48-formal-v2-2026-09-01
     paths:
       - .github/workflows/ozon-step8-performance-complete-v2.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v2/**
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_SELLER_STEP7_463_FORMAL_ACCEPTANCE_2026-08-31.md
+      - tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_EXACT_MATRIX_2026-08-29.json
   workflow_dispatch:
 
 permissions:
@@ -48,8 +51,8 @@ jobs:
           python-version: '3.12'
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - name: Build and verify the complete Step 8 surface
+          node-version: '24'
+      - name: Build and verify complete Step 8 surface
         shell: bash
         run: |
           set -euo pipefail
@@ -60,7 +63,6 @@ jobs:
           perf_candidate="$RUNNER_TEMP/performance-step6-candidate"
           rm -rf "$stage" "$full" "$artifact" "$perf_work" "$perf_candidate"
           mkdir -p "$stage" "$full" "$artifact"
-
           python "$PARTITION_BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$stage"
           python "$PERF_MATERIALIZER" --repo-root "$GITHUB_WORKSPACE" --work-root "$perf_work" --out "$perf_candidate"
           node "$MATRIX_REGRESSION" "$perf_work/step5-base" "$PERF_MATRIX"
@@ -122,7 +124,7 @@ jobs:
           python-version: '3.12'
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
       - uses: actions/download-artifact@v4
         with:
           name: ozon-performance-step8-Linux-v2
@@ -135,14 +137,13 @@ jobs:
         with:
           name: ozon-performance-step8-cross-platform-v2
           path: ${{ runner.temp }}/cross
-      - name: Freshly reproduce, freeze, accept and create Step 9 branch
+      - name: Reproduce, freeze, accept and create Step 9 branch
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           canonical_actual="$(git ls-remote origin "refs/heads/$CANONICAL_BRANCH" | awk '{print $1}')"
           test "$canonical_actual" = "$CANONICAL_SHA"
-
           stage="$RUNNER_TEMP/step8-v2-fresh-partition"
           full="$RUNNER_TEMP/step8-v2-fresh-full"
           perf_work="$RUNNER_TEMP/performance-step6-work"
@@ -154,7 +155,6 @@ jobs:
           node "$MATRIX_REGRESSION" "$perf_work/step5-base" "$PERF_MATRIX"
           node "$READ_REGRESSION" "$perf_candidate" "$PERF_MATRIX" "$perf_work/step5-base"
           python "$V2_GATE" --repo-root "$GITHUB_WORKSPACE" --out "$full" --source-commit "$GITHUB_SHA"
-
           python "$FINALIZER" finalize \
             --repo-root "$GITHUB_WORKSPACE" \
             --fresh-stage "$stage" \
@@ -167,7 +167,6 @@ jobs:
             --canonical-branch "$CANONICAL_BRANCH" \
             --canonical-sha "$CANONICAL_SHA" \
             --step9-branch "$STEP9_BRANCH"
-
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add \
@@ -178,19 +177,17 @@ jobs:
           git commit -m 'accept(ozon): formally close Performance Step8 48 of 48 v2'
           acceptance_commit="$(git rev-parse HEAD)"
           git push origin HEAD:"$BRANCH"
-
           if git ls-remote --exit-code --heads origin "$STEP9_BRANCH" >/dev/null 2>&1; then
             existing="$(git ls-remote origin "refs/heads/$STEP9_BRANCH" | awk '{print $1}')"
             test "$existing" = "$acceptance_commit"
           else
             git push origin "$acceptance_commit:refs/heads/$STEP9_BRANCH"
           fi
-
           test "$(git ls-remote origin "refs/heads/$BRANCH" | awk '{print $1}')" = "$acceptance_commit"
           test "$(git ls-remote origin "refs/heads/$STEP9_BRANCH" | awk '{print $1}')" = "$acceptance_commit"
           test "$(git ls-remote origin "refs/heads/$CANONICAL_BRANCH" | awk '{print $1}')" = "$CANONICAL_SHA"
-          echo "OZON_PERFORMANCE_STEP8_FORMALLY_ACCEPTED"
-          echo "OZON_STEP9_BRANCH_CREATED_FROM_STEP8_ACCEPTANCE"
+          echo OZON_PERFORMANCE_STEP8_FORMALLY_ACCEPTED
+          echo OZON_STEP9_BRANCH_CREATED_FROM_STEP8_ACCEPTANCE
       - uses: actions/upload-artifact@v4
         with:
           name: ozon-performance-step8-formal-acceptance-v2
