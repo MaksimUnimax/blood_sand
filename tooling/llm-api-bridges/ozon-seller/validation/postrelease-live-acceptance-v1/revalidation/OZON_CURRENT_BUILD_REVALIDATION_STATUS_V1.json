@@ -11,13 +11,14 @@
     "current_read_surface": {"seller":245,"performance":21,"total":266}
   },
   "status": "IN_PROGRESS",
-  "runs_completed": 5,
+  "runs_completed": 6,
   "runs": [
     {"run_number":1,"name":"Seller baseline stocks_current","status":"PASS","logical_business_result_count":1,"physical_business_request_count":1,"http_200":1,"operations":["stocks_current"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_001_STOCKS_CURRENT_2026-09-01.json"},
     {"run_number":2,"name":"Representative Seller API batch","status":"PASS","logical_business_result_count":6,"physical_business_request_count":6,"http_200":6,"operations":["seller_product_info_list","analytics_data","assembly_fbs_posting_list","finance_transaction_list_v3","returns_list","seller_rating_summary"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_002_REPRESENTATIVE_SELLER_BATCH_2026-09-01.json"},
     {"run_number":3,"name":"Representative Performance API and CSV batch","status":"PASS_WITH_DELIVERY_SIZE_OBSERVATION","logical_business_result_count":6,"physical_business_request_count":6,"http_200":6,"operations":["performance_campaigns","performance_bid_limits","performance_search_promo_products","performance_expense","performance_expense_csv","performance_statistics_list_api"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_003_PERFORMANCE_BATCH_2026-09-01.json"},
     {"run_number":4,"name":"Personal Data OFF and return-giveout discovery","status":"PARTIAL_PASS_TEST_INPUT_CORRECTION_REQUIRED","logical_business_result_count":2,"physical_business_request_count":2,"http_200":1,"http_403":1,"policy_blocked":2,"local_guidance_rejections":1,"operations":["return_giveout_is_enabled","return_giveout_list","review_list","return_giveout_get_pdf","return_giveout_get_png"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_004_PERSONAL_DATA_OFF_AND_GIVEOUT_DISCOVERY_2026-09-01.json"},
-    {"run_number":5,"name":"Corrected review privacy gate and FBS act discovery","status":"PARTIAL_PASS_FBS_ACT_FILTER_RETRY_REQUIRED","logical_business_result_count":1,"physical_business_request_count":1,"http_400":1,"policy_blocked":1,"operations":["review_list","fbs_act_list"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_005_REVIEW_GATE_AND_FBS_ACT_DISCOVERY_2026-09-01.json"}
+    {"run_number":5,"name":"Corrected review privacy gate and FBS act discovery","status":"PARTIAL_PASS_FBS_ACT_FILTER_RETRY_REQUIRED","logical_business_result_count":1,"physical_business_request_count":1,"http_400":1,"policy_blocked":1,"operations":["review_list","fbs_act_list"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_005_REVIEW_GATE_AND_FBS_ACT_DISCOVERY_2026-09-01.json"},
+    {"run_number":6,"name":"Filtered FBS act discovery","status":"PROVIDER_400_NO_RETRY_FIXTURE_DISCOVERY_UNRESOLVED","logical_business_result_count":1,"physical_business_request_count":1,"http_400":1,"operations":["fbs_act_list"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_006_FBS_ACT_DISCOVERY_FILTERED_2026-09-01.json"}
   ],
   "verified": {
     "seller_credentials_and_transport": true,
@@ -48,16 +49,19 @@
     "return_giveout_png_personal_data_off_blocked_before_provider": true,
     "return_giveout_fixture_available": false,
     "provider_error_no_retry_sample": true,
+    "fbs_act_list_provider_reached": true,
+    "fbs_act_list_no_retry": true,
+    "fbs_act_binary_fixture_available": false,
     "hidden_pagination_not_observed": true,
     "automatic_retry_not_observed": true,
     "credentials_not_exposed": true
   },
   "accounting": {
-    "submitted_commands": 20,
-    "logical_business_results": 16,
-    "physical_business_requests": 16,
+    "submitted_commands": 21,
+    "logical_business_results": 17,
+    "physical_business_requests": 17,
     "http_200": 14,
-    "provider_http_400": 1,
+    "provider_http_400": 2,
     "provider_http_403": 1,
     "policy_blocked_before_provider": 3,
     "local_guidance_rejections": 1,
@@ -71,11 +75,11 @@
   },
   "remaining_required_groups": [
     "Personal Data ON explicit review_list execution",
-    "binary transport: PDF and PNG using a real FBS act if discovery succeeds",
+    "binary transport PDF/PNG only if a real eligible fixture can be obtained; current return-giveout and FBS-act discovery have not yielded one",
     "final request accounting"
   ],
   "next_run": {
-    "run_number": 6,
-    "goal": "Keep Personal Data OFF and repeat fbs_act_list with an explicit recent date_from/date_to filter to obtain a real FBS act id."
+    "run_number": 7,
+    "goal": "Enable Personal Data and explicitly run review_list. In parallel, only continue PDF/PNG if exact Swagger/source semantics identify a valid obtainable fixture; do not repeat guessed fbs_act_list requests."
   }
 }
