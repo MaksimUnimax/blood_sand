@@ -1,0 +1,84 @@
+{
+  "schema": "OZON_CURRENT_BUILD_REVALIDATION_RUN_V1",
+  "schema_version": 1,
+  "run_number": 5,
+  "date": "2026-09-01",
+  "scope": "OZON_API_ONLY",
+  "build": {
+    "bridge": "ozon-llm-api-bridge",
+    "version": "0.1.19",
+    "installable_zip_sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574"
+  },
+  "status": "PARTIAL_PASS_FBS_ACT_FILTER_RETRY_REQUIRED",
+  "decision": "REVIEW_LIST_PERSONAL_DATA_OFF_GATE_PASS_FBS_ACT_DISCOVERY_PROVIDER_400_NO_RETRY",
+  "batch": {
+    "delivery_mode": "sequential_batch_single_delivery",
+    "result_count": 2,
+    "capability_probe": {
+      "performed": false,
+      "status": "not_needed",
+      "subscription_type": "UNKNOWN",
+      "http_status": 0,
+      "error_code": null
+    },
+    "query_planner": {
+      "status": "complete",
+      "coalesced_group_count": 0,
+      "coalesced_logical_count": 0,
+      "logical_business_result_count": 1,
+      "physical_business_request_count": 1
+    }
+  },
+  "results": [
+    {
+      "operation": "review_list",
+      "request_id": "policy-fe7d076f-940e-4416-883c-d5a8a132cf3f",
+      "command_fingerprint": "0be2ea18",
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "external_request_executed": false,
+      "http_status": 0,
+      "policy_status": "POLICY_BLOCKED",
+      "policy_reason": "personal_data_setting_off",
+      "error_code": "OPERATION_DISABLED_BY_USER",
+      "stage": "personal_data_policy",
+      "automatic_retry": false
+    },
+    {
+      "operation": "fbs_act_list",
+      "request_id": "e4b03065-bca2-4b21-817f-48817b7b5712",
+      "command_fingerprint": "937e3a3f",
+      "physical_command_fingerprint": "937e3a3f",
+      "command_transformed": false,
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "entitlement_key": "POST /v2/posting/fbs/act/list",
+      "external_request_executed": true,
+      "http_status": 400,
+      "provider_error_category": "provider_request",
+      "provider_error_code": "3",
+      "automatic_retry": false,
+      "test_interpretation": "PROVIDER_REACHED_NO_BRIDGE_RETRY; DISCOVERY_NOT_COMPLETE"
+    }
+  ],
+  "assertions": {
+    "review_list_personal_data_off_blocked_before_provider": true,
+    "review_list_corrected_limit_accepted_by_local_contract": true,
+    "review_list_zero_physical_requests": true,
+    "fbs_act_list_reached_provider": true,
+    "fbs_act_list_one_physical_request": true,
+    "fbs_act_list_http_400": true,
+    "fbs_act_list_automatic_retry_false": true,
+    "capability_probe_not_executed": true
+  },
+  "diagnosis": {
+    "fbs_act_list_contract": {
+      "allowed_top_level_fields": ["filter", "limit"],
+      "limit_maximum": 50,
+      "filter_fields": ["date_from", "date_to", "integration_type", "status"],
+      "filter_date_from_and_date_to_required_when_filter_present": true
+    },
+    "next_test_adjustment": "Repeat fbs_act_list with an explicit date_from/date_to filter. The previous limit-only request was locally valid but the provider returned HTTP 400."
+  },
+  "next_action": "Keep Personal Data OFF and run fbs_act_list with an explicit recent date filter to obtain a real act id. Then enable Personal Data and explicitly test review_list plus PDF/PNG binary reads using a real act id if available."
+}
