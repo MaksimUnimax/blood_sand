@@ -18,12 +18,13 @@ A live operation is counted `LIVE_PASS` when the bridge recognizes the operation
 - Existing Seller regression smoke: `1/1 PASS` (`stocks_current`)
 - Existing Seller helper reads used for live-data discovery: `1 PASS` (`assembly_fbs_posting_list`)
 - New Seller reads added by this build: `5/26 LIVE_PASS`
-- New Seller reads attempted against live Ozon: `9/26`
-- New Seller reads not yet attempted: `17/26`
-- Provider-permission blocked after correct live dispatch: `4`
+- New Seller reads attempted against live Ozon: `13/26`
+- New Seller reads not yet attempted: `13/26`
+- All `13/13` new `safe_projection` operations have now been live-dispatched
+- Provider-permission blocked after correct live dispatch: `8`
 - Needs diagnostic after latest run: `0`
-- Physical business requests observed: `12`
-- Logical business commands observed: `12`
+- Physical business requests observed: `16`
+- Logical business commands observed: `16`
 - Automatic capability probes observed: `0`
 - Batch transport: `PASS`
 
@@ -37,10 +38,16 @@ New operations `LIVE_PASS` so far:
 
 Provider permission blocked after correct live dispatch:
 
-- `receipts_seller_list` — HTTP `403`, provider `auth_or_permission`, code `7`
-- `posting_digital_list_v2` — corrected filtered request reached provider and returned HTTP `403`, provider `auth_or_permission`, code `7`
-- `delivery_map` — HTTP `403`, provider `auth_or_permission`, code `7`
-- `delivery_point_list` — HTTP `403`, provider `auth_or_permission`, code `7`
+- `receipts_seller_list`
+- `posting_digital_list_v2`
+- `delivery_map`
+- `delivery_point_list`
+- `fbs_product_exemplar_validate`
+- `posting_fbs_pickup_code_verify`
+- `order_cancel_check`
+- `posting_marks`
+
+All eight were recognized, dispatched to their expected Seller API endpoints, received HTTP `403` / provider `auth_or_permission` code `7`, and were not retried automatically.
 
 ## Run 001 — baseline + notifications
 
@@ -245,7 +252,7 @@ Single owner run containing 3 commands.
 - command transformed: `false`
 - provider returned `3` real FBS postings for the requested cutoff interval
 - raw posting numbers, SKUs, offer names and product names are intentionally not copied into this repository ledger
-- outcome: existing Seller helper `PASS`; live identifiers are available in the owner-visible result for subsequent new-read tests
+- outcome: existing Seller helper `PASS`; live identifiers were used only in the owner-visible next test
 
 ### Run 003 invariants
 
@@ -256,9 +263,86 @@ Single owner run containing 3 commands.
 - `posting_global_etgb` business response: `LIVE_PASS`
 - helper returned real live FBS records for downstream parameterized testing: `PASS`
 
+## Run 004 — remaining safe-projection posting-dependent reads
+
+**Status: PROVIDER_PERMISSION_BLOCKED_4_OF_4_WITH_CORRECT_DISPATCH**
+
+Single owner run containing 4 new Seller read commands using live posting-derived identifiers where applicable.
+
+### Batch envelope
+
+- `result_count`: `4`
+- `query_planner.status`: `complete`
+- `logical_business_result_count`: `4`
+- `physical_business_request_count`: `4`
+- capability probe: `not_needed`, `performed=false`
+- four explicit commands -> exactly four physical Ozon requests: `PASS`
+
+### Result 1 — `fbs_product_exemplar_validate`
+
+- expected endpoint: `POST /v5/fbs/posting/product/exemplar/validate`
+- external request executed: `true`
+- HTTP: `403`
+- exact request preserved by entitlement layer: `true`
+- execution reports `command_transformed=true`; physical fingerprint differs from logical fingerprint
+- provider category: `auth_or_permission`
+- provider code: `7`
+- automatic retry: `false`
+- outcome: `PROVIDER_PERMISSION_BLOCKED`
+- note: correct live endpoint dispatch is proven; command normalization/transformation is retained as an observation for final review because the provider denied business execution before a success response was possible
+
+### Result 2 — `posting_fbs_pickup_code_verify`
+
+- expected endpoint: `POST /v1/posting/fbs/pick-up-code/verify`
+- external request executed: `true`
+- HTTP: `403`
+- exact request preserved by entitlement layer: `true`
+- execution reports `command_transformed=true`; physical fingerprint differs from logical fingerprint
+- provider category: `auth_or_permission`
+- provider code: `7`
+- automatic retry: `false`
+- outcome: `PROVIDER_PERMISSION_BLOCKED`
+- note: correct endpoint reached; the account/key is not permitted to exercise this operation in the tested context
+
+### Result 3 — `order_cancel_check`
+
+- expected endpoint: `POST /v1/order/cancel/check`
+- external request executed: `true`
+- HTTP: `403`
+- exact request preserved: `true`
+- command transformed: `false`
+- provider category: `auth_or_permission`
+- provider code: `7`
+- automatic retry: `false`
+- outcome: `PROVIDER_PERMISSION_BLOCKED`
+
+### Result 4 — `posting_marks`
+
+- expected endpoint: `POST /v1/posting/marks`
+- external request executed: `true`
+- HTTP: `403`
+- exact request preserved: `true`
+- command transformed: `false`
+- provider category: `auth_or_permission`
+- provider code: `7`
+- automatic retry: `false`
+- outcome: `PROVIDER_PERMISSION_BLOCKED`
+
+### Run 004 invariants
+
+- all four new aliases recognized: `PASS`
+- all four intended Seller endpoints reached: `PASS`
+- exactly one physical request per explicit command: `PASS`
+- no capability probes: `PASS`
+- no automatic retry on any 403: `PASS`
+- successful business responses: `0/4`
+- permission-classified provider blocks: `4/4`
+- all `13/13` new safe-projection operations have now been live-dispatched across Runs 001-004
+
 ## Next
 
-1. Use the live FBS posting identifiers returned by Run 003 to test new posting-dependent reads without fake IDs.
-2. Keep `posting_digital_list_v2`, `receipts_seller_list`, `delivery_map`, and `delivery_point_list` classified as `PROVIDER_PERMISSION_BLOCKED` for this account unless credentials/entitlements change.
-3. Continue grouped new-read coverage and maintain exactly one physical provider request per explicit command.
-4. Every subsequent run must be appended here before issuing the next live batch.
+1. Test the `13` new `operator_personal_data_gate` operations with Personal Data disabled in one grouped run; expected physical provider requests: `0`.
+2. Enable Personal Data and verify enabling alone does not replay any blocked command.
+3. Explicitly resubmit the same 13 reads in one grouped run; each explicit command may make at most one provider request.
+4. Provider permission blocks already observed on safe-projection operations remain accepted as live-routing evidence but not as successful business-semantic `LIVE_PASS`.
+5. Every subsequent run must be appended here before issuing the next live batch.
