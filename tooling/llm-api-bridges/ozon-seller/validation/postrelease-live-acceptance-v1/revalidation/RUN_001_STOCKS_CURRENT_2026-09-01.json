@@ -11,103 +11,51 @@
   },
   "status": "PASS",
   "decision": "STOCKS_CURRENT_LIVE_SMOKE_PASS",
+  "privacy": {
+    "provider_payload_persisted": false,
+    "note": "Sanitized evidence only; customer/product/business response payload values are intentionally omitted."
+  },
   "batch": {
     "delivery_mode": "sequential_batch_single_delivery",
     "result_count": 1,
-    "capability_probe": {
-      "performed": false,
-      "status": "not_needed",
-      "subscription_type": "UNKNOWN",
-      "http_status": 0,
-      "error_code": null
-    },
-    "query_planner": {
-      "status": "complete",
-      "coalesced_group_count": 0,
-      "coalesced_logical_count": 0,
-      "logical_business_result_count": 1,
-      "physical_business_request_count": 1
-    }
+    "capability_probe_performed": false,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
   },
   "result": {
-    "request_id": "c9bef87c-ad67-41a6-99f2-d95842961d68",
     "operation": "stocks_current",
-    "command": {
-      "operation": "stocks_current",
-      "fingerprint": "1fe1af8c"
-    },
     "request_meta": {
-      "provider": "ozon",
       "host_alias": "seller_api",
       "http_method": "POST",
       "path_alias": "stocks_current",
       "external_request_executed": true,
-      "capability_probe_executed": false,
-      "capability_probe_http_status": 0
+      "capability_probe_executed": false
     },
     "http_status": 200,
     "elapsed_ms": 330,
-    "pagination": null,
-    "rate_limit": null,
     "planning": {
-      "capability": {
-        "is_premium": null,
-        "probe_error_code": null,
-        "probe_http_status": 0,
-        "probe_performed": false,
-        "status": "not_needed",
-        "subscription_type": "UNKNOWN"
-      },
-      "entitlement": {
-        "capability_required": false,
-        "entitlement_key": "POST /v4/product/info/stocks",
-        "exact_request_preserved": true,
-        "partial": false,
-        "reason": "all_accounts",
-        "rule_source": "reviewed-openapi-463-2026-08-19",
-        "status": "SUPPORTED_AND_ENTITLED"
-      },
-      "execution": {
-        "logical_command_fingerprint": "1fe1af8c",
-        "physical_command_fingerprint": "1fe1af8c",
-        "command_transformed": false
-      }
+      "entitlement_key": "POST /v4/product/info/stocks",
+      "entitlement_status": "SUPPORTED_AND_ENTITLED",
+      "exact_request_preserved": true,
+      "command_transformed": false
     },
-    "provider_result": {
-      "items": [
-        {
-          "product_id": 1082848375,
-          "offer_id": "Чётки - Талисман в машину \"RSOTM\".",
-          "stocks": [
-            {
-              "type": "fbs",
-              "present": 0,
-              "reserved": 0,
-              "sku": 1602711278,
-              "shipment_type": "SHIPMENT_TYPE_GENERAL",
-              "warehouse_ids": []
-            }
-          ]
-        }
-      ],
-      "total": 1,
-      "cursor": "WzEwODI4NDgzNzUsMTA4Mjg0ODM3NV0="
+    "response_shape": {
+      "items_present": true,
+      "item_count": 1,
+      "cursor_present": true
     }
   },
   "assertions": {
     "operation_recognized": true,
     "correct_provider": true,
     "correct_method": true,
-    "correct_entitlement_key": true,
     "external_request_executed": true,
     "http_200": true,
     "one_logical_command": true,
     "one_physical_business_request": true,
     "command_not_transformed": true,
     "capability_probe_not_executed": true,
-    "response_contains_requested_product": true,
     "hidden_pagination_not_executed": true,
     "automatic_retry_not_observed": true
-  },
-  "next_action": "Continue Ozon API-only revalidation with a combined representative Seller batch, Performance authentication/read smoke, Personal Data policy gate, and binary transport samples."
+  }
 }
