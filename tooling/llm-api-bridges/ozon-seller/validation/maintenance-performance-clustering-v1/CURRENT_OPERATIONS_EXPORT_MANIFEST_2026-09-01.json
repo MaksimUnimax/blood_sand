@@ -1,0 +1,32 @@
+{
+  "schema": "OZON_CURRENT_OPERATIONS_EXPORT_MANIFEST_V1",
+  "schema_version": 1,
+  "date": "2026-09-01",
+  "source_installable": {
+    "file": "OZON_BRIDGE_v0.1.19_CURRENT_PRODUCTION_2026-09-01.zip",
+    "sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574"
+  },
+  "export": {
+    "file": "OZON_CURRENT_OPERATIONS_EXPORT_2026-09-01.json",
+    "sha256": "1e278312cc1878e4edf9013f9ee9f38e1801c8ae3dadd13d0cbebace914e985f",
+    "bytes": 297739
+  },
+  "counts": {
+    "command_aliases_total": 270,
+    "seller_command_aliases": 245,
+    "performance_command_aliases": 25,
+    "accepted_authority_endpoint_reads_total": 266,
+    "seller_authority_endpoint_reads": 245,
+    "performance_authority_endpoint_reads": 21,
+    "performance_documented_json_variant_aliases": 4,
+    "top_level_clusters": 13,
+    "sections": 50
+  },
+  "registry_contract_validation": {
+    "ok": true,
+    "errors": []
+  },
+  "latest_26_seller_aliases_present": 26,
+  "latest_26_seller_aliases_missing": 0,
+  "advertising_patch_gate": "BLOCKED_PENDING_OWNER_COMMAND_INVENTORY_REVIEW"
+}
