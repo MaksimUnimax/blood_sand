@@ -1,7 +1,7 @@
 # Ozon Bridge — Performance clustering, command inventory and bounded-response plan
 
 Date: 2026-09-01
-Status: IN_PROGRESS
+Status: `WAITING_FOR_OWNER_COMMAND_INVENTORY_REVIEW`
 Scope: Ozon API behavior and command guidance only. UI excluded.
 
 ## Owner-ordered sequence — do not reorder
@@ -23,7 +23,7 @@ Scope: Ozon API behavior and command guidance only. UI excluded.
    - Bridge executes that exact command and returns the Ozon result;
    - no hidden pagination, fan-out, retry, or autonomous follow-up provider calls.
 7. Produce/export one JSON inventory containing all current operations and the fields needed for manual coverage review, including at minimum alias, provider, method, path, effect, currentness, safety/privacy, cluster, section, guidance visibility, workflow role, purpose and template.
-8. Give the owner a direct command to obtain/download that JSON and manually verify that all current commands are present.
+8. Give the owner a direct way to obtain/download that JSON and manually verify that all current commands are present.
 9. ONLY AFTER the command JSON is reviewed/accepted, implement the advertising sorting/bounded-response patch.
 10. Persist findings, proposed clustering and later patch evidence in GitHub so the task survives chat/network interruption.
 
@@ -45,8 +45,37 @@ Scope: Ozon API behavior and command guidance only. UI excluded.
 - `CURRENT_OPERATION_CLUSTER_COVERAGE`: exact current-operation coverage, including latest Seller + Performance additions, with missing/orphaned/hidden mismatches enumerated.
 - `PROPOSED_CLUSTERING_V2`: proposed cluster and section structure plus migration map from existing cluster IDs.
 - `CURRENT_OPERATIONS_EXPORT.json`: machine-readable complete current command inventory for owner review.
-- Owner download/export command for that JSON.
+- Owner download/export path for that JSON.
 - Owner confirmation that inventory is complete.
+
+## Progress
+
+### Completed before production patch
+
+- [x] Current clustering/guidance implementation inspected from production package.
+- [x] Purpose and AI -> guidance -> AI exact command -> provider flow documented.
+- [x] Full production registry counted and contract-aligned: `270/270`, validation errors `0`.
+- [x] Latest 26 Seller aliases checked: present `26`, missing `0`.
+- [x] Performance alias accounting resolved: `25` command aliases represent `21` authority reads plus `4` documented JSON variants.
+- [x] Current cluster distribution audited: `13` top-level clusters, `50` sections.
+- [x] Stale startup guidance found: only 6 clusters advertised although registry has 13; startup still instructs V1 although section-aware V2 exists.
+- [x] Advertising under-clustering identified: 25 aliases are currently split into only 2 sections.
+- [x] `PROPOSED_CLUSTERING_V2_2026-09-01.md` created.
+- [x] Reproducible `export_current_operations.js` created.
+- [x] Full current operations export generated from the accepted production installable.
+- [x] Export manifest recorded: `270` aliases, SHA-256 `1e278312cc1878e4edf9013f9ee9f38e1801c8ae3dadd13d0cbebace914e985f`.
+
+### Current gate
+
+- [ ] Owner manually reviews the current operations JSON and confirms whether all expected commands are present.
+
+### Explicitly blocked until owner review
+
+- [ ] Production clustering refactor.
+- [ ] Advertising post-result refinement choices.
+- [ ] Generic `performance_campaigns` bounded default behavior.
+- [ ] `latest/newest` local-sort result-view behavior.
+- [ ] Targeted advertising regression/live retest.
 
 ## Advertising patch — blocked until owner inventory review
 
@@ -60,6 +89,7 @@ Planned behavior after unblock:
 - Concrete campaigns: `campaignIds`.
 - Active campaigns: `state`.
 - Underspecified advertising intent: Bridge guidance returns available exact command alternatives first; AI sends a second explicit command; only then is a provider request executed.
+- Broad valid advertising result: Bridge may return bounded data plus `refinement_choices`, but must not auto-execute any refinement.
 
 ## Current live finding motivating the work
 
