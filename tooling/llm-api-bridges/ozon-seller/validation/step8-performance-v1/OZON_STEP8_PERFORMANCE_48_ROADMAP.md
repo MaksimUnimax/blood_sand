@@ -1,6 +1,6 @@
 # Ozon Performance Step 8 — terminal acceptance roadmap
 
-**Status:** `IN_PROGRESS`
+**Status:** `ACCEPTED`
 
 ## Starting point
 
@@ -97,3 +97,18 @@ OZON_PERFORMANCE_STEP8_FORMALLY_ACCEPTED
 - Existing accepted current reads: `21`.
 - Remaining queue: `27`.
 - Repository cross-platform baseline CI: pending.
+
+## Formal completion — v2
+
+- Source commit: `fb8e984791150605d4c1b84534c58a7a076e0734`.
+- Workflow run: `33478203985`.
+- Performance operations terminal: `48 / 48`.
+- Current Performance reads preserved: `21`.
+- Remaining source-terminal decisions: `27`.
+- New runtime implementation required: `0`.
+- Unknown / pending / unresolved: `0 / 0 / 0`.
+- Linux/Windows byte identity: `PASS`.
+- Fresh repository freeze verification: `PASS`.
+- Independent reverification: `PASS`.
+- `OZON_PERFORMANCE_STEP8_FORMALLY_ACCEPTED`.
+- Next stage: `repair/ozon-step9-full-integration-266-reads-2026-09-01`.

@@ -1,0 +1,35 @@
+{
+  "files": [
+    {
+      "bytes": 1062,
+      "path": "OZON_PERFORMANCE_STEP8_ACCEPTANCE_PROOF.json",
+      "sha256": "0d3e51d1fc0d767f0824336a5cc98979b6cdb6127a913d42b77e782cea3e38f8"
+    },
+    {
+      "bytes": 13583,
+      "path": "OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX.csv",
+      "sha256": "84cd522d5a62a6ce7f8a8d560c33fe7eef9b876e3cc4e8499ca69a2e2bfb9908"
+    },
+    {
+      "bytes": 41904,
+      "path": "OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX.json",
+      "sha256": "5b51c98eb4716706beab0027865e46eacba52243763811ad6e788044ba9e33ab"
+    },
+    {
+      "bytes": 432,
+      "path": "OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX_SUMMARY.md",
+      "sha256": "c17625fef12d768dc6acde3759b75031f8b3b84f61645a8ab6034e5750b700c5"
+    }
+  ],
+  "package_members": [
+    "OZON_PERFORMANCE_STEP8_ACCEPTANCE_PROOF.json",
+    "OZON_PERFORMANCE_STEP8_PACKAGE_MANIFEST.json",
+    "OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX.csv",
+    "OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX.json",
+    "OZON_PERFORMANCE_STEP8_TERMINAL_MATRIX_SUMMARY.md"
+  ],
+  "schema": "OZON_PERFORMANCE_STEP8_PACKAGE_MANIFEST_V2",
+  "schema_version": 2,
+  "source_commit": "fb8e984791150605d4c1b84534c58a7a076e0734",
+  "status": "PASS"
+}

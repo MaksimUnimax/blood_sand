@@ -1,0 +1,31 @@
+{
+  "combined_current_read_surface": 266,
+  "current_reads_preserved": 21,
+  "independent_reverification": {
+    "performed_outside_github_actions": true,
+    "sha256": "4da349f8a4f7f67d312d07515edd7727f4cc3703efbba39e40cad3b8d3ed21b0",
+    "status": "PASS"
+  },
+  "markers": [
+    "PERFORMANCE_STEP8_EXACT_AUTHORITY_48_PASS",
+    "PERFORMANCE_STEP8_EXACT_21_27_PARTITION_PASS",
+    "PERFORMANCE_STEP8_EXISTING_MATRIX_REGRESSION_REQUIRED",
+    "PERFORMANCE_STEP8_EXISTING_READ_COVERAGE_REGRESSION_REQUIRED",
+    "OZON_PERFORMANCE_STEP8_V2_GATE_PASS"
+  ],
+  "new_runtime_implementation_count": 0,
+  "pending": 0,
+  "performance_operations_terminal": 48,
+  "regression_requirements": [
+    "OZON_PERFORMANCE_STEP6_MATRIX_REGRESSION_PASS",
+    "OZON_PERFORMANCE_STEP6_READ_COVERAGE_REGRESSION_PASS"
+  ],
+  "remaining_terminal_decisions": 27,
+  "schema": "OZON_PERFORMANCE_STEP8_ACCEPTANCE_PROOF_V2",
+  "schema_version": 2,
+  "seller_reads": 245,
+  "source_commit": "fb8e984791150605d4c1b84534c58a7a076e0734",
+  "status": "PASS",
+  "unknown": 0,
+  "unresolved": 0
+}

@@ -1,0 +1,83 @@
+{
+  "canonical": {
+    "branch": "repair/ozon-v2-b1-stocks-warehouse-2026-08-29",
+    "commit": "8ee16f38bf2ec60e4b2e42192c2f41d87021b214",
+    "modified": false
+  },
+  "combined_current_read_surface": {
+    "performance_reads": 21,
+    "seller_reads": 245,
+    "total_reads": 266
+  },
+  "cross_platform": {
+    "byte_identical": true,
+    "file_count": 17,
+    "proof_sha256": "1de173e999158cc1cdb605b36915777b1e670e815943367e22f0a106230241c4",
+    "status": "PASS"
+  },
+  "decision": {
+    "canonical_promotion_performed": false,
+    "next_branch": "repair/ozon-step9-full-integration-266-reads-2026-09-01",
+    "next_stage": "STEP9_FULL_INTEGRATION_266_CURRENT_READS",
+    "step8_formally_closed": true
+  },
+  "fresh_reproduction": {
+    "full_gate": {
+      "matrix_sha256": "5b51c98eb4716706beab0027865e46eacba52243763811ad6e788044ba9e33ab",
+      "package_bytes": 59019,
+      "package_sha256": "81666ba3c12abca1423c132964a4de85e92515967dff29882bfcfcba409ea4c4"
+    },
+    "matches_linux_artifact": true,
+    "partition": {
+      "current_reads": 21,
+      "new_runtime_implementation_count": 0,
+      "pending": 0,
+      "performance_operations_total": 48,
+      "remaining_terminal_decisions": 27,
+      "unknown": 0,
+      "unresolved": 0
+    }
+  },
+  "independent_reverification": {
+    "path": "tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/evidence/OZON_PERFORMANCE_STEP8_INDEPENDENT_REVERIFICATION_V1.json",
+    "performed_outside_github_actions": true,
+    "sha256": "4da349f8a4f7f67d312d07515edd7727f4cc3703efbba39e40cad3b8d3ed21b0",
+    "status": "PASS"
+  },
+  "markers": [
+    "PERFORMANCE_STEP8_48_EXHAUSTIVE_TERMINAL_MATRIX_PASS",
+    "PERFORMANCE_STEP8_CURRENT_READS_21_PRESERVED_PASS",
+    "PERFORMANCE_STEP8_REMAINING_TERMINAL_DECISIONS_27_PASS",
+    "PERFORMANCE_STEP8_NEW_RUNTIME_IMPLEMENTATION_0_PASS",
+    "PERFORMANCE_STEP8_UNKNOWN_0_PASS",
+    "PERFORMANCE_STEP8_PENDING_0_PASS",
+    "PERFORMANCE_STEP8_UNRESOLVED_0_PASS",
+    "PERFORMANCE_STEP8_EXISTING_MATRIX_REGRESSION_PASS",
+    "PERFORMANCE_STEP8_EXISTING_READ_COVERAGE_REGRESSION_PASS",
+    "PERFORMANCE_STEP8_LINUX_WINDOWS_BYTE_IDENTICAL_PASS",
+    "PERFORMANCE_STEP8_FRESH_REPOSITORY_FREEZE_PASS",
+    "OZON_PERFORMANCE_STEP8_INDEPENDENT_REVERIFICATION_PASS",
+    "OZON_PERFORMANCE_STEP8_FORMALLY_ACCEPTED"
+  ],
+  "schema": "OZON_PERFORMANCE_STEP8_FORMAL_ACCEPTANCE_V2",
+  "schema_version": 2,
+  "scope": {
+    "current_production_reads": 21,
+    "new_runtime_implementation_count": 0,
+    "pending": 0,
+    "performance_operations_terminal": 48,
+    "performance_operations_total": 48,
+    "source_terminal_non_current_operations": 27,
+    "unknown": 0,
+    "unresolved": 0
+  },
+  "seller_step7_dependency": {
+    "candidate_tree_sha256": "f605c2645e3a7a429facaab1bbb4b1252c7ee39d601b50d0480c4006b689d974",
+    "formal_acceptance_marker": "OZON_SELLER_STEP7_FORMALLY_ACCEPTED",
+    "package_sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574",
+    "production_reads": 245
+  },
+  "source_commit": "fb8e984791150605d4c1b84534c58a7a076e0734",
+  "status": "ACCEPTED",
+  "workflow_run_id": 33478203985
+}
