@@ -443,6 +443,26 @@
     return normalized;
   }
 
+  function normalizeDescriptionCategoryDependentAttributesParams(params) {
+    const normalized = requirePlainObject(params, "params");
+    assertAllowedFields(normalized, ["description_category_id", "type_id"]);
+    requireSafeInt64Number(requireField(normalized, "description_category_id"), "params.description_category_id");
+    if (Object.prototype.hasOwnProperty.call(normalized, "type_id")) requireSafeInt64Number(normalized.type_id, "params.type_id");
+    return normalized;
+  }
+
+  function normalizeDescriptionCategoryDependentAttributeValuesParams(params) {
+    const normalized = requirePlainObject(params, "params");
+    assertAllowedFields(normalized, ["parent_attribute_id", "child_attribute_id", "description_category_id", "type_id", "limit", "cursor"]);
+    requireSafeInt64Number(requireField(normalized, "parent_attribute_id"), "params.parent_attribute_id");
+    requireSafeInt64Number(requireField(normalized, "child_attribute_id"), "params.child_attribute_id");
+    if (Object.prototype.hasOwnProperty.call(normalized, "description_category_id")) requireSafeInt64Number(normalized.description_category_id, "params.description_category_id");
+    if (Object.prototype.hasOwnProperty.call(normalized, "type_id")) requireSafeInt64Number(normalized.type_id, "params.type_id");
+    if (Object.prototype.hasOwnProperty.call(normalized, "limit")) requireInteger(normalized.limit, "params.limit", { minimum: 1, maximum: 1000 });
+    if (Object.prototype.hasOwnProperty.call(normalized, "cursor")) requireString(normalized.cursor, "params.cursor", { nonEmpty: false });
+    return normalized;
+  }
+
   function requireInt32Number(value, path) {
     if (!Number.isInteger(value) || value < -2147483648 || value > 2147483647) fail("INVALID_OPERATION_PARAMS", `${path} должен быть целым числом int32.`);
     return value;
@@ -2289,9 +2309,13 @@
     return normalized;
   }
 
+  const PERFORMANCE_CAMPAIGN_LOCAL_SORTS = deepFreeze([
+    "created_at_desc", "created_at_asc", "updated_at_desc", "updated_at_asc", "from_date_desc", "from_date_asc"
+  ]);
+
   function normalizePerformanceCampaignsParams(params) {
     const normalized = requirePlainObject(params, "params");
-    assertAllowedFields(normalized, ["campaignIds", "advObjectType", "state", "page", "pageSize"]);
+    assertAllowedFields(normalized, ["campaignIds", "advObjectType", "state", "page", "pageSize", "local_sort", "local_limit"]);
     if (Object.prototype.hasOwnProperty.call(normalized, "campaignIds")) validateOptionalCampaignIds(normalized.campaignIds, "params.campaignIds");
     if (Object.prototype.hasOwnProperty.call(normalized, "advObjectType")) {
       normalized.advObjectType = String(normalized.advObjectType ?? "").trim();
@@ -2301,9 +2325,92 @@
       normalized.state = String(normalized.state ?? "").trim();
       if (!["CAMPAIGN_STATE_UNKNOWN", "CAMPAIGN_STATE_RUNNING", "CAMPAIGN_STATE_PLANNED", "CAMPAIGN_STATE_STOPPED", "CAMPAIGN_STATE_INACTIVE", "CAMPAIGN_STATE_ARCHIVED", "CAMPAIGN_STATE_MODERATION_DRAFT", "CAMPAIGN_STATE_MODERATION_IN_PROGRESS", "CAMPAIGN_STATE_MODERATION_FAILED", "CAMPAIGN_STATE_FINISHED"].includes(normalized.state)) fail("INVALID_OPERATION_PARAMS", "params.state содержит неподдерживаемое состояние кампании.");
     }
-    if (Object.prototype.hasOwnProperty.call(normalized, "page")) requireInteger(normalized.page, "params.page", { minimum: 1 });
-    if (Object.prototype.hasOwnProperty.call(normalized, "pageSize")) requireInteger(normalized.pageSize, "params.pageSize", { minimum: 1 });
+    const localSortPresent = Object.prototype.hasOwnProperty.call(normalized, "local_sort");
+    if (localSortPresent) {
+      normalized.local_sort = String(normalized.local_sort ?? "").trim();
+      if (!PERFORMANCE_CAMPAIGN_LOCAL_SORTS.includes(normalized.local_sort)) fail("INVALID_OPERATION_PARAMS", "params.local_sort содержит неподдерживаемую локальную сортировку.");
+      if (Object.prototype.hasOwnProperty.call(normalized, "page") || Object.prototype.hasOwnProperty.call(normalized, "pageSize")) {
+        fail("INVALID_OPERATION_PARAMS", "params.local_sort нельзя совмещать с provider page/pageSize: глобальная локальная сортировка требует одного полного provider response.");
+      }
+      if (!Object.prototype.hasOwnProperty.call(normalized, "local_limit")) normalized.local_limit = 100;
+      requireInteger(normalized.local_limit, "params.local_limit", { minimum: 1, maximum: 100 });
+    } else {
+      if (Object.prototype.hasOwnProperty.call(normalized, "local_limit")) fail("INVALID_OPERATION_PARAMS", "params.local_limit используется только вместе с params.local_sort.");
+      if (!Object.prototype.hasOwnProperty.call(normalized, "page")) normalized.page = 1;
+      if (!Object.prototype.hasOwnProperty.call(normalized, "pageSize")) normalized.pageSize = 100;
+      requireInteger(normalized.page, "params.page", { minimum: 1 });
+      requireInteger(normalized.pageSize, "params.pageSize", { minimum: 1, maximum: 100 });
+    }
     return normalized;
+  }
+
+  function performanceCampaignSortSpec(value) {
+    const map = {
+      created_at_desc: { field: "createdAt", direction: "DESC" }, created_at_asc: { field: "createdAt", direction: "ASC" },
+      updated_at_desc: { field: "updatedAt", direction: "DESC" }, updated_at_asc: { field: "updatedAt", direction: "ASC" },
+      from_date_desc: { field: "fromDate", direction: "DESC" }, from_date_asc: { field: "fromDate", direction: "ASC" }
+    };
+    return map[String(value || "")] || null;
+  }
+
+  function performanceCampaignDateValue(item, field) {
+    const raw = item && typeof item === "object" ? item[field] : null;
+    if (typeof raw !== "string" || !raw.trim()) return Number.NEGATIVE_INFINITY;
+    const parsed = Date.parse(field === "fromDate" && /^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T00:00:00Z` : raw);
+    return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+  }
+
+  function campaignRefinementChoices(params, sourceCount) {
+    const filters = {};
+    for (const key of ["campaignIds", "advObjectType", "state"]) if (Object.prototype.hasOwnProperty.call(params, key)) filters[key] = params[key];
+    const choices = [];
+    if (!params.local_sort) {
+      const page = Number(params.page || 1), pageSize = Number(params.pageSize || 100);
+      choices.push({
+        id: "next_page", purpose: "Получить следующую явную страницу кампаний без hidden pagination.",
+        command: { operation: "performance_campaigns", params: { ...filters, page: page + 1, pageSize } }
+      });
+    }
+    choices.push(
+      { id: "active_campaigns", purpose: "Только активные кампании.", command: { operation: "performance_campaigns", params: { ...filters, state: "CAMPAIGN_STATE_RUNNING", page: 1, pageSize: 100 } } },
+      { id: "latest_created", purpose: "Самые новые по createdAt; один provider request, затем локальная сортировка Bridge.", command: { operation: "performance_campaigns", params: { ...filters, local_sort: "created_at_desc", local_limit: 100 } } },
+      { id: "latest_updated", purpose: "Последние изменённые по updatedAt; один provider request, затем локальная сортировка Bridge.", command: { operation: "performance_campaigns", params: { ...filters, local_sort: "updated_at_desc", local_limit: 100 } } },
+      { id: "specific_campaign_ids", purpose: "Только конкретные кампании.", template: { operation: "performance_campaigns", params: { campaignIds: ["CAMPAIGN_ID"], page: 1, pageSize: 100 } } },
+      { id: "campaign_products", purpose: "Товары конкретной рекламной кампании.", template: { operation: "performance_campaign_products", params: { campaignId: "CAMPAIGN_ID", page: 1, pageSize: 100 } } },
+      { id: "campaign_product_statistics", purpose: "Статистика кампаний в разрезе товаров за период.", template: { operation: "performance_campaign_product", params: { campaignIds: ["CAMPAIGN_ID"], dateFrom: "YYYY-MM-DD", dateTo: "YYYY-MM-DD" } } },
+      { id: "sku_statistics", purpose: "SKU-статистика по рекламным кампаниям за период.", template: { operation: "performance_sku_statistics", params: { campaignIds: ["CAMPAIGN_ID"], dateFrom: "YYYY-MM-DD", dateTo: "YYYY-MM-DD" } } }
+    );
+    return { source_count: Number(sourceCount || 0), choices };
+  }
+
+  function performanceCampaignsResult(rawResult, context = {}) {
+    const source = rawResult && typeof rawResult === "object" && !Array.isArray(rawResult) ? rawResult : {};
+    const originalList = Array.isArray(source.list) ? source.list : [];
+    const params = context?.params && typeof context.params === "object" ? context.params : {};
+    let list = [...originalList];
+    const sort = performanceCampaignSortSpec(params.local_sort);
+    if (sort) {
+      const direction = sort.direction === "ASC" ? 1 : -1;
+      list.sort((a, b) => direction * (performanceCampaignDateValue(a, sort.field) - performanceCampaignDateValue(b, sort.field)));
+    }
+    const limit = sort ? Number(params.local_limit || 100) : Math.min(Number(params.pageSize || 100), 100);
+    const visible = list.slice(0, Math.max(1, limit));
+    const refinements = campaignRefinementChoices(params, originalList.length);
+    return safeReadResult({
+      ...source,
+      list: visible,
+      bridge_view: {
+        provider_items_received: originalList.length,
+        items_returned_to_ai: visible.length,
+        result_bounded: originalList.length > visible.length,
+        provider_page: sort ? null : Number(params.page || 1),
+        provider_page_size: sort ? null : Number(params.pageSize || 100),
+        local_sort: sort ? { ...sort, scope: "single_full_provider_response", additional_provider_requests: 0 } : null,
+        hidden_pagination_requests: 0,
+        automatic_retry_requests: 0
+      },
+      refinement_choices: refinements.choices
+    }, { operation: "performance_campaigns" });
   }
 
   function normalizePerformanceDateRangeParams(params) {
@@ -3043,6 +3150,8 @@
     description_category_attributes: { normalizeParams: normalizeDescriptionCategoryAttributesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b15" },
     description_category_attribute_values: { normalizeParams: normalizeDescriptionCategoryAttributeValuesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b15_explicit_pagination" },
     description_category_attribute_values_search: { normalizeParams: normalizeDescriptionCategoryAttributeValuesSearchParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b15" },
+    description_category_dependent_attributes: { normalizeParams: normalizeDescriptionCategoryDependentAttributesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_09_01_beta_read" },
+    description_category_dependent_attribute_values: { normalizeParams: normalizeDescriptionCategoryDependentAttributeValuesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_09_01_beta_read_explicit_cursor" },
     brand_company_certification_list: { normalizeParams: normalizeBrandCompanyCertificationListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b19_explicit_page" },
     product_certificate_product_status_list: { normalizeParams: normalizeNoBodyParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b19_no_body" },
     product_certificate_rejection_reasons: { normalizeParams: normalizeNoBodyParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b19_no_body" },
@@ -3286,7 +3395,7 @@
     delivery_point_list: { normalizeParams: normalizeEmptyJsonBodyParams, sanitizeResult: safeReadResult, contract_state: "exact_operator_swagger_2026_08_25_step7_empty_json" },
     order_cancel_check: { normalizeParams: normalizeStep7OrderCancelCheckParams, sanitizeResult: safeReadResult, contract_state: "exact_operator_swagger_2026_08_25_step7" },
     posting_marks: { normalizeParams: normalizeStep7PostingMarksParams, sanitizeResult: safeReadResult, contract_state: "exact_operator_swagger_2026_08_25_step7" },
-    performance_campaigns: { normalizeParams: normalizePerformanceCampaignsParams, sanitizeResult: safeReadResult, contract_state: "official_performance_openapi_v2_0" },
+    performance_campaigns: { normalizeParams: normalizePerformanceCampaignsParams, sanitizeResult: performanceCampaignsResult, contract_state: "official_performance_openapi_v2_0_bounded_refinement_v1" },
     performance_campaign_objects: { normalizeParams: normalizePerformanceCampaignObjectParams, sanitizeResult: safeReadResult, contract_state: "official_performance_openapi_2026_08_26_b6" },
     performance_bid_limits: { normalizeParams: normalizeNoBodyParams, sanitizeResult: safeReadResult, contract_state: "official_performance_openapi_2026_08_26_b6" },
     performance_campaign_products: { normalizeParams: normalizePerformanceCampaignProductsParams, sanitizeResult: safeReadResult, contract_state: "official_performance_openapi_2026_08_26_b6" },
@@ -3641,6 +3750,10 @@
       }
       if (/[{}]/.test(fixedPath)) fail("INVALID_FIXED_PATH_TEMPLATE", "Performance API path содержит неподдерживаемый фиксированный placeholder.");
 
+      if (preflight.command.operation === "performance_campaigns") {
+        delete requestParams.local_sort;
+        delete requestParams.local_limit;
+      }
       const query = meta.request_style === "query" ? encodeQueryParams(requestParams) : "";
       const url = `${performanceApiBase}${fixedPath}${query ? `?${query}` : ""}`;
       return deepFreeze({
@@ -3658,7 +3771,7 @@
 
     function sanitizeResult(command, rawResult) {
       const preflight = preflightExecution(command);
-      const sanitized = preflight.meta.sanitizeResult(rawResult, { operation: preflight.command.operation });
+      const sanitized = preflight.meta.sanitizeResult(rawResult, { operation: preflight.command.operation, params: preflight.command.params });
       return deepFreeze(sanitizeJsonValue(sanitized, "result", { rejectTransportKeys: false }));
     }
 

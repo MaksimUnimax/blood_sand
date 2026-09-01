@@ -77,12 +77,12 @@
   }
 
   function classify(descriptor) {
-    if (descriptor?.sensitive) return Object.freeze({ status: "guidance_error", cluster: null, section: null, error: "SENSITIVE_ATTEMPT_REDACTED" });
+    if (descriptor?.sensitive) return Object.freeze({ status: "guidance_error", cluster: null, section: null, version: 2, error: "SENSITIVE_ATTEMPT_REDACTED" });
     const scored = scoreDescriptor(descriptor);
     const ranked = Object.entries(scored.scores).sort((a, b) => b[1] - a[1]);
-    if (!ranked.length || ranked[0][1] <= 0) return Object.freeze({ status: "cluster_required", cluster: null, section: null, error: descriptor?.error_code || null, scores: scored.scores });
-    if (ranked[1] && ranked[1][1] === ranked[0][1]) return Object.freeze({ status: "cluster_required", cluster: null, section: null, error: "AMBIGUOUS_CLUSTER", scores: scored.scores });
-    return Object.freeze({ status: "cluster_suggested", cluster: ranked[0][0], section: null, error: descriptor?.error_code || null, scores: scored.scores });
+    if (!ranked.length || ranked[0][1] <= 0) return Object.freeze({ status: "cluster_required", cluster: null, section: null, version: 2, error: descriptor?.error_code || null, scores: scored.scores });
+    if (ranked[1] && ranked[1][1] === ranked[0][1]) return Object.freeze({ status: "cluster_required", cluster: null, section: null, version: 2, error: "AMBIGUOUS_CLUSTER", scores: scored.scores });
+    return Object.freeze({ status: "cluster_suggested", cluster: ranked[0][0], section: null, version: 2, error: descriptor?.error_code || null, scores: scored.scores });
   }
 
   function extractBalancedObject(source, start) {

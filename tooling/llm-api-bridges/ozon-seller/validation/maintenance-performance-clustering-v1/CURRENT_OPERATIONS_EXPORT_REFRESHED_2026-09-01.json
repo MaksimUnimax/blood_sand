@@ -1,0 +1,5879 @@
+{
+  "schema": "OZON_CURRENT_OPERATIONS_EXPORT_V2",
+  "date": "2026-09-01",
+  "counts": {
+    "total": 270,
+    "seller": 245,
+    "performance": 25,
+    "current_read_authority": 266
+  },
+  "operations": [
+    {
+      "alias": "analytics_data",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/analytics/data",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "sales_analytics",
+      "section": "sales_revenue_units",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить аналитику продаж по периоду, метрикам и группировкам.",
+      "template": {
+        "operation": "analytics_data",
+        "params": {
+          "date_from": "2026-01-01",
+          "date_to": "2026-01-07",
+          "dimension": [
+            "day"
+          ],
+          "metrics": [
+            "revenue"
+          ],
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "arrival_pass_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/pass/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "assembly_carriage",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить одну явную страницу пропусков; данные водителей доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "arrival_pass_list",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "assembly_carriage_posting_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/assembly/carriage/posting/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "assembly_carriage",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить отправления одной перевозки для сборки без скрытого продолжения cursor.",
+      "template": {
+        "operation": "assembly_carriage_posting_list",
+        "params": {
+          "filter": {
+            "carriage_id": 1
+          },
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "assembly_carriage_product_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/assembly/carriage/product/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "assembly_carriage",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить товары одной перевозки для сборки без скрытого продолжения cursor.",
+      "template": {
+        "operation": "assembly_carriage_product_list",
+        "params": {
+          "filter": {
+            "carriage_id": 1
+          },
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "assembly_fbs_posting_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/assembly/fbs/posting/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "assembly_carriage",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить FBS-отправления для сборки по явному cutoff-периоду без скрытой пагинации.",
+      "template": {
+        "operation": "assembly_fbs_posting_list",
+        "params": {
+          "filter": {
+            "cutoff_from": "2026-01-01T00:00:00Z",
+            "cutoff_to": "2026-01-02T00:00:00Z"
+          },
+          "limit": 100,
+          "sort_dir": "ASC"
+        }
+      }
+    },
+    {
+      "alias": "assembly_fbs_product_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/assembly/fbs/product/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "assembly_carriage",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить FBS-товары для сборки по явному cutoff-периоду без скрытого offset-продолжения.",
+      "template": {
+        "operation": "assembly_fbs_product_list",
+        "params": {
+          "filter": {
+            "cutoff_from": "2026-01-01T00:00:00Z",
+            "cutoff_to": "2026-01-02T00:00:00Z"
+          },
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "brand_company_certification_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/brand/company-certification/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список брендов, для товаров которых требуется предоставить сертификаты, с явной страницей без скрытой автопагинации.",
+      "template": {
+        "operation": "brand_company_certification_list",
+        "params": {
+          "page": 1,
+          "page_size": 100
+        }
+      }
+    },
+    {
+      "alias": "cancel_reason_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cancel-reason/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "cancellations",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить возможные причины отмены отправлений и заказов.",
+      "template": {
+        "operation": "cancel_reason_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "cancel_reason_list_by_order",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cancel-reason/list-by-order",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "cancellations",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить возможные причины отмены для конкретного заказа.",
+      "template": {
+        "operation": "cancel_reason_list_by_order",
+        "params": {
+          "order_number": "12345678-0001"
+        }
+      }
+    },
+    {
+      "alias": "cancel_reason_list_by_posting",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cancel-reason/list-by-posting",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "cancellations",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить возможные причины отмены для конкретного отправления.",
+      "template": {
+        "operation": "cancel_reason_list_by_posting",
+        "params": {
+          "posting_number": "12345678-0001-1"
+        }
+      }
+    },
+    {
+      "alias": "cargoes_label_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cargoes-label/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargo_labels",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить идентификатор этикетки для грузомест",
+      "template": {
+        "operation": "cargoes_label_get",
+        "params": {
+          "operation_id": "op-1"
+        }
+      }
+    },
+    {
+      "alias": "cargoes_label_transport_by_order_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cargoes/label/transport-by-order/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargo_status",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить статус генерации этикеток для транспортных грузомеcт по идентификатору поставки",
+      "template": {
+        "operation": "cargoes_label_transport_by_order_status",
+        "params": {
+          "operation_id": "op-1"
+        }
+      }
+    },
+    {
+      "alias": "cargoes_label_transport_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cargoes/label/transport/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargo_status",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить статус генерации этикеток транспортных грузомест по идентификатору грузоместа",
+      "template": {
+        "operation": "cargoes_label_transport_status",
+        "params": {
+          "operation_id": "op-1"
+        }
+      }
+    },
+    {
+      "alias": "cargoes_transport_create_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cargoes/transport/create/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargo_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус создания транспортного грузоместа",
+      "template": {
+        "operation": "cargoes_transport_create_status",
+        "params": {
+          "operation_id": "op-1"
+        }
+      }
+    },
+    {
+      "alias": "carriage_act_discrepancy_pdf",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/carriage/act-discrepancy/pdf",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "labels_documents",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить акт о расхождениях по отгрузке FBS",
+      "template": {
+        "operation": "carriage_act_discrepancy_pdf",
+        "params": {
+          "carriage_id": 1
+        }
+      }
+    },
+    {
+      "alias": "carriage_container_document_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/carriage/container/document/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "labels_documents",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить документы по грузоместам — ТрН и лист отгрузки",
+      "template": {
+        "operation": "carriage_container_document_get",
+        "params": {
+          "container_ids": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "carriage_container_label_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/carriage/container/label/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "labels_documents",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить этикетку по грузоместам",
+      "template": {
+        "operation": "carriage_container_label_get",
+        "params": {
+          "container_ids": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "carriage_courier_contact_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/carriage/courier-contact/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "assembly_carriage",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить контактные данные продавца для курьера",
+      "template": {
+        "operation": "carriage_courier_contact_get",
+        "params": {
+          "carriage_id": 1
+        }
+      }
+    },
+    {
+      "alias": "carriage_delivery_list_v2",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/carriage/delivery/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "assembly_carriage",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить одну явную страницу методов доставки и отгрузок.",
+      "template": {
+        "operation": "carriage_delivery_list_v2",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "chat_list_v3",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v3/chat/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "reviews_questions",
+      "section": "chats",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить метаданные одной явной страницы чатов без чтения истории и тел сообщений.",
+      "template": {
+        "operation": "chat_list_v3",
+        "params": {
+          "limit": 30
+        }
+      }
+    },
+    {
+      "alias": "cluster_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/cluster/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "clusters",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить макролокальные кластеры Ozon без request body.",
+      "template": {
+        "operation": "cluster_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "conditional_cancellation_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/conditional-cancellation/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "returns_cancellations",
+      "section": "cancellation_status",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить одну явную страницу заявок на отмену rFBS; пользовательские данные доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "conditional_cancellation_list",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "delivery_check",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/delivery/check",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "warehouse_logistics",
+      "section": "delivery_geo",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Проверить доступность доставки для номера покупателя только при включённой настройке личных данных.",
+      "template": {
+        "operation": "delivery_check",
+        "params": {
+          "client_phone": "79990000000"
+        }
+      }
+    },
+    {
+      "alias": "delivery_checkout_v2",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/delivery/checkout",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "warehouse_logistics",
+      "section": "delivery_geo",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить доступные варианты доставки с номером покупателя только при включённой настройке личных данных.",
+      "template": {
+        "operation": "delivery_checkout_v2",
+        "params": {
+          "buyer_phone": "79990000000",
+          "delivery_schema": "MIX",
+          "items": [
+            {
+              "sku": 1,
+              "quantity": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "alias": "delivery_map",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/delivery/map",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "delivery_geo",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить точки доставки для явно указанной области карты.",
+      "template": {
+        "operation": "delivery_map",
+        "params": {
+          "viewport": {
+            "left_bottom": {
+              "lat": 55,
+              "long": 37
+            },
+            "right_top": {
+              "lat": 56,
+              "long": 38
+            }
+          },
+          "zoom": 10
+        }
+      }
+    },
+    {
+      "alias": "delivery_method_return_settings",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/delivery-method/return/settings/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "delivery_methods",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить возвратные настройки выбранного rFBS-метода доставки.",
+      "template": {
+        "operation": "delivery_method_return_settings",
+        "params": {
+          "delivery_method_id": 1
+        }
+      }
+    },
+    {
+      "alias": "delivery_point_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/delivery/point/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "delivery_geo",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о точке самовывоза",
+      "template": {
+        "operation": "delivery_point_info",
+        "params": {
+          "map_point_ids": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "delivery_point_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/delivery/point/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "delivery_geo",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список точек самовывоза.",
+      "template": {
+        "operation": "delivery_point_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "delivery_polygon_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/polygon/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "delivery_methods",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить геометрию и время доставки полигонов для явно выбранных склада и метода доставки.",
+      "template": {
+        "operation": "delivery_polygon_list",
+        "params": {
+          "delivery_method_id": 1,
+          "warehouse_id": 1
+        }
+      }
+    },
+    {
+      "alias": "description_category_attribute_values",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/description-category/attribute/values",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "attributes_categories",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить справочные значения характеристики с явным limit/last_value_id без скрытой автопагинации.",
+      "template": {
+        "operation": "description_category_attribute_values",
+        "params": {
+          "attribute_id": 1,
+          "description_category_id": 1,
+          "limit": 100,
+          "type_id": 1
+        }
+      }
+    },
+    {
+      "alias": "description_category_attribute_values_search",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/description-category/attribute/values/search",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "attributes_categories",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Найти справочные значения характеристики по тексту без скрытой автопагинации.",
+      "template": {
+        "operation": "description_category_attribute_values_search",
+        "params": {
+          "attribute_id": 1,
+          "description_category_id": 1,
+          "limit": 100,
+          "type_id": 1,
+          "value": "Name"
+        }
+      }
+    },
+    {
+      "alias": "description_category_attributes",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/description-category/attribute",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "attributes_categories",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить характеристики выбранной категории и типа товара.",
+      "template": {
+        "operation": "description_category_attributes",
+        "params": {
+          "description_category_id": 1,
+          "type_id": 1
+        }
+      }
+    },
+    {
+      "alias": "description_category_dependent_attribute_values",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/description-category/dependent-attributes/values",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "attributes_categories",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить возможные значения дочерней характеристики для значений родительской с явным cursor/limit без скрытой автопагинации.",
+      "template": {
+        "operation": "description_category_dependent_attribute_values",
+        "params": {
+          "parent_attribute_id": 1,
+          "child_attribute_id": 1,
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "description_category_dependent_attributes",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/description-category/dependent-attributes",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "attributes_categories",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить пары родительских и дочерних зависимых характеристик категории.",
+      "template": {
+        "operation": "description_category_dependent_attributes",
+        "params": {
+          "description_category_id": 1
+        }
+      }
+    },
+    {
+      "alias": "description_category_tree",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/description-category/tree",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "attributes_categories",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить актуальное дерево категорий и типов товаров.",
+      "template": {
+        "operation": "description_category_tree",
+        "params": {}
+      }
+    },
+    {
+      "alias": "discount_task_list_v2",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/actions/discounts-task/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "prices_promotions",
+      "section": "discount_tasks",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить одну явную страницу заявок покупателей на скидку; пользовательские данные доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "discount_task_list_v2",
+        "params": {
+          "limit": 50,
+          "status": "ALL"
+        }
+      }
+    },
+    {
+      "alias": "fbo_cargoes_create_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/cargoes/create/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargoes",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о результате установки грузомест по явному operation_id.",
+      "template": {
+        "operation": "fbo_cargoes_create_info",
+        "params": {
+          "operation_id": "OPERATION_ID"
+        }
+      }
+    },
+    {
+      "alias": "fbo_cargoes_delete_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cargoes/delete/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargo_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус ранее запущенного удаления грузоместа по явному operation_id без автоматического polling.",
+      "template": {
+        "operation": "fbo_cargoes_delete_status",
+        "params": {
+          "operation_id": "OPERATION_ID"
+        }
+      }
+    },
+    {
+      "alias": "fbo_cargoes_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cargoes/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargoes",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о грузоместах для явно переданных идентификаторов поставок.",
+      "template": {
+        "operation": "fbo_cargoes_get",
+        "params": {
+          "supply_ids": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "fbo_cargoes_rules_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cargoes/rules/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargoes",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить чек-лист правил установки грузомест для явно переданных идентификаторов поставок.",
+      "template": {
+        "operation": "fbo_cargoes_rules_get",
+        "params": {
+          "supply_ids": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "fbo_cargoes_supplies_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cargoes/supplies/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargoes",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о грузоместах для явно переданных идентификаторов поставок.",
+      "template": {
+        "operation": "fbo_cargoes_supplies_get",
+        "params": {
+          "supply_ids": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "fbo_cargoes_transport_activate_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cargoes/transport/activate/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargo_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус включения или отключения транспортных грузомест по явному operation_id без автоматического polling.",
+      "template": {
+        "operation": "fbo_cargoes_transport_activate_status",
+        "params": {
+          "operation_id": "OPERATION_ID"
+        }
+      }
+    },
+    {
+      "alias": "fbo_cargoes_transport_bind_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cargoes/transport/bind/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargo_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус связывания или отвязывания грузомест по явному operation_id без автоматического polling.",
+      "template": {
+        "operation": "fbo_cargoes_transport_bind_status",
+        "params": {
+          "operation_id": "OPERATION_ID"
+        }
+      }
+    },
+    {
+      "alias": "fbo_cargoes_v2_delete_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/cargoes/delete/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargo_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус ранее запущенного удаления грузомест по явному operation_id без автоматического polling.",
+      "template": {
+        "operation": "fbo_cargoes_v2_delete_status",
+        "params": {
+          "operation_id": "OPERATION_ID"
+        }
+      }
+    },
+    {
+      "alias": "fbo_cargoes_v2_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/cargoes/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "cargoes",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о грузоместах для явно указанных поставок и идентификаторов грузомест.",
+      "template": {
+        "operation": "fbo_cargoes_v2_get",
+        "params": {
+          "supplies": [
+            {
+              "supply_id": 1,
+              "cargo_ids": [
+                "1"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "alias": "fbo_draft_cluster_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/cluster/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "drafts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить кластеры и их склады для планирования FBO-поставки.",
+      "template": {
+        "operation": "fbo_draft_cluster_list",
+        "params": {
+          "cluster_type": "CLUSTER_TYPE_OZON"
+        }
+      }
+    },
+    {
+      "alias": "fbo_draft_create_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/draft/create/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "drafts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о ранее созданном черновике заявки на поставку.",
+      "template": {
+        "operation": "fbo_draft_create_info",
+        "params": {
+          "draft_id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbo_draft_supply_create_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/draft/supply/create/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "drafts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус создания заявки на поставку по явному draft_id без автоматического polling.",
+      "template": {
+        "operation": "fbo_draft_supply_create_status",
+        "params": {
+          "draft_id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbo_draft_timeslot_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/draft/timeslot/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "timeslots",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить доступные таймслоты для явно выбранного FBO-черновика и складов кластера; без скрытых дополнительных запросов.",
+      "template": {
+        "operation": "fbo_draft_timeslot_info",
+        "params": {
+          "date_from": "2026-08-28",
+          "date_to": "2026-08-29",
+          "draft_id": 1,
+          "supply_type": "DIRECT",
+          "selected_cluster_warehouses": [
+            {
+              "macrolocal_cluster_id": 1,
+              "storage_warehouse_id": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "alias": "fbo_draft_warehouse_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbo/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "drafts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Найти точки отгрузки для кросс-докинга или прямой FBO-поставки.",
+      "template": {
+        "operation": "fbo_draft_warehouse_list",
+        "params": {
+          "filter_by_supply_type": [
+            "CREATE_TYPE_DIRECT"
+          ],
+          "search": "Ozon"
+        }
+      }
+    },
+    {
+      "alias": "fbo_seller_warehouse_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbo/seller/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "seller_warehouses",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список FBO-складов продавца без request body.",
+      "template": {
+        "operation": "fbo_seller_warehouse_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "fbo_stock_by_warehouse",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/info/stocks-by-warehouse/fbo",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "stocks_inventory",
+      "section": "warehouse_fbo",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить остатки FBO по складам для явно указанных offer_ids/skus без скрытой автопагинации.",
+      "template": {
+        "operation": "fbo_stock_by_warehouse",
+        "params": {
+          "skus": [
+            "1"
+          ],
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "fbp_act_from_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/act-from/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "acts",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить статус генерации акта приёмки",
+      "template": {
+        "operation": "fbp_act_from_get",
+        "params": {
+          "file_uuid": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    },
+    {
+      "alias": "fbp_act_to_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/act-to/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "acts",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить статус генерации транспортной накладной",
+      "template": {
+        "operation": "fbp_act_to_get",
+        "params": {
+          "code": "code-1",
+          "supply_id": "1"
+        }
+      }
+    },
+    {
+      "alias": "fbp_archive_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/archive/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "supplies_fbo",
+      "section": "fbp_archive",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить завершённую FBP-поставку; контактные данные доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "fbp_archive_get",
+        "params": {
+          "supply_id": "1"
+        }
+      }
+    },
+    {
+      "alias": "fbp_archive_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/archive/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "supplies_fbo",
+      "section": "fbp_archive",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить одну явную страницу завершённых FBP-поставок; контактные данные доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "fbp_archive_list",
+        "params": {
+          "count": "100"
+        }
+      }
+    },
+    {
+      "alias": "fbp_draft_direct_timeslot_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/draft/direct/timeslot/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "timeslots",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить доступные таймслоты для прямой FBP-поставки в явно заданном интервале.",
+      "template": {
+        "operation": "fbp_draft_direct_timeslot_get",
+        "params": {
+          "bundle_id": "BUNDLE_ID",
+          "interval_start": "2026-08-28T00:00:00Z",
+          "interval_end": "2026-08-29T00:00:00Z",
+          "warehouse_id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbp_draft_dropoff_point_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/draft/drop-off/point/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "fbp_drafts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить drop-off пункты выбранной провинции; продолжение страницы только отдельной явной командой.",
+      "template": {
+        "operation": "fbp_draft_dropoff_point_list",
+        "params": {
+          "page_size": 50,
+          "province_uuid": "PROVINCE_UUID",
+          "warehouse_id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbp_draft_dropoff_point_timetable",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/draft/drop-off/point/timetable",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "timeslots",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить расписание выбранного FBP drop-off пункта.",
+      "template": {
+        "operation": "fbp_draft_dropoff_point_timetable",
+        "params": {
+          "drop_off_point_id": 1,
+          "province_uuid": "PROVINCE_UUID",
+          "warehouse_id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbp_draft_dropoff_province_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/draft/drop-off/province/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "fbp_drafts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список провинций для планирования FBP drop-off по явному warehouse_id.",
+      "template": {
+        "operation": "fbp_draft_dropoff_province_list",
+        "params": {
+          "warehouse_id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbp_draft_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/draft/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "supplies_fbo",
+      "section": "fbp_drafts",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить черновик FBP-поставки; контактные данные доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "fbp_draft_get",
+        "params": {
+          "supply_id": "1"
+        }
+      }
+    },
+    {
+      "alias": "fbp_draft_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/draft/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "supplies_fbo",
+      "section": "fbp_drafts",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить одну явную страницу черновиков FBP-поставки; контактные данные доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "fbp_draft_list",
+        "params": {
+          "count": 100
+        }
+      }
+    },
+    {
+      "alias": "fbp_label_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/label/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "acts",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить статус задания на генерацию этикеток",
+      "template": {
+        "operation": "fbp_label_get",
+        "params": {
+          "code": "code-1",
+          "supply_id": "1"
+        }
+      }
+    },
+    {
+      "alias": "fbp_order_direct_timeslot_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/order/direct/timeslot/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "timeslots",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить доступные таймслоты для уже созданной FBP-поставки в явно заданном интервале.",
+      "template": {
+        "operation": "fbp_order_direct_timeslot_list",
+        "params": {
+          "interval_start": "2026-08-28T00:00:00Z",
+          "interval_end": "2026-08-29T00:00:00Z",
+          "supply_id": "SUPPLY_ID"
+        }
+      }
+    },
+    {
+      "alias": "fbp_order_dropoff_timetable",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/order/drop-off/timetable",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "timeslots",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить график работы выбранного FBP drop-off пункта для поставки.",
+      "template": {
+        "operation": "fbp_order_dropoff_timetable",
+        "params": {
+          "drop_off_point_id": 1,
+          "province_uuid": "PROVINCE_UUID",
+          "warehouse_id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbp_order_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/order/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "supplies_fbo",
+      "section": "fbp_orders",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить FBP-поставку; контактные данные доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "fbp_order_get",
+        "params": {
+          "supply_id": "1"
+        }
+      }
+    },
+    {
+      "alias": "fbp_order_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/order/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "supplies_fbo",
+      "section": "fbp_orders",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить одну явную страницу FBP-поставок; контактные данные доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "fbp_order_list",
+        "params": {
+          "count": 100
+        }
+      }
+    },
+    {
+      "alias": "fbp_posting_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/fbp/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbp_postings",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить безопасную информацию об одном FBP-отправлении по явно заданному posting_number.",
+      "template": {
+        "operation": "fbp_posting_get",
+        "params": {
+          "posting_number": "12345678-0001-1"
+        }
+      }
+    },
+    {
+      "alias": "fbp_posting_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/fbp/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbp_postings",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список FBP-отправлений; cursor продолжает выборку только отдельной явной командой.",
+      "template": {
+        "operation": "fbp_posting_list",
+        "params": {
+          "limit": 100,
+          "sort_dir": "ASC"
+        }
+      }
+    },
+    {
+      "alias": "fbp_warehouse_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/fbp/warehouse/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "ozon_warehouses",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список партнёрских складов FBP.",
+      "template": {
+        "operation": "fbp_warehouse_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "fbs_act_check_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/posting/fbs/act/check-status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "acts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Проверить статус явно указанного задания формирования FBS-акта без автоматического polling.",
+      "template": {
+        "operation": "fbs_act_check_status",
+        "params": {
+          "id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbs_act_get_postings",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/posting/fbs/act/get-postings",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "acts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить отправления одного явно указанного FBS-акта без fanout и вторичных запросов.",
+      "template": {
+        "operation": "fbs_act_get_postings",
+        "params": {
+          "id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbs_act_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/posting/fbs/act/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "acts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список FBS-актов без скрытой пагинации.",
+      "template": {
+        "operation": "fbs_act_list",
+        "params": {
+          "limit": 50
+        }
+      }
+    },
+    {
+      "alias": "fbs_carriage_container_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/carriage/container/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "carriage_containers",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить безопасную информацию об одном явно указанном грузоместе FBS.",
+      "template": {
+        "operation": "fbs_carriage_container_get",
+        "params": {
+          "container_id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbs_carriage_container_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/carriage/container/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "carriage_containers",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список грузомест FBS без скрытого продолжения cursor.",
+      "template": {
+        "operation": "fbs_carriage_container_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "fbs_carriage_container_status_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/carriage/container/status/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "carriage_containers",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статусы явно переданного набора грузомест FBS.",
+      "template": {
+        "operation": "fbs_carriage_container_status_get",
+        "params": {
+          "container_ids": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "fbs_carriage_container_task_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/carriage/container/task/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "carriage_containers",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус задачи грузового места без автоматического polling.",
+      "template": {
+        "operation": "fbs_carriage_container_task_info",
+        "params": {
+          "task_id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbs_carriage_ettn_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/carriage/ettn/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "acts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус проверки электронной ТТН для явно указанной FBS-перевозки без polling и документов.",
+      "template": {
+        "operation": "fbs_carriage_ettn_status",
+        "params": {
+          "carriage_id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbs_carriage_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/carriage/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "assembly_carriage",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить безопасную информацию об одной явно указанной FBS-перевозке.",
+      "template": {
+        "operation": "fbs_carriage_get",
+        "params": {
+          "carriage_id": 1
+        }
+      }
+    },
+    {
+      "alias": "fbs_posting_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v4/posting/fbs/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "fbs_postings",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить список отправлений FBS; ответ может содержать данные покупателя/получателя.",
+      "template": {
+        "operation": "fbs_posting_list",
+        "params": {
+          "filter": {
+            "since": "2026-01-01T00:00:00Z",
+            "to": "2026-01-02T00:00:00Z"
+          },
+          "limit": 10
+        }
+      }
+    },
+    {
+      "alias": "fbs_posting_product_exemplar_create_or_get_v6",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v6/fbs/posting/product/exemplar/create-or-get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_exemplars_marks",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить данные созданных экземпляров",
+      "template": {
+        "operation": "fbs_posting_product_exemplar_create_or_get_v6",
+        "params": {
+          "posting_number": "1"
+        }
+      }
+    },
+    {
+      "alias": "fbs_posting_product_exemplar_status_v5",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v5/fbs/posting/product/exemplar/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_exemplars_marks",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус добавления экземпляров",
+      "template": {
+        "operation": "fbs_posting_product_exemplar_status_v5",
+        "params": {
+          "posting_number": "1"
+        }
+      }
+    },
+    {
+      "alias": "fbs_posting_restrictions",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/fbs/restrictions",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_restrictions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить габаритные, весовые и ценовые ограничения пункта приёма для явно указанного FBS-отправления.",
+      "template": {
+        "operation": "fbs_posting_restrictions",
+        "params": {
+          "posting_number": "12345678-0001-1"
+        }
+      }
+    },
+    {
+      "alias": "fbs_posting_timeslot_change_restrictions",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/fbs/timeslot/change-restrictions",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_restrictions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить доступный интервал переноса доставки и оставшееся число переносов для одного явно указанного FBS/rFBS-отправления.",
+      "template": {
+        "operation": "fbs_posting_timeslot_change_restrictions",
+        "params": {
+          "posting_number": "12345678-0001-1"
+        }
+      }
+    },
+    {
+      "alias": "fbs_product_country_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/posting/fbs/product/country/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_restrictions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить справочник доступных стран-изготовителей FBS без скрытых дополнительных запросов.",
+      "template": {
+        "operation": "fbs_product_country_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "fbs_product_exemplar_validate",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v5/fbs/posting/product/exemplar/validate",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_exemplars_marks",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Проверить коды маркировки перед явной операцией с отправлением без изменения его состояния.",
+      "template": {
+        "operation": "fbs_product_exemplar_validate",
+        "params": {
+          "posting_number": "POSTING_NUMBER",
+          "products": [
+            {
+              "product_id": 1,
+              "exemplars": [
+                {}
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "alias": "fbs_stock_by_warehouse",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/product/info/stocks-by-warehouse/fbs",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "stocks_inventory",
+      "section": "warehouse_fbs",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить остатки FBS/rFBS по складам без скрытого продолжения cursor.",
+      "template": {
+        "operation": "fbs_stock_by_warehouse",
+        "params": {
+          "sku": [
+            "1"
+          ],
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "fbs_traceable_attribute_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/fbs/product/traceable/attribute",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_restrictions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список незаполненных прослеживаемых атрибутов для явно указанного FBS-отправления.",
+      "template": {
+        "operation": "fbs_traceable_attribute_list",
+        "params": {
+          "posting_number": "12345678-0001-1"
+        }
+      }
+    },
+    {
+      "alias": "fbs_unfulfilled_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v4/posting/fbs/unfulfilled/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "fbs_postings",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить список необработанных отправлений FBS; ответ может содержать данные покупателя/получателя.",
+      "template": {
+        "operation": "fbs_unfulfilled_list",
+        "params": {
+          "limit": 10
+        }
+      }
+    },
+    {
+      "alias": "finance_accrual_by_day",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/finance/accrual/by-day",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "accruals_balance",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить начисления за один день; продолжение last_id выполняется только отдельной явной командой.",
+      "template": {
+        "operation": "finance_accrual_by_day",
+        "params": {
+          "date": "2026-08-25",
+          "last_id": ""
+        }
+      }
+    },
+    {
+      "alias": "finance_accrual_postings",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/finance/accrual/postings",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "accruals_balance",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить начисления по указанным номерам отправлений.",
+      "template": {
+        "operation": "finance_accrual_postings",
+        "params": {
+          "posting_numbers": [
+            "12345678-0001-1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "finance_accrual_types",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/finance/accrual/types",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "accruals_balance",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить справочник типов начислений.",
+      "template": {
+        "operation": "finance_accrual_types",
+        "params": {}
+      }
+    },
+    {
+      "alias": "finance_b2b_sales_json",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/finance/document-b2b-sales/json",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "finance",
+      "section": "b2b",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить реестр продаж юридическим лицам в JSON; реквизиты доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "finance_b2b_sales_json",
+        "params": {
+          "date": "2019-01"
+        }
+      }
+    },
+    {
+      "alias": "finance_balance",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/finance/balance",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "accruals_balance",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить отчёт о балансе за явно заданный период.",
+      "template": {
+        "operation": "finance_balance",
+        "params": {
+          "date_from": "2026-08-01T00:00:00Z",
+          "date_to": "2026-08-28T23:59:59Z"
+        }
+      }
+    },
+    {
+      "alias": "finance_cash_flow_statement_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/finance/cash-flow-statement/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "cashflow_buyout",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить финансовый отчёт денежных потоков; следующая страница только отдельной явной командой.",
+      "template": {
+        "operation": "finance_cash_flow_statement_list",
+        "params": {
+          "date": {
+            "from": "2026-08-01T00:00:00Z",
+            "to": "2026-08-28T23:59:59Z"
+          },
+          "page": 1,
+          "page_size": 100,
+          "with_details": true
+        }
+      }
+    },
+    {
+      "alias": "finance_products_buyout",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/finance/products/buyout",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "cashflow_buyout",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить прямой JSON-отчёт о товарах, выкупленных Ozon, за явно заданный период без скрытых дополнительных запросов.",
+      "template": {
+        "operation": "finance_products_buyout",
+        "params": {
+          "date_from": "2026-08-01",
+          "date_to": "2026-08-28"
+        }
+      }
+    },
+    {
+      "alias": "finance_realization_by_day",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/finance/realization/by-day",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "realization",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить суммы реализации за один явно заданный день; endpoint требует Premium Plus или Premium Pro.",
+      "template": {
+        "operation": "finance_realization_by_day",
+        "params": {
+          "day": 28,
+          "month": 8,
+          "year": 2026
+        }
+      }
+    },
+    {
+      "alias": "finance_realization_posting",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/finance/realization/posting",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "realization",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить позаказный отчёт о реализации за явно заданный месяц старого периода, поддерживаемого endpoint.",
+      "template": {
+        "operation": "finance_realization_posting",
+        "params": {
+          "month": 8,
+          "year": 2023
+        }
+      }
+    },
+    {
+      "alias": "finance_realization_v2",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/finance/realization",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "realization",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить месячный отчёт о реализации товаров версии 2.",
+      "template": {
+        "operation": "finance_realization_v2",
+        "params": {
+          "month": 8,
+          "year": 2026
+        }
+      }
+    },
+    {
+      "alias": "finance_transaction_list_v3",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v3/finance/transaction/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "transactions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список финансовых транзакций; page продолжает выборку только отдельной явной командой.",
+      "template": {
+        "operation": "finance_transaction_list_v3",
+        "params": {
+          "page": 1,
+          "page_size": 100,
+          "filter": {
+            "date": {
+              "from": "2026-08-01T00:00:00Z",
+              "to": "2026-08-28T23:59:59Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "alias": "invoice_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/invoice/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "receipts_invoices",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о счёте-фактуре",
+      "template": {
+        "operation": "invoice_get",
+        "params": {
+          "posting_number": "1"
+        }
+      }
+    },
+    {
+      "alias": "marketplace_search_queries_text",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/search-queries/text",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "search_visibility",
+      "section": "marketplace_search_queries",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить поисковые запросы маркетплейса по тексту; Premium Pro; offset продолжает выборку только отдельной явной командой.",
+      "template": {
+        "operation": "marketplace_search_queries_text",
+        "params": {
+          "limit": "50",
+          "offset": "0",
+          "text": "куртка"
+        }
+      }
+    },
+    {
+      "alias": "marketplace_search_queries_top",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/search-queries/top",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "search_visibility",
+      "section": "marketplace_search_queries",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить популярные поисковые запросы маркетплейса; Premium Pro; offset продолжает выборку только отдельной явной командой.",
+      "template": {
+        "operation": "marketplace_search_queries_top",
+        "params": {
+          "limit": "50",
+          "offset": "0"
+        }
+      }
+    },
+    {
+      "alias": "notification_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/notification/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "account_access",
+      "section": "notifications",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о подключённых URL уведомлений без выполнения webhook-проверки.",
+      "template": {
+        "operation": "notification_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "notification_push_type_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/notification/push-type/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "account_access",
+      "section": "notifications",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить справочник типов push-уведомлений.",
+      "template": {
+        "operation": "notification_push_type_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "order_cancel_check",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/order/cancel/check",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "cancellation_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Проверить возможность отмены заказа без изменения его состояния.",
+      "template": {
+        "operation": "order_cancel_check",
+        "params": {
+          "order_number": "ORDER_NUMBER"
+        }
+      }
+    },
+    {
+      "alias": "order_cancel_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/order/cancel/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "cancellation_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус отмены заказа.",
+      "template": {
+        "operation": "order_cancel_status",
+        "params": {
+          "order_number": "12345678-0001"
+        }
+      }
+    },
+    {
+      "alias": "ozon_action_candidates",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/actions/candidates",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "actions_promotions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить товары, доступные для выбранной акции Ozon, без скрытого продолжения last_id.",
+      "template": {
+        "operation": "ozon_action_candidates",
+        "params": {
+          "action_id": 1,
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "ozon_action_products",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/actions/products",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "actions_promotions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить товары, участвующие в выбранной акции Ozon, без скрытого продолжения last_id.",
+      "template": {
+        "operation": "ozon_action_products",
+        "params": {
+          "action_id": 1,
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "ozon_actions_list",
+      "provider": "seller_api",
+      "method": "GET",
+      "path": "/v1/actions",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "actions_promotions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список акций Ozon, доступных продавцу для участия.",
+      "template": {
+        "operation": "ozon_actions_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "ozon_auto_add_candidates",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/actions/auto-add/products/candidates",
+      "effect": "READ",
+      "currentness": "beta",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "actions_promotions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить beta-список кандидатов для автодобавления в акцию без скрытой offset-пагинации.",
+      "template": {
+        "operation": "ozon_auto_add_candidates",
+        "params": {
+          "action_id": 1,
+          "auto_add_date": "2035-08-28T14:00:00Z",
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "ozon_auto_add_products",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/actions/auto-add/products/list",
+      "effect": "READ",
+      "currentness": "beta",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "actions_promotions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить beta-список товаров с автодобавлением в акцию без скрытой offset-пагинации.",
+      "template": {
+        "operation": "ozon_auto_add_products",
+        "params": {
+          "action_id": 1,
+          "auto_add_date": "2035-08-28T14:00:00Z",
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "ozon_warehouse_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/ozon/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "ozon_warehouses",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список складов Ozon и их географические/типовые данные.",
+      "template": {
+        "operation": "ozon_warehouse_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "performance_bid_limits",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/limits/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "bids",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить лимиты ставок для инструментов продвижения.",
+      "template": {
+        "operation": "performance_bid_limits",
+        "params": {}
+      }
+    },
+    {
+      "alias": "performance_campaign_objects",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/campaign/{campaignId}/objects",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "campaign_products_objects",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список продвигаемых объектов в кампании.",
+      "template": {
+        "operation": "performance_campaign_objects",
+        "params": {
+          "campaignId": "1"
+        }
+      }
+    },
+    {
+      "alias": "performance_campaign_product",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/statistics/campaign/product/json",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "statistics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить рекламную статистику в разрезе кампаний и товаров.",
+      "template": {
+        "operation": "performance_campaign_product",
+        "params": {
+          "dateFrom": "2026-01-01",
+          "dateTo": "2026-01-07"
+        }
+      }
+    },
+    {
+      "alias": "performance_campaign_product_csv",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/statistics/campaign/product",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "statistics_exports",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статистику кампаний и товаров в документированном CSV-формате.",
+      "template": {
+        "operation": "performance_campaign_product_csv",
+        "params": {
+          "dateFrom": "2026-01-01",
+          "dateTo": "2026-01-07"
+        }
+      }
+    },
+    {
+      "alias": "performance_campaign_products",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/campaign/{campaignId}/v2/products",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "campaign_products_objects",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список товаров кампании без скрытой автопагинации.",
+      "template": {
+        "operation": "performance_campaign_products",
+        "params": {
+          "campaignId": "1",
+          "page": 1,
+          "pageSize": 100
+        }
+      }
+    },
+    {
+      "alias": "performance_campaigns",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/campaign",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "campaigns",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить одну ограниченную страницу рекламных кампаний; ответ содержит явные команды для фильтрации, локальной сортировки по датам и перехода к товарам/статистике без скрытых запросов.",
+      "template": {
+        "operation": "performance_campaigns",
+        "params": {
+          "page": 1,
+          "pageSize": 100
+        }
+      }
+    },
+    {
+      "alias": "performance_competitive_bids",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/campaign/{campaignId}/products/bids/competitive",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "bids",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить конкурентные ставки для явно указанных SKU кампании.",
+      "template": {
+        "operation": "performance_competitive_bids",
+        "params": {
+          "campaignId": "1",
+          "skus": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "performance_cpo_min_bids",
+      "provider": "performance_api",
+      "method": "POST",
+      "path": "/api/client/search_promo/get_cpo_min_bids",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "bids",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить фиксированные CPO-ставки для явно указанных SKU.",
+      "template": {
+        "operation": "performance_cpo_min_bids",
+        "params": {
+          "skus": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "performance_daily",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/statistics/daily/json",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "statistics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить дневную рекламную статистику.",
+      "template": {
+        "operation": "performance_daily",
+        "params": {
+          "dateFrom": "2026-01-01",
+          "dateTo": "2026-01-07"
+        }
+      }
+    },
+    {
+      "alias": "performance_daily_csv",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/statistics/daily",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "statistics_exports",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить дневную статистику в документированном CSV-формате.",
+      "template": {
+        "operation": "performance_daily_csv",
+        "params": {
+          "dateFrom": "2026-01-01",
+          "dateTo": "2026-01-07"
+        }
+      }
+    },
+    {
+      "alias": "performance_expense",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/statistics/expense/json",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "statistics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статистику рекламных расходов.",
+      "template": {
+        "operation": "performance_expense",
+        "params": {
+          "dateFrom": "2026-01-01",
+          "dateTo": "2026-01-07"
+        }
+      }
+    },
+    {
+      "alias": "performance_expense_csv",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/statistics/expense",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "statistics_exports",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статистику расходов в документированном CSV-формате.",
+      "template": {
+        "operation": "performance_expense_csv",
+        "params": {
+          "dateFrom": "2026-01-01",
+          "dateTo": "2026-01-07"
+        }
+      }
+    },
+    {
+      "alias": "performance_media",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/statistics/campaign/media/json",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "statistics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить рекламную статистику по медийным кампаниям в JSON.",
+      "template": {
+        "operation": "performance_media",
+        "params": {
+          "dateFrom": "2026-01-01",
+          "dateTo": "2026-01-07"
+        }
+      }
+    },
+    {
+      "alias": "performance_media_csv",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/statistics/campaign/media",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "statistics_exports",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статистику по медийным кампаниям в документированном CSV-формате.",
+      "template": {
+        "operation": "performance_media_csv",
+        "params": {
+          "dateFrom": "2026-01-01",
+          "dateTo": "2026-01-07"
+        }
+      }
+    },
+    {
+      "alias": "performance_min_bid_by_sku",
+      "provider": "performance_api",
+      "method": "POST",
+      "path": "/api/client/min/sku",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "bids",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить минимальную ставку для товаров по SKU.",
+      "template": {
+        "operation": "performance_min_bid_by_sku",
+        "params": {
+          "sku": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "performance_products_with_bonuses",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/products_with_bonuses",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "campaign_products_objects",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список SKU товаров с бонусами.",
+      "template": {
+        "operation": "performance_products_with_bonuses",
+        "params": {}
+      }
+    },
+    {
+      "alias": "performance_search_promo_products",
+      "provider": "performance_api",
+      "method": "POST",
+      "path": "/api/client/campaign/search_promo/v2/products",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "campaign_products_objects",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список товаров в продвижении с оплатой за заказ без скрытой автопагинации.",
+      "template": {
+        "operation": "performance_search_promo_products",
+        "params": {
+          "page": 1,
+          "pageSize": 100
+        }
+      }
+    },
+    {
+      "alias": "performance_sku_statistics",
+      "provider": "performance_api",
+      "method": "POST",
+      "path": "/api/client/statistics/products/sku",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "statistics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статистику по товарам в оплате за клик.",
+      "template": {
+        "operation": "performance_sku_statistics",
+        "params": {
+          "dateFrom": "2026-01-01",
+          "dateTo": "2026-01-07"
+        }
+      }
+    },
+    {
+      "alias": "performance_statistics_list_api",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/statistics/externallist",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "report_workflow",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить одну явную страницу отчётов, созданных через API.",
+      "template": {
+        "operation": "performance_statistics_list_api",
+        "params": {
+          "page": 1,
+          "pageSize": 100
+        }
+      }
+    },
+    {
+      "alias": "performance_statistics_list_ui",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/statistics/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "report_workflow",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить одну явную страницу отчётов, созданных через интерфейс.",
+      "template": {
+        "operation": "performance_statistics_list_ui",
+        "params": {
+          "page": 1,
+          "pageSize": 100
+        }
+      }
+    },
+    {
+      "alias": "performance_statistics_report_download",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/statistics/report",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "report_workflow",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Скачать ранее подготовленный Performance отчёт одним явным запросом.",
+      "template": {
+        "operation": "performance_statistics_report_download",
+        "params": {
+          "UUID": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    },
+    {
+      "alias": "performance_statistics_status",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/statistics/{UUID}",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "report_workflow",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить статус ранее явно запрошенного отчёта.",
+      "template": {
+        "operation": "performance_statistics_status",
+        "params": {
+          "UUID": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    },
+    {
+      "alias": "performance_vendor_statistics_list",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/vendors/statistics/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "external_traffic",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить одну явную страницу отчётов аналитики внешнего трафика.",
+      "template": {
+        "operation": "performance_vendor_statistics_list",
+        "params": {
+          "page": 1,
+          "pageSize": 100
+        }
+      }
+    },
+    {
+      "alias": "performance_vendor_statistics_status",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/vendors/statistics/{UUID}",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "external_traffic",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить статус ранее явно запрошенного отчёта внешнего трафика.",
+      "template": {
+        "operation": "performance_vendor_statistics_status",
+        "params": {
+          "UUID": "00000000-0000-0000-0000-000000000000",
+          "vendor": true
+        }
+      }
+    },
+    {
+      "alias": "performance_vendor_tag",
+      "provider": "performance_api",
+      "method": "GET",
+      "path": "/api/client/organisation/vendor_tag",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "advertising_performance",
+      "section": "external_traffic",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить префикс UTM-метки организации.",
+      "template": {
+        "operation": "performance_vendor_tag",
+        "params": {
+          "orgId": "1"
+        }
+      }
+    },
+    {
+      "alias": "posting_cancel_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/cancel/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "cancellation_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Проверить статус отмены отправления.",
+      "template": {
+        "operation": "posting_cancel_status",
+        "params": {
+          "posting_number": "12345678-0001-1"
+        }
+      }
+    },
+    {
+      "alias": "posting_digital_list_v2",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/posting/digital/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_postings",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить одну явную страницу цифровых отправлений с редактированием чувствительных полей результата.",
+      "template": {
+        "operation": "posting_digital_list_v2",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "posting_fbo_cancel_reason_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/fbo/cancel-reason/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "cancellations",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить причины отмены, доступные для FBO-отправлений.",
+      "template": {
+        "operation": "posting_fbo_cancel_reason_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "posting_fbo_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/posting/fbo/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbo_postings",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить безопасную информацию об одном отправлении FBO по явно заданному posting_number.",
+      "template": {
+        "operation": "posting_fbo_get",
+        "params": {
+          "posting_number": "12345678-0001-1"
+        }
+      }
+    },
+    {
+      "alias": "posting_fbo_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v3/posting/fbo/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbo_postings",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список отправлений FBO.",
+      "template": {
+        "operation": "posting_fbo_list",
+        "params": {
+          "limit": 10
+        }
+      }
+    },
+    {
+      "alias": "posting_fbs_act_get_barcode",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/posting/fbs/act/get-barcode",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "labels_documents",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Штрихкод для отгрузки отправления",
+      "template": {
+        "operation": "posting_fbs_act_get_barcode",
+        "params": {
+          "id": 1
+        }
+      }
+    },
+    {
+      "alias": "posting_fbs_act_get_barcode_text",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/posting/fbs/act/get-barcode/text",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "labels_documents",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Значение штрихкода для отгрузки отправления",
+      "template": {
+        "operation": "posting_fbs_act_get_barcode_text",
+        "params": {
+          "id": 1
+        }
+      }
+    },
+    {
+      "alias": "posting_fbs_act_get_pdf",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/posting/fbs/act/get-pdf",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "labels_documents",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить PDF c документами",
+      "template": {
+        "operation": "posting_fbs_act_get_pdf",
+        "params": {
+          "id": 1
+        }
+      }
+    },
+    {
+      "alias": "posting_fbs_cancel_reason",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/fbs/cancel-reason",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "cancellations",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить причины отмены для явно заданных FBS/rFBS отправлений одним прямым запросом.",
+      "template": {
+        "operation": "posting_fbs_cancel_reason",
+        "params": {
+          "related_posting_numbers": [
+            "12345678-0001-1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "posting_fbs_cancel_reason_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/posting/fbs/cancel-reason/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "cancellations",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить причины отмены, доступные для FBS/rFBS отправлений.",
+      "template": {
+        "operation": "posting_fbs_cancel_reason_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "posting_fbs_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v3/posting/fbs/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "orders_postings",
+      "section": "fbs_postings",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить подробную информацию об отправлении FBS; ответ может содержать данные покупателя/получателя.",
+      "template": {
+        "operation": "posting_fbs_get",
+        "params": {
+          "posting_number": "12345678-0001-1"
+        }
+      }
+    },
+    {
+      "alias": "posting_fbs_get_by_barcode",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/posting/fbs/get-by-barcode",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_postings",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию об отправлении по штрихкоду",
+      "template": {
+        "operation": "posting_fbs_get_by_barcode",
+        "params": {
+          "barcode": "1"
+        }
+      }
+    },
+    {
+      "alias": "posting_fbs_package_label_get_v1",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/fbs/package-label/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "labels_documents",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить файл с этикетками",
+      "template": {
+        "operation": "posting_fbs_package_label_get_v1",
+        "params": {
+          "task_id": 1
+        }
+      }
+    },
+    {
+      "alias": "posting_fbs_pickup_code_verify",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/fbs/pick-up-code/verify",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_exemplars_marks",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Проверить предоставленный код курьера для отправления без изменения состояния отправления.",
+      "template": {
+        "operation": "posting_fbs_pickup_code_verify",
+        "params": {
+          "pickup_code": "000000",
+          "posting_number": "POSTING_NUMBER"
+        }
+      }
+    },
+    {
+      "alias": "posting_global_etgb",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/global/etgb",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "labels_documents",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить таможенные декларации ETGB за явно указанный период.",
+      "template": {
+        "operation": "posting_global_etgb",
+        "params": {
+          "date": {
+            "from": "2026-01-01T00:00:00Z",
+            "to": "2026-01-02T00:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "alias": "posting_marks",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/marks",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_exemplars_marks",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить маркировки экземпляров для явно указанных отправлений.",
+      "template": {
+        "operation": "posting_marks",
+        "params": {
+          "posting_numbers": [
+            "POSTING_NUMBER"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "posting_unpaid_legal_product_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/posting/unpaid-legal/product/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "orders_postings",
+      "section": "fbs_postings",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список неоплаченных товаров из заказов юридических лиц; cursor продолжает выборку только отдельной явной командой.",
+      "template": {
+        "operation": "posting_unpaid_legal_product_list",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "pricing_strategy_competitors",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/pricing-strategy/competitors/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "pricing_strategy",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список конкурентов для ценовых стратегий с явной page/limit без скрытой автопагинации.",
+      "template": {
+        "operation": "pricing_strategy_competitors",
+        "params": {
+          "page": 1,
+          "limit": 20
+        }
+      }
+    },
+    {
+      "alias": "pricing_strategy_ids_by_product_ids",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/pricing-strategy/strategy-ids-by-product-ids",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "pricing_strategy",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить назначенные ценовые стратегии для явного списка product_id одним запросом без fanout.",
+      "template": {
+        "operation": "pricing_strategy_ids_by_product_ids",
+        "params": {
+          "product_id": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "pricing_strategy_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/pricing-strategy/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "pricing_strategy",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить параметры выбранной ценовой стратегии.",
+      "template": {
+        "operation": "pricing_strategy_info",
+        "params": {
+          "strategy_id": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    },
+    {
+      "alias": "pricing_strategy_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/pricing-strategy/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "pricing_strategy",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список ценовых стратегий с явной page/limit без скрытой автопагинации.",
+      "template": {
+        "operation": "pricing_strategy_list",
+        "params": {
+          "page": 1,
+          "limit": 20
+        }
+      }
+    },
+    {
+      "alias": "pricing_strategy_product_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/pricing-strategy/product/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "pricing_strategy",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить цену и ссылку на товар конкурента для товара в стратегии; ссылка возвращается как данные и автоматически не открывается.",
+      "template": {
+        "operation": "pricing_strategy_product_info",
+        "params": {
+          "product_id": 1
+        }
+      }
+    },
+    {
+      "alias": "pricing_strategy_products",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/pricing-strategy/products/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "pricing_strategy",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить товары выбранной ценовой стратегии одним запросом.",
+      "template": {
+        "operation": "pricing_strategy_products",
+        "params": {
+          "strategy_id": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    },
+    {
+      "alias": "product_action_timer_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/action/timer/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "prices",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус таймера актуальности минимальной цены для явно переданных товаров без скрытого fanout.",
+      "template": {
+        "operation": "product_action_timer_status",
+        "params": {
+          "product_ids": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "product_certificate_accordance_types",
+      "provider": "seller_api",
+      "method": "GET",
+      "path": "/v2/product/certificate/accordance-types/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification_reference",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить актуальный справочник типов соответствия требованиям для сертификатов.",
+      "template": {
+        "operation": "product_certificate_accordance_types",
+        "params": {}
+      }
+    },
+    {
+      "alias": "product_certificate_accordance_types_v1",
+      "provider": "seller_api",
+      "method": "GET",
+      "path": "/v1/product/certificate/accordance-types",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification_reference",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Список типов соответствия требованиям (версия 1)",
+      "template": {
+        "operation": "product_certificate_accordance_types_v1",
+        "params": {}
+      }
+    },
+    {
+      "alias": "product_certificate_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/certificate/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию об одном сертификате по явно переданному номеру.",
+      "template": {
+        "operation": "product_certificate_info",
+        "params": {
+          "certificate_number": "CERTIFICATE_NUMBER"
+        }
+      }
+    },
+    {
+      "alias": "product_certificate_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/certificate/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список сертификатов продавца с явной страницей без скрытой автопагинации.",
+      "template": {
+        "operation": "product_certificate_list",
+        "params": {
+          "page": 1,
+          "page_size": 100
+        }
+      }
+    },
+    {
+      "alias": "product_certificate_product_status_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/certificate/product_status/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить справочник возможных статусов товаров при привязке к сертификату.",
+      "template": {
+        "operation": "product_certificate_product_status_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "product_certificate_products",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/certificate/products/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить товары, привязанные к сертификату, через актуальный limit/last_id режим без скрытой автопагинации.",
+      "template": {
+        "operation": "product_certificate_products",
+        "params": {
+          "certificate_id": 1,
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "product_certificate_rejection_reasons",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/certificate/rejection_reasons/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification_reference",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить справочник причин отклонения сертификатов.",
+      "template": {
+        "operation": "product_certificate_rejection_reasons",
+        "params": {}
+      }
+    },
+    {
+      "alias": "product_certificate_status_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/certificate/status/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить справочник возможных статусов сертификатов.",
+      "template": {
+        "operation": "product_certificate_status_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "product_certificate_types",
+      "provider": "seller_api",
+      "method": "GET",
+      "path": "/v1/product/certificate/types",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification_reference",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить справочник типов документов для сертификации товаров.",
+      "template": {
+        "operation": "product_certificate_types",
+        "params": {}
+      }
+    },
+    {
+      "alias": "product_certification_categories",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/product/certification/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification_reference",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список категорий товаров, для которых требуется сертификация, с явной страницей без скрытой автопагинации.",
+      "template": {
+        "operation": "product_certification_categories",
+        "params": {
+          "page": 1,
+          "page_size": 100
+        }
+      }
+    },
+    {
+      "alias": "product_certification_options",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/product/certification/options",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification_reference",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить справочные параметры для создания сертификата качества.",
+      "template": {
+        "operation": "product_certification_options",
+        "params": {}
+      }
+    },
+    {
+      "alias": "product_certification_params_v2",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/product/certification/params",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "certification_reference",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить обязательные параметры для создания сертификата качества",
+      "template": {
+        "operation": "product_certification_params_v2",
+        "params": {}
+      }
+    },
+    {
+      "alias": "product_content_rating",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/rating-by-sku",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "limits_diagnostics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить контент-рейтинг товаров и рекомендации по его повышению по явно переданным SKU.",
+      "template": {
+        "operation": "product_content_rating",
+        "params": {
+          "skus": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "product_discounted_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/info/discounted",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "product_list_info",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить состояние, дефекты и основной SKU для явно переданных уценённых FBO-товаров.",
+      "template": {
+        "operation": "product_discounted_info",
+        "params": {
+          "discounted_skus": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "product_fbs_warehouse_stocks",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/info/warehouse/stocks",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "stocks_inventory",
+      "section": "warehouse_fbs",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить остатки на одном явно указанном FBS/rFBS складе без скрытой пагинации.",
+      "template": {
+        "operation": "product_fbs_warehouse_stocks",
+        "params": {
+          "limit": 100,
+          "warehouse_id": 1
+        }
+      }
+    },
+    {
+      "alias": "product_import_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/import/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "product_list_info",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус ранее запущенной задачи импорта товара по явно указанному task_id без polling.",
+      "template": {
+        "operation": "product_import_info",
+        "params": {
+          "task_id": 1
+        }
+      }
+    },
+    {
+      "alias": "product_info_description",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/info/description",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "description_content",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить описание одного товара по offer_id или product_id.",
+      "template": {
+        "operation": "product_info_description",
+        "params": {
+          "offer_id": "OFFER_ID"
+        }
+      }
+    },
+    {
+      "alias": "product_pictures_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/product/pictures/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "pictures",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить ссылки на изображения выбранных товаров без автоматической загрузки этих файлов.",
+      "template": {
+        "operation": "product_pictures_info",
+        "params": {
+          "product_id": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "product_placement_zone_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/placement-zone/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "product_quant_placement",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить зоны размещения товаров по явно переданным SKU перед поставкой.",
+      "template": {
+        "operation": "product_placement_zone_info",
+        "params": {
+          "skus": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "product_price_details",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/prices/details",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "prices",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить подробную информацию о ценах товаров по SKU.",
+      "template": {
+        "operation": "product_price_details",
+        "params": {
+          "skus": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "product_prices_bulk",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v5/product/info/prices",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "prices",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить текущую информацию о ценах товаров без скрытой автопагинации.",
+      "template": {
+        "operation": "product_prices_bulk",
+        "params": {
+          "filter": {},
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "product_quant_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/quant/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "product_quant_placement",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию об эконом-товарах по явно переданным кодам квантов.",
+      "template": {
+        "operation": "product_quant_info",
+        "params": {
+          "quant_code": [
+            "QUANT_CODE"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "product_quant_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/quant/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "product_quant_placement",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список эконом-товаров одним явным запросом без скрытой пагинации.",
+      "template": {
+        "operation": "product_quant_list",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "product_queries",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/analytics/product-queries",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "search_visibility",
+      "section": "product_queries",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить сводку поисковых запросов по выбранным SKU.",
+      "template": {
+        "operation": "product_queries",
+        "params": {
+          "date_from": "2026-01-01T00:00:00Z",
+          "page_size": 10,
+          "skus": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "product_queries_details",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/analytics/product-queries/details",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "search_visibility",
+      "section": "query_details",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить детализацию поисковых запросов по выбранным SKU.",
+      "template": {
+        "operation": "product_queries_details",
+        "params": {
+          "date_from": "2026-01-01T00:00:00Z",
+          "page_size": 10,
+          "skus": [
+            "1"
+          ],
+          "limit_by_sku": 10
+        }
+      }
+    },
+    {
+      "alias": "product_related_sku",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/related-sku/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "product_list_info",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить связанные единые SKU по явно переданным старым SKU FBS/FBO.",
+      "template": {
+        "operation": "product_related_sku",
+        "params": {
+          "sku": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "product_stairway_discount_by_quantity_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/stairway-discount/by-quantity/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "prices",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить текущую скидку от количества для явно переданных SKU.",
+      "template": {
+        "operation": "product_stairway_discount_by_quantity_get",
+        "params": {
+          "skus": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "product_subscription_count",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/info/subscription",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "product_list_info",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить количество пользователей, подписавшихся на уведомление о поступлении выбранных товаров.",
+      "template": {
+        "operation": "product_subscription_count",
+        "params": {
+          "skus": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "product_upload_quota",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v4/product/info/limit",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "limits_diagnostics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить текущие лимиты на ассортимент, создание, обновление и операции с товарами.",
+      "template": {
+        "operation": "product_upload_quota",
+        "params": {}
+      }
+    },
+    {
+      "alias": "product_visibility_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/visibility/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "product_list_info",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о видимости явно указанных SKU или доступную сводку без скрытых повторных запросов.",
+      "template": {
+        "operation": "product_visibility_info",
+        "params": {
+          "skus": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "product_wrong_volume",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/product/info/wrong-volume",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "limits_diagnostics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить товары с некорректными объёмно-весовыми характеристиками без скрытого продолжения cursor.",
+      "template": {
+        "operation": "product_wrong_volume",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "question_answer_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/question/answer/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "reviews_questions",
+      "section": "answers",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить ответы на вопрос; имя автора и свободный текст доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "question_answer_list",
+        "params": {
+          "question_id": "QUESTION_ID",
+          "sku": 1
+        }
+      }
+    },
+    {
+      "alias": "question_count",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/question/count",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "reviews_questions",
+      "section": "questions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить агрегированное количество вопросов по статусам без текста вопросов.",
+      "template": {
+        "operation": "question_count",
+        "params": {}
+      }
+    },
+    {
+      "alias": "question_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/question/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "reviews_questions",
+      "section": "questions",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить вопрос по идентификатору; имя автора и свободный текст доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "question_info",
+        "params": {
+          "question_id": "QUESTION_ID"
+        }
+      }
+    },
+    {
+      "alias": "question_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/question/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "reviews_questions",
+      "section": "questions",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить вопросы покупателей; имя автора и свободный пользовательский текст доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "question_list",
+        "params": {
+          "limit": 100,
+          "sort_dir": "DESC"
+        }
+      }
+    },
+    {
+      "alias": "question_top_sku",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/question/top-sku",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "reviews_questions",
+      "section": "questions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить SKU с наибольшим количеством вопросов без текста и имён авторов.",
+      "template": {
+        "operation": "question_top_sku",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "receipts_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/receipts/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "finance",
+      "section": "receipts_invoices",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить чек в формате PDF",
+      "template": {
+        "operation": "receipts_get",
+        "params": {
+          "receipt_id": "1"
+        }
+      }
+    },
+    {
+      "alias": "receipts_seller_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/receipts/seller/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "receipts_invoices",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить одну явную страницу чеков продавца с безопасной проекцией результата.",
+      "template": {
+        "operation": "receipts_seller_list",
+        "params": {
+          "page": 0,
+          "page_size": 100
+        }
+      }
+    },
+    {
+      "alias": "removal_from_stock_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/removal/from-stock/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "utilization_removals",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить отчёт по вывозу и утилизации со стока FBO; следующая страница только отдельной явной командой с last_id.",
+      "template": {
+        "operation": "removal_from_stock_list",
+        "params": {
+          "date_from": "2026-08-01",
+          "date_to": "2026-08-28",
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "removal_from_supply_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/removal/from-supply/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "utilization_removals",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить отчёт по вывозу и утилизации с поставки FBO; следующая страница только отдельной явной командой с last_id.",
+      "template": {
+        "operation": "removal_from_supply_list",
+        "params": {
+          "date_from": "2026-08-01",
+          "date_to": "2026-08-28",
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "report_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/report/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "documents_reports",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию об уже созданном отчёте по его коду; файл автоматически не загружается.",
+      "template": {
+        "operation": "report_info",
+        "params": {
+          "code": "REPORT_CODE"
+        }
+      }
+    },
+    {
+      "alias": "report_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/report/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "finance",
+      "section": "documents_reports",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список ранее сформированных отчётов без создания новых отчётов.",
+      "template": {
+        "operation": "report_list",
+        "params": {
+          "page": 1,
+          "page_size": 100
+        }
+      }
+    },
+    {
+      "alias": "return_giveout_barcode",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/return/giveout/barcode",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "return_giveout",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Значение штрихкода для возвратных отгрузок",
+      "template": {
+        "operation": "return_giveout_barcode",
+        "params": {}
+      }
+    },
+    {
+      "alias": "return_giveout_get_pdf",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/return/giveout/get-pdf",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "returns_cancellations",
+      "section": "return_giveout",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Штрихкод для получения возвратной отгрузки в формате PDF",
+      "template": {
+        "operation": "return_giveout_get_pdf",
+        "params": {}
+      }
+    },
+    {
+      "alias": "return_giveout_get_png",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/return/giveout/get-png",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "returns_cancellations",
+      "section": "return_giveout",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Штрихкод для получения возвратной отгрузки в формате PNG",
+      "template": {
+        "operation": "return_giveout_get_png",
+        "params": {}
+      }
+    },
+    {
+      "alias": "return_giveout_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/return/giveout/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "return_giveout",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о возвратной отгрузке.",
+      "template": {
+        "operation": "return_giveout_info",
+        "params": {
+          "giveout_id": 1
+        }
+      }
+    },
+    {
+      "alias": "return_giveout_is_enabled",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/return/giveout/is-enabled",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "return_giveout",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Проверить, доступно ли получение возвратных отгрузок по штрихкоду.",
+      "template": {
+        "operation": "return_giveout_is_enabled",
+        "params": {}
+      }
+    },
+    {
+      "alias": "return_giveout_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/return/giveout/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "return_giveout",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список активных возвратных отгрузок.",
+      "template": {
+        "operation": "return_giveout_list",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "returns_company_fbs_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/returns/company/fbs/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "return_giveout",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить количество возвратов FBS и информацию по drop-off пунктам.",
+      "template": {
+        "operation": "returns_company_fbs_info",
+        "params": {
+          "pagination": {
+            "limit": 100
+          }
+        }
+      }
+    },
+    {
+      "alias": "returns_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/returns/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "returns",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о возвратах FBO и FBS.",
+      "template": {
+        "operation": "returns_list",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "returns_utilization_history",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/returns/settings/utilization/history",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "utilization_removals",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить историю изменений настроек автоутилизации возвратов.",
+      "template": {
+        "operation": "returns_utilization_history",
+        "params": {}
+      }
+    },
+    {
+      "alias": "returns_utilization_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/returns/settings/utilization/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "returns_cancellations",
+      "section": "utilization_removals",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить текущие настройки автоутилизации возвратов.",
+      "template": {
+        "operation": "returns_utilization_info",
+        "params": {}
+      }
+    },
+    {
+      "alias": "review_comment_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/review/comment/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "reviews_questions",
+      "section": "review_comments",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить комментарии к отзыву; свободный текст доступен только при включённой настройке личных данных.",
+      "template": {
+        "operation": "review_comment_list",
+        "params": {
+          "review_id": "REVIEW_ID",
+          "limit": 100,
+          "sort_dir": "ASC"
+        }
+      }
+    },
+    {
+      "alias": "review_count",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/review/count",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "reviews_questions",
+      "section": "reviews",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить агрегированное количество отзывов по статусам без текста отзывов.",
+      "template": {
+        "operation": "review_count",
+        "params": {}
+      }
+    },
+    {
+      "alias": "review_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/review/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "reviews_questions",
+      "section": "reviews",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить отзыв по идентификатору; свободный пользовательский текст доступен только при включённой настройке личных данных.",
+      "template": {
+        "operation": "review_info",
+        "params": {
+          "review_id": "REVIEW_ID"
+        }
+      }
+    },
+    {
+      "alias": "review_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/review/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "reviews_questions",
+      "section": "reviews",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить список отзывов покупателей; свободный пользовательский текст доступен только при включённой настройке личных данных.",
+      "template": {
+        "operation": "review_list",
+        "params": {
+          "limit": 100,
+          "sort_dir": "DESC"
+        }
+      }
+    },
+    {
+      "alias": "rfbs_returns_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/returns/rfbs/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "returns_cancellations",
+      "section": "returns",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить заявку на возврат rFBS; сведения о покупателе доступны только при включённой настройке личных данных.",
+      "template": {
+        "operation": "rfbs_returns_get",
+        "params": {
+          "return_id": 1
+        }
+      }
+    },
+    {
+      "alias": "rfbs_returns_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/returns/rfbs/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "PERSONAL_DATA_READ_GATED",
+      "privacy_policy": "operator_personal_data_gate",
+      "cluster": "returns_cancellations",
+      "section": "returns",
+      "guidance_visibility": "conditional",
+      "workflow_role": "single_read",
+      "purpose": "Получить заявки на возврат rFBS; ответ может содержать имя клиента.",
+      "template": {
+        "operation": "rfbs_returns_list",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "roles",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/roles",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "account_access",
+      "section": "roles_access",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить роли и методы, разрешённые текущему Seller API-ключу.",
+      "template": {
+        "operation": "roles",
+        "params": {}
+      }
+    },
+    {
+      "alias": "seller_action_candidates",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/seller-actions/products/candidates",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "actions_promotions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить товары, доступные для выбранной акции продавца, с только явным cursor без скрытой автопагинации.",
+      "template": {
+        "operation": "seller_action_candidates",
+        "params": {
+          "action_id": 1,
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "seller_action_products",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/seller-actions/products/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "actions_promotions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить товары, участвующие в выбранной акции, без скрытого продолжения cursor.",
+      "template": {
+        "operation": "seller_action_products",
+        "params": {
+          "action_id": 1,
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "seller_actions_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/seller-actions/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "actions_promotions",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список акций продавца с явной пагинацией offset/limit.",
+      "template": {
+        "operation": "seller_actions_list",
+        "params": {
+          "limit": 100,
+          "offset": 0
+        }
+      }
+    },
+    {
+      "alias": "seller_actions_voucher_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/seller-actions/voucher/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "prices_promotions",
+      "section": "actions_promotions",
+      "guidance_visibility": "user",
+      "workflow_role": "explicit_workflow_read_step",
+      "purpose": "Получить файл с промокодами в формате CSV",
+      "template": {
+        "operation": "seller_actions_voucher_get",
+        "params": {
+          "action_id": 1
+        }
+      }
+    },
+    {
+      "alias": "seller_delivery_method_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/delivery-method/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "delivery_methods",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить методы доставки realFBS-складов с явным cursor/limit без скрытой автопагинации.",
+      "template": {
+        "operation": "seller_delivery_method_list",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "seller_fbs_error_index",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/rating/index/fbs/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "sales_analytics",
+      "section": "delivery_returns_cancellations_metrics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить текущий индекс ошибок FBS/rFBS и стоимость обработки ошибок.",
+      "template": {
+        "operation": "seller_fbs_error_index",
+        "params": {}
+      }
+    },
+    {
+      "alias": "seller_fbs_error_postings",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/rating/index/fbs/posting/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "sales_analytics",
+      "section": "delivery_returns_cancellations_metrics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить отправления, повлиявшие на индекс ошибок FBS/rFBS, без скрытой автопагинации.",
+      "template": {
+        "operation": "seller_fbs_error_postings",
+        "params": {
+          "filter": {
+            "date_from": "2026-08-01T00:00:00Z",
+            "date_to": "2026-08-26T23:59:59Z"
+          },
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "seller_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/seller/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "account_access",
+      "section": "seller_settings",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о кабинете продавца, компании, рейтингах и подписке.",
+      "template": {
+        "operation": "seller_info",
+        "params": {}
+      }
+    },
+    {
+      "alias": "seller_ozon_logistics_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/seller/ozon-logistics/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "account_access",
+      "section": "seller_settings",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус подключения Ozon Доставки и доступные схемы FBO/FBS.",
+      "template": {
+        "operation": "seller_ozon_logistics_info",
+        "params": {}
+      }
+    },
+    {
+      "alias": "seller_product_attributes",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v4/product/info/attributes",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "attributes_categories",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить характеристики товаров по идентификаторам и видимости без скрытой автопагинации.",
+      "template": {
+        "operation": "seller_product_attributes",
+        "params": {
+          "filter": {},
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "seller_product_info_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v3/product/info/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "product_list_info",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о товарах по одной группе идентификаторов.",
+      "template": {
+        "operation": "seller_product_info_list",
+        "params": {
+          "product_id": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "seller_product_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v3/product/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "catalog_products",
+      "section": "product_list_info",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список товаров Seller API без скрытой автопагинации.",
+      "template": {
+        "operation": "seller_product_list",
+        "params": {
+          "filter": {},
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "seller_rating_history",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/rating/history",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "sales_analytics",
+      "section": "delivery_returns_cancellations_metrics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить историю выбранных рейтингов продавца за явный период.",
+      "template": {
+        "operation": "seller_rating_history",
+        "params": {
+          "date_from": "2026-08-01T00:00:00Z",
+          "date_to": "2026-08-26T23:59:59Z",
+          "ratings": [
+            "rating_on_time"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "seller_rating_summary",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/rating/summary",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "sales_analytics",
+      "section": "delivery_returns_cancellations_metrics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить текущие рейтинги продавца и их пороги.",
+      "template": {
+        "operation": "seller_rating_summary",
+        "params": {}
+      }
+    },
+    {
+      "alias": "seller_warehouse_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/warehouse/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "seller_warehouses",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список складов FBS/rFBS с явным cursor/limit без скрытой автопагинации.",
+      "template": {
+        "operation": "seller_warehouse_list",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "stock_analytics",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/analytics/stocks",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "stocks_inventory",
+      "section": "stock_analytics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить текущую аналитику остатков по SKU и фильтрам складов/кластеров.",
+      "template": {
+        "operation": "stock_analytics",
+        "params": {
+          "skus": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "stock_on_warehouses_v2",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/analytics/stock_on_warehouses",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "stocks_inventory",
+      "section": "stock_analytics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить отчёт по остаткам товаров на складах; offset продолжает выборку только отдельной явной командой.",
+      "template": {
+        "operation": "stock_on_warehouses_v2",
+        "params": {
+          "limit": 100,
+          "offset": 0,
+          "warehouse_type": "ALL"
+        }
+      }
+    },
+    {
+      "alias": "stock_turnover_analytics",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/analytics/turnover/stocks",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "stocks_inventory",
+      "section": "stock_movement_turnover",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить оборачиваемость и уровень текущего остатка товаров; offset продолжает выборку только отдельной явной командой.",
+      "template": {
+        "operation": "stock_turnover_analytics",
+        "params": {
+          "limit": 100,
+          "offset": 0,
+          "sku": []
+        }
+      }
+    },
+    {
+      "alias": "stocks_current",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v4/product/info/stocks",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "stocks_inventory",
+      "section": "current_aggregate",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить текущие остатки товаров.",
+      "template": {
+        "operation": "stocks_current",
+        "params": {
+          "filter": {},
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "supplier_available_warehouses",
+      "provider": "seller_api",
+      "method": "GET",
+      "path": "/v1/supplier/available_warehouses",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "ozon_warehouses",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить активные склады Ozon и их среднюю загруженность без дополнительных запросов.",
+      "template": {
+        "operation": "supplier_available_warehouses",
+        "params": {}
+      }
+    },
+    {
+      "alias": "supply_order_act_accept_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/supply-order/act/accept/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_acts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус согласования акта по явному operation_id; без автоматического polling.",
+      "template": {
+        "operation": "supply_order_act_accept_status",
+        "params": {
+          "operation_id": "OPERATION_ID"
+        }
+      }
+    },
+    {
+      "alias": "supply_order_act_product_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/supply-order/act/product/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_acts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию о товарах в акте по идентификатору поставки.",
+      "template": {
+        "operation": "supply_order_act_product_get",
+        "params": {
+          "supply_id": 1
+        }
+      }
+    },
+    {
+      "alias": "supply_order_act_summary_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/supply-order/act/summary/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_acts",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить информацию об акте по идентификатору заявки на поставку.",
+      "template": {
+        "operation": "supply_order_act_summary_get",
+        "params": {
+          "order_id": 1
+        }
+      }
+    },
+    {
+      "alias": "supply_order_bundle",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/supply-order/bundle",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_orders",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить товарный состав поставки или заявки на поставку.",
+      "template": {
+        "operation": "supply_order_bundle",
+        "params": {
+          "bundle_ids": [
+            "BUNDLE_ID"
+          ],
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "supply_order_cancel_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/supply-order/cancel/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус ранее запущенной отмены по явному operation_id; без автоматического polling.",
+      "template": {
+        "operation": "supply_order_cancel_status",
+        "params": {
+          "operation_id": "OPERATION_ID"
+        }
+      }
+    },
+    {
+      "alias": "supply_order_content_update_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/supply-order/content/update/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус ранее запущенного редактирования состава по явному operation_id; без polling.",
+      "template": {
+        "operation": "supply_order_content_update_status",
+        "params": {
+          "operation_id": "OPERATION_ID"
+        }
+      }
+    },
+    {
+      "alias": "supply_order_content_update_validation",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/supply-order/content/update/validation",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Проверить новый товарный состав поставки без применения изменения.",
+      "template": {
+        "operation": "supply_order_content_update_validation",
+        "params": {
+          "new_bundle_id": "BUNDLE_ID",
+          "supply_id": 1
+        }
+      }
+    },
+    {
+      "alias": "supply_order_details",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/supply-order/details",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_orders",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить подробную информацию о заявке на поставку.",
+      "template": {
+        "operation": "supply_order_details",
+        "params": {
+          "order_id": 1
+        }
+      }
+    },
+    {
+      "alias": "supply_order_get",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v3/supply-order/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_orders",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить заявки на поставку по идентификаторам.",
+      "template": {
+        "operation": "supply_order_get",
+        "params": {
+          "order_ids": [
+            1
+          ]
+        }
+      }
+    },
+    {
+      "alias": "supply_order_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v3/supply-order/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_orders",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список идентификаторов заявок на поставку.",
+      "template": {
+        "operation": "supply_order_list",
+        "params": {
+          "filter": {
+            "states": []
+          },
+          "limit": 100,
+          "sort_by": "ORDER_CREATION",
+          "sort_dir": "DESC"
+        }
+      }
+    },
+    {
+      "alias": "supply_order_pass_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/supply-order/pass/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус ввода данных о водителе и автомобиле по явному operation_id; без polling.",
+      "template": {
+        "operation": "supply_order_pass_status",
+        "params": {
+          "operation_id": "OPERATION_ID"
+        }
+      }
+    },
+    {
+      "alias": "supply_order_status_counter",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/supply-order/status/counter",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_orders",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить количество заявок на поставку по статусам.",
+      "template": {
+        "operation": "supply_order_status_counter",
+        "params": {}
+      }
+    },
+    {
+      "alias": "supply_order_timeslot_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v2/supply-order/timeslot/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_orders",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить актуальный список доступных интервалов поставки.",
+      "template": {
+        "operation": "supply_order_timeslot_list",
+        "params": {
+          "order_id": 1
+        }
+      }
+    },
+    {
+      "alias": "supply_order_timeslot_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/supply-order/timeslot/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "supplies_fbo",
+      "section": "supply_status",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус ранее запущенного изменения интервала по явному operation_id; без polling.",
+      "template": {
+        "operation": "supply_order_timeslot_status",
+        "params": {
+          "operation_id": "OPERATION_ID"
+        }
+      }
+    },
+    {
+      "alias": "warehouse_fbs_create_dropoff_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbs/create/drop-off/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_setup",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить доступные drop-off пункты для настройки FBS-склада; адреса относятся только к логистическим пунктам.",
+      "template": {
+        "operation": "warehouse_fbs_create_dropoff_list",
+        "params": {
+          "country_code": "RU",
+          "is_kgt": false
+        }
+      }
+    },
+    {
+      "alias": "warehouse_fbs_create_dropoff_timeslot_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbs/create/drop-off/timeslot/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_timeslots_pickup",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить таймслоты drop-off для создания FBS-склада по явно выбранному логистическому пункту.",
+      "template": {
+        "operation": "warehouse_fbs_create_dropoff_timeslot_list",
+        "params": {
+          "drop_off_point_id": 1
+        }
+      }
+    },
+    {
+      "alias": "warehouse_fbs_create_pickup_timeslot_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbs/create/pick-up/timeslot/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_timeslots_pickup",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить таймслоты pick-up для создания FBS-склада по явно заданным координатам склада.",
+      "template": {
+        "operation": "warehouse_fbs_create_pickup_timeslot_list",
+        "params": {
+          "is_kgt": false,
+          "address_coordinates": {
+            "latitude": 55.75,
+            "longitude": 37.62
+          }
+        }
+      }
+    },
+    {
+      "alias": "warehouse_fbs_create_return_point_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbs/create/return-point/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_setup",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить логистические пункты возврата для создания FBS-склада; last_id продолжает выборку только отдельной явной командой.",
+      "template": {
+        "operation": "warehouse_fbs_create_return_point_list",
+        "params": {
+          "country_code": "RU",
+          "coordinates": {
+            "latitude": 55.75,
+            "longitude": 37.62
+          },
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "warehouse_fbs_pickup_history_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbs/pickup/history/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_timeslots_pickup",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить историю FBS-отгрузок курьеру; cursor продолжает выборку только отдельной явной командой.",
+      "template": {
+        "operation": "warehouse_fbs_pickup_history_list",
+        "params": {
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "warehouse_fbs_pickup_planning_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbs/pickup/planning/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_timeslots_pickup",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить список складов, доступных для планирования FBS-отгрузок курьеру.",
+      "template": {
+        "operation": "warehouse_fbs_pickup_planning_list",
+        "params": {}
+      }
+    },
+    {
+      "alias": "warehouse_fbs_return_mile_check",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbs/return-mile/check",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_diagnostics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Проверить необходимость настройки возвратной мили FBS по явно заданным параметрам склада.",
+      "template": {
+        "operation": "warehouse_fbs_return_mile_check",
+        "params": {
+          "country_code": "RU",
+          "first_mile_type": "DROP_OFF",
+          "is_kgt": false
+        }
+      }
+    },
+    {
+      "alias": "warehouse_fbs_return_mile_info",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbs/return-mile/info",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_diagnostics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить настройки возвратной мили и безопасную операционную географию для явно указанных FBS-складов.",
+      "template": {
+        "operation": "warehouse_fbs_return_mile_info",
+        "params": {
+          "warehouse_ids": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "alias": "warehouse_fbs_update_dropoff_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbs/update/drop-off/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_setup",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить доступные drop-off пункты для изменения настроек явно выбранного FBS-склада.",
+      "template": {
+        "operation": "warehouse_fbs_update_dropoff_list",
+        "params": {
+          "warehouse_id": 1
+        }
+      }
+    },
+    {
+      "alias": "warehouse_fbs_update_dropoff_timeslot_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbs/update/drop-off/timeslot/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_timeslots_pickup",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить таймслоты drop-off для изменения настроек явно выбранного FBS-склада.",
+      "template": {
+        "operation": "warehouse_fbs_update_dropoff_timeslot_list",
+        "params": {
+          "drop_off_point_id": 1,
+          "warehouse_id": 1
+        }
+      }
+    },
+    {
+      "alias": "warehouse_fbs_update_pickup_timeslot_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbs/update/pick-up/timeslot/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_timeslots_pickup",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить таймслоты pick-up для изменения настроек явно выбранного FBS-склада.",
+      "template": {
+        "operation": "warehouse_fbs_update_pickup_timeslot_list",
+        "params": {
+          "warehouse_id": 1
+        }
+      }
+    },
+    {
+      "alias": "warehouse_fbs_update_return_point_list",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/fbs/update/return-point/list",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_setup",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить логистические пункты возврата для изменения FBS-склада; last_id продолжает выборку только отдельной явной командой.",
+      "template": {
+        "operation": "warehouse_fbs_update_return_point_list",
+        "params": {
+          "warehouse_id": 1,
+          "limit": 100
+        }
+      }
+    },
+    {
+      "alias": "warehouse_invalid_products",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/invalid-products/get",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_diagnostics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить товары с ограничениями доставки на выбранном складе без скрытого продолжения last_id.",
+      "template": {
+        "operation": "warehouse_invalid_products",
+        "params": {
+          "warehouse_id": 1
+        }
+      }
+    },
+    {
+      "alias": "warehouse_operation_status",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/operation/status",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_diagnostics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить статус явно указанной операции склада без автоматического polling.",
+      "template": {
+        "operation": "warehouse_operation_status",
+        "params": {
+          "operation_id": "operation-id"
+        }
+      }
+    },
+    {
+      "alias": "warehouses_with_invalid_products",
+      "provider": "seller_api",
+      "method": "POST",
+      "path": "/v1/warehouse/warehouses-with-invalid-products",
+      "effect": "READ",
+      "currentness": "current",
+      "safety_class": "READ_SAFE",
+      "privacy_policy": "safe_projection",
+      "cluster": "warehouse_logistics",
+      "section": "warehouse_diagnostics",
+      "guidance_visibility": "user",
+      "workflow_role": "single_read",
+      "purpose": "Получить склады, на которых есть товары с ограничениями доставки.",
+      "template": {
+        "operation": "warehouses_with_invalid_products",
+        "params": {}
+      }
+    }
+  ]
+}
