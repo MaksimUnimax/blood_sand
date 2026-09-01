@@ -1,0 +1,92 @@
+{
+  "schema": "OZON_CURRENT_BUILD_REVALIDATION_RUN_V1",
+  "schema_version": 1,
+  "run_number": 7,
+  "date": "2026-09-01",
+  "scope": "OZON_API_ONLY",
+  "build": {
+    "bridge": "ozon-llm-api-bridge",
+    "version": "0.1.19",
+    "installable_zip_sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574"
+  },
+  "status": "PASS_WITH_BINARY_FIXTURE_UNAVAILABLE",
+  "decision": "PERSONAL_DATA_ON_EXPLICIT_DISPATCH_PASS_FBS_ACT_DISCOVERY_HTTP_200_EMPTY",
+  "batch": {
+    "delivery_mode": "sequential_batch_single_delivery",
+    "result_count": 2,
+    "capability_probe": {
+      "performed": false,
+      "status": "not_needed",
+      "subscription_type": "UNKNOWN",
+      "http_status": 0,
+      "error_code": null
+    },
+    "query_planner": {
+      "status": "complete",
+      "coalesced_group_count": 0,
+      "coalesced_logical_count": 0,
+      "logical_business_result_count": 2,
+      "physical_business_request_count": 2
+    }
+  },
+  "results": [
+    {
+      "operation": "review_list",
+      "request_id": "ccaf3ba1-e52d-4ea7-b9a0-4f48a6d0b662",
+      "command_fingerprint": "0be2ea18",
+      "physical_command_fingerprint": "0be2ea18",
+      "command_transformed": false,
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "entitlement_key": "POST /v2/review/list",
+      "external_request_executed": true,
+      "http_status": 403,
+      "provider_error_category": "auth_or_permission",
+      "provider_error_code": "7",
+      "automatic_retry": false,
+      "test_interpretation": "PERSONAL_DATA_ON_EXPLICIT_NEW_COMMAND_REACHED_PROVIDER; provider permission is separate from Bridge personal-data policy"
+    },
+    {
+      "operation": "fbs_act_list",
+      "request_id": "84597544-12bf-40ca-a6ce-460ded878e8a",
+      "command_fingerprint": "0f483e9f",
+      "physical_command_fingerprint": "0f483e9f",
+      "command_transformed": false,
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "entitlement_key": "POST /v2/posting/fbs/act/list",
+      "external_request_executed": true,
+      "http_status": 200,
+      "automatic_retry": false,
+      "submitted_filter": {
+        "date_from": "2026-08-01",
+        "date_to": "2026-08-31"
+      },
+      "submitted_limit": 50,
+      "response_summary": {
+        "act_count": 0
+      }
+    }
+  ],
+  "assertions": {
+    "personal_data_on_explicit_review_command_reached_provider": true,
+    "review_list_one_physical_business_request": true,
+    "review_list_automatic_retry_false": true,
+    "fbs_act_list_correct_date_semantics_accepted_by_provider": true,
+    "fbs_act_list_http_200": true,
+    "fbs_act_list_one_physical_business_request": true,
+    "fbs_act_list_automatic_retry_false": true,
+    "real_fbs_act_id_obtained": false,
+    "capability_probe_not_executed": true
+  },
+  "fixture_conclusion": {
+    "return_giveout_fixture_available": false,
+    "fbs_act_fixture_available": false,
+    "pdf_success_live_test": "LIVE_FIXTURE_UNAVAILABLE",
+    "png_success_live_test": "LIVE_FIXTURE_UNAVAILABLE",
+    "pdf_png_personal_data_off_gate_previously_verified": true,
+    "csv_binary_success_live_test_previously_verified": true,
+    "interpretation": "No eligible current account entity exists for either available PDF/PNG read path used by this bridge: return-giveout discovery returned an empty list and correctly formatted FBS act discovery returned HTTP 200 with an empty result. Do not manufacture or mutate Ozon state solely to create a binary test fixture."
+  },
+  "next_action": "No further Ozon request is required for this revalidation. Produce final accounting and close with PDF/PNG success marked LIVE_FIXTURE_UNAVAILABLE, not failed. Track the oversized performance_campaigns model-visible response separately as a response-size reliability issue."
+}
