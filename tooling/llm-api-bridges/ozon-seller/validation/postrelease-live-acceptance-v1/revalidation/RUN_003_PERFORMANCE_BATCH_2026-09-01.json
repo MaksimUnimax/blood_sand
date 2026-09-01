@@ -1,0 +1,159 @@
+{
+  "schema": "OZON_CURRENT_BUILD_REVALIDATION_RUN_V1",
+  "schema_version": 1,
+  "run_number": 3,
+  "date": "2026-09-01",
+  "scope": "OZON_API_ONLY",
+  "build": {
+    "bridge": "ozon-llm-api-bridge",
+    "version": "0.1.19",
+    "installable_zip_sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574"
+  },
+  "status": "PASS_WITH_DELIVERY_SIZE_OBSERVATION",
+  "decision": "PERFORMANCE_BATCH_6_OF_6_PROVIDER_PASS_CSV_BINARY_PASS",
+  "batch": {
+    "delivery_mode": "sequential_batch_single_delivery",
+    "result_count": 6,
+    "capability_probe": {
+      "performed": false,
+      "status": "not_needed",
+      "subscription_type": "UNKNOWN",
+      "http_status": 0,
+      "error_code": null
+    },
+    "query_planner": {
+      "status": "complete",
+      "coalesced_group_count": 0,
+      "coalesced_logical_count": 0,
+      "logical_business_result_count": 6,
+      "physical_business_request_count": 6
+    }
+  },
+  "results": [
+    {
+      "operation": "performance_campaigns",
+      "request_id": "50189453-900b-4bbf-a4a6-5a7a02f8ccb6",
+      "command_fingerprint": "051bb998",
+      "physical_command_fingerprint": "051bb998",
+      "command_transformed": false,
+      "host_alias": "performance_api",
+      "http_method": "GET",
+      "external_request_executed": true,
+      "http_status": 200,
+      "elapsed_ms": 756,
+      "response_summary": {
+        "reported_total": 1128,
+        "returned_campaign_count": 1128,
+        "raw_campaign_objects_not_persisted_in_public_evidence": true
+      }
+    },
+    {
+      "operation": "performance_bid_limits",
+      "request_id": "7906b23a-6339-477b-94ac-9e2646555f86",
+      "command_fingerprint": "f91e6b47",
+      "physical_command_fingerprint": "f91e6b47",
+      "command_transformed": false,
+      "host_alias": "performance_api",
+      "http_method": "GET",
+      "external_request_executed": true,
+      "http_status": 200,
+      "elapsed_ms": 374,
+      "response_summary": {
+        "limit_group_count": 7
+      }
+    },
+    {
+      "operation": "performance_search_promo_products",
+      "request_id": "d443468c-93de-459c-aff7-c1a4039821eb",
+      "command_fingerprint": "eb12b0d7",
+      "physical_command_fingerprint": "eb12b0d7",
+      "command_transformed": false,
+      "host_alias": "performance_api",
+      "http_method": "POST",
+      "external_request_executed": true,
+      "http_status": 200,
+      "elapsed_ms": 645,
+      "response_summary": {
+        "reported_total": 74,
+        "returned_product_count": 10
+      }
+    },
+    {
+      "operation": "performance_expense",
+      "request_id": "6e34f283-9aed-46e2-ab83-436a1de7bdad",
+      "command_fingerprint": "2d551a1b",
+      "physical_command_fingerprint": "2d551a1b",
+      "command_transformed": false,
+      "host_alias": "performance_api",
+      "http_method": "GET",
+      "external_request_executed": true,
+      "http_status": 200,
+      "elapsed_ms": 382,
+      "response_summary": {
+        "returned_row_count": 163,
+        "raw_expense_rows_not_persisted_in_public_evidence": true
+      }
+    },
+    {
+      "operation": "performance_expense_csv",
+      "request_id": "8d23c000-7506-4957-8900-d9344549154d",
+      "command_fingerprint": "b563202a",
+      "physical_command_fingerprint": "b563202a",
+      "command_transformed": false,
+      "host_alias": "performance_api",
+      "http_method": "GET",
+      "external_request_executed": true,
+      "http_status": 200,
+      "elapsed_ms": 402,
+      "response_summary": {
+        "content_type": "text/csv",
+        "encoding": "base64",
+        "declared_byte_length": 11736,
+        "decoded_byte_length": 11736,
+        "decoded_sha256": "cf21a49e0f87fcc2821ef2bf1b06af7861308bc93f4f03b4dfc50222ec231986",
+        "decoded_csv_line_count": 164,
+        "raw_file_content_not_persisted_in_public_evidence": true
+      }
+    },
+    {
+      "operation": "performance_statistics_list_api",
+      "request_id": "b1447f56-5b23-4fb4-8726-75cadc25a9bb",
+      "command_fingerprint": "b4dd5771",
+      "physical_command_fingerprint": "b4dd5771",
+      "command_transformed": false,
+      "host_alias": "performance_api",
+      "http_method": "GET",
+      "external_request_executed": true,
+      "http_status": 200,
+      "elapsed_ms": 365,
+      "response_summary": {
+        "item_count": 0,
+        "reported_total": 0
+      }
+    }
+  ],
+  "assertions": {
+    "all_six_operations_recognized": true,
+    "all_correct_performance_provider": true,
+    "all_external_requests_executed": true,
+    "all_http_200": true,
+    "six_logical_business_results": true,
+    "six_physical_business_requests": true,
+    "one_physical_business_request_per_explicit_command": true,
+    "capability_probe_not_executed": true,
+    "all_logical_and_physical_fingerprints_equal": true,
+    "no_command_transformation": true,
+    "performance_csv_binary_transport": true,
+    "csv_base64_decodes_to_declared_byte_length": true,
+    "bearer_token_not_present_in_model_visible_result": true,
+    "automatic_retry_not_observed": true,
+    "hidden_pagination_not_observed": true
+  },
+  "delivery_observation": {
+    "status": "OBSERVED_NON_PROVIDER_ISSUE",
+    "description": "ChatGPT displayed a connection-interrupted message while rendering the very large raw batch output. The attached batch result is complete and contains all six terminal results. performance_campaigns alone returned 1128 full campaign objects, making the pasted batch approximately 1.35 MB. This is not counted as an Ozon provider/API failure in the API-only scope, but the oversized model-visible delivery should be tracked as a response-size reliability observation.",
+    "api_run_lost": false,
+    "rerun_required": false
+  },
+  "next_action": "Continue current-build API-only revalidation with representative Personal Data fail-closed/authorized behavior, PDF/PNG binary transport where an eligible return giveout exists, provider error/no-retry sample, and final accounting."
+}
