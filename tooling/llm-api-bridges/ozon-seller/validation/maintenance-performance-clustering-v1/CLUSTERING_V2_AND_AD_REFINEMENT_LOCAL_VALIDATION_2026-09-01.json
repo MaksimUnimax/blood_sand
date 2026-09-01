@@ -1,0 +1,194 @@
+{
+  "schema": "OZON_CLUSTERING_V2_AND_AD_REFINEMENT_LOCAL_VALIDATION_V1",
+  "date": "2026-09-01",
+  "status": "PASS",
+  "registry_contract": {
+    "validation": {
+      "ok": true,
+      "errors": []
+    },
+    "command_aliases": 270,
+    "seller_aliases": 245,
+    "performance_aliases": 25,
+    "retired_aliases_absent": [
+      "fbs_stock_by_warehouse_v1",
+      "fbs_carriage_available_list"
+    ],
+    "new_aliases_present": [
+      "description_category_dependent_attributes",
+      "description_category_dependent_attribute_values"
+    ]
+  },
+  "guidance": {
+    "default_version": 2,
+    "top_cluster_count": 13,
+    "max_operations_in_any_v2_section": 9,
+    "section_operation_counts": {
+      "account_access": {
+        "roles_access": 1,
+        "seller_settings": 2,
+        "notifications": 2
+      },
+      "catalog_products": {
+        "product_list_info": 7,
+        "attributes_categories": 7,
+        "certification": 6,
+        "certification_reference": 7,
+        "limits_diagnostics": 3,
+        "description_content": 1,
+        "pictures": 1,
+        "product_quant_placement": 3
+      },
+      "stocks_inventory": {
+        "current_aggregate": 1,
+        "warehouse_fbo": 2,
+        "warehouse_fbs": 2,
+        "stock_analytics": 1,
+        "stock_movement_turnover": 2
+      },
+      "sales_analytics": {
+        "sales_revenue_units": 1,
+        "delivery_returns_cancellations_metrics": 4
+      },
+      "search_visibility": {
+        "product_queries": 1,
+        "query_details": 1,
+        "marketplace_search_queries": 2
+      },
+      "prices_promotions": {
+        "prices": 4,
+        "pricing_strategy": 6,
+        "actions_promotions": 9,
+        "discount_tasks": 1
+      },
+      "orders_postings": {
+        "fbo_postings": 2,
+        "fbp_postings": 2,
+        "fbs_postings": 6,
+        "assembly_carriage": 8,
+        "acts": 4,
+        "carriage_containers": 4,
+        "fbs_restrictions": 4,
+        "labels_documents": 8,
+        "fbs_exemplars_marks": 5
+      },
+      "supplies_fbo": {
+        "supply_orders": 6,
+        "supply_acts": 3,
+        "supply_status": 5,
+        "drafts": 4,
+        "timeslots": 5,
+        "fbp_drafts": 4,
+        "cargoes": 5,
+        "cargo_status": 7,
+        "cargo_labels": 1,
+        "acts": 3,
+        "fbp_archive": 2,
+        "fbp_orders": 2
+      },
+      "warehouse_logistics": {
+        "warehouse_setup": 4,
+        "warehouse_timeslots_pickup": 6,
+        "delivery_methods": 3,
+        "ozon_warehouses": 3,
+        "seller_warehouses": 2,
+        "warehouse_diagnostics": 5,
+        "clusters": 1,
+        "delivery_geo": 5
+      },
+      "returns_cancellations": {
+        "returns": 3,
+        "utilization_removals": 4,
+        "return_giveout": 7,
+        "cancellations": 6,
+        "cancellation_status": 4
+      },
+      "finance": {
+        "accruals_balance": 4,
+        "cashflow_buyout": 2,
+        "transactions": 1,
+        "realization": 3,
+        "documents_reports": 2,
+        "receipts_invoices": 3,
+        "b2b": 1
+      },
+      "reviews_questions": {
+        "reviews": 3,
+        "review_comments": 1,
+        "questions": 4,
+        "answers": 1,
+        "chats": 1
+      },
+      "advertising_performance": {
+        "campaigns": 1,
+        "campaign_products_objects": 4,
+        "bids": 4,
+        "statistics": 5,
+        "report_workflow": 4,
+        "statistics_exports": 4,
+        "external_traffic": 3
+      }
+    }
+  },
+  "advertising": {
+    "broad_campaigns": {
+      "normalized_params": {
+        "page": 1,
+        "pageSize": 100
+      },
+      "provider_request_path_query": "/api/client/campaign?page=1&pageSize=100",
+      "expected_provider_business_requests": 1,
+      "hidden_pagination_requests": 0
+    },
+    "local_sort": {
+      "normalized_params": {
+        "state": "CAMPAIGN_STATE_RUNNING",
+        "local_sort": "created_at_desc",
+        "local_limit": 2
+      },
+      "provider_request_path_query": "/api/client/campaign?state=CAMPAIGN_STATE_RUNNING",
+      "local_controls_removed_before_provider": true,
+      "sort_example_ids": [
+        "2",
+        "1"
+      ],
+      "bridge_view": {
+        "provider_items_received": 3,
+        "items_returned_to_ai": 2,
+        "result_bounded": true,
+        "local_sort": {
+          "field": "createdAt",
+          "direction": "desc",
+          "scope": "single_full_provider_response",
+          "additional_provider_requests": 0
+        },
+        "hidden_pagination_requests": 0,
+        "automatic_retry_requests": 0
+      },
+      "refinement_choice_ids": [
+        "active_campaigns",
+        "latest_created",
+        "latest_updated",
+        "specific_campaign_ids",
+        "campaign_products",
+        "campaign_product_statistics",
+        "sku_statistics"
+      ]
+    },
+    "result_bounding": {
+      "mock_provider_items_received": 150,
+      "items_returned_to_ai": 100,
+      "result_bounded": true
+    },
+    "negative_validation": {
+      "local_sort_plus_page_rejected": true,
+      "page_size_101_rejected": true
+    }
+  },
+  "invariants": {
+    "guidance_provider_requests": 0,
+    "automatic_followup_requests": 0,
+    "one_explicit_command_max_one_business_request": true,
+    "local_sort_additional_provider_requests": 0
+  }
+}
