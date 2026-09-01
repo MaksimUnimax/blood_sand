@@ -60,6 +60,10 @@ function loadClassic(file) {
   vm.runInThisContext(source, { filename: file, displayErrors: true });
 }
 
+function providerOf(meta) {
+  return String(meta?.provider || "seller_api");
+}
+
 const args = parseArgs(process.argv);
 const repo = path.resolve(args["repo-root"]);
 const output = path.resolve(args.output);
@@ -91,8 +95,8 @@ const allEntries = Object.entries(operations);
 assert.equal(allEntries.length, 270, "registry alias count");
 
 const isCurrentRead = (meta) => meta?.effect === "READ" && meta?.currentness === "current" && meta?.execution_enabled === true;
-const sellerAliases = allEntries.filter(([, meta]) => meta.provider === "seller_api" && isCurrentRead(meta)).map(([alias]) => alias).sort();
-const performanceAliases = allEntries.filter(([, meta]) => meta.provider === "performance_api" && isCurrentRead(meta)).map(([alias]) => alias).sort();
+const sellerAliases = allEntries.filter(([, meta]) => providerOf(meta) === "seller_api" && isCurrentRead(meta)).map(([alias]) => alias).sort();
+const performanceAliases = allEntries.filter(([, meta]) => providerOf(meta) === "performance_api" && isCurrentRead(meta)).map(([alias]) => alias).sort();
 assert.equal(sellerAliases.length, 245, "Seller current-read alias count");
 assert.equal(performanceAliases.length, 25, "Performance registry alias count");
 
@@ -115,7 +119,7 @@ assert.equal(new Set(compatibilityAliases).size, 4, "Performance compatibility a
 assert.deepEqual([...new Set([...canonicalPerformanceAliases, ...compatibilityAliases])].sort(), performanceAliases, "Performance 21+4 alias partition");
 for (const row of compatibilityRows) {
   const meta = operations[row.documented_json_variant_alias];
-  assert.ok(meta && isCurrentRead(meta) && meta.provider === "performance_api", `${row.documented_json_variant_alias}: invalid compatibility descriptor`);
+  assert.ok(meta && isCurrentRead(meta) && providerOf(meta) === "performance_api", `${row.documented_json_variant_alias}: invalid compatibility descriptor`);
   if (row.documented_json_variant_path) assert.equal(meta.path, row.documented_json_variant_path, `${row.documented_json_variant_alias}: compatibility path`);
 }
 
@@ -137,7 +141,7 @@ assert.equal(selectedAliases.length, 266, "selected runtime count");
 assert.equal(new Set(selectedAliases).size, 266, "selected alias collision");
 
 const selectedDescriptors = selectedAliases.map((alias) => [alias, operations[alias]]);
-const operationIdentities = new Set(selectedDescriptors.map(([alias, meta]) => `${meta.provider}\u0000${meta.method}\u0000${meta.path}\u0000${alias}`));
+const operationIdentities = new Set(selectedDescriptors.map(([alias, meta]) => `${providerOf(meta)}\u0000${meta.method}\u0000${meta.path}\u0000${alias}`));
 assert.equal(operationIdentities.size, 266, "selected operation identity collision");
 
 const sellerCredentials = { clientId: "step9-seller-client", apiKey: "step9-seller-key" };
@@ -192,7 +196,7 @@ async function fetchImpl(url, options = {}) {
   assert.equal(href, active.request.url, `${active.alias}: request URL`);
   assert.equal(method, active.request.method, `${active.alias}: request method`);
   assert.equal(options.body, active.request.body, `${active.alias}: request body`);
-  const expectedProvider = active.meta.provider;
+  const expectedProvider = providerOf(active.meta);
   if (expectedProvider === "seller_api") {
     assert.equal(headers["client-id"], sellerCredentials.clientId, `${active.alias}: Client-Id`);
     assert.equal(headers["api-key"], sellerCredentials.apiKey, `${active.alias}: Api-Key`);
@@ -240,14 +244,15 @@ const provider = providerFactory.createOzonProvider({
 const runtimeRows = [];
 for (const alias of selectedAliases) {
   const meta = operations[alias];
+  const normalizedProvider = providerOf(meta);
   assert.ok(meta && isCurrentRead(meta), `${alias}: not an enabled current read`);
   assert.equal(meta.template?.operation, alias, `${alias}: template operation`);
   const command = clone(meta.template);
   const normalized = contract.normalizeCommand(command);
   assert.equal(normalized.operation, alias);
   const preflight = contract.preflightExecution(normalized);
-  assert.equal(preflight.meta.provider, meta.provider);
-  const request = meta.provider === "performance_api"
+  assert.equal(providerOf(preflight.meta), normalizedProvider);
+  const request = normalizedProvider === "performance_api"
     ? contract.buildPerformanceRequest(normalized, globalThis.OzonCredentials.performanceBearerHeaders("step9-access-token"))
     : contract.buildRequest(normalized, globalThis.OzonCredentials.sellerHeaders(sellerCredentials));
   assert.ok(!/[{}]/.test(request.path), `${alias}: unresolved path placeholder`);
@@ -259,7 +264,7 @@ for (const alias of selectedAliases) {
   active = null;
   assert.equal(result.ok, true, `${alias}: provider result`);
   assert.equal(result.operation, alias, `${alias}: result operation`);
-  assert.equal(result.provider, meta.provider, `${alias}: result provider`);
+  assert.equal(result.provider, normalizedProvider, `${alias}: result provider`);
   assert.equal(result.http_status, 200, `${alias}: result status`);
   assert.equal(businessRecords.length - beforeBusiness, 1, `${alias}: physical business request count`);
   const authDelta = authRecords.length - beforeAuth;
@@ -267,7 +272,7 @@ for (const alias of selectedAliases) {
   runtimeRows.push({
     ordinal: runtimeRows.length + 1,
     alias,
-    provider: meta.provider,
+    provider: normalizedProvider,
     method: request.method,
     declared_path: meta.path,
     resolved_path: request.path,
