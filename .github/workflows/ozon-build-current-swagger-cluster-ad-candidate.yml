@@ -1,0 +1,83 @@
+name: Ozon Build Current Swagger Cluster Ad Candidate
+
+on:
+  push:
+    branches:
+      - repair/ozon-current-swagger-refresh-2026-09-01
+    paths:
+      - tooling/llm-api-bridges/ozon-seller/validation/maintenance-performance-clustering-v1/build-current-refresh/BUILD_TRIGGER
+
+permissions:
+  contents: write
+
+jobs:
+  build-candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build deterministic 21-file installable
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
+          import hashlib
+          src=Path('tooling/llm-api-bridges/ozon-seller/dist-step7-candidate')
+          out=Path('tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_CANDIDATE_2026-09-01.zip')
+          files=sorted(p for p in src.rglob('*') if p.is_file())
+          if len(files) != 21:
+              raise SystemExit(f'expected 21 files, got {len(files)}')
+          with ZipFile(out,'w',compression=ZIP_DEFLATED,compresslevel=9) as z:
+              for p in files:
+                  rel=p.relative_to(src).as_posix()
+                  zi=ZipInfo(rel,(1980,1,1,0,0,0))
+                  zi.compress_type=ZIP_DEFLATED
+                  zi.external_attr=(0o100644 << 16)
+                  z.writestr(zi,p.read_bytes(),compress_type=ZIP_DEFLATED,compresslevel=9)
+          h=hashlib.sha256(out.read_bytes()).hexdigest()
+          expected='f72804389267d78d0db804bd44e3128c545065a219ecb70e8a170952848993d3'
+          if h != expected:
+              raise SystemExit(f'candidate sha mismatch: {h} != {expected}')
+          Path(str(out)+'.sha256.txt').write_text(f'{h}  {out.name}\n',encoding='utf-8')
+          print('OZON_DETERMINISTIC_CANDIDATE_BUILD_PASS', len(files), out.stat().st_size, h)
+          PY
+
+      - name: Fresh extraction smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          Z=tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_CANDIDATE_2026-09-01.zip
+          rm -rf /tmp/ozon-candidate
+          mkdir -p /tmp/ozon-candidate
+          unzip -q "$Z" -d /tmp/ozon-candidate
+          test "$(find /tmp/ozon-candidate -type f | wc -l)" -eq 21
+          node --check /tmp/ozon-candidate/shared/ozon_operation_registry.js
+          node --check /tmp/ozon-candidate/shared/ozon_contract.js
+          node --check /tmp/ozon-candidate/shared/ozon_guidance.js
+          node --check /tmp/ozon-candidate/shared/runtime_names.js
+          node <<'NODE'
+          const fs=require('fs'),vm=require('vm');
+          const b='/tmp/ozon-candidate/shared';
+          for(const f of ['runtime_names.js','ozon_operation_registry.js','ozon_contract.js','ozon_guidance.js']) vm.runInThisContext(fs.readFileSync(`${b}/${f}`,'utf8'),{filename:f});
+          const R=globalThis.OzonOperationRegistry,C=globalThis.OzonContract,G=globalThis.OzonGuidance;
+          const v=R.catalogValidation(C.OPERATIONS); if(!v.ok) throw Error(JSON.stringify(v));
+          if(Object.keys(R.OPERATIONS).length!==270) throw Error('alias count');
+          if(G.classify({operation:'performance_campaigns'}).version!==2) throw Error('guidance default');
+          console.log('OZON_FRESH_EXTRACT_REGISTRY_CONTRACT_GUIDANCE_PASS');
+          NODE
+
+      - name: Commit candidate artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_CANDIDATE_2026-09-01.zip \
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_CANDIDATE_2026-09-01.zip.sha256.txt
+          git commit -m 'build(ozon): publish current swagger cluster ad candidate'
+          git push origin HEAD:${GITHUB_REF_NAME}
