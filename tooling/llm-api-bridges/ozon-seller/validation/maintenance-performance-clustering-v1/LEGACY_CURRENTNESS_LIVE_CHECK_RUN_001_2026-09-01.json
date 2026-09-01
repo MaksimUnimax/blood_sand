@@ -1,0 +1,57 @@
+{
+  "schema": "OZON_LEGACY_CURRENTNESS_LIVE_CHECK_V1",
+  "schema_version": 1,
+  "date": "2026-09-01",
+  "scope": "OZON_API_ONLY",
+  "privacy": {
+    "provider_payload_persisted": false,
+    "note": "Sanitized outcome only; business response payload values are not persisted."
+  },
+  "batch": {
+    "delivery_mode": "sequential_batch_single_delivery",
+    "result_count": 2,
+    "capability_probe_performed": false,
+    "logical_business_result_count": 2,
+    "physical_business_request_count": 2,
+    "coalesced_group_count": 0
+  },
+  "results": [
+    {
+      "operation": "fbs_stock_by_warehouse_v1",
+      "entitlement_key": "POST /v1/product/info/stocks-by-warehouse/fbs",
+      "external_request_executed": true,
+      "http_status": 400,
+      "provider_error_code": "9",
+      "automatic_retry": false,
+      "exact_request_preserved": true,
+      "command_transformed": false,
+      "classification": "ENDPOINT_DISPATCH_REACHED_PROVIDER_BUSINESS_CURRENTNESS_INCONCLUSIVE",
+      "reason": "The legacy path returned a provider HTTP 400 rather than a local/transport failure. This proves dispatch reached Ozon but does not distinguish retired-operation behavior from request/entity validation. Compare the same explicit SKU request against the documented v2 replacement."
+    },
+    {
+      "operation": "seller_delivery_method_list",
+      "entitlement_key": "POST /v2/delivery-method/list",
+      "external_request_executed": true,
+      "http_status": 200,
+      "automatic_retry": false,
+      "exact_request_preserved": true,
+      "command_transformed": false,
+      "response_shape": {
+        "delivery_method_count": 0,
+        "cursor_present": true,
+        "has_next": false
+      },
+      "classification": "CURRENT_ENDPOINT_PASS_NO_DELIVERY_METHOD_FIXTURE_AVAILABLE",
+      "reason": "The account returned no delivery methods, so it cannot supply a real delivery_method_id for the legacy /v1/posting/carriage-available/list check."
+    }
+  ],
+  "accounting_assertions": {
+    "two_logical_commands": true,
+    "two_physical_business_requests": true,
+    "no_capability_probe": true,
+    "no_hidden_retry_observed": true,
+    "no_hidden_pagination_observed": true
+  },
+  "decision": "RUN_PASS_TRANSPORT_ACCOUNTING_LEGACY_CURRENTNESS_PARTIAL",
+  "next_action": "Compare fbs_stock_by_warehouse_v1 with its v2 replacement using the same SKU. Query carriage_delivery_list_v2 as the documented replacement and inspect whether the account exposes usable carriage/delivery context for one final legacy carriage check."
+}
