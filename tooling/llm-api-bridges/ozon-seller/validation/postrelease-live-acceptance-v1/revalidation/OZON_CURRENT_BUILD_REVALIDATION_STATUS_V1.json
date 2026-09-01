@@ -2,6 +2,7 @@
   "schema": "OZON_CURRENT_BUILD_REVALIDATION_STATUS_V1",
   "schema_version": 1,
   "date_started": "2026-09-01",
+  "date_completed": "2026-09-01",
   "scope": "OZON_API_ONLY",
   "ui_excluded": true,
   "branch": "repair/ozon-step10-owner-live-acceptance-evidence-final-2026-09-01",
@@ -10,15 +11,17 @@
     "installable_zip_sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574",
     "current_read_surface": {"seller":245,"performance":21,"total":266}
   },
-  "status": "IN_PROGRESS",
-  "runs_completed": 6,
+  "status": "COMPLETE_WITH_NONBLOCKING_FIXTURE_LIMITATION_AND_RESPONSE_SIZE_ISSUE",
+  "decision": "OZON_API_ONLY_REVALIDATION_COMPLETE",
+  "runs_completed": 7,
   "runs": [
     {"run_number":1,"name":"Seller baseline stocks_current","status":"PASS","logical_business_result_count":1,"physical_business_request_count":1,"http_200":1,"operations":["stocks_current"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_001_STOCKS_CURRENT_2026-09-01.json"},
     {"run_number":2,"name":"Representative Seller API batch","status":"PASS","logical_business_result_count":6,"physical_business_request_count":6,"http_200":6,"operations":["seller_product_info_list","analytics_data","assembly_fbs_posting_list","finance_transaction_list_v3","returns_list","seller_rating_summary"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_002_REPRESENTATIVE_SELLER_BATCH_2026-09-01.json"},
     {"run_number":3,"name":"Representative Performance API and CSV batch","status":"PASS_WITH_DELIVERY_SIZE_OBSERVATION","logical_business_result_count":6,"physical_business_request_count":6,"http_200":6,"operations":["performance_campaigns","performance_bid_limits","performance_search_promo_products","performance_expense","performance_expense_csv","performance_statistics_list_api"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_003_PERFORMANCE_BATCH_2026-09-01.json"},
     {"run_number":4,"name":"Personal Data OFF and return-giveout discovery","status":"PARTIAL_PASS_TEST_INPUT_CORRECTION_REQUIRED","logical_business_result_count":2,"physical_business_request_count":2,"http_200":1,"http_403":1,"policy_blocked":2,"local_guidance_rejections":1,"operations":["return_giveout_is_enabled","return_giveout_list","review_list","return_giveout_get_pdf","return_giveout_get_png"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_004_PERSONAL_DATA_OFF_AND_GIVEOUT_DISCOVERY_2026-09-01.json"},
     {"run_number":5,"name":"Corrected review privacy gate and FBS act discovery","status":"PARTIAL_PASS_FBS_ACT_FILTER_RETRY_REQUIRED","logical_business_result_count":1,"physical_business_request_count":1,"http_400":1,"policy_blocked":1,"operations":["review_list","fbs_act_list"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_005_REVIEW_GATE_AND_FBS_ACT_DISCOVERY_2026-09-01.json"},
-    {"run_number":6,"name":"Filtered FBS act discovery","status":"PROVIDER_400_NO_RETRY_FIXTURE_DISCOVERY_UNRESOLVED","logical_business_result_count":1,"physical_business_request_count":1,"http_400":1,"operations":["fbs_act_list"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_006_FBS_ACT_DISCOVERY_FILTERED_2026-09-01.json"}
+    {"run_number":6,"name":"Filtered FBS act discovery","status":"PROVIDER_400_NO_RETRY_FIXTURE_DISCOVERY_UNRESOLVED","logical_business_result_count":1,"physical_business_request_count":1,"http_400":1,"operations":["fbs_act_list"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_006_FBS_ACT_DISCOVERY_FILTERED_2026-09-01.json"},
+    {"run_number":7,"name":"Personal Data ON and final binary fixture check","status":"PASS_WITH_BINARY_FIXTURE_UNAVAILABLE","logical_business_result_count":2,"physical_business_request_count":2,"http_200":1,"http_403":1,"operations":["review_list","fbs_act_list"],"record":"tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_007_PERSONAL_DATA_ON_AND_FINAL_FIXTURE_CHECK_2026-09-01.json"}
   ],
   "verified": {
     "seller_credentials_and_transport": true,
@@ -45,41 +48,57 @@
     "performance_csv_base64_decodes_to_declared_byte_length": true,
     "performance_bearer_token_not_exposed": true,
     "review_list_personal_data_off_gate": true,
+    "review_list_personal_data_on_explicit_provider_dispatch": true,
     "return_giveout_pdf_personal_data_off_blocked_before_provider": true,
     "return_giveout_png_personal_data_off_blocked_before_provider": true,
-    "return_giveout_fixture_available": false,
     "provider_error_no_retry_sample": true,
-    "fbs_act_list_provider_reached": true,
-    "fbs_act_list_no_retry": true,
-    "fbs_act_binary_fixture_available": false,
     "hidden_pagination_not_observed": true,
     "automatic_retry_not_observed": true,
     "credentials_not_exposed": true
   },
   "accounting": {
-    "submitted_commands": 21,
-    "logical_business_results": 17,
-    "physical_business_requests": 17,
-    "http_200": 14,
+    "submitted_commands": 23,
+    "logical_business_results": 19,
+    "physical_business_requests": 19,
+    "http_200": 15,
     "provider_http_400": 2,
-    "provider_http_403": 1,
+    "provider_http_403": 2,
     "policy_blocked_before_provider": 3,
     "local_guidance_rejections": 1,
     "capability_probes": 0,
     "automatic_retries_observed": 0,
-    "hidden_pagination_requests_observed": 0
+    "hidden_pagination_requests_observed": 0,
+    "explicit_provider_commands_with_terminal_provider_result": 19,
+    "physical_requests_per_terminal_provider_command": 1
   },
-  "delivery_observations": {
-    "oversized_model_visible_batch_count": 1,
-    "last_observation": "Run 003 contained approximately 1.35 MB of pasted result data because performance_campaigns returned 1128 full campaign objects. ChatGPT displayed a connection-interrupted message, while the attached batch result remained complete."
+  "binary_transport": {
+    "csv": {
+      "status": "PASS",
+      "operation": "performance_expense_csv",
+      "content_type": "text/csv",
+      "declared_and_decoded_byte_length_match": true
+    },
+    "pdf": {
+      "status": "LIVE_FIXTURE_UNAVAILABLE",
+      "privacy_gate": "PASS",
+      "reason": "return_giveout_list returned no giveouts and correctly formatted fbs_act_list returned HTTP 200 with an empty result; no eligible entity exists to request a read-only PDF without mutating Ozon state"
+    },
+    "png": {
+      "status": "LIVE_FIXTURE_UNAVAILABLE",
+      "privacy_gate": "PASS",
+      "reason": "return_giveout_list returned no giveouts and correctly formatted fbs_act_list returned HTTP 200 with an empty result; no eligible entity exists to request a read-only PNG without mutating Ozon state"
+    }
   },
-  "remaining_required_groups": [
-    "Personal Data ON explicit review_list execution",
-    "binary transport PDF/PNG only if a real eligible fixture can be obtained; current return-giveout and FBS-act discovery have not yielded one",
-    "final request accounting"
+  "nonblocking_findings": [
+    {
+      "id": "PERFORMANCE_CAMPAIGNS_OVERSIZED_MODEL_VISIBLE_RESPONSE",
+      "severity": "RELIABILITY",
+      "status": "OPEN_FOR_MAINTENANCE",
+      "observation": "performance_campaigns returned 1128 full campaign objects and the model-visible batch was approximately 1.35 MB; ChatGPT displayed a connection-interrupted message although the attached batch result remained complete",
+      "provider_api_status": "PASS",
+      "recommendation": "Add an explicit bounded response strategy for very large read results, such as mandatory page/limit support, safe projection, or transport-level truncation metadata without hidden pagination."
+    }
   ],
-  "next_run": {
-    "run_number": 7,
-    "goal": "Enable Personal Data and explicitly run review_list. In parallel, only continue PDF/PNG if exact Swagger/source semantics identify a valid obtainable fixture; do not repeat guessed fbs_act_list requests."
-  }
+  "remaining_required_groups": [],
+  "next_action": "No further live Ozon request is required for this current-build API-only revalidation. Return to maintenance roadmap with the oversized Performance response finding as the only actionable reliability item from these live runs."
 }
