@@ -6,7 +6,7 @@
   "delivery_mode": "sequential_batch_single_delivery",
   "source_branch": "repair/ozon-step7-245-read-final-candidate-v3-2026-08-31",
   "live_test_branch": "test/ozon-v0.1.19-full-read-266-live-2026-09-01",
-  "runs_completed": 3,
+  "runs_completed": 4,
   "existing_seller_regression_smoke": {
     "passed": 1,
     "total": 1,
@@ -18,10 +18,14 @@
   },
   "new_seller_reads": {
     "total": 26,
-    "attempted_live": 9,
-    "untested_live": 17,
+    "attempted_live": 13,
+    "untested_live": 13,
+    "safe_projection_total": 13,
+    "safe_projection_attempted_live": 13,
+    "personal_data_gate_total": 13,
+    "personal_data_gate_attempted_live": 0,
     "passed_live": 5,
-    "provider_permission_blocked": 4,
+    "provider_permission_blocked": 8,
     "needs_diagnostic": 0,
     "passed_operations": [
       "notification_list",
@@ -34,47 +38,67 @@
       "receipts_seller_list",
       "posting_digital_list_v2",
       "delivery_map",
-      "delivery_point_list"
+      "delivery_point_list",
+      "fbs_product_exemplar_validate",
+      "posting_fbs_pickup_code_verify",
+      "order_cancel_check",
+      "posting_marks"
     ],
     "diagnostic_pending_operations": []
   },
   "accounting": {
-    "logical_business_commands": 12,
-    "physical_business_requests": 12,
+    "logical_business_commands": 16,
+    "physical_business_requests": 16,
     "capability_probes": 0
   },
   "last_run": {
-    "run_number": 3,
-    "status": "PARTIAL_PASS_WITH_PROVIDER_BLOCK_AND_HELPER_SUCCESS",
-    "result_count": 3,
-    "logical_business_result_count": 3,
-    "physical_business_request_count": 3,
+    "run_number": 4,
+    "status": "PROVIDER_PERMISSION_BLOCKED_4_OF_4_WITH_CORRECT_DISPATCH",
+    "result_count": 4,
+    "logical_business_result_count": 4,
+    "physical_business_request_count": 4,
     "operations": [
       {
-        "operation": "posting_digital_list_v2",
+        "operation": "fbs_product_exemplar_validate",
         "http_status": 403,
         "external_request_executed": true,
         "provider_category": "auth_or_permission",
         "provider_code": "7",
         "automatic_retry": false,
+        "command_transformed": true,
         "outcome": "PROVIDER_PERMISSION_BLOCKED"
       },
       {
-        "operation": "posting_global_etgb",
-        "http_status": 200,
+        "operation": "posting_fbs_pickup_code_verify",
+        "http_status": 403,
         "external_request_executed": true,
-        "provider_result_empty": true,
-        "outcome": "NEW_READ_LIVE_PASS"
+        "provider_category": "auth_or_permission",
+        "provider_code": "7",
+        "automatic_retry": false,
+        "command_transformed": true,
+        "outcome": "PROVIDER_PERMISSION_BLOCKED"
       },
       {
-        "operation": "assembly_fbs_posting_list",
-        "http_status": 200,
+        "operation": "order_cancel_check",
+        "http_status": 403,
         "external_request_executed": true,
-        "returned_live_postings": 3,
-        "sensitive_identifiers_persisted": false,
-        "outcome": "HELPER_PASS"
+        "provider_category": "auth_or_permission",
+        "provider_code": "7",
+        "automatic_retry": false,
+        "command_transformed": false,
+        "outcome": "PROVIDER_PERMISSION_BLOCKED"
+      },
+      {
+        "operation": "posting_marks",
+        "http_status": 403,
+        "external_request_executed": true,
+        "provider_category": "auth_or_permission",
+        "provider_code": "7",
+        "automatic_retry": false,
+        "command_transformed": false,
+        "outcome": "PROVIDER_PERMISSION_BLOCKED"
       }
     ]
   },
-  "next_action": "Use owner-visible live FBS identifiers from Run 003 to test remaining posting-dependent new reads in grouped batches; do not persist raw posting identifiers in the repository ledger."
+  "next_action": "Run all 13 new personal-data-gated reads with Personal Data disabled; expect zero physical provider requests, then enable Personal Data without replay and explicitly resubmit."
 }
