@@ -1,0 +1,52 @@
+{
+  "schema": "OZON_CURRENT_BUILD_REVALIDATION_STATUS_V1",
+  "schema_version": 1,
+  "date_started": "2026-09-01",
+  "scope": "OZON_API_ONLY",
+  "ui_excluded": true,
+  "branch": "repair/ozon-step10-owner-live-acceptance-evidence-final-2026-09-01",
+  "build": {
+    "bridge_version": "0.1.19",
+    "installable_zip_sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574",
+    "current_read_surface": {
+      "seller": 245,
+      "performance": 21,
+      "total": 266
+    }
+  },
+  "status": "IN_PROGRESS",
+  "runs_completed": 1,
+  "runs": [
+    {
+      "run_number": 1,
+      "name": "Seller baseline stocks_current",
+      "status": "PASS",
+      "logical_business_result_count": 1,
+      "physical_business_request_count": 1,
+      "http_200": 1,
+      "operation": "stocks_current",
+      "record": "tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/revalidation/RUN_001_STOCKS_CURRENT_2026-09-01.json"
+    }
+  ],
+  "verified": {
+    "seller_credentials_and_transport": true,
+    "seller_fixed_endpoint_routing": true,
+    "one_command_one_request": true,
+    "stocks_current_response_contract": true,
+    "requested_product_returned": true,
+    "hidden_pagination_not_observed": true,
+    "automatic_retry_not_observed": true
+  },
+  "remaining_required_groups": [
+    "representative Seller read batch across catalog, analytics, orders, finance, returns, notifications and documents",
+    "Performance API authentication and representative read batch",
+    "Personal Data OFF fail-closed and explicit ON execution",
+    "binary transport: one PDF, one PNG and one CSV",
+    "provider error/no-retry sample",
+    "final request accounting"
+  ],
+  "next_run": {
+    "run_number": 2,
+    "goal": "Combined representative Seller regression batch with operations that do not require Personal Data and do not mutate Ozon state."
+  }
+}
