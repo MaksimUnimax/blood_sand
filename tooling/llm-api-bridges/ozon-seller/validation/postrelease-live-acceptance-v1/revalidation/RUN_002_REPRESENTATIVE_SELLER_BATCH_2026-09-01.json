@@ -1,0 +1,176 @@
+{
+  "schema": "OZON_CURRENT_BUILD_REVALIDATION_RUN_V1",
+  "schema_version": 1,
+  "run_number": 2,
+  "date": "2026-09-01",
+  "scope": "OZON_API_ONLY",
+  "build": {
+    "bridge": "ozon-llm-api-bridge",
+    "version": "0.1.19",
+    "installable_zip_sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574"
+  },
+  "status": "PASS",
+  "decision": "REPRESENTATIVE_SELLER_BATCH_6_OF_6_PASS",
+  "batch": {
+    "delivery_mode": "sequential_batch_single_delivery",
+    "result_count": 6,
+    "capability_probe": {
+      "performed": false,
+      "status": "not_needed",
+      "subscription_type": "UNKNOWN",
+      "http_status": 0,
+      "error_code": null
+    },
+    "query_planner": {
+      "status": "complete",
+      "coalesced_group_count": 0,
+      "coalesced_logical_count": 0,
+      "logical_business_result_count": 6,
+      "physical_business_request_count": 6
+    }
+  },
+  "results": [
+    {
+      "operation": "seller_product_info_list",
+      "request_id": "d987d006-33e4-4175-a25b-919ba1f0f1d5",
+      "command_fingerprint": "5a388746",
+      "physical_command_fingerprint": "5a388746",
+      "command_transformed": false,
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "entitlement_key": "POST /v3/product/info/list",
+      "external_request_executed": true,
+      "http_status": 200,
+      "elapsed_ms": 1416,
+      "response_summary": {
+        "item_count": 1,
+        "requested_product_id_returned": true,
+        "requested_product_id": 1082848375,
+        "credentials_not_exposed": true
+      }
+    },
+    {
+      "operation": "analytics_data",
+      "request_id": "7450449e-939d-4599-92c0-a7cd6b63e998",
+      "command_fingerprint": "759912a6",
+      "physical_command_fingerprint": "27067e73",
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "entitlement_key": "POST /v1/analytics/data",
+      "external_request_executed": true,
+      "http_status": 200,
+      "elapsed_ms": 5383,
+      "acquisition": {
+        "profile_id": "analytics_basic_metrics_v1",
+        "prefetch_applied": true,
+        "requested_metrics": ["revenue"],
+        "physical_metrics": ["revenue", "ordered_units"],
+        "additional_physical_business_request": false
+      },
+      "rate_limit": {
+        "quota_family": "seller.analytics_data.v1",
+        "min_interval_ms": 60000,
+        "automatic_retry": false
+      },
+      "response_summary": {
+        "day_rows": 7,
+        "totals_present": true,
+        "credentials_not_exposed": true
+      }
+    },
+    {
+      "operation": "assembly_fbs_posting_list",
+      "request_id": "60862cbb-d74a-46ee-86e5-a0ca9f99d454",
+      "command_fingerprint": "83d3704b",
+      "physical_command_fingerprint": "83d3704b",
+      "command_transformed": false,
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "entitlement_key": "POST /v1/assembly/fbs/posting/list",
+      "external_request_executed": true,
+      "http_status": 200,
+      "elapsed_ms": 313,
+      "response_summary": {
+        "posting_count": 0,
+        "cursor_empty": true,
+        "credentials_not_exposed": true
+      }
+    },
+    {
+      "operation": "finance_transaction_list_v3",
+      "request_id": "43b3099f-3022-40be-838c-47cef19daa43",
+      "command_fingerprint": "97ff43e4",
+      "physical_command_fingerprint": "3e46b5e8",
+      "command_transformed": true,
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "entitlement_key": "POST /v3/finance/transaction/list",
+      "external_request_executed": true,
+      "http_status": 200,
+      "elapsed_ms": 359,
+      "response_summary": {
+        "returned_operation_count": 10,
+        "page_count_reported": 54,
+        "row_count_reported": 538,
+        "hidden_next_page_request_executed": false,
+        "credentials_not_exposed": true
+      }
+    },
+    {
+      "operation": "returns_list",
+      "request_id": "5e0f8acc-e906-4f32-8cac-2c05ac659644",
+      "command_fingerprint": "9050d428",
+      "physical_command_fingerprint": "9050d428",
+      "command_transformed": false,
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "entitlement_key": "POST /v1/returns/list",
+      "external_request_executed": true,
+      "http_status": 200,
+      "elapsed_ms": 329,
+      "response_summary": {
+        "returned_page_nonempty": true,
+        "requested_limit": 10,
+        "has_next": true,
+        "hidden_next_page_request_executed": false,
+        "addresses_redacted": true,
+        "credentials_not_exposed": true
+      }
+    },
+    {
+      "operation": "seller_rating_summary",
+      "request_id": "b9662ea4-769d-49c1-ba28-97e7413ea711",
+      "command_fingerprint": "35310934",
+      "physical_command_fingerprint": "35310934",
+      "command_transformed": false,
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "entitlement_key": "POST /v1/rating/summary",
+      "external_request_executed": true,
+      "http_status": 200,
+      "elapsed_ms": 437,
+      "response_summary": {
+        "group_count": 4,
+        "penalty_score_exceeded": false,
+        "credentials_not_exposed": true
+      }
+    }
+  ],
+  "assertions": {
+    "all_six_operations_recognized": true,
+    "all_correct_seller_provider": true,
+    "all_correct_http_method": true,
+    "all_external_requests_executed": true,
+    "all_http_200": true,
+    "six_logical_results": true,
+    "six_physical_business_requests": true,
+    "one_physical_request_per_explicit_command": true,
+    "capability_probe_not_executed": true,
+    "automatic_retry_not_observed": true,
+    "hidden_pagination_not_executed": true,
+    "analytics_prefetch_preserved_single_request": true,
+    "sensitive_addresses_redacted": true,
+    "credentials_not_exposed": true
+  },
+  "next_action": "Run a combined Performance API authentication and representative read batch, then Personal Data policy and binary transport samples."
+}
