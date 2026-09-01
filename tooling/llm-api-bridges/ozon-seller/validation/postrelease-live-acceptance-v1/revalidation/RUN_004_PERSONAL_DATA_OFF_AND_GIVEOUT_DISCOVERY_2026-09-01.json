@@ -1,0 +1,109 @@
+{
+  "schema": "OZON_CURRENT_BUILD_REVALIDATION_RUN_V1",
+  "schema_version": 1,
+  "run_number": 4,
+  "date": "2026-09-01",
+  "scope": "OZON_API_ONLY",
+  "build": {
+    "bridge": "ozon-llm-api-bridge",
+    "version": "0.1.19",
+    "installable_zip_sha256": "f954dd7cd7b8ab62cfceddcca3e700ef91794801b9082595cfd39a00120e7574"
+  },
+  "status": "PARTIAL_PASS_TEST_INPUT_CORRECTION_REQUIRED",
+  "decision": "PDF_PNG_POLICY_GATE_PASS_GIVEOUT_DISCOVERY_COMPLETE_REVIEW_GATE_NOT_TESTED",
+  "batch": {
+    "delivery_mode": "sequential_batch_single_delivery",
+    "result_count": 5,
+    "capability_probe": {
+      "performed": false,
+      "status": "not_needed",
+      "subscription_type": "UNKNOWN",
+      "http_status": 0,
+      "error_code": null
+    },
+    "query_planner": {
+      "status": "complete",
+      "coalesced_group_count": 0,
+      "coalesced_logical_count": 0,
+      "logical_business_result_count": 2,
+      "physical_business_request_count": 2
+    }
+  },
+  "results": [
+    {
+      "operation": "return_giveout_is_enabled",
+      "request_id": "9aca2f32-e9af-4714-8429-06cc0d8fe9fc",
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "external_request_executed": true,
+      "http_status": 403,
+      "provider_error_category": "auth_or_permission",
+      "provider_error_code": "7",
+      "automatic_retry": false,
+      "command_transformed": false
+    },
+    {
+      "operation": "return_giveout_list",
+      "request_id": "c2ee6c89-6f03-4483-af9a-e968ebc4e732",
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "external_request_executed": true,
+      "http_status": 200,
+      "response_summary": {
+        "giveout_count": 0
+      },
+      "command_transformed": false
+    },
+    {
+      "operation": "review_list",
+      "result_type": "OZON_GUIDANCE_RESULT_V1",
+      "external_request_executed": false,
+      "physical_business_request_count": 0,
+      "error": "OZON_LIMIT_VIOLATION",
+      "test_interpretation": "NOT_A_PRIVACY_GATE_RESULT",
+      "reason": "The submitted test used limit=10. The Bridge returned guidance with the production template limit=100 before reaching the personal-data policy stage. This command must be repeated with an accepted limit before the review_list privacy gate can be marked tested."
+    },
+    {
+      "operation": "return_giveout_get_pdf",
+      "request_id": "policy-caf7ddd3-4b55-4acd-9942-f3debe044d41",
+      "external_request_executed": false,
+      "http_status": 0,
+      "policy_status": "POLICY_BLOCKED",
+      "policy_reason": "personal_data_setting_off",
+      "error_code": "OPERATION_DISABLED_BY_USER",
+      "stage": "personal_data_policy",
+      "automatic_retry": false
+    },
+    {
+      "operation": "return_giveout_get_png",
+      "request_id": "policy-f6031e75-8daf-4abd-a069-ecc8d2255086",
+      "external_request_executed": false,
+      "http_status": 0,
+      "policy_status": "POLICY_BLOCKED",
+      "policy_reason": "personal_data_setting_off",
+      "error_code": "OPERATION_DISABLED_BY_USER",
+      "stage": "personal_data_policy",
+      "automatic_retry": false
+    }
+  ],
+  "assertions": {
+    "two_safe_commands_reached_provider": true,
+    "two_physical_business_requests": true,
+    "return_giveout_list_http_200": true,
+    "return_giveout_list_empty": true,
+    "return_giveout_is_enabled_provider_403_no_retry": true,
+    "pdf_personal_data_off_blocked_before_provider": true,
+    "png_personal_data_off_blocked_before_provider": true,
+    "review_list_personal_data_off_test_passed": false,
+    "review_list_requires_corrected_test_input": true,
+    "automatic_retry_not_observed": true,
+    "capability_probe_not_executed": true
+  },
+  "observations": {
+    "return_giveout_binary_fixture_available": false,
+    "provider_error_no_retry_sample_obtained": true,
+    "provider_error_sample": "return_giveout_is_enabled returned provider 403 with automatic_retry=false",
+    "tester_input_issue": "review_list used limit=10 and was locally rejected with OZON_LIMIT_VIOLATION; repeat with the accepted production template limit before drawing a privacy conclusion"
+  },
+  "next_action": "Repeat review_list with an accepted limit while Personal Data remains OFF, then enable Personal Data and explicitly submit a new review_list command. Since no return giveout exists, use other available binary read operations for PDF/PNG if possible; otherwise record return-giveout PDF/PNG as fixture-unavailable rather than as a Bridge failure."
+}
