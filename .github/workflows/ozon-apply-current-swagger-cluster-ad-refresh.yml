@@ -1,0 +1,120 @@
+name: Ozon Apply Current Swagger Cluster Ad Refresh
+
+on:
+  push:
+    branches:
+      - repair/ozon-current-swagger-refresh-2026-09-01
+    paths:
+      - tooling/llm-api-bridges/ozon-seller/validation/maintenance-performance-clustering-v1/apply-current-refresh-v2/APPLY_TRIGGER
+
+permissions:
+  contents: write
+
+jobs:
+  apply-refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and verify patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          D=tooling/llm-api-bridges/ozon-seller/validation/maintenance-performance-clustering-v1/apply-current-refresh-v2
+          cat "$D"/patch.gz.b64.part?? > /tmp/patch.gz.b64
+          test "$(wc -c < /tmp/patch.gz.b64)" -eq 24912
+          base64 -d /tmp/patch.gz.b64 > /tmp/patch.gz
+          gzip -dc /tmp/patch.gz > /tmp/patch.diff
+          echo '4b95a2e1160a91150009824942d0a763abdf0d9a8828f299904dd2b6dd7f1530  /tmp/patch.diff' | sha256sum -c -
+          git apply --check /tmp/patch.diff
+
+      - name: Apply exact patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply /tmp/patch.diff
+
+      - name: Verify exact production file bytes and syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          B=tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared
+          echo '3571afd7535fc3838f24a5ed12baea334331dcb26893d8212f07491ede714e4a  '"$B"'/ozon_operation_registry.js' | sha256sum -c -
+          echo '05bfe07463c45442d199f3472f5b6e71e6715ea66cc45322cbebca65817a1c1e  '"$B"'/ozon_contract.js' | sha256sum -c -
+          echo '2a5475b5dd657573cc856e7eeaf50fa613f05af6c04dc06a8eb5b4d37bd3e9c2  '"$B"'/ozon_guidance.js' | sha256sum -c -
+          echo '027098c21a26fb069a71b891e790984c5d70dfe5a917ec24f286e4f89bdd68d3  '"$B"'/runtime_names.js' | sha256sum -c -
+          node --check "$B/ozon_operation_registry.js"
+          node --check "$B/ozon_contract.js"
+          node --check "$B/ozon_guidance.js"
+          node --check "$B/runtime_names.js"
+
+      - name: Validate registry contract and guidance invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          const base = 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared';
+          for (const f of ['runtime_names.js','ozon_operation_registry.js','ozon_contract.js','ozon_guidance.js']) {
+            vm.runInThisContext(fs.readFileSync(`${base}/${f}`, 'utf8'), {filename:f});
+          }
+          const R = globalThis.OzonOperationRegistry;
+          const C = globalThis.OzonContract;
+          const G = globalThis.OzonGuidance;
+          const v = R.catalogValidation(C.OPERATIONS);
+          if (!v.ok || v.errors.length) throw new Error(`catalogValidation failed: ${JSON.stringify(v)}`);
+          const aliases = Object.keys(R.OPERATIONS);
+          if (aliases.length !== 270) throw new Error(`expected 270 aliases, got ${aliases.length}`);
+          for (const a of ['fbs_stock_by_warehouse_v1','fbs_carriage_available_list']) {
+            if (R.OPERATIONS[a]) throw new Error(`retired alias still present: ${a}`);
+          }
+          for (const a of ['description_category_dependent_attributes','description_category_dependent_attribute_values']) {
+            if (!R.OPERATIONS[a]) throw new Error(`new alias missing: ${a}`);
+          }
+          const cls = G.classify({operation:'performance_campaigns'});
+          if (cls.version !== 2) throw new Error(`guidance default is not V2: ${JSON.stringify(cls)}`);
+          if (Object.keys(R.CLUSTERS).length !== 13) throw new Error('expected 13 top-level clusters');
+          console.log('OZON_CURRENT_REFRESH_INVARIANTS_PASS');
+          NODE
+
+      - name: Export refreshed command inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs'); const vm=require('vm');
+          const base='tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared';
+          for (const f of ['runtime_names.js','ozon_operation_registry.js','ozon_contract.js']) vm.runInThisContext(fs.readFileSync(`${base}/${f}`,'utf8'),{filename:f});
+          const ops=globalThis.OzonOperationRegistry.OPERATIONS;
+          const rows=Object.entries(ops).sort(([a],[b])=>a.localeCompare(b)).map(([alias,m])=>({
+            alias, provider:m.provider||'seller_api', method:m.method, path:m.path, effect:m.effect,
+            currentness:m.currentness, safety_class:m.safety_class, privacy_policy:m.privacy_policy,
+            cluster:m.cluster, section:m.section, guidance_visibility:m.guidance_visibility,
+            workflow_role:m.workflow_role, purpose:m.purpose, template:m.template
+          }));
+          const seller=rows.filter(x=>x.provider==='seller_api').length;
+          const performance=rows.filter(x=>x.provider==='performance_api').length;
+          const out={schema:'OZON_CURRENT_OPERATIONS_EXPORT_V2',date:'2026-09-01',counts:{total:rows.length,seller,performance,current_read_authority:266},operations:rows};
+          const path='tooling/llm-api-bridges/ozon-seller/validation/maintenance-performance-clustering-v1/CURRENT_OPERATIONS_EXPORT_REFRESHED_2026-09-01.json';
+          fs.writeFileSync(path,JSON.stringify(out,null,2)+'\n');
+          console.log(JSON.stringify(out.counts));
+          NODE
+          sha256sum tooling/llm-api-bridges/ozon-seller/validation/maintenance-performance-clustering-v1/CURRENT_OPERATIONS_EXPORT_REFRESHED_2026-09-01.json
+
+      - name: Commit verified refresh
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_operation_registry.js \
+            tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_contract.js \
+            tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_guidance.js \
+            tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/runtime_names.js \
+            tooling/llm-api-bridges/ozon-seller/validation/maintenance-performance-clustering-v1/CURRENT_OPERATIONS_EXPORT_REFRESHED_2026-09-01.json
+          git commit -m 'feat(ozon): refresh current reads, clustering v2, and campaign refinements'
+          git push origin HEAD:${GITHUB_REF_NAME}
