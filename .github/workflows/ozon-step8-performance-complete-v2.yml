@@ -23,10 +23,7 @@ env:
   STEP9_BRANCH: repair/ozon-step9-full-integration-266-reads-2026-09-01
   CANONICAL_BRANCH: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
   CANONICAL_SHA: 8ee16f38bf2ec60e4b2e42192c2f41d87021b214
-  V1_ROOT: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1
-  BASELINE_BUILDER: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/build_step8_performance_inventory.py
-  QUEUE_BUILDER: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/build_step8_performance_remaining_queue.py
-  TERMINAL_BUILDER: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v1/build_step8_performance_terminal_matrix.py
+  PARTITION_BUILDER: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v2/build_partition_v2.py
   V2_GATE: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v2/run_step8_v2_gate.py
   FINALIZER: tooling/llm-api-bridges/ozon-seller/validation/step8-performance-v2/finalize_step8.py
   MATRIX_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_MATRIX_REGRESSION_2026-08-29.mjs
@@ -54,20 +51,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          stage="$GITHUB_WORKSPACE/$V1_ROOT/generated-v2-stage"
+          stage="$RUNNER_TEMP/step8-v2-partition"
           full="$RUNNER_TEMP/step8-v2-full"
           artifact="$RUNNER_TEMP/step8-v2-artifact"
           rm -rf "$stage" "$full" "$artifact"
           mkdir -p "$stage" "$full" "$artifact"
 
-          python "$BASELINE_BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$stage"
-          python "$QUEUE_BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$stage"
-          python "$TERMINAL_BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$stage"
+          python "$PARTITION_BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$stage"
           node "$MATRIX_REGRESSION"
           node "$READ_REGRESSION"
           python "$V2_GATE" --repo-root "$GITHUB_WORKSPACE" --out "$full" --source-commit "$GITHUB_SHA"
           python "$FINALIZER" assemble --stage "$stage" --full "$full" --out "$artifact" --source-commit "$GITHUB_SHA"
-          rm -rf "$stage"
           echo "PERFORMANCE_STEP8_${RUNNER_OS^^}_V2_FULL_GATE_PASS"
       - uses: actions/upload-artifact@v4
         with:
@@ -144,13 +138,11 @@ jobs:
           canonical_actual="$(git ls-remote origin "refs/heads/$CANONICAL_BRANCH" | awk '{print $1}')"
           test "$canonical_actual" = "$CANONICAL_SHA"
 
-          stage="$GITHUB_WORKSPACE/$V1_ROOT/generated-v2-stage"
+          stage="$RUNNER_TEMP/step8-v2-fresh-partition"
           full="$RUNNER_TEMP/step8-v2-fresh-full"
           rm -rf "$stage" "$full"
           mkdir -p "$stage" "$full"
-          python "$BASELINE_BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$stage"
-          python "$QUEUE_BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$stage"
-          python "$TERMINAL_BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$stage"
+          python "$PARTITION_BUILDER" --repo-root "$GITHUB_WORKSPACE" --out "$stage"
           node "$MATRIX_REGRESSION"
           node "$READ_REGRESSION"
           python "$V2_GATE" --repo-root "$GITHUB_WORKSPACE" --out "$full" --source-commit "$GITHUB_SHA"
@@ -167,7 +159,6 @@ jobs:
             --canonical-branch "$CANONICAL_BRANCH" \
             --canonical-sha "$CANONICAL_SHA" \
             --step9-branch "$STEP9_BRANCH"
-          rm -rf "$stage"
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
