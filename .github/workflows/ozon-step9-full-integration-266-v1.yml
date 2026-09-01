@@ -1,0 +1,204 @@
+name: Ozon Step9 full integration 266 v1
+run-name: Ozon Step9 266 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step9-full-integration-266-reads-2026-09-01
+    paths:
+      - .github/workflows/ozon-step9-full-integration-266-v1.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/step9-integration-v1/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ozon-step9-full-integration-266-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUTF8: '1'
+  PYTHONIOENCODING: utf-8
+  SELLER_ROOT: tooling/llm-api-bridges/ozon-seller
+  RUNTIME_266: tooling/llm-api-bridges/ozon-seller/validation/step9-integration-v1/run_all_266_runtime.mjs
+  PRIVACY_HARNESS: tooling/llm-api-bridges/ozon-seller/validation/step7-privacy-v1/run_step7_privacy.py
+  RUNTIME_HARNESS: tooling/llm-api-bridges/ozon-seller/validation/step7-runtime-v1/run_step7_runtime.py
+  BUNDLE: tooling/llm-api-bridges/ozon-seller/dist/ozon-seller-mcp-nodebundle.js
+  MOCK_FETCH: tooling/llm-api-bridges/ozon-seller/validation/step7-runtime-v1/mock_fetch.cjs
+  READ_REGISTRY: tooling/llm-api-bridges/ozon-seller/inventory/OZON_SELLER_EXACT_READ_REGISTRY.json
+  RUNTIME_CONTRACT: tooling/llm-api-bridges/ozon-seller/OZON_STEP7_RUNTIME_TEST_ARTIFACT_2026-08-30.json
+  PERF_MATERIALIZER: tooling/llm-api-bridges/ozon-seller/validation/materialize_performance_step6_read_coverage_package.py
+  PERF_MATRIX: tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_EXACT_MATRIX_2026-08-29.json
+  MATRIX_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_MATRIX_REGRESSION_2026-08-29.mjs
+  READ_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/OZON_PERFORMANCE_STEP6_READ_COVERAGE_REGRESSION_2026-08-29.mjs
+  ARTIFACT_BUILDER: tooling/llm-api-bridges/ozon-seller/validation/step9-integration-v1/build_step9_artifact.py
+  ARTIFACT_VERIFIER: tooling/llm-api-bridges/ozon-seller/validation/step9-integration-v1/verify_step9_artifacts.py
+  CANONICAL_BRANCH: repair/ozon-v2-b1-stocks-warehouse-2026-08-29
+  CANONICAL_SHA: 8ee16f38bf2ec60e4b2e42192c2f41d87021b214
+
+jobs:
+  platform-full-integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Disable Git line-ending conversion
+        shell: bash
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Execute all 266 current operations and integration regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/step9-work"
+          out="$RUNNER_TEMP/step9-artifact"
+          perf_work="$RUNNER_TEMP/step9-performance-work"
+          perf_candidate="$RUNNER_TEMP/step9-performance-candidate"
+          rm -rf "$work" "$out" "$perf_work" "$perf_candidate"
+          mkdir -p "$work" "$out"
+
+          node "$RUNTIME_266" \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --output "$work/runtime-proof.json" \
+            --source-commit "$GITHUB_SHA"
+
+          python "$PRIVACY_HARNESS" \
+            --runtime-harness "$RUNTIME_HARNESS" \
+            --bundle "$BUNDLE" \
+            --preload "$MOCK_FETCH" \
+            --registry "$READ_REGISTRY" \
+            --contract "$RUNTIME_CONTRACT" \
+            --work-dir "$work/privacy-work" \
+            --output "$work/privacy-proof.json" \
+            --source-commit "$GITHUB_SHA"
+
+          python "$PERF_MATERIALIZER" \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --work-root "$perf_work" \
+            --out "$perf_candidate"
+          node "$MATRIX_REGRESSION" "$perf_work/step5-base" "$PERF_MATRIX" | tee "$work/matrix-regression.log"
+          node "$READ_REGRESSION" "$perf_candidate" "$PERF_MATRIX" "$perf_work/step5-base" | tee "$work/read-regression.log"
+
+          python "$ARTIFACT_BUILDER" \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --runtime-proof "$work/runtime-proof.json" \
+            --privacy-proof "$work/privacy-proof.json" \
+            --matrix-regression-log "$work/matrix-regression.log" \
+            --read-regression-log "$work/read-regression.log" \
+            --out "$out" \
+            --source-commit "$GITHUB_SHA"
+          echo "OZON_STEP9_${RUNNER_OS^^}_FULL_INTEGRATION_PASS"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step9-${{ runner.os }}-v1
+          path: ${{ runner.temp }}/step9-artifact
+          if-no-files-found: error
+          retention-days: 14
+
+  compare-cross-platform:
+    needs: platform-full-integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step9-Linux-v1
+          path: ${{ runner.temp }}/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step9-Windows-v1
+          path: ${{ runner.temp }}/windows
+      - name: Prove byte-identical Linux and Windows artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/cross"
+          python "$ARTIFACT_VERIFIER" compare \
+            --linux "$RUNNER_TEMP/linux" \
+            --windows "$RUNNER_TEMP/windows" \
+            --output "$RUNNER_TEMP/cross/OZON_STEP9_CROSS_PLATFORM_PROOF_V1.json" \
+            --source-commit "$GITHUB_SHA" \
+            --workflow-run-id "$GITHUB_RUN_ID"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step9-cross-platform-v1
+          path: ${{ runner.temp }}/cross/OZON_STEP9_CROSS_PLATFORM_PROOF_V1.json
+          if-no-files-found: error
+          retention-days: 14
+
+  verify-fresh-repository-freeze:
+    needs: compare-cross-platform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step9-Linux-v1
+          path: ${{ runner.temp }}/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step9-Windows-v1
+          path: ${{ runner.temp }}/windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-step9-cross-platform-v1
+          path: ${{ runner.temp }}/cross
+      - name: Reproduce from repository and verify freeze
+        shell: bash
+        run: |
+          set -euo pipefail
+          canonical_actual="$(git ls-remote origin "refs/heads/$CANONICAL_BRANCH" | awk '{print $1}')"
+          test "$canonical_actual" = "$CANONICAL_SHA"
+
+          work="$RUNNER_TEMP/step9-fresh-work"
+          fresh="$RUNNER_TEMP/step9-fresh-artifact"
+          perf_work="$RUNNER_TEMP/step9-fresh-performance-work"
+          perf_candidate="$RUNNER_TEMP/step9-fresh-performance-candidate"
+          rm -rf "$work" "$fresh" "$perf_work" "$perf_candidate"
+          mkdir -p "$work" "$fresh"
+
+          node "$RUNTIME_266" --repo-root "$GITHUB_WORKSPACE" --output "$work/runtime-proof.json" --source-commit "$GITHUB_SHA"
+          python "$PRIVACY_HARNESS" \
+            --runtime-harness "$RUNTIME_HARNESS" --bundle "$BUNDLE" --preload "$MOCK_FETCH" \
+            --registry "$READ_REGISTRY" --contract "$RUNTIME_CONTRACT" \
+            --work-dir "$work/privacy-work" --output "$work/privacy-proof.json" --source-commit "$GITHUB_SHA"
+          python "$PERF_MATERIALIZER" --repo-root "$GITHUB_WORKSPACE" --work-root "$perf_work" --out "$perf_candidate"
+          node "$MATRIX_REGRESSION" "$perf_work/step5-base" "$PERF_MATRIX" | tee "$work/matrix-regression.log"
+          node "$READ_REGRESSION" "$perf_candidate" "$PERF_MATRIX" "$perf_work/step5-base" | tee "$work/read-regression.log"
+          python "$ARTIFACT_BUILDER" \
+            --repo-root "$GITHUB_WORKSPACE" --runtime-proof "$work/runtime-proof.json" --privacy-proof "$work/privacy-proof.json" \
+            --matrix-regression-log "$work/matrix-regression.log" --read-regression-log "$work/read-regression.log" \
+            --out "$fresh" --source-commit "$GITHUB_SHA"
+
+          mkdir -p "$RUNNER_TEMP/freeze"
+          python "$ARTIFACT_VERIFIER" freeze \
+            --fresh "$fresh" --linux "$RUNNER_TEMP/linux" --windows "$RUNNER_TEMP/windows" \
+            --cross "$RUNNER_TEMP/cross/OZON_STEP9_CROSS_PLATFORM_PROOF_V1.json" \
+            --output "$RUNNER_TEMP/freeze/OZON_STEP9_REPOSITORY_FREEZE_PROOF_V1.json" \
+            --source-commit "$GITHUB_SHA" --workflow-run-id "$GITHUB_RUN_ID" \
+            --canonical-branch "$CANONICAL_BRANCH" --canonical-sha "$CANONICAL_SHA"
+          echo OZON_STEP9_CROSS_PLATFORM_CANDIDATE_READY_FOR_INDEPENDENT_REVERIFICATION
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-step9-repository-freeze-v1
+          path: ${{ runner.temp }}/freeze/OZON_STEP9_REPOSITORY_FREEZE_PROOF_V1.json
+          if-no-files-found: error
+          retention-days: 14
