@@ -1,0 +1,70 @@
+{
+  "schema": "OZON_CURRENT_REFRESH_APPLICATION_RESULT_V1",
+  "date": "2026-09-01",
+  "scope": "OZON_API_ONLY",
+  "status": "PASS",
+  "branch": "repair/ozon-current-swagger-refresh-2026-09-01",
+  "source_commit": "7893073206d162296a1afd7ea31240482fa99a21",
+  "workflow_run": {
+    "id": 33503525308,
+    "conclusion": "success",
+    "steps": {
+      "reconstruct_and_verify_patch": "success",
+      "apply_exact_patch": "success",
+      "verify_exact_production_file_bytes_and_syntax": "success",
+      "validate_registry_contract_and_guidance_invariants": "success",
+      "export_refreshed_command_inventory": "success",
+      "commit_verified_refresh": "success"
+    }
+  },
+  "patch": {
+    "sha256": "4b95a2e1160a91150009824942d0a763abdf0d9a8828f299904dd2b6dd7f1530",
+    "git_apply_check": "PASS"
+  },
+  "production_file_sha256": {
+    "shared/ozon_operation_registry.js": "3571afd7535fc3838f24a5ed12baea334331dcb26893d8212f07491ede714e4a",
+    "shared/ozon_contract.js": "05bfe07463c45442d199f3472f5b6e71e6715ea66cc45322cbebca65817a1c1e",
+    "shared/ozon_guidance.js": "2a5475b5dd657573cc856e7eeaf50fa613f05af6c04dc06a8eb5b4d37bd3e9c2",
+    "shared/runtime_names.js": "027098c21a26fb069a71b891e790984c5d70dfe5a917ec24f286e4f89bdd68d3"
+  },
+  "current_surface": {
+    "formal_read_authority": 266,
+    "seller_current_read_aliases": 245,
+    "performance_executable_aliases": 25,
+    "total_executable_aliases": 270,
+    "added": [
+      "description_category_dependent_attributes",
+      "description_category_dependent_attribute_values"
+    ],
+    "retired_from_current_surface": [
+      "fbs_stock_by_warehouse_v1",
+      "fbs_carriage_available_list"
+    ]
+  },
+  "guidance": {
+    "default_version": 2,
+    "top_level_clusters": 13,
+    "max_operations_in_one_v2_section": 9,
+    "automatic_provider_request_from_guidance": false
+  },
+  "advertising": {
+    "broad_performance_campaigns_default": {
+      "page": 1,
+      "pageSize": 100
+    },
+    "local_sort_supported": [
+      "created_at_desc",
+      "created_at_asc",
+      "updated_at_desc",
+      "updated_at_asc",
+      "from_date_desc",
+      "from_date_asc"
+    ],
+    "local_sort_max_items_returned_to_ai": 100,
+    "refinement_choices_require_new_explicit_command": true,
+    "hidden_pagination": false,
+    "additional_provider_requests_for_local_sort": 0,
+    "automatic_business_retry": false
+  },
+  "next_gate": "Build installable candidate from the verified 21-file tree and run targeted live tests only: the two new Seller reads, bounded broad performance_campaigns, then one explicit local-sort performance_campaigns command."
+}
