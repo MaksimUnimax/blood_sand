@@ -6,53 +6,97 @@
   "delivery_mode": "sequential_batch_single_delivery",
   "source_branch": "repair/ozon-step7-245-read-final-candidate-v3-2026-08-31",
   "live_test_branch": "test/ozon-v0.1.19-full-read-266-live-2026-09-01",
-  "runs_completed": 1,
+  "runs_completed": 2,
   "existing_seller_regression_smoke": {
     "passed": 1,
     "total": 1,
     "operations": ["stocks_current"]
   },
   "new_seller_reads": {
-    "passed_live": 2,
     "total": 26,
-    "remaining": 24,
+    "attempted_live": 8,
+    "untested_live": 18,
+    "passed_live": 4,
+    "provider_permission_blocked": 3,
+    "needs_diagnostic": 1,
     "passed_operations": [
       "notification_list",
-      "notification_push_type_list"
+      "notification_push_type_list",
+      "carriage_delivery_list_v2",
+      "chat_list_v3"
+    ],
+    "permission_blocked_operations": [
+      "receipts_seller_list",
+      "delivery_map",
+      "delivery_point_list"
+    ],
+    "diagnostic_pending_operations": [
+      "posting_digital_list_v2"
     ]
   },
   "accounting": {
-    "logical_business_commands": 3,
-    "physical_business_requests": 3,
+    "logical_business_commands": 9,
+    "physical_business_requests": 9,
     "capability_probes": 0
   },
   "last_run": {
-    "run_number": 1,
-    "status": "PASS",
-    "result_count": 3,
-    "physical_business_request_count": 3,
+    "run_number": 2,
+    "status": "PARTIAL_PASS_WITH_PROVIDER_BLOCKS_AND_DIAGNOSTIC",
+    "result_count": 6,
+    "logical_business_result_count": 6,
+    "physical_business_request_count": 6,
     "operations": [
       {
-        "operation": "stocks_current",
-        "request_id": "76f1a741-76b5-4f6b-aaa7-8e2482331674",
-        "http_status": 200,
-        "external_request_executed": true,
-        "outcome": "REGRESSION_PASS"
-      },
-      {
-        "operation": "notification_list",
-        "request_id": "73857176-25c6-44d8-92bf-3bbb8475e92f",
+        "operation": "carriage_delivery_list_v2",
         "http_status": 200,
         "external_request_executed": true,
         "outcome": "NEW_READ_LIVE_PASS"
       },
       {
-        "operation": "notification_push_type_list",
-        "request_id": "e8437538-d0d8-41ef-a72d-f344e2756071",
+        "operation": "chat_list_v3",
         "http_status": 200,
         "external_request_executed": true,
+        "hidden_pagination_observed": false,
+        "provider_has_next": true,
         "outcome": "NEW_READ_LIVE_PASS"
+      },
+      {
+        "operation": "receipts_seller_list",
+        "http_status": 403,
+        "external_request_executed": true,
+        "provider_category": "auth_or_permission",
+        "provider_code": "7",
+        "automatic_retry": false,
+        "outcome": "PROVIDER_PERMISSION_BLOCKED"
+      },
+      {
+        "operation": "posting_digital_list_v2",
+        "http_status": 400,
+        "external_request_executed": true,
+        "provider_category": "provider_request",
+        "provider_code": "3",
+        "automatic_retry": false,
+        "outcome": "NEEDS_DIAGNOSTIC"
+      },
+      {
+        "operation": "delivery_map",
+        "http_status": 403,
+        "external_request_executed": true,
+        "provider_category": "auth_or_permission",
+        "provider_code": "7",
+        "automatic_retry": false,
+        "outcome": "PROVIDER_PERMISSION_BLOCKED"
+      },
+      {
+        "operation": "delivery_point_list",
+        "http_status": 403,
+        "external_request_executed": true,
+        "provider_category": "auth_or_permission",
+        "provider_code": "7",
+        "automatic_retry": false,
+        "outcome": "PROVIDER_PERMISSION_BLOCKED"
       }
     ]
-  }
+  },
+  "next_action": "Diagnose posting_digital_list_v2 frozen request contract, then continue grouped live coverage without blind retry."
 }
