@@ -1,0 +1,72 @@
+name: Ozon full-read 266 post-release completion v1
+run-name: Ozon full-read 266 post-release completion · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-step10-owner-live-acceptance-evidence-final-2026-09-01
+    paths:
+      - .github/workflows/ozon-full-read-266-postrelease-completion-v1.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/OZON_FULL_READ_266_OWNER_LIVE_ACCEPTANCE_V1.json
+      - tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/OZON_FULL_READ_266_OWNER_LIVE_ACCEPTANCE_V1.md
+      - tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/verify_postrelease_completion.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-full-read-266-postrelease-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-and-freeze:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify formal chain, installable and owner live evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/evidence"
+          python tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/verify_postrelease_completion.py \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --source-commit "$GITHUB_SHA" \
+            --output-json "$out/OZON_FULL_READ_266_POSTRELEASE_COMPLETION_V1.json" \
+            --output-md "$out/OZON_FULL_READ_266_POSTRELEASE_COMPLETION_V1.md" \
+            | tee "$RUNNER_TEMP/postrelease.log"
+          grep -Fx OZON_FULL_READ_266_FORMAL_CHAIN_RECONFIRMED_PASS "$RUNNER_TEMP/postrelease.log"
+          grep -Fx OZON_FULL_READ_266_OWNER_LIVE_EVIDENCE_PASS "$RUNNER_TEMP/postrelease.log"
+          grep -Fx OZON_FULL_READ_266_POSTRELEASE_COMPLETION_PASS "$RUNNER_TEMP/postrelease.log"
+          grep -Fx FULL_OZON_READ_COVERAGE_ACCEPTED "$RUNNER_TEMP/postrelease.log"
+      - name: Commit immutable completion evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/evidence
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo OZON_FULL_READ_266_POSTRELEASE_EVIDENCE_ALREADY_FROZEN
+            exit 0
+          fi
+          git commit -m 'test(ozon): freeze post-release owner live acceptance'
+          git push origin HEAD:${{ github.ref_name }}
+          echo OZON_FULL_READ_266_POSTRELEASE_EVIDENCE_COMMITTED
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-full-read-266-postrelease-completion-v1
+          path: |
+            tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/OZON_FULL_READ_266_OWNER_LIVE_ACCEPTANCE_V1.json
+            tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/OZON_FULL_READ_266_OWNER_LIVE_ACCEPTANCE_V1.md
+            tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/evidence/OZON_FULL_READ_266_POSTRELEASE_COMPLETION_V1.json
+            tooling/llm-api-bridges/ozon-seller/validation/postrelease-live-acceptance-v1/evidence/OZON_FULL_READ_266_POSTRELEASE_COMPLETION_V1.md
+          if-no-files-found: error
+          retention-days: 30
