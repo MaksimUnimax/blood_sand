@@ -18,7 +18,7 @@ Gate policy: expandable only for materially distinct commercial capabilities.
 | 7 | STD-07 | Какие товары скоро закончатся, какие лежат слишком долго, что пополнять? | PASS | PASS_ALL_STD07_PROVIDER_READS | NO | 3 | Total-stock procurement emergency rejected: selected low-FBO candidates retain ~39–55 FBO+FBS units. Main action is FBO allocation. Fresh 2026-09-05 supplies already cover most top candidates (e.g. Чур22, Алатырь21, Громовик11, Сварог7, Герб6). Highest uncovered next-FBO candidates: Водолей, Овен, Стрелец, Лев (Античность), Близнецы (Символы). Do not replenish CRITICAL/RED/NOSALES slow-turnover SKUs. |
 | 8 | STD-08 | Текущие остатки по складам, склады от большего к меньшему. | PASS | PASS_PROVIDER_READS_WITH_REPRODUCED_PAGINATION_GUIDANCE_GAP | NO | 3 | 247 rows / 33 Ozon warehouses. Free-to-sell total 628, reserved14, promised54. Top free stock: Санкт_Петербург_РФЦ101; ХАБАРОВСК_2_РФЦ71 (+1 reserved,+54 promised); ПУШКИНО_1_РФЦ57; Екатеринбург_РФЦ_НОВЫЙ48 (+1 reserved); РОСТОВ_НА_ДОНУ_2_РФЦ45 (+4 reserved). All 3 responses had `pagination=null`; continuation required model inference from 100/100/47 page sizes. Warehouse/FBO surface only, not total FBO+FBS inventory. |
 | 9 | STD-09 | Продажи за вчера по складам. | PASS — exact FBO+FBS warehouse reconstruction = 16 units / 27,200 RUB | PASS_WITH_EXPECTED_LOCAL_PRIVACY_GATE_AND_EXPLICIT_OPERATOR_RETRY | YES_PRIVACY_SETTING_TOGGLE | 3 | FBO 12 / 20,400 + FBS 4 / 6,800 = exact STD-01 total 16 / 27,200. Top warehouse `Златоуст Чёт` = 4 / 6,800; `СПБ_ШУШАРЫ_РФЦ` = 2 / 3,400; ten FBO warehouses = 1 / 1,700 each. Exact reconciliation proves benchmark `revenue+ordered_units` are ordered-cohort metrics: currently cancelled postings remain part of the historical ordered total. Privacy gap recorded: aggregate FBS analytics currently requires enabling personal-data setting. |
-| 10 | STD-10 | Авария/пожар на складе Ozon: был ли там мой товар и что контролировать? | PENDING | PENDING | PENDING | 0 | READY |
+| 10 | STD-10 | Авария/пожар на складе Ozon: был ли там мой товар и что контролировать? | IN_PROGRESS | PASS_RUN1_EXTERNAL_INCIDENT_EXACTLY_MATCHED | NO | 1 | Run1 `ozon_warehouse_list` matched the real 2026-08-22 Ozon fire/UAV incident in Chapayevsk exactly to `САМАРА_РФЦ`, warehouse_id `23128509046000`, address Industrialnaya 3. Public reports: operations stopped and routes cancelled/reallocated. STD-08 current 2026-09-02 warehouse-stock traversal has no Samara rows, but this does not prove historical exposure. `is_active=true` in warehouse registry is not treated as real-time operational status. Next: pre-incident FBO postings to prove/reject seller inventory presence. |
 | 11 | STD-11 | Исчез товар с FBO без продаж: куда мог деться? | PENDING | PENDING | PENDING | 0 | — |
 | 12 | STD-12 | Какие поставки сейчас активны и что с каждой происходит? | PENDING | PENDING | PENDING | 0 | — |
 | 13 | STD-13 | Товар привезён, но не принят/не появился в продаже: где застрял? | PENDING | PENDING | PENDING | 0 | — |
@@ -55,7 +55,7 @@ Gate policy: expandable only for materially distinct commercial capabilities.
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_09_COMPLETE_STD_10_READY`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_10_RUN1_SAMARA_INCIDENT_MATCH_PREINCIDENT_FBO_EVIDENCE_NEXT`
 
 ## Detailed evidence
 
