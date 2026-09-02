@@ -528,7 +528,7 @@ This is the execution order. Update the status table after every step and commit
 |---:|---|---|---|
 | 1 | Fix cyclic/shared-reference bug in `specific_campaign_ids` | COMPLETE | production diff + focused tests |
 | 2 | Add regression for actual executability of generated refinement | COMPLETE | test names/markers and PASS output |
-| 3 | Fix entitlement metadata for both new Seller READs | PENDING | deterministic entitlement assertions |
+| 3 | Fix entitlement metadata for both new Seller READs | COMPLETE | deterministic entitlement assertions |
 | 4 | Build a new deterministic candidate | PENDING | artifact path, file count, SHA-256, fresh extraction verification |
 | 5 | Repeat live test #6 with campaign ID `37130644` | PENDING | one physical request, HTTP 200, only requested campaign, no retry/pagination |
 | 6 | Run short final Ozon-only regression | PENDING | focused PASS matrix below |
@@ -605,8 +605,8 @@ Until then, the current candidate remains rejected for release because of the `s
 | ID | Severity | Status | Summary |
 |---|---|---|---|
 | OZ-LIVE-AD-001 | BLOCKER | FIXED_PENDING_LIVE_RETEST | `performance_campaigns + campaignIds` fails pre-network with cyclic provider result in generated refinements |
-| OZ-LIVE-ENT-002 | MEDIUM | OPEN | both new dependent-attribute Seller reads lack deterministic entitlement metadata |
-| OZ-LIVE-FIXTURE-003 | TEST GAP | OPEN | second dependent-attribute endpoint lacks live fixture; deterministic regression required |
+| OZ-LIVE-ENT-002 | MEDIUM | FIXED | both new dependent-attribute Seller reads lack deterministic entitlement metadata |
+| OZ-LIVE-FIXTURE-003 | TEST GAP | DETERMINISTIC_REGRESSION_COVERED_LIVE_FIXTURE_PENDING | second dependent-attribute endpoint lacks live fixture; deterministic regression required |
 
 No other release-blocking Ozon defect was found in this live pass.
 
@@ -634,3 +634,16 @@ Status: **COMPLETE**
 - Every generated command passes normalizeCommand and buildPerformanceRequest.
 - Focused marker: OZON_GENERATED_REFINEMENT_EXECUTABILITY_PASS.
 - Evidence: validation/live-repair-2026-09-02/STEP2_GENERATED_REFINEMENT_EXECUTABILITY_RESULT.json.
+
+
+<!-- OZON-ROADMAP-STEP-3-COMPLETE -->
+### 2026-09-02 — Step 3: entitlement metadata repaired for both new Seller reads
+
+Status: **COMPLETE**
+
+- Previous commit: af9712d545f1bcb4a34e76a53c57abdcc5346344.
+- Both dependent-attribute entitlement keys resolve as ALL_ACCOUNTS without a capability probe.
+- The second endpoint has deterministic required-field, limit, cursor, method/path and mocked-result coverage.
+- Markers: OZON_DEPENDENT_ATTRIBUTE_ENTITLEMENTS_AND_CONTRACT_PASS and OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_REGRESSION_PASS.
+- Production file SHA-256: c032baab0d6818b5cdbe5e962c7dffa07ad3d31b3e79760b4ac5a820bdb2dbc1.
+- Evidence: validation/live-repair-2026-09-02/STEP3_DEPENDENT_ATTRIBUTE_ENTITLEMENT_RESULT.json.

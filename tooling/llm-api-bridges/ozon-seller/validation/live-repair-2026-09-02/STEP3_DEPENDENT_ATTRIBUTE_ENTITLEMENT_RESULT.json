@@ -1,0 +1,30 @@
+{
+  "schema": "OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_REGRESSION_V1",
+  "date": "2026-09-02",
+  "mode": "entitlements",
+  "bridge_base": "/home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared",
+  "details": {
+    "entitlements": {
+      "marker": "OZON_DEPENDENT_ATTRIBUTE_ENTITLEMENTS_AND_CONTRACT_PASS",
+      "operations": [
+        {
+          "alias": "description_category_dependent_attributes",
+          "entitlement_key": "POST /v1/description-category/dependent-attributes",
+          "status": "SUPPORTED_AND_ENTITLED",
+          "path": "/v1/description-category/dependent-attributes"
+        },
+        {
+          "alias": "description_category_dependent_attribute_values",
+          "entitlement_key": "POST /v1/description-category/dependent-attributes/values",
+          "status": "SUPPORTED_AND_ENTITLED",
+          "path": "/v1/description-category/dependent-attributes/values",
+          "cursor_preserved": true,
+          "limit_bounds_verified": [
+            1,
+            1000
+          ]
+        }
+      ]
+    }
+  }
+}

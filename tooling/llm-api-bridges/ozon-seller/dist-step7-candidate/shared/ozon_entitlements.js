@@ -58,6 +58,8 @@
       "POST /v1/description-category/attribute": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v1/description-category/attribute/values": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v1/description-category/attribute/values/search": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/description-category/dependent-attributes": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/description-category/dependent-attributes/values": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v1/brand/company-certification/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v1/product/certificate/product_status/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v1/product/certificate/rejection_reasons/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
