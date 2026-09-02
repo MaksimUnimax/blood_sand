@@ -1,119 +1,86 @@
 name: Ozon read-effect repair
 run-name: Ozon read-effect repair · ${{ github.ref_name }} · ${{ github.sha }}
-
 on:
   push:
-    branches:
-      - repair/ozon-read-effect-reclassification-2026-09-02
+    branches: [repair/ozon-read-effect-reclassification-2026-09-02]
     paths-ignore:
       - tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_operation_registry.js
       - tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_contract.js
       - tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_entitlements.js
+      - tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_provider.js
+      - tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/provider_transport_core.js
   workflow_dispatch:
-
 permissions:
   contents: write
-
 jobs:
   effect-repair:
     strategy:
       fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+      matrix: { os: [ubuntu-latest, windows-latest] }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+        with: { python-version: '3.12' }
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Apply deterministic effect-read repair
+        with: { node-version: '20' }
+      - name: Materialize repaired runtime
         shell: bash
         run: |
           REG=tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_operation_registry.js
-          if grep -q 'report_products_create:' "$REG"; then
-            echo OZON_EFFECT_READ_REPAIR_ALREADY_FROZEN
-          else
-            python tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_effect_read_repair.py --repo-root "$GITHUB_WORKSPACE"
-          fi
-      - name: Syntax-check patched runtime
+          if ! grep -q 'report_products_create:' "$REG"; then python tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_effect_read_repair.py --repo-root "$GITHUB_WORKSPACE"; fi
+          if ! grep -q 'report_file_get:' "$REG"; then python tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_report_file_workflow.py --repo-root "$GITHUB_WORKSPACE"; fi
+      - name: Syntax-check repaired runtime
         shell: bash
         run: |
-          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_operation_registry.js
-          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_contract.js
-          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_entitlements.js
-      - name: Verify repaired runtime surface
+          for f in ozon_operation_registry.js ozon_contract.js ozon_entitlements.js ozon_provider.js provider_transport_core.js; do node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/$f; done
+      - name: Verify 271 Seller READ surface
         shell: bash
         run: node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_effect_read_repair_gate.mjs "$GITHUB_WORKSPACE"
-      - name: Build deterministic LF-normalized runtime artifact
+      - name: Verify opaque report-file workflow
+        shell: bash
+        run: node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_file_workflow_gate.mjs "$GITHUB_WORKSPACE"
+      - name: Build deterministic LF runtime artifact
         shell: bash
         run: |
           python - <<'PY'
-          import hashlib, json, pathlib, shutil
-          src = pathlib.Path('tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared')
-          out = pathlib.Path('out/ozon-effect-read-repair-runtime/shared')
-          out.mkdir(parents=True, exist_ok=True)
+          import hashlib,json,pathlib
+          src=pathlib.Path('tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared'); out=pathlib.Path('out/ozon-effect-read-repair-runtime/shared'); out.mkdir(parents=True,exist_ok=True)
           rows=[]
           for p in sorted(src.glob('*.js')):
-              text=p.read_text(encoding='utf-8')
-              target=out/p.name
-              target.write_text(text,encoding='utf-8',newline='\n')
-              b=target.read_bytes()
-              rows.append({'path':p.name,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
-          payload={'schema':'OZON_EFFECT_READ_REPAIR_RUNTIME_MANIFEST_V2','seller_enabled_reads':271,'seller_current_reads':269,'seller_beta_reads':2,'performance_aliases':25,'canonical_performance_reads':21,'canonical_runtime_reads':292,'registry_aliases':296,'files':rows}
+            t=out/p.name; t.write_text(p.read_text(encoding='utf-8'),encoding='utf-8',newline='\n'); b=t.read_bytes(); rows.append({'path':p.name,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+          payload={'schema':'OZON_EFFECT_READ_REPAIR_RUNTIME_MANIFEST_V3','seller_enabled_reads':271,'seller_current_reads':269,'seller_beta_reads':2,'performance_aliases':25,'internal_report_file_helpers':1,'canonical_performance_reads':21,'canonical_api_reads':292,'registry_aliases':297,'files':rows}
           pathlib.Path('out/ozon-effect-read-repair-runtime/runtime-manifest.json').write_text(json.dumps(payload,sort_keys=True,indent=2)+'\n',encoding='utf-8',newline='\n')
-          print(json.dumps(payload,sort_keys=True))
           PY
-      - name: Upload repaired runtime artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: ozon-effect-read-repair-runtime-${{ runner.os }}
           if-no-files-found: error
           retention-days: 14
           path: out/ozon-effect-read-repair-runtime/
-
   freeze-runtime:
     needs: effect-repair
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: repair/ozon-read-effect-reclassification-2026-09-02
-          fetch-depth: 1
+        with: { ref: repair/ozon-read-effect-reclassification-2026-09-02, fetch-depth: 1 }
       - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+        with: { python-version: '3.12' }
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Materialize repaired runtime into Git working tree
+        with: { node-version: '20' }
+      - name: Materialize and verify runtime
         shell: bash
         run: |
           REG=tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_operation_registry.js
-          if grep -q 'report_products_create:' "$REG"; then
-            echo OZON_EFFECT_READ_REPAIR_ALREADY_FROZEN
-          else
-            python tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_effect_read_repair.py --repo-root "$GITHUB_WORKSPACE"
-          fi
-          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_operation_registry.js
-          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_contract.js
-          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_entitlements.js
+          if ! grep -q 'report_products_create:' "$REG"; then python tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_effect_read_repair.py --repo-root "$GITHUB_WORKSPACE"; fi
+          if ! grep -q 'report_file_get:' "$REG"; then python tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_report_file_workflow.py --repo-root "$GITHUB_WORKSPACE"; fi
+          for f in ozon_operation_registry.js ozon_contract.js ozon_entitlements.js ozon_provider.js provider_transport_core.js; do node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/$f; done
           node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_effect_read_repair_gate.mjs "$GITHUB_WORKSPACE"
+          node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_file_workflow_gate.mjs "$GITHUB_WORKSPACE"
       - name: Commit frozen repaired runtime
         shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_operation_registry.js \
-            tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_contract.js \
-            tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_entitlements.js
-          if git diff --cached --quiet; then
-            echo OZON_EFFECT_READ_REPAIR_RUNTIME_ALREADY_COMMITTED
-          else
-            git commit -m "freeze(ozon): persist 271-read effect repair runtime"
-            git push origin HEAD:repair/ozon-read-effect-reclassification-2026-09-02
-          fi
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/{ozon_operation_registry.js,ozon_contract.js,ozon_entitlements.js,ozon_provider.js,provider_transport_core.js}
+          if ! git diff --cached --quiet; then git commit -m "freeze(ozon): persist opaque report file READ workflow"; git push origin HEAD:repair/ozon-read-effect-reclassification-2026-09-02; fi
