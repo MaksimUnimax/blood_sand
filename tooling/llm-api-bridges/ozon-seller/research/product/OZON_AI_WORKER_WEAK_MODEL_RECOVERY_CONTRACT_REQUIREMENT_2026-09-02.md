@@ -1,8 +1,8 @@
 # Ozon AI Worker — Weak-Model Recovery Contract Requirement
 
 Date: 2026-09-02
-Status: MANDATORY PRODUCT HARDENING REQUIREMENT DISCOVERED BY STD-01
-Source benchmark row: `STD-01`
+Status: MANDATORY PRODUCT HARDENING REQUIREMENT DISCOVERED BY STD-01 / EXTENDED BY STD-05
+Source benchmark rows: `STD-01`, `STD-05`
 
 ## Why this exists
 
@@ -14,19 +14,23 @@ The important finding is not only the provider 429. GPT-5.6 Sol itself initially
 
 If the strongest baseline model can make that planning mistake, weaker consumer models are materially more likely to fail, switch endpoints, give up, invent a result, or incorrectly interpret the absence of data.
 
-Therefore provider-error recovery guidance must become a Bridge/product contract capability rather than an emergent reasoning skill expected from each AI model.
+STD-05 then exposed the same general product problem in another form: `stock_on_warehouses_v2` returned two consecutive full-size `limit=100` pages while Bridge exposed `pagination:null`. GPT-5.6 Sol inferred from row count that another explicit `offset` read was needed. A weaker model may incorrectly treat the first full page as the complete dataset.
 
-## Product principle
+Therefore both provider-error recovery and known continuation mechanics must become Bridge/product contract capabilities rather than emergent reasoning skills expected from each AI model.
+
+## Product principles
 
 `DO_NOT_REQUIRE_MODEL_INTELLIGENCE_FOR_KNOWN_RECOVERY_MECHANICS`
 
-The AI should reason about the business problem. The Bridge should expose deterministic machine-readable guidance for known transport/provider failure classes.
+`DO_NOT_REQUIRE_MODEL_INTELLIGENCE_TO_INFER_PAGINATION_FROM_ROW_COUNT`
+
+The AI should reason about the business problem. The Bridge should expose deterministic machine-readable guidance for known transport/provider failure and continuation classes.
 
 This does not relax the invariant:
 
 `ONE EXPLICIT AI COMMAND = AT MOST ONE PHYSICAL BUSINESS API REQUEST`
 
-Automatic hidden retry/fanout remains forbidden.
+Automatic hidden retry/fanout/pagination remains forbidden.
 
 ## Required 429 behavior
 
@@ -73,6 +77,56 @@ The Bridge should preserve enough state to expose that this is a repeated failur
 
 Do not invent a precise Ozon cooldown duration merely to make recovery deterministic.
 
+## Pagination / continuation requirement discovered by STD-05
+
+### Evidence
+
+During STD-05, operation `stock_on_warehouses_v2` was called with explicit `limit=100` and offsets `0` then `100`.
+
+Both responses:
+
+- returned HTTP 200;
+- returned exactly 100 rows;
+- exposed `pagination: null` at the Bridge result level;
+- required the AI to infer that another explicit offset read was likely necessary.
+
+This is a weak-model portability gap because the result does not deterministically distinguish:
+
+- complete dataset of exactly 100 rows;
+- non-terminal page that happens to contain the full requested page size.
+
+### Required contract behavior
+
+For every read operation with explicit `limit/offset` semantics, Bridge should expose the strongest safe continuation state available without inventing provider truth.
+
+Candidate machine-readable fields:
+
+```text
+continuation: {
+  result_complete: true | false | null,
+  page_size_requested: 100,
+  rows_returned: 100,
+  next_offset: 100 | null,
+  next_read_recommended: true | false | null,
+  terminal_signal_source: "provider" | "short_page" | "bridge_contract" | "unknown",
+  automatic_pagination: false
+}
+```
+
+Rules:
+
+- never hide-follow the next page;
+- never claim completeness if the provider/contract cannot prove it;
+- if `rows_returned == limit` and no provider terminal signal exists, explicitly state that completeness is unknown and another explicit offset read may be required;
+- if `rows_returned < limit`, Bridge may expose a `short_page` terminal signal only when the endpoint contract makes that inference safe;
+- preserve exact next offset when derivable from the explicit request;
+- tell the AI not to present the dataset as complete until a terminal condition is reached;
+- maintain one-command/one-physical-request invariant.
+
+### Product consequence
+
+A weak AI should not need to know Ozon's pagination conventions or inspect row count arithmetic to continue a business investigation. Bridge should make continuation mechanics explicit while leaving the decision to issue the next read to the AI.
+
 ## Candidate implementation directions to evaluate after Sol benchmark
 
 These are design candidates, not yet accepted implementation decisions:
@@ -82,8 +136,9 @@ These are design candidates, not yet accepted implementation decisions:
 3. **Local preflight refusal** — if the AI resubmits too early, return `external_request_executed:false` plus exact retry guidance instead of spending another provider request.
 4. **Exact retry-command echo** — expose the sanitized logical command/payload that should be repeated, so a weak model does not reconstruct or mutate it.
 5. **Diagnostic escalation contract** — after repeated identical 429s, expose a deterministic next diagnostic action such as a non-analytics health check when supported.
+6. **Continuation metadata** — expose explicit page completeness/next-offset guidance for offset-based reads while preserving explicit AI-issued pagination.
 
-Any accepted design must preserve no-hidden-retry and one-command/one-physical-request invariants.
+Any accepted design must preserve no-hidden-retry, no-hidden-pagination and one-command/one-physical-request invariants.
 
 ## Benchmark consequences
 
@@ -93,7 +148,11 @@ Any accepted design must preserve no-hidden-retry and one-command/one-physical-r
 
 The business question is answerable, but first-attempt operational reliability and model-independent recovery are not yet good enough for weak-AI portability.
 
-All later Sol rows must record whether failures required operator intervention or model-specific inference.
+`STD-05` has additionally discovered:
+
+`FULL_PAGE_WITH_NULL_PAGINATION_REQUIRES_MODEL_INFERENCE`
+
+All later Sol rows must record whether failures or continuation mechanics required operator intervention or model-specific inference.
 
 Before Alice Free benchmark:
 
@@ -103,14 +162,14 @@ Before Alice Free benchmark:
 4. rerun affected Sol rows on the hardened candidate;
 5. only then freeze the Bridge candidate for Alice and later weaker-provider comparison.
 
-This avoids changing the Bridge independently for every provider while also preventing the Alice benchmark from measuring raw error-code interpretation skill.
+This avoids changing the Bridge independently for every provider while also preventing the Alice benchmark from measuring raw error-code interpretation skill or pagination-guessing skill that should have been normalized by Bridge.
 
 ## Commercial significance
 
 Preferred-AI portability is part of the product value proposition. Therefore the Bridge must normalize provider/API complexity sufficiently that weaker consumer AIs can act as reliable workers.
 
-A product that only works because GPT-5.6 Sol can reverse-engineer raw API failures is not commercially portable across AI providers.
+A product that only works because GPT-5.6 Sol can reverse-engineer raw API failures or infer continuation from page length is not commercially portable across AI providers.
 
 ## Current checkpoint
 
-`WEAK_MODEL_RECOVERY_GUIDANCE_GAP_DISCOVERED_STD_01_MUST_HARDEN_AFTER_SOL_BEFORE_ALICE`
+`WEAK_MODEL_RECOVERY_AND_PAGINATION_GUIDANCE_GAPS_DISCOVERED_MUST_HARDEN_AFTER_SOL_BEFORE_ALICE`
