@@ -14,7 +14,7 @@ This is the compact authoritative live result ledger. Detailed raw/intermediate 
 | 2 | STD-02 | Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня. | PASS — 574,564 RUB / 341 units; top 30.08, 29.08, 31.08; bottom 26.08, 01.09, 25.08 | FAIL_FIRST_ATTEMPT_429_THEN_RECOVERED | NO | Run1 429; exact repeat 176.815s later 200 | Exact same 14-day payload succeeded; range-too-heavy hypothesis rejected. |
 | 3 | STD-03 | Дай топ-20 товаров за последние 7 дней по выручке. | PASS — top SKU 1636048691 «Печать Велеса» = 45,288 RUB / 27 units | PASS_FIRST_ATTEMPT | NO | 1 `analytics_data` SKU-ranked read, 200 | Top-20 = 220,777 RUB / 131 units ≈76.4% revenue / 76.2% units. |
 | 4 | STD-04 | Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах. | PASS — revenue 49,640→27,200 RUB = −45.2%; units 31→16 = −48.4% | PASS_FIRST_ATTEMPT | NO | 1 two-day analytics read, 200 | Correct AI-side comparison and percent calculations. |
-| 5 | STD-05 | Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж. | IN_PROGRESS — broad SKU decline localized; broad ad shutdown rejected; mass listing failure rejected; stock-only explanation weakened; organic/search branch blocked by provider 403 pending roles diagnostic | MIXED — provider reads mostly healthy; Run6 local validation failure; Run9 provider 403 | NO operator business steering; Sol inferred several mechanics | Runs1-5,7-8 provider 200; Run6 local guidance/0 provider; Run9 `product_queries` 403 | New gaps: null pagination; cross-source metric semantics; actionable parameter repair; stock-surface semantics; entitlement preflight contradiction. Next: `roles` diagnostic for `/v1/analytics/product-queries`. |
+| 5 | STD-05 | Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж. | IN_PROGRESS — broad SKU decline localized; broad ad shutdown rejected; mass listing failure rejected; total-current-stock shortage not supported; organic/search branch hit 403 but key role is confirmed; freshness-window control next | MIXED — provider reads mostly healthy; Run6 local validation failure; Run9 provider 403; Run10 roles 200 | NO operator business steering; Sol inferred several mechanics | Runs1-5,7-8,10 provider 200; Run6 local guidance/0 provider; Run9 `product_queries` 403 | Run10 proves `/v1/analytics/product-queries` is present in `Admin read only`, rejecting missing-key-role cause. New candidate root cause: recent-data freshness/calculation window vs account/provider policy. Next: controlled older-date `product_queries` diagnostic. |
 | 6 | STD-06 | Что сегодня в моём кабинете требует внимания в первую очередь? | PENDING | PENDING | PENDING | 0 | — |
 | 7 | STD-07 | Какие товары у меня скоро закончатся, а какие лежат слишком долго? Что пополнять в первую очередь? | PENDING | PENDING | PENDING | 0 | — |
 | 8 | STD-08 | Покажи текущие остатки по складам и отсортируй склады от наибольшего остатка к наименьшему. | PENDING | PENDING | PENDING | 0 | — |
@@ -169,13 +169,30 @@ Request `4b947e9e-2549-4387-b885-992dccae6d56`, `product_queries`, endpoint `POS
 - external request executed: true;
 - no business data.
 
-Current classification:
+Initial classification:
 `PROVIDER_403_ENTITLEMENT_OR_ROLE_MISMATCH / EXACT_CAUSE_PENDING_ROLES_DIAGNOSTIC`.
 
 This contradicts the strength of Bridge preflight wording and creates an entitlement-model gap.
 
 Detailed evidence: `live-runs/STD_05_RUN_9_PRODUCT_QUERIES_403_2026-09-02.md`.
 Entitlement hardening requirement: `OZON_AI_WORKER_ENTITLEMENT_PREFLIGHT_GAP_REQUIREMENT_2026-09-02.md`.
+
+### Run 10 — roles diagnostic
+
+Request `816ec939-9f7a-4110-9aa6-239fcd9f8085`, `roles`, HTTP 200.
+
+- `/v1/analytics/product-queries` is explicitly present in `Admin read only`;
+- `/v1/analytics/product-queries/details` is also present;
+- key expires `2027-02-06T08:09:07.738279Z`.
+
+Conclusion: missing API-key role is rejected as the Run9 cause.
+
+Current strongest classification:
+`PRODUCT_QUERIES_PROVIDER_403_WITH_ROLE_PRESENT / KEY_ROLE_CAUSE_REJECTED`.
+
+A documented recent-data calculation/freshness window is now the next controlled hypothesis because Run9 requested `2026-08-31` only two days before the test date `2026-09-02`. Do not classify the whole operation as Standard-blocked until an older-date control is tried.
+
+Detailed evidence: `live-runs/STD_05_RUN_10_ROLES_DIAGNOSTIC_2026-09-02.md`.
 
 ### Current STD-05 hypothesis state
 
@@ -185,9 +202,11 @@ Entitlement hardening requirement: `OZON_AI_WORKER_ENTITLEMENT_PREFLIGHT_GAP_REQ
 - broad current-stock shortage: `NOT SUPPORTED`;
 - local card defect: `SUPPORTED_FOR_MARA_ONLY`;
 - exact historical stock causality on 2026-09-01: `NOT PROVEN`;
-- organic/search change: `UNTESTED / CURRENTLY BLOCKED_BY_403`;
-- exact 403 cause: `PENDING_ROLES_DIAGNOSTIC`.
+- organic/search change: `UNTESTED / RUN9_BLOCKED_BY_403`;
+- missing API-key role: `REJECTED_BY_RUN10`;
+- recent-data freshness/calculation window: `PLAUSIBLE / CONTROL_PENDING`;
+- account/subscription/provider policy: `PLAUSIBLE / NOT YET DISTINGUISHED_FROM_FRESHNESS`.
 
 ## Current checkpoint
 
-`FORTY_TEST_GATE_LAYER_A_STD_01_TO_STD_04_COMPLETE_STD_05_RUN9_PROVIDER_403_RECORDED_ROLES_DIAGNOSTIC_NEXT_NO_SKIP`
+`FORTY_TEST_GATE_LAYER_A_STD_01_TO_STD_04_COMPLETE_STD_05_RUN10_ROLE_CAUSE_REJECTED_OLDER_DATE_PRODUCT_QUERIES_CONTROL_NEXT`
