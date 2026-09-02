@@ -65,8 +65,10 @@ Despite the historical filename, that document now defines an expandable capabil
 - Detailed Run 2 evidence: `live-runs/STD_06_RUN_2_STOCK_TURNOVER_2026-09-02.md`.
 - STD-06 Run 3 (`supply_order_status_counter`) returned HTTP 200. No current rejection/acceptance/report-confirmation emergency was exposed: `REPORT_REJECTED=0`, `REJECTED_AT_SUPPLY_WAREHOUSE=0`, acceptance/storage-acceptance/report-confirmation states are 0. Active supply signals are four `DATA_FILLING` orders and one `IN_TRANSIT` order.
 - Detailed Run 3 evidence: `live-runs/STD_06_RUN_3_SUPPLY_STATUS_COUNTER_2026-09-02.md`.
-- Next STD-06 step: list only `DATA_FILLING` and `IN_TRANSIT` supply orders, sorted by creation time, to distinguish stale drafts from current work and determine whether the in-transit supply mitigates any inventory priority from Run 2.
+- STD-06 Run 4 (`supply_order_list`) returned HTTP 200 and exactly five active order IDs under `DATA_FILLING|IN_TRANSIT`: `125820894`, `125819631`, `125818485`, `125818083`, `122149074`. The list response exposes only IDs, so state/age/destination/content correlation is not yet possible.
+- Detailed Run 4 evidence: `live-runs/STD_06_RUN_4_ACTIVE_SUPPLY_ORDER_IDS_2026-09-02.md`.
+- Next STD-06 step: one `supply_order_get` call for all five IDs to identify the one `IN_TRANSIT` supply and distinguish current work from stale `DATA_FILLING` drafts. If contents are not included, follow with the minimum explicit content/bundle read needed to test whether the in-transit supply mitigates Run 2 inventory priorities.
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_06_RUN3_NO_SUPPLY_EMERGENCY_ACTIVE_4_DATA_FILLING_1_IN_TRANSIT_DRILLDOWN_NEXT`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_06_RUN4_FIVE_ACTIVE_SUPPLY_IDS_FOUND_GET_ALL_FIVE_NEXT`
