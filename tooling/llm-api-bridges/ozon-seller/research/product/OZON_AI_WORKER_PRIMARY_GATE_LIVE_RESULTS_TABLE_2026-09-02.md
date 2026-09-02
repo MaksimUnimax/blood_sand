@@ -15,8 +15,8 @@ Gate policy: expandable only for materially distinct commercial capabilities.
 | 4 | STD-04 | Сравни вчера и позавчера: выручка, штуки, %. | PASS | PASS_FIRST_ATTEMPT | NO | 1 | Revenue −45.2%; units −48.4%. |
 | 5 | STD-05 | Почему вчера продажи резко просели? | PASS_WITH_LIMITS | MIXED_ROOT_CAUSED | NO | 11 | Strongest explanation: normal demand/day-of-week variance; broad ads/listing/stock failure rejected; search target dates blocked by freshness window. Multiple Bridge hardening gaps recorded. |
 | 6 | STD-06 | Что сегодня в кабинете требует внимания в первую очередь? | PASS | PASS_ALL_PROVIDER_READS | NO | 6 | #1 stale `IN_TRANSIT` supply `122149074` with 54 units; #2 critical slow-turnover inventory; #3 four fresh DATA_FILLING orders due 2026-09-05. Ratings healthy. |
-| 7 | STD-07 | Какие товары скоро закончатся, какие лежат слишком долго, что пополнять? | IN_PROGRESS | PASS_RUN1_RUN2 | NO | 2 | Run1 found critical slow/no-sales inventory and low-FBO candidates. Run2 proved all 22 selected candidates still have 39–55 total free FBO+FBS units: broad total-stockout rejected; real issue is FBO placement/distribution. Top FBO candidates include Чур, Алатырь, Громовик, Герб России, Родимич, Молвинец, Сварог, Водолей. Next: correlate four fresh 2026-09-05 supply bundles before final replenishment ranking. |
-| 8 | STD-08 | Текущие остатки по складам, склады от большего к меньшему. | PENDING | PENDING | PENDING | 0 | — |
+| 7 | STD-07 | Какие товары скоро закончатся, какие лежат слишком долго, что пополнять? | PASS | PASS_ALL_STD07_PROVIDER_READS | NO | 3 | Total-stock procurement emergency rejected: selected low-FBO candidates retain ~39–55 FBO+FBS units. Main action is FBO allocation. Fresh 2026-09-05 supplies already cover most top candidates (e.g. Чур22, Алатырь21, Громовик11, Сварог7, Герб6). Highest uncovered next-FBO candidates: Водолей, Овен, Стрелец, Лев (Античность), Близнецы (Символы). Do not replenish CRITICAL/RED/NOSALES slow-turnover SKUs. |
+| 8 | STD-08 | Текущие остатки по складам, склады от большего к меньшему. | PENDING | PENDING | PENDING | 0 | READY |
 | 9 | STD-09 | Продажи за вчера по складам. | PENDING | PENDING | PENDING | 0 | — |
 | 10 | STD-10 | Авария/пожар на складе Ozon: был ли там мой товар и что контролировать? | PENDING | PENDING | PENDING | 0 | — |
 | 11 | STD-11 | Исчез товар с FBO без продаж: куда мог деться? | PENDING | PENDING | PENDING | 0 | — |
@@ -55,7 +55,7 @@ Gate policy: expandable only for materially distinct commercial capabilities.
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_07_RUN2_TOTAL_STOCKOUT_REJECTED_FBO_DISTRIBUTION_RISK_UPCOMING_SUPPLY_CORRELATION_NEXT`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_07_COMPLETE_STD_08_READY`
 
 ## Detailed evidence
 
