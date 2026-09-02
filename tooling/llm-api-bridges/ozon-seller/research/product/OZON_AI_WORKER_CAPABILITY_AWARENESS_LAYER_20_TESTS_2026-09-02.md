@@ -1,4 +1,4 @@
-# Ozon AI Worker — Capability Awareness / Product Logic Layer (20 tests)
+# Ozon AI Worker — Capability Awareness / Product Logic Layer (baseline 20, expandable)
 
 Date: 2026-09-02
 Branch: `research/ozon-product-demand-2026-09-02`
@@ -19,14 +19,23 @@ This layer tests product logic, not merely endpoint correctness.
 
 The AI must not be rewarded for issuing the same `analytics_data` read repeatedly with different sorting or interpretation instructions. Each test must exercise a materially different Bridge data surface or a materially new cross-surface orchestration path.
 
-## Relationship to the 40-test commercial gate
+## Relationship to the primary commercial gate
 
-The main Standard commercial gate is exactly 40 tests:
+The originally frozen 40-test gate is now treated as a **baseline, not a hard ceiling**:
 
-- Layer A: `STD-01` … `STD-20` — real sellable business questions on the current Bridge contract.
-- Layer B: `CAP-01` … `CAP-20` — capability-awareness / product-logic questions started only after STD-20 is completed.
+- Layer A baseline: `STD-01` … `STD-20` — real sellable business questions on the current Bridge contract.
+- Layer B baseline: `CAP-01` … `CAP-20` — capability-awareness / product-logic questions started only after STD-20 is completed.
+- Additional CAP rows may be promoted into the **same primary gate** when they represent a materially distinct commercial capability discovered during live research.
 
-Existing `STD-21` … `STD-28` are preserved as reserve/extended commercial cases and are not deleted, but they are outside the primary 40-test gate unless promoted later.
+Gate-size principle:
+
+`EXPAND_GATE_FOR_DISTINCT_COMMERCIAL_CAPABILITY_NOT_FOR_TEST_COUNT`
+
+Do not add cosmetic variants merely to increase coverage count. Every added primary-gate row must justify a new data surface, a materially new orchestration path, a new entitlement/coverage boundary, or a clearly distinct commercial job.
+
+Existing `STD-21` … `STD-28` remain preserved as reserve/extended commercial cases unless specifically promoted later.
+
+As of 2026-09-02, primary-gate capability rows `CAP-21` … `CAP-23` are promoted for SEO/semantic-core, competitor-card benchmarking, and category/search-position coverage. The current primary gate is therefore **43 baseline rows (20 STD + 23 CAP), expandable if further distinct capabilities are discovered**.
 
 ## What Layer B must measure
 
@@ -51,9 +60,9 @@ That older design primarily helps after an invalid/unknown attempted command. Th
 
 Layer B is intended to reveal exactly how much additional capability-discovery guidance is needed for weak models.
 
-## Planned 20 capability/product-logic surfaces
+## Baseline capability/product-logic surfaces
 
-Exact natural-language wording will be frozen after STD-20 so that it can incorporate evidence from Layer A without changing Layer A mid-run. The 20 slots and required diversity are frozen now.
+Exact natural-language wording for each row is frozen when the row becomes active so it can incorporate evidence from Layer A without changing already-executed rows.
 
 | ID | Primary capability surface | What the test must prove |
 |---|---|---|
@@ -77,6 +86,12 @@ Exact natural-language wording will be frozen after STD-20 so that it can incorp
 | CAP-18 | Advertising statistics | AI can obtain expense/daily/product advertising statistics and not confuse them with Seller sales analytics. |
 | CAP-19 | Cross-surface orchestration | AI combines at least two materially different Bridge surfaces (for example ads × stock, sales × finance, supply × visibility) through sequential explicit commands. |
 | CAP-20 | Bridge + external-world investigation | AI combines Ozon cabinet evidence with public/external context for a real-world event or market explanation while separating facts from hypotheses. |
+| CAP-21 | Own-card SEO / semantic core | AI combines product title/info, description, attributes, Ozon content rating and real product-query evidence to identify semantic gaps and SEO/content recommendations. |
+| CAP-22 | Competitor SEO / positioning benchmark | AI discovers relevant competitors where evidence exists, keeps private seller evidence separate from public competitor-card evidence, and compares semantics/content/price without inventing competitor private metrics. |
+| CAP-23 | Category/search position & coverage boundary | AI determines what own search-position evidence is available, handles Premium-only `position_category` honestly, and surfaces the current Bridge coverage gap for `/v1/analytics/category/comparison` if still absent. |
+
+Authority for CAP-21…CAP-23:
+`OZON_AI_WORKER_SEO_COMPETITIVE_POSITION_CAPABILITY_REQUIREMENT_2026-09-02.md`.
 
 ## Diversity rule
 
@@ -92,8 +107,9 @@ while using essentially the same underlying data surface as another row.
 
 A valid CAP row must either:
 
-- exercise a materially different operation/data family; or
-- exercise a materially new multi-surface orchestration path whose value is the correlation itself.
+- exercise a materially different operation/data family;
+- exercise a materially new multi-surface orchestration path whose value is the correlation itself; or
+- exercise a commercially important entitlement/coverage boundary that changes what the AI worker can truthfully answer.
 
 ## Scoring
 
@@ -105,8 +121,10 @@ Each CAP test receives at least these fields:
 - `multi_run_orchestration`: PASS/PARTIAL/FAIL/NOT_NEEDED
 - `business_answer`: PASS/PARTIAL/FAIL/BLOCKED
 - `operator_intervention_required`: YES/NO
-- `bridge_guidance_gap`: NONE / RECOVERY / CAPABILITY_DISCOVERY / ENTITLEMENT / PAGINATION / OTHER
+- `bridge_guidance_gap`: NONE / RECOVERY / CAPABILITY_DISCOVERY / ENTITLEMENT / PAGINATION / COVERAGE / OTHER
 - `notes`
+
+SEO/competitive-position rows additionally record the fields defined in the SEO competitive-position authority document.
 
 ## Product implication
 
@@ -118,13 +136,14 @@ If Layer B shows that models repeatedly fail because they do not know which data
 
 1. Continue current Layer A without changing its live questions.
 2. Finish `STD-01` … `STD-20` under `NO_SKIP_ON_FAILURE`.
-3. Freeze exact wording for `CAP-01` … `CAP-20` based on the capability surfaces above and Layer A evidence.
-4. Run all 20 CAP tests on GPT-5.6 Sol + current Bridge.
-5. Consolidate recovery + capability-awareness gaps into one Bridge guidance-hardening package.
-6. Rerun affected Sol tests without operator rescue.
-7. Freeze hardened candidate.
-8. Run the same 40-test gate on Alice Free and later providers.
+3. Freeze exact wording for active CAP rows based on the capability surfaces above and Layer A evidence.
+4. Run all current primary-gate CAP rows on GPT-5.6 Sol + current Bridge.
+5. Persist every run/result and any newly justified primary-gate extension.
+6. Consolidate recovery + capability-awareness + coverage gaps into one Bridge guidance-hardening package.
+7. Rerun affected Sol tests without operator rescue.
+8. Freeze hardened candidate.
+9. Run the same final primary gate on Alice Free and later providers.
 
 ## Current checkpoint
 
-`FORTY_TEST_GATE_DEFINED_LAYER_A_STD_01_TO_STD_20_THEN_LAYER_B_CAP_01_TO_CAP_20`
+`PRIMARY_GATE_BASELINE_40_EXPANDED_TO_43_WITH_CAP_21_TO_CAP_23_AND_REMAINS_EVIDENCE_DRIVEN_EXPANDABLE`
