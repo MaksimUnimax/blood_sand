@@ -60,8 +60,8 @@ Despite the historical filename, that document now defines an expandable capabil
 
 ## Current Layer-A execution checkpoint
 
-- STD-01…STD-07 complete.
-- STD-08 ready.
+- STD-01…STD-08 complete.
+- STD-09 ready.
 
 ### STD-06 completed
 
@@ -128,6 +128,51 @@ Detailed STD-07 evidence:
 - `live-runs/STD_07_RUN_2_TOTAL_FBO_FBS_STOCK_CONFIRMATION_2026-09-02.md`
 - `live-runs/STD_07_RUN_3_FRESH_SUPPLY_BUNDLES_2026-09-02.md`
 
+### STD-08 completed
+
+Question: `Покажи текущие остатки по складам и отсортируй склады от наибольшего остатка к наименьшему.`
+
+Runs 1–3 all reached the provider and returned HTTP 200.
+
+Pagination evidence:
+- offset0: 100 rows, `pagination=null`;
+- offset100: 100 rows, `pagination=null`;
+- offset200: 47 rows, `pagination=null`, terminal by short-page inference.
+
+Total: **247 rows across 33 Ozon warehouses**.
+
+This reproduces the Bridge pagination-guidance gap: the model had to infer continuation from row count because Bridge provided no explicit continuation object.
+
+Semantic boundary: this is Ozon warehouse/FBO analytics from `/v2/analytics/stock_on_warehouses`, not total seller FBO+FBS inventory.
+
+Aggregated totals:
+- free-to-sell: **628**;
+- reserved: **14**;
+- promised: **54**.
+
+Top warehouses by current free-to-sell:
+1. `Санкт_Петербург_РФЦ` — 101;
+2. `ХАБАРОВСК_2_РФЦ` — 71 free +1 reserved +54 promised;
+3. `ПУШКИНО_1_РФЦ` — 57;
+4. `Екатеринбург_РФЦ_НОВЫЙ` — 48 free +1 reserved;
+5. `РОСТОВ_НА_ДОНУ_2_РФЦ` — 45 free +4 reserved;
+6. `НИЖНИЙ_НОВГОРОД_2_РФЦ` — 36;
+7. `СПБ_ШУШАРЫ_РФЦ` — 28;
+8. `ВАТУТИНКИ_РФЦ` — 27 free +2 reserved;
+9. `НЕВИННОМЫССК_РФЦ` — 25;
+10. `ВОРОНЕЖ_2_РФЦ` — 20.
+
+`ХАБАРОВСК_2_РФЦ` is notable for 54 promised units; promised units are shown separately and are not counted as current free-to-sell.
+
+STD-08 classification: `PASS`
+Operational reliability: `PASS_PROVIDER_READS_WITH_REPRODUCED_PAGINATION_GUIDANCE_GAP`
+Operator business steering: `NO`
+
+Detailed STD-08 evidence:
+- `live-runs/STD_08_RUN_1_STOCK_WAREHOUSE_PAGE_1_2026-09-02.md`
+- `live-runs/STD_08_RUN_2_STOCK_WAREHOUSE_PAGE_2_2026-09-02.md`
+- `live-runs/STD_08_RUN_3_TERMINAL_PAGE_AND_FINAL_WAREHOUSE_AGGREGATION_2026-09-02.md`
+
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_07_COMPLETE_STD_08_READY`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_08_COMPLETE_STD_09_READY`
