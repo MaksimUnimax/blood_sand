@@ -1548,10 +1548,15 @@
 
   function normalizeReportFileGetParams(params) {
     const normalized = requirePlainObject(params, "params");
-    assertAllowedFields(normalized, ["file_ref"]);
+    assertAllowedFields(normalized, ["file_ref", "sheet", "offset", "limit"]);
     const value = requireString(requireField(normalized, "file_ref"), "params.file_ref");
     if (!/^rpf_[A-Za-z0-9_-]{12,120}$/.test(value)) fail("INVALID_OPERATION_PARAMS", "params.file_ref должен быть opaque report file ref bridge.");
     normalized.file_ref = value;
+    if (Object.prototype.hasOwnProperty.call(normalized, "sheet")) requireString(normalized.sheet, "params.sheet");
+    if (!Object.prototype.hasOwnProperty.call(normalized, "offset")) normalized.offset = 0;
+    if (!Object.prototype.hasOwnProperty.call(normalized, "limit")) normalized.limit = 200;
+    requireInteger(normalized.offset, "params.offset", { minimum: 0, maximum: 1000000 });
+    requireInteger(normalized.limit, "params.limit", { minimum: 1, maximum: 500 });
     return normalized;
   }
 

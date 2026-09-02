@@ -80,7 +80,7 @@
 
     async function executeReportFileCommand(command) {
       const record = resolveReportFileRef(command.params.file_ref);
-      const response = await globalThis.ProviderTransportCore.executeTrustedReportFileOnce({ fetchImpl, url: record.url, now });
+      const response = await globalThis.ProviderTransportCore.executeTrustedReportFileOnce({ fetchImpl, url: record.url, now, parseOptions: command.params });
       const request = Object.freeze({
         method: "GET", host_alias: "report_file", path: "/__opaque_report_file__", operation: "report_file_get",
         response_style: "binary", response_content_types: null
