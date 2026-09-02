@@ -85,6 +85,11 @@ def patch_contract(text: str) -> str:
     text, count = pattern.subn(replacement, text, count=1)
     if count != 1:
         raise RuntimeError(f"effect schema block replacement count {count}")
+    old_integer = '    if (type === "integer") { if (!Number.isInteger(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть целым числом.`); return; }'
+    new_integer = '    if (type === "integer") { if (!Number.isInteger(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть целым числом.`); if (Number.isFinite(schema.minimum) && value < schema.minimum) fail("INVALID_OPERATION_PARAMS", `${path} должен быть >= ${schema.minimum}.`); if (Number.isFinite(schema.maximum) && value > schema.maximum) fail("INVALID_OPERATION_PARAMS", `${path} должен быть <= ${schema.maximum}.`); return; }'
+    if text.count(old_integer) != 1:
+        raise RuntimeError("integer-bound validation anchor mismatch")
+    text = text.replace(old_integer, new_integer, 1)
     old_month_anchor = '      if (schema.format === "date" && !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть датой YYYY-MM-DD.`);\n      if (schema.format === "date-time" && !Number.isFinite(Date.parse(value))) fail("INVALID_OPERATION_PARAMS", `${path} должен быть ISO date-time.`);'
     new_month_anchor = '      if (schema.format === "date" && !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть датой YYYY-MM-DD.`);\n      if (schema.format === "month" && !/^\\d{4}-(0[1-9]|1[0-2])$/.test(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть периодом YYYY-MM.`);\n      if (schema.format === "date-time" && !Number.isFinite(Date.parse(value))) fail("INVALID_OPERATION_PARAMS", `${path} должен быть ISO date-time.`);'
     if text.count(old_month_anchor) != 1:
@@ -116,6 +121,7 @@ def main():
     print("OZON_MARKED_SALES_DATE_OBJECT_PASS")
     print("OZON_CARGOES_LABEL_OBJECT_SCHEMA_PASS")
     print("OZON_PACKAGE_LABEL_BATCH_ARRAY_SCHEMA_PASS")
+    print("OZON_EFFECT_REPAIR_NUMERIC_BOUNDS_PASS")
 
 if __name__ == "__main__":
     main()
