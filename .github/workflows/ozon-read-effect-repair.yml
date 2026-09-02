@@ -1,0 +1,39 @@
+name: Ozon read-effect repair
+run-name: Ozon read-effect repair · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-read-effect-reclassification-2026-09-02
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  effect-repair:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply deterministic effect-read repair
+        shell: bash
+        run: python tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_effect_read_repair.py --repo-root "$GITHUB_WORKSPACE"
+      - name: Syntax-check patched runtime
+        shell: bash
+        run: |
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_operation_registry.js
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_contract.js
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_entitlements.js
+      - name: Verify repaired runtime surface
+        shell: bash
+        run: node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_effect_read_repair_gate.mjs "$GITHUB_WORKSPACE"
