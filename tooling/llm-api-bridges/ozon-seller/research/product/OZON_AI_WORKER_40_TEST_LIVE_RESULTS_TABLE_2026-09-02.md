@@ -14,7 +14,7 @@ This is the compact authoritative live result ledger. Detailed raw/intermediate 
 | 2 | STD-02 | Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня. | PASS — 574,564 RUB / 341 units; top 30.08, 29.08, 31.08; bottom 26.08, 01.09, 25.08 | FAIL_FIRST_ATTEMPT_429_THEN_RECOVERED | NO | Run1 429; exact repeat 176.815s later 200 | Exact same 14-day payload succeeded; range-too-heavy hypothesis rejected. |
 | 3 | STD-03 | Дай топ-20 товаров за последние 7 дней по выручке. | PASS — top SKU 1636048691 «Печать Велеса» = 45,288 RUB / 27 units | PASS_FIRST_ATTEMPT | NO | 1 `analytics_data` SKU-ranked read, 200 | Top-20 = 220,777 RUB / 131 units ≈76.4% revenue / 76.2% units. |
 | 4 | STD-04 | Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах. | PASS — revenue 49,640→27,200 RUB = −45.2%; units 31→16 = −48.4% | PASS_FIRST_ATTEMPT | NO | 1 two-day analytics read, 200 | Correct AI-side comparison and percent calculations. |
-| 5 | STD-05 | Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж. | IN_PROGRESS — broad SKU decline localized; broad ad shutdown rejected; mass listing failure rejected; total-current-stock shortage not supported; organic/search branch hit 403 but key role is confirmed; freshness-window control next | MIXED — provider reads mostly healthy; Run6 local validation failure; Run9 provider 403; Run10 roles 200 | NO operator business steering; Sol inferred several mechanics | Runs1-5,7-8,10 provider 200; Run6 local guidance/0 provider; Run9 `product_queries` 403 | Run10 proves `/v1/analytics/product-queries` is present in `Admin read only`, rejecting missing-key-role cause. New candidate root cause: recent-data freshness/calculation window vs account/provider policy. Next: controlled older-date `product_queries` diagnostic. |
+| 5 | STD-05 | Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж. | PASS_WITH_LIMITS — strongest supported explanation is ordinary demand/day-of-week variance after an unusually strong weekend+Monday; 2026-09-01 Tue 27,200 RUB/16 units vs prior Tue 2026-08-25 28,900/17 (−5.9%); broad ad shutdown, mass listing failure and broad current-stock shortage rejected | MIXED — 9 provider reads 200, 1 provider freshness-window 403, 1 local validation failure/0 provider requests; root-caused without skipping | NO operator business steering | Runs1-5,7-8,10-11 HTTP 200; Run6 local guidance; Run9 target-date `product_queries` 403; Run10 role confirmed; Run11 older-date control 200 | Direct organic-search comparison for 31.08→01.09 is not queryable yet because recent data are not ready. Run11 proves endpoint/account access and strongly supports a freshness/queryability cause for Run9. Product gaps: pagination guidance, parameter-repair guidance, Seller×Performance semantics, stock-surface semantics, entitlement vs queryability separation. |
 | 6 | STD-06 | Что сегодня в моём кабинете требует внимания в первую очередь? | PENDING | PENDING | PENDING | 0 | — |
 | 7 | STD-07 | Какие товары у меня скоро закончатся, а какие лежат слишком долго? Что пополнять в первую очередь? | PENDING | PENDING | PENDING | 0 | — |
 | 8 | STD-08 | Покажи текущие остатки по складам и отсортируй склады от наибольшего остатка к наименьшему. | PENDING | PENDING | PENDING | 0 | — |
@@ -84,7 +84,7 @@ This is the compact authoritative live result ledger. Detailed raw/intermediate 
 - units `−15 / −48.4%`;
 - classification `PASS_FIRST_ATTEMPT`.
 
-## STD-05 active investigation
+## STD-05 completed investigation
 
 ### Run 1 — sales decomposition
 
@@ -160,22 +160,18 @@ Thus total-current-stock shortage is not supported as the broad explanation.
 
 Detailed evidence: `live-runs/STD_05_RUN_8_PRODUCT_INFO_2026-09-02.md`.
 
-### Run 9 — organic/search query attempt blocked by provider
+### Run 9 — target-date organic/search attempt
 
-Request `4b947e9e-2549-4387-b885-992dccae6d56`, `product_queries`, endpoint `POST /v1/analytics/product-queries`.
+Request `4b947e9e-2549-4387-b885-992dccae6d56`, `product_queries`, target day `2026-08-31`.
 
-- Bridge preflight: `SUPPORTED_AND_ENTITLED`, reason `provider_may_return_subscription_dependent_scope`;
+- Bridge preflight: `SUPPORTED_AND_ENTITLED`;
 - provider: HTTP `403`, code `7`, `auth_or_permission`;
-- external request executed: true;
+- one physical request;
 - no business data.
 
-Initial classification:
-`PROVIDER_403_ENTITLEMENT_OR_ROLE_MISMATCH / EXACT_CAUSE_PENDING_ROLES_DIAGNOSTIC`.
-
-This contradicts the strength of Bridge preflight wording and creates an entitlement-model gap.
+This created an entitlement/queryability preflight contradiction.
 
 Detailed evidence: `live-runs/STD_05_RUN_9_PRODUCT_QUERIES_403_2026-09-02.md`.
-Entitlement hardening requirement: `OZON_AI_WORKER_ENTITLEMENT_PREFLIGHT_GAP_REQUIREMENT_2026-09-02.md`.
 
 ### Run 10 — roles diagnostic
 
@@ -187,26 +183,43 @@ Request `816ec939-9f7a-4110-9aa6-239fcd9f8085`, `roles`, HTTP 200.
 
 Conclusion: missing API-key role is rejected as the Run9 cause.
 
-Current strongest classification:
-`PRODUCT_QUERIES_PROVIDER_403_WITH_ROLE_PRESENT / KEY_ROLE_CAUSE_REJECTED`.
-
-A documented recent-data calculation/freshness window is now the next controlled hypothesis because Run9 requested `2026-08-31` only two days before the test date `2026-09-02`. Do not classify the whole operation as Standard-blocked until an older-date control is tried.
-
 Detailed evidence: `live-runs/STD_05_RUN_10_ROLES_DIAGNOSTIC_2026-09-02.md`.
 
-### Current STD-05 hypothesis state
+### Run 11 — older-date freshness control
 
-- single-SKU collapse: `REJECTED`;
-- broad advertising shutdown: `REJECTED`;
-- mass listing/archive/visibility failure: `REJECTED_FOR_CURRENT_STATE`;
-- broad current-stock shortage: `NOT SUPPORTED`;
-- local card defect: `SUPPORTED_FOR_MARA_ONLY`;
-- exact historical stock causality on 2026-09-01: `NOT PROVEN`;
-- organic/search change: `UNTESTED / RUN9_BLOCKED_BY_403`;
-- missing API-key role: `REJECTED_BY_RUN10`;
-- recent-data freshness/calculation window: `PLAUSIBLE / CONTROL_PENDING`;
-- account/subscription/provider policy: `PLAUSIBLE / NOT YET DISTINGUISHED_FROM_FRESHNESS`.
+Request `41e392f8-ad80-41eb-81f8-c84644df59bc`, same `product_queries` endpoint/account/key, control date `2026-08-29`, SKU `1636048691`.
+
+- HTTP `200`;
+- `unique_search_users=4876`;
+- `gmv=1244 RUB`;
+- `total=1`, `page_count=1`.
+
+Conclusion:
+`RECENT_DATA_FRESHNESS_OR_DATA_READINESS_RESTRICTION_STRONGLY_SUPPORTED / EXACT_BOUNDARY_NOT_PROVEN`.
+
+This rejects global Standard/account denial of the operation and proves that Run9's 403 is tied to the concrete recent queryability/data-readiness state rather than endpoint existence or key role.
+
+Detailed evidence: `live-runs/STD_05_RUN_11_PRODUCT_QUERIES_FRESHNESS_CONTROL_2026-09-02.md`.
+
+### Final business interpretation
+
+The strongest supported explanation for the apparent 31-Aug→1-Sep collapse is **normal demand/day-of-week variance after an unusually strong recent run**, not a broad technical failure in ads, listings or current availability.
+
+Evidence from the already collected 14-day series:
+- `2026-09-01` (Tuesday): `27,200 RUB / 16 units`;
+- previous Tuesday `2026-08-25`: `28,900 RUB / 17 units`;
+- Tuesday-to-Tuesday difference is only about `−5.9%` in both revenue and units;
+- `2026-08-31` (Monday): `49,640 RUB / 31 units`;
+- previous Monday `2026-08-24`: `39,100 RUB / 23 units`;
+- the comparison base on 31-Aug was itself unusually strong versus the prior Monday (`+27.0%` revenue, `+34.8%` units), after very strong 29-30 Aug weekend days (`50,745` and `57,776 RUB`).
+
+Therefore the day-over-day `−45.2%` headline exaggerates the abnormality of 1-Sep: compared with the previous same weekday, 1-Sep is close to normal for the observed two-week window.
+
+Direct organic/search confirmation for 31-Aug and 1-Sep is not available yet because those target analytics are still inside the provider's recent-data readiness boundary. Do not interpret the 403 as zero search demand.
+
+Final classification:
+`PASS_WITH_SEARCH_FRESHNESS_LIMIT_AND_MULTIPLE_PRODUCT_HARDENING_GAPS`.
 
 ## Current checkpoint
 
-`FORTY_TEST_GATE_LAYER_A_STD_01_TO_STD_04_COMPLETE_STD_05_RUN10_ROLE_CAUSE_REJECTED_OLDER_DATE_PRODUCT_QUERIES_CONTROL_NEXT`
+`FORTY_TEST_GATE_LAYER_A_STD_01_TO_STD_05_COMPLETE_STD_06_READY`
