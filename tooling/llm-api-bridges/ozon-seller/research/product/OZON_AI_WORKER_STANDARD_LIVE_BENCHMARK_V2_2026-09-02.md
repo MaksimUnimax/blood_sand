@@ -20,7 +20,7 @@ Premium endpoints/metrics are excluded from this pass.
 
 | ID | Family | Canonical query | Sol status | Runs | Alice | Current note |
 |---|---|---|---|---:|---|---|
-| STD-01 | Instant sales BI | Дай продажи за вчера: общая выручка и количество заказанных единиц. | IN_PROGRESS / ROOT_CAUSE_DIAGNOSTICS | 2 business + D1 pending | PENDING | Two `/v1/analytics/data` calls ~117.962 s apart both returned 429; do not skip. |
+| STD-01 | Instant sales BI | Дай продажи за вчера: общая выручка и количество заказанных единиц. | IN_PROGRESS / ANALYTICS_METHOD_DIAGNOSTICS | 2 business + D1 | PENDING | Two analytics calls returned 429; D1 `roles` returned 200 and proves key/global Seller API/role are healthy. Continue same-query diagnosis. |
 | STD-02 | Period BI | Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня. | PENDING | 0 | PENDING | — |
 | STD-03 | Product BI | Дай топ-20 товаров за последние 7 дней по выручке. | PENDING | 0 | PENDING | — |
 | STD-04 | Period comparison | Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах. | PENDING | 0 | PENDING | — |
@@ -51,6 +51,12 @@ Premium endpoints/metrics are excluded from this pass.
 
 ## STD-01 live record
 
+Canonical business question:
+
+`Дай продажи за вчера: общая выручка и количество заказанных единиц.`
+
+Resolved date: `2026-09-01`.
+
 ### Business Run 1
 
 Command: `analytics_data`, 2026-09-01, dimensions `[day]`, metrics `[revenue, ordered_units]`.
@@ -76,16 +82,47 @@ Observed:
 
 ### Root-cause analysis after Run 2
 
-- `/v1/analytics/data` has a method-specific limit of one request per minute per seller account.
-- accepted Bridge source uses 60000 ms plus 5000 ms launch safety for this quota family.
+- `/v1/analytics/data` has a method-specific slow quota; current Bridge models the family with 60000 ms minimum plus 5000 ms launch safety.
 - 117.962 s > 65 s, therefore simple violation of the Bridge local spacing rule does not explain Run 2.
-- Bridge transport would preserve `Retry-After`; delivered results did not contain it.
-- remaining leading hypotheses: another/untracked caller consuming the same seller-account method quota, or an extended Ozon provider-side cooldown/circuit state after prior traffic.
-- global/auth/provider health has not yet been isolated.
+- Bridge transport would preserve `Retry-After`; delivered 429 results did not contain one.
+- leading remaining hypotheses became analytics-method/provider quota state, external/untracked consumption of the same account quota, or an extended provider-side cooldown/circuit condition.
 
-### Diagnostic D1 — pending
+### Diagnostic D1 — `roles`
 
-Call `roles` once. Purpose: if it returns 200, reject global Seller API/auth outage and localize failure to analytics-specific provider state. If it also 429s, investigate provider-wide/account-wide throttling before any further business query.
+Command:
+
+```text
+OZON_API_V1
+{
+  "operation": "roles",
+  "params": {}
+}
+```
+
+Observed:
+- `POST /v1/roles`;
+- exactly one physical business request;
+- HTTP `200`;
+- entitlement `SUPPORTED_AND_ENTITLED` / `all_accounts`;
+- no rate-limit metadata;
+- current API key expiry: `2027-02-06T08:09:07.738279Z`;
+- returned role inventory explicitly includes `/v1/analytics/data` under `Admin read only`.
+
+D1 conclusions:
+- `AUTH_OR_ROLE_ERROR` rejected;
+- expired-key hypothesis rejected;
+- general Seller API/provider path is healthy at the time of D1;
+- `OZON_GLOBAL_RATE_LIMIT` is rejected for that observation point because another Seller method returned 200;
+- `/v1/analytics/data` is explicitly allowed by the current key;
+- the unresolved failure is now localized to analytics-method/family quota/provider state or an untracked caller consuming the same quota.
+
+### Diagnostic D2 — next
+
+Repeat the exact original `analytics_data` command after the now substantially longer elapsed interval. Do not alter metrics, date or dimensions.
+
+Interpretation rule:
+- D2 HTTP 200: obtain the real STD-01 data and continue to final business answer; earlier 429s are then consistent with a temporary/extended quota condition, though external concurrent consumption is not automatically ruled out.
+- D2 HTTP 429: do not skip. Escalate diagnosis toward persistent analytics-method provider block or external/untracked consumer; inspect local diagnostic/request history and account integrations before another business query.
 
 ## Result rule
 
@@ -93,4 +130,4 @@ A business row is not marked PASS/PARTIAL/FAIL/BLOCKED until either a useful fin
 
 ## Current checkpoint
 
-`STANDARD_V2_NO_SKIP_STD_01_D1_ROLES_READY`
+`STANDARD_V2_NO_SKIP_STD_01_D1_ROLES_200_D2_ANALYTICS_REPEAT_READY`
