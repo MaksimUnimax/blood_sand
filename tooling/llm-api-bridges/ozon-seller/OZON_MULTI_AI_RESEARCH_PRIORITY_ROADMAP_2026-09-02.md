@@ -1,143 +1,108 @@
 # Ozon Bridge — Multi-AI research priority roadmap
 
 Date: 2026-09-02
-Status: SCOPE_FROZEN_FINAL_DISCOVERY_TARGET
-Scope: selected browser AI providers only. ChatGPT and Yandex Alice remain accepted baseline adapters.
+Status: **PAUSED_BY_OPERATOR**
+Branch: `design/ozon-multi-ai-autodetect-multichannel-2026-09-02`
 
-## 1. Operator scope freeze — authoritative
+## 1. Freeze notice — authoritative
 
-The broad Tier A expansion is intentionally stopped.
+The operator explicitly paused this roadmap to switch to other work and return later.
 
-Do NOT continue first-pass discovery for Perplexity, Microsoft Copilot, Poe, Mistral Vibe / Le Chat, GigaChat, Duck.ai, Proton Lumo, T3 Chat, or any other provider unless the operator explicitly re-opens scope.
+Do not continue this roadmap until the operator explicitly resumes the Multi-AI project.
 
-The only remaining first-pass provider is:
+While paused:
 
-1. **OpenRouter Chat** — `https://openrouter.ai/chat`
+- do not start another provider discovery;
+- do not add substitute providers;
+- do not start the pre-patch matrix unless the operator resumes this work;
+- do not implement new provider adapters;
+- do not modify production provider routing/manifest for this expansion;
+- do not start generic-core refactoring under authority of this roadmap;
+- do not perform authenticated closure or environment retries for the collected providers.
 
-Claude and Kimi first-pass collection are complete and must not be repeated before the mandatory pre-patch matrix.
+The durable work-history/resumption authority is:
 
-After OpenRouter raw evidence + review are recorded, broad discovery STOPS. No substitute provider is added automatically.
+`tooling/llm-api-bridges/ozon-seller/OZON_MULTI_AI_WORK_PAUSE_CHECKPOINT_2026-09-02.md`
 
-## 2. Collected provider set
+Resume marker:
 
-Keep all evidence already collected because it affects later architecture and provider closure.
+`MULTI_AI_DISCOVERY_SCOPE_COMPLETE_PAUSED_BEFORE_PRE_PATCH_MATRIX`
 
-1. Google Gemini — environment-blocked first-pass record.
-2. Qwen — guest first-pass record plus operator-supplied authenticated `/c/<UUID>` route candidate.
-3. DeepSeek — `AUTH_REQUIRED_FOR_BASIC_CHAT` first-pass record.
-4. Grok — provider document reached, usable chat DOM blank/incomplete.
-5. Meta AI — guest composer/autodetection evidence; exact multiline write blocker prevented Send.
-6. Claude — provider reached `/login`; `AUTH_REQUIRED_FOR_BASIC_CHAT`.
-7. Kimi — public Kimi product DOM and editor candidate observed; deterministic enabled Send not resolved.
-8. ChatGPT — accepted baseline adapter.
-9. Yandex Alice — accepted baseline adapter.
+## 2. Discovery progress at freeze
 
-Remaining collection target:
+The currently selected discovery scope is COMPLETE.
 
-10. OpenRouter Chat.
+Collected/reviewed provider set affecting the future pre-patch matrix:
 
-## 3. Kimi first-pass checkpoint
+- [x] Google Gemini — environment/browser-policy blocked before provider DOM; not provider-tested.
+- [x] Qwen — guest flow evidence; guest durable identity failed; authenticated `/c/<UUID>` candidate supplied for future verification.
+- [x] DeepSeek — `AUTH_REQUIRED_FOR_BASIC_CHAT`; `/sign_in` observed.
+- [x] Grok — provider document reached; executable chat DOM blank/incomplete.
+- [x] Meta AI — guest composer/autodetection candidate; provider-specific multiline composer blocker; no Send performed.
+- [x] Claude — `AUTH_REQUIRED_FOR_BASIC_CHAT`; `/login` observed.
+- [x] Kimi — public editor candidate; deterministic enabled Send unresolved; no probe sent.
+- [x] OpenRouter Chat — `/chat` playground/navigation shell rendered; no composer/model/chat execution state; provider remains `openrouter_chat` regardless of underlying model.
 
-Observed:
+Existing accepted baselines remain:
 
-- final URL/origin remained `https://www.kimi.com/` / `https://www.kimi.com`;
-- Kimi product DOM rendered normally;
-- editor candidate: `div.chat-input-editor[role="textbox"]`;
-- login/history-sync controls were visible;
-- deterministic enabled Send was not resolved;
-- no probe was sent;
-- therefore conversation identity, turns, completion, code extraction, delivery, SPA, tabs, Manual and Autorun remain untested.
+- ChatGPT;
+- Yandex Alice.
 
-Auth interpretation:
+Providers explicitly removed from the current discovery scope remain out of scope unless operator reopens them:
 
-- public/editor surface is available without immediate login redirect;
-- login is visibly connected to history synchronization;
-- basic Send authentication requirement is UNRESOLVED because no deterministic Send was reached.
+- Perplexity;
+- Microsoft Copilot;
+- Poe;
+- Mistral Vibe / Le Chat;
+- GigaChat;
+- Duck.ai;
+- Proton Lumo;
+- T3 Chat;
+- any other not explicitly re-authorized provider.
 
-Current Kimi blocker:
+## 3. Last completed discovery checkpoint
 
-`PROVIDER_SEND_CONTROL_UNRESOLVED`
+OpenRouter Chat was the final requested discovery target.
 
-Do not treat the editor selector alone as executable Kimi support.
+Raw evidence:
 
-Raw-report quality note:
+`tooling/llm-api-bridges/ozon-seller/research/multi-ai/openrouter/OPENROUTER_CHAT_BROWSER_DISCOVERY_RAW_2026-09-02.md`
 
-The source report contains a checklist contradiction: KIMI-01..05 are `BLOCKED` in the table but described as `PASS` in terminal closure prose. The raw evidence is preserved unchanged. The project review records the contradiction and uses the observed facts rather than silently rewriting the source.
+Review:
 
-Kimi patch readiness:
+`tooling/llm-api-bridges/ozon-seller/research/multi-ai/openrouter/OPENROUTER_CHAT_BROWSER_DISCOVERY_REVIEW_2026-09-02.md`
 
-`NEEDS_PROVIDER_SEND_CONTROL_RESEARCH`
+Raw commit:
 
-## 4. Current phase — OpenRouter evidence collection only
+`d154afc1ec04feabc3947ffce061c5c5534f7a54`
 
-Until OpenRouter first-pass report is collected:
+Review commit:
 
-- do not implement any new provider adapter;
-- do not modify production provider routing;
-- do not expand production manifest host permissions;
-- do not start generic-core refactoring;
-- do not return to authenticated closure for Qwen, DeepSeek, Claude or other providers;
-- do not retry Gemini/Grok environment blockers;
-- do not start Kimi Send-control closure.
+`e28c339a8ee379455a2a7f6c57ce49b19ab1cb9b`
 
-OpenRouter discovery rules:
+## 4. Next step when operator resumes
 
-1. Codex performs browser discovery only, not Git/GitHub/repository work.
-2. `/goal` is mandatory at the start.
-3. Safe browser clicks must be explicitly authorized in the prompt.
-4. Every checklist item ends PASS / FAIL / BLOCKED / NOT_APPLICABLE.
-5. Underlying model selected inside OpenRouter is NOT provider identity.
-6. Codex returns one Markdown report.
-7. Assistant immediately stores raw evidence and separate review in GitHub.
-8. Then discovery stops and the pre-patch matrix is created.
+Do NOT resume with another browser provider prompt.
 
-## 5. Discovery stop condition
+The next mandatory artifact is:
 
-Discovery is complete when OpenRouter first-pass report + GitHub review exist.
+`tooling/llm-api-bridges/ozon-seller/OZON_MULTI_AI_PRE_PATCH_EVIDENCE_GAP_MATRIX_2026-09-02.md`
 
-At that exact point:
+It must be created from the already collected evidence and must separate, for each relevant provider:
 
-**STOP browser-provider breadth discovery. Do not immediately patch anything.**
+1. proven evidence;
+2. evidence never collected;
+3. exact blocker;
+4. exact browser tests still required;
+5. unresolved architecture/design decisions;
+6. patch-readiness status.
 
-The next mandatory artifact is the **PRE-PATCH EVIDENCE AND GAP MATRIX**.
-
-## 6. Mandatory pre-patch evidence and gap matrix
-
-Before any implementation patch, create one consolidated GitHub document covering every provider whose collected evidence affects the project.
-
-Required top-level table:
+Required matrix columns include at least:
 
 | Provider | Evidence collected | Evidence missing | Auth requirement | Environment/provider blocker | Identity status | Composer/Send status | Turn/completion status | Code extraction status | Delivery status | SPA/tabs status | Manual status | Autorun status | Decisions still required | Exact next work |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 
-For every provider include these sections:
-
-### A. Proven evidence
-Only actually observed facts.
-
-### B. Not collected
-Tests that never ran or evidence that does not exist.
-
-### C. Blockers
-Use precise classes where applicable:
-
-- `AUTH_REQUIRED_FOR_BASIC_CHAT`
-- `AUTH_REQUIRED_FOR_HISTORY_OR_DURABLE_IDENTITY`
-- `NO_AUTH_FOR_EPHEMERAL_CHAT_BUT_AUTH_REQUIRED_FOR_DURABLE_CHAT`
-- `ENVIRONMENT_BLOCKED_NOT_TESTED`
-- `PROVIDER_CHALLENGE_BLOCKED_NOT_TESTED`
-- `PROVIDER_SPECIAL_COMPOSER_BLOCKED`
-- `PROVIDER_SEND_CONTROL_UNRESOLVED`
-- other exact evidence-backed blocker.
-
-### D. Exact browser tests still required
-Examples: authenticated conversation ID, reload durability, message IDs, exact code extraction, result-delivery confirmation, SPA A→B→A, different-chat tabs, same-chat duplicate tabs, Manual, established Autorun, new-chat Autorun.
-
-### E. Architectural decisions still required
-Keep design uncertainty separate from missing evidence. Include provider identity source, normalization/case policy, synthetic message identity if needed, composer write strategy, completion policy, delivery confirmation, duplicate-tab lease evidence, provider surface split, guest/auth capability split.
-
-### F. Patch readiness
-One of:
+Patch-readiness values:
 
 - `READY_FOR_PROVIDER_CLOSURE`
 - `NEEDS_AUTHENTICATED_DISCOVERY`
@@ -147,89 +112,50 @@ One of:
 - `EVIDENCE_INCOMPLETE`
 - `READY_FOR_IMPLEMENTATION_DESIGN`
 
-No provider becomes implementation-ready merely because a selector exists.
+No provider is implementation-ready merely because a URL or selector exists.
 
-## 7. Provider-by-provider closure after matrix review
+## 5. Work after matrix review
 
-After operator review of the matrix, work ONE provider at a time.
+Only after the operator reviews the pre-patch matrix:
 
-For the selected provider:
+1. operator chooses one provider;
+2. close that provider's missing browser evidence;
+3. resolve auth/environment/editor/send blockers;
+4. freeze its adapter contract;
+5. only then design/implement its patch;
+6. run provider-specific regressions;
+7. record raw/review/checkpoint in GitHub;
+8. move to another provider only after current provider closure.
 
-1. close missing browser evidence;
-2. resolve auth/environment/editor/send blockers;
-3. freeze the provider adapter contract;
-4. only then design/implement its patch;
-5. run provider-specific regressions;
-6. save checkpoint/results in GitHub;
-7. move to another provider only when the current provider is closed.
+Do not patch all providers in one batch.
 
-The operator chooses provider order after the matrix exists.
-
-## 8. Non-negotiable Ozon Bridge invariant
+## 6. Non-negotiable safety invariant
 
 `ONE EXPLICIT AI COMMAND = AT MOST ONE PHYSICAL BUSINESS API REQUEST`
 
-No provider adapter may introduce hidden retry, hidden pagination, polling, fan-out, implicit provider/model chaining, duplicate result Send, or cross-chat leakage.
+No provider adapter may introduce:
 
-Provider autodetection is independent from Ozon Autorun.
+- hidden retry;
+- hidden pagination;
+- polling;
+- provider/model fan-out;
+- implicit provider chaining;
+- duplicate result Send;
+- cross-chat prompt/result leakage.
 
-The web provider is determined by the actual web surface, not by the model selected inside an aggregator such as OpenRouter.
+Provider autodetection remains independent from Ozon Autorun.
 
-## 9. Current execution queue
+For aggregator web products, provider identity is the actual web surface, not the underlying selected model.
 
-### Collection phase
+## 7. Resume authority
 
-- [x] Claude — `AUTH_REQUIRED_FOR_BASIC_CHAT`
-- [x] Kimi — public editor candidate; `PROVIDER_SEND_CONTROL_UNRESOLVED`
-- [ ] **OpenRouter Chat — NEXT AND FINAL DISCOVERY TARGET**
+On return, read these two files first:
 
-### Immediately after OpenRouter
+1. `OZON_MULTI_AI_WORK_PAUSE_CHECKPOINT_2026-09-02.md`
+2. `OZON_MULTI_AI_RESEARCH_PRIORITY_ROADMAP_2026-09-02.md`
 
-- [ ] STOP breadth discovery.
-- [ ] Consolidate all raw/review evidence.
-- [ ] Create pre-patch evidence/gap matrix.
-- [ ] List missing evidence per provider.
-- [ ] List blockers per provider.
-- [ ] List exact follow-up browser tests.
-- [ ] List unresolved architecture decisions.
-- [ ] Assign patch-readiness status.
-- [ ] Review matrix with operator.
+Then resume from:
 
-### Only after matrix review
+**PRE-PATCH EVIDENCE AND GAP MATRIX**
 
-- [ ] Begin provider-by-provider closure.
-- [ ] No production patch before selected provider reaches design readiness.
-
-## 10. Current provider snapshot
-
-### Gemini
-`ENVIRONMENT_BLOCKED_NOT_TESTED`; provider DOM unavailable in Codex run. Not ready.
-
-### Qwen
-Guest DOM/composer/one-shot Send/ordered turns/completion observed; guest durable identity failed; authenticated `/c/<UUID>` candidate supplied by operator. Needs authenticated closure.
-
-### DeepSeek
-Provider reached `/sign_in`; `AUTH_REQUIRED_FOR_BASIC_CHAT`. Needs authenticated closure.
-
-### Grok
-Provider origin reached; usable chat DOM blank/incomplete. Needs environment/render retry.
-
-### Meta AI
-Guest positive signature and Send state observed; exact multiline composer read-back failed and no Send was made. Needs provider-specific composer research.
-
-### Claude
-Provider reached `/login`; `AUTH_REQUIRED_FOR_BASIC_CHAT`. Needs authenticated closure. Source report has CLAUDE-27 table/narrative mismatch preserved in review.
-
-### Kimi
-Public product DOM/editor candidate observed; deterministic enabled Send unresolved; basic Send auth boundary unresolved. Needs provider-specific Send-control research.
-
-### OpenRouter Chat
-Collection pending — NEXT and FINAL discovery target.
-
-## 11. Authority rule
-
-This document supersedes earlier breadth queues.
-
-Unless the operator explicitly changes scope:
-
-**OpenRouter → STOP discovery → pre-patch evidence/gap matrix → operator review → provider-by-provider closure → only then implementation patch.**
+Do not resume from an older provider-discovery queue.
