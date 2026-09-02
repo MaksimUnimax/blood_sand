@@ -1,0 +1,15 @@
+{
+  "schema": "OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_REGRESSION_V1",
+  "date": "2026-09-02",
+  "mode": "specific",
+  "bridge_base": "/home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared",
+  "details": {
+    "specific": {
+      "marker": "OZON_SPECIFIC_CAMPAIGN_IDS_REPAIR_PASS",
+      "refinement_count": 8,
+      "detached_inherited_campaign_id_arrays": 4,
+      "generated_request_method": "GET",
+      "generated_request_path": "/api/client/campaign"
+    }
+  }
+}

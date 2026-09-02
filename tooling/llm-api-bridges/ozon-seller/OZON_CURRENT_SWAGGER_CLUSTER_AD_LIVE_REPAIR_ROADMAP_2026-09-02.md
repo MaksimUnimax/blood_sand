@@ -526,7 +526,7 @@ This is the execution order. Update the status table after every step and commit
 
 | Step | Work item | Status | Evidence required |
 |---:|---|---|---|
-| 1 | Fix cyclic/shared-reference bug in `specific_campaign_ids` | IN PROGRESS | production diff + focused tests |
+| 1 | Fix cyclic/shared-reference bug in `specific_campaign_ids` | COMPLETE | production diff + focused tests |
 | 2 | Add regression for actual executability of generated refinement | PENDING | test names/markers and PASS output |
 | 3 | Fix entitlement metadata for both new Seller READs | PENDING | deterministic entitlement assertions |
 | 4 | Build a new deterministic candidate | PENDING | artifact path, file count, SHA-256, fresh extraction verification |
@@ -604,8 +604,21 @@ Until then, the current candidate remains rejected for release because of the `s
 
 | ID | Severity | Status | Summary |
 |---|---|---|---|
-| OZ-LIVE-AD-001 | BLOCKER | OPEN | `performance_campaigns + campaignIds` fails pre-network with cyclic provider result in generated refinements |
+| OZ-LIVE-AD-001 | BLOCKER | FIXED_PENDING_LIVE_RETEST | `performance_campaigns + campaignIds` fails pre-network with cyclic provider result in generated refinements |
 | OZ-LIVE-ENT-002 | MEDIUM | OPEN | both new dependent-attribute Seller reads lack deterministic entitlement metadata |
 | OZ-LIVE-FIXTURE-003 | TEST GAP | OPEN | second dependent-attribute endpoint lacks live fixture; deterministic regression required |
 
 No other release-blocking Ozon defect was found in this live pass.
+
+
+<!-- OZON-ROADMAP-STEP-1-COMPLETE -->
+### 2026-09-02 — Step 1: cyclic/shared-reference bug repaired
+
+Status: **COMPLETE**
+
+- Pre-repair failure reproduced from base 4447bb27a546140aa4c5892208f5c059b20a04ee.
+- Production ozon_contract.js now creates a fresh scalar campaignIds array for every generated refinement command.
+- Cycle/shared-reference validation remains enabled and unchanged.
+- Focused marker: OZON_SPECIFIC_CAMPAIGN_IDS_REPAIR_PASS.
+- Production file SHA-256: 90e27c430d86fe8dbc0bb1cf3df4e590923f851305d03ab6b3588452ca224898.
+- Evidence: validation/live-repair-2026-09-02/STEP1_SPECIFIC_CAMPAIGN_IDS_REPAIR_RESULT.json.

@@ -2360,21 +2360,31 @@
     return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
   }
 
-  function campaignRefinementChoices(params, sourceCount) {
+  function detachedCampaignRefinementFilters(params) {
     const filters = {};
-    for (const key of ["campaignIds", "advObjectType", "state"]) if (Object.prototype.hasOwnProperty.call(params, key)) filters[key] = params[key];
+    if (Object.prototype.hasOwnProperty.call(params, "campaignIds")) {
+      filters.campaignIds = params.campaignIds.map((campaignId) => String(campaignId));
+    }
+    for (const key of ["advObjectType", "state"]) {
+      if (Object.prototype.hasOwnProperty.call(params, key)) filters[key] = params[key];
+    }
+    return filters;
+  }
+
+  function campaignRefinementChoices(params, sourceCount) {
+    const filters = () => detachedCampaignRefinementFilters(params);
     const choices = [];
     if (!params.local_sort) {
       const page = Number(params.page || 1), pageSize = Number(params.pageSize || 100);
       choices.push({
         id: "next_page", purpose: "Получить следующую явную страницу кампаний без hidden pagination.",
-        command: { operation: "performance_campaigns", params: { ...filters, page: page + 1, pageSize } }
+        command: { operation: "performance_campaigns", params: { ...filters(), page: page + 1, pageSize } }
       });
     }
     choices.push(
-      { id: "active_campaigns", purpose: "Только активные кампании.", command: { operation: "performance_campaigns", params: { ...filters, state: "CAMPAIGN_STATE_RUNNING", page: 1, pageSize: 100 } } },
-      { id: "latest_created", purpose: "Самые новые по createdAt; один provider request, затем локальная сортировка Bridge.", command: { operation: "performance_campaigns", params: { ...filters, local_sort: "created_at_desc", local_limit: 100 } } },
-      { id: "latest_updated", purpose: "Последние изменённые по updatedAt; один provider request, затем локальная сортировка Bridge.", command: { operation: "performance_campaigns", params: { ...filters, local_sort: "updated_at_desc", local_limit: 100 } } },
+      { id: "active_campaigns", purpose: "Только активные кампании.", command: { operation: "performance_campaigns", params: { ...filters(), state: "CAMPAIGN_STATE_RUNNING", page: 1, pageSize: 100 } } },
+      { id: "latest_created", purpose: "Самые новые по createdAt; один provider request, затем локальная сортировка Bridge.", command: { operation: "performance_campaigns", params: { ...filters(), local_sort: "created_at_desc", local_limit: 100 } } },
+      { id: "latest_updated", purpose: "Последние изменённые по updatedAt; один provider request, затем локальная сортировка Bridge.", command: { operation: "performance_campaigns", params: { ...filters(), local_sort: "updated_at_desc", local_limit: 100 } } },
       { id: "specific_campaign_ids", purpose: "Только конкретные кампании.", template: { operation: "performance_campaigns", params: { campaignIds: ["CAMPAIGN_ID"], page: 1, pageSize: 100 } } },
       { id: "campaign_products", purpose: "Товары конкретной рекламной кампании.", template: { operation: "performance_campaign_products", params: { campaignId: "CAMPAIGN_ID", page: 1, pageSize: 100 } } },
       { id: "campaign_product_statistics", purpose: "Статистика кампаний в разрезе товаров за период.", template: { operation: "performance_campaign_product", params: { campaignIds: ["CAMPAIGN_ID"], dateFrom: "YYYY-MM-DD", dateTo: "YYYY-MM-DD" } } },
