@@ -75,8 +75,8 @@ Examples:
 |---:|---|---:|---|---|---|---|
 | 1 | Google Gemini | >1.0B monthly users | OFFICIAL PRODUCT MAU, Aug 2026 | COMPLETE AS ENVIRONMENT-BLOCKED RECORD | `ENVIRONMENT_BLOCKED / NOT TESTED`: Codex Browser Use returned `BROWSER_POLICY_UNVERIFIED` before Gemini document load; auth state not observed | Defer retry until Pass 2 / browser policy fixed |
 | 2 | Qwen | 251.13M | standardized App MAU, Jun 2026 | COMPLETE for guest surface | Basic guest chat: NO AUTH. Durable exact chat: auth currently required; authenticated `/c/<UUID>` candidate observed | Defer authenticated closure to Pass 2 |
-| 3 | DeepSeek | 139.08M | standardized App MAU, Jun 2026 | NOT COMPLETE | UNKNOWN; broad pass had content unavailable/no safe composer | **NEXT PROVIDER** |
-| 4 | Grok | 117M Grok-AI-feature MAU in Mar 2026; 67.88M standardized App MAU in Jun 2026 | high, but measurement boundaries differ | NOT COMPLETE | UNKNOWN; broad pass produced blank/no provider DOM | After DeepSeek |
+| 3 | DeepSeek | 139.08M | standardized App MAU, Jun 2026 | COMPLETE AS AUTH-BLOCKED RECORD | `AUTH_REQUIRED_FOR_BASIC_CHAT`: provider reached normally, redirected to `/sign_in`; no composer/Send/chat before login | Defer authenticated closure to Pass 2 |
+| 4 | Grok | 117M Grok-AI-feature MAU in Mar 2026; 67.88M standardized App MAU in Jun 2026 | high, but measurement boundaries differ | NOT COMPLETE | UNKNOWN; broad pass produced blank/no provider DOM | **NEXT PROVIDER** |
 | 5 | Meta AI | 73.06M standalone App MAU, Jun 2026 | standardized standalone app MAU; broader Meta-integrated AI audience is larger and intentionally not used | NOT COMPLETE | AUTH REQUIRED in broad pass | Record blocker in Pass 1, authenticated closure in Pass 2 |
 | 6 | Claude | 39.81M | standardized App MAU, Jun 2026 | NOT COMPLETE | AUTH REQUIRED; broad pass reached `/login` | Record blocker in Pass 1, authenticated closure in Pass 2 |
 | 7 | Perplexity | 27.54M | standardized App MAU, Jun 2026 | PARTIAL | Basic page/composer visible; login required before Send in broad pass | Finish read-only first pass; authenticated closure in Pass 2 |
@@ -124,6 +124,7 @@ This matters because Ozon Bridge may be able to inspect/send in a guest chat whi
 |---|---|---|---|
 | Gemini | UNRESOLVED | UNRESOLVED | `ENVIRONMENT_BLOCKED / NOT TESTED`; Browser Use policy blocked before document load, not an auth observation |
 | Qwen | YES, guest observed | NO in tested guest flow | Authenticated `/c/<UUID>` candidate observed by operator; verify in Pass 2 |
+| DeepSeek | NO | NOT TESTED | `AUTH_REQUIRED_FOR_BASIC_CHAT`; provider reached normally and redirected to `/sign_in` |
 | Claude | NO in broad pass | NOT TESTED | Login barrier |
 | Perplexity | Composer visible, but Send triggered login barrier | NOT TESTED | Auth required for usable tested flow |
 | Meta AI | NO in broad pass | NOT TESTED | Login barrier |
@@ -132,7 +133,6 @@ This matters because Ozon Bridge may be able to inspect/send in a guest chat whi
 | Duck.ai | YES per official docs | likely not durable without optional synced history; must verify live | First-pass live evidence pending |
 | Proton Lumo | YES per official docs | saved/history chat requires account | First-pass live evidence pending |
 | T3 Chat | Broad pass reached chat and sent once | UNRESOLVED | Recheck in its ranked turn |
-| DeepSeek | UNRESOLVED | UNRESOLVED | Pending |
 | Grok | UNRESOLVED | UNRESOLVED | Pending |
 | Kimi | UNRESOLVED | UNRESOLVED | Pending |
 | GigaChat | UNRESOLVED | UNRESOLVED | Pending |
@@ -145,27 +145,27 @@ Completed Pass-1 records so far:
 
 1. Google Gemini — `ENVIRONMENT_BLOCKED / NOT TESTED` (`BROWSER_POLICY_UNVERIFIED` before document load).
 2. Qwen — guest flow classified; authenticated durable-route closure deferred to Pass 2.
+3. DeepSeek — `AUTH_REQUIRED_FOR_BASIC_CHAT`; provider reached normally at `/sign_in`, authenticated closure deferred to Pass 2.
 
-Continue Pass 1 by audience order without returning to either provider yet.
+Continue Pass 1 by audience order without returning to these providers yet.
 
 Active queue:
 
-1. **DeepSeek**
-2. Grok
-3. Meta AI
-4. Claude
-5. Perplexity
-6. Kimi
-7. GigaChat
-8. Microsoft Copilot
-9. OpenRouter Chat
-10. Poe
-11. Mistral Vibe / Le Chat
-12. Duck.ai
-13. Proton Lumo
-14. T3 Chat
+1. **Grok**
+2. Meta AI
+3. Claude
+4. Perplexity
+5. Kimi
+6. GigaChat
+7. Microsoft Copilot
+8. OpenRouter Chat
+9. Poe
+10. Mistral Vibe / Le Chat
+11. Duck.ai
+12. Proton Lumo
+13. T3 Chat
 
-After item 14 is complete, stop breadth discovery and begin Pass 2 from the highest-priority provider with unresolved/blocked evidence. Gemini returns first because it has the highest audience priority and no provider-level evidence was obtained. Qwen returns next at its original audience priority, using an authenticated session and `/c/<UUID>` as a candidate identity to verify.
+After item 13 is complete, stop breadth discovery and begin Pass 2 from the highest-priority provider with unresolved/blocked evidence. Gemini returns first because it has the highest audience priority and no provider-level evidence was obtained. Qwen returns next at its original audience priority, using an authenticated session and `/c/<UUID>` as a candidate identity to verify. DeepSeek returns next using an already-authenticated disposable session.
 
 ## 8. Implementation rule
 
