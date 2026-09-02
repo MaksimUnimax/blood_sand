@@ -172,6 +172,12 @@ def patch_contract(text: str) -> str:
     text = replace_once(text, '["seller_api", "performance_api"].includes(provider)', '["seller_api", "performance_api", "report_file"].includes(provider)', 'provider allowlist')
     text = replace_once(text, '  function normalizeSupplyOrderListParams(params) {', CONTRACT_NORMALIZER + '\n  function normalizeSupplyOrderListParams(params) {', 'contract helper normalizer')
     text = replace_once(text, '    report_products_create: { normalizeParams:', CONTRACT_MAP_INSERT + '    report_products_create: { normalizeParams:', 'contract helper map')
+    text = replace_once(
+        text,
+        '      if (meta.method === "GET" && meta.request_style !== "query") fail("REQUEST_STYLE_NOT_READY", `${name}: GET требует query builder.`);',
+        '      if (meta.method === "GET" && meta.request_style !== "query" && !(provider === "report_file" && meta.request_style === "opaque_file_ref")) fail("REQUEST_STYLE_NOT_READY", `${name}: GET требует query builder.`);\n      if (provider === "report_file" && meta.request_style !== "opaque_file_ref") fail("REQUEST_STYLE_NOT_READY", `${name}: report_file требует opaque_file_ref builder.`);',
+        'internal report file GET request-style exemption'
+    )
     return text
 
 
@@ -209,6 +215,7 @@ def main():
     patch(files['provider'], patch_provider)
     print('OZON_REPORT_FILE_OPAQUE_REF_REGISTRY_PASS')
     print('OZON_REPORT_FILE_OPAQUE_REF_CONTRACT_PASS')
+    print('OZON_REPORT_FILE_GET_STYLE_EXEMPTION_PASS')
     print('OZON_REPORT_FILE_TRUSTED_TRANSPORT_PASS')
     print('OZON_REPORT_FILE_PROVIDER_SESSION_REF_PASS')
     print('OZON_REPORT_FILE_WORKFLOW_APPLY_PASS')
