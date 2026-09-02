@@ -1,0 +1,119 @@
+name: Ozon Current Swagger Live Repair Record Step 5
+
+on:
+  push:
+    branches:
+      - repair/ozon-current-swagger-refresh-2026-09-01
+    paths:
+      - tooling/llm-api-bridges/ozon-seller/validation/live-repair-2026-09-02/STEP5_RECORD_TRIGGER
+
+permissions:
+  contents: write
+
+jobs:
+  record-step5:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Persist Step 5 live PASS evidence and roadmap status
+        shell: bash
+        run: |
+          set -euo pipefail
+          O=tooling/llm-api-bridges/ozon-seller
+          D="$O/validation/live-repair-2026-09-02"
+          R="$O/OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ROADMAP_2026-09-02.md"
+          test -f "$D/STEP5_RECORD_TRIGGER"
+          test -f "$R"
+          python <<'PY'
+          from pathlib import Path
+          import json
+
+          root=Path('tooling/llm-api-bridges/ozon-seller')
+          d=root/'validation/live-repair-2026-09-02'
+          roadmap=root/'OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ROADMAP_2026-09-02.md'
+          evidence=d/'STEP5_LIVE_TEST_RESULT.json'
+
+          payload={
+            'schema':'OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_LIVE_TEST_V1',
+            'date':'2026-09-02',
+            'roadmap_step':5,
+            'status':'PASS',
+            'candidate':{
+              'artifact':'OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_CANDIDATE_2026-09-02.zip',
+              'sha256':'80d0b4eba7110dc2d69ef3fab40214a9a6c54e98cfd6820ab611ac7ba73b2c76',
+              'artifact_commit':'13b14811c36694c8d47c17c0eca8176cc0b57950'
+            },
+            'command':{
+              'operation':'performance_campaigns',
+              'params':{'campaignIds':['37130644'],'page':1,'pageSize':100}
+            },
+            'request_id':'61fce8c2-0002-4e6e-87cc-6ac848e46385',
+            'observed':{
+              'bridge':'ozon-llm-api-bridge',
+              'version':'0.1.19',
+              'delivery_mode':'sequential_batch_single_delivery',
+              'logical_business_result_count':1,
+              'physical_business_request_count':1,
+              'capability_probe_performed':False,
+              'external_request_executed':True,
+              'provider':'ozon',
+              'host_alias':'performance_api',
+              'http_method':'GET',
+              'http_status':200,
+              'elapsed_ms':390,
+              'result_total':'1',
+              'result_ids':['37130644'],
+              'result_states':['CAMPAIGN_STATE_RUNNING'],
+              'provider_items_received':1,
+              'items_returned_to_ai':1,
+              'provider_page':1,
+              'provider_page_size':100,
+              'hidden_pagination_requests':0,
+              'automatic_retry_requests':0,
+              'refinement_choice_ids':['next_page','active_campaigns','latest_created','latest_updated','specific_campaign_ids','campaign_products','campaign_product_statistics','sku_statistics'],
+              'inherited_campaign_ids_in_generated_commands':True,
+              'invalid_result_value_present':False,
+              'cyclic_provider_result_present':False
+            },
+            'verdict':'specific_campaign_ids live retest passed; previous cyclic/shared-reference blocker is fixed in the candidate'
+          }
+          evidence.write_text(json.dumps(payload,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+          text=roadmap.read_text(encoding='utf-8')
+          old='| 5 | Repeat live test #6 with campaign ID `37130644` | PENDING | one physical request, HTTP 200, only requested campaign, no retry/pagination |'
+          new='| 5 | Repeat live test #6 with campaign ID `37130644` | COMPLETE | one physical request, HTTP 200, only requested campaign, no retry/pagination |'
+          if old in text:
+            text=text.replace(old,new,1)
+          elif new not in text:
+            raise SystemExit('Step 5 roadmap row not found')
+
+          old_def='| OZ-LIVE-AD-001 | BLOCKER | FIXED_PENDING_LIVE_RETEST |'
+          new_def='| OZ-LIVE-AD-001 | BLOCKER | FIXED_LIVE_RETEST_PASS |'
+          if old_def in text:
+            text=text.replace(old_def,new_def,1)
+          elif new_def not in text:
+            raise SystemExit('OZ-LIVE-AD-001 row not found')
+
+          stale='Until then, the current candidate remains rejected for release because of the `specific_campaign_ids` blocker.'
+          current='The `specific_campaign_ids` blocker has passed its live retest. The candidate remains unaccepted until roadmap Steps 6 and 7 complete.'
+          if stale in text:
+            text=text.replace(stale,current,1)
+          elif current not in text:
+            raise SystemExit('acceptance-status sentence not found')
+
+          marker='<!-- OZON-ROADMAP-STEP-5-COMPLETE -->'
+          if marker not in text:
+            text += '''\n\n%s\n### 2026-09-02 — Step 5: live `specific_campaign_ids` retest passed\n\nStatus: **COMPLETE / PASS**\n\n- Candidate: `OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_CANDIDATE_2026-09-02.zip`.\n- Candidate SHA-256: `80d0b4eba7110dc2d69ef3fab40214a9a6c54e98cfd6820ab611ac7ba73b2c76`.\n- Artifact commit: `13b14811c36694c8d47c17c0eca8176cc0b57950`.\n- Live request ID: `61fce8c2-0002-4e6e-87cc-6ac848e46385`.\n- Command: `performance_campaigns` with `campaignIds=["37130644"]`, `page=1`, `pageSize=100`.\n- HTTP 200; `logical_business_result_count=1`; `physical_business_request_count=1`; `external_request_executed=true`.\n- Provider returned exactly one campaign and it was `id=37130644`; `total="1"`.\n- `provider_items_received=1`; `items_returned_to_ai=1`; `provider_page=1`; `provider_page_size=100`.\n- `hidden_pagination_requests=0`; `automatic_retry_requests=0`; capability probe was not performed.\n- All eight refinement choices were returned successfully. Generated `next_page`, `active_campaigns`, `latest_created`, and `latest_updated` commands preserved a detached `campaignIds=["37130644"]` array without triggering repeated-reference validation.\n- No `INVALID_RESULT_VALUE`; no `циклический provider result`.\n- Verdict: the previous release-blocking cyclic/shared-reference failure is fixed in the installed candidate.\n- Evidence: `validation/live-repair-2026-09-02/STEP5_LIVE_TEST_RESULT.json`.\n- Next: roadmap Step 6 short final Ozon-only regression.\n''' % marker
+
+          roadmap.write_text(text,encoding='utf-8',newline='\n')
+          print('OZON_ROADMAP_STEP_5_LIVE_PASS_RECORDED')
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$R" "$D/STEP5_LIVE_TEST_RESULT.json"
+          git commit -m 'test(ozon): record specific campaign live repair pass'
+          git push origin HEAD:${GITHUB_REF_NAME}
