@@ -60,8 +60,8 @@ Despite the historical filename, that document now defines an expandable capabil
 
 ## Current Layer-A execution checkpoint
 
-- STD-01…STD-10 complete.
-- STD-11 ready.
+- STD-01…STD-11 complete.
+- STD-12 ready.
 
 ### STD-06 completed
 
@@ -248,6 +248,38 @@ Detailed STD-10 evidence:
 - `live-runs/STD_10_RUN_3_CURRENT_FBO_PLACEMENT_EXPOSED_SKUS_2026-09-02.md`
 - `live-runs/STD_10_RUN_4_FRESH_PRODUCT_STATE_AND_FINAL_2026-09-02.md`
 
+### STD-11 completed
+
+Question: `У меня исчез товар с FBO, а продаж с этого склада не было. Разберись, куда он мог деться и какие доказательства есть в данных.`
+
+A real same-day case was selected rather than inventing a disappearance: SKU `1720141903` / `Водолей` changed from FBO `present=1,reserved=0` to `present=1,reserved=1`, so free FBO changed `1→0` without physical present stock falling.
+
+Run 1 `posting_fbo_list` for 2026-09-02 returned HTTP 200 and terminal `has_next=false`. It found exact active posting `0223728377-0109-5`:
+- SKU `1720141903`, qty1;
+- status `awaiting_packaging`;
+- substatus `posting_created`;
+- cancellation null;
+- warehouse_id `1020001007805000` / `ВОРОНЕЖ_2_РФЦ`.
+
+That warehouse_id exactly matches the sole non-zero FBO warehouse row where the SKU had `present=1,reserved=1`.
+
+Final forensic conclusion:
+`FREE_STOCK_DISAPPEARED_BECAUSE_UNIT_IS_RESERVED_FOR_ACTIVE_FBO_ORDER_NOT_BECAUSE_PHYSICAL_PRESENT_STOCK_WAS_LOST`.
+
+The unit is not yet a completed sale/delivery; it is reserved under an active order. No return/removal/supply drill-down is required for this concrete case because SKU, quantity, reservation state and warehouse reconcile exactly.
+
+Semantic rule:
+`FREE_FBO_DECREASE_IS_NOT_EQUIVALENT_TO_PHYSICAL_FBO_LOSS_OR_COMPLETED_SALE`.
+
+STD-11 classification: `PASS`
+Operational reliability: `PASS_FIRST_PROVIDER_READ`
+Operator business steering: `NO`
+Provider incidents: none.
+
+Detailed STD-11 evidence:
+- `live-runs/STD_11_SETUP_AQUARIUS_FREE_FBO_DISAPPEARANCE_CASE_2026-09-02.md`
+- `live-runs/STD_11_RUN_1_AQUARIUS_RESERVATION_FORENSIC_AND_FINAL_2026-09-02.md`
+
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_10_COMPLETE_STD_11_READY`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_11_COMPLETE_STD_12_READY`
