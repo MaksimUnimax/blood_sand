@@ -5,6 +5,7 @@ Status: ACTIVE — GPT-5.6 SOL LIVE TEST / NO-SKIP FAILURE DIAGNOSTICS
 Supersedes: `OZON_AI_WORKER_STANDARD_LIVE_BENCHMARK_V1_2026-09-02.md`
 Failure diagnostics: `OZON_AI_WORKER_LIVE_FAILURE_DIAGNOSTICS_2026-09-02.md`
 Weak-model recovery requirement: `OZON_AI_WORKER_WEAK_MODEL_RECOVERY_CONTRACT_REQUIREMENT_2026-09-02.md`
+Capability-awareness Layer B: `OZON_AI_WORKER_CAPABILITY_AWARENESS_LAYER_20_TESTS_2026-09-02.md`
 Scope: authenticated Ozon seller without Premium.
 
 ## Mandatory test rule
@@ -16,6 +17,26 @@ A blocked/failed run is investigated before moving to another commercial query. 
 One user business question may require multiple explicit Bridge runs. Exactly one `OZON_API_V1` command is sent at a time; after every result GPT-5.6 Sol decides the next read/diagnostic or gives the final business answer.
 
 Premium endpoints/metrics are excluded from this pass.
+
+## 40-test commercial product gate
+
+The primary Standard live gate is now exactly **40 tests in two layers**.
+
+### Layer A — 20 current commercial questions
+
+Execute `STD-01` through `STD-20` exactly as the current live benchmark. These test whether the worker can solve sellable business questions with the current Bridge contract.
+
+### Layer B — 20 capability-awareness / product-logic tests
+
+Start only after `STD-20` is complete. Execute `CAP-01` through `CAP-20` from `OZON_AI_WORKER_CAPABILITY_AWARENESS_LAYER_20_TESTS_2026-09-02.md`.
+
+Layer B exists because varying a date range, top-N count or interpretation of the same `analytics_data` response does not prove that an AI understands what data the Bridge can obtain. Layer B must exercise materially different data surfaces and cross-surface orchestration paths: catalog, visibility, content diagnostics, stock, turnover, warehouse/logistics references, supplies, postings, prices, promotions, returns/cancellations, finance, ratings/FBS errors, reviews/questions, Performance campaigns/statistics, multi-surface joins and Bridge + external-world investigation.
+
+The goal is to determine whether a weak AI can recognize that the necessary Ozon information is obtainable through Bridge, select the right data family, use discovery/help instead of guessing unsupported operations, issue additional explicit reads when needed, and complete the business job without the operator teaching it the API.
+
+### Reserve rows
+
+`STD-21` through `STD-28` remain preserved as extended commercial cases. They are **not deleted**, but they are outside the primary 40-test gate unless later promoted. This keeps prior research intact while making the main gate exactly 20 + 20 as instructed.
 
 ## Mandatory reliability scoring rule
 
@@ -29,7 +50,7 @@ A row may be answerable and still expose a product reliability/model-portability
 
 Do not collapse these into a clean PASS.
 
-## Frozen Standard core — 28 queries
+## Layer A — active Standard commercial questions (STD-01..STD-20)
 
 | ID | Family | Canonical query | Sol status | Runs | Alice | Current note |
 |---|---|---|---|---:|---|---|
@@ -52,15 +73,20 @@ Do not collapse these into a clean PASS.
 | STD-17 | Advertising waste | Какие кампании и товары сейчас больше всего съедают рекламный бюджет и где результат слабый? | PENDING | 0 | PENDING | — |
 | STD-18 | Ads × stock | Какие товары я сейчас рекламирую, хотя они заканчиваются или уже отсутствуют на нужных складах? | PENDING | 0 | PENDING | — |
 | STD-19 | Ads × listing | На какие товары я трачу рекламу, хотя карточка плохо заполнена, невидима или имеет ограничения? | PENDING | 0 | PENDING | — |
-| STD-20 | DRR diagnosis | Почему у меня вырос ДРР? Разбери, что изменилось в рекламе и продажах. | PENDING | 0 | PENDING | — |
-| STD-21 | Finance reconciliation | Почему мне выплатили заметно меньше, чем я вижу в продажах? Разложи, куда ушли деньги. | PENDING | 0 | PENDING | — |
-| STD-22 | Finance BI | Разложи финансовые начисления и удержания за последние 7 дней по типам: сумма каждого и доля в общей сумме. | PENDING | 0 | PENDING | — |
-| STD-23 | Unit economics | Какие мои товары реально продаются в минус после комиссии, логистики, рекламы и возвратов? | PENDING | 0 | PENDING | — |
-| STD-24 | Promotions | Какие товары сейчас участвуют в акциях и стало ли мне от этих акций выгоднее? | PENDING | 0 | PENDING | — |
-| STD-25 | Returns/cancellations | По каким товарам у меня ненормально много возвратов или отмен и что могло измениться? | PENDING | 0 | PENDING | — |
-| STD-26 | Rating/FBS errors | Что сейчас ухудшает мой рейтинг или индекс ошибок FBS и какие отправления на это повлияли? | PENDING | 0 | PENDING | — |
-| STD-27 | Listing quality | Какие карточки у меня сейчас самые проблемные: плохо заполнены, невидимы или требуют исправления? | PENDING | 0 | PENDING | — |
-| STD-28 | Manager report | Подготовь недельный отчёт по кабинету: продажи, реклама, остатки, поставки, возвраты и деньги; выдели 5 главных выводов и 5 задач на следующую неделю. | PENDING | 0 | PENDING | — |
+| STD-20 | DRR diagnosis | Почему у меня вырос ДРР? Разбери, что изменилось в рекламе и продажах. | PENDING | 0 | PENDING | **After this row, stop Layer A and start CAP-01..CAP-20.** |
+
+## Preserved reserve commercial rows (outside primary 40-test gate)
+
+| ID | Family | Canonical query | Status |
+|---|---|---|---|
+| STD-21 | Finance reconciliation | Почему мне выплатили заметно меньше, чем я вижу в продажах? Разложи, куда ушли деньги. | RESERVE |
+| STD-22 | Finance BI | Разложи финансовые начисления и удержания за последние 7 дней по типам: сумма каждого и доля в общей сумме. | RESERVE |
+| STD-23 | Unit economics | Какие мои товары реально продаются в минус после комиссии, логистики, рекламы и возвратов? | RESERVE |
+| STD-24 | Promotions | Какие товары сейчас участвуют в акциях и стало ли мне от этих акций выгоднее? | RESERVE |
+| STD-25 | Returns/cancellations | По каким товарам у меня ненормально много возвратов или отмен и что могло измениться? | RESERVE |
+| STD-26 | Rating/FBS errors | Что сейчас ухудшает мой рейтинг или индекс ошибок FBS и какие отправления на это повлияли? | RESERVE |
+| STD-27 | Listing quality | Какие карточки у меня сейчас самые проблемные: плохо заполнены, невидимы или требуют исправления? | RESERVE |
+| STD-28 | Manager report | Подготовь недельный отчёт по кабинету: продажи, реклама, остатки, поставки, возвраты и деньги; выдели 5 главных выводов и 5 задач на следующую неделю. | RESERVE |
 
 ## STD-01 live record
 
@@ -187,4 +213,4 @@ A business row is not marked complete until either a useful final business answe
 
 ## Current checkpoint
 
-`STANDARD_V2_STD_01_PASS_WITH_429_AND_RECOVERY_GUIDANCE_GAP_STD_02_READY`
+`FORTY_TEST_GATE_LAYER_A_ACTIVE_STD_01_DONE_STD_02_READY_LAYER_B_CAP_01_TO_CAP_20_AFTER_STD_20`
