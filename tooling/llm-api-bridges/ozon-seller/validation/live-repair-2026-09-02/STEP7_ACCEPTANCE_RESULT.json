@@ -1,0 +1,31 @@
+{
+  "schema": "OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ACCEPTANCE_V1",
+  "date": "2026-09-02",
+  "roadmap_step": 7,
+  "status": "ACCEPTED",
+  "marker": "OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ACCEPTED",
+  "artifact": "OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_CANDIDATE_2026-09-02.zip",
+  "sha256": "80d0b4eba7110dc2d69ef3fab40214a9a6c54e98cfd6820ab611ac7ba73b2c76",
+  "size_bytes": 199684,
+  "file_count": 21,
+  "production_source_commit": "516ecf140538ad2838d39dcd01c7428efc1880d3",
+  "artifact_publication_commit": "13b14811c36694c8d47c17c0eca8176cc0b57950",
+  "step5_live_request_id": "61fce8c2-0002-4e6e-87cc-6ac848e46385",
+  "step6_local_sort_request_id": "8bbeb96b-86c4-42e0-9cf5-97948664b86b",
+  "acceptance_criteria": {
+    "specific_campaign_ids_live_retest": true,
+    "no_invalid_result_value": true,
+    "one_command_one_request_invariant": true,
+    "generated_refinement_executable": true,
+    "new_seller_entitlements_deterministic": true,
+    "dependent_attributes_live_pass": true,
+    "dependent_attribute_values_deterministic_contract_pass": true,
+    "broad_campaigns_bounded": true,
+    "local_sort_single_provider_request": true,
+    "retired_aliases_absent_from_guidance": true,
+    "stocks_current_seller_smoke": true,
+    "automatic_retry_zero": true,
+    "hidden_pagination_zero": true
+  },
+  "verdict": "accepted"
+}

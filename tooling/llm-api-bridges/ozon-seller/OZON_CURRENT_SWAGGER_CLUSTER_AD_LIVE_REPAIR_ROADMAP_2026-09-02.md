@@ -531,8 +531,8 @@ This is the execution order. Update the status table after every step and commit
 | 3 | Fix entitlement metadata for both new Seller READs | COMPLETE | deterministic entitlement assertions |
 | 4 | Build a new deterministic candidate | COMPLETE | artifact path, file count, SHA-256, fresh extraction verification |
 | 5 | Repeat live test #6 with campaign ID `37130644` | COMPLETE | one physical request, HTTP 200, only requested campaign, no retry/pagination |
-| 6 | Run short final Ozon-only regression | PENDING | focused PASS matrix below |
-| 7 | Accept build only if all required checks pass | PENDING | final acceptance marker and accepted artifact identity |
+| 6 | Run short final Ozon-only regression | COMPLETE | focused PASS matrix below |
+| 7 | Accept build only if all required checks pass | COMPLETE | final acceptance marker and accepted artifact identity |
 
 ### Step 6 short final Ozon-only regression
 
@@ -596,7 +596,7 @@ Final acceptance marker to record in this document only after all criteria pass:
 OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ACCEPTED
 ```
 
-The `specific_campaign_ids` blocker has passed its live retest. The candidate remains unaccepted until roadmap Steps 6 and 7 complete.
+All required repair and final-regression criteria passed. The candidate is accepted; see the final acceptance marker and Step 7 record below.
 
 ---
 
@@ -606,7 +606,7 @@ The `specific_campaign_ids` blocker has passed its live retest. The candidate re
 |---|---|---|---|
 | OZ-LIVE-AD-001 | BLOCKER | FIXED_LIVE_RETEST_PASS | `performance_campaigns + campaignIds` fails pre-network with cyclic provider result in generated refinements |
 | OZ-LIVE-ENT-002 | MEDIUM | FIXED | both new dependent-attribute Seller reads lack deterministic entitlement metadata |
-| OZ-LIVE-FIXTURE-003 | TEST GAP | DETERMINISTIC_REGRESSION_COVERED_LIVE_FIXTURE_PENDING | second dependent-attribute endpoint lacks live fixture; deterministic regression required |
+| OZ-LIVE-FIXTURE-003 | TEST GAP | CLOSED_DETERMINISTIC_COVERAGE | second dependent-attribute endpoint lacks live fixture; deterministic regression required |
 
 No other release-blocking Ozon defect was found in this live pass.
 
@@ -681,3 +681,39 @@ Status: **COMPLETE / PASS**
 - Verdict: the previous release-blocking cyclic/shared-reference failure is fixed in the installed candidate.
 - Evidence: `validation/live-repair-2026-09-02/STEP5_LIVE_TEST_RESULT.json`.
 - Next: roadmap Step 6 short final Ozon-only regression.
+
+<!-- OZON-ROADMAP-STEP-6-COMPLETE -->
+### 2026-09-02 — Step 6: short final Ozon-only regression passed
+
+Status: **COMPLETE / PASS**
+
+- Broad `performance_campaigns {}`: PASS; one provider request, page 1 / pageSize 100, 100 items visible to AI, eight refinement choices, zero hidden pagination/retry.
+- `specific_campaign_ids`: reused Step 5 live PASS for campaign `37130644`; one physical request, HTTP 200, exactly one requested campaign, no cyclic/shared-reference error.
+- Isolated `updated_at_desc` request `8bbeb96b-86c4-42e0-9cf5-97948664b86b`: PASS; HTTP 200; one physical provider request; provider returned 1128 campaigns once; Bridge returned 100 to AI; `updatedAt DESC`; `single_full_provider_response`; `additional_provider_requests=0`; hidden pagination/retry 0.
+- Earlier batch attempt of the same local-sort check returned provider HTTP 429; Bridge correctly did not retry. The isolated retest resolved this as provider rate limiting, not a Bridge defect.
+- `description_category_dependent_attributes`: PASS live with `SUPPORTED_AND_ENTITLED`, `reason=all_accounts`, exact request preserved, no capability probe.
+- `description_category_dependent_attribute_values`: deterministic fresh-extraction contract regression PASS; live fixture remains optional and is not an acceptance blocker.
+- `stocks_current` product `1082848375`: PASS.
+- Guidance: `fbs_stock_by_warehouse_v1` absent and v2 replacement present; `fbs_carriage_available_list` absent and `carriage_delivery_list_v2` present.
+- Evidence: `validation/live-repair-2026-09-02/STEP6_FINAL_REGRESSION_RESULT.json`.
+
+<!-- OZON-ROADMAP-STEP-7-COMPLETE -->
+### 2026-09-02 — Step 7: repaired candidate accepted
+
+Status: **COMPLETE / ACCEPTED**
+
+- Accepted artifact: `OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_CANDIDATE_2026-09-02.zip`.
+- SHA-256: `80d0b4eba7110dc2d69ef3fab40214a9a6c54e98cfd6820ab611ac7ba73b2c76`.
+- Size: `199684` bytes.
+- Installable file count: `21`.
+- Production source commit: `516ecf140538ad2838d39dcd01c7428efc1880d3`.
+- Artifact publication commit: `13b14811c36694c8d47c17c0eca8176cc0b57950`.
+- Step 5 live request: `61fce8c2-0002-4e6e-87cc-6ac848e46385`.
+- Step 6 final isolated local-sort request: `8bbeb96b-86c4-42e0-9cf5-97948664b86b`.
+- All required acceptance criteria in Section 6 are satisfied.
+- Acceptance evidence: `validation/live-repair-2026-09-02/STEP7_ACCEPTANCE_RESULT.json`.
+
+```text
+OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ACCEPTED
+```
+

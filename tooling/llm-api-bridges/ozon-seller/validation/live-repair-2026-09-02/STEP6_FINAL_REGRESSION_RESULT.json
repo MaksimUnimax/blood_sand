@@ -1,0 +1,110 @@
+{
+  "schema": "OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_STEP6_FINAL_V1",
+  "date": "2026-09-02",
+  "roadmap_step": 6,
+  "status": "PASS",
+  "candidate": {
+    "artifact": "OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_CANDIDATE_2026-09-02.zip",
+    "sha256": "80d0b4eba7110dc2d69ef3fab40214a9a6c54e98cfd6820ab611ac7ba73b2c76",
+    "source_commit": "516ecf140538ad2838d39dcd01c7428efc1880d3",
+    "artifact_commit": "13b14811c36694c8d47c17c0eca8176cc0b57950"
+  },
+  "checks": [
+    {
+      "id": "broad_performance_campaigns",
+      "request_id": "6168be57-749f-4c1b-b09c-c70f7ec8d4f6",
+      "status": "PASS",
+      "http_status": 200,
+      "physical_business_request_count": 1,
+      "provider_items_received": 100,
+      "items_returned_to_ai": 100,
+      "provider_page": 1,
+      "provider_page_size": 100,
+      "hidden_pagination_requests": 0,
+      "automatic_retry_requests": 0,
+      "refinement_choice_count": 8
+    },
+    {
+      "id": "description_category_dependent_attributes",
+      "request_id": "935cbb5c-c4e5-48f1-ac87-4b435f952e2a",
+      "status": "PASS",
+      "http_status": 200,
+      "physical_business_request_count": 1,
+      "external_request_executed": true,
+      "entitlement_status": "SUPPORTED_AND_ENTITLED",
+      "entitlement_reason": "all_accounts",
+      "capability_required": false,
+      "exact_request_preserved": true,
+      "capability_probe_performed": false,
+      "result_is_valid_empty_array": true
+    },
+    {
+      "id": "stocks_current",
+      "request_id": "5334291d-5fbf-408c-bf0c-e2370aea3a1b",
+      "status": "PASS",
+      "http_status": 200,
+      "physical_business_request_count": 1,
+      "external_request_executed": true,
+      "product_id": 1082848375,
+      "total": 1,
+      "entitlement_status": "SUPPORTED_AND_ENTITLED",
+      "entitlement_reason": "all_accounts"
+    },
+    {
+      "id": "guidance_stocks_inventory_warehouse_fbs",
+      "status": "PASS",
+      "guidance_version": "2",
+      "section_status": "section_selected",
+      "external_request_executed": false,
+      "physical_business_request_count": 0,
+      "present_operations": [
+        "fbs_stock_by_warehouse",
+        "product_fbs_warehouse_stocks"
+      ],
+      "retired_operation_absent": "fbs_stock_by_warehouse_v1"
+    },
+    {
+      "id": "guidance_orders_postings_assembly_carriage",
+      "status": "PASS",
+      "guidance_version": "2",
+      "section_status": "section_selected",
+      "external_request_executed": false,
+      "physical_business_request_count": 0,
+      "present_operation": "carriage_delivery_list_v2",
+      "retired_operation_absent": "fbs_carriage_available_list"
+    },
+    {
+      "id": "performance_campaigns_updated_at_desc",
+      "request_id": "8bbeb96b-86c4-42e0-9cf5-97948664b86b",
+      "status": "PASS",
+      "http_status": 200,
+      "physical_business_request_count": 1,
+      "external_request_executed": true,
+      "provider_items_received": 1128,
+      "items_returned_to_ai": 100,
+      "result_bounded": true,
+      "local_sort": {
+        "field": "updatedAt",
+        "direction": "DESC",
+        "scope": "single_full_provider_response",
+        "additional_provider_requests": 0
+      },
+      "hidden_pagination_requests": 0,
+      "automatic_retry_requests": 0,
+      "capability_probe_performed": false,
+      "note": "An earlier batch attempt received provider HTTP 429 and was correctly not retried; this isolated retest returned HTTP 200."
+    }
+  ],
+  "reused_evidence": {
+    "specific_campaign_ids_live": "STEP5_LIVE_TEST_RESULT.json",
+    "dependent_attribute_values_deterministic_fixture": "STEP4_FRESH_EXTRACTION_REGRESSION_RESULT.json"
+  },
+  "global_assertions": {
+    "one_explicit_command_at_most_one_physical_business_request": true,
+    "automatic_retry_zero": true,
+    "hidden_pagination_zero": true,
+    "fan_out_zero": true,
+    "credentials_absent_from_ai_visible_results": true
+  },
+  "verdict": "short final Ozon-only regression passed; candidate is eligible for acceptance"
+}
