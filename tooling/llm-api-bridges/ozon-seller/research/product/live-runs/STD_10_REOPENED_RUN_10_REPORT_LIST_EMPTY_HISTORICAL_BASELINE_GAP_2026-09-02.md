@@ -1,4 +1,4 @@
-# STD-10 REOPENED Run 10 — report list empty; historical baseline path unavailable
+# STD-10 REOPENED Run 10 — report list empty; historical baseline blocked by missing full-read implementation
 
 Date: 2026-09-02
 Canonical question: `На складе Ozon был пожар или авария. Был ли там мой товар, что с ним сейчас и что мне нужно контролировать?`
@@ -43,17 +43,19 @@ Supported statement:
 
 `REPORT_LIST_TOTAL_ZERO_NO_EXISTING_REPORT_PATH_TO_PREINCIDENT_SAMARA_BASELINE`.
 
-## Current API/Bridge coverage boundary
+## Corrected implementation interpretation
 
-Current Ozon Seller API includes `POST /v1/report/placement/by-products/create` for generating a placement-cost report over an explicit date range, followed by `POST /v1/report/info` for status/file metadata.
+Do **not** classify the missing workflow as a legitimate optional capability boundary.
 
-Current Bridge v0.1.19 does **not** register `report/placement/by-products/create` (nor a usable report-file download/ingestion path for this workflow). Existing `report_info` is registered, but it is useless here because `report_list` returned no report codes and the Bridge cannot create the required historical report.
+The accepted 463/463 coverage model defined 268 operations in the full read rollout, including 40 explicit read workflows for reports/files/documents/status, and explicitly states that report creation belongs to its business cluster. Historical workflow inventory lists `POST /v1/report/placement/by-products/create` as a server-side generation/workflow-start candidate requiring exact schema review. Current runtime does not register it.
 
-This is now a concrete capability gap for incident stock forensics:
+The correct classification is therefore an implementation omission against the accepted full-read scope:
 
-`HISTORICAL_FBO_PLACEMENT_REPORT_GENERATION_AND_FILE_INGESTION_REQUIRED_FOR_PREINCIDENT_STOCK_RECONSTRUCTION`.
+`FULL_READ_ROLLOUT_INCOMPLETE_FOR_PLACEMENT_REPORT_WORKFLOW`
 
-Do not invent the historical stock quantity from current endpoints.
+Provider Swagger defines the path as an `Admin read only` report workflow with required `date_from` and `date_to`, maximum interval 31 days, returning report `code` for subsequent `POST /v1/report/info`.
+
+So the problem exposed by Run 10 is not that Ozon or the intended Bridge design cannot support the read workflow. The current implementation failed to carry this intended read workflow into the executable registry/file-ingestion path.
 
 ## Damage-reconstruction state after Run 10
 
@@ -73,15 +75,16 @@ Still unproven:
 - write-off evidence outside the tested `compensation` transaction type;
 - exact destroyed/lost unit count.
 
-## Next step
+## Required project action
 
-Continue eliminating observable normal inventory movement with `returns_list`, filtered to:
-- FBO;
-- target warehouse_id `23128509046000`;
-- logistic return date 2026-08-22..2026-09-02;
-- limit 500.
+Before accepting the historical-baseline limit as terminal, fix the missing accepted read-workflow implementation:
+1. add `POST /v1/report/placement/by-products/create` with exact Swagger validation;
+2. expose the returned report code;
+3. use explicit `report_info` reads without hidden polling;
+4. provide a safe report-file download/ingestion path;
+5. then rerun the historical Samara baseline attempt.
 
-If the provider returns `last_id`, continue explicitly before declaring the return branch terminal.
+Other observable movement reads such as `returns_list` may still be useful, but they are not a substitute for fixing the missing full-read workflow.
 
 Checkpoint:
-`STD_10_REOPENED_RUN10_REPORT_LIST_TOTAL_ZERO_HISTORICAL_REPORT_CAPABILITY_GAP_SAMARA_FBO_RETURNS_NEXT`
+`STD_10_REOPENED_RUN10_REPORT_LIST_TOTAL_ZERO_FULL_READ_PLACEMENT_WORKFLOW_IMPLEMENTATION_DEFECT_MUST_FIX_BEFORE_TERMINAL_BASELINE_LIMIT`
