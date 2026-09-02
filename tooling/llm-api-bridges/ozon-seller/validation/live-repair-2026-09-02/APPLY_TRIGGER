@@ -1,0 +1,5 @@
+apply=true
+roadmap=OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ROADMAP_2026-09-02.md
+expected_base=629c50369d8e49488f3405a99f574f879134ba07
+expected_installable_files=21
+live_retest_campaign_id=37130644
