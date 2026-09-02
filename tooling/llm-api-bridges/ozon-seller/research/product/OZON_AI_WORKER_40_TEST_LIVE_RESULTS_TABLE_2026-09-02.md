@@ -6,15 +6,15 @@ Scope: Ozon Standard / no Premium.
 Gate: 20 Layer-A commercial tests + 20 Layer-B capability-awareness/product-logic tests.
 Rule: `NO_SKIP_ON_FAILURE`.
 
-This is the compact authoritative live result ledger. Detailed evidence remains in the benchmark/diagnostic documents.
+This is the compact authoritative live result ledger. Detailed raw/intermediate evidence may also be stored under `research/product/live-runs/`.
 
 | # | ID | Business question | Sol business result | Operational reliability | Operator intervention | Runs / incident | Final note |
 |---:|---|---|---|---|---|---|---|
 | 1 | STD-01 | Дай продажи за вчера: общая выручка и количество заказанных единиц. | PASS — 27,200 RUB; 16 units for 2026-09-01 | FAIL_TRANSIENT_429_THEN_RECOVERED | YES | 3 business + 1 roles diagnostic; first two analytics calls 429; same call later 200 | Recovery-guidance gap discovered; exact 429 trigger unresolved. |
-| 2 | STD-02 | Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня. | PASS — total 574,564 RUB / 341 units; top: 2026-08-30 57,776, 2026-08-29 50,745, 2026-08-31 49,640; bottom: 2026-08-26 20,400, 2026-09-01 27,200, 2026-08-25 28,900 | FAIL_FIRST_ATTEMPT_429_THEN_RECOVERED | NO | Run 1 exact 14-day query => 429; Run 2 exact same query 176.815s later => HTTP 200 | Same 14-day payload succeeded, rejecting query-range-too-heavy as supported cause. Recurrent transient analytics quota/provider-state risk remains. |
-| 3 | STD-03 | Дай топ-20 товаров за последние 7 дней по выручке. | PASS — top SKU 1636048691 / «Печать Велеса» = 45,288 RUB / 27 units; query totals 288,998 RUB / 172 units | PASS_FIRST_ATTEMPT | NO | 1 business run; `analytics_data`, dimension `sku`, revenue DESC, HTTP 200 | AI selected a materially different analytics shape: SKU breakdown + provider-side sorting. Returned 20 requested rows. Top-20 rows sum to 220,777 RUB / 131 units ≈ 76.4% of total revenue and 76.2% of units. |
-| 4 | STD-04 | Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах. | PASS — 2026-09-01 vs 2026-08-31: revenue 27,200 vs 49,640 RUB; units 16 vs 31; revenue change −22,440 RUB / −45.2%; units change −15 / −48.4% | PASS_FIRST_ATTEMPT | NO | 1 business run; `analytics_data`, dimension `day`, 2-day range, HTTP 200 | AI correctly performed the comparison and percentage calculations client-side from one Ozon read. |
-| 5 | STD-05 | Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж. | IN_PROGRESS — sales decomposition localized broad SKU-level decline: selling SKUs 24 → 14; gross negative contribution −36,652 RUB, positive offsets +14,212 RUB, net −22,440 RUB | PASS_RUN1_FIRST_ATTEMPT | NO | Run 1: `analytics_data`, dimensions `[day, sku]`, HTTP 200, 1 physical request | Top negative contributors: SKU 1720144370 −5,100 RUB; 2184234912 −3,094 RUB; 1636048691 −2,788 RUB. Pattern is broad rather than one-hit collapse. Next: current warehouse-stock evidence, then visibility/ads as indicated. |
+| 2 | STD-02 | Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня. | PASS — total 574,564 RUB / 341 units; top: 2026-08-30 57,776, 2026-08-29 50,745, 2026-08-31 49,640; bottom: 2026-08-26 20,400, 2026-09-01 27,200, 2026-08-25 28,900 | FAIL_FIRST_ATTEMPT_429_THEN_RECOVERED | NO | Run 1 exact 14-day query => 429; Run 2 exact same query 176.815s later => 200 | Same 14-day payload succeeded; range-too-heavy hypothesis rejected. Recurrent transient analytics quota/provider-state risk remains. |
+| 3 | STD-03 | Дай топ-20 товаров за последние 7 дней по выручке. | PASS — top SKU 1636048691 / «Печать Велеса» = 45,288 RUB / 27 units; query totals 288,998 RUB / 172 units | PASS_FIRST_ATTEMPT | NO | 1 provider run; `analytics_data`, dimension `sku`, revenue DESC, 200 | Correctly changed from daily analytics to SKU ranking. Top-20 = 220,777 RUB / 131 units ≈76.4% revenue and 76.2% units. |
+| 4 | STD-04 | Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах. | PASS — 2026-09-01 vs 2026-08-31: revenue 27,200 vs 49,640 RUB; units 16 vs 31; revenue −22,440 RUB / −45.2%; units −15 / −48.4% | PASS_FIRST_ATTEMPT | NO | 1 provider run; 2-day `analytics_data`, 200 | Comparison and percentages correctly calculated AI-side. |
+| 5 | STD-05 | Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж. | IN_PROGRESS — broad SKU decline localized; stock explains part only; advertising-collapse hypothesis rejected; listing/visibility check active | MIXED — provider reads healthy; Run 6 local parameter-validation failure | NO | Run1 analytics 200; Runs2-4 stock pages 200/200/200; Run5 Performance 200; Run6 local guidance, 0 provider requests | New gaps: null pagination required model inference; Seller vs Performance metrics not 1:1; Guidance V2 failed to expose exact mechanical repair for numeric→string SKU identifiers. Next: repeat same `seller_product_list` with string int64 SKUs. |
 | 6 | STD-06 | Что сегодня в моём кабинете требует внимания в первую очередь? | PENDING | PENDING | PENDING | 0 | — |
 | 7 | STD-07 | Какие товары у меня скоро закончатся, а какие лежат слишком долго? Что пополнять в первую очередь? | PENDING | PENDING | PENDING | 0 | — |
 | 8 | STD-08 | Покажи текущие остатки по складам и отсортируй склады от наибольшего остатка к наименьшему. | PENDING | PENDING | PENDING | 0 | — |
@@ -29,7 +29,7 @@ This is the compact authoritative live result ledger. Detailed evidence remains 
 | 17 | STD-17 | Какие кампании и товары сейчас больше всего съедают рекламный бюджет и где результат слабый? | PENDING | PENDING | PENDING | 0 | — |
 | 18 | STD-18 | Какие товары я сейчас рекламирую, хотя они заканчиваются или уже отсутствуют на нужных складах? | PENDING | PENDING | PENDING | 0 | — |
 | 19 | STD-19 | На какие товары я трачу рекламу, хотя карточка плохо заполнена, невидима или имеет ограничения? | PENDING | PENDING | PENDING | 0 | — |
-| 20 | STD-20 | Почему у меня вырос ДРР? Разбери, что изменилось в рекламе и продажах. | PENDING | PENDING | PENDING | 0 | — |
+| 20 | STD-20 | Почему у меня вырос ДРР? Разбери, что изменилось в рекламе и продажах. | PENDING | PENDING | PENDING | 0 | After this row start Layer B. |
 | 21 | CAP-01 | Capability-awareness layer test 01 | PENDING | PENDING | PENDING | 0 | Defined in capability-awareness authority. |
 | 22 | CAP-02 | Capability-awareness layer test 02 | PENDING | PENDING | PENDING | 0 | Defined in capability-awareness authority. |
 | 23 | CAP-03 | Capability-awareness layer test 03 | PENDING | PENDING | PENDING | 0 | Defined in capability-awareness authority. |
@@ -51,163 +51,161 @@ This is the compact authoritative live result ledger. Detailed evidence remains 
 | 39 | CAP-19 | Capability-awareness layer test 19 | PENDING | PENDING | PENDING | 0 | Defined in capability-awareness authority. |
 | 40 | CAP-20 | Capability-awareness layer test 20 | PENDING | PENDING | PENDING | 0 | Defined in capability-awareness authority. |
 
-## STD-02 completed incident record
+## STD-01 completed record
 
-Canonical query: `Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня.`
+Question: `Дай продажи за вчера: общая выручка и количество заказанных единиц.`
 
-Period: `2026-08-19`..`2026-09-01` inclusive.
+- resolved day: `2026-09-01`;
+- two initial exact `analytics_data` reads returned HTTP 429;
+- a `roles` diagnostic returned HTTP 200 and proved key/role access including `/v1/analytics/data`;
+- exact analytics command later returned HTTP 200 after a longer quiet gap;
+- final answer: `27,200 RUB`, `16` ordered units;
+- exact 429 trigger remains unresolved between transient method/provider state and untracked/shared quota consumption;
+- operator intervention was required because Sol initially attempted to move on instead of preserving the failed business job.
 
-### Run 1 — provider 429
+Classification: `PASS_WITH_RECORDED_TRANSIENT_429_INCIDENT_AND_RECOVERY_GUIDANCE_GAP`.
 
-- request id `506f91a1-1e65-42af-a9b6-16ce9ea3d49b`;
-- `analytics_data`;
-- entitlement `SUPPORTED_AND_ENTITLED` / `all_accounts`;
-- exactly one physical request;
-- HTTP `429`, provider code `8`, category `rate_limit`;
-- no automatic retry;
-- provider dispatch `1788338573386` = `2026-09-02T08:42:53.386Z`;
-- previous successful analytics dispatch `1788337707374` = `2026-09-02T08:28:27.374Z`;
-- gap from previous successful analytics request `866.012s` = `14m26.012s`.
+## STD-02 completed record
 
-Therefore the configured Bridge local 65-second analytics spacing cannot explain Run 1.
+Question: `Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня.`
 
-### Run 2 — exact-command recovery
+Period: `2026-08-19`..`2026-09-01`.
 
-Exact same logical command, unchanged.
+Run 1:
+- request `506f91a1-1e65-42af-a9b6-16ce9ea3d49b`;
+- HTTP 429 despite previous successful analytics request being 866.012s earlier.
 
-- request id `2536d0f4-5ab6-4ed2-99f9-5f82503a189d`;
-- HTTP `200`;
-- exactly one physical request;
-- provider dispatch `1788338750201` = `2026-09-02T08:45:50.201Z`;
-- gap from Run 1 `176.815s` = `2m56.815s`;
-- returned all 14 requested day rows;
-- totals `574564 RUB`, `341 ordered_units`.
+Run 2 exact repeat:
+- request `2536d0f4-5ab6-4ed2-99f9-5f82503a189d`;
+- HTTP 200 after 176.815s;
+- totals `574,564 RUB`, `341` units.
 
-The fact that the exact same 14-day payload succeeded rejects the working diagnostic hypothesis that the 14-day range itself was inherently too expensive/large.
+Top 3 revenue days:
+1. 2026-08-30 — 57,776 RUB / 34 units.
+2. 2026-08-29 — 50,745 RUB / 30 units.
+3. 2026-08-31 — 49,640 RUB / 31 units.
 
-Strongest supported incident class remains:
+Bottom 3:
+1. 2026-08-26 — 20,400 RUB / 12 units.
+2. 2026-09-01 — 27,200 RUB / 16 units.
+3. 2026-08-25 — 28,900 RUB / 17 units.
 
-`RECURRENT_TRANSIENT_ANALYTICS_METHOD_QUOTA_OR_PROVIDER_STATE / EXACT_TRIGGER_UNRESOLVED`
-
-Potential external/shared quota consumption is not ruled out. Do not claim a more precise Ozon cooldown without provider evidence.
-
-### Ranked answer
-
-Top 3 days by revenue:
-1. `2026-08-30` — `57,776 RUB`, `34` units.
-2. `2026-08-29` — `50,745 RUB`, `30` units.
-3. `2026-08-31` — `49,640 RUB`, `31` units.
-
-Bottom 3 days by revenue:
-1. `2026-08-26` — `20,400 RUB`, `12` units.
-2. `2026-09-01` — `27,200 RUB`, `16` units.
-3. `2026-08-25` — `28,900 RUB`, `17` units.
+Classification: `PASS_WITH_TRANSIENT_429_ON_FIRST_ATTEMPT`.
 
 ## STD-03 completed record
 
-Canonical query: `Дай топ-20 товаров за последние 7 дней по выручке.`
+Question: `Дай топ-20 товаров за последние 7 дней по выручке.`
 
-Period: `2026-08-26`..`2026-09-01` inclusive.
+- period `2026-08-26`..`2026-09-01`;
+- one `analytics_data` read with dimension `[sku]`, metrics `[revenue, ordered_units]`, revenue DESC, limit 20;
+- HTTP 200, one physical request;
+- totals `288,998 RUB`, `172` units;
+- top SKU `1636048691` «Печать Велеса» = `45,288 RUB`, `27` units;
+- top 20 sum `220,777 RUB`, `131` units ≈76.4% revenue / 76.2% units.
 
-Run 1:
-- request id `eee2b1c1-91b1-4a7b-94cf-0c808d6ba71b`;
-- operation `analytics_data`;
-- dimension `[sku]`;
-- metrics `[revenue, ordered_units]`;
-- sort `revenue DESC`;
-- limit `20`, offset `0`;
-- entitlement `SUPPORTED_AND_ENTITLED` / `all_accounts`;
-- HTTP `200`;
-- exactly one physical request;
-- no retry or operator intervention;
-- provider returned exactly 20 ranked SKU rows;
-- query totals `288,998 RUB`, `172 ordered_units`.
-
-Top 5 rows:
-1. `1636048691` — «Славянский оберег - Подвеска на зеркало в машину \"Печать Велеса\"» — `45,288 RUB`, `27` units.
-2. `2559437928` — «Славянский оберег - Подвеска на зеркало в машину \"Чур\"» — `20,052 RUB`, `12` units.
-3. `1602722942` — «Амулет - Подвеска на зеркало в машину \"Вегвизир - Рунический компас\".» — `18,394 RUB`, `11` units.
-4. `1640251697` — «Славянский оберег - Подвеска на зеркало в машину \"Алатырь (Крест Сварога)\"» — `13,600 RUB`, `8` units.
-5. `1640326205` — «Славянский оберег - Подвеска на зеркало в машину \"Колядник\"» — `13,600 RUB`, `8` units.
-
-All 20 returned rows sum to `220,777 RUB` and `131` units, about `76.4%` of total query revenue and `76.2%` of total ordered units. This extra calculation is AI-side and required no extra Ozon request.
-
-Classification:
-- business answerability: `PASS`;
-- operational reliability: `PASS_FIRST_ATTEMPT`;
-- operator intervention: `NO`;
-- product-logic note: the worker successfully changed from daily time-series analytics to SKU-level ranked analytics and used provider-side sorting rather than post-hoc reinterpreting the previous result.
+Classification: `PASS_FIRST_ATTEMPT`.
 
 ## STD-04 completed record
 
-Canonical query: `Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах.`
+Question: `Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах.`
 
-Resolved dates:
-- yesterday: `2026-09-01`;
-- day before yesterday: `2026-08-31`.
+One two-day analytics read returned:
+- 2026-08-31: `49,640 RUB`, `31` units;
+- 2026-09-01: `27,200 RUB`, `16` units.
 
-Run 1:
-- request id `fd7ead86-6573-429d-9358-209815b83bdc`;
-- operation `analytics_data`;
-- dimension `[day]`;
-- metrics `[revenue, ordered_units]`;
-- HTTP `200`;
-- exactly one physical request;
-- no retry and no operator intervention.
+AI calculations:
+- revenue delta `−22,440 RUB / −45.2%`;
+- units delta `−15 / −48.4%`.
 
-Returned values:
-- `2026-08-31`: revenue `49,640 RUB`, ordered units `31`;
-- `2026-09-01`: revenue `27,200 RUB`, ordered units `16`.
+Classification: `PASS_FIRST_ATTEMPT`.
 
-AI-side calculations:
-- revenue absolute change: `27,200 - 49,640 = -22,440 RUB`;
-- revenue percent change: `-22,440 / 49,640 × 100 ≈ -45.2%`;
-- ordered-units absolute change: `16 - 31 = -15`;
-- ordered-units percent change: `-15 / 31 × 100 ≈ -48.4%`.
+## STD-05 active investigation record
 
-Classification:
-- business answerability: `PASS`;
-- operational reliability: `PASS_FIRST_ATTEMPT`;
-- operator intervention: `NO`;
-- product-logic note: one two-day API read was sufficient; comparison and percentages were computed by the AI without another provider request.
+Question: `Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж.`
 
-## STD-05 active record
+### Run 1 — day × SKU sales decomposition
 
-Canonical query: `Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж.`
+Request `530237e4-029c-4f49-b27b-b097cc890748`, `analytics_data`, dimensions `[day, sku]`, HTTP 200.
 
-### Run 1 — localize the decline by day × SKU
+Findings:
+- selling SKUs: `24 → 14`;
+- total revenue delta: `−22,440 RUB`;
+- gross negative SKU contribution: `−36,652 RUB`;
+- positive/new SKU offsets: `+14,212 RUB`;
+- largest negatives:
+  1. SKU `1720144370` «Дева»: `−5,100 RUB`;
+  2. SKU `2184234912` «Звезда Лады»: `−3,094 RUB`;
+  3. SKU `1636048691` «Печать Велеса»: `−2,788 RUB`.
 
-- request id `530237e4-029c-4f49-b27b-b097cc890748`;
-- operation `analytics_data`;
-- period `2026-08-31`..`2026-09-01`;
-- dimensions `[day, sku]`;
-- metrics `[revenue, ordered_units]`;
-- limit `1000`, offset `0`;
-- entitlement `SUPPORTED_AND_ENTITLED` / `all_accounts`;
-- HTTP `200`;
-- exactly one physical request;
-- no retry/operator intervention.
+Interpretation: broad assortment decline, not a single-SKU collapse.
 
-AI-side decomposition:
-- total revenue decline remains `−22,440 RUB`;
-- selling SKU count fell from `24` on 2026-08-31 to `14` on 2026-09-01;
-- SKUs with negative contribution together contributed `−36,652 RUB`;
-- new/growing SKUs offset `+14,212 RUB`;
-- net `−36,652 + 14,212 = −22,440 RUB`.
+### Runs 2-4 — current warehouse-stock branch
 
-Largest negative contributions:
-1. SKU `1720144370` — «Дева» — `5,100 → 0 RUB`, delta `−5,100 RUB`.
-2. SKU `2184234912` — «Звезда Лады» — `4,794 → 1,700 RUB`, delta `−3,094 RUB`.
-3. SKU `1636048691` — «Печать Велеса» — `6,188 → 3,400 RUB`, delta `−2,788 RUB`.
-4. Multiple other SKUs each lost roughly one order (`−1,700 RUB` or `−1,394 RUB`).
+Operation `stock_on_warehouses_v2` with explicit pages:
+- Run 2 offset 0: request `f6e626ef-df0a-400c-b79e-f35aec20b512`, 100 rows, HTTP 200;
+- Run 3 offset 100: request `4f710fa8-5a83-491a-9e55-3782df4b27a7`, 100 rows, HTTP 200;
+- Run 4 offset 200: request `de07b1f4-e0a0-4a71-b655-e883da7af0b7`, short terminal page, HTTP 200.
 
-Interim interpretation:
-- the decline is distributed across many SKUs rather than explained by one product disappearing;
-- a single-SKU failure is therefore not the leading explanation;
-- this still does not prove demand weakness, stockout, visibility, pricing, advertising or logistics as the cause.
+Bridge exposed `pagination:null` even for full 100-row pages. Sol had to infer continuation from `rows_returned == limit`; this is recorded as `FULL_PAGE_WITH_NULL_PAGINATION_REQUIRES_MODEL_INFERENCE`.
 
-Next evidence step: obtain current warehouse-stock report and correlate the declining SKUs with available stock. If stock evidence does not explain the breadth loss, continue with visibility/listing and advertising evidence. Current stock is supportive evidence only; it does not by itself prove what inventory was at every moment on 2026-09-01.
+Current-stock findings for major negative SKUs:
+- `1636048691` «Печать Велеса»: about 188 free units across visible warehouses plus promised stock; broad stockout is not supported as explanation for this SKU's decline;
+- `1720144370` «Дева»: only 1 free unit was present in the completed current stock report;
+- `2184234912` «Звезда Лады»: 5 free units + 2 promised in the completed current stock report.
+
+Interpretation: stock scarcity plausibly contributes to some declining SKUs, especially `Дева` / `Звезда Лады`, but cannot explain the entire broad decline. These are current stocks, not historical 2026-09-01 inventory, so causality is not proven.
+
+### Run 5 — Performance daily advertising comparison
+
+Request `d4f6b587-38af-4e25-86a3-87c84d35ac80`, `performance_daily`, period `2026-08-31`..`2026-09-01`, HTTP 200.
+
+AI aggregation across returned campaign rows:
+- ad spend: `5,337.70 → 5,534.91 RUB` = `+3.7%`;
+- attributed orders: `22 → 24` = `+9.1%`;
+- Performance `ordersMoney`: `35,564 → 39,882 RUB` = `+12.1%`;
+- views: about `−5.0%`;
+- clicks: about `−3.1%`.
+
+Interpretation: a broad advertising shutdown or sharp ad-volume collapse is not supported as the primary explanation for Seller revenue falling 45.2%.
+
+Cross-source warning discovered: Performance `ordersMoney` is not directly reconcilable 1:1 with Seller `revenue`; on 2026-09-01 Performance attribution is 39,882 RUB while Seller revenue is 27,200 RUB. AI must preserve different attribution/date/metric semantics rather than treating them as the same measure.
+
+### Run 6 — catalog/listing check rejected locally
+
+Intended operation: `seller_product_list` for the 24 SKUs that sold on 2026-08-31.
+
+Observed:
+- `OZON_GUIDANCE_RESULT_V2`;
+- status `cluster_suggested`;
+- cluster `catalog_products`;
+- error `INVALID_OPERATION_PARAMS`;
+- descriptor operation `seller_product_list`;
+- `external_request_executed=false`;
+- `physical_business_request_count=0`.
+
+Exact root cause from accepted Bridge contract:
+- `seller_product_list.filter.skus` is validated as string int64 identifiers;
+- attempted values were JSON numbers;
+- correct representation is e.g. `"1636048691"`, not `1636048691`.
+
+Product guidance finding:
+`GUIDANCE_KNOWS_OPERATION_BUT_DOES_NOT_EXPOSE_ACTIONABLE_PARAMETER_REPAIR`.
+
+Guidance safely failed closed and identified the correct cluster, but did not expose the exact field/type repair or a safe same-operation retry shape. This is a weak-model portability gap.
+
+Detailed evidence: `live-runs/STD_05_RUN_6_CATALOG_VALIDATION_GUIDANCE_2026-09-02.md`.
+
+### Current STD-05 hypothesis state
+
+- single-SKU collapse: `REJECTED`;
+- broad advertising shutdown: `REJECTED`;
+- stock scarcity as partial contributor: `SUPPORTED_FOR_SOME_SKUS / NOT_SUFFICIENT_FOR_BROAD_DECLINE`;
+- listing/visibility issue: `ACTIVE / NOT YET TESTED`;
+- organic-demand/search change: `PLAUSIBLE / NOT YET TESTED`;
+- exact historical stock causality: `NOT PROVEN`.
+
+Next exact step: repeat the same `seller_product_list` operation with all `filter.skus` values encoded as string int64s.
 
 ## Current checkpoint
 
-`FORTY_TEST_GATE_LAYER_A_STD_01_TO_STD_04_COMPLETE_STD_05_RUN1_SALES_DECOMPOSITION_PASS_NEXT_STOCK_EVIDENCE`
+`FORTY_TEST_GATE_LAYER_A_STD_01_TO_STD_04_COMPLETE_STD_05_RUN6_VALIDATION_GAP_ROOT_CAUSED_REPEAT_CATALOG_READ_WITH_STRING_SKUS_READY`
