@@ -530,7 +530,7 @@ This is the execution order. Update the status table after every step and commit
 | 2 | Add regression for actual executability of generated refinement | COMPLETE | test names/markers and PASS output |
 | 3 | Fix entitlement metadata for both new Seller READs | COMPLETE | deterministic entitlement assertions |
 | 4 | Build a new deterministic candidate | COMPLETE | artifact path, file count, SHA-256, fresh extraction verification |
-| 5 | Repeat live test #6 with campaign ID `37130644` | PENDING | one physical request, HTTP 200, only requested campaign, no retry/pagination |
+| 5 | Repeat live test #6 with campaign ID `37130644` | COMPLETE | one physical request, HTTP 200, only requested campaign, no retry/pagination |
 | 6 | Run short final Ozon-only regression | PENDING | focused PASS matrix below |
 | 7 | Accept build only if all required checks pass | PENDING | final acceptance marker and accepted artifact identity |
 
@@ -596,7 +596,7 @@ Final acceptance marker to record in this document only after all criteria pass:
 OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ACCEPTED
 ```
 
-Until then, the current candidate remains rejected for release because of the `specific_campaign_ids` blocker.
+The `specific_campaign_ids` blocker has passed its live retest. The candidate remains unaccepted until roadmap Steps 6 and 7 complete.
 
 ---
 
@@ -604,7 +604,7 @@ Until then, the current candidate remains rejected for release because of the `s
 
 | ID | Severity | Status | Summary |
 |---|---|---|---|
-| OZ-LIVE-AD-001 | BLOCKER | FIXED_PENDING_LIVE_RETEST | `performance_campaigns + campaignIds` fails pre-network with cyclic provider result in generated refinements |
+| OZ-LIVE-AD-001 | BLOCKER | FIXED_LIVE_RETEST_PASS | `performance_campaigns + campaignIds` fails pre-network with cyclic provider result in generated refinements |
 | OZ-LIVE-ENT-002 | MEDIUM | FIXED | both new dependent-attribute Seller reads lack deterministic entitlement metadata |
 | OZ-LIVE-FIXTURE-003 | TEST GAP | DETERMINISTIC_REGRESSION_COVERED_LIVE_FIXTURE_PENDING | second dependent-attribute endpoint lacks live fixture; deterministic regression required |
 
@@ -660,3 +660,24 @@ Status: **COMPLETE**
 - Size: 199684 bytes; installable file count: 21.
 - Fresh extraction markers: OZON_LIVE_REPAIR_FRESH_EXTRACTION_21_FILES_PASS and OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_REGRESSION_PASS.
 - Live Step 5 remains PENDING and must use campaign ID 37130644.
+
+
+<!-- OZON-ROADMAP-STEP-5-COMPLETE -->
+### 2026-09-02 — Step 5: live `specific_campaign_ids` retest passed
+
+Status: **COMPLETE / PASS**
+
+- Candidate: `OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_CANDIDATE_2026-09-02.zip`.
+- Candidate SHA-256: `80d0b4eba7110dc2d69ef3fab40214a9a6c54e98cfd6820ab611ac7ba73b2c76`.
+- Artifact commit: `13b14811c36694c8d47c17c0eca8176cc0b57950`.
+- Live request ID: `61fce8c2-0002-4e6e-87cc-6ac848e46385`.
+- Command: `performance_campaigns` with `campaignIds=["37130644"]`, `page=1`, `pageSize=100`.
+- HTTP 200; `logical_business_result_count=1`; `physical_business_request_count=1`; `external_request_executed=true`.
+- Provider returned exactly one campaign and it was `id=37130644`; `total="1"`.
+- `provider_items_received=1`; `items_returned_to_ai=1`; `provider_page=1`; `provider_page_size=100`.
+- `hidden_pagination_requests=0`; `automatic_retry_requests=0`; capability probe was not performed.
+- All eight refinement choices were returned successfully. Generated `next_page`, `active_campaigns`, `latest_created`, and `latest_updated` commands preserved a detached `campaignIds=["37130644"]` array without triggering repeated-reference validation.
+- No `INVALID_RESULT_VALUE`; no `циклический provider result`.
+- Verdict: the previous release-blocking cyclic/shared-reference failure is fixed in the installed candidate.
+- Evidence: `validation/live-repair-2026-09-02/STEP5_LIVE_TEST_RESULT.json`.
+- Next: roadmap Step 6 short final Ozon-only regression.
