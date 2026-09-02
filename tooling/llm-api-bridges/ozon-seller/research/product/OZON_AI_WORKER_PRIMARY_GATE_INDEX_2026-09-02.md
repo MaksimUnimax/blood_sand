@@ -57,22 +57,45 @@ Despite the historical filename, that document now defines an expandable capabil
 
 ## Current Layer-A execution checkpoint
 
-- STD-01…STD-05 complete.
-- STD-06 active.
-- STD-06 Run 1 (`seller_rating_summary`) returned HTTP 200. No critical rating/penalty issue: penalty score not exceeded, FBS complaints 0, product rating 4.98, price index healthy. Localization is 37% but no critical threshold is proven by that response.
-- STD-06 Run 2 (`stock_turnover_analytics`) returned HTTP 200 with 72 rows. Turnover grades: 20 critical, 2 red, 34 yellow, 15 green, 1 no-sales. Material slow-turnover/overstock cluster found; highest critical turnover values include Козерог (Античность) 794, Знич 722, Хорс 596, Козерог (Символы) 467, Рыбы 442.67.
-- Run 2 also returned eight `current_stock=0` signals. These are not treated as total stockouts because prior cross-operation evidence proves stock surfaces differ; `Чур` and `Стрелец` are high-priority FBO/distribution checks because they were recent top sellers.
-- Detailed Run 2 evidence: `live-runs/STD_06_RUN_2_STOCK_TURNOVER_2026-09-02.md`.
-- STD-06 Run 3 (`supply_order_status_counter`) returned HTTP 200. No current rejection/acceptance/report-confirmation emergency was exposed: `REPORT_REJECTED=0`, `REJECTED_AT_SUPPLY_WAREHOUSE=0`, acceptance/storage-acceptance/report-confirmation states are 0. Active supply signals are four `DATA_FILLING` orders and one `IN_TRANSIT` order.
-- Detailed Run 3 evidence: `live-runs/STD_06_RUN_3_SUPPLY_STATUS_COUNTER_2026-09-02.md`.
-- STD-06 Run 4 (`supply_order_list`) returned HTTP 200 and exactly five active order IDs under `DATA_FILLING|IN_TRANSIT`: `125820894`, `125819631`, `125818485`, `125818083`, `122149074`. The list response exposes only IDs, so state/age/destination/content correlation required a drill-down.
-- Detailed Run 4 evidence: `live-runs/STD_06_RUN_4_ACTIVE_SUPPLY_ORDER_IDS_2026-09-02.md`.
-- STD-06 Run 5 (`supply_order_get`) returned HTTP 200 and exposed a materially higher-priority supply incident. Order `122149074` / `2000062599609` was created `2026-08-10`, had an `2026-08-11` planned slot, last changed state on `2026-08-12`, and remains `IN_TRANSIT` on `2026-09-02`. It is crossdock, bundle `019feae9-0fbe-75af-8f63-b9df1ca38840`, macrolocal cluster `4002`, drop-off `ЗЛАТОУСТ_89`.
-- The four `DATA_FILLING` orders are not stale: all were created `2026-08-30`, have data-filling deadline `2026-09-05T06:00:00Z` and planned slot `2026-09-05T07:00:00Z..08:00:00Z`. These are near-term operational tasks rather than current failures.
-- Detailed Run 5 evidence: `live-runs/STD_06_RUN_5_SUPPLY_ORDER_GET_2026-09-02.md`.
-- Current STD-06 priority: investigate the potentially stuck in-transit supply first; then complete the four DATA_FILLING orders before deadline; then address slow-turnover/overstock and FBO/distribution stock risks.
-- Next STD-06 step: `supply_order_bundle` for bundle `019feae9-0fbe-75af-8f63-b9df1ca38840` to retrieve the product composition of the old in-transit supply and determine which SKUs/quantities may be stuck.
+- STD-01…STD-06 complete.
+- STD-07 ready.
+
+### STD-06 completed
+
+Question: `Что сегодня в моём кабинете требует внимания в первую очередь?`
+
+Runs 1–6 all reached the provider and returned HTTP 200.
+
+1. `seller_rating_summary`: no critical rating/penalty issue. Penalty score not exceeded; FBS complaints 0; product rating 4.98; price index healthy. Localization 37% was observed but no critical threshold was proven by that response.
+2. `stock_turnover_analytics`: 72 rows; turnover grades = 20 critical, 2 red, 34 yellow, 15 green, 1 no-sales. Highest critical turnover examples: Козерог (Античность) 794, Знич 722, Хорс 596, Козерог (Символы) 467, Рыбы 442.67. Eight `current_stock=0` signals were treated as FBO/distribution signals rather than total stockouts because prior cross-operation evidence proved stock-surface semantics differ.
+3. `supply_order_status_counter`: no rejected/report-rejected/acceptance emergency; four `DATA_FILLING`, one `IN_TRANSIT`.
+4. `supply_order_list`: exactly five active order IDs returned.
+5. `supply_order_get`: order `122149074` / `2000062599609` is materially stale. Created 2026-08-10, slot 2026-08-11, last state update 2026-08-12, still `IN_TRANSIT` on 2026-09-02. The four `DATA_FILLING` orders are fresh (created 2026-08-30) with deadline 2026-09-05T06:00:00Z and slot 2026-09-05T07:00:00Z..08:00:00Z.
+6. `supply_order_bundle`: stale bundle `019feae9-0fbe-75af-8f63-b9df1ca38840` contains 54 units across 9 SKUs, `has_next=false`: Герб России 2, Чур 5, Печать Велеса 31, Перун 2, Звезда Лады 2, Громовик 2, Алатырь 5, Спаси и Сохрани 2, Шлем ужаса 3.
+
+Final business priority:
+1. **Investigate/escalate stale `IN_TRANSIT` supply `122149074` first.** It has remained in transit for roughly three weeks and contains 54 units. `Чур` is particularly relevant because it is a recent top seller and has an FBO/distribution risk signal.
+2. **Address critical slow-turnover/no-sales inventory.** Do not blindly replenish the highest critical-turnover SKUs before checking price/content/ads/demand.
+3. **Complete the four fresh `DATA_FILLING` orders before the 2026-09-05 deadline.** They are upcoming work, not current failures.
+4. Ratings/penalties are not a current urgent issue.
+
+STD-06 classification:
+`PASS`
+
+Operational reliability:
+`PASS_ALL_STD06_PROVIDER_READS`
+
+Operator business steering:
+`NO`
+
+Detailed evidence:
+- `live-runs/STD_06_RUN_1_RATING_SUMMARY_2026-09-02.md`
+- `live-runs/STD_06_RUN_2_STOCK_TURNOVER_2026-09-02.md`
+- `live-runs/STD_06_RUN_3_SUPPLY_STATUS_COUNTER_2026-09-02.md`
+- `live-runs/STD_06_RUN_4_ACTIVE_SUPPLY_ORDER_IDS_2026-09-02.md`
+- `live-runs/STD_06_RUN_5_SUPPLY_ORDER_GET_2026-09-02.md`
+- `live-runs/STD_06_RUN_6_STALE_IN_TRANSIT_BUNDLE_2026-09-02.md`
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_06_RUN5_OLD_IN_TRANSIT_SUPPLY_HIGH_PRIORITY_BUNDLE_CONTENT_NEXT`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_06_COMPLETE_STD_07_READY`
