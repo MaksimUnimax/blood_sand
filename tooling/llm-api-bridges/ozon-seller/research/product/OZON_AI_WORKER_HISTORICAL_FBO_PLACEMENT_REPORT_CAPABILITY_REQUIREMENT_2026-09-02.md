@@ -1,65 +1,50 @@
-# Ozon AI Worker — Historical FBO Placement Report Implementation Coverage Defect
+# Ozon AI Worker — Historical FBO Placement Report Coverage Note
 
 Date: 2026-09-02
 Branch: `research/ozon-product-demand-2026-09-02`
 Origin: reopened `STD-10` incident/damage reconstruction.
-Status: CORRECTED CLASSIFICATION — implementation omission against the accepted full-read scope, not a newly discovered optional capability.
+Status: FINAL CORRECTION — **not an implementation defect in the accepted read surface**.
 
-## Correction
+## Final authority
 
-The earlier wording called this a new `Capability Requirement`. That wording was misleading.
+The final Seller 463/463 terminal matrix classifies:
 
-The accepted 463/463 Seller API coverage model already defined a **full read rollout of 268 operations**, including **40 explicit read workflows for reports/files/documents/status**. Its global rules explicitly state that generic report helpers are hidden `_workflow` steps while **report creation belongs to its business cluster**. Therefore server-side report generation that only produces a read report is part of the intended read-workflow model and is not supposed to be dismissed merely because the provider path contains `/create`.
+`POST /v1/report/placement/by-products/create`
 
-Historical inventory also shows `POST /v1/report/placement/by-products/create` as key-permitted under `Admin read only`. The later workflow inventory still classified it as `SERVER_SIDE_GENERATION_OR_WORKFLOW_START_CANDIDATE_EXACT_SCHEMA_REVIEW_REQUIRED`, with no accepted Bridge alias/effect at that point. The current v0.1.19 runtime likewise does not register this path.
+as:
 
-Therefore the correct defect classification is:
+`REJECT_SERVER_SIDE_GENERATION_OR_CREATION`
 
-`FULL_READ_ROLLOUT_INCOMPLETE_FOR_PLACEMENT_REPORT_WORKFLOW`
+with the decision reason that the operation creates server-side business/job/artifact/report state.
 
-and specifically:
+The final accepted semantic model contains **245 admissible Seller reads** and **218 terminal-unavailable operations**. It explicitly preserves the rule that an endpoint does not become a read merely because it returns a report ID, file, label or status; operations that create reports/documents or initiate server-side work remain generation/mutation and are excluded from the AI read surface.
 
-`POST /v1/report/placement/by-products/create` is an intended read-workflow surface that was not carried through to the current executable registry.
+Therefore the earlier same-day interpretation based on the older intermediate 268-operation catalog was wrong. The current v0.1.19 registry is not missing this endpoint relative to the final accepted read classification; its absence is intentional.
 
-## Provider contract
+## Why the confusion occurred
 
-Current accepted Seller Swagger defines:
-- endpoint: `POST /v1/report/placement/by-products/create`;
-- operationId: `CreatePlacementByProductsReport`;
-- purpose: obtain the FBO placement-cost report by products;
-- required request fields: `date_from`, `date_to` in `YYYY-MM-DD`;
-- maximum report interval: 31 days;
-- response: report `code`;
-- the returned `code` is then passed to `POST /v1/report/info`.
+An older intermediate coverage artifact from 2026-08-25 described a 268-operation provisional read rollout with explicit report workflows. That artifact was superseded by the later exhaustive Seller classification.
 
-This is a server-side report-generation workflow. It does not mutate seller catalog, stock, prices, orders or other business state and belongs in the project's explicit read-workflow model.
+The later workflow/report/document work and final terminal matrix tightened the semantic rule:
+- report creation/generation must not be disguised as reads;
+- `report_info` and `report_list` are reads;
+- report `/create` endpoints that initiate server-side generation are terminal unavailable from the read-only AI surface.
 
-## Why STD-10 exposed the defect
+The final terminal matrix specifically records `CreatePlacementByProductsReport` as `REJECT_SERVER_SIDE_GENERATION_OR_CREATION`.
 
-Run 10 called the already registered `report_list` and received `reports=[]`, `total=0`, so there is no pre-existing report code to reuse.
+## STD-10 implication
 
-The incident investigation therefore needs the missing workflow:
-1. explicit `placement by products` report creation for the historical interval around 2026-08-21/22;
-2. explicit `report_info` read by returned code;
-3. safe report-file download/ingestion preserving provenance;
-4. parse/filter by warehouse/product/date where the provider file exposes those dimensions.
+Run 10 remains valid:
+- `report_list` returned `reports=[]`, `total=0`;
+- therefore there is no already-created report that the accepted read surface can inspect with `report_info`.
 
-Without that workflow, current stock reads cannot supply the exact pre-incident Samara baseline because they have no historical `as_of` semantics.
+But this does **not** reveal an incomplete full-read implementation. Instead it reveals a legitimate boundary of the intentionally read-only Bridge: obtaining a new placement report would require a server-side generation operation that the final safety classification deliberately excludes.
 
-## Required fix
+For the incident investigation, continue with admissible read surfaces (returns, supplies, movements/finance where available) and state the historical point-in-time baseline limitation if it cannot be reconstructed without initiating a new report-generation job.
 
-Implement the missing accepted read workflow in the Bridge rather than treating the absence as a legitimate product coverage boundary:
-- add a unique Bridge alias for `POST /v1/report/placement/by-products/create`;
-- compile the exact request/response contract from the accepted Swagger;
-- classify it as an explicit read-workflow start, not a business mutation;
-- preserve one explicit AI command = at most one physical provider request;
-- no hidden polling/retry;
-- make the generated report result consumable through an explicit safe report-file ingestion step;
-- keep unrelated PII out of the AI surface.
+## Final classification
 
-## Acceptance criterion
-
-Given an explicit historical interval, the Worker can start the placement-by-products report, receive its code, explicitly read report status, ingest the resulting report, and use provider-backed rows for incident stock reconstruction. If the report itself does not contain exact point-in-time warehouse stock, that remaining provider semantic limit must be stated explicitly.
+`PLACEMENT_BY_PRODUCTS_CREATE_INTENTIONALLY_TERMINAL_UNAVAILABLE_SERVER_SIDE_GENERATION_NOT_A_MISSING_READ`
 
 Checkpoint:
-`STD_10_HISTORICAL_PLACEMENT_WORKFLOW_IS_MISSING_IMPLEMENTATION_AGAINST_ACCEPTED_FULL_READ_SCOPE_NOT_NEW_OPTIONAL_CAPABILITY`
+`STD_10_RUN10_REPORT_LIST_EMPTY_FINAL_MATRIX_CONFIRMS_PLACEMENT_CREATE_IS_INTENTIONAL_GENERATION_EXCLUSION_CONTINUE_ADMISSIBLE_READ_FORENSICS`
