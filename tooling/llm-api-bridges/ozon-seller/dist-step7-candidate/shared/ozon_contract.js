@@ -168,6 +168,7 @@
 
   function shouldRedactResultField(operation, fieldPath, key) {
     if ((operation === "report_list" || operation === "report_info") && String(key) === "file") return true;
+    if (["cargoes_label_get", "cargoes_label_transport_by_order_status", "cargoes_label_transport_status", "fbp_act_from_get", "fbp_act_to_get", "fbp_label_get", "posting_fbs_package_label_get_v1"].includes(operation) && ["file_url", "cdn_url", "label_url"].includes(String(key))) return true;
     if (operation === "posting_fbo_list") {
       if (/^postings\[\]\.legal_info(?:\.|$)/.test(fieldPath)) return true;
       if (/^postings\[\]\.products\[\]\.digital_codes$/.test(fieldPath)) return true;

@@ -153,6 +153,123 @@
   }
 
 
+
+  function reportBase64ToBytes(value) {
+    const input = String(value || "").replace(/\s+/g, "");
+    if (!input || input.length % 4 !== 0) fail("INVALID_BASE64", "Некорректный base64 документ.");
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const lookup = new Map([...alphabet].map((ch, index) => [ch, index]));
+    const out = [];
+    for (let i = 0; i < input.length; i += 4) {
+      const a = lookup.get(input[i]), b = lookup.get(input[i + 1]);
+      const c = input[i + 2] === "=" ? 0 : lookup.get(input[i + 2]);
+      const d = input[i + 3] === "=" ? 0 : lookup.get(input[i + 3]);
+      if ([a,b,c,d].some((v) => v === undefined)) fail("INVALID_BASE64", "Некорректный base64 документ.");
+      const triple = (a << 18) | (b << 12) | (c << 6) | d;
+      out.push((triple >> 16) & 255);
+      if (input[i + 2] !== "=") out.push((triple >> 8) & 255);
+      if (input[i + 3] !== "=") out.push(triple & 255);
+    }
+    return new Uint8Array(out);
+  }
+
+  function reportLatin1(bytes) {
+    const source = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+    let out = "";
+    const chunk = 0x4000;
+    for (let i = 0; i < source.length; i += chunk) out += String.fromCharCode(...source.subarray(i, Math.min(source.length, i + chunk)));
+    return out;
+  }
+
+  function pdfDecodeLiteral(raw) {
+    let out = "";
+    const text = String(raw || "");
+    for (let i = 0; i < text.length; i += 1) {
+      if (text[i] !== "\\") { out += text[i]; continue; }
+      i += 1;
+      if (i >= text.length) break;
+      const ch = text[i];
+      const mapped = { n:"\n", r:"\r", t:"\t", b:"\b", f:"\f", "(":"(", ")":")", "\\":"\\" }[ch];
+      if (mapped !== undefined) { out += mapped; continue; }
+      if (/[0-7]/.test(ch)) {
+        let oct = ch;
+        for (let j = 0; j < 2 && /[0-7]/.test(text[i + 1] || ""); j += 1) { i += 1; oct += text[i]; }
+        out += String.fromCharCode(parseInt(oct, 8));
+        continue;
+      }
+      if (ch === "\r" && text[i + 1] === "\n") i += 1;
+      else if (ch !== "\r" && ch !== "\n") out += ch;
+    }
+    return out;
+  }
+
+  function pdfDecodeHex(raw) {
+    let hex = String(raw || "").replace(/\s+/g, "");
+    if (hex.length % 2) hex += "0";
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < bytes.length; i += 1) bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+      let out = "";
+      for (let i = 2; i + 1 < bytes.length; i += 2) out += String.fromCharCode((bytes[i] << 8) | bytes[i + 1]);
+      return out;
+    }
+    return reportLatin1(bytes);
+  }
+
+  function pdfExtractTextOperators(content) {
+    const text = String(content || "");
+    const pieces = [];
+    for (const match of text.matchAll(/\(((?:\\.|[^\\)])*)\)\s*Tj\b/g)) pieces.push(pdfDecodeLiteral(match[1]));
+    for (const match of text.matchAll(/<([0-9A-Fa-f\s]+)>\s*Tj\b/g)) pieces.push(pdfDecodeHex(match[1]));
+    for (const arrayMatch of text.matchAll(/\[([\s\S]*?)\]\s*TJ\b/g)) {
+      let joined = "";
+      for (const literal of arrayMatch[1].matchAll(/\(((?:\\.|[^\\)])*)\)/g)) joined += pdfDecodeLiteral(literal[1]);
+      for (const hex of arrayMatch[1].matchAll(/<([0-9A-Fa-f\s]+)>/g)) joined += pdfDecodeHex(hex[1]);
+      if (joined) pieces.push(joined);
+    }
+    return pieces.map((value) => String(value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]+/g, " ").trim()).filter(Boolean);
+  }
+
+  async function parsePdfDocumentBytes(bytes, { maxTextChars = 30000 } = {}) {
+    const source = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+    const latin = reportLatin1(source);
+    const pieces = pdfExtractTextOperators(latin);
+    const streamPattern = /<<([\s\S]{0,4096}?)>>\s*stream\r?\n/g;
+    let match;
+    while ((match = streamPattern.exec(latin)) !== null) {
+      const dataStart = streamPattern.lastIndex;
+      const end = latin.indexOf("endstream", dataStart);
+      if (end < 0) break;
+      let dataEnd = end;
+      while (dataEnd > dataStart && (latin[dataEnd - 1] === "\r" || latin[dataEnd - 1] === "\n")) dataEnd -= 1;
+      if (/\/FlateDecode\b/.test(match[1])) {
+        try {
+          if (typeof DecompressionStream !== "function") fail("PDF_DEFLATE_UNAVAILABLE", "Runtime не поддерживает PDF FlateDecode.");
+          const compressed = source.slice(dataStart, dataEnd);
+          const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate"));
+          const inflated = new Uint8Array(await new Response(stream).arrayBuffer());
+          pieces.push(...pdfExtractTextOperators(reportLatin1(inflated)));
+        } catch (_) {
+          // Some PDFs use predictors/font encodings; fail-soft on text extraction while preserving document metadata.
+        }
+      } else pieces.push(...pdfExtractTextOperators(latin.slice(dataStart, dataEnd)));
+      streamPattern.lastIndex = end + 9;
+    }
+    const unique = [];
+    const seen = new Set();
+    for (const piece of pieces) {
+      const normalized = piece.replace(/\s+/g, " ").trim();
+      if (normalized && !seen.has(normalized)) { seen.add(normalized); unique.push(normalized); }
+    }
+    const joined = unique.join("\n");
+    return Object.freeze({
+      format: "pdf",
+      text_extract_available: Boolean(joined),
+      text_extract: joined.slice(0, maxTextChars),
+      text_truncated: joined.length > maxTextChars
+    });
+  }
+
   function reportXmlDecode(value) {
     return String(value || "")
       .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
@@ -400,6 +517,7 @@
       }
       fail("REPORT_ZIP_CONTENT_UNSUPPORTED", "ZIP отчёт не содержит поддерживаемый XLSX/CSV файл.");
     }
+    if (ct === "application/pdf" || lower.endsWith(".pdf")) return await parsePdfDocumentBytes(source);
     if (ct === "application/vnd.ms-excel" || lower.endsWith(".xls")) fail("REPORT_XLS_BINARY_UNSUPPORTED", "Старый XLS binary формат не поддерживается; ожидается XLSX из report_info.");
     fail("REPORT_FILE_FORMAT_UNSUPPORTED", `Неподдерживаемый формат отчёта: ${ct || lower || "unknown"}.`);
   }
@@ -511,6 +629,8 @@
   globalThis.ProviderTransportCore = Object.freeze({
     readResponse,
     normalizeTrustedReportFileUrl,
+    reportBase64ToBytes,
+    parsePdfDocumentBytes,
     parseAiReadableReportBytes,
     executeTrustedReportFileOnce,
     executeJsonOnce,

@@ -80,14 +80,43 @@
 
     async function executeReportFileCommand(command) {
       const record = resolveReportFileRef(command.params.file_ref);
+      if (record.inline_base64) {
+        const started = Number(now());
+        const bytes = globalThis.ProviderTransportCore.reportBase64ToBytes(record.inline_base64);
+        const parsedDocument = await globalThis.ProviderTransportCore.parseAiReadableReportBytes(bytes, { contentType: record.content_type || "application/pdf", pathname: "/inline-document.pdf", sheet: command.params.sheet ?? null, offset: Number(command.params.offset || 0), limit: Number(command.params.limit || 200) });
+        const response = Object.freeze({ httpStatus: 200, ok: true, rawText: "", parsed: Object.freeze({ content_type: record.content_type || "application/pdf", byte_length: bytes.byteLength, ...parsedDocument }), byteLength: bytes.byteLength, elapsedMs: Math.max(0, Number(now()) - started), responseMeta: Object.freeze({ content_type: record.content_type || "application/pdf", content_length: String(bytes.byteLength), request_id: null, retry_after: null }) });
+        const request = Object.freeze({ method: "GET", host_alias: "report_file", path: "/__opaque_inline_document__", operation: "report_file_get", response_style: "binary", response_content_types: null, external_request_executed: false });
+        return { request, response, auth_request_performed: false };
+      }
       const response = await globalThis.ProviderTransportCore.executeTrustedReportFileOnce({ fetchImpl, url: record.url, now, parseOptions: command.params });
-      const request = Object.freeze({
-        method: "GET", host_alias: "report_file", path: "/__opaque_report_file__", operation: "report_file_get",
-        response_style: "binary", response_content_types: null
-      });
+      const request = Object.freeze({ method: "GET", host_alias: "report_file", path: "/__opaque_report_file__", operation: "report_file_get", response_style: "binary", response_content_types: null, external_request_executed: true });
       return { request, response, auth_request_performed: false };
     }
 
+
+
+    const GENERATED_DOCUMENT_URL_FIELD_BY_OPERATION = Object.freeze({
+      cargoes_label_get: "file_url",
+      cargoes_label_transport_by_order_status: "file_url",
+      cargoes_label_transport_status: "file_url",
+      fbp_act_from_get: "cdn_url",
+      fbp_act_to_get: "label_url",
+      fbp_label_get: "label_url",
+      posting_fbs_package_label_get_v1: "file_url"
+    });
+    const DIRECT_PDF_OPERATIONS = new Set(["posting_fbs_act_container_labels", "posting_fbs_package_label"]);
+
+    function registerInlineGeneratedDocument(binaryPayload) {
+      const contentType = String(binaryPayload?.content_type || "application/octet-stream").toLowerCase();
+      const base64 = String(binaryPayload?.file_content_base64 || "");
+      if (!base64 || contentType !== "application/pdf") return null;
+      pruneReportFileRefs();
+      const token = String(uuid()).replace(/[^A-Za-z0-9_-]/g, "");
+      const ref = `rpf_${token}`;
+      reportFileRefs.set(ref, Object.freeze({ inline_base64: base64, content_type: contentType, byte_length: Number(binaryPayload?.byte_length || 0), created_at_ms: Number(now()) }));
+      pruneReportFileRefs();
+      return ref;
+    }
 
     function clearPerformanceToken() {
       performanceToken = null;
@@ -241,6 +270,25 @@
             result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), report_file_ref: fileRef });
           }
         }
+
+        const generatedUrlField = GENERATED_DOCUMENT_URL_FIELD_BY_OPERATION[command.operation];
+        if (generatedUrlField) {
+          const rawGeneratedUrl = findFirstField(response.parsed, generatedUrlField);
+          if (typeof rawGeneratedUrl === "string" && rawGeneratedUrl.trim()) {
+            const generatedRef = registerReportFile(rawGeneratedUrl.trim());
+            result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), generated_file_ref: generatedRef });
+          }
+        }
+        if (DIRECT_PDF_OPERATIONS.has(command.operation)) {
+          const generatedRef = registerInlineGeneratedDocument(response.parsed);
+          if (generatedRef) {
+            const safe = result && typeof result === "object" && !Array.isArray(result) ? { ...result } : { result };
+            delete safe.file_content_base64;
+            safe.generated_file_ref = generatedRef;
+            safe.format = "pdf";
+            result = Object.freeze(safe);
+          }
+        }
       } else {
         result = { error: errorPayload };
       }
@@ -259,7 +307,7 @@
           host_alias: request.host_alias,
           http_method: request.method,
           path_alias: logicalCommand.operation,
-          external_request_executed: true,
+          external_request_executed: request.external_request_executed !== false,
           capability_probe_executed: planning?.capability?.probe_performed === true,
           capability_probe_http_status: Number(planning?.capability?.probe_http_status || 0)
         },

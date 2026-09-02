@@ -999,7 +999,7 @@
       provider: "report_file", method: "GET", path: "/__opaque_report_file__", effect: "READ", request_style: "opaque_file_ref", execution_enabled: true,
       currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false,
       cluster: "finance", section: "documents_reports", guidance_visibility: "conditional", workflow_role: "explicit_workflow_read_step",
-      purpose: "Получить готовый файл отчёта по непрозрачной ссылке bridge без раскрытия signed URL.", template: { operation: "report_file_get", params: { file_ref: "REPORT_FILE_REF", offset: 0, limit: 200 } }
+      purpose: "Получить и безопасно разобрать готовый файл отчёта/документа по opaque ref без раскрытия signed URL или base64.", template: { operation: "report_file_get", params: { file_ref: "REPORT_FILE_REF", offset: 0, limit: 200 } }
     },
     report_products_create: {
       provider: "seller_api", method: "POST", path: "/v1/report/products/create", effect: "READ", request_style: "json_body", execution_enabled: true,
