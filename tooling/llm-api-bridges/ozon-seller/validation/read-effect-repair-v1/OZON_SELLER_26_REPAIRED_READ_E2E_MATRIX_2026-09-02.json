@@ -1,0 +1,50 @@
+{
+  "schema": "OZON_SELLER_26_REPAIRED_READ_E2E_MATRIX_V1",
+  "date": "2026-09-02",
+  "governing_rule": "READ iff operation does not change Seller/Ozon business/account data or business-process state",
+  "counts": {
+    "operations": 26,
+    "report_workflows": 13,
+    "generated_document_workflows": 9,
+    "validation_reads": 3,
+    "sensitive_gated_reads": 1
+  },
+  "generic_file_delivery": {
+    "report_info": "explicit Seller READ by report code; raw signed file URL is redacted and converted to opaque rpf_* ref",
+    "report_file_get": "explicit internal READ by opaque ref; URL-backed refs perform exactly one trusted Ozon HTTPS GET; inline direct-PDF refs perform zero additional network requests",
+    "structured_formats": ["csv", "xlsx", "zip containing csv/xlsx"],
+    "structured_output": ["format", "available_sheets", "sheet.columns", "sheet.rows", "sheet.row_count", "sheet.has_more", "sheet.next_offset"],
+    "pdf_output": ["format=pdf", "text_extract_available", "text_extract", "text_truncated"],
+    "forbidden_ai_output": ["raw signed Ozon file URL", "file_content_base64"]
+  },
+  "operations": [
+    {"n":1,"alias":"report_products_create","endpoint":"POST /v1/report/products/create","class":"REPORT_WORKFLOW","first_result":"report code (result.code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured CSV/XLSX rows"},
+    {"n":2,"alias":"report_returns_create_v2","endpoint":"POST /v2/report/returns/create","class":"REPORT_WORKFLOW","first_result":"report code (result.code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured CSV/XLSX rows"},
+    {"n":3,"alias":"report_postings_create","endpoint":"POST /v1/report/postings/create","class":"REPORT_WORKFLOW","first_result":"report code (result.code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured CSV/XLSX rows"},
+    {"n":4,"alias":"report_discounted_create","endpoint":"POST /v1/report/discounted/create","class":"REPORT_WORKFLOW","first_result":"report code (code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured CSV/XLSX rows"},
+    {"n":5,"alias":"report_warehouse_stock","endpoint":"POST /v1/report/warehouse/stock","class":"REPORT_WORKFLOW","first_result":"report code (result.code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured CSV/XLSX rows"},
+    {"n":6,"alias":"report_placement_by_products_create","endpoint":"POST /v1/report/placement/by-products/create","class":"REPORT_WORKFLOW","first_result":"report code (code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured historical placement rows; primary STD-10 baseline workflow"},
+    {"n":7,"alias":"report_placement_by_supplies_create","endpoint":"POST /v1/report/placement/by-supplies/create","class":"REPORT_WORKFLOW","first_result":"report code (code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured placement rows"},
+    {"n":8,"alias":"report_marked_products_sales_create","endpoint":"POST /v1/report/marked-products-sales/create","class":"REPORT_WORKFLOW","first_result":"report code (result.code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured CSV/XLSX rows"},
+    {"n":9,"alias":"report_realization_posting_create","endpoint":"POST /v1/report/realization/posting/create","class":"REPORT_WORKFLOW","first_result":"report code (code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured realization rows"},
+    {"n":10,"alias":"finance_document_b2b_sales","endpoint":"POST /v1/finance/document-b2b-sales","class":"REPORT_WORKFLOW","first_result":"report code (result.code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured B2B sales rows"},
+    {"n":11,"alias":"finance_mutual_settlement_report","endpoint":"POST /v1/finance/mutual-settlement","class":"REPORT_WORKFLOW","first_result":"report code (result.code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured settlement rows"},
+    {"n":12,"alias":"finance_compensation_report","endpoint":"POST /v1/finance/compensation","class":"REPORT_WORKFLOW","first_result":"report code (result.code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured compensation rows; dedicated compensation evidence"},
+    {"n":13,"alias":"finance_decompensation_report","endpoint":"POST /v1/finance/decompensation","class":"REPORT_WORKFLOW","first_result":"report code (result.code)","next_read":"report_info","file_step":"report_file_get","gpt_result":"structured decompensation rows"},
+
+    {"n":14,"alias":"cargoes_label_create","endpoint":"POST /v1/cargoes-label/create","class":"GENERATED_DOCUMENT","first_result":"operation_id","next_read":"cargoes_label_get","retrieval_result":"file_url is redacted and replaced by generated_file_ref","file_step":"report_file_get","gpt_result":"PDF text/metadata; no URL/base64"},
+    {"n":15,"alias":"posting_fbs_act_container_labels","endpoint":"POST /v2/posting/fbs/act/get-container-labels","class":"DIRECT_PDF","first_result":"PDF bytes","next_read":"report_file_get using generated_file_ref created from inline bytes","retrieval_result":"zero additional network requests","file_step":"report_file_get","gpt_result":"PDF text/metadata; no base64"},
+    {"n":16,"alias":"posting_fbs_package_label","endpoint":"POST /v2/posting/fbs/package-label","class":"DIRECT_PDF","first_result":"PDF bytes","next_read":"report_file_get using generated_file_ref created from inline bytes","retrieval_result":"zero additional network requests","file_step":"report_file_get","gpt_result":"PDF text/metadata; no base64"},
+    {"n":17,"alias":"posting_fbs_package_label_create","endpoint":"POST /v2/posting/fbs/package-label/create","class":"GENERATED_DOCUMENT","first_result":"result.tasks[].task_id","next_read":"posting_fbs_package_label_get_v1","retrieval_result":"file_url is redacted and replaced by generated_file_ref","file_step":"report_file_get","gpt_result":"PDF text/metadata; no URL/base64"},
+    {"n":18,"alias":"cargoes_transport_label_by_order_create","endpoint":"POST /v1/cargoes/label/transport-by-order/create","class":"GENERATED_DOCUMENT","first_result":"operation_id","next_read":"cargoes_label_transport_by_order_status","retrieval_result":"file_url is redacted and replaced by generated_file_ref","file_step":"report_file_get","gpt_result":"PDF text/metadata; no URL/base64"},
+    {"n":19,"alias":"cargoes_transport_label_create","endpoint":"POST /v1/cargoes/label/transport/create","class":"GENERATED_DOCUMENT","first_result":"operation_id","next_read":"cargoes_label_transport_status","retrieval_result":"file_url is redacted and replaced by generated_file_ref","file_step":"report_file_get","gpt_result":"PDF text/metadata; no URL/base64"},
+    {"n":20,"alias":"fbp_act_from_create","endpoint":"POST /v1/fbp/act-from/create","class":"GENERATED_DOCUMENT","first_result":"file_uuid","next_read":"fbp_act_from_get","retrieval_result":"cdn_url is redacted and replaced by generated_file_ref","file_step":"report_file_get","gpt_result":"document text/metadata; no URL/base64"},
+    {"n":21,"alias":"fbp_act_to_create","endpoint":"POST /v1/fbp/act-to/create","class":"GENERATED_DOCUMENT","first_result":"code + caller retains supply_id","next_read":"fbp_act_to_get","retrieval_result":"label_url is redacted and replaced by generated_file_ref","file_step":"report_file_get","gpt_result":"document text/metadata; no URL/base64"},
+    {"n":22,"alias":"fbp_label_create","endpoint":"POST /v1/fbp/label/create","class":"GENERATED_DOCUMENT","first_result":"code + caller retains supply_id","next_read":"fbp_label_get","retrieval_result":"label_url is redacted and replaced by generated_file_ref","file_step":"report_file_get","gpt_result":"PDF text/metadata; no URL/base64"},
+
+    {"n":23,"alias":"fbp_draft_direct_product_validate","endpoint":"POST /v1/fbp/draft/direct/product/validate","class":"VALIDATION_READ","first_result":"immediate JSON validation result","next_read":null,"file_step":null,"gpt_result":"approved/rejected items and bundle metadata"},
+    {"n":24,"alias":"fbp_draft_dropoff_product_validate","endpoint":"POST /v1/fbp/draft/drop-off/product/validate","class":"VALIDATION_READ","first_result":"immediate JSON validation result","next_read":null,"file_step":null,"gpt_result":"approved/rejected items and bundle metadata"},
+    {"n":25,"alias":"fbp_draft_pickup_product_validate","endpoint":"POST /v1/fbp/draft/pick-up/product/validate","class":"VALIDATION_READ","first_result":"immediate JSON validation result","next_read":null,"file_step":null,"gpt_result":"approved/rejected items and bundle metadata"},
+    {"n":26,"alias":"chat_history_v3","endpoint":"POST /v3/chat/history","class":"SENSITIVE_GATED_READ","first_result":"immediate JSON chat history","next_read":null,"file_step":null,"gpt_result":"chat messages/context under existing operator_personal_data_gate"}
+  ]
+}
