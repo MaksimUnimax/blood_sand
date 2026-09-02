@@ -1,0 +1,229 @@
+name: Ozon Current Swagger Cluster Ad Live Repair V2
+
+on:
+  push:
+    branches:
+      - repair/ozon-current-swagger-refresh-2026-09-01
+    paths:
+      - tooling/llm-api-bridges/ozon-seller/validation/live-repair-2026-09-02/APPLY_TRIGGER_V2
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-current-swagger-cluster-ad-live-repair-v2
+  cancel-in-progress: false
+
+jobs:
+  repair-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Persist canonical regression error codes
+        shell: bash
+        run: |
+          set -euo pipefail
+          D=tooling/llm-api-bridges/ozon-seller/validation/live-repair-2026-09-02
+          TEST="$D/ozon_live_repair_regression.js"
+          python <<'PY'
+          from pathlib import Path
+          p=Path('tooling/llm-api-bridges/ozon-seller/validation/live-repair-2026-09-02/ozon_live_repair_regression.js')
+          t=p.read_text(encoding='utf-8')
+          replacements={
+              '}), "INVALID_OPERATION_PARAMS", "limit below minimum");':'}), "OZON_LIMIT_VIOLATION", "limit below minimum");',
+              '}), "INVALID_OPERATION_PARAMS", "limit above maximum");':'}), "OZON_LIMIT_VIOLATION", "limit above maximum");'
+          }
+          for old,new in replacements.items():
+              count=t.count(old)
+              if count == 1:
+                  t=t.replace(old,new,1)
+              elif count == 0 and new in t:
+                  pass
+              else:
+                  raise SystemExit(f'expected one canonical test assertion, got {count}: {old}')
+          p.write_text(t,encoding='utf-8',newline='\n')
+          PY
+          node --check "$TEST"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$TEST"
+          git commit -m 'test(ozon): assert canonical limit violation codes'
+          git push origin HEAD:${GITHUB_REF_NAME}
+          echo "OZON_LIVE_REPAIR_REGRESSION_EXPECTATIONS_CORRECTED"
+
+      - name: Reproduce blocker before production repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          D=tooling/llm-api-bridges/ozon-seller/validation/live-repair-2026-09-02
+          set +e
+          node "$D/ozon_live_repair_regression.js" specific > /tmp/ozon-pre-repair.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/ozon-pre-repair.log
+          test "$status" -ne 0
+          grep -q 'циклический provider result' /tmp/ozon-pre-repair.log
+          echo "OZON_SPECIFIC_CAMPAIGN_IDS_PRE_REPAIR_FAILURE_REPRODUCED"
+
+      - name: Roadmap Step 1 - repair detached campaign filters
+        shell: bash
+        run: |
+          set -euo pipefail
+          D=tooling/llm-api-bridges/ozon-seller/validation/live-repair-2026-09-02
+          O=tooling/llm-api-bridges/ozon-seller
+          S="$O/dist-step7-candidate/shared"
+          E="$D/STEP1_SPECIFIC_CAMPAIGN_IDS_REPAIR_RESULT.json"
+          BASE_HEAD="$(git rev-parse HEAD)"
+          python "$D/apply_live_repair.py" step1
+          node --check "$S/ozon_contract.js"
+          OZON_REPAIR_EVIDENCE="$E" node "$D/ozon_live_repair_regression.js" specific
+          CONTRACT_SHA="$(sha256sum "$S/ozon_contract.js" | awk '{print $1}')"
+          python "$D/update_roadmap.py" \
+            --step 1 --status COMPLETE \
+            --title 'cyclic/shared-reference bug repaired' \
+            --marker OZON-ROADMAP-STEP-1-COMPLETE \
+            --detail "Pre-repair failure reproduced from base ${BASE_HEAD}." \
+            --detail "Production ozon_contract.js now creates a fresh scalar campaignIds array for every generated refinement command." \
+            --detail "Cycle/shared-reference validation remains enabled and unchanged." \
+            --detail "Focused marker: OZON_SPECIFIC_CAMPAIGN_IDS_REPAIR_PASS." \
+            --detail "Production file SHA-256: ${CONTRACT_SHA}." \
+            --detail "Evidence: validation/live-repair-2026-09-02/STEP1_SPECIFIC_CAMPAIGN_IDS_REPAIR_RESULT.json."
+          python <<'PY'
+          from pathlib import Path
+          p=Path('tooling/llm-api-bridges/ozon-seller/OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ROADMAP_2026-09-02.md')
+          t=p.read_text(encoding='utf-8')
+          old='| OZ-LIVE-AD-001 | BLOCKER | OPEN |'
+          new='| OZ-LIVE-AD-001 | BLOCKER | FIXED_PENDING_LIVE_RETEST |'
+          if old in t: t=t.replace(old,new,1)
+          elif new not in t: raise SystemExit('OZ-LIVE-AD-001 status row not found')
+          p.write_text(t,encoding='utf-8',newline='\n')
+          PY
+          git add "$S/ozon_contract.js" "$E" "$O/OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ROADMAP_2026-09-02.md"
+          git commit -m 'fix(ozon): detach campaign refinement filter objects'
+          git push origin HEAD:${GITHUB_REF_NAME}
+
+      - name: Roadmap Step 2 - prove generated refinements executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          D=tooling/llm-api-bridges/ozon-seller/validation/live-repair-2026-09-02
+          O=tooling/llm-api-bridges/ozon-seller
+          E="$D/STEP2_GENERATED_REFINEMENT_EXECUTABILITY_RESULT.json"
+          STEP1_COMMIT="$(git rev-parse HEAD)"
+          OZON_REPAIR_EVIDENCE="$E" node "$D/ozon_live_repair_regression.js" refinements
+          python "$D/update_roadmap.py" \
+            --step 2 --status COMPLETE \
+            --title 'generated refinement executability regression added and passing' \
+            --marker OZON-ROADMAP-STEP-2-COMPLETE \
+            --detail "Step 1 production commit: ${STEP1_COMMIT}." \
+            --detail "All eight advertising refinement objects are JSON trees without repeated object identity." \
+            --detail "Every generated command passes normalizeCommand and buildPerformanceRequest." \
+            --detail "Focused marker: OZON_GENERATED_REFINEMENT_EXECUTABILITY_PASS." \
+            --detail "Evidence: validation/live-repair-2026-09-02/STEP2_GENERATED_REFINEMENT_EXECUTABILITY_RESULT.json."
+          git add "$E" "$O/OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ROADMAP_2026-09-02.md"
+          git commit -m 'test(ozon): prove advertising refinements executable'
+          git push origin HEAD:${GITHUB_REF_NAME}
+
+      - name: Roadmap Step 3 - repair dependent-attribute entitlement metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          D=tooling/llm-api-bridges/ozon-seller/validation/live-repair-2026-09-02
+          O=tooling/llm-api-bridges/ozon-seller
+          S="$O/dist-step7-candidate/shared"
+          E="$D/STEP3_DEPENDENT_ATTRIBUTE_ENTITLEMENT_RESULT.json"
+          PREVIOUS_COMMIT="$(git rev-parse HEAD)"
+          python "$D/apply_live_repair.py" step3
+          node --check "$S/ozon_entitlements.js"
+          OZON_REPAIR_EVIDENCE="$E" node "$D/ozon_live_repair_regression.js" entitlements
+          OZON_REPAIR_EVIDENCE="$D/STEP3_FULL_LOCAL_REGRESSION_RESULT.json" node "$D/ozon_live_repair_regression.js" full
+          ENTITLEMENTS_SHA="$(sha256sum "$S/ozon_entitlements.js" | awk '{print $1}')"
+          python "$D/update_roadmap.py" \
+            --step 3 --status COMPLETE \
+            --title 'entitlement metadata repaired for both new Seller reads' \
+            --marker OZON-ROADMAP-STEP-3-COMPLETE \
+            --detail "Previous commit: ${PREVIOUS_COMMIT}." \
+            --detail "Both dependent-attribute entitlement keys resolve as ALL_ACCOUNTS without a capability probe." \
+            --detail "The second endpoint has deterministic required-field, limit, cursor, method/path and mocked-result coverage." \
+            --detail "Markers: OZON_DEPENDENT_ATTRIBUTE_ENTITLEMENTS_AND_CONTRACT_PASS and OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_REGRESSION_PASS." \
+            --detail "Production file SHA-256: ${ENTITLEMENTS_SHA}." \
+            --detail "Evidence: validation/live-repair-2026-09-02/STEP3_DEPENDENT_ATTRIBUTE_ENTITLEMENT_RESULT.json."
+          python <<'PY'
+          from pathlib import Path
+          p=Path('tooling/llm-api-bridges/ozon-seller/OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ROADMAP_2026-09-02.md')
+          t=p.read_text(encoding='utf-8')
+          replacements={
+            '| OZ-LIVE-ENT-002 | MEDIUM | OPEN |':'| OZ-LIVE-ENT-002 | MEDIUM | FIXED |',
+            '| OZ-LIVE-FIXTURE-003 | TEST GAP | OPEN |':'| OZ-LIVE-FIXTURE-003 | TEST GAP | DETERMINISTIC_REGRESSION_COVERED_LIVE_FIXTURE_PENDING |'
+          }
+          for old,new in replacements.items():
+            if old in t: t=t.replace(old,new,1)
+            elif new not in t: raise SystemExit(f'defect status row not found: {old}')
+          p.write_text(t,encoding='utf-8',newline='\n')
+          PY
+          git add "$S/ozon_entitlements.js" "$E" "$D/STEP3_FULL_LOCAL_REGRESSION_RESULT.json" "$O/OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ROADMAP_2026-09-02.md"
+          git commit -m 'fix(ozon): define dependent attribute entitlements'
+          git push origin HEAD:${GITHUB_REF_NAME}
+
+      - name: Roadmap Step 4 - build and verify deterministic repaired candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          D=tooling/llm-api-bridges/ozon-seller/validation/live-repair-2026-09-02
+          O=tooling/llm-api-bridges/ozon-seller
+          SRC="$O/dist-step7-candidate"
+          ART="$O/artifacts/OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_CANDIDATE_2026-09-02.zip"
+          SOURCE_COMMIT="$(git rev-parse HEAD)"
+          SOURCE_COMMIT="$SOURCE_COMMIT" python <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
+          import hashlib, json, os
+          src=Path('tooling/llm-api-bridges/ozon-seller/dist-step7-candidate')
+          out=Path('tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_CANDIDATE_2026-09-02.zip')
+          evidence=Path('tooling/llm-api-bridges/ozon-seller/validation/live-repair-2026-09-02/STEP4_CANDIDATE_BUILD_RESULT.json')
+          files=sorted(p for p in src.rglob('*') if p.is_file())
+          if len(files) != 21: raise SystemExit(f'expected 21 installable files, got {len(files)}')
+          out.parent.mkdir(parents=True,exist_ok=True)
+          with ZipFile(out,'w',compression=ZIP_DEFLATED,compresslevel=9) as z:
+              for p in files:
+                  rel=p.relative_to(src).as_posix()
+                  zi=ZipInfo(rel,(1980,1,1,0,0,0)); zi.compress_type=ZIP_DEFLATED; zi.external_attr=(0o100644 << 16)
+                  z.writestr(zi,p.read_bytes(),compress_type=ZIP_DEFLATED,compresslevel=9)
+          digest=hashlib.sha256(out.read_bytes()).hexdigest()
+          Path(str(out)+'.sha256.txt').write_text(f'{digest}  {out.name}\n',encoding='utf-8')
+          payload={
+            'schema':'OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_CANDIDATE_V1','date':'2026-09-02',
+            'source_commit':os.environ['SOURCE_COMMIT'],'artifact':str(out),'artifact_name':out.name,
+            'sha256':digest,'size_bytes':out.stat().st_size,'file_count':len(files),
+            'deterministic_timestamp':'1980-01-01T00:00:00',
+            'files':[{'path':p.relative_to(src).as_posix(),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'size':p.stat().st_size} for p in files]
+          }
+          evidence.write_text(json.dumps(payload,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('OZON_LIVE_REPAIR_DETERMINISTIC_CANDIDATE_BUILD_PASS',len(files),out.stat().st_size,digest)
+          PY
+          rm -rf /tmp/ozon-live-repair-candidate
+          mkdir -p /tmp/ozon-live-repair-candidate
+          unzip -q "$ART" -d /tmp/ozon-live-repair-candidate
+          test "$(find /tmp/ozon-live-repair-candidate -type f | wc -l)" -eq 21
+          for f in ozon_contract.js ozon_entitlements.js ozon_operation_registry.js ozon_guidance.js runtime_names.js; do node --check "/tmp/ozon-live-repair-candidate/shared/$f"; done
+          OZON_BRIDGE_BASE=/tmp/ozon-live-repair-candidate/shared OZON_REPAIR_EVIDENCE="$D/STEP4_FRESH_EXTRACTION_REGRESSION_RESULT.json" node "$D/ozon_live_repair_regression.js" full
+          echo "OZON_LIVE_REPAIR_FRESH_EXTRACTION_21_FILES_PASS"
+          SHA="$(sha256sum "$ART" | awk '{print $1}')"
+          SIZE="$(wc -c < "$ART")"
+          python "$D/update_roadmap.py" \
+            --step 4 --status COMPLETE \
+            --title 'new deterministic candidate built and fresh-extraction verified' \
+            --marker OZON-ROADMAP-STEP-4-COMPLETE \
+            --detail "Candidate source commit before artifact commit: ${SOURCE_COMMIT}." \
+            --detail "Artifact: OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_CANDIDATE_2026-09-02.zip." \
+            --detail "SHA-256: ${SHA}." \
+            --detail "Size: ${SIZE} bytes; installable file count: 21." \
+            --detail "Fresh extraction markers: OZON_LIVE_REPAIR_FRESH_EXTRACTION_21_FILES_PASS and OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_REGRESSION_PASS." \
+            --detail "Live Step 5 remains PENDING and must use campaign ID 37130644."
+          git add "$ART" "$ART.sha256.txt" "$D/STEP4_CANDIDATE_BUILD_RESULT.json" "$D/STEP4_FRESH_EXTRACTION_REGRESSION_RESULT.json" "$O/OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_ROADMAP_2026-09-02.md"
+          git commit -m 'build(ozon): publish live repair candidate'
+          git push origin HEAD:${GITHUB_REF_NAME}
+          echo "OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_STEPS_1_TO_4_PASS"
