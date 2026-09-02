@@ -529,7 +529,7 @@ This is the execution order. Update the status table after every step and commit
 | 1 | Fix cyclic/shared-reference bug in `specific_campaign_ids` | COMPLETE | production diff + focused tests |
 | 2 | Add regression for actual executability of generated refinement | COMPLETE | test names/markers and PASS output |
 | 3 | Fix entitlement metadata for both new Seller READs | COMPLETE | deterministic entitlement assertions |
-| 4 | Build a new deterministic candidate | PENDING | artifact path, file count, SHA-256, fresh extraction verification |
+| 4 | Build a new deterministic candidate | COMPLETE | artifact path, file count, SHA-256, fresh extraction verification |
 | 5 | Repeat live test #6 with campaign ID `37130644` | PENDING | one physical request, HTTP 200, only requested campaign, no retry/pagination |
 | 6 | Run short final Ozon-only regression | PENDING | focused PASS matrix below |
 | 7 | Accept build only if all required checks pass | PENDING | final acceptance marker and accepted artifact identity |
@@ -647,3 +647,16 @@ Status: **COMPLETE**
 - Markers: OZON_DEPENDENT_ATTRIBUTE_ENTITLEMENTS_AND_CONTRACT_PASS and OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_REGRESSION_PASS.
 - Production file SHA-256: c032baab0d6818b5cdbe5e962c7dffa07ad3d31b3e79760b4ac5a820bdb2dbc1.
 - Evidence: validation/live-repair-2026-09-02/STEP3_DEPENDENT_ATTRIBUTE_ENTITLEMENT_RESULT.json.
+
+
+<!-- OZON-ROADMAP-STEP-4-COMPLETE -->
+### 2026-09-02 — Step 4: new deterministic candidate built and fresh-extraction verified
+
+Status: **COMPLETE**
+
+- Candidate source commit before artifact commit: 516ecf140538ad2838d39dcd01c7428efc1880d3.
+- Artifact: OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_CANDIDATE_2026-09-02.zip.
+- SHA-256: 80d0b4eba7110dc2d69ef3fab40214a9a6c54e98cfd6820ab611ac7ba73b2c76.
+- Size: 199684 bytes; installable file count: 21.
+- Fresh extraction markers: OZON_LIVE_REPAIR_FRESH_EXTRACTION_21_FILES_PASS and OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_REGRESSION_PASS.
+- Live Step 5 remains PENDING and must use campaign ID 37130644.
