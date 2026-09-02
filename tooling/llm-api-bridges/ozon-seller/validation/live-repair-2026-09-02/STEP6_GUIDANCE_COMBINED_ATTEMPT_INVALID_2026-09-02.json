@@ -1,0 +1,19 @@
+{
+  "schema": "OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_STEP6_GUIDANCE_ATTEMPT_V1",
+  "date": "2026-09-02",
+  "status": "INVALID_TEST_FORM_NOT_BRIDGE_FAILURE",
+  "observed": {
+    "result_count": 1,
+    "guidance_status": "guidance_error",
+    "error": "HELP_EXACT_OBJECT_REQUIRED",
+    "external_request_executed": false,
+    "physical_business_request_count": 0
+  },
+  "interpretation": "Two OZON_HELP_V2 exact objects were sent in one message. The HELP parser requires exactly one object per invocation, so the combined test form was rejected before any Ozon request. This does not change Step 6 product verdict.",
+  "roadmap_status": "STEP6_REMAINS_PARTIAL_PENDING",
+  "next": [
+    "Run stocks_inventory/warehouse_fbs guidance check alone.",
+    "Run orders_postings/assembly_carriage guidance check alone.",
+    "Repeat performance_campaigns local_sort=updated_at_desc as an isolated live command after provider rate limit clears."
+  ]
+}
