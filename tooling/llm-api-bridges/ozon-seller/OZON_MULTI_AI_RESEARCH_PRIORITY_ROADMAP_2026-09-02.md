@@ -2,7 +2,7 @@
 
 Date: 2026-09-02
 Status: ACTIVE_RESEARCH_ROADMAP
-Scope: Tier A new providers only; ChatGPT and Yandex Alice remain accepted baseline adapters and are not re-ranked for new-provider discovery.
+Scope: Tier A new providers only. ChatGPT and Yandex Alice remain accepted baseline adapters and are not re-ranked for new-provider discovery.
 
 ## 1. Governing workflow
 
@@ -10,33 +10,36 @@ The project uses two provider passes.
 
 ### PASS 1 — breadth first
 
-Research every Tier A provider once before doing any provider-specific implementation or deep authenticated closure.
+Research every Tier A provider once before provider-specific implementation or deep authenticated closure.
 
-For every provider the first pass must establish at minimum:
+For every provider the first pass records:
 
-- public/basic browser access state;
+- browser/environment reachability;
+- public/basic chat access;
 - whether authentication is required for basic chat;
-- whether authentication is required specifically for durable conversation identity/history;
-- positive provider/chat DOM candidate;
+- whether authentication is required only for durable history/identity;
+- positive chat-DOM evidence or exact blocker;
 - conversation identity candidate or blocker;
 - composer/Send candidate or blocker;
-- exact unresolved evidence needed later.
+- unresolved evidence required for Pass 2.
 
-A provider that hits an authentication barrier or Codex browser-environment blocker is recorded and skipped for the remainder of Pass 1. Do not stop the whole Tier A program to finish it immediately.
+A provider that hits authentication, browser-environment, provider challenge, or blank/incomplete product DOM is recorded and skipped for the rest of Pass 1.
 
-Important classification rule:
+Classification rules:
 
-- `AUTH_REQUIRED` requires actual provider/page authentication evidence;
-- `BROWSER_POLICY_UNVERIFIED`, blocked origin access, missing Browser Use grant, or equivalent pre-document failure is an **environment blocker**, not a provider/auth verdict;
-- environment blockers are recorded as `ENVIRONMENT_BLOCKED / NOT TESTED` and revisited later.
+- `AUTH_REQUIRED` requires actual provider authentication evidence;
+- `ENVIRONMENT_BLOCKED / NOT TESTED` is used when Codex Browser Use or the effective browser/render path prevents a usable product DOM without proving auth or product incompatibility;
+- `PROVIDER_CHALLENGE_BLOCKED / NOT TESTED` is reserved for actual CAPTCHA/anti-bot/geo/provider challenge evidence;
+- missing/blank product DOM is never silently converted into `UNSAFE / UNSUPPORTED`;
+- `UNSAFE / UNSUPPORTED` requires observed provider behavior demonstrating an actual incompatibility.
 
-### PASS 2 — depth after all providers have first-pass records
+### PASS 2 — depth after all providers have Pass-1 records
 
-Only after every Tier A provider has a Pass-1 record, return to providers one by one and close their missing items in the same audience-priority order, including authenticated passes where required and environment-blocked retries where Browser Use must first be fixed.
+Only after every Tier A provider has a Pass-1 record, return by the same audience-priority order and close missing items, including authenticated and environment-retry passes.
 
 Pass 2 closes:
 
-- exact durable identity;
+- exact durable conversation identity;
 - reload stability;
 - stable turn/message identity;
 - code block/raw extraction;
@@ -48,11 +51,11 @@ Pass 2 closes:
 - established-chat Autorun;
 - new-chat Autorun.
 
-Only after provider evidence is closed do we implement/finish that provider adapter.
+Only after evidence is closed do we implement/refine that provider adapter.
 
 ## 2. Audience-ranking methodology
 
-Priority is by the best current public product-level active-user figure available as of 2026-09-02.
+Priority uses the best current public product-level active-user figure available as of 2026-09-02.
 
 Preference order:
 
@@ -61,53 +64,44 @@ Preference order:
 3. official product user/community count where MAU is unavailable;
 4. older/partial public user count as a low-confidence fallback.
 
-Metrics are explicitly labeled because they are not perfectly interchangeable. Parent-company/ecosystem audience is NOT silently substituted for the browser chat product.
+Parent ecosystem audience is not silently substituted for the browser chat product.
 
-Examples:
+## 3. Tier A priority order and Pass-1 status
 
-- Microsoft reports 150M MAU for the whole first-party Copilot family, but the standalone Microsoft Copilot app is measured at 17.64M App MAU. The standalone figure is used for `copilot.com` priority.
-- Proton reports 100M+ users across the Proton ecosystem, but that is not Lumo MAU; Lumo remains `UNKNOWN_PRODUCT_MAU`.
-- DuckDuckGo has a large ecosystem, but no current product-specific Duck.ai MAU was found; Duck.ai remains `UNKNOWN_PRODUCT_MAU`.
-
-## 3. Tier A priority order
-
-| Priority | Provider | Current audience figure used | Metric quality | Pass-1 status | Authentication / access classification so far | Next action |
+| Priority | Provider | Audience figure used | Metric quality | Pass-1 status | Authentication / access classification | Next action |
 |---:|---|---:|---|---|---|---|
-| 1 | Google Gemini | >1.0B monthly users | OFFICIAL PRODUCT MAU, Aug 2026 | COMPLETE AS ENVIRONMENT-BLOCKED RECORD | `ENVIRONMENT_BLOCKED / NOT TESTED`: Codex Browser Use returned `BROWSER_POLICY_UNVERIFIED` before Gemini document load; auth state not observed | Defer retry until Pass 2 / browser policy fixed |
-| 2 | Qwen | 251.13M | standardized App MAU, Jun 2026 | COMPLETE for guest surface | Basic guest chat: NO AUTH. Durable exact chat: auth currently required; authenticated `/c/<UUID>` candidate observed | Defer authenticated closure to Pass 2 |
-| 3 | DeepSeek | 139.08M | standardized App MAU, Jun 2026 | COMPLETE AS AUTH-BLOCKED RECORD | `AUTH_REQUIRED_FOR_BASIC_CHAT`: provider reached normally, redirected to `/sign_in`; no composer/Send/chat before login | Defer authenticated closure to Pass 2 |
-| 4 | Grok | 117M Grok-AI-feature MAU in Mar 2026; 67.88M standardized App MAU in Jun 2026 | high, but measurement boundaries differ | NOT COMPLETE | UNKNOWN; broad pass produced blank/no provider DOM | **NEXT PROVIDER** |
-| 5 | Meta AI | 73.06M standalone App MAU, Jun 2026 | standardized standalone app MAU; broader Meta-integrated AI audience is larger and intentionally not used | NOT COMPLETE | AUTH REQUIRED in broad pass | Record blocker in Pass 1, authenticated closure in Pass 2 |
-| 6 | Claude | 39.81M | standardized App MAU, Jun 2026 | NOT COMPLETE | AUTH REQUIRED; broad pass reached `/login` | Record blocker in Pass 1, authenticated closure in Pass 2 |
-| 7 | Perplexity | 27.54M | standardized App MAU, Jun 2026 | PARTIAL | Basic page/composer visible; login required before Send in broad pass | Finish read-only first pass; authenticated closure in Pass 2 |
-| 8 | Kimi | 22.69M | standardized App MAU, Jun 2026 | NOT COMPLETE | UNKNOWN; landing surface only in broad pass | First-pass discovery |
-| 9 | GigaChat | >20M monthly audience in current Sber investor communication | official monthly audience statement; older/other transcript figures conflict, so >20M is conservative authority | NOT COMPLETE | UNKNOWN; no safe composer in broad pass | First-pass discovery |
-| 10 | Microsoft Copilot | 17.64M standalone app MAU | standardized standalone App MAU, Jun 2026; Microsoft also reports 150M MAU across all first-party Copilots, not used for standalone ranking | NOT COMPLETE | UNKNOWN; broad pass reached landing/marketing surface | First-pass discovery |
-| 11 | OpenRouter Chat | 10M+ global users | official total community/users, not MAU and not chat-only | NOT COMPLETE | UNKNOWN; playground visible but active chat/model context unverified | First-pass discovery |
-| 12 | Poe | 1.43M | standardized App MAU, Jun 2026 | NOT COMPLETE | AUTH REQUIRED; broad pass redirected to login | Record blocker in Pass 1, authenticated closure in Pass 2 |
-| 13 | Mistral Vibe / Le Chat | 1.19M | standardized App MAU, Jun 2026 | PARTIAL | Basic chat surface accessible without login in broad pass; generic ProseMirror insertion failed exact read-back | Finish Pass-1 classification; editor-special-case closure in Pass 2 |
-| 14 | Duck.ai | UNKNOWN_PRODUCT_MAU | no defensible current Duck.ai-specific user count found; DuckDuckGo ecosystem size intentionally not substituted | NOT COMPLETE | Official product docs say free Duck.ai can be used without an account; broad Codex pass had provider DOM unavailable | First-pass discovery |
-| 15 | Proton Lumo | UNKNOWN_PRODUCT_MAU | Proton ecosystem has 100M+ users, but no defensible Lumo-specific MAU found | NOT COMPLETE | Official docs say guest access is available without account; durable saved history requires Proton account | First-pass discovery |
-| 16 | T3 Chat | >=100K historical users who sent a message within first 16 days after launch; current MAU not found | LOW-CONFIDENCE HISTORICAL FLOOR | PARTIAL broad evidence only | Basic chat was reachable/sent once in broad pass; current account requirement must be rechecked | LAST in current audience-ranked Pass 1 unless newer usage evidence moves it upward |
+| 1 | Google Gemini | >1.0B monthly users | official product MAU, Aug 2026 | COMPLETE AS BLOCKED RECORD | `ENVIRONMENT_BLOCKED / NOT TESTED`: Browser Use returned `BROWSER_POLICY_UNVERIFIED` before Gemini document load; auth state not observed | Retry in Pass 2 after browser policy/access fixed |
+| 2 | Qwen | 251.13M | standardized App MAU, Jun 2026 | COMPLETE for guest surface | Basic guest chat works without auth; guest `/c/guest` is not durable. Operator later observed authenticated `/c/<UUID>` candidate | Authenticated closure in Pass 2 |
+| 3 | DeepSeek | 139.08M | standardized App MAU, Jun 2026 | COMPLETE AS AUTH-BLOCKED RECORD | `AUTH_REQUIRED_FOR_BASIC_CHAT`: provider reached normally and redirected to `/sign_in`; no chat/composer/Send before login | Authenticated closure in Pass 2 |
+| 4 | Grok | 117M Grok-AI-feature MAU Mar 2026; 67.88M standardized App MAU Jun 2026 | high, boundaries differ | COMPLETE AS BLOCKED RECORD | Provider document reached at `https://grok.com/`, but usable chat DOM did not render; only `Skip to main content`; no auth/CAPTCHA/redirect observed | Environment/render retry in Pass 2 |
+| 5 | Meta AI | 73.06M standalone App MAU, Jun 2026 | standardized standalone App MAU | NOT COMPLETE | Broad pass observed login control and disabled Send; auth likely but dedicated pass required | **NEXT PROVIDER** |
+| 6 | Claude | 39.81M | standardized App MAU, Jun 2026 | NOT COMPLETE | Broad pass redirected to `/login` | After Meta AI |
+| 7 | Perplexity | 27.54M | standardized App MAU, Jun 2026 | PARTIAL | Composer visible; login dialog appeared before Send | Finish Pass-1 classification |
+| 8 | Kimi | 22.69M | standardized App MAU, Jun 2026 | NOT COMPLETE | Broad pass reached landing surface only | First-pass discovery |
+| 9 | GigaChat | >20M monthly audience | official Sber monthly audience statement | NOT COMPLETE | Broad pass found no safe composer | First-pass discovery |
+| 10 | Microsoft Copilot | 17.64M standalone App MAU | standardized standalone App MAU, Jun 2026 | NOT COMPLETE | Broad pass reached landing/marketing surface | First-pass discovery |
+| 11 | OpenRouter Chat | 10M+ global users | official total users/community, not MAU/chat-only | NOT COMPLETE | Playground visible; active chat/model context unverified | First-pass discovery |
+| 12 | Poe | 1.43M | standardized App MAU, Jun 2026 | NOT COMPLETE | Broad pass redirected to login | Record auth blocker in Pass 1 |
+| 13 | Mistral Vibe / Le Chat | 1.19M | standardized App MAU, Jun 2026 | PARTIAL | Basic chat accessible; generic ProseMirror insertion did not round-trip exactly | Finish Pass-1 classification; editor special case in Pass 2 |
+| 14 | Duck.ai | UNKNOWN_PRODUCT_MAU | no defensible current Duck.ai-specific MAU found | NOT COMPLETE | Official docs say basic Duck.ai works without account; live evidence pending | First-pass discovery |
+| 15 | Proton Lumo | UNKNOWN_PRODUCT_MAU | Proton ecosystem audience not substituted | NOT COMPLETE | Official docs say guest access exists; saved history requires account | First-pass discovery |
+| 16 | T3 Chat | >=100K historical users in first 16 days | low-confidence historical floor | PARTIAL broad evidence | Basic chat reached and one Send observed; durable identity/lifecycle incomplete | Last in Pass 1 |
 
-## 4. Source notes for ranking
+## 4. Ranking source notes
 
-Primary current sources used to establish this order:
-
-- Google Gemini official: >1B monthly Gemini app users, Aug 11 2026 — https://blog.google/innovation-and-ai/products/gemini-app/one-billion-monthly-users/
-- AICPB Global AI App MAU, Jun 2026: Qwen 251.13M; DeepSeek 139.08M; Meta AI 73.06M; Grok 67.88M; Claude 39.81M; Perplexity 27.54M; Kimi 22.69M; Microsoft Copilot 17.64M — https://www.aicpb.com/en/ai-rankings/products/global-ai-rankings/apps
-- Grok: 117M monthly active users for Grok AI features as of Mar 2026, reported from SpaceX filing — https://techcrunch.com/2026/05/20/xai-burned-6-4b-last-year-spacexs-ipo-filing-shows-why-the-spending-is-far-from-over/
-- GigaChat: Sber investor communication reports monthly audience >20M and 800M prompts — https://t.me/s/SberForInvestors/350
-- OpenRouter official: 10M+ global users — https://openrouter.ai/about
-- Poe standardized App MAU: 1.43M, Jun 2026 — https://www.aicpb.com/ai-rankings/products/ai-global-slowdown-rankings/apps
-- Mistral Le Chat standardized App MAU: 1.19M, Jun 2026 — https://www.aicpb.com/en/product/Le-Chat-by-Mistral-AI/appid1D6F320E1
-- T3 historical floor: >100,000 users sent a message in first 16 days — Theo Browne public launch update.
-- Duck.ai official access docs: no account required — https://duckduckgo.com/duckduckgo-help-pages/duckai/approach-to-ai
-- Proton Lumo official docs: guest use without account; account required for saved chat history — https://proton.me/support/lumo-getting-started
+- Gemini official >1B monthly users: https://blog.google/innovation-and-ai/products/gemini-app/one-billion-monthly-users/
+- Standardized App MAU source for Qwen, DeepSeek, Meta AI, Grok, Claude, Perplexity, Kimi, Microsoft Copilot: https://www.aicpb.com/en/ai-rankings/products/global-ai-rankings/apps
+- Grok 117M monthly active users for Grok AI features as of Mar 2026, reported from SpaceX filing: https://techcrunch.com/2026/05/20/xai-burned-6-4b-last-year-spacexs-ipo-filing-shows-why-the-spending-is-far-from-over/
+- GigaChat >20M monthly audience: https://t.me/s/SberForInvestors/350
+- OpenRouter 10M+ global users: https://openrouter.ai/about
+- Poe App MAU: https://www.aicpb.com/ai-rankings/products/ai-global-slowdown-rankings/apps
+- Mistral Le Chat App MAU: https://www.aicpb.com/en/product/Le-Chat-by-Mistral-AI/appid1D6F320E1
+- Duck.ai account/access docs: https://duckduckgo.com/duckduckgo-help-pages/duckai/approach-to-ai
+- Proton Lumo account/history docs: https://proton.me/support/lumo-getting-started
 
 ## 5. Authentication/access taxonomy
 
-Do not use a single vague `AUTH_REQUIRED` flag. Final matrix must distinguish:
+Final matrix distinguishes:
 
 - `NO_AUTH_FOR_BASIC_CHAT`
 - `AUTH_REQUIRED_FOR_BASIC_CHAT`
@@ -115,70 +109,70 @@ Do not use a single vague `AUTH_REQUIRED` flag. Final matrix must distinguish:
 - `AUTH_REQUIRED_FOR_HISTORY_OR_DURABLE_IDENTITY`
 - `AUTH_STATE_UNRESOLVED`
 - `ENVIRONMENT_BLOCKED_NOT_TESTED`
-
-This matters because Ozon Bridge may be able to inspect/send in a guest chat while still being unable to create a safe durable channel, and because Codex Browser Use may fail before the provider is reached at all.
+- `PROVIDER_CHALLENGE_BLOCKED_NOT_TESTED`
 
 ## 6. Current authentication/access matrix
 
-| Provider | Basic chat without auth | Durable conversation without auth | Current status |
+| Provider | Basic chat without auth | Durable conversation without auth | Current Pass-1 status |
 |---|---|---|---|
-| Gemini | UNRESOLVED | UNRESOLVED | `ENVIRONMENT_BLOCKED / NOT TESTED`; Browser Use policy blocked before document load, not an auth observation |
-| Qwen | YES, guest observed | NO in tested guest flow | Authenticated `/c/<UUID>` candidate observed by operator; verify in Pass 2 |
-| DeepSeek | NO | NOT TESTED | `AUTH_REQUIRED_FOR_BASIC_CHAT`; provider reached normally and redirected to `/sign_in` |
+| Gemini | UNRESOLVED | UNRESOLVED | `ENVIRONMENT_BLOCKED / NOT TESTED`; pre-document Browser Use policy blocker |
+| Qwen | YES, guest observed | NO in tested guest flow | Authenticated `/c/<UUID>` candidate must be verified in Pass 2 |
+| DeepSeek | NO | NOT TESTED | `AUTH_REQUIRED_FOR_BASIC_CHAT`; `/sign_in` |
+| Grok | UNRESOLVED | UNRESOLVED | `ENVIRONMENT_BLOCKED / NOT TESTED`; provider document reached but chat DOM blank/incomplete |
+| Meta AI | Broad pass suggested NO | NOT TESTED | Dedicated first pass pending |
 | Claude | NO in broad pass | NOT TESTED | Login barrier |
-| Perplexity | Composer visible, but Send triggered login barrier | NOT TESTED | Auth required for usable tested flow |
-| Meta AI | NO in broad pass | NOT TESTED | Login barrier |
-| Poe | NO in broad pass | NOT TESTED | Login barrier |
-| Mistral Le Chat | YES in broad pass | UNRESOLVED | ProseMirror insertion special case |
-| Duck.ai | YES per official docs | likely not durable without optional synced history; must verify live | First-pass live evidence pending |
-| Proton Lumo | YES per official docs | saved/history chat requires account | First-pass live evidence pending |
-| T3 Chat | Broad pass reached chat and sent once | UNRESOLVED | Recheck in its ranked turn |
-| Grok | UNRESOLVED | UNRESOLVED | Pending |
+| Perplexity | Composer visible but Send caused login barrier | NOT TESTED | Dedicated first-pass closure pending |
 | Kimi | UNRESOLVED | UNRESOLVED | Pending |
 | GigaChat | UNRESOLVED | UNRESOLVED | Pending |
 | Microsoft Copilot | UNRESOLVED | UNRESOLVED | Pending |
 | OpenRouter Chat | UNRESOLVED | UNRESOLVED | Pending |
+| Poe | NO in broad pass | NOT TESTED | Login barrier |
+| Mistral Le Chat | YES in broad pass | UNRESOLVED | ProseMirror insertion special case |
+| Duck.ai | YES per official docs | UNRESOLVED live | Pending live first pass |
+| Proton Lumo | YES per official docs | saved history requires account | Pending live first pass |
+| T3 Chat | Broad pass reached chat | UNRESOLVED | Dedicated first-pass closure pending |
 
-## 7. Active execution queue
-
-Completed Pass-1 records so far:
+## 7. Completed Pass-1 checkpoints
 
 1. Google Gemini — `ENVIRONMENT_BLOCKED / NOT TESTED` (`BROWSER_POLICY_UNVERIFIED` before document load).
-2. Qwen — guest flow classified; authenticated durable-route closure deferred to Pass 2.
-3. DeepSeek — `AUTH_REQUIRED_FOR_BASIC_CHAT`; provider reached normally at `/sign_in`, authenticated closure deferred to Pass 2.
+2. Qwen — guest flow classified; authenticated durable-ID closure deferred to Pass 2.
+3. DeepSeek — `AUTH_REQUIRED_FOR_BASIC_CHAT`; provider reached `/sign_in` normally.
+4. Grok — `ENVIRONMENT_BLOCKED / NOT TESTED`; provider document reached but usable Grok chat DOM did not render; no auth/challenge evidence.
 
-Continue Pass 1 by audience order without returning to these providers yet.
+## 8. Active Pass-1 execution queue
 
-Active queue:
+1. **Meta AI**
+2. Claude
+3. Perplexity
+4. Kimi
+5. GigaChat
+6. Microsoft Copilot
+7. OpenRouter Chat
+8. Poe
+9. Mistral Vibe / Le Chat
+10. Duck.ai
+11. Proton Lumo
+12. T3 Chat
 
-1. **Grok**
-2. Meta AI
-3. Claude
-4. Perplexity
-5. Kimi
-6. GigaChat
-7. Microsoft Copilot
-8. OpenRouter Chat
-9. Poe
-10. Mistral Vibe / Le Chat
-11. Duck.ai
-12. Proton Lumo
-13. T3 Chat
+After item 12 is complete, freeze the breadth matrix and begin Pass 2 by original audience priority:
 
-After item 13 is complete, stop breadth discovery and begin Pass 2 from the highest-priority provider with unresolved/blocked evidence. Gemini returns first because it has the highest audience priority and no provider-level evidence was obtained. Qwen returns next at its original audience priority, using an authenticated session and `/c/<UUID>` as a candidate identity to verify. DeepSeek returns next using an already-authenticated disposable session.
+1. Gemini environment retry;
+2. Qwen authenticated closure;
+3. DeepSeek authenticated closure;
+4. Grok environment/render retry;
+5. Meta AI authenticated closure if required;
+6. continue down the ranking.
 
-## 8. Implementation rule
+## 9. Implementation rule
 
 No new Tier A adapter is implemented during Pass 1.
 
-After Pass 1 is complete:
+After Pass 1:
 
-1. freeze the full provider/access/auth matrix;
+1. freeze provider/access/auth matrix;
 2. start Pass 2 by audience priority;
 3. close one provider completely;
-4. review and record evidence in GitHub;
+4. record evidence/review in GitHub;
 5. implement/refine that provider adapter;
-6. run its local/browser regressions;
+6. run local/browser regressions;
 7. only then move to the next provider.
-
-This prevents low-traffic aggregator surfaces from consuming engineering time before high-audience providers such as Gemini, DeepSeek, Grok, Meta AI and Claude are understood.
