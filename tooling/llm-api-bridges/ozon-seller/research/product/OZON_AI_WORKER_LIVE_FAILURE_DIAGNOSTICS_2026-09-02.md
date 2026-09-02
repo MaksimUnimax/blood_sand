@@ -2,7 +2,7 @@
 
 Date: 2026-09-02
 Branch: `research/ozon-product-demand-2026-09-02`
-Status: ACTIVE
+Status: ACTIVE — STD-01 INCIDENT CLOSED FOR BENCHMARK PROGRESSION
 
 ## Mandatory rule
 
@@ -24,7 +24,7 @@ Required failure classes:
 - `PROVIDER_OUTAGE_OR_SERVER_ERROR`
 - `UNKNOWN_REQUIRES_MORE_DIAGNOSTICS`
 
-## Active incident — STD-01 / analytics_data HTTP 429
+## Closed incident — STD-01 / analytics_data HTTP 429 then recovery
 
 Business query:
 
@@ -67,7 +67,7 @@ These metrics were classified by the accepted entitlement registry as available 
 
 Elapsed between Bridge dispatches: `117.962 seconds`.
 
-## Evidence already established
+## Evidence established before recovery
 
 1. `/v1/analytics/data` is a method with a special slow request quota; the accepted Bridge models this family at 60 seconds plus 5 seconds launch safety.
 2. The Bridge quota identity is keyed by a hash of Seller `clientId`, so changing API-key revision does not intentionally create an independent account quota bucket.
@@ -76,7 +76,7 @@ Elapsed between Bridge dispatches: `117.962 seconds`.
 5. Provider transport captures safe `Retry-After` metadata and can extend the local analytics quota from it; neither 429 delivered a `retry_after` value.
 6. The accepted project operational-constraints evidence explicitly warns not to invent exact provider quota/reset semantics when Ozon does not expose them.
 
-## Diagnostic D1 — completed
+## Diagnostic D1 — completed PASS
 
 Command: `roles` / `POST /v1/roles`.
 
@@ -97,42 +97,75 @@ Observed:
 - general Seller API/provider outage — rejected at D1 observation point.
 - `ENTITLEMENT_ERROR` for the requested basic metrics — rejected by both entitlement planner and returned role permission.
 
-## Current narrowed hypotheses after D1
+## Diagnostic D2 / Business Run 3 — recovery PASS
 
-### H1 — `OZON_METHOD_RATE_LIMIT` / extended method cooldown
+Exact original command was repeated with no logical changes:
+- `date_from`: `2026-09-01`;
+- `date_to`: `2026-09-01`;
+- `dimension`: `[day]`;
+- `metrics`: `[revenue, ordered_units]`;
+- `limit`: `100`.
 
-The analytics method may still be in a provider-side method-specific quota window or cooldown beyond the nominal local 65-second protection used by Bridge.
+Observed:
+- request id `7b670916-262e-46f3-8702-c55dfb862225`;
+- HTTP `200`;
+- exactly one physical business request;
+- no automatic retry;
+- entitlement `SUPPORTED_AND_ENTITLED` / `all_accounts`;
+- `last_provider_request_at`: `1788337707374` = 2026-09-02 08:28:27.374 UTC;
+- Bridge `next_allowed_at`: `1788337772374` = 2026-09-02 08:29:32.374 UTC;
+- elapsed `6007 ms`;
+- returned revenue `27200`;
+- returned ordered units `16`.
 
-Status: `PLAUSIBLE / NOT YET PROVEN`.
+Elapsed from Run 2 dispatch to successful D2 dispatch: `1013.748 seconds` = `16m 53.748s`.
 
-### H2 — `PARALLEL_EXTERNAL_CONSUMER_OR_UNTRACKED_CALL`
+## Final incident classification
 
-Another browser/profile/extension instance, script, integration, analytics product or other caller may be consuming the same seller-account `/v1/analytics/data` quota. Such traffic is invisible to this extension's local quota state.
+`TRANSIENT_ANALYTICS_METHOD_QUOTA_OR_PROVIDER_STATE_RECOVERED / EXACT_TRIGGER_UNRESOLVED`
 
-Status: `PLAUSIBLE / NOT YET PROVEN`.
+The incident is closed for benchmark progression because the exact requested commercial read succeeded and the business result is now available.
 
-### H3 — `OZON_PROVIDER_CIRCUIT_BLOCK`
+### Strongly rejected classes
 
-Ozon may be maintaining an extended provider-side block/circuit for this method after previous excessive traffic.
+- `AI_COMMAND_SELECTION_ERROR` — exact intended method and metrics ultimately succeeded unchanged.
+- `BRIDGE_CONTRACT_OR_PLANNER_ERROR` — exact request was preserved and accepted by provider on recovery.
+- `AUTH_OR_ROLE_ERROR` — D1 roles returned 200 and explicitly permitted `/v1/analytics/data`.
+- `ENTITLEMENT_ERROR` — entitlement remained `SUPPORTED_AND_ENTITLED` throughout.
+- `OZON_GLOBAL_RATE_LIMIT` — D1 roles returned 200 while analytics was the affected family.
+- general provider outage — not supported by D1 and later analytics recovery.
+- basic `BRIDGE_RATE_LIMIT_STATE_ERROR` as direct cause — Run 2 already respected more than the locally protected interval and each command emitted exactly one external request.
 
-Status: `PLAUSIBLE / NOT YET PROVEN`; current sanitized 429 output does not contain enough provider detail to distinguish this from H1.
+### Remaining indistinguishable causes
 
-### H4 — `BRIDGE_RATE_LIMIT_STATE_ERROR`
+#### H1 — `OZON_METHOD_RATE_LIMIT` / extended method cooldown
 
-The basic local scheduling rule is not supported as the direct cause because Run 2 was nearly 118 seconds after Run 1 and only one physical request occurred per run.
+Consistent with recovery after a substantially longer quiet interval, but not proven because Ozon did not expose a reset time or diagnostic detail in the delivered 429s.
 
-Status: `CURRENTLY DISFAVORED / NOT FULLY CLOSED`.
+Status: `PLAUSIBLE / NOT DISTINGUISHABLE FROM H2/H3`.
 
-## Next diagnostic — D2
+#### H2 — `PARALLEL_EXTERNAL_CONSUMER_OR_UNTRACKED_CALL`
 
-Repeat the exact original `/v1/analytics/data` logical read after the substantially longer elapsed interval, without changing date, dimensions or metrics.
+Another caller using the same seller account could have consumed the method quota before the first two Bridge attempts and then stopped before D2.
 
-Expected interpretations:
+Status: `PLAUSIBLE / NOT PROVEN`.
 
-- `HTTP 200`: STD-01 data becomes available. Earlier failures are consistent with a temporary/extended analytics-method quota condition; external concurrent use remains possible unless separately excluded.
-- `HTTP 429`: do not skip. Persistent method-specific block/external untracked consumption becomes the main incident. Next inspect local request history/diagnostics and known integrations/parallel instances before issuing another business query.
-- other HTTP/error: classify separately rather than collapsing it into the current rate-limit hypothesis.
+#### H3 — `OZON_PROVIDER_CIRCUIT_BLOCK`
+
+An extended provider-side block/circuit could also explain recovery after ~17 minutes, but the sanitized provider response did not contain enough evidence to prove this mechanism.
+
+Status: `PLAUSIBLE / NOT PROVEN`.
+
+No more precise root cause should be asserted without provider/account-level traffic evidence.
+
+## Benchmark implication
+
+STD-01 is `PASS`:
+- 2026-09-01 revenue: `27,200 RUB`;
+- ordered units: `16`.
+
+Benchmark may now proceed to STD-02 under the same `NO_SKIP_ON_FAILURE` rule. If `/v1/analytics/data` returns 429 again during later rows, this incident becomes relevant recurrence evidence and should be reopened with the new timestamps rather than treated as an unrelated first occurrence.
 
 ## Current checkpoint
 
-`STD_01_D1_ROLES_200_AUTH_GLOBAL_ROLE_REJECTED_D2_EXACT_ANALYTICS_REPEAT_READY`
+`STD_01_TRANSIENT_ANALYTICS_429_RECOVERED_HTTP_200_INCIDENT_CLOSED_STD_02_READY`
