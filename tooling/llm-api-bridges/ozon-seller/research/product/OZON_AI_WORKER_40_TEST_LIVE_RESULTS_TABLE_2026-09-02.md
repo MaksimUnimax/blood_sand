@@ -13,8 +13,8 @@ This is the compact authoritative live result ledger. Detailed evidence remains 
 | 1 | STD-01 | Дай продажи за вчера: общая выручка и количество заказанных единиц. | PASS — 27,200 RUB; 16 units for 2026-09-01 | FAIL_TRANSIENT_429_THEN_RECOVERED | YES | 3 business + 1 roles diagnostic; first two analytics calls 429; same call later 200 | Recovery-guidance gap discovered; exact 429 trigger unresolved. |
 | 2 | STD-02 | Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня. | PASS — total 574,564 RUB / 341 units; top: 2026-08-30 57,776, 2026-08-29 50,745, 2026-08-31 49,640; bottom: 2026-08-26 20,400, 2026-09-01 27,200, 2026-08-25 28,900 | FAIL_FIRST_ATTEMPT_429_THEN_RECOVERED | NO | Run 1 exact 14-day query => 429; Run 2 exact same query 176.815s later => HTTP 200 | Same 14-day payload succeeded, rejecting query-range-too-heavy as supported cause. Recurrent transient analytics quota/provider-state risk remains. |
 | 3 | STD-03 | Дай топ-20 товаров за последние 7 дней по выручке. | PASS — top SKU 1636048691 / «Печать Велеса» = 45,288 RUB / 27 units; query totals 288,998 RUB / 172 units | PASS_FIRST_ATTEMPT | NO | 1 business run; `analytics_data`, dimension `sku`, revenue DESC, HTTP 200 | AI selected a materially different analytics shape: SKU breakdown + provider-side sorting. Returned 20 requested rows. Top-20 rows sum to 220,777 RUB / 131 units ≈ 76.4% of total revenue and 76.2% of units. |
-| 4 | STD-04 | Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах. | READY | PENDING | PENDING | 0 | Next Layer-A test. |
-| 5 | STD-05 | Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж. | PENDING | PENDING | PENDING | 0 | — |
+| 4 | STD-04 | Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах. | PASS — 2026-09-01 vs 2026-08-31: revenue 27,200 vs 49,640 RUB; units 16 vs 31; revenue change −22,440 RUB / −45.2%; units change −15 / −48.4% | PASS_FIRST_ATTEMPT | NO | 1 business run; `analytics_data`, dimension `day`, 2-day range, HTTP 200 | AI correctly performed the comparison and percentage calculations client-side from one Ozon read. |
+| 5 | STD-05 | Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж. | READY | PENDING | PENDING | 0 | Next Layer-A test; must investigate causes, not stop at sales delta. |
 | 6 | STD-06 | Что сегодня в моём кабинете требует внимания в первую очередь? | PENDING | PENDING | PENDING | 0 | — |
 | 7 | STD-07 | Какие товары у меня скоро закончатся, а какие лежат слишком долго? Что пополнять в первую очередь? | PENDING | PENDING | PENDING | 0 | — |
 | 8 | STD-08 | Покажи текущие остатки по складам и отсортируй склады от наибольшего остатка к наименьшему. | PENDING | PENDING | PENDING | 0 | — |
@@ -138,6 +138,39 @@ Classification:
 - operator intervention: `NO`;
 - product-logic note: the worker successfully changed from daily time-series analytics to SKU-level ranked analytics and used provider-side sorting rather than post-hoc reinterpreting the previous result.
 
+## STD-04 completed record
+
+Canonical query: `Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах.`
+
+Resolved dates:
+- yesterday: `2026-09-01`;
+- day before yesterday: `2026-08-31`.
+
+Run 1:
+- request id `fd7ead86-6573-429d-9358-209815b83bdc`;
+- operation `analytics_data`;
+- dimension `[day]`;
+- metrics `[revenue, ordered_units]`;
+- HTTP `200`;
+- exactly one physical request;
+- no retry and no operator intervention.
+
+Returned values:
+- `2026-08-31`: revenue `49,640 RUB`, ordered units `31`;
+- `2026-09-01`: revenue `27,200 RUB`, ordered units `16`.
+
+AI-side calculations:
+- revenue absolute change: `27,200 - 49,640 = -22,440 RUB`;
+- revenue percent change: `-22,440 / 49,640 × 100 ≈ -45.2%`;
+- ordered-units absolute change: `16 - 31 = -15`;
+- ordered-units percent change: `-15 / 31 × 100 ≈ -48.4%`.
+
+Classification:
+- business answerability: `PASS`;
+- operational reliability: `PASS_FIRST_ATTEMPT`;
+- operator intervention: `NO`;
+- product-logic note: one two-day API read was sufficient; comparison and percentages were computed by the AI without another provider request.
+
 ## Current checkpoint
 
-`FORTY_TEST_GATE_LAYER_A_STD_01_STD_02_STD_03_COMPLETE_STD_04_READY`
+`FORTY_TEST_GATE_LAYER_A_STD_01_STD_02_STD_03_STD_04_COMPLETE_STD_05_READY`
