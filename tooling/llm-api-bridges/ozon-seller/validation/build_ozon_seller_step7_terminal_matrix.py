@@ -6,7 +6,7 @@ from pathlib import Path
 SELLER_SWAGGER_BYTES = 3933043
 SELLER_SWAGGER_SHA256 = "39e053a147180d1df4ded6ed0272aaaf02dd6a371144d8ebed7113fd218e4b40"
 SELLER_OPERATIONS = 463
-ACCEPTED_SELLER_READS = 219
+ACCEPTED_SELLER_READS = 245
 
 SUNSET_KEYS = {
     "POST /v1/actions/discounts-task/list",
@@ -23,52 +23,87 @@ SUNSET_KEYS = {
     "POST /v1/analytics/manage/stocks",
 }
 
-NEW_READ_SPECS = {
-    "POST /v1/pass/list": ["arrival_pass_list","operator_personal_data_gate","orders_postings","assembly_carriage"],
-    "POST /v5/fbs/posting/product/exemplar/validate": ["fbs_product_exemplar_validate","safe_projection","orders_postings","fbs_postings"],
-    "POST /v2/carriage/delivery/list": ["carriage_delivery_list_v2","safe_projection","orders_postings","assembly_carriage"],
-    "POST /v1/posting/fbs/pick-up-code/verify": ["posting_fbs_pickup_code_verify","safe_projection","orders_postings","fbs_postings"],
-    "POST /v1/posting/global/etgb": ["posting_global_etgb","safe_projection","orders_postings","labels_documents"],
-    "POST /v2/returns/rfbs/get": ["rfbs_returns_get","operator_personal_data_gate","returns_cancellations","returns"],
-    "POST /v2/conditional-cancellation/list": ["conditional_cancellation_list","operator_personal_data_gate","returns_cancellations","cancellations"],
-    "POST /v3/chat/list": ["chat_list_v3","safe_projection","reviews_questions","chats"],
-    "POST /v1/finance/document-b2b-sales/json": ["finance_b2b_sales_json","operator_personal_data_gate","finance","documents_reports"],
-    "POST /v1/receipts/seller/list": ["receipts_seller_list","safe_projection","finance","documents_reports"],
-    "POST /v2/actions/discounts-task/list": ["discount_task_list_v2","operator_personal_data_gate","prices_promotions","actions_promotions"],
-    "POST /v2/posting/digital/list": ["posting_digital_list_v2","safe_projection","orders_postings","fbs_postings"],
-    "POST /v1/notification/list": ["notification_list","safe_projection","account_access","seller_settings"],
-    "POST /v1/notification/push-type/list": ["notification_push_type_list","safe_projection","account_access","seller_settings"],
-    "POST /v1/fbp/archive/get": ["fbp_archive_get","operator_personal_data_gate","supplies_fbo","supply_orders"],
-    "POST /v1/fbp/archive/list": ["fbp_archive_list","operator_personal_data_gate","supplies_fbo","supply_orders"],
-    "POST /v1/fbp/draft/get": ["fbp_draft_get","operator_personal_data_gate","supplies_fbo","drafts"],
-    "POST /v1/fbp/draft/list": ["fbp_draft_list","operator_personal_data_gate","supplies_fbo","drafts"],
-    "POST /v1/fbp/order/get": ["fbp_order_get","operator_personal_data_gate","supplies_fbo","supply_orders"],
-    "POST /v1/fbp/order/list": ["fbp_order_list","operator_personal_data_gate","supplies_fbo","supply_orders"],
-    "POST /v1/delivery/check": ["delivery_check","operator_personal_data_gate","warehouse_logistics","delivery_methods"],
-    "POST /v2/delivery/checkout": ["delivery_checkout_v2","operator_personal_data_gate","warehouse_logistics","delivery_methods"],
-    "POST /v1/delivery/map": ["delivery_map","safe_projection","warehouse_logistics","delivery_methods"],
-    "POST /v1/delivery/point/list": ["delivery_point_list","safe_projection","warehouse_logistics","delivery_methods"],
-    "POST /v1/order/cancel/check": ["order_cancel_check","safe_projection","returns_cancellations","cancellations"],
-    "POST /v1/posting/marks": ["posting_marks","safe_projection","orders_postings","fbs_postings"],
+# Project effect rule:
+# A passive operation remains READ even if it starts server-side computation or
+# creates a report/PDF/PNG/label/act/validation artifact. Only changes to
+# seller/Ozon business/account/process state are mutations.
+EFFECT_REPAIR_READ_SPECS = {
+    "POST /v1/report/products/create": ["report_products_create","safe_projection","finance","documents_reports","READ_ARTIFACT_GENERATION"],
+    "POST /v2/report/returns/create": ["report_returns_create_v2","safe_projection","returns_cancellations","returns","READ_ARTIFACT_GENERATION"],
+    "POST /v1/report/postings/create": ["report_postings_create","safe_projection","orders_postings","labels_documents","READ_ARTIFACT_GENERATION"],
+    "POST /v1/report/discounted/create": ["report_discounted_create","safe_projection","finance","documents_reports","READ_ARTIFACT_GENERATION"],
+    "POST /v1/report/warehouse/stock": ["report_warehouse_stock","safe_projection","stocks_inventory","warehouse_fbs","READ_ARTIFACT_GENERATION"],
+    "POST /v1/report/placement/by-products/create": ["report_placement_by_products_create","safe_projection","stocks_inventory","stock_movement_turnover","READ_ARTIFACT_GENERATION"],
+    "POST /v1/report/placement/by-supplies/create": ["report_placement_by_supplies_create","safe_projection","supplies_fbo","supply_orders","READ_ARTIFACT_GENERATION"],
+    "POST /v1/report/marked-products-sales/create": ["report_marked_products_sales_create","safe_projection","sales_analytics","period_product_category","READ_ARTIFACT_GENERATION"],
+    "POST /v1/report/realization/posting/create": ["report_realization_posting_create","safe_projection","finance","realization","READ_ARTIFACT_GENERATION"],
+    "POST /v1/finance/document-b2b-sales": ["finance_document_b2b_sales","safe_projection","finance","documents_reports","READ_ARTIFACT_GENERATION"],
+    "POST /v1/finance/mutual-settlement": ["finance_mutual_settlement_report","safe_projection","finance","documents_reports","READ_ARTIFACT_GENERATION"],
+    "POST /v1/finance/compensation": ["finance_compensation_report","safe_projection","finance","documents_reports","READ_ARTIFACT_GENERATION"],
+    "POST /v1/finance/decompensation": ["finance_decompensation_report","safe_projection","finance","documents_reports","READ_ARTIFACT_GENERATION"],
+    "POST /v1/cargoes-label/create": ["cargoes_label_create","safe_projection","supplies_fbo","cargoes","READ_ARTIFACT_GENERATION"],
+    "POST /v2/posting/fbs/act/get-container-labels": ["posting_fbs_act_container_labels","operator_personal_data_gate","orders_postings","labels_documents","READ_BINARY_DOCUMENT"],
+    "POST /v2/posting/fbs/package-label": ["posting_fbs_package_label","operator_personal_data_gate","orders_postings","labels_documents","READ_BINARY_DOCUMENT"],
+    "POST /v2/posting/fbs/package-label/create": ["posting_fbs_package_label_create","safe_projection","orders_postings","labels_documents","READ_ARTIFACT_GENERATION"],
+    "POST /v1/cargoes/label/transport-by-order/create": ["cargoes_transport_label_by_order_create","safe_projection","supplies_fbo","cargoes","READ_ARTIFACT_GENERATION"],
+    "POST /v1/cargoes/label/transport/create": ["cargoes_transport_label_create","safe_projection","supplies_fbo","cargoes","READ_ARTIFACT_GENERATION"],
+    "POST /v1/fbp/act-from/create": ["fbp_act_from_create","safe_projection","supplies_fbo","acts","READ_ARTIFACT_GENERATION"],
+    "POST /v1/fbp/act-to/create": ["fbp_act_to_create","safe_projection","supplies_fbo","acts","READ_ARTIFACT_GENERATION"],
+    "POST /v1/fbp/label/create": ["fbp_label_create","safe_projection","supplies_fbo","cargoes","READ_ARTIFACT_GENERATION"],
+    "POST /v1/fbp/draft/direct/product/validate": ["fbp_draft_direct_product_validate","safe_projection","supplies_fbo","drafts","READ_VALIDATION"],
+    "POST /v1/fbp/draft/drop-off/product/validate": ["fbp_draft_dropoff_product_validate","safe_projection","supplies_fbo","drafts","READ_VALIDATION"],
+    "POST /v1/fbp/draft/pick-up/product/validate": ["fbp_draft_pickup_product_validate","safe_projection","supplies_fbo","drafts","READ_VALIDATION"],
+    "POST /v3/chat/history": ["chat_history_v3","operator_personal_data_gate","reviews_questions","chats","READ_SENSITIVE"],
+}
+
+# These 38 operations were previously mixed into the generic "generation"
+# bucket, but they actually create/update persistent business/process state.
+OLD_GENERATION_BUCKET_TRUE_WRITE_KEYS = {
+    "POST /v3/product/import",
+    "POST /v1/product/import-by-sku",
+    "POST /v1/barcode/add",
+    "POST /v1/barcode/generate",
+    "POST /v1/pricing-strategy/create",
+    "POST /v1/carriage/pass/create",
+    "POST /v1/return/pass/create",
+    "POST /v1/polygon/create",
+    "POST /v1/supply-order/pass/create",
+    "POST /v1/draft/crossdock/create",
+    "POST /v1/draft/direct/create",
+    "POST /v1/draft/multi-cluster/create",
+    "POST /v1/cargoes/create",
+    "POST /v2/draft/supply/create",
+    "POST /v1/carriage/create",
+    "POST /v1/return/giveout/barcode-reset",
+    "POST /v2/invoice/create-or-update",
+    "POST /v1/review/comment/create",
+    "POST /v1/question/answer/create",
+    "POST /v2/product/certificate/create",
+    "POST /v1/warehouse/fbs/create",
+    "POST /v1/warehouse/fbs/pickup/courier/create",
+    "POST /v1/warehouse/erfbs/aggregator/create",
+    "POST /v1/warehouse/erfbs/non-integrated/create",
+    "POST /v1/seller-actions/create/discount",
+    "POST /v1/seller-actions/create/discount-with-condition",
+    "POST /v1/seller-actions/create/installment",
+    "POST /v1/seller-actions/create/multi-level-discount",
+    "POST /v1/seller-actions/create/voucher",
+    "POST /v1/cargoes/transport/create",
+    "POST /v1/fbp/draft/direct/seller-dlv/create",
+    "POST /v1/fbp/draft/direct/create",
+    "POST /v1/fbp/draft/drop-off/create",
+    "POST /v1/fbp/draft/pick-up/create",
+    "POST /v1/fbp/draft/direct/tpl-dlv/create",
+    "POST /v1/carriage/container/create",
+    "POST /v1/chat/start",
+    "POST /v2/order/create",
 }
 
 SPECIAL_REJECTS = {
-    "POST /v3/chat/history": ["REJECT_SENSITIVE_UNSTRUCTURED_CONTENT","raw buyer/seller/courier chat message bodies are unstructured model input"],
-    "POST /v1/notification/check": ["REJECT_NON_READ_EXTERNAL_EFFECT_CONTROL","checks a caller-supplied webhook URL and is not a passive Seller data read"],
-}
-
-GENERATION_OVERRIDE_KEYS = {
-    "POST /v1/barcode/add",
-    "POST /v1/barcode/generate",
-    "POST /v1/cargoes/create",
-    "POST /v1/cargoes-label/create",
-    "POST /v2/posting/fbs/act/get-container-labels",
-    "POST /v2/posting/fbs/package-label",
-    "POST /v2/posting/fbs/package-label/create",
-    "POST /v1/return/giveout/barcode-reset",
-    "POST /v1/fbp/draft/direct/product/validate",
-    "POST /v1/fbp/draft/drop-off/product/validate",
-    "POST /v1/fbp/draft/pick-up/product/validate",
+    "POST /v1/notification/check": [
+        "REJECT_NON_READ_EXTERNAL_EFFECT_CONTROL",
+        "checks a caller-supplied webhook URL and causes an active external callback; separate effect policy required",
+    ],
 }
 
 READLIKE_MUTATION_KEYS = {
@@ -90,10 +125,8 @@ READLIKE_MUTATION_KEYS = {
 HTTP = {"get","post","put","patch","delete"}
 READLIKE_RE = re.compile(r"Get|List|Info|Check|Validate|Status|Получить|Список|Информац|Провер|Валидац|Статус|Сумм|маркиров", re.I)
 
-
 def sha256(data):
     return hashlib.sha256(data).hexdigest()
-
 
 def operation_rows(swagger):
     rows=[]
@@ -113,7 +146,6 @@ def operation_rows(swagger):
             })
     return rows
 
-
 def load_step5(path):
     p=Path(path)
     if p.suffix.lower()=='.csv':
@@ -123,22 +155,6 @@ def load_step5(path):
     if len(rows)!=118:
         raise SystemExit(f"SELLER_STEP7_STEP5_DECISION_COUNT_FAIL:{len(rows)}")
     return {r['operation_key']:r['terminal_decision'] for r in rows}
-
-
-def is_generation(row):
-    if row["operation_key"] in GENERATION_OVERRIDE_KEYS:
-        return True
-    oid=row["operation_id"].lower()
-    summary=row["purpose"].lower()
-    return (
-        "create" in oid or "generate" in oid or "report" in oid or
-        any(x in summary for x in [
-            "создать ", "создание ", "сгенерировать", "генерирует",
-            "создаёт", "создает", "задание на формирование",
-            "задание на выгрузку", "задание на генерацию"
-        ])
-    )
-
 
 def main():
     ap=argparse.ArgumentParser()
@@ -166,6 +182,10 @@ def main():
     for alias,meta in registry.items():
         if str(meta.get("provider","seller_api"))!="seller_api":
             continue
+        if meta.get("effect") not in (None, "READ"):
+            continue
+        if meta.get("execution_enabled") is False:
+            continue
         key=f'{str(meta["method"]).upper()} {meta["path"]}'
         if key in seller:
             raise SystemExit(f"SELLER_STEP7_DUPLICATE_ACCEPTED_METHOD_PATH_FAIL:{key}")
@@ -180,6 +200,7 @@ def main():
         raise SystemExit("SELLER_STEP7_STEP5_OUTSIDE_SWAGGER_FAIL")
 
     output=[]
+    step5_overrides=[]
     for row in rows:
         key=row["operation_key"]
         out={k:v for k,v in row.items() if k!="description"}
@@ -187,158 +208,181 @@ def main():
             alias,meta=seller[key]
             out.update({
                 "terminal_decision":"ACCEPTED_IMPLEMENTED_READ",
-                "decision_reason":"accepted Step6 Seller registry exact method+path",
+                "decision_reason":"current 245-read Seller production registry exact method+path",
                 "alias":alias,
                 "privacy_policy":meta.get("privacy_policy"),
                 "cluster":meta.get("cluster"),
                 "section":meta.get("section"),
+                "effect_class":"READ_CURRENT",
             })
-            if key in step5 and step5[key]!="IMPLEMENT_READ":
-                raise SystemExit(f"SELLER_STEP7_STEP5_REJECT_BECAME_ACCEPTED_FAIL:{key}:{step5[key]}")
-        elif key in step5:
-            d=step5[key]
-            if d=="IMPLEMENT_READ":
-                raise SystemExit(f"SELLER_STEP7_STEP5_READ_MISSING_FROM_ACCEPTED_BASE_FAIL:{key}")
+            if key in step5 and step5[key] not in ("IMPLEMENT_READ","ACCEPTED_IMPLEMENTED_READ"):
+                step5_overrides.append({"operation_key":key,"old_decision":step5[key],"new_decision":"ACCEPTED_IMPLEMENTED_READ"})
+        elif key in EFFECT_REPAIR_READ_SPECS:
+            alias,privacy,cluster,section,effect_class=EFFECT_REPAIR_READ_SPECS[key]
             out.update({
-                "terminal_decision":d,
-                "decision_reason":"preserved accepted Step5 exact terminal decision",
+                "terminal_decision":"IMPLEMENT_READ_EFFECT_REPAIR",
+                "decision_reason":"passive computation/artifact generation; no Seller/Ozon business/account/process state mutation",
+                "alias":alias,
+                "privacy_policy":privacy,
+                "cluster":cluster,
+                "section":section,
+                "effect_class":effect_class,
             })
+            if key in step5 and step5[key] not in ("IMPLEMENT_READ","ACCEPTED_IMPLEMENTED_READ"):
+                step5_overrides.append({"operation_key":key,"old_decision":step5[key],"new_decision":"IMPLEMENT_READ_EFFECT_REPAIR"})
         elif row["deprecated"]:
             out.update({
                 "terminal_decision":"REJECT_DEPRECATED_REPLACED",
                 "decision_reason":"exact Swagger operation has deprecated=true",
+                "effect_class":"DEPRECATED",
             })
         elif key in SUNSET_KEYS:
             out.update({
                 "terminal_decision":"REJECT_SUNSET_REPLACED",
                 "decision_reason":"exact Swagger description/changelog names shutdown or current replacement",
-            })
-        elif key in NEW_READ_SPECS:
-            alias,privacy,cluster,section=NEW_READ_SPECS[key]
-            out.update({
-                "terminal_decision":"IMPLEMENT_READ_STEP7",
-                "decision_reason":"exact schema is passive read/read-like computation with no Seller state mutation",
-                "alias":alias,
-                "privacy_policy":privacy,
-                "cluster":cluster,
-                "section":section,
+                "effect_class":"SUNSET_REPLACED",
             })
         elif key in SPECIAL_REJECTS:
             d,why=SPECIAL_REJECTS[key]
-            out.update({"terminal_decision":d,"decision_reason":why})
-        elif is_generation(row):
+            out.update({"terminal_decision":d,"decision_reason":why,"effect_class":"EXTERNAL_ACTIVE_EFFECT"})
+        elif key in OLD_GENERATION_BUCKET_TRUE_WRITE_KEYS:
             out.update({
-                "terminal_decision":"REJECT_SERVER_SIDE_GENERATION_OR_CREATION",
-                "decision_reason":"operation creates business state, job, artifact, draft, label, report, or validated bundle",
+                "terminal_decision":"REJECT_MUTATION_SIDE_EFFECT",
+                "decision_reason":"operation creates or changes persistent Seller/Ozon business/account/process state",
+                "effect_class":"WRITE_BUSINESS_STATE",
+            })
+        elif key in step5:
+            d=step5[key]
+            if d=="IMPLEMENT_READ":
+                raise SystemExit(f"SELLER_EFFECT_REAUDIT_STEP5_READ_MISSING_FROM_CURRENT_REGISTRY:{key}")
+            if d in ("REJECT_SERVER_SIDE_GENERATION_OR_CREATION","REJECT_SENSITIVE_UNSTRUCTURED_CONTENT"):
+                raise SystemExit(f"SELLER_EFFECT_REAUDIT_UNREVIEWED_OLD_FALSE_NEGATIVE_CLASS:{key}:{d}")
+            out.update({
+                "terminal_decision":d,
+                "decision_reason":"preserved Step5 decision after effect re-audit; not in corrected passive-generation/sensitive-read sets",
+                "effect_class":"PRESERVED_TERMINAL",
             })
         else:
             text=f'{row["operation_id"]} {row["purpose"]}'
             if READLIKE_RE.search(text) and key not in READLIKE_MUTATION_KEYS:
-                raise SystemExit(f"SELLER_STEP7_UNREVIEWED_READLIKE_REJECT_FAIL:{key}")
+                raise SystemExit(f"SELLER_EFFECT_REAUDIT_UNREVIEWED_READLIKE_REJECT:{key}")
             out.update({
                 "terminal_decision":"REJECT_MUTATION_SIDE_EFFECT",
-                "decision_reason":"operation changes Seller/Ozon business or account state",
+                "decision_reason":"operation changes Seller/Ozon business/account/process state",
+                "effect_class":"WRITE_BUSINESS_STATE",
             })
         output.append(out)
 
     counts=Counter(r["terminal_decision"] for r in output)
     expected={
-        "ACCEPTED_IMPLEMENTED_READ":219,
-        "IMPLEMENT_READ_STEP7":26,
-        "REJECT_DEPRECATED_REPLACED":8,
+        "ACCEPTED_IMPLEMENTED_READ":245,
+        "IMPLEMENT_READ_EFFECT_REPAIR":26,
+        "REJECT_DEPRECATED_REPLACED":12,
         "REJECT_SUNSET_REPLACED":12,
-        "REJECT_SERVER_SIDE_GENERATION_OR_CREATION":64,
-        "REJECT_MUTATION_SIDE_EFFECT":132,
-        "REJECT_SENSITIVE_UNSTRUCTURED_CONTENT":1,
+        "REJECT_MUTATION_SIDE_EFFECT":167,
         "REJECT_NON_READ_EXTERNAL_EFFECT_CONTROL":1,
     }
     if dict(counts)!=expected:
-        raise SystemExit(f"SELLER_STEP7_TERMINAL_COUNTS_FAIL:{dict(counts)}")
+        raise SystemExit(f"SELLER_EFFECT_REAUDIT_TERMINAL_COUNTS_FAIL:{dict(counts)}")
     if len(output)!=463 or sum(counts.values())!=463:
-        raise SystemExit("SELLER_STEP7_463_EXHAUSTIVE_FAIL")
+        raise SystemExit("SELLER_EFFECT_REAUDIT_463_EXHAUSTIVE_FAIL")
     if any(x in r["terminal_decision"] for r in output for x in ["PENDING","UNKNOWN","UNRESOLVED"]):
-        raise SystemExit("SELLER_STEP7_NONTERMINAL_DECISION_FAIL")
+        raise SystemExit("SELLER_EFFECT_REAUDIT_NONTERMINAL_DECISION_FAIL")
+    if any(r["terminal_decision"]=="REJECT_SERVER_SIDE_GENERATION_OR_CREATION" for r in output):
+        raise SystemExit("SELLER_EFFECT_REAUDIT_GENERIC_GENERATION_REJECT_STILL_PRESENT")
+    if any(r["terminal_decision"]=="REJECT_SENSITIVE_UNSTRUCTURED_CONTENT" for r in output):
+        raise SystemExit("SELLER_EFFECT_REAUDIT_SENSITIVE_READ_FALSE_NEGATIVE_STILL_PRESENT")
 
-    new_privacy=Counter(r.get("privacy_policy") for r in output if r["terminal_decision"]=="IMPLEMENT_READ_STEP7")
-    if new_privacy!=Counter({"safe_projection":13,"operator_personal_data_gate":13}):
-        raise SystemExit(f"SELLER_STEP7_NEW_READ_PRIVACY_COUNTS_FAIL:{dict(new_privacy)}")
+    repair_privacy=Counter(r.get("privacy_policy") for r in output if r["terminal_decision"]=="IMPLEMENT_READ_EFFECT_REPAIR")
+    if repair_privacy!=Counter({"safe_projection":23,"operator_personal_data_gate":3}):
+        raise SystemExit(f"SELLER_EFFECT_REAUDIT_REPAIR_PRIVACY_COUNTS_FAIL:{dict(repair_privacy)}")
 
     payload={
-        "schema":"OZON_SELLER_STEP7_TERMINAL_MATRIX_V2",
-        "as_of":"2026-08-30",
-        "roadmap_step":7,
+        "schema":"OZON_SELLER_EFFECT_REAUDIT_TERMINAL_MATRIX_V1",
+        "as_of":"2026-09-02",
         "authority":{
             "swagger_bytes":SELLER_SWAGGER_BYTES,
             "swagger_sha256":SELLER_SWAGGER_SHA256,
             "openapi":"3.0.0",
             "paths":463,
             "operations":463,
-            "step5_terminal_decisions_preserved":118,
+            "historical_step5_decisions_loaded":118,
+            "historical_step5_false_negative_overrides":len(step5_overrides),
         },
-        "base":{"accepted_step6_seller_reads":219},
+        "base":{"current_production_seller_reads":245},
         "counts":{
             "rows":463,
-            "accepted_implemented_reads":219,
-            "new_reads_to_implement":26,
-            "final_admissible_reads":245,
-            "final_non_reads":218,
+            "accepted_implemented_reads":245,
+            "reads_to_add_effect_repair":26,
+            "corrected_admissible_reads":271,
+            "corrected_non_reads":192,
             **expected,
-            "new_safe_projection":13,
-            "new_personal_data_gate":13,
+            "repair_safe_projection":23,
+            "repair_personal_data_gate":3,
         },
+        "governing_rule":"READ iff the operation does not change Seller/Ozon business/account data or business-process state; passive report/document/label/act/validation generation remains READ",
         "invariants":[
             "ALL_463_CURRENT_SELLER_OPERATIONS_EXACTLY_ONCE",
-            "ALL_118_ACCEPTED_STEP5_TERMINAL_DECISIONS_PRESERVED",
             "ZERO_UNKNOWN_PENDING_UNRESOLVED",
             "ONE_EXPLICIT_COMMAND_ONE_BUSINESS_REQUEST",
             "NO_HIDDEN_PAGINATION_RETRY_POLLING_FANOUT_CHAINING",
             "EXISTING_B0_PERSONAL_DATA_GATE_ONLY",
             "NO_MUTATION_UNDER_READ_ALIAS",
             "NO_DEPRECATED_ENDPOINT_INSTEAD_OF_CURRENT_REPLACEMENT",
-            "SERVER_SIDE_GENERATION_IS_NOT_A_READ",
-            "RAW_CHAT_MESSAGE_HISTORY_REMAINS_UNAVAILABLE",
-            "CALLER_SUPPLIED_WEBHOOK_CHECK_REMAINS_UNAVAILABLE",
+            "PASSIVE_ARTIFACT_GENERATION_WITHOUT_BUSINESS_STATE_CHANGE_IS_READ",
+            "SENSITIVE_READS_USE_EXISTING_PERSONAL_DATA_GATE_NOT_COVERAGE_REMOVAL",
+            "NO_GENERIC_CREATE_GENERATE_REPORT_NAME_BASED_REJECTION",
         ],
+        "step5_false_negative_overrides":step5_overrides,
         "rows":output,
     }
     Path(args.out_json).write_text(json.dumps(payload,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    fields=["operation_key","http_method","fixed_path","operation_id","source_category_tag","purpose","deprecated","terminal_decision","decision_reason","alias","privacy_policy","cluster","section"]
+    fields=["operation_key","http_method","fixed_path","operation_id","source_category_tag","purpose","deprecated","terminal_decision","effect_class","decision_reason","alias","privacy_policy","cluster","section"]
     with Path(args.out_csv).open("w",encoding="utf-8",newline="") as f:
         w=csv.DictWriter(f,fieldnames=fields,extrasaction="ignore")
         w.writeheader(); w.writerows(output)
+
     summary=[
-        "# Ozon Seller Step 7 — 463/463 terminal decision matrix",
+        "# Ozon Seller effect re-audit — 463/463",
         "",
         f"- Exact Seller Swagger: `{SELLER_SWAGGER_BYTES}` bytes / `{SELLER_SWAGGER_SHA256}`.",
-        "- Current operations: **463/463 classified exactly once**.",
-        "- Accepted Step 6 Seller reads carried forward: **219**.",
-        "- Accepted Step 5 terminal decisions preserved: **118/118**.",
-        "- New admissible reads to implement in Step 7: **26**.",
-        "- Final admissible Seller read surface after implementation: **245**.",
-        "- Final non-read/unavailable operations: **218**.",
+        "- Current operations: **463/463 classified exactly once by business effect**.",
+        "- Current production Seller reads carried forward: **245**.",
+        "- False-negative READs to add: **26**.",
+        "- Corrected Seller READ surface: **271**.",
+        "- Corrected terminal non-read/unavailable: **192**.",
+        "",
+        "## Governing rule",
+        "",
+        "An operation is READ when it does not change Seller/Ozon business/account data or business-process state.",
+        "Report/PDF/PNG/label/act/validation generation is therefore READ when it only computes/produces requested output.",
         "",
         "## Terminal decisions",
         "",
     ]
     for name,count in sorted(expected.items()): summary.append(f"- `{name}`: **{count}**")
     summary += [
-        "", "## New read privacy", "",
-        "- `safe_projection`: **13**",
-        "- `operator_personal_data_gate`: **13**",
         "",
-        "There are no `UNKNOWN`, `PENDING`, or `UNRESOLVED` rows.",
-        "Production acceptance still requires implementation of all 26 `IMPLEMENT_READ_STEP7` rows and cross-platform artifact verification.",
+        "## Effect-repair privacy",
+        "",
+        "- `safe_projection`: **23**",
+        "- `operator_personal_data_gate`: **3**",
+        "",
+        f"Historical Step5 false-negative decisions overridden by effect rule: **{len(step5_overrides)}**.",
+        "There are no `UNKNOWN`, `PENDING`, `UNRESOLVED`, generic generation rejects, or sensitive-read coverage removals.",
+        "Production acceptance still requires implementing all 26 `IMPLEMENT_READ_EFFECT_REPAIR` rows, strict per-operation schemas, binary/document handling, and cross-platform artifact verification.",
     ]
     Path(args.out_summary).write_text("\n".join(summary)+"\n",encoding="utf-8")
-    print("SELLER_STEP7_EXACT_SWAGGER_IDENTITY_PASS")
-    print("SELLER_STEP7_ACCEPTED_219_BASE_RECONCILIATION_PASS")
-    print("SELLER_STEP7_STEP5_118_TERMINAL_DECISIONS_PRESERVED_PASS")
-    print("SELLER_STEP7_463_EXHAUSTIVE_TERMINAL_MATRIX_PASS")
-    print("SELLER_STEP7_NEW_READS_26_PASS")
-    print("SELLER_STEP7_NEW_READ_PRIVACY_13_GATE_13_SAFE_PASS")
-    print("SELLER_STEP7_ZERO_UNKNOWN_PENDING_UNRESOLVED_PASS")
+    print("SELLER_EFFECT_REAUDIT_EXACT_SWAGGER_IDENTITY_PASS")
+    print("SELLER_EFFECT_REAUDIT_CURRENT_245_BASE_PASS")
+    print("SELLER_EFFECT_REAUDIT_463_EXHAUSTIVE_PASS")
+    print("SELLER_EFFECT_REAUDIT_FALSE_NEGATIVE_READS_26_PASS")
+    print("SELLER_EFFECT_REAUDIT_CORRECTED_READ_SURFACE_271_PASS")
+    print("SELLER_EFFECT_REAUDIT_NO_GENERIC_GENERATION_REJECT_PASS")
+    print("SELLER_EFFECT_REAUDIT_SENSITIVE_READ_GATE_PASS")
+    print("SELLER_EFFECT_REAUDIT_ZERO_UNKNOWN_PENDING_UNRESOLVED_PASS")
     print(json.dumps(payload["counts"],ensure_ascii=False,sort_keys=True))
-    print("OZON_SELLER_STEP7_TERMINAL_MATRIX_PASS")
+    print("OZON_SELLER_EFFECT_REAUDIT_TERMINAL_MATRIX_PASS")
 
 if __name__=="__main__":
     main()
