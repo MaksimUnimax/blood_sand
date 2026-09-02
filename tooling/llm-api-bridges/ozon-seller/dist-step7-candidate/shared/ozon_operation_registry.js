@@ -995,6 +995,162 @@
       cluster: "finance", section: "documents_reports", guidance_visibility: "user", entitlement_key: "POST /v1/report/info", workflow_role: "single_read",
       purpose: "Получить информацию об уже созданном отчёте по его коду; файл автоматически не загружается.", template: { operation: "report_info", params: { code: "REPORT_CODE" } }
     },
+    report_products_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/products/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/products/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт по товарам", template: {"operation":"report_products_create","params":{}}
+    },
+    report_returns_create_v2: {
+      provider: "seller_api", method: "POST", path: "/v2/report/returns/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "returns_cancellations", section: "returns",
+      guidance_visibility: "user", entitlement_key: "POST /v2/report/returns/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт о возвратах", template: {"operation":"report_returns_create_v2","params":{"filter":{"date_from":"2026-01-01T00:00:00Z","date_to":"2026-01-01T00:00:00Z","status":"DisputeOpened"}}}
+    },
+    report_postings_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/postings/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "labels_documents",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/postings/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт об отправлениях", template: {"operation":"report_postings_create","params":{"filter":{"processed_at_from":"2026-01-01T00:00:00Z","processed_at_to":"2026-01-01T00:00:00Z","delivery_schema":["FBO"]}}}
+    },
+    report_discounted_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/discounted/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/discounted/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт об уценённых товарах", template: {"operation":"report_discounted_create","params":{}}
+    },
+    report_warehouse_stock: {
+      provider: "seller_api", method: "POST", path: "/v1/report/warehouse/stock", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "stocks_inventory", section: "warehouse_fbs",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/warehouse/stock", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт об остатках на FBS-складе", template: {"operation":"report_warehouse_stock","params":{"warehouseId":["1"]}}
+    },
+    report_placement_by_products_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/placement/by-products/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "stocks_inventory", section: "stock_movement_turnover",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/placement/by-products/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Получить отчёт о стоимости размещения по товарам", template: {"operation":"report_placement_by_products_create","params":{"date_from":"2026-01-01","date_to":"2026-01-01"}}
+    },
+    report_placement_by_supplies_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/placement/by-supplies/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "supply_orders",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/placement/by-supplies/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Получить отчёт о стоимости размещения по поставкам", template: {"operation":"report_placement_by_supplies_create","params":{"date_from":"2026-01-01","date_to":"2026-01-01"}}
+    },
+    report_marked_products_sales_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/marked-products-sales/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "sales_analytics", section: "period_product_category",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/marked-products-sales/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать отчёт по продажам товаров с маркировкой", template: {"operation":"report_marked_products_sales_create","params":{}}
+    },
+    report_realization_posting_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/realization/posting/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "realization",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/realization/posting/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Получить позаказный отчёт о реализации товаров", template: {"operation":"report_realization_posting_create","params":{"month":8,"year":2026}}
+    },
+    finance_document_b2b_sales: {
+      provider: "seller_api", method: "POST", path: "/v1/finance/document-b2b-sales", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/finance/document-b2b-sales", workflow_role: "explicit_workflow_read_step",
+      purpose: "Реестр продаж юридическим лицам", template: {"operation":"finance_document_b2b_sales","params":{"date":"2026-01-01"}}
+    },
+    finance_mutual_settlement_report: {
+      provider: "seller_api", method: "POST", path: "/v1/finance/mutual-settlement", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/finance/mutual-settlement", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт о взаиморасчётах", template: {"operation":"finance_mutual_settlement_report","params":{"date":"2026-01-01"}}
+    },
+    finance_compensation_report: {
+      provider: "seller_api", method: "POST", path: "/v1/finance/compensation", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/finance/compensation", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт о компенсациях", template: {"operation":"finance_compensation_report","params":{"date":"2026-01-01"}}
+    },
+    finance_decompensation_report: {
+      provider: "seller_api", method: "POST", path: "/v1/finance/decompensation", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/finance/decompensation", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт о декомпенсациях", template: {"operation":"finance_decompensation_report","params":{"date":"2026-01-01"}}
+    },
+    cargoes_label_create: {
+      provider: "seller_api", method: "POST", path: "/v1/cargoes-label/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
+      guidance_visibility: "user", entitlement_key: "POST /v1/cargoes-label/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать этикетки для грузомест", template: {"operation":"cargoes_label_create","params":{"supply_id":1}}
+    },
+    posting_fbs_act_container_labels: {
+      provider: "seller_api", method: "POST", path: "/v2/posting/fbs/act/get-container-labels", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false, cluster: "orders_postings", section: "labels_documents",
+      guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/act/get-container-labels", workflow_role: "single_read", response_style: "binary", response_content_types: ["application/pdf"],
+      purpose: "Этикетки для грузового места", template: {"operation":"posting_fbs_act_container_labels","params":{"id":1}}
+    },
+    posting_fbs_package_label: {
+      provider: "seller_api", method: "POST", path: "/v2/posting/fbs/package-label", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false, cluster: "orders_postings", section: "labels_documents",
+      guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/package-label", workflow_role: "single_read", response_style: "binary", response_content_types: ["application/pdf"],
+      purpose: "Напечатать этикетку", template: {"operation":"posting_fbs_package_label","params":{"posting_number":["POSTING_NUMBER"]}}
+    },
+    posting_fbs_package_label_create: {
+      provider: "seller_api", method: "POST", path: "/v2/posting/fbs/package-label/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "labels_documents",
+      guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/package-label/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Создать задание на формирование этикеток", template: {"operation":"posting_fbs_package_label_create","params":{"posting_number":"POSTING_NUMBER"}}
+    },
+    cargoes_transport_label_by_order_create: {
+      provider: "seller_api", method: "POST", path: "/v1/cargoes/label/transport-by-order/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
+      guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/label/transport-by-order/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать этикетки для транспортных грузомест по заявке", template: {"operation":"cargoes_transport_label_by_order_create","params":{"order_id":1}}
+    },
+    cargoes_transport_label_create: {
+      provider: "seller_api", method: "POST", path: "/v1/cargoes/label/transport/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
+      guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/label/transport/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать этикетки транспортных грузомест", template: {"operation":"cargoes_transport_label_create","params":{"supply_id":1}}
+    },
+    fbp_act_from_create: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/act-from/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "acts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/act-from/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать акт приёмки", template: {"operation":"fbp_act_from_create","params":{"supply_id":"1"}}
+    },
+    fbp_act_to_create: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/act-to/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "acts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/act-to/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать транспортную накладную", template: {"operation":"fbp_act_to_create","params":{"supply_id":"1"}}
+    },
+    fbp_label_create: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/label/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/label/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Cоздать задание на генерацию этикеток", template: {"operation":"fbp_label_create","params":{"supply_id":"1"}}
+    },
+    fbp_draft_direct_product_validate: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/draft/direct/product/validate", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "drafts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/direct/product/validate", workflow_role: "single_read",
+      purpose: "Проверить список товаров для склада партнёра", template: {"operation":"fbp_draft_direct_product_validate","params":{"skus":[{"count":1,"sku":1}],"warehouse_id":1}}
+    },
+    fbp_draft_dropoff_product_validate: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/draft/drop-off/product/validate", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "drafts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/drop-off/product/validate", workflow_role: "single_read",
+      purpose: "Проверить список товаров, которые склад партнёра может принять", template: {"operation":"fbp_draft_dropoff_product_validate","params":{"skus":[{"count":1,"sku":1}],"warehouse_id":1}}
+    },
+    fbp_draft_pickup_product_validate: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/draft/pick-up/product/validate", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "drafts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/pick-up/product/validate", workflow_role: "single_read",
+      purpose: "Провалидировать список товаров для pick-up поставки", template: {"operation":"fbp_draft_pickup_product_validate","params":{"skus":[{"count":1,"sku":1}],"warehouse_id":1}}
+    },
+    chat_history_v3: {
+      provider: "seller_api", method: "POST", path: "/v3/chat/history", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false, cluster: "reviews_questions", section: "chats",
+      guidance_visibility: "conditional", entitlement_key: "POST /v3/chat/history", workflow_role: "single_read",
+      purpose: "История чата", template: {"operation":"chat_history_v3","params":{"chat_id":"1"}}
+    },
     supply_order_list: {
       provider: "seller_api", method: "POST", path: "/v3/supply-order/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
