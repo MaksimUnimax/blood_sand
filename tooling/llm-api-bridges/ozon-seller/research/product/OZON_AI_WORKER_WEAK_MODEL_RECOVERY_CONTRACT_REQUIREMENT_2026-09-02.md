@@ -14,9 +14,12 @@ The important finding is not only the provider 429. GPT-5.6 Sol itself initially
 
 If the strongest baseline model can make that planning mistake, weaker consumer models are materially more likely to fail, switch endpoints, give up, invent a result, or incorrectly interpret the absence of data.
 
-STD-05 then exposed the same general product problem in another form: `stock_on_warehouses_v2` returned two consecutive full-size `limit=100` pages while Bridge exposed `pagination:null`. GPT-5.6 Sol inferred from row count that another explicit `offset` read was needed. A weaker model may incorrectly treat the first full page as the complete dataset.
+STD-05 then exposed the same general product problem in additional forms:
 
-Therefore both provider-error recovery and known continuation mechanics must become Bridge/product contract capabilities rather than emergent reasoning skills expected from each AI model.
+1. `stock_on_warehouses_v2` returned consecutive full-size `limit=100` pages while Bridge exposed `pagination:null`; GPT-5.6 Sol had to infer continuation from row count.
+2. Seller `analytics_data.revenue` and Performance `performance_daily.ordersMoney` for the same calendar date differed materially because they are not guaranteed to share the same attribution/accounting semantics. A weak model can incorrectly force them to reconcile or call the data inconsistent.
+
+Therefore provider-error recovery, continuation mechanics and cross-source metric semantics must become Bridge/product contract capabilities rather than emergent reasoning skills expected from each AI model.
 
 ## Product principles
 
@@ -24,7 +27,9 @@ Therefore both provider-error recovery and known continuation mechanics must bec
 
 `DO_NOT_REQUIRE_MODEL_INTELLIGENCE_TO_INFER_PAGINATION_FROM_ROW_COUNT`
 
-The AI should reason about the business problem. The Bridge should expose deterministic machine-readable guidance for known transport/provider failure and continuation classes.
+`DO_NOT_REQUIRE_MODEL_INTELLIGENCE_TO_GUESS_CROSS_SOURCE_METRIC_SEMANTICS`
+
+The AI should reason about the business problem. The Bridge should expose deterministic machine-readable guidance for known transport/provider failure, continuation and cross-source semantic classes.
 
 This does not relax the invariant:
 
@@ -81,16 +86,18 @@ Do not invent a precise Ozon cooldown duration merely to make recovery determini
 
 ### Evidence
 
-During STD-05, operation `stock_on_warehouses_v2` was called with explicit `limit=100` and offsets `0` then `100`.
+During STD-05, operation `stock_on_warehouses_v2` was called with explicit `limit=100` and offsets `0`, `100`, then `200`.
 
-Both responses:
+The first two responses:
 
 - returned HTTP 200;
 - returned exactly 100 rows;
 - exposed `pagination: null` at the Bridge result level;
 - required the AI to infer that another explicit offset read was likely necessary.
 
-This is a weak-model portability gap because the result does not deterministically distinguish:
+The third response returned fewer than 100 rows, providing the practical terminal short-page signal.
+
+This is a weak-model portability gap because the first two results did not deterministically distinguish:
 
 - complete dataset of exactly 100 rows;
 - non-terminal page that happens to contain the full requested page size.
@@ -127,6 +134,55 @@ Rules:
 
 A weak AI should not need to know Ozon's pagination conventions or inspect row count arithmetic to continue a business investigation. Bridge should make continuation mechanics explicit while leaving the decision to issue the next read to the AI.
 
+## Cross-source metric semantics requirement discovered by STD-05
+
+### Evidence
+
+STD-05 correlated Seller API and Performance API data for the same business investigation.
+
+For `2026-09-01`:
+
+- Seller `analytics_data` reported revenue `27,200 RUB`;
+- Performance `performance_daily` rows summed to `ordersMoney = 39,882 RUB`.
+
+The Performance value exceeded Seller same-day revenue. This does **not** prove corruption or double counting. The two APIs use different business meanings/attribution rules and are not established as one-to-one comparable accounting metrics.
+
+Across 2026-08-31 → 2026-09-01 Performance aggregate behavior was:
+
+- spend `5,337.70 → 5,534.91 RUB` (`+3.7%`);
+- attributed orders `22 → 24` (`+9.1%`);
+- `ordersMoney 35,564 → 39,882 RUB` (`+12.1%`);
+- views `52,520 → 49,913` (`-5.0%`);
+- clicks `1,228 → 1,190` (`-3.1%`).
+
+Meanwhile Seller revenue fell `49,640 → 27,200 RUB` (`-45.2%`). This is useful correlation evidence, but the Performance monetary total must not be substituted for Seller revenue.
+
+### Required contract behavior
+
+When Bridge exposes metrics from different provider contours that are commonly correlated but not guaranteed to reconcile, it should expose concise semantic metadata where known, for example:
+
+```text
+metric_semantics: {
+  metric: "ordersMoney",
+  provider: "performance_api",
+  comparable_to: ["seller.analytics_data.revenue"],
+  reconciliation: "NOT_GUARANTEED_1_TO_1",
+  warning: "Attribution/accounting semantics may differ. Use for correlation, not direct reconciliation unless a specific contract proves equivalence."
+}
+```
+
+Required rules:
+
+- do not label distinct provider metrics as equivalent merely because both are monetary/order measures;
+- expose attribution/accounting-window differences when contract evidence exists;
+- if equivalence is not proven, state that direct reconciliation is unsupported;
+- weak-model guidance should explicitly permit correlation while prohibiting false arithmetic reconciliation;
+- do not invent undocumented attribution windows or causal explanations.
+
+### Product consequence
+
+A cross-report AI worker must know not only which data can be fetched but also **which fields may safely be joined or compared**. Otherwise weaker models can produce confident but false conclusions from perfectly valid source data.
+
 ## Candidate implementation directions to evaluate after Sol benchmark
 
 These are design candidates, not yet accepted implementation decisions:
@@ -137,6 +193,7 @@ These are design candidates, not yet accepted implementation decisions:
 4. **Exact retry-command echo** — expose the sanitized logical command/payload that should be repeated, so a weak model does not reconstruct or mutate it.
 5. **Diagnostic escalation contract** — after repeated identical 429s, expose a deterministic next diagnostic action such as a non-analytics health check when supported.
 6. **Continuation metadata** — expose explicit page completeness/next-offset guidance for offset-based reads while preserving explicit AI-issued pagination.
+7. **Cross-source semantic metadata** — expose safe comparison/reconciliation warnings for Seller × Performance and other known cross-provider joins.
 
 Any accepted design must preserve no-hidden-retry, no-hidden-pagination and one-command/one-physical-request invariants.
 
@@ -150,9 +207,10 @@ The business question is answerable, but first-attempt operational reliability a
 
 `STD-05` has additionally discovered:
 
-`FULL_PAGE_WITH_NULL_PAGINATION_REQUIRES_MODEL_INFERENCE`
+- `FULL_PAGE_WITH_NULL_PAGINATION_REQUIRES_MODEL_INFERENCE`
+- `CROSS_SOURCE_METRIC_SEMANTICS_REQUIRE_GUIDANCE`
 
-All later Sol rows must record whether failures or continuation mechanics required operator intervention or model-specific inference.
+All later Sol rows must record whether failures, continuation mechanics or cross-source interpretation required operator intervention or model-specific API inference.
 
 Before Alice Free benchmark:
 
@@ -162,14 +220,14 @@ Before Alice Free benchmark:
 4. rerun affected Sol rows on the hardened candidate;
 5. only then freeze the Bridge candidate for Alice and later weaker-provider comparison.
 
-This avoids changing the Bridge independently for every provider while also preventing the Alice benchmark from measuring raw error-code interpretation skill or pagination-guessing skill that should have been normalized by Bridge.
+This avoids changing the Bridge independently for every provider while also preventing the Alice benchmark from measuring raw error-code interpretation, pagination-guessing or cross-source-semantic guessing that should have been normalized by Bridge.
 
 ## Commercial significance
 
 Preferred-AI portability is part of the product value proposition. Therefore the Bridge must normalize provider/API complexity sufficiently that weaker consumer AIs can act as reliable workers.
 
-A product that only works because GPT-5.6 Sol can reverse-engineer raw API failures or infer continuation from page length is not commercially portable across AI providers.
+A product that only works because GPT-5.6 Sol can reverse-engineer raw API failures, infer continuation from page length or know subtle Seller-vs-Performance metric semantics is not commercially portable across AI providers.
 
 ## Current checkpoint
 
-`WEAK_MODEL_RECOVERY_AND_PAGINATION_GUIDANCE_GAPS_DISCOVERED_MUST_HARDEN_AFTER_SOL_BEFORE_ALICE`
+`WEAK_MODEL_RECOVERY_PAGINATION_AND_CROSS_SOURCE_SEMANTICS_GAPS_DISCOVERED_MUST_HARDEN_AFTER_SOL_BEFORE_ALICE`
