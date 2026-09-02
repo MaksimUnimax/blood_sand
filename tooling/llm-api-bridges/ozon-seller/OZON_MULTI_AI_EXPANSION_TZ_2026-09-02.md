@@ -181,40 +181,58 @@ For every supported AI:
 
 ## 5. Target web-AI discovery list
 
-Existing baseline adapters:
+Public-service verification refreshed on 2026-09-02. The discovery pass must still follow redirects and confirm the real logged-in app origin before proposing manifest coverage.
 
-- ChatGPT
-- Yandex Alice
+### Existing baseline adapters
 
-Primary onboarding candidates:
+- ChatGPT — `https://chatgpt.com/`
+- Yandex Alice — `https://alice.yandex.ru/`
 
-- Claude
-- Google Gemini
-- DeepSeek Web
-- Qwen Chat
-- Kimi
-- Grok
-- Mistral Vibe
-- Microsoft Copilot
-- Perplexity
-- Meta AI
-- GigaChat
+### Tier A — mandatory browser-chat discovery
 
-Secondary onboarding candidates:
+- Claude — `https://claude.ai/`
+- Google Gemini — `https://gemini.google.com/`
+- DeepSeek Web — `https://chat.deepseek.com/`
+- Qwen Chat / Qwen Studio — `https://chat.qwen.ai/`
+- Kimi — `https://www.kimi.com/`
+- Grok — `https://grok.com/`
+- Mistral Vibe — `https://chat.mistral.ai/`
+- Microsoft Copilot — `https://copilot.com/`
+- Perplexity — `https://www.perplexity.ai/`
+- Meta AI — `https://www.meta.ai/` / `https://meta.ai/` (follow actual redirect)
+- GigaChat — `https://giga.chat/`
+- Duck.ai — `https://duck.ai/`
+- OpenRouter Chat Playground — `https://openrouter.ai/chat`
+- Poe — `https://poe.com/`
 
-- Poe
-- Z.ai / GLM
-- Doubao
-- Tencent Yuanbao
-- Baidu ERNIE
-- MiniMax Chat
-- Manus
-- Genspark
-- HuggingChat
-- Phind
-- Blackbox AI
+These include both first-party model providers and high-value multi-model gateways. A single safe Poe/OpenRouter/Duck.ai adapter can expose many underlying models without separate DOM support for each model.
 
-Secondary candidates are accepted only if the live web UI exposes a sufficiently deterministic conversation/message/composer lifecycle for safe Ozon delivery. API-only, mobile-only, image/video-only, or non-deterministic agent surfaces may be classified unsupported after discovery rather than forced into the extension.
+### Tier B — onboard if live web lifecycle is deterministic
+
+- Z.ai / GLM — `https://chat.z.ai/`
+- Doubao — `https://www.doubao.com/` (follow `使用网页版` / actual chat route)
+- Tencent Yuanbao — `https://yuanbao.tencent.com/`
+- Baidu ERNIE — start at `https://ernie.baidu.com/`, then follow the 2026 upgraded-service link to the actual current chat app
+- MiniMax — inspect both `https://agent.minimax.io/` and any still-active `https://chat.minimax.io/` route; select the deterministic conversational surface
+- Manus — `https://manus.im/`; prefer Chat Mode over long-running Agent Mode when possible
+- Genspark — `https://www.genspark.ai/` / actual signed-in web workbench; classify whether normal chat is deterministic enough
+- Blackbox AI — inspect `https://agent.blackbox.ai/` as the conversational surface
+- Pi — `https://pi.ai/`
+
+### Tier C — discovery only / no support promise
+
+- Phind — current browser chat must be independently confirmed by Codex before any adapter work
+- Scira — only if the signed-in web chat exposes stable turn/composer lifecycle; do not target the CLI
+- other major browser AI chats naturally discovered during the pass may be added to the evidence matrix, but not to production without review
+
+### Explicitly excluded / currently closed
+
+- HuggingChat: Hugging Face publicly announced the hosted HuggingChat service was closed in July 2025. Do not spend a DOM-discovery pass on it.
+- API-only or mobile-only products.
+- image/video-only generators.
+- long-running autonomous surfaces that cannot prove completed turn ownership and safe one-shot result delivery.
+
+Any candidate may be classified `UNSAFE/UNSUPPORTED`. “All possible AIs” means all viable deterministic browser chat surfaces, not forcing unsafe support into the extension.
 
 ---
 
@@ -328,7 +346,8 @@ Return:
 
 ### Gemini
 
-- `/app/...` identity behavior and whether the route changes on first send;
+- current conversation identity behavior from the actual `gemini.google.com` app; do not assume a stale `/app/...` route;
+- whether URL changes before/after first send;
 - stable message IDs despite dynamic Angular/custom-element structure;
 - code-block root/copy control;
 - composer type and send/stop lifecycle;
@@ -364,13 +383,13 @@ Return:
 
 ### Mistral Vibe
 
-- test current Vibe Work and Vibe Chat/legacy paths because Le Chat was renamed Vibe;
-- select the surface that provides the safest deterministic turn-by-turn lifecycle;
+- inspect Vibe Work and currently available Chat because Le Chat was renamed Vibe and Chat is migrating;
+- select the surface that provides the safest deterministic turn-by-turn lifecycle and document migration risk;
 - conversation identity, code block, composer, send/stop, completion evidence.
 
 ### Microsoft Copilot
 
-- select the ordinary Copilot Chat surface, not unrelated Microsoft 365 document UI;
+- select the ordinary Copilot Chat surface at `copilot.com`, not unrelated Microsoft 365 document UI;
 - account/work/life route differences;
 - stable conversation identity;
 - message/code/composer lifecycle;
@@ -380,8 +399,8 @@ Return:
 
 - thread identity route;
 - answer container with citations versus code block ownership;
-- completion state for Search/Pro/Research modes;
-- choose a deterministic ordinary chat/search mode for Bridge;
+- completion state for ordinary Search/chat vs Pro/Research modes;
+- choose a deterministic ordinary mode for Bridge;
 - composer/send lifecycle.
 
 ### Meta AI
@@ -393,11 +412,27 @@ Return:
 
 ### GigaChat
 
-- current official web host/route after login;
+- current `giga.chat` web route after login;
 - conversation route/id;
 - Russian UI selectors without relying solely on visible Russian labels;
 - code block/copy control;
 - composer/send/stop/ready lifecycle.
+
+### Duck.ai
+
+- determine whether one DOM adapter works across model switches;
+- separate conversation identity from selected underlying model;
+- verify code block rendering across at least two available text models;
+- composer/send/stop/ready lifecycle without account assumptions;
+- determine whether chats are persisted and whether a route ID exists; if not, identify another safe per-conversation binding key or classify Autorun unsafe.
+
+### OpenRouter Chat
+
+- route/conversation identity in `openrouter.ai/chat`;
+- model selector must not be confused with conversation identity;
+- test at least two underlying models for common message/code/composer structure;
+- determine whether one platform adapter can safely cover the playground irrespective of model;
+- send/stop/completion lifecycle and chat-history behavior.
 
 ### Poe
 
@@ -415,15 +450,47 @@ Return:
 ### Doubao / Tencent Yuanbao / ERNIE
 
 - current official route and login/region constraints;
+- for ERNIE, follow the 2026 service-upgrade redirect rather than assuming the legacy host is the final app;
 - stable chat IDs and message IDs;
 - Chinese-localized controls: find non-text structural selectors;
 - code blocks and delivery lifecycle.
 
-### MiniMax / Manus / Genspark
+### MiniMax
 
-- first classify the surface: deterministic conversational chat versus long-running agent task;
-- only propose support if completed assistant turns, exact code payloads and one-shot composer delivery can be proven;
-- otherwise return `UNSAFE/UNSUPPORTED` with evidence rather than inventing selectors.
+- compare `agent.minimax.io` and any still-active MiniMax Chat surface;
+- prefer a deterministic turn-based chat over long-running agent task mode;
+- prove exact code payload and composer one-shot delivery or classify unsupported.
+
+### Manus
+
+- inspect Chat Mode first; only inspect Agent Mode as a separate unsupported/special-case candidate;
+- determine if Chat Mode provides stable route/turn IDs, code blocks and normal composer lifecycle;
+- do not use long-running agent-task completion as a substitute for a chat-turn completion signal.
+
+### Genspark
+
+- compare normal web workbench chat with long-running Super Agent tasks;
+- determine whether there is a safe deterministic normal chat lifecycle suitable for Ozon Bridge;
+- if only task/artifact semantics are stable, return `UNSAFE/UNSUPPORTED` for this phase.
+
+### Blackbox AI
+
+- inspect `agent.blackbox.ai` normal chat;
+- conversation/message IDs, code blocks, composer/send/stop lifecycle;
+- separate ordinary answer mode from coding/agent workspaces if their DOM differs.
+
+### Pi
+
+- determine whether Pi can reliably emit exact fenced code without conversational rewriting;
+- route/conversation identity and message IDs;
+- composer/send/response-complete lifecycle;
+- because Pi is optimized as a personal conversational assistant rather than project/code work, explicitly classify protocol fidelity and whether Manual/Autorun are safe.
+
+### Phind / Scira / other discovery-only surfaces
+
+- first prove the current browser conversational surface exists and is suitable;
+- do not add manifest permissions or code based on stale product knowledge;
+- return `UNSAFE/UNSUPPORTED` if the current product is API/CLI-only or lacks deterministic conversation lifecycle.
 
 ---
 
