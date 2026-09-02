@@ -14,7 +14,7 @@ This is the compact authoritative live result ledger. Detailed evidence remains 
 | 2 | STD-02 | Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня. | PASS — total 574,564 RUB / 341 units; top: 2026-08-30 57,776, 2026-08-29 50,745, 2026-08-31 49,640; bottom: 2026-08-26 20,400, 2026-09-01 27,200, 2026-08-25 28,900 | FAIL_FIRST_ATTEMPT_429_THEN_RECOVERED | NO | Run 1 exact 14-day query => 429; Run 2 exact same query 176.815s later => HTTP 200 | Same 14-day payload succeeded, rejecting query-range-too-heavy as supported cause. Recurrent transient analytics quota/provider-state risk remains. |
 | 3 | STD-03 | Дай топ-20 товаров за последние 7 дней по выручке. | PASS — top SKU 1636048691 / «Печать Велеса» = 45,288 RUB / 27 units; query totals 288,998 RUB / 172 units | PASS_FIRST_ATTEMPT | NO | 1 business run; `analytics_data`, dimension `sku`, revenue DESC, HTTP 200 | AI selected a materially different analytics shape: SKU breakdown + provider-side sorting. Returned 20 requested rows. Top-20 rows sum to 220,777 RUB / 131 units ≈ 76.4% of total revenue and 76.2% of units. |
 | 4 | STD-04 | Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах. | PASS — 2026-09-01 vs 2026-08-31: revenue 27,200 vs 49,640 RUB; units 16 vs 31; revenue change −22,440 RUB / −45.2%; units change −15 / −48.4% | PASS_FIRST_ATTEMPT | NO | 1 business run; `analytics_data`, dimension `day`, 2-day range, HTTP 200 | AI correctly performed the comparison and percentage calculations client-side from one Ozon read. |
-| 5 | STD-05 | Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж. | READY | PENDING | PENDING | 0 | Next Layer-A test; must investigate causes, not stop at sales delta. |
+| 5 | STD-05 | Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж. | IN_PROGRESS — sales decomposition localized broad SKU-level decline: selling SKUs 24 → 14; gross negative contribution −36,652 RUB, positive offsets +14,212 RUB, net −22,440 RUB | PASS_RUN1_FIRST_ATTEMPT | NO | Run 1: `analytics_data`, dimensions `[day, sku]`, HTTP 200, 1 physical request | Top negative contributors: SKU 1720144370 −5,100 RUB; 2184234912 −3,094 RUB; 1636048691 −2,788 RUB. Pattern is broad rather than one-hit collapse. Next: current warehouse-stock evidence, then visibility/ads as indicated. |
 | 6 | STD-06 | Что сегодня в моём кабинете требует внимания в первую очередь? | PENDING | PENDING | PENDING | 0 | — |
 | 7 | STD-07 | Какие товары у меня скоро закончатся, а какие лежат слишком долго? Что пополнять в первую очередь? | PENDING | PENDING | PENDING | 0 | — |
 | 8 | STD-08 | Покажи текущие остатки по складам и отсортируй склады от наибольшего остатка к наименьшему. | PENDING | PENDING | PENDING | 0 | — |
@@ -171,6 +171,43 @@ Classification:
 - operator intervention: `NO`;
 - product-logic note: one two-day API read was sufficient; comparison and percentages were computed by the AI without another provider request.
 
+## STD-05 active record
+
+Canonical query: `Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж.`
+
+### Run 1 — localize the decline by day × SKU
+
+- request id `530237e4-029c-4f49-b27b-b097cc890748`;
+- operation `analytics_data`;
+- period `2026-08-31`..`2026-09-01`;
+- dimensions `[day, sku]`;
+- metrics `[revenue, ordered_units]`;
+- limit `1000`, offset `0`;
+- entitlement `SUPPORTED_AND_ENTITLED` / `all_accounts`;
+- HTTP `200`;
+- exactly one physical request;
+- no retry/operator intervention.
+
+AI-side decomposition:
+- total revenue decline remains `−22,440 RUB`;
+- selling SKU count fell from `24` on 2026-08-31 to `14` on 2026-09-01;
+- SKUs with negative contribution together contributed `−36,652 RUB`;
+- new/growing SKUs offset `+14,212 RUB`;
+- net `−36,652 + 14,212 = −22,440 RUB`.
+
+Largest negative contributions:
+1. SKU `1720144370` — «Дева» — `5,100 → 0 RUB`, delta `−5,100 RUB`.
+2. SKU `2184234912` — «Звезда Лады» — `4,794 → 1,700 RUB`, delta `−3,094 RUB`.
+3. SKU `1636048691` — «Печать Велеса» — `6,188 → 3,400 RUB`, delta `−2,788 RUB`.
+4. Multiple other SKUs each lost roughly one order (`−1,700 RUB` or `−1,394 RUB`).
+
+Interim interpretation:
+- the decline is distributed across many SKUs rather than explained by one product disappearing;
+- a single-SKU failure is therefore not the leading explanation;
+- this still does not prove demand weakness, stockout, visibility, pricing, advertising or logistics as the cause.
+
+Next evidence step: obtain current warehouse-stock report and correlate the declining SKUs with available stock. If stock evidence does not explain the breadth loss, continue with visibility/listing and advertising evidence. Current stock is supportive evidence only; it does not by itself prove what inventory was at every moment on 2026-09-01.
+
 ## Current checkpoint
 
-`FORTY_TEST_GATE_LAYER_A_STD_01_STD_02_STD_03_STD_04_COMPLETE_STD_05_READY`
+`FORTY_TEST_GATE_LAYER_A_STD_01_TO_STD_04_COMPLETE_STD_05_RUN1_SALES_DECOMPOSITION_PASS_NEXT_STOCK_EVIDENCE`
