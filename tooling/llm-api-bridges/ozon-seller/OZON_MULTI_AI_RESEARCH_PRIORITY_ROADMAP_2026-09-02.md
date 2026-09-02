@@ -22,9 +22,10 @@ Do NOT continue first-pass discovery for:
 
 The only remaining providers to collect before discovery stops are, in this exact order:
 
-1. **Claude** — `https://claude.ai/`
-2. **Kimi** — `https://www.kimi.com/`
-3. **OpenRouter Chat** — `https://openrouter.ai/chat`
+1. **Kimi** — `https://www.kimi.com/`
+2. **OpenRouter Chat** — `https://openrouter.ai/chat`
+
+Claude first-pass collection is complete and must not be repeated before the final pre-patch matrix.
 
 After OpenRouter first-pass evidence is recorded, broad discovery STOPS.
 
@@ -41,12 +42,12 @@ Current collected set:
 3. DeepSeek — authentication-required first-pass record.
 4. Grok — blank/incomplete provider-DOM first-pass record.
 5. Meta AI — guest composer/autodetection evidence; multiline exact-write blocker prevented Send.
-6. ChatGPT — existing accepted baseline adapter.
-7. Yandex Alice — existing accepted baseline adapter.
+6. Claude — provider reached `/login`; `AUTH_REQUIRED_FOR_BASIC_CHAT`; authenticated closure required.
+7. ChatGPT — existing accepted baseline adapter.
+8. Yandex Alice — existing accepted baseline adapter.
 
 Remaining collection set:
 
-8. Claude.
 9. Kimi.
 10. OpenRouter Chat.
 
@@ -54,16 +55,16 @@ The fact that Meta AI was researched before this scope freeze is not discarded. 
 
 ## 3. Current phase — finish evidence collection only
 
-Until Claude, Kimi and OpenRouter first-pass reports are collected:
+Until Kimi and OpenRouter first-pass reports are collected:
 
 - do not implement new provider adapters;
 - do not modify production provider routing;
 - do not expand manifest host permissions for new providers;
 - do not start generic-core refactoring;
-- do not try to finish authenticated/provider-specific closure for Qwen, DeepSeek, Meta AI or any other provider yet;
+- do not try to finish authenticated/provider-specific closure for Qwen, DeepSeek, Claude, Meta AI or any other provider yet;
 - do not restart Gemini/Grok environment retries yet.
 
-For each of Claude, Kimi and OpenRouter:
+For each of Kimi and OpenRouter:
 
 1. run one provider-specific Codex browser discovery prompt;
 2. Codex performs browser discovery only, not Git/GitHub/repository work;
@@ -76,11 +77,12 @@ For each of Claude, Kimi and OpenRouter:
 
 ## 4. Discovery stop condition
 
-Discovery is complete when all three remaining reports exist and have been reviewed:
+Discovery is complete when both remaining reports exist and have been reviewed:
 
-- Claude first-pass report + GitHub review;
 - Kimi first-pass report + GitHub review;
 - OpenRouter Chat first-pass report + GitHub review.
+
+Claude first-pass report + review are already complete.
 
 At that point do NOT immediately patch anything.
 
@@ -207,8 +209,8 @@ The web provider is determined by the actual web surface, not by the underlying 
 
 ### Collection phase
 
-- [ ] Claude — NEXT
-- [ ] Kimi
+- [x] Claude — first-pass complete: `AUTH_REQUIRED_FOR_BASIC_CHAT`
+- [ ] Kimi — NEXT
 - [ ] OpenRouter Chat
 
 ### Then STOP and create pre-patch matrix
@@ -261,11 +263,14 @@ Patch status: not ready.
 
 ### Claude
 
-Collection status: pending — NEXT.
+Collected: provider rendered and redirected to `https://claude.ai/login`; login surface offers Google/Apple/email/SSO and exposes no chat/composer/Send/turn DOM.
+Current status: `AUTH_REQUIRED_FOR_BASIC_CHAT`.
+Evidence note: source report has a `CLAUDE-27` table/narrative mismatch (`BLOCKED` vs `NOT_APPLICABLE`); artifact evidence is treated as not obtained and must be re-evaluated in authenticated closure.
+Patch status: not ready; authenticated discovery required.
 
 ### Kimi
 
-Collection status: pending.
+Collection status: pending — NEXT.
 
 ### OpenRouter Chat
 
@@ -277,4 +282,4 @@ This scope freeze supersedes earlier roadmap sections that instructed continued 
 
 Unless the operator explicitly changes scope again:
 
-**Claude → Kimi → OpenRouter → STOP → pre-patch evidence/gap matrix → provider-by-provider closure → only then implementation patch.**
+**Kimi → OpenRouter → STOP → pre-patch evidence/gap matrix → provider-by-provider closure → only then implementation patch.**
