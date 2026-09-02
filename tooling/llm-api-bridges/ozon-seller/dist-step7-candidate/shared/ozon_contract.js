@@ -1545,6 +1545,16 @@
     return normalized;
   }
 
+
+  function normalizeReportFileGetParams(params) {
+    const normalized = requirePlainObject(params, "params");
+    assertAllowedFields(normalized, ["file_ref"]);
+    const value = requireString(requireField(normalized, "file_ref"), "params.file_ref");
+    if (!/^rpf_[A-Za-z0-9_-]{12,120}$/.test(value)) fail("INVALID_OPERATION_PARAMS", "params.file_ref должен быть opaque report file ref bridge.");
+    normalized.file_ref = value;
+    return normalized;
+  }
+
   function normalizeSupplyOrderListParams(params) {
     const normalized = requirePlainObject(params, "params");
     assertAllowedFields(normalized, ["filter", "last_id", "limit", "sort_by", "sort_dir"]);
@@ -2537,7 +2547,7 @@
     if (!/^(GET|POST)$/.test(String(meta.method))) fail("INVALID_REGISTRY_METHOD", `${name}: неподдерживаемый HTTP method.`);
     if (!/^\/[^?#]*$/.test(String(meta.path)) || String(meta.path).includes("..")) fail("INVALID_REGISTRY_PATH", `${name}: небезопасный fixed path.`);
     const provider = String(meta.provider || "seller_api");
-    if (!["seller_api", "performance_api"].includes(provider)) fail("INVALID_REGISTRY_PROVIDER", `${name}: неизвестный provider.`);
+    if (!["seller_api", "performance_api", "report_file"].includes(provider)) fail("INVALID_REGISTRY_PROVIDER", `${name}: неизвестный provider.`);
     if (provider === "performance_api") {
       assertPerformanceMutationBlocked(meta.method, meta.path);
       assertPerformanceAsyncReportSideEffectBlocked(meta.method, meta.path);
@@ -2557,7 +2567,8 @@
     if (meta.execution_enabled === true) {
       if (typeof meta.normalizeParams !== "function") fail("PARAM_SCHEMA_NOT_READY", `${name}: нет request normalizer.`);
       if (typeof meta.sanitizeResult !== "function") fail("RESULT_POLICY_NOT_READY", `${name}: нет result/PII policy.`);
-      if (meta.method === "GET" && meta.request_style !== "query") fail("REQUEST_STYLE_NOT_READY", `${name}: GET требует query builder.`);
+      if (meta.method === "GET" && meta.request_style !== "query" && !(provider === "report_file" && meta.request_style === "opaque_file_ref")) fail("REQUEST_STYLE_NOT_READY", `${name}: GET требует query builder.`);
+      if (provider === "report_file" && meta.request_style !== "opaque_file_ref") fail("REQUEST_STYLE_NOT_READY", `${name}: report_file требует opaque_file_ref builder.`);
       if (meta.method === "POST" && !["json_body", "no_body"].includes(meta.request_style)) fail("REQUEST_STYLE_NOT_READY", `${name}: POST требует fixed json_body/no_body builder.`);
     }
   }
@@ -3220,6 +3231,7 @@
     finance_products_buyout: { normalizeParams: normalizeFinanceProductsBuyoutParams, sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_08_28_b41_finance_buyout" },
     report_list: { normalizeParams: normalizeReportListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b5_existing_report_read" },
     report_info: { normalizeParams: normalizeReportInfoParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b5_existing_report_read" },
+    report_file_get: { normalizeParams: normalizeReportFileGetParams, sanitizeResult: authorizedPersonalDataReadResult, contract_state: "opaque_report_file_ref_v1" },
     report_products_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_products_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
     report_returns_create_v2: { normalizeParams: (params) => normalizeEffectRepairParams("report_returns_create_v2", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
     report_postings_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_postings_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },

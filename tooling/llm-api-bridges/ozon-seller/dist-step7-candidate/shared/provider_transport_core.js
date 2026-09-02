@@ -140,6 +140,66 @@
     });
   }
 
+
+  function normalizeTrustedReportFileUrl(rawUrl) {
+    let parsed;
+    try { parsed = new URL(String(rawUrl || "")); }
+    catch (_) { fail("UNTRUSTED_REPORT_FILE_URL", "Report file URL от Ozon некорректен."); }
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.port) fail("UNTRUSTED_REPORT_FILE_URL", "Report file URL должен быть HTTPS без credentials/нестандартного порта.");
+    const host = String(parsed.hostname || "").toLowerCase();
+    const allowed = host === "ozone.ru" || host.endsWith(".ozone.ru") || host === "ozon.ru" || host.endsWith(".ozon.ru");
+    if (!allowed) fail("UNTRUSTED_REPORT_FILE_HOST", `Неподдерживаемый Ozon report file host: ${host || "empty"}.`);
+    return parsed.toString();
+  }
+
+  async function executeTrustedReportFileOnce({ fetchImpl, url, now = () => Date.now(), maxBytes = 16 * 1024 * 1024 }) {
+    if (typeof fetchImpl !== "function") fail("FETCH_IMPL_MISSING", "fetchImpl обязателен.");
+    const trustedUrl = normalizeTrustedReportFileUrl(url);
+    const started = now();
+    let response;
+    try {
+      response = await fetchImpl(trustedUrl, {
+        method: "GET",
+        headers: { Accept: "text/csv,text/plain,application/csv,application/octet-stream,application/zip,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+        redirect: "error",
+        credentials: "omit"
+      });
+    } catch (error) {
+      const wrapped = new Error(String(error?.message || error || "Report file fetch failed"));
+      wrapped.code = "REPORT_FILE_FETCH_FAILED";
+      wrapped.external_request_executed = true;
+      wrapped.request_attempted = true;
+      throw wrapped;
+    }
+    const received = await readResponse(response, { preserveBytes: Boolean(response.ok) });
+    if (received.byteLength > maxBytes) {
+      const error = new Error(`Report file превышает лимит bridge ${maxBytes} bytes.`);
+      error.code = "REPORT_FILE_TOO_LARGE";
+      error.http_status = Number(response.status || 0);
+      error.external_request_executed = true;
+      throw error;
+    }
+    const contentType = normalizedContentType(headerValue(response?.headers, "content-type"));
+    let parsed = null;
+    let rawText = received.rawText || "";
+    if (response.ok) {
+      const pathname = (() => { try { return new URL(trustedUrl).pathname.toLowerCase(); } catch (_) { return ""; } })();
+      const textual = ["text/csv", "application/csv", "text/plain", "application/json"].includes(contentType) || pathname.endsWith(".csv") || pathname.endsWith(".txt");
+      if (textual) {
+        const text = new TextDecoder("utf-8").decode(received.bytes || new Uint8Array());
+        parsed = Object.freeze({ content_type: contentType || "text/csv", byte_length: received.byteLength, encoding: "utf-8", content_text: text });
+      } else {
+        parsed = Object.freeze({ content_type: contentType || "application/octet-stream", byte_length: received.byteLength, encoding: "base64", file_content_base64: bytesToBase64(received.bytes) });
+      }
+    } else if (rawText.trim()) {
+      try { parsed = JSON.parse(rawText); } catch (_) { parsed = null; }
+    }
+    return Object.freeze({
+      httpStatus: Number(response.status || 0), ok: Boolean(response.ok), rawText, parsed,
+      byteLength: received.byteLength, elapsedMs: Math.max(0, Number(now() - started) || 0), responseMeta: safeResponseMeta(response)
+    });
+  }
+
   async function executePerformanceJsonOnce({ fetchImpl, request, now = () => Date.now() }) {
     if (typeof fetchImpl !== "function") fail("FETCH_IMPL_MISSING", "fetchImpl обязателен.");
     if (!request || typeof request !== "object") fail("INVALID_REQUEST", "Trusted request object обязателен.");
@@ -201,6 +261,8 @@
 
   globalThis.ProviderTransportCore = Object.freeze({
     readResponse,
+    normalizeTrustedReportFileUrl,
+    executeTrustedReportFileOnce,
     executeJsonOnce,
     executePerformanceJsonOnce
   });

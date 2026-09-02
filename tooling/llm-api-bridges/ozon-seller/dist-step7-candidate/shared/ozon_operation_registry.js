@@ -995,6 +995,12 @@
       cluster: "finance", section: "documents_reports", guidance_visibility: "user", entitlement_key: "POST /v1/report/info", workflow_role: "single_read",
       purpose: "Получить информацию об уже созданном отчёте по его коду; файл автоматически не загружается.", template: { operation: "report_info", params: { code: "REPORT_CODE" } }
     },
+    report_file_get: {
+      provider: "report_file", method: "GET", path: "/__opaque_report_file__", effect: "READ", request_style: "opaque_file_ref", execution_enabled: true,
+      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false,
+      cluster: "finance", section: "documents_reports", guidance_visibility: "conditional", workflow_role: "explicit_workflow_read_step",
+      purpose: "Получить готовый файл отчёта по непрозрачной ссылке bridge без раскрытия signed URL.", template: { operation: "report_file_get", params: { file_ref: "REPORT_FILE_REF" } }
+    },
     report_products_create: {
       provider: "seller_api", method: "POST", path: "/v1/report/products/create", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",

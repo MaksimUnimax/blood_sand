@@ -44,6 +44,51 @@
   } = {}) {
     let performanceToken = null;
 
+    const reportFileRefs = new Map();
+    const REPORT_FILE_REF_TTL_MS = 30 * 60 * 1000;
+    const REPORT_FILE_REF_MAX = 128;
+
+    function pruneReportFileRefs() {
+      const current = Number(now());
+      for (const [ref, record] of reportFileRefs.entries()) {
+        if (!record || current - Number(record.created_at_ms || 0) > REPORT_FILE_REF_TTL_MS) reportFileRefs.delete(ref);
+      }
+      while (reportFileRefs.size > REPORT_FILE_REF_MAX) reportFileRefs.delete(reportFileRefs.keys().next().value);
+    }
+
+    function registerReportFile(rawUrl) {
+      const trustedUrl = globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl(rawUrl);
+      pruneReportFileRefs();
+      const token = String(uuid()).replace(/[^A-Za-z0-9_-]/g, "");
+      const ref = `rpf_${token}`;
+      reportFileRefs.set(ref, Object.freeze({ url: trustedUrl, created_at_ms: Number(now()) }));
+      pruneReportFileRefs();
+      return ref;
+    }
+
+    function resolveReportFileRef(ref) {
+      pruneReportFileRefs();
+      const record = reportFileRefs.get(String(ref || ""));
+      if (!record) {
+        const error = new Error("Report file ref неизвестен или истёк. Повторите report_info отдельной командой.");
+        error.code = "REPORT_FILE_REF_NOT_FOUND";
+        error.external_request_executed = false;
+        throw error;
+      }
+      return record;
+    }
+
+    async function executeReportFileCommand(command) {
+      const record = resolveReportFileRef(command.params.file_ref);
+      const response = await globalThis.ProviderTransportCore.executeTrustedReportFileOnce({ fetchImpl, url: record.url, now });
+      const request = Object.freeze({
+        method: "GET", host_alias: "report_file", path: "/__opaque_report_file__", operation: "report_file_get",
+        response_style: "binary", response_content_types: null
+      });
+      return { request, response, auth_request_performed: false };
+    }
+
+
     function clearPerformanceToken() {
       performanceToken = null;
     }
@@ -157,9 +202,11 @@
       }
       const preflight = contract.preflightExecution(command);
       const provider = String(preflight.meta.provider || "seller_api");
-      const execution = provider === "performance_api"
-        ? await executePerformanceCommand(command, rawPerformanceCredentials)
-        : await executeSellerCommand(command, rawCredentials);
+      const execution = provider === "report_file"
+        ? await executeReportFileCommand(command)
+        : (provider === "performance_api"
+          ? await executePerformanceCommand(command, rawPerformanceCredentials)
+          : await executeSellerCommand(command, rawCredentials));
       const { request, response } = execution;
       let effectiveQuota = quota;
       if (typeof onProviderResponse === "function") {
@@ -185,7 +232,15 @@
           verificationError.rate_limit = safeQuotaRateMeta(effectiveQuota, response.responseMeta.retry_after);
           throw verificationError;
         }
+
         result = contract.sanitizeResult(command, response.parsed ?? response.rawText);
+        if (command.operation === "report_info") {
+          const rawFile = findFirstField(response.parsed, "file");
+          if (typeof rawFile === "string" && rawFile.trim()) {
+            const fileRef = registerReportFile(rawFile.trim());
+            result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), report_file_ref: fileRef });
+          }
+        }
       } else {
         result = { error: errorPayload };
       }
