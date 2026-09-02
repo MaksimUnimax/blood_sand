@@ -1047,7 +1047,7 @@
       provider: "seller_api", method: "POST", path: "/v1/report/marked-products-sales/create", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "sales_analytics", section: "period_product_category",
       guidance_visibility: "user", entitlement_key: "POST /v1/report/marked-products-sales/create", workflow_role: "explicit_workflow_read_step",
-      purpose: "Сгенерировать отчёт по продажам товаров с маркировкой", template: {"operation":"report_marked_products_sales_create","params":{}}
+      purpose: "Сгенерировать отчёт по продажам товаров с маркировкой", template: {"operation":"report_marked_products_sales_create","params":{"date":{"from":"2026-01-01","to":"2026-01-01"}}}
     },
     report_realization_posting_create: {
       provider: "seller_api", method: "POST", path: "/v1/report/realization/posting/create", effect: "READ", request_style: "json_body", execution_enabled: true,
@@ -1059,31 +1059,31 @@
       provider: "seller_api", method: "POST", path: "/v1/finance/document-b2b-sales", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
       guidance_visibility: "user", entitlement_key: "POST /v1/finance/document-b2b-sales", workflow_role: "explicit_workflow_read_step",
-      purpose: "Реестр продаж юридическим лицам", template: {"operation":"finance_document_b2b_sales","params":{"date":"2026-01-01"}}
+      purpose: "Реестр продаж юридическим лицам", template: {"operation":"finance_document_b2b_sales","params":{"date":"2026-01"}}
     },
     finance_mutual_settlement_report: {
       provider: "seller_api", method: "POST", path: "/v1/finance/mutual-settlement", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
       guidance_visibility: "user", entitlement_key: "POST /v1/finance/mutual-settlement", workflow_role: "explicit_workflow_read_step",
-      purpose: "Отчёт о взаиморасчётах", template: {"operation":"finance_mutual_settlement_report","params":{"date":"2026-01-01"}}
+      purpose: "Отчёт о взаиморасчётах", template: {"operation":"finance_mutual_settlement_report","params":{"date":"2026-01"}}
     },
     finance_compensation_report: {
       provider: "seller_api", method: "POST", path: "/v1/finance/compensation", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
       guidance_visibility: "user", entitlement_key: "POST /v1/finance/compensation", workflow_role: "explicit_workflow_read_step",
-      purpose: "Отчёт о компенсациях", template: {"operation":"finance_compensation_report","params":{"date":"2026-01-01"}}
+      purpose: "Отчёт о компенсациях", template: {"operation":"finance_compensation_report","params":{"date":"2026-01"}}
     },
     finance_decompensation_report: {
       provider: "seller_api", method: "POST", path: "/v1/finance/decompensation", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
       guidance_visibility: "user", entitlement_key: "POST /v1/finance/decompensation", workflow_role: "explicit_workflow_read_step",
-      purpose: "Отчёт о декомпенсациях", template: {"operation":"finance_decompensation_report","params":{"date":"2026-01-01"}}
+      purpose: "Отчёт о декомпенсациях", template: {"operation":"finance_decompensation_report","params":{"date":"2026-01"}}
     },
     cargoes_label_create: {
       provider: "seller_api", method: "POST", path: "/v1/cargoes-label/create", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
       guidance_visibility: "user", entitlement_key: "POST /v1/cargoes-label/create", workflow_role: "explicit_workflow_read_step",
-      purpose: "Сгенерировать этикетки для грузомест", template: {"operation":"cargoes_label_create","params":{"supply_id":1}}
+      purpose: "Сгенерировать этикетки для грузомест", template: {"operation":"cargoes_label_create","params":{"supply_id":1,"cargoes":[{"cargo_id":1}]}}
     },
     posting_fbs_act_container_labels: {
       provider: "seller_api", method: "POST", path: "/v2/posting/fbs/act/get-container-labels", effect: "READ", request_style: "json_body", execution_enabled: true,
@@ -1101,7 +1101,7 @@
       provider: "seller_api", method: "POST", path: "/v2/posting/fbs/package-label/create", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "labels_documents",
       guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/package-label/create", workflow_role: "explicit_workflow_read_step",
-      purpose: "Создать задание на формирование этикеток", template: {"operation":"posting_fbs_package_label_create","params":{"posting_number":"POSTING_NUMBER"}}
+      purpose: "Создать задание на формирование этикеток", template: {"operation":"posting_fbs_package_label_create","params":{"posting_number":["POSTING_NUMBER"]}}
     },
     cargoes_transport_label_by_order_create: {
       provider: "seller_api", method: "POST", path: "/v1/cargoes/label/transport-by-order/create", effect: "READ", request_style: "json_body", execution_enabled: true,
@@ -1113,7 +1113,7 @@
       provider: "seller_api", method: "POST", path: "/v1/cargoes/label/transport/create", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
       guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/label/transport/create", workflow_role: "explicit_workflow_read_step",
-      purpose: "Сгенерировать этикетки транспортных грузомест", template: {"operation":"cargoes_transport_label_create","params":{"supply_id":1}}
+      purpose: "Сгенерировать этикетки транспортных грузомест", template: {"operation":"cargoes_transport_label_create","params":{"supply_id":1,"transport_cargo_ids":["1"]}}
     },
     fbp_act_from_create: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/act-from/create", effect: "READ", request_style: "json_body", execution_enabled: true,
