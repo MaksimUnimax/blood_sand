@@ -2,18 +2,22 @@
 
 Date: 2026-09-02
 Status: ACTIVE
-Product gate: `COMMERCIAL_QUERY_CORE_NOT_YET_VALIDATED`
+Product gate: `COMMERCIAL_QUERY_CORE_V1_READY_FOR_OPERATOR_REVIEW`
 Authority TZ: `OZON_AI_WORKER_COMMERCIAL_VALIDATION_TZ_2026-09-02.md`
+Core: `OZON_AI_WORKER_COMMERCIAL_QUERY_CORE_V1_2026-09-02.md`
+Evidence: `OZON_AI_WORKER_REAL_DEMAND_SOURCE_LEDGER_2026-09-02.md`
+Competitive landscape: `OZON_AI_WORKER_COMPETITIVE_LANDSCAPE_2026-09-02.md`
+Synthesis: `OZON_AI_WORKER_COMMERCIAL_RESEARCH_SYNTHESIS_2026-09-02.md`
 
 ## Goal
 
-Build an evidence-backed commercial query core that defines what the Ozon AI worker must be able to solve to have a credible sellable value proposition. Then benchmark the same core first on GPT-5.6 Sol + Bridge, second on Alice + Bridge, and later on each additional AI provider.
+Build an evidence-backed commercial query core that defines what the Ozon AI worker must be able to solve to have a credible sellable value proposition. Benchmark the same frozen core first on GPT-5.6 Sol + Bridge, second on Alice + Bridge, and later on each additional AI provider.
 
 ## Frozen product model
 
 Product = preferred AI + Ozon Bridge + Ozon cabinet data + external/public context + AI analysis.
 
-Coverage is measured at the level of a solved business question, not at the level of an API endpoint.
+Coverage is measured at the level of a solved business question, not an API endpoint.
 
 ## Phase 0 — Product framing and preservation
 
@@ -28,121 +32,120 @@ Status: COMPLETE
 
 ## Phase 1 — Current capability inventory
 
-Status: IN PROGRESS
-
-Purpose: understand what data the accepted Bridge can currently expose without using this inventory to invent demand.
+Status: COMPLETE FOR CORE V1
 
 - [x] Confirm accepted build has broad Seller API + Performance API read registry.
-- [x] Confirm capability clusters include account/access, catalog, stocks, sales analytics, search visibility, prices/promotions, orders/postings, FBO/FBP supplies, warehouse/logistics, returns/cancellations, finance, reviews/questions and advertising/performance.
-- [x] Confirm explicit privacy-gated reads exist for some personal/user-generated data.
-- [x] Confirm Premium-dependent search/finance operations exist in registry.
-- [ ] Produce compact capability-to-evidence map used only for coverage mapping.
+- [x] Confirm capability clusters: account/access, catalog, stocks, sales analytics, search visibility, prices/promotions, orders/postings, FBO/FBP supplies, warehouse/logistics, returns/cancellations, finance, reviews/questions and advertising/performance.
+- [x] Confirm privacy-gated reads exist for personal/user-generated data.
+- [x] Confirm Premium/Premium Plus/Premium Pro entitlement logic exists.
+- [x] Map each Core V1 query to a current product capability hypothesis.
+
+Important: capability mapping was performed only after independent demand collection. It is not the source of the query core.
 
 ## Phase 2 — External real-demand corpus
 
-Status: IN PROGRESS
+Status: COMPLETE FOR CORE V1
 
-Required source classes:
+Collected and preserved evidence from:
 
-- [x] Seller forums / real seller problem threads.
-- [x] Official Ozon seller materials.
-- [x] Marketplace-management agencies / freelancers selling operational work.
-- [x] Analytics/management tools marketed to sellers.
-- [ ] Additional public community/chat evidence for underrepresented jobs.
-- [ ] Additional evidence for Premium-specific professional analytics jobs.
-- [ ] De-duplicate and score recurring demand themes.
+- [x] seller forums / real seller problem threads;
+- [x] official Ozon seller materials and public channels;
+- [x] marketplace-management agencies and freelancers;
+- [x] seller analytics/management products;
+- [x] direct AI-agent / AI-analyst competitors;
+- [x] real external incident and seasonal/outage examples.
 
-Already evidenced recurring themes include:
-
-- unexplained sales collapse / sales anomaly diagnosis;
-- FBO stock disappearing or becoming inconsistent;
-- stock allocation and shortage/overstock by warehouse;
-- delayed/unaccepted FBO supplies;
-- delivery/visibility problems despite stock and listing status;
-- advertising DRR too high and sales collapsing when ads stop;
-- campaign/bid efficiency;
-- understanding payouts, commissions, logistics and financial reports;
-- profitability/unit economics after marketplace costs;
-- pricing/discount/promotion confusion;
-- reviews/questions/rating management;
-- search-query/position/visibility analytics;
-- weekly/daily reporting and cabinet health monitoring;
-- agency/freelancer demand for analytics, logistics, cards, ads, reviews and reporting;
-- external-event investigation such as warehouse fires, outages, holidays and seasonality.
+Evidence ledger conclusion: recurring paid demand exists for sales diagnostics, inventory/supplies, advertising, finance/profitability, listing/search visibility, returns/reputation and operational reporting.
 
 ## Phase 3 — Demand normalization
 
-Status: NOT STARTED
+Status: COMPLETE FOR CORE V1
 
-For each evidence-backed job:
+- [x] Preserve source/original pain.
+- [x] Normalize into natural-language AI-worker questions.
+- [x] Assign four target segments.
+- [x] Assign Premium/privacy/user-data dependencies.
+- [x] Reject endpoint-level trivia as the benchmark unit.
+- [x] Preserve multi-factor diagnostic questions because they are central to product value.
 
-1. preserve source and original problem;
-2. normalize into one or more realistic natural-language AI-worker queries;
-3. assign segment(s);
-4. assign Premium dependency where evidenced;
-5. state business outcome/value;
-6. classify recurrence/importance;
-7. reject weak, artificial or low-value queries.
+## Phase 4 — Commercial Query Core V1
 
-Output: demand ledger.
+Status: COMPLETE / AWAITING OPERATOR REVIEW
 
-## Phase 4 — Commercial query core V1
+Core size: **33 canonical queries**.
 
-Status: NOT STARTED
+Breakdown:
 
-Build the frozen benchmark table.
+- 13 `SELLER_STANDARD`
+- 6 `SELLER_PREMIUM`
+- 8 `SERVICE_STANDARD`
+- 6 `SERVICE_PREMIUM`
 
-Target initial size: enough rows to cover the recurring sellable jobs without bloating the benchmark with endpoint-level variants. Prefer representative high-value queries over exhaustive paraphrases.
+The core deliberately includes both easy fact questions and hard multi-source investigations.
 
-Required query families:
+Examples:
 
-- daily/weekly cabinet health;
-- sales anomaly/root-cause investigation;
-- stock loss/warehouse incident investigation;
-- replenishment/stock allocation;
-- supply/acceptance/logistics problems;
-- listing visibility/content diagnosis;
-- advertising efficiency and DRR;
-- search demand/position/keyword analysis;
-- pricing/promotions;
-- returns/cancellations/quality signals;
-- ratings/reviews/questions;
-- finance/payout/reconciliation;
-- product/SKU profitability where required business inputs are available;
-- professional client reporting/audit;
-- multi-factor professional diagnostics.
-
-Every row receives a stable ID and evidence links.
+- daily cabinet health;
+- sales collapse/root cause;
+- warehouse incident impact;
+- disappearing FBO stock;
+- stockout/overstock;
+- supply acceptance;
+- listing/delivery visibility;
+- DRR/ad waste;
+- payout reconciliation;
+- SKU profit with user cost data;
+- search/query/position analytics;
+- organic vs paid dependency;
+- client morning audit / weekly report;
+- full premium professional diagnostic;
+- multi-client portfolio triage.
 
 ## Phase 5 — Current-product coverage hypothesis
 
-Status: NOT STARTED
+Status: COMPLETE FOR CORE V1
 
-Map each frozen query to what the AI worker would need:
+Pre-test distribution across 33 rows:
 
-- Bridge data cluster(s);
-- public web/current information;
-- calendar/seasonality context;
-- calculations;
-- user-provided business facts such as cost price where Ozon does not know them;
-- unavailable data.
+- `STRONG_CANDIDATE`: 12
+- `CONDITIONAL_USER_DATA`: 5
+- `PARTIAL_CANDIDATE`: 3
+- `PRIVACY_OR_ENTITLEMENT_GATED`: 12
+- `CURRENT_PRODUCT_GAP`: 1
 
-Set only a pre-test hypothesis:
+This is NOT a success rate.
 
-- `STRONG_CANDIDATE`
-- `PARTIAL_CANDIDATE`
-- `GAP_CANDIDATE`
-- `UNKNOWN`
+The explicit current architectural gap is multi-client portfolio triage across several seller credential contexts. Historical stock forensics, causality and seller-only cost/plan data are important limitations but not complete blockers for their whole query families.
 
-Do NOT mark provider PASS here.
+## Phase 5A — Competitive landscape
+
+Status: COMPLETE FOR DECISION V1
+
+Direct competition exists:
+
+- Ozon `Умный ассистент`;
+- inSales AI analyst;
+- Operesso personal Ozon AI manager;
+- ReStat AI analytics;
+- SuperIntellect, JAFO, AISellerAgent and others.
+
+Therefore generic `chat with your Ozon data` is not a sufficient differentiator.
+
+Candidate differentiation to validate:
+
+1. native operation inside the user's preferred AI;
+2. replaceable AI provider over the same Bridge;
+3. private cabinet evidence + current public web/event context;
+4. Bridge credential/allowlist boundary;
+5. evidence-backed provider benchmark over the same commercial core.
 
 ## Phase 6 — GPT-5.6 Sol + Bridge benchmark
 
-Status: BLOCKED ON CORE FREEZE
+Status: NEXT AFTER OPERATOR CORE REVIEW
 
 GPT-5.6 Sol is the strongest baseline worker and is tested first.
 
-For every query record:
+For every frozen query record:
 
 - intent understanding;
 - investigation plan quality;
@@ -154,7 +157,7 @@ For every query record:
 - hallucination/unsupported-causality errors;
 - final result: PASS / PARTIAL / FAIL / BLOCKED.
 
-Failures are classified by cause:
+Failures must be classified by cause:
 
 - Bridge data gap;
 - missing Ozon entitlement;
@@ -169,28 +172,26 @@ Failures are classified by cause:
 
 Status: BLOCKED ON GPT-5.6 SOL BASELINE
 
-Run the same frozen core against Alice with materially equivalent fixtures.
+Run the same frozen core against Alice using materially equivalent fixtures.
 
-Compare row-by-row against the Sol baseline.
-
-Do not weaken the question to make Alice pass unless a separately recorded UX adaptation is being evaluated.
+Do not simplify a question merely to make a weaker AI pass. If a product-side prompt/guidance adaptation is needed, record it as engineering work and retest explicitly.
 
 ## Phase 8 — Commercial decision checkpoint
 
-Status: BLOCKED
+Status: BLOCKED ON SOL + ALICE RESULTS
 
-Before resuming broad multi-AI development, answer:
+Answer:
 
-1. What are we actually selling?
-2. Which query families are reliably solved today?
-3. Which four-segment proposition is strongest?
-4. Which queries create the clearest willingness-to-pay value?
-5. What can sales/marketing promise without overclaiming?
-6. Is the core broad/valuable enough to justify continuing the product?
-7. Which small engineering changes unlock the largest amount of commercial demand?
-8. Is multi-AI expansion still justified after the benchmark?
+1. What exactly can we sell?
+2. Which commercial query families are reliably solved?
+3. Which segment is strongest: seller standard, seller Premium, service standard or service Premium?
+4. What can marketing truthfully promise?
+5. Which failures are Bridge gaps vs AI/model gaps?
+6. Which small changes unlock the most paid demand?
+7. Does native preferred-AI operation create enough differentiation from Ozon/inSales/Operesso?
+8. Is continued multi-AI expansion justified?
 
-Output decision statuses:
+Decision statuses:
 
 - `COMMERCIAL_CORE_VALIDATED`
 - `COMMERCIAL_CORE_VALIDATED_WITH_PRIORITY_GAPS`
@@ -201,20 +202,17 @@ Output decision statuses:
 
 Status: PAUSED
 
-Only after the commercial decision checkpoint.
-
-Provider sequence and adapter work are handled separately. Each added provider is benchmarked against the already frozen commercial core.
+Only after the commercial decision checkpoint. Every provider is benchmarked against the same frozen commercial core.
 
 ## Current exact checkpoint
 
-`PRODUCT_DEMAND_RESEARCH_IN_PROGRESS_BEFORE_COMMERCIAL_QUERY_CORE_V1`
+`COMMERCIAL_QUERY_CORE_V1_READY_FOR_OPERATOR_REVIEW_BEFORE_SOL_BENCHMARK`
 
 Next work:
 
-1. expand/clean real-demand source corpus;
-2. create source/demand ledger;
-3. normalize high-value jobs into natural-language queries;
-4. build Commercial Query Core V1;
-5. map theoretical current-product coverage;
-6. freeze core;
-7. start GPT-5.6 Sol live benchmark.
+1. operator reviews/edits the 33-row commercial core;
+2. freeze exact V1 benchmark wording;
+3. prepare live test fixtures/rules;
+4. run GPT-5.6 Sol + Bridge first;
+5. record row-by-row results;
+6. only then run Alice.
