@@ -1,7 +1,7 @@
 # Ozon AI Worker — Standard-only Live Benchmark V1
 
 Date: 2026-09-02
-Status: ACTIVE — GPT-5.6 SOL LIVE TEST STARTING
+Status: ACTIVE — GPT-5.6 SOL LIVE TEST IN PROGRESS
 Scope: authenticated Ozon seller **without Premium**. Premium rows are excluded from live testing for now and will be evaluated later by evidence-based extrapolation and, if needed, a separate Premium pass.
 Authority: `OZON_AI_WORKER_COMMERCIAL_VALIDATION_TZ_2026-09-02.md`
 Parent core: `OZON_AI_WORKER_COMMERCIAL_QUERY_CORE_V2_2026-09-02.md`
@@ -24,6 +24,7 @@ For each row:
 6. Multi-run investigations are explicitly allowed and are expected for complex rows.
 7. A row receives `PASS`, `PARTIAL`, `FAIL` or `BLOCKED` only after the final business answer is evaluated.
 8. Every run and conclusion is recorded here. Nothing load-bearing is kept only in chat.
+9. A transient provider/runtime rate limit does **not** count as a business-answer FAIL. The exact failed physical request is recorded, the row remains `IN_PROGRESS`, and the same logical read may be explicitly retried after the provider/quota window permits it. No automatic retry is allowed.
 
 ## Provider order
 
@@ -47,7 +48,7 @@ A Premium extrapolation is never written as a live PASS.
 
 | ID | Family | Canonical user query | Expected investigation value | Sol status | Sol runs | Alice status | Notes |
 |---|---|---|---|---|---|---|---|
-| STD-01 | Instant sales BI | **Дай продажи за вчера: общая выручка и количество заказанных единиц.** | Basic direct analytics retrieval and interpretation. | IN_PROGRESS | — | PENDING | First live test. |
+| STD-01 | Instant sales BI | **Дай продажи за вчера: общая выручка и количество заказанных единиц.** | Basic direct analytics retrieval and interpretation. | IN_PROGRESS | 1 | PENDING | Run 1: correct Standard `analytics_data` request, entitlement `SUPPORTED_AND_ENTITLED`, one physical request, Ozon HTTP 429; no business data returned. Explicit retry required; not a FAIL. |
 | STD-02 | Period BI | **Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня.** | Period series + sorting. | PENDING | — | PENDING | — |
 | STD-03 | Product BI | **Дай топ-20 товаров за последние 7 дней по выручке.** | Product-level ranking without manual export. | PENDING | — | PENDING | — |
 | STD-04 | Period comparison | **Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах.** | Multi-period comparison/calculation. | PENDING | — | PENDING | — |
@@ -90,6 +91,8 @@ Required data is available but the AI worker chooses the wrong investigation, pr
 ### BLOCKED
 The test cannot proceed because of credentials/runtime/adapter/privacy/access limitations or because the needed Ozon capability is not available in the Standard contour.
 
+Transient Ozon/provider rate limits are recorded as temporary infrastructure blockers while the row remains `IN_PROGRESS`; they do not by themselves determine the final business-query result.
+
 ## Run log
 
 ### STD-01
@@ -100,10 +103,55 @@ Canonical question:
 
 Resolved test date: 2026-09-01.
 
-State: `IN_PROGRESS / awaiting Bridge run 1`.
+#### Run 1
 
-No provider result has been assigned yet.
+AI-selected command:
+
+```text
+OZON_API_V1
+{
+  "operation": "analytics_data",
+  "params": {
+    "date_from": "2026-09-01",
+    "date_to": "2026-09-01",
+    "dimension": ["day"],
+    "metrics": ["revenue", "ordered_units"],
+    "limit": 100
+  }
+}
+```
+
+Observed Bridge result:
+
+- operation: `analytics_data`;
+- provider: `seller_api`;
+- HTTP method/path: `POST /v1/analytics/data`;
+- entitlement: `SUPPORTED_AND_ENTITLED`;
+- entitlement reason: `all_accounts`;
+- requested metrics preserved: `revenue`, `ordered_units`;
+- logical business result count: 1;
+- physical business request count: 1;
+- external request executed: true;
+- HTTP status: `429`;
+- provider error category: `rate_limit`;
+- quota family: `seller.analytics_data.v1`;
+- minimum interval recorded by Bridge: `60000 ms`;
+- automatic retry: false;
+- no sales data returned.
+
+Assessment after run 1:
+
+- AI intent/operation selection: **correct**;
+- Standard entitlement selection: **correct / proven**;
+- request safety and one-request invariant: **PASS for this run**;
+- business answer: **not yet evaluable**;
+- blocker: `TEMPORARY_PROVIDER_RATE_LIMIT`;
+- no inference such as `zero sales` is permitted from this response;
+- do not change operation/metrics merely because of the 429;
+- explicit retry of the same logical read is required after the quota/provider window permits it.
+
+State: `IN_PROGRESS / RUN_1_RATE_LIMIT / RETRY_SAME_READ`.
 
 ## Current checkpoint
 
-`STANDARD_ONLY_LIVE_BENCHMARK_28_ROWS_SOL_STD_01_RUN_1_READY`
+`STANDARD_ONLY_LIVE_BENCHMARK_28_ROWS_SOL_STD_01_RUN_1_429_RETRY_SAME_READ`
