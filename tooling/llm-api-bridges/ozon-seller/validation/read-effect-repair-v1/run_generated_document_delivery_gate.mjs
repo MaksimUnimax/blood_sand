@@ -65,7 +65,7 @@ const inlinePdf = await provider.executeCommandObject({ operation: "report_file_
 assert.equal(calls.length, beforeInlineRead, "inline PDF ref read must not execute another provider request");
 assert.equal(inlinePdf.result?.format, "pdf");
 assert.match(inlinePdf.result?.text_extract || "", /LABEL 123/);
-assert.match(inlinePdf.report_text, /external_request_executed: false/);
+assert.ok(inlinePdf.report_text.includes('"external_request_executed": false'));
 
 console.log("OZON_GENERATED_PDF_TEXT_EXTRACTION_PASS");
 console.log("OZON_GENERATED_URL_REDACTED_PASS");
