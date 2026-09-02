@@ -2,11 +2,11 @@
 
 Date: 2026-09-02
 Status: MANDATORY HARDENING REQUIREMENT DISCOVERED BY STD-05
-Source: `STD-05 Run 9`, `STD-05 Run 10`
+Source: `STD-05 Run 9`, `STD-05 Run 10`, `STD-05 Run 11`
 
 ## Incident
 
-Bridge accepted and dispatched `product_queries` (`POST /v1/analytics/product-queries`) for a Standard/non-Premium live account.
+Bridge accepted and dispatched `product_queries` (`POST /v1/analytics/product-queries`) for a Standard/non-Premium live account using target date `2026-08-31`.
 
 Before dispatch Bridge reported:
 - `entitlement.status = SUPPORTED_AND_ENTITLED`;
@@ -22,7 +22,7 @@ No business data was returned.
 
 ## Run 10 roles diagnostic
 
-A same-account/key `roles` diagnostic then returned HTTP `200`.
+A same-account/key `roles` diagnostic returned HTTP `200`.
 
 The current key's `Admin read only` role explicitly contains:
 - `/v1/analytics/product-queries`;
@@ -30,69 +30,74 @@ The current key's `Admin read only` role explicitly contains:
 
 Therefore the Run 9 403 is **not explained by the endpoint being absent from the API-key role set**.
 
-This narrows the live contradiction to an account/subscription/provider-policy condition, a date/data-freshness restriction, or another provider-side condition not modeled by Bridge.
+## Run 11 controlled older-date result
 
-## Freshness-window hypothesis discovered after Run 10
+Run 11 repeated the same operation on the same live account/key, but used an older control date outside the newest target window:
 
-Current documentation for `product_queries` describes a recent-data calculation delay: the newest roughly three days are not available while analytics is calculated.
+- operation: `product_queries`;
+- date: `2026-08-29`;
+- SKU: `1636048691`;
+- request id: `41e392f8-ad80-41eb-81f8-c84644df59bc`;
+- HTTP `200`;
+- returned valid search analytics (`unique_search_users=4876`, `gmv=1244 RUB`).
 
-Run 9 requested `2026-08-31` while the test date is `2026-09-02`, so the requested day falls inside that recent window.
+This rejects:
+- global account denial of `product_queries`;
+- missing API-key role;
+- invalid operation/parameter shape as the Run 9 cause.
 
-This may explain why:
-- the method is present in roles;
-- Bridge's static contract sees the operation as generally available/partially available;
-- Ozon still rejects the concrete request.
+Strongest supported classification is now:
 
-However the exact 403 trigger is **not yet proven**. The required controlled diagnostic is the same `product_queries` operation for an older date outside the recent calculation window, e.g. `2026-08-29`, using a minimal SKU set.
+`RECENT_DATA_FRESHNESS_OR_DATA_READINESS_RESTRICTION_STRONGLY_SUPPORTED / EXACT_BOUNDARY_NOT_PROVEN`
 
-Do not classify `product_queries` as globally unavailable to Standard until that diagnostic is completed.
+The exact provider cutoff must not be invented from one pass/fail pair. What is proven is that the newer target date was rejected while the older control date was queryable on the same endpoint/account/key.
 
 ## Why this is a product defect
 
-`SUPPORTED_AND_ENTITLED` communicates a stronger claim than the Bridge had actually proven.
+`SUPPORTED_AND_ENTITLED` communicates a stronger claim than the Bridge had actually proven for the **concrete request**.
 
-The static reviewed OpenAPI rule for this method is represented as `ALL_ACCOUNTS_PARTIAL_RESPONSE`, while live provider behavior can still reject a concrete request because of conditions not represented in the current preflight model.
-
-The Bridge currently conflates at least four different concepts:
+The current preflight model conflates at least four different concepts:
 1. operation exists in the reviewed contract;
 2. current API-key role includes the endpoint;
-3. current account/subscription may use the requested feature/data scope;
-4. the concrete date/range is currently queryable.
+3. current account/subscription may use the endpoint/feature;
+4. the concrete requested date/range is currently queryable and data-ready.
 
-These states must not collapse into one unconditional `SUPPORTED_AND_ENTITLED` label.
+Runs 9-11 prove that the first three can be true enough for an older request while the fourth is false for a newer request. These states must not collapse into one unconditional entitlement label.
 
 ## Required semantic states
 
-Bridge planning should distinguish static support from proven live entitlement and queryability. Candidate state model:
+Bridge planning should distinguish static support, role, entitlement and queryability. Candidate state model:
 
 - `SUPPORTED_STATICALLY_ACCESS_UNKNOWN`
 - `SUPPORTED_ROLE_CONFIRMED`
 - `SUPPORTED_SUBSCRIPTION_CONFIRMED`
 - `SUPPORTED_BUT_FRESHNESS_WINDOW_UNKNOWN`
-- `SUPPORTED_AND_ENTITLED` only when live account/key evidence truly proves it
+- `DATA_WINDOW_NOT_READY`
+- `SUPPORTED_AND_QUERYABLE`
 - `NOT_ENTITLED`
 - `ENTITLEMENT_PROVIDER_DEPENDENT`
 - `ENTITLEMENT_RULE_STALE_OR_CONTRADICTED_BY_PROVIDER`
-- `DATA_WINDOW_NOT_READY` / equivalent when contract/provider evidence proves a freshness restriction
 
 Exact enum names are not frozen, but the semantic distinction is mandatory.
 
 ## Required 403 behavior
 
-When provider returns a permission/entitlement 403 after Bridge predicted access:
+When provider returns a permission-looking 403 after Bridge predicted access:
 
 - `business_result_valid: false`
-- `retryable: false` unless provider evidence says otherwise
-- `failure_class: OZON_PERMISSION_OR_ENTITLEMENT_REJECTED` or stronger supported class
 - preserve operation and logical fingerprint
 - `external_request_executed: true`
 - `automatic_retry: false`
-- `preflight_entitlement_prediction` must be included
-- `provider_contradicted_preflight: true`
-- recommend deterministic diagnostics such as `roles` and, where relevant, an older-date freshness control
-- keep the original business job active under `NO_SKIP_ON_FAILURE`
-- do not reinterpret the failure as empty search data
+- expose `preflight_entitlement_prediction`
+- expose `provider_contradicted_preflight: true`
+- do not interpret the failure as empty business/search data
 - do not silently fall back to a Premium-only alternative
+- recommend deterministic diagnostics based on evidence:
+  - role check when role is unknown;
+  - older-date freshness control when the endpoint has a known recent-data lag;
+- keep the original business job active under `NO_SKIP_ON_FAILURE`.
+
+After an older-date control succeeds on the same endpoint/account/key, the AI-facing classification should move away from generic entitlement denial toward the strongest supported freshness/data-readiness class.
 
 ## Freshness / data-readiness requirement
 
@@ -114,31 +119,37 @@ queryability: {
 
 Rules:
 - do not send a known-not-ready recent date merely because the endpoint exists in roles;
-- do not label a recent-window rejection as account entitlement failure when the contract proves data readiness is the issue;
-- do not invent the provider's exact calculation delay if it is not documented;
-- where documented, make the restriction machine-readable for weak models.
+- do not label a recent-window rejection as account entitlement failure when evidence supports data readiness as the issue;
+- do not invent the provider's exact calculation delay if it is not firmly represented in the reviewed contract;
+- where documented, make the restriction machine-readable for weak models;
+- an older successful control should be recorded as evidence that the operation/account entitlement exists while the target range is not yet queryable;
+- no hidden retry, hidden date substitution or silent fallback is allowed.
 
 ## Snapshot feedback requirement
 
-A live provider contradiction should be recordable as evidence that the bundled entitlement/queryability snapshot may be stale or incomplete.
+A live provider contradiction should be recordable as evidence that the bundled entitlement/queryability snapshot is incomplete even if its endpoint-level subscription rule is not stale.
 
-Bridge should not automatically rewrite static rules from one incident, but it should expose enough metadata so validation can distinguish:
+Validation must distinguish:
 - key-role issue;
 - subscription/account issue;
 - data-freshness/queryability issue;
 - stale entitlement rule;
 - unknown provider policy.
 
+STD-05 demonstrates that endpoint-level entitlement metadata alone is insufficient for date-sensitive analytics methods.
+
 ## Weak-model consequence
 
-A weak model should not have to infer from `403 code 7` that a method present in its roles may still reject a concrete request because of subscription or freshness rules.
+A weak model should not have to infer from `403 code 7` that a method present in its roles and generally available may still reject a concrete request because the requested analytics period is not ready.
 
 Principles:
 
-`DO_NOT_TELL_THE_MODEL_ENTITLED_WHEN_ENTITLEMENT_IS_ONLY_STATICALLY_ASSUMED`
+`DO_NOT_TELL_THE_MODEL_ENTITLED_WHEN_QUERYABILITY_IS_UNPROVEN`
 
 `DO_NOT_REQUIRE_MODEL_INTELLIGENCE_TO_DISCOVER_DOCUMENTED_DATA_FRESHNESS_WINDOWS`
 
+`SEPARATE_ENDPOINT_ENTITLEMENT_FROM_CONCRETE_REQUEST_QUERYABILITY`
+
 ## Current checkpoint
 
-`STD_05_PRODUCT_QUERIES_403_ROLE_CAUSE_REJECTED_FRESHNESS_CONTROL_NEXT`
+`STD_05_PRODUCT_QUERIES_403_ROOT_CAUSE_NARROWED_TO_RECENT_DATA_FRESHNESS_QUERYABILITY_GAP_RUN11_OLDER_DATE_200`
