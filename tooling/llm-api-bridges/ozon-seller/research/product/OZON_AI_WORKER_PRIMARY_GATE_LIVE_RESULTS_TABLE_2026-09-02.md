@@ -17,7 +17,7 @@ Gate policy: expandable only for materially distinct commercial capabilities.
 | 6 | STD-06 | Что сегодня в кабинете требует внимания в первую очередь? | PASS | PASS_ALL_PROVIDER_READS | NO | 6 | #1 stale `IN_TRANSIT` supply `122149074` with 54 units; #2 critical slow-turnover inventory; #3 four fresh DATA_FILLING orders due 2026-09-05. Ratings healthy. |
 | 7 | STD-07 | Какие товары скоро закончатся, какие лежат слишком долго, что пополнять? | PASS | PASS_ALL_STD07_PROVIDER_READS | NO | 3 | Total-stock procurement emergency rejected: selected low-FBO candidates retain ~39–55 FBO+FBS units. Main action is FBO allocation. Fresh 2026-09-05 supplies already cover most top candidates (e.g. Чур22, Алатырь21, Громовик11, Сварог7, Герб6). Highest uncovered next-FBO candidates: Водолей, Овен, Стрелец, Лев (Античность), Близнецы (Символы). Do not replenish CRITICAL/RED/NOSALES slow-turnover SKUs. |
 | 8 | STD-08 | Текущие остатки по складам, склады от большего к меньшему. | PASS | PASS_PROVIDER_READS_WITH_REPRODUCED_PAGINATION_GUIDANCE_GAP | NO | 3 | 247 rows / 33 Ozon warehouses. Free-to-sell total 628, reserved14, promised54. Top free stock: Санкт_Петербург_РФЦ101; ХАБАРОВСК_2_РФЦ71 (+1 reserved,+54 promised); ПУШКИНО_1_РФЦ57; Екатеринбург_РФЦ_НОВЫЙ48 (+1 reserved); РОСТОВ_НА_ДОНУ_2_РФЦ45 (+4 reserved). All 3 responses had `pagination=null`; continuation required model inference from 100/100/47 page sizes. Warehouse/FBO surface only, not total FBO+FBS inventory. |
-| 9 | STD-09 | Продажи за вчера по складам. | IN_PROGRESS | PASS_FBO_PARTIAL | NO | 1 | FBO postings provide real `analytics_data.warehouse_name`. 12 postings on 2026-09-01, 1 cancelled => 11 units / 18,700 RUB non-cancelled FBO. STD-01 whole-account total is 16 units / 27,200 RUB, leaving exact residual 5 units / 8,500 RUB. Next: FBS correlation. `fbs_posting_list` is PERSONAL_DATA_READ_GATED; use minimum analytics fields and preserve operator gate. |
+| 9 | STD-09 | Продажи за вчера по складам. | IN_PROGRESS | FBO_PASS_THEN_LOCAL_PRIVACY_POLICY_BLOCK_ZERO_PROVIDER | PRIVACY_ACTION_REQUIRED | 2 | Run1 FBO: 12 postings, 1 cancelled => 11 units / 18,700 RUB with real `analytics_data.warehouse_name`; whole-account STD-01 = 16 / 27,200, residual 5 / 8,500 remains. Run2 `fbs_posting_list` was blocked locally before provider: `POLICY_BLOCKED`, `personal_data_setting_off`, physical requests0. Current Bridge requires operator to enable `Показывать личные данные` and submit a new command. Product gap recorded: aggregate FBS warehouse analytics should not require exposing customer PII. STD-09 remains active; do not move to STD-10. |
 | 10 | STD-10 | Авария/пожар на складе Ozon: был ли там мой товар и что контролировать? | PENDING | PENDING | PENDING | 0 | — |
 | 11 | STD-11 | Исчез товар с FBO без продаж: куда мог деться? | PENDING | PENDING | PENDING | 0 | — |
 | 12 | STD-12 | Какие поставки сейчас активны и что с каждой происходит? | PENDING | PENDING | PENDING | 0 | — |
@@ -55,7 +55,7 @@ Gate policy: expandable only for materially distinct commercial capabilities.
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_09_RUN1_FBO_PARTIAL_11_UNITS_18700_FBS_CORRELATION_NEXT`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_09_RUN2_FBS_PRIVACY_POLICY_BLOCK_OPERATOR_ACTION_REQUIRED_NO_SKIP`
 
 ## Detailed evidence
 
