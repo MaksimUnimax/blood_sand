@@ -274,11 +274,11 @@ function testDependentAttributeEntitlementsAndContract() {
   assertThrowsCode(() => C.normalizeCommand({
     operation: "description_category_dependent_attribute_values",
     params: { parent_attribute_id: 8229, child_attribute_id: 23348, limit: 0 }
-  }), "INVALID_OPERATION_PARAMS", "limit below minimum");
+  }), "OZON_LIMIT_VIOLATION", "limit below minimum");
   assertThrowsCode(() => C.normalizeCommand({
     operation: "description_category_dependent_attribute_values",
     params: { parent_attribute_id: 8229, child_attribute_id: 23348, limit: 1001 }
-  }), "INVALID_OPERATION_PARAMS", "limit above maximum");
+  }), "OZON_LIMIT_VIOLATION", "limit above maximum");
 
   console.log("OZON_DEPENDENT_ATTRIBUTE_ENTITLEMENTS_AND_CONTRACT_PASS");
   return {
