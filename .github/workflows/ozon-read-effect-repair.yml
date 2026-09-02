@@ -37,3 +37,26 @@ jobs:
       - name: Verify repaired runtime surface
         shell: bash
         run: node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_effect_read_repair_gate.mjs "$GITHUB_WORKSPACE"
+      - name: Build deterministic file manifest
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib
+          root = pathlib.Path('tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared')
+          rows = []
+          for p in sorted(root.glob('*.js')):
+              b = p.read_bytes()
+              rows.append({'path': p.name, 'bytes': len(b), 'sha256': hashlib.sha256(b).hexdigest()})
+          payload = {'schema':'OZON_EFFECT_READ_REPAIR_RUNTIME_MANIFEST_V1','seller_enabled_reads':271,'seller_current_reads':269,'seller_beta_reads':2,'performance_aliases':25,'canonical_runtime_reads':292,'registry_aliases':296,'files':rows}
+          pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/runtime-manifest.json').write_text(json.dumps(payload,sort_keys=True,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(payload,sort_keys=True))
+          PY
+      - name: Upload repaired runtime artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-effect-read-repair-runtime-${{ runner.os }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/*.js
+            tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/runtime-manifest.json
