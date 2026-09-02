@@ -20,8 +20,8 @@ Premium endpoints/metrics are excluded from this pass.
 
 | ID | Family | Canonical query | Sol status | Runs | Alice | Current note |
 |---|---|---|---|---:|---|---|
-| STD-01 | Instant sales BI | Дай продажи за вчера: общая выручка и количество заказанных единиц. | IN_PROGRESS / ANALYTICS_METHOD_DIAGNOSTICS | 2 business + D1 | PENDING | Two analytics calls returned 429; D1 `roles` returned 200 and proves key/global Seller API/role are healthy. Continue same-query diagnosis. |
-| STD-02 | Period BI | Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня. | PENDING | 0 | PENDING | — |
+| STD-01 | Instant sales BI | Дай продажи за вчера: общая выручка и количество заказанных единиц. | PASS | 3 business + D1 | PENDING | Final exact analytics read HTTP 200: revenue 27,200; ordered units 16 for 2026-09-01. Earlier 429s recovered after 16m53.748s quiet gap; exact trigger unresolved between method/provider cooldown and untracked concurrent quota consumption. |
+| STD-02 | Period BI | Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня. | READY | 0 | PENDING | Next Standard live query. Resolve period as 2026-08-19 through 2026-09-01 inclusive. |
 | STD-03 | Product BI | Дай топ-20 товаров за последние 7 дней по выручке. | PENDING | 0 | PENDING | — |
 | STD-04 | Period comparison | Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах. | PENDING | 0 | PENDING | — |
 | STD-05 | Sales diagnosis | Почему вчера продажи резко просели? Найди наиболее вероятные причины, а не просто покажи цифру продаж. | PENDING | 0 | PENDING | — |
@@ -114,15 +114,68 @@ D1 conclusions:
 - general Seller API/provider path is healthy at the time of D1;
 - `OZON_GLOBAL_RATE_LIMIT` is rejected for that observation point because another Seller method returned 200;
 - `/v1/analytics/data` is explicitly allowed by the current key;
-- the unresolved failure is now localized to analytics-method/family quota/provider state or an untracked caller consuming the same quota.
+- the unresolved failure was localized to analytics-method/family quota/provider state or an untracked caller consuming the same quota.
 
-### Diagnostic D2 — next
+### Business Run 3 / Diagnostic D2 — recovery PASS
 
-Repeat the exact original `analytics_data` command after the now substantially longer elapsed interval. Do not alter metrics, date or dimensions.
+Exact same original `analytics_data` command, unchanged:
+- date `2026-09-01` through `2026-09-01`;
+- dimension `[day]`;
+- metrics `[revenue, ordered_units]`;
+- limit `100`.
 
-Interpretation rule:
-- D2 HTTP 200: obtain the real STD-01 data and continue to final business answer; earlier 429s are then consistent with a temporary/extended quota condition, though external concurrent consumption is not automatically ruled out.
-- D2 HTTP 429: do not skip. Escalate diagnosis toward persistent analytics-method provider block or external/untracked consumer; inspect local diagnostic/request history and account integrations before another business query.
+Observed:
+- request id `7b670916-262e-46f3-8702-c55dfb862225`;
+- exactly one physical business request;
+- entitlement `SUPPORTED_AND_ENTITLED` / `all_accounts`;
+- HTTP `200`;
+- elapsed `6007 ms`;
+- `last_provider_request_at`: `1788337707374` = 2026-09-02 08:28:27.374 UTC;
+- Bridge `next_allowed_at`: `1788337772374` = 2026-09-02 08:29:32.374 UTC;
+- no automatic retry;
+- provider returned one day row for `2026-09-01`;
+- metrics: revenue `27200`, ordered units `16`;
+- totals: `[27200, 16]`.
+
+Elapsed from Business Run 2 dispatch to successful D2 dispatch: `1013.748 seconds` = `16m 53.748s`.
+
+### STD-01 business answer
+
+For 2026-09-01:
+- revenue: `27,200 RUB`;
+- ordered units: `16`.
+
+### STD-01 incident classification
+
+Benchmark result: `PASS`.
+
+Strongest supported root-cause statement for the earlier 429s:
+
+`TRANSIENT_ANALYTICS_METHOD_QUOTA_OR_PROVIDER_STATE_RECOVERED / EXACT_TRIGGER_UNRESOLVED`.
+
+What is proven:
+- credentials/role/entitlement were healthy;
+- Seller API was globally reachable;
+- each Bridge command produced exactly one physical request and no automatic retry;
+- Run 2 was already 117.962 seconds after Run 1, so simple violation of the Bridge 65-second local spacing rule does not explain both 429s;
+- the exact same logical analytics read later succeeded after a 16m53.748s gap.
+
+What is not proven:
+- whether an external/untracked caller consumed the seller-account analytics quota;
+- whether Ozon imposed an extended method-specific cooldown;
+- whether a provider-side circuit state existed.
+
+Do not invent a more precise cause without additional provider/account evidence. The incident is closed for benchmark progression because the commercial job is operational and the requested data was successfully obtained.
+
+## STD-02 next
+
+Canonical business question:
+
+`Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня.`
+
+Resolved Standard period on 2026-09-02: `2026-08-19` through `2026-09-01` inclusive.
+
+First read should use one explicit `analytics_data` command with dimension `[day]` and Standard metrics `[revenue, ordered_units]`. After the result, rank days by revenue and report the three highest and three lowest days; do not issue another API call unless the returned result proves the first read insufficient.
 
 ## Result rule
 
@@ -130,4 +183,4 @@ A business row is not marked PASS/PARTIAL/FAIL/BLOCKED until either a useful fin
 
 ## Current checkpoint
 
-`STANDARD_V2_NO_SKIP_STD_01_D1_ROLES_200_D2_ANALYTICS_REPEAT_READY`
+`STANDARD_V2_STD_01_PASS_STD_02_ANALYTICS_14D_READY`
