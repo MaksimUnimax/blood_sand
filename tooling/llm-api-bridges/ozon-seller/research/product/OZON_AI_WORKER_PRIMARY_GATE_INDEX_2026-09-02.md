@@ -59,8 +59,12 @@ Despite the historical filename, that document now defines an expandable capabil
 
 - STD-01…STD-05 complete.
 - STD-06 active.
-- STD-06 Run 1 (`seller_rating_summary`) returned HTTP 200 and found no critical rating/penalty issue; inventory/turnover triage is next.
+- STD-06 Run 1 (`seller_rating_summary`) returned HTTP 200. No critical rating/penalty issue: penalty score not exceeded, FBS complaints 0, product rating 4.98, price index healthy. Localization is 37% but no critical threshold is proven by that response.
+- STD-06 Run 2 (`stock_turnover_analytics`) returned HTTP 200 with 72 rows. Turnover grades: 20 critical, 2 red, 34 yellow, 15 green, 1 no-sales. Material slow-turnover/overstock cluster found; highest critical turnover values include Козерог (Античность) 794, Знич 722, Хорс 596, Козерог (Символы) 467, Рыбы 442.67.
+- Run 2 also returned eight `current_stock=0` signals. These are not treated as total stockouts because prior cross-operation evidence proves stock surfaces differ; `Чур` and `Стрелец` are high-priority FBO/distribution checks because they were recent top sellers.
+- Detailed Run 2 evidence: `live-runs/STD_06_RUN_2_STOCK_TURNOVER_2026-09-02.md`.
+- Next STD-06 triage read: `supply_order_status_counter` to identify overdue/rejected/in-transit/acceptance supply states before final prioritization.
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_06_ACTIVE_CAP_21_TO_CAP_23_PERSISTED`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_06_RUN2_TURNOVER_RISKS_FOUND_SUPPLY_STATUS_COUNTER_NEXT`
