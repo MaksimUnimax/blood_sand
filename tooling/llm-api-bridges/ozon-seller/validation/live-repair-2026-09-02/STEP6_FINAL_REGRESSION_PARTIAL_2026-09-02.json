@@ -1,0 +1,76 @@
+{
+  "schema": "OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_STEP6_PARTIAL_V1",
+  "date": "2026-09-02",
+  "candidate": "OZON_BRIDGE_v0.1.19_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_CANDIDATE_2026-09-02.zip",
+  "candidate_sha256": "80d0b4eba7110dc2d69ef3fab40214a9a6c54e98cfd6820ab611ac7ba73b2c76",
+  "status": "PARTIAL_PENDING",
+  "batch": {
+    "result_count": 4,
+    "logical_business_result_count": 4,
+    "physical_business_request_count": 4,
+    "capability_probe_performed": false
+  },
+  "checks": [
+    {
+      "id": "broad_performance_campaigns",
+      "request_id": "6168be57-749f-4c1b-b09c-c70f7ec8d4f6",
+      "status": "PASS",
+      "http_status": 200,
+      "physical_business_request_count": 1,
+      "provider_items_received": 100,
+      "items_returned_to_ai": 100,
+      "provider_page": 1,
+      "provider_page_size": 100,
+      "hidden_pagination_requests": 0,
+      "automatic_retry_requests": 0,
+      "refinement_choice_count": 8
+    },
+    {
+      "id": "performance_campaigns_updated_at_desc",
+      "request_id": "00c07f0b-c9b7-432c-aba8-42eb4d783908",
+      "status": "INCONCLUSIVE_PROVIDER_RATE_LIMIT",
+      "http_status": 429,
+      "source": "provider",
+      "category": "rate_limit",
+      "physical_business_request_count": 1,
+      "external_request_executed": true,
+      "automatic_retry": false,
+      "note": "Not a Bridge failure. Repeat this check as an isolated explicit command before Step 6 can complete."
+    },
+    {
+      "id": "description_category_dependent_attributes",
+      "request_id": "935cbb5c-c4e5-48f1-ac87-4b435f952e2a",
+      "status": "PASS",
+      "http_status": 200,
+      "physical_business_request_count": 1,
+      "external_request_executed": true,
+      "entitlement_status": "SUPPORTED_AND_ENTITLED",
+      "entitlement_reason": "all_accounts",
+      "capability_required": false,
+      "exact_request_preserved": true,
+      "capability_probe_performed": false,
+      "result_is_valid_empty_array": true
+    },
+    {
+      "id": "stocks_current",
+      "request_id": "5334291d-5fbf-408c-bf0c-e2370aea3a1b",
+      "status": "PASS",
+      "http_status": 200,
+      "physical_business_request_count": 1,
+      "external_request_executed": true,
+      "product_id": 1082848375,
+      "total": 1,
+      "entitlement_status": "SUPPORTED_AND_ENTITLED",
+      "entitlement_reason": "all_accounts"
+    }
+  ],
+  "already_satisfied_step6_checks": {
+    "specific_campaign_ids_live": "PASS in STEP5_LIVE_TEST_RESULT.json",
+    "dependent_attribute_values_deterministic_fixture": "PASS in STEP4 fresh-extraction/full deterministic regression"
+  },
+  "remaining_before_step6_complete": [
+    "Repeat performance_campaigns local_sort=updated_at_desc as isolated live command and obtain HTTP 200 with one provider request, local sort metadata, bounded AI output, zero hidden pagination and zero retry.",
+    "Guidance check stocks_inventory/warehouse_fbs: fbs_stock_by_warehouse_v1 absent and fbs_stock_by_warehouse present.",
+    "Guidance check orders_postings/assembly_carriage: fbs_carriage_available_list absent and carriage_delivery_list_v2 present."
+  ]
+}
