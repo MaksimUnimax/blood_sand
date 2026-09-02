@@ -16,7 +16,7 @@ Gate policy: expandable only for materially distinct commercial capabilities.
 | 5 | STD-05 | Почему вчера продажи резко просели? | PASS_WITH_LIMITS | MIXED_ROOT_CAUSED | NO | 11 | Strongest explanation: normal demand/day-of-week variance; broad ads/listing/stock failure rejected; search target dates blocked by freshness window. Multiple Bridge hardening gaps recorded. |
 | 6 | STD-06 | Что сегодня в кабинете требует внимания в первую очередь? | PASS | PASS_ALL_PROVIDER_READS | NO | 6 | #1 stale `IN_TRANSIT` supply `122149074` with 54 units; #2 critical slow-turnover inventory; #3 four fresh DATA_FILLING orders due 2026-09-05. Ratings healthy. |
 | 7 | STD-07 | Какие товары скоро закончатся, какие лежат слишком долго, что пополнять? | PASS | PASS_ALL_STD07_PROVIDER_READS | NO | 3 | Total-stock procurement emergency rejected: selected low-FBO candidates retain ~39–55 FBO+FBS units. Main action is FBO allocation. Fresh 2026-09-05 supplies already cover most top candidates (e.g. Чур22, Алатырь21, Громовик11, Сварог7, Герб6). Highest uncovered next-FBO candidates: Водолей, Овен, Стрелец, Лев (Античность), Близнецы (Символы). Do not replenish CRITICAL/RED/NOSALES slow-turnover SKUs. |
-| 8 | STD-08 | Текущие остатки по складам, склады от большего к меньшему. | IN_PROGRESS | PASS_RUN1_WITH_KNOWN_PAGINATION_GAP | NO | 1 | Run1 `stock_on_warehouses_v2` offset0 returned a full 100-row page, HTTP200, but `pagination=null`; continuation is mandatory. Treat result as Ozon warehouse/FBO analytics, not total FBO+FBS seller stock. Next: offset100. |
+| 8 | STD-08 | Текущие остатки по складам, склады от большего к меньшему. | IN_PROGRESS | PASS_RUN1_RUN2_WITH_KNOWN_PAGINATION_GAP | NO | 2 | offset0 and offset100 both returned full-size pages, HTTP200, with `pagination=null`; collected first 200 warehouse-stock rows but result is not yet terminal. Both runs show `command_transformed=true`. Treat as Ozon warehouse/FBO analytics, not total FBO+FBS seller stock. Next: offset200. |
 | 9 | STD-09 | Продажи за вчера по складам. | PENDING | PENDING | PENDING | 0 | — |
 | 10 | STD-10 | Авария/пожар на складе Ozon: был ли там мой товар и что контролировать? | PENDING | PENDING | PENDING | 0 | — |
 | 11 | STD-11 | Исчез товар с FBO без продаж: куда мог деться? | PENDING | PENDING | PENDING | 0 | — |
@@ -55,7 +55,7 @@ Gate policy: expandable only for materially distinct commercial capabilities.
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_08_RUN1_FULL_PAGE_PAGINATION_NULL_OFFSET100_NEXT`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_08_RUN2_SECOND_FULL_PAGE_PAGINATION_NULL_OFFSET200_NEXT`
 
 ## Detailed evidence
 
