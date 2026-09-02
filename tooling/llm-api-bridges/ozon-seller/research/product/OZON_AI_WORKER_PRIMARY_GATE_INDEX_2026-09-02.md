@@ -65,10 +65,14 @@ Despite the historical filename, that document now defines an expandable capabil
 - Detailed Run 2 evidence: `live-runs/STD_06_RUN_2_STOCK_TURNOVER_2026-09-02.md`.
 - STD-06 Run 3 (`supply_order_status_counter`) returned HTTP 200. No current rejection/acceptance/report-confirmation emergency was exposed: `REPORT_REJECTED=0`, `REJECTED_AT_SUPPLY_WAREHOUSE=0`, acceptance/storage-acceptance/report-confirmation states are 0. Active supply signals are four `DATA_FILLING` orders and one `IN_TRANSIT` order.
 - Detailed Run 3 evidence: `live-runs/STD_06_RUN_3_SUPPLY_STATUS_COUNTER_2026-09-02.md`.
-- STD-06 Run 4 (`supply_order_list`) returned HTTP 200 and exactly five active order IDs under `DATA_FILLING|IN_TRANSIT`: `125820894`, `125819631`, `125818485`, `125818083`, `122149074`. The list response exposes only IDs, so state/age/destination/content correlation is not yet possible.
+- STD-06 Run 4 (`supply_order_list`) returned HTTP 200 and exactly five active order IDs under `DATA_FILLING|IN_TRANSIT`: `125820894`, `125819631`, `125818485`, `125818083`, `122149074`. The list response exposes only IDs, so state/age/destination/content correlation required a drill-down.
 - Detailed Run 4 evidence: `live-runs/STD_06_RUN_4_ACTIVE_SUPPLY_ORDER_IDS_2026-09-02.md`.
-- Next STD-06 step: one `supply_order_get` call for all five IDs to identify the one `IN_TRANSIT` supply and distinguish current work from stale `DATA_FILLING` drafts. If contents are not included, follow with the minimum explicit content/bundle read needed to test whether the in-transit supply mitigates Run 2 inventory priorities.
+- STD-06 Run 5 (`supply_order_get`) returned HTTP 200 and exposed a materially higher-priority supply incident. Order `122149074` / `2000062599609` was created `2026-08-10`, had an `2026-08-11` planned slot, last changed state on `2026-08-12`, and remains `IN_TRANSIT` on `2026-09-02`. It is crossdock, bundle `019feae9-0fbe-75af-8f63-b9df1ca38840`, macrolocal cluster `4002`, drop-off `ЗЛАТОУСТ_89`.
+- The four `DATA_FILLING` orders are not stale: all were created `2026-08-30`, have data-filling deadline `2026-09-05T06:00:00Z` and planned slot `2026-09-05T07:00:00Z..08:00:00Z`. These are near-term operational tasks rather than current failures.
+- Detailed Run 5 evidence: `live-runs/STD_06_RUN_5_SUPPLY_ORDER_GET_2026-09-02.md`.
+- Current STD-06 priority: investigate the potentially stuck in-transit supply first; then complete the four DATA_FILLING orders before deadline; then address slow-turnover/overstock and FBO/distribution stock risks.
+- Next STD-06 step: `supply_order_bundle` for bundle `019feae9-0fbe-75af-8f63-b9df1ca38840` to retrieve the product composition of the old in-transit supply and determine which SKUs/quantities may be stuck.
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_06_RUN4_FIVE_ACTIVE_SUPPLY_IDS_FOUND_GET_ALL_FIVE_NEXT`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_06_RUN5_OLD_IN_TRANSIT_SUPPLY_HIGH_PRIORITY_BUNDLE_CONTENT_NEXT`
