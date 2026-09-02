@@ -4,6 +4,7 @@ Date: 2026-09-02
 Status: ACTIVE — GPT-5.6 SOL LIVE TEST / NO-SKIP FAILURE DIAGNOSTICS
 Supersedes: `OZON_AI_WORKER_STANDARD_LIVE_BENCHMARK_V1_2026-09-02.md`
 Failure diagnostics: `OZON_AI_WORKER_LIVE_FAILURE_DIAGNOSTICS_2026-09-02.md`
+Weak-model recovery requirement: `OZON_AI_WORKER_WEAK_MODEL_RECOVERY_CONTRACT_REQUIREMENT_2026-09-02.md`
 Scope: authenticated Ozon seller without Premium.
 
 ## Mandatory test rule
@@ -16,11 +17,23 @@ One user business question may require multiple explicit Bridge runs. Exactly on
 
 Premium endpoints/metrics are excluded from this pass.
 
+## Mandatory reliability scoring rule
+
+A row may be answerable and still expose a product reliability/model-portability gap. Record separately:
+
+- final business-answer correctness;
+- first-attempt operational success;
+- provider/API incidents;
+- whether the model chose the correct recovery without operator intervention;
+- whether the Bridge contract made the recovery action deterministic.
+
+Do not collapse these into a clean PASS.
+
 ## Frozen Standard core — 28 queries
 
 | ID | Family | Canonical query | Sol status | Runs | Alice | Current note |
 |---|---|---|---|---:|---|---|
-| STD-01 | Instant sales BI | Дай продажи за вчера: общая выручка и количество заказанных единиц. | PASS | 3 business + D1 | PENDING | Final exact analytics read HTTP 200: revenue 27,200; ordered units 16 for 2026-09-01. Earlier 429s recovered after 16m53.748s quiet gap; exact trigger unresolved between method/provider cooldown and untracked concurrent quota consumption. |
+| STD-01 | Instant sales BI | Дай продажи за вчера: общая выручка и количество заказанных единиц. | PASS_WITH_RECORDED_TRANSIENT_429_INCIDENT_AND_RECOVERY_GUIDANCE_GAP | 3 business + D1 | PENDING | Final exact analytics read HTTP 200: revenue 27,200; ordered units 16 for 2026-09-01. First two exact reads returned 429. Sol initially attempted to move to another query; operator enforced NO_SKIP and same-job diagnosis/retry. This is a Bridge/model-portability hardening requirement before Alice. |
 | STD-02 | Period BI | Покажи продажи за последние 14 дней по дням и выдели 3 лучших и 3 худших дня. | READY | 0 | PENDING | Next Standard live query. Resolve period as 2026-08-19 through 2026-09-01 inclusive. |
 | STD-03 | Product BI | Дай топ-20 товаров за последние 7 дней по выручке. | PENDING | 0 | PENDING | — |
 | STD-04 | Period comparison | Сравни продажи вчера и позавчера: выручка, штуки и изменение в процентах. | PENDING | 0 | PENDING | — |
@@ -80,6 +93,23 @@ Observed:
 - no sales data;
 - dispatch interval from Run 1: `117.962 seconds`.
 
+### AI-planning incident discovered in Step 1
+
+After the repeated 429, GPT-5.6 Sol initially proposed parking STD-01 and continuing another business query. The operator correctly rejected that behavior and required diagnosis of the active business job.
+
+This is now a benchmark finding, not chat-only context:
+
+`SOL_REQUIRED_OPERATOR_INTERVENTION_TO_PRESERVE_FAILED_BUSINESS_JOB`
+
+Implication:
+
+- if GPT-5.6 Sol can make this recovery-planning error, weaker models are at greater risk;
+- known API recovery mechanics cannot depend on model cleverness;
+- Bridge must eventually provide machine-readable deterministic recovery guidance for known failures;
+- this must be hardened before Alice Free is used as a meaningful provider benchmark.
+
+Detailed requirement: `OZON_AI_WORKER_WEAK_MODEL_RECOVERY_CONTRACT_REQUIREMENT_2026-09-02.md`.
+
 ### Root-cause analysis after Run 2
 
 - `/v1/analytics/data` has a method-specific slow quota; current Bridge models the family with 60000 ms minimum plus 5000 ms launch safety.
@@ -89,53 +119,33 @@ Observed:
 
 ### Diagnostic D1 — `roles`
 
-Command:
-
-```text
-OZON_API_V1
-{
-  "operation": "roles",
-  "params": {}
-}
-```
-
 Observed:
 - `POST /v1/roles`;
 - exactly one physical business request;
 - HTTP `200`;
 - entitlement `SUPPORTED_AND_ENTITLED` / `all_accounts`;
-- no rate-limit metadata;
 - current API key expiry: `2027-02-06T08:09:07.738279Z`;
 - returned role inventory explicitly includes `/v1/analytics/data` under `Admin read only`.
 
 D1 conclusions:
 - `AUTH_OR_ROLE_ERROR` rejected;
 - expired-key hypothesis rejected;
-- general Seller API/provider path is healthy at the time of D1;
-- `OZON_GLOBAL_RATE_LIMIT` is rejected for that observation point because another Seller method returned 200;
-- `/v1/analytics/data` is explicitly allowed by the current key;
-- the unresolved failure was localized to analytics-method/family quota/provider state or an untracked caller consuming the same quota.
+- general Seller API/provider path healthy at observation point;
+- global Seller API rate-limit hypothesis rejected at that observation point;
+- analytics method explicitly allowed by current key.
 
 ### Business Run 3 / Diagnostic D2 — recovery PASS
 
-Exact same original `analytics_data` command, unchanged:
-- date `2026-09-01` through `2026-09-01`;
-- dimension `[day]`;
-- metrics `[revenue, ordered_units]`;
-- limit `100`.
+Exact same original `analytics_data` command succeeded.
 
 Observed:
 - request id `7b670916-262e-46f3-8702-c55dfb862225`;
 - exactly one physical business request;
 - entitlement `SUPPORTED_AND_ENTITLED` / `all_accounts`;
 - HTTP `200`;
-- elapsed `6007 ms`;
-- `last_provider_request_at`: `1788337707374` = 2026-09-02 08:28:27.374 UTC;
-- Bridge `next_allowed_at`: `1788337772374` = 2026-09-02 08:29:32.374 UTC;
-- no automatic retry;
-- provider returned one day row for `2026-09-01`;
-- metrics: revenue `27200`, ordered units `16`;
-- totals: `[27200, 16]`.
+- provider returned revenue `27200` and ordered units `16` for `2026-09-01`;
+- totals `[27200, 16]`;
+- no automatic retry.
 
 Elapsed from Business Run 2 dispatch to successful D2 dispatch: `1013.748 seconds` = `16m 53.748s`.
 
@@ -145,27 +155,21 @@ For 2026-09-01:
 - revenue: `27,200 RUB`;
 - ordered units: `16`.
 
-### STD-01 incident classification
+### STD-01 final classification
 
-Benchmark result: `PASS`.
+Business answerability: `PASS`.
+Operational first-attempt reliability: `FAIL_TRANSIENT_429`.
+Model-independent recovery guidance: `GAP`.
+Operator intervention required during recovery planning: `YES`.
+Combined benchmark status:
 
-Strongest supported root-cause statement for the earlier 429s:
+`PASS_WITH_RECORDED_TRANSIENT_429_INCIDENT_AND_RECOVERY_GUIDANCE_GAP`
+
+Strongest supported root-cause statement for the provider incident:
 
 `TRANSIENT_ANALYTICS_METHOD_QUOTA_OR_PROVIDER_STATE_RECOVERED / EXACT_TRIGGER_UNRESOLVED`.
 
-What is proven:
-- credentials/role/entitlement were healthy;
-- Seller API was globally reachable;
-- each Bridge command produced exactly one physical request and no automatic retry;
-- Run 2 was already 117.962 seconds after Run 1, so simple violation of the Bridge 65-second local spacing rule does not explain both 429s;
-- the exact same logical analytics read later succeeded after a 16m53.748s gap.
-
-What is not proven:
-- whether an external/untracked caller consumed the seller-account analytics quota;
-- whether Ozon imposed an extended method-specific cooldown;
-- whether a provider-side circuit state existed.
-
-Do not invent a more precise cause without additional provider/account evidence. The incident is closed for benchmark progression because the commercial job is operational and the requested data was successfully obtained.
+Do not invent a more precise provider cause without additional evidence.
 
 ## STD-02 next
 
@@ -179,8 +183,8 @@ First read should use one explicit `analytics_data` command with dimension `[day
 
 ## Result rule
 
-A business row is not marked PASS/PARTIAL/FAIL/BLOCKED until either a useful final business answer is produced or a persistent underlying constraint is root-caused and shown to prevent the product job.
+A business row is not marked complete until either a useful final business answer is produced or a persistent underlying constraint is root-caused and shown to prevent the product job. Completion status must preserve reliability/model-guidance flags rather than overwriting them with a clean PASS.
 
 ## Current checkpoint
 
-`STANDARD_V2_STD_01_PASS_STD_02_ANALYTICS_14D_READY`
+`STANDARD_V2_STD_01_PASS_WITH_429_AND_RECOVERY_GUIDANCE_GAP_STD_02_READY`
