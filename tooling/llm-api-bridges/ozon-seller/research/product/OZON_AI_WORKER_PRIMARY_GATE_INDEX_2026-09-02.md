@@ -60,8 +60,8 @@ Despite the historical filename, that document now defines an expandable capabil
 
 ## Current Layer-A execution checkpoint
 
-- STD-01…STD-09 complete.
-- STD-10 ready.
+- STD-01…STD-10 complete.
+- STD-11 ready.
 
 ### STD-06 completed
 
@@ -219,6 +219,35 @@ Detailed STD-09 evidence and requirements:
 - `OZON_AI_WORKER_AGGREGATE_FBS_ANALYTICS_PRIVACY_REQUIREMENT_2026-09-02.md`
 - `OZON_AI_WORKER_ORDERED_REVENUE_POSTING_STATUS_SEMANTICS_REQUIREMENT_2026-09-02.md`
 
+### STD-10 completed
+
+Question: `На складе Ozon был пожар или авария. Был ли там мой товар, что с ним сейчас и что мне нужно контролировать?`
+
+Runs 1–4 all reached the provider and returned HTTP 200.
+
+1. `ozon_warehouse_list` exactly matched the real 2026-08-22 Chapayevsk incident to `САМАРА_РФЦ`, warehouse_id `23128509046000`, Industrialnaya 3. Registry `is_active=true` was explicitly not interpreted as real-time normal operation.
+2. `posting_fbo_list` for 2026-08-19..21 proved pre-incident seller exposure at that exact warehouse. Two seller SKUs were routed from Samara: `2271188511` Лев (Символы), later delivered; `1720141903` Водолей, later cancelled by Ozon with reason 695 `Не удалось доставить заказ`. The cancellation is correlation only; no causal incident attribution is made.
+3. `fbo_stock_by_warehouse` returned explicit current Samara rows with `present=0,reserved=0` for both exposed SKUs. Лев had 4 FBO units elsewhere; Водолей's only FBO unit was already reserved.
+4. Fresh `seller_product_info_list` established current aggregate state. Both cards are `Продается`, approved, validation-successful, `errors=[]`, priced, stocked and `AVAILABLE`. Лев = FBO4 + FBS43, total free47. Водолей = FBO1/reserved1 + FBS43, total free43.
+
+Final business interpretation:
+- YES, seller goods were in the affected Samara fulfillment flow immediately before the incident;
+- both exposed SKUs are currently zero at Samara;
+- neither SKU is currently a total-stockout or listing failure;
+- `Водолей` has a current FBO-allocation issue (zero free FBO) but healthy FBS stock;
+- exact physical stock remaining inside the building at incident time, physical destruction/damage, incident causality of the Ozon cancellation, and incident-linked compensation/write-off are not proven by the collected surfaces and must not be guessed.
+
+STD-10 classification: `PASS_WITH_EXPLICIT_INCIDENT_CAUSALITY_AND_HISTORICAL_SNAPSHOT_LIMITS`
+Operational reliability: `PASS_ALL_STD10_PROVIDER_READS`
+Operator business steering: `NO`
+Provider incidents: none.
+
+Detailed STD-10 evidence:
+- `live-runs/STD_10_RUN_1_OZON_WAREHOUSE_LIST_AND_SAMARA_INCIDENT_MATCH_2026-09-02.md`
+- `live-runs/STD_10_RUN_2_PREINCIDENT_FBO_SAMARA_EXPOSURE_2026-09-02.md`
+- `live-runs/STD_10_RUN_3_CURRENT_FBO_PLACEMENT_EXPOSED_SKUS_2026-09-02.md`
+- `live-runs/STD_10_RUN_4_FRESH_PRODUCT_STATE_AND_FINAL_2026-09-02.md`
+
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_09_COMPLETE_STD_10_READY`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_10_COMPLETE_STD_11_READY`
