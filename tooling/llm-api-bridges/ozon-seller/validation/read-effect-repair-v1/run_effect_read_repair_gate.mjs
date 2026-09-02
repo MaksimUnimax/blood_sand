@@ -21,10 +21,11 @@ const providerOf = (meta) => String(meta?.provider || "seller_api");
 const isCurrentRead = (meta) => meta?.effect === "READ" && meta?.currentness === "current" && meta?.execution_enabled === true;
 const seller = entries.filter(([,meta]) => providerOf(meta) === "seller_api" && isCurrentRead(meta));
 const performance = entries.filter(([,meta]) => providerOf(meta) === "performance_api" && isCurrentRead(meta));
-assert.equal(entries.length, 296, "registry aliases");
-assert.equal(seller.length, 271, "Seller current reads");
-assert.equal(performance.length, 25, "Performance aliases");
 const repairAliases = ["report_products_create","report_returns_create_v2","report_postings_create","report_discounted_create","report_warehouse_stock","report_placement_by_products_create","report_placement_by_supplies_create","report_marked_products_sales_create","report_realization_posting_create","finance_document_b2b_sales","finance_mutual_settlement_report","finance_compensation_report","finance_decompensation_report","cargoes_label_create","posting_fbs_act_container_labels","posting_fbs_package_label","posting_fbs_package_label_create","cargoes_transport_label_by_order_create","cargoes_transport_label_create","fbp_act_from_create","fbp_act_to_create","fbp_label_create","fbp_draft_direct_product_validate","fbp_draft_dropoff_product_validate","fbp_draft_pickup_product_validate","chat_history_v3"];
+console.log("EFFECT_REPAIR_PARTITION", JSON.stringify({ total: entries.length, seller: seller.length, performance: performance.length }));
+console.log("EFFECT_REPAIR_PROVIDER_COUNTS", JSON.stringify(Object.fromEntries([...new Set(entries.map(([,m]) => providerOf(m)))].sort().map((provider) => [provider, entries.filter(([,m]) => providerOf(m) === provider).length]))));
+console.log("EFFECT_REPAIR_ALIAS_STATE", JSON.stringify(repairAliases.map((alias) => ({ alias, exists: Boolean(operations[alias]), provider: operations[alias] ? providerOf(operations[alias]) : null, effect: operations[alias]?.effect || null, currentness: operations[alias]?.currentness || null, enabled: operations[alias]?.execution_enabled ?? null }))));
+assert.equal(entries.length, 296, "registry aliases");
 assert.equal(repairAliases.length, 26);
 const entitlementText = fs.readFileSync(path.join(shared, "ozon_entitlements.js"), "utf8");
 for (const alias of repairAliases) {
@@ -44,6 +45,8 @@ for (const alias of repairAliases) {
     assert.ok(!/[{}]/.test(request.path), `${alias} unresolved placeholder`);
   }
 }
+assert.equal(seller.length, 271, "Seller current reads");
+assert.equal(performance.length, 25, "Performance aliases");
 const gated = repairAliases.filter((alias) => operations[alias].privacy_policy === "operator_personal_data_gate");
 assert.deepEqual(gated.sort(), ["chat_history_v3","posting_fbs_act_container_labels","posting_fbs_package_label"].sort());
 const binary = repairAliases.filter((alias) => operations[alias].response_style === "binary");
