@@ -1,0 +1,6 @@
+apply=true
+workflow=ozon-current-swagger-cluster-ad-live-repair-v2
+expected_base=ae1738dd27966ee753e11d7e548058adb2e9804f
+expected_installable_files=21
+live_retest_campaign_id=37130644
+prior_failed_run=33581514966
