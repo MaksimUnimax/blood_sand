@@ -58,25 +58,44 @@ Current Bridge can directly inspect:
 
 These flows can explain part or all of the stock delta and can identify direct Ozon compensation even if an exact historical stock snapshot is not available.
 
+## Reopened Run 5 — compensation transaction check
+
+Operation: `finance_transaction_list_v3`
+Request id: `5fd0c0ac-b6b5-42d3-89b6-a23373d295a0`
+Window: `2026-08-22T00:00:00Z..2026-09-02T23:59:59Z`
+Filter: `transaction_type=compensation`
+HTTP: `200`
+Physical business requests: `1`
+External request executed: `true`
+Result: `operations=[]`, `page_count=0`, `row_count=0`.
+
+Interpretation:
+`NO_FINANCE_TRANSACTION_V3_COMPENSATION_ROWS_2026_08_22_TO_2026_09_02`.
+
+This is negative compensation evidence only. It does not prove zero physical loss, zero write-off, or that compensation will never appear. The relevant event may be pending or represented on another movement/accounting surface.
+
+Detailed evidence:
+`live-runs/STD_10_REOPENED_RUN_5_COMPENSATION_TRANSACTIONS_EMPTY_2026-09-02.md`.
+
 ## Correct status
 
-STD-10 prior final classification is withdrawn as a gate-completion state.
-
-New status:
+STD-10 remains:
 `REOPENED_IN_PROGRESS_HISTORICAL_STOCK_DAMAGE_RECONSTRUCTION`.
 
 STD-11 remains a valid completed independent test, but STD-12 execution is paused until this reopened STD-10 investigation reaches the strongest evidence-backed conclusion.
 
 ## Immediate next read
 
-Start with Ozon financial compensation transactions from the incident through today. This is a direct JSON surface available in the current Bridge and may immediately identify compensated SKUs/amounts related to inventory loss.
+Inspect formal FBO stock removals/utilization from the incident through today using `removal_from_stock_list`.
 
-Operation: `finance_transaction_list_v3`
-Filter window: `2026-08-22T00:00:00Z..2026-09-02T23:59:59Z`
-Transaction type: `compensation`
-Page size: `1000`.
+Use:
+- `date_from=2026-08-22`;
+- `date_to=2026-09-02`;
+- `limit=500`.
 
-After that, correlate any compensation rows with SKU/posting/warehouse data, then inspect removals/utilization and post-incident Samara postings. Historical pre-incident stock remains the load-bearing baseline gap to solve or explicitly bound.
+If the provider exposes continuation/`last_id`, continue with a separate explicit command. Then correlate any returned records with `САМАРА_РФЦ`, target SKUs and later post-incident posting evidence.
+
+After removals/utilization, inspect post-incident Samara FBO postings and attempt the historical pre-incident baseline through any already available report/history surface. The historical stock baseline remains load-bearing for a numerical burned/lost-unit conclusion.
 
 Checkpoint:
-`STD_10_REOPENED_PREINCIDENT_STOCK_BASELINE_PLUS_POSTINCIDENT_FLOW_AND_COMPENSATION_RECONSTRUCTION_COMPENSATION_READ_NEXT`
+`STD_10_REOPENED_RUN5_NO_COMPENSATION_ROWS_REMOVAL_UTILIZATION_READ_NEXT`
