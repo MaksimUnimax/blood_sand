@@ -69,47 +69,70 @@ Elapsed between Bridge dispatches: `117.962 seconds`.
 
 ## Evidence already established
 
-1. `/v1/analytics/data` is documented/replicated as a special slow method: no more than one request per minute from one seller account.
-2. The accepted Bridge implements `ANALYTICS_MIN_INTERVAL_MS = 60_000` plus `ANALYTICS_QUOTA_LAUNCH_SAFETY_MS = 5_000`, i.e. effective local interval 65 seconds.
-3. The Bridge quota identity is keyed by a hash of Seller `clientId`, so changing API-key revision does not intentionally create an independent account quota bucket.
-4. Each STD-01 run executed exactly one physical business request. There was no hidden retry/pagination/fanout.
-5. Run 2 occurred 117.962 seconds after Run 1, therefore the Bridge's own 65-second local interval is not sufficient to explain the second provider 429.
-6. Ozon general documentation allows a much higher provider-wide request rate and explicitly notes that method-specific restrictions also exist.
-7. Ozon may temporarily block a method after excessive traffic (`Circle is open` / provider-side circuit behavior), potentially for multiple minutes; however the delivered sanitized result currently exposes only rate-limit category/code and not enough raw detail to prove that branch.
-8. Provider transport captures only `content-type`, `content-length`, request ID and `Retry-After` as safe response metadata. Both delivered results lacked `retry_after`, so the Bridge had no server-provided reset time to extend its local quota window.
+1. `/v1/analytics/data` is a method with a special slow request quota; the accepted Bridge models this family at 60 seconds plus 5 seconds launch safety.
+2. The Bridge quota identity is keyed by a hash of Seller `clientId`, so changing API-key revision does not intentionally create an independent account quota bucket.
+3. Each STD-01 business run executed exactly one physical business request. There was no hidden retry/pagination/fanout.
+4. Run 2 occurred 117.962 seconds after Run 1, therefore the Bridge's own 65-second effective spacing cannot by itself explain the second provider 429.
+5. Provider transport captures safe `Retry-After` metadata and can extend the local analytics quota from it; neither 429 delivered a `retry_after` value.
+6. The accepted project operational-constraints evidence explicitly warns not to invent exact provider quota/reset semantics when Ozon does not expose them.
 
-## Current narrowed hypotheses
+## Diagnostic D1 — completed
 
-### H1 — parallel/untracked consumer of the same seller-account analytics quota
+Command: `roles` / `POST /v1/roles`.
 
-Possible sources include another browser/profile/extension instance, script, integration, analytics service, or other caller using the same seller account. Because the documented quota is account-level, a request outside this Bridge quota state can consume the one-per-minute slot and cause both Bridge requests to receive 429 even though the two Bridge dispatches themselves are far enough apart.
+Observed:
+
+- HTTP `200`;
+- exactly one physical business request;
+- entitlement `SUPPORTED_AND_ENTITLED` / `all_accounts`;
+- no rate-limit metadata;
+- current API key expiry `2027-02-06T08:09:07.738279Z`;
+- returned `Admin read only` role explicitly contains `/v1/analytics/data`.
+
+### Hypotheses rejected by D1
+
+- `AUTH_OR_ROLE_ERROR` — rejected: key works and analytics method is explicitly allowed.
+- expired API key — rejected: expiry is in 2027.
+- `OZON_GLOBAL_RATE_LIMIT` at the D1 observation point — rejected: another Seller method returned 200.
+- general Seller API/provider outage — rejected at D1 observation point.
+- `ENTITLEMENT_ERROR` for the requested basic metrics — rejected by both entitlement planner and returned role permission.
+
+## Current narrowed hypotheses after D1
+
+### H1 — `OZON_METHOD_RATE_LIMIT` / extended method cooldown
+
+The analytics method may still be in a provider-side method-specific quota window or cooldown beyond the nominal local 65-second protection used by Bridge.
 
 Status: `PLAUSIBLE / NOT YET PROVEN`.
 
-### H2 — Ozon provider-side extended circuit/cooldown
+### H2 — `PARALLEL_EXTERNAL_CONSUMER_OR_UNTRACKED_CALL`
 
-A prior burst or repeated rejected requests may have put the analytics method in an extended provider-side block beyond the nominal one-minute method interval.
+Another browser/profile/extension instance, script, integration, analytics product or other caller may be consuming the same seller-account `/v1/analytics/data` quota. Such traffic is invisible to this extension's local quota state.
 
 Status: `PLAUSIBLE / NOT YET PROVEN`.
 
-### H3 — Bridge local quota scheduler bug
+### H3 — `OZON_PROVIDER_CIRCUIT_BLOCK`
 
-The observed 117.962-second separation is greater than the configured 65-second effective local interval, and each response reports one external request with no automatic retry. That strongly argues against the basic local spacing rule as the cause of Run 2.
+Ozon may be maintaining an extended provider-side block/circuit for this method after previous excessive traffic.
 
-Status: `CURRENTLY NOT SUPPORTED BY OBSERVED EVIDENCE`; continue diagnostics before closing.
+Status: `PLAUSIBLE / NOT YET PROVEN`; current sanitized 429 output does not contain enough provider detail to distinguish this from H1.
 
-## Diagnostic sequence — do not skip STD-01
+### H4 — `BRIDGE_RATE_LIMIT_STATE_ERROR`
 
-D1. Call standard `roles` once. Purpose: prove Seller API credentials/provider path are healthy and determine whether 429 is global vs analytics-family specific.
+The basic local scheduling rule is not supported as the direct cause because Run 2 was nearly 118 seconds after Run 1 and only one physical request occurred per run.
 
-D2. If `roles` succeeds, classify global auth/provider outage as rejected and keep investigation on analytics-specific quota/circuit.
+Status: `CURRENTLY DISFAVORED / NOT FULLY CLOSED`.
 
-D3. Inspect any safe response metadata available from D1 and the next analytics attempt; specifically preserve `Retry-After` if Ozon supplies it.
+## Next diagnostic — D2
 
-D4. Perform the next `/v1/analytics/data` attempt only under a controlled quiet condition where no other intentional analytics_data caller is running for the seller account during the method window. If it succeeds, the strongest cause becomes external/untracked concurrent consumption or expired provider circuit. If it still 429s after a controlled quiet window, provider-side extended block/circuit or an unknown external consumer remains and further local diagnostics are required.
+Repeat the exact original `/v1/analytics/data` logical read after the substantially longer elapsed interval, without changing date, dimensions or metrics.
 
-D5. Do not mark STD-01 PASS/PARTIAL/FAIL until actual sales data is obtained or the root cause is proven to make the query operationally unavailable.
+Expected interpretations:
+
+- `HTTP 200`: STD-01 data becomes available. Earlier failures are consistent with a temporary/extended analytics-method quota condition; external concurrent use remains possible unless separately excluded.
+- `HTTP 429`: do not skip. Persistent method-specific block/external untracked consumption becomes the main incident. Next inspect local request history/diagnostics and known integrations/parallel instances before issuing another business query.
+- other HTTP/error: classify separately rather than collapsing it into the current rate-limit hypothesis.
 
 ## Current checkpoint
 
-`STD_01_429_ROOT_CAUSE_INVESTIGATION_NO_SKIP_D1_ROLES_READY`
+`STD_01_D1_ROLES_200_AUTH_GLOBAL_ROLE_REJECTED_D2_EXACT_ANALYTICS_REPEAT_READY`
