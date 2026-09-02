@@ -75,6 +75,16 @@
         "product_fbs_warehouse_stocks"
       ],
       "retired_operation_absent": "fbs_stock_by_warehouse_v1"
+    },
+    {
+      "id": "guidance_orders_postings_assembly_carriage",
+      "status": "PASS",
+      "guidance_version": "2",
+      "section_status": "section_selected",
+      "external_request_executed": false,
+      "physical_business_request_count": 0,
+      "present_operation": "carriage_delivery_list_v2",
+      "retired_operation_absent": "fbs_carriage_available_list"
     }
   ],
   "already_satisfied_step6_checks": {
@@ -85,7 +95,6 @@
     "A prior attempt to place two OZON_HELP_V2 exact objects in one message returned HELP_EXACT_OBJECT_REQUIRED with zero external requests. This was a test-form error, not a Bridge defect."
   ],
   "remaining_before_step6_complete": [
-    "Repeat performance_campaigns local_sort=updated_at_desc as isolated live command and obtain HTTP 200 with one provider request, local sort metadata, bounded AI output, zero hidden pagination and zero retry.",
-    "Guidance check orders_postings/assembly_carriage: fbs_carriage_available_list absent and carriage_delivery_list_v2 present."
+    "Repeat performance_campaigns local_sort=updated_at_desc as isolated live command and obtain HTTP 200 with one provider request, local sort metadata, bounded AI output, zero hidden pagination and zero retry."
   ]
 }
