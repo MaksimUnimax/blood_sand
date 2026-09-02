@@ -60,8 +60,8 @@ Despite the historical filename, that document now defines an expandable capabil
 
 ## Current Layer-A execution checkpoint
 
-- STD-01…STD-08 complete.
-- STD-09 ready.
+- STD-01…STD-09 complete.
+- STD-10 ready.
 
 ### STD-06 completed
 
@@ -173,6 +173,52 @@ Detailed STD-08 evidence:
 - `live-runs/STD_08_RUN_2_STOCK_WAREHOUSE_PAGE_2_2026-09-02.md`
 - `live-runs/STD_08_RUN_3_TERMINAL_PAGE_AND_FINAL_WAREHOUSE_AGGREGATION_2026-09-02.md`
 
+### STD-09 completed
+
+Question: `Дай продажи за вчера по складам от большего к меньшему.`
+
+Run 1 used `posting_fbo_list` with `analytics_data=true` for 2026-09-01. It returned 12 FBO postings, one unit each at 1,700 RUB, with real `analytics_data.warehouse_name` attribution. Initial interpretation excluded the one currently cancelled FBO posting, producing 11 / 18,700, but this did not reconcile to the accepted STD-01 ordered metrics.
+
+Run 2 attempted `fbs_posting_list` with only aggregate analytics requested. Bridge blocked locally before Ozon because `personal_data_setting_off`:
+- provider requests: 0;
+- `POLICY_BLOCKED`;
+- operator action required: enable `Показывать личные данные` and submit a new explicit command.
+
+This is expected current privacy policy behavior, not a provider/API failure. A product hardening requirement was recorded because aggregate FBS business analytics should not require exposing unnecessary customer PII to the AI.
+
+Run 3 repeated the exact FBS read after explicit operator privacy enablement and returned HTTP 200:
+- 4 FBS postings;
+- all 4 attributed to seller warehouse `Златоуст Чёт`;
+- each 1 unit × 1,700 RUB;
+- FBS total = **4 units / 6,800 RUB**.
+
+Exact cross-source reconciliation:
+- FBO created-order cohort = **12 / 20,400**;
+- FBS created-order cohort = **4 / 6,800**;
+- combined = **16 / 27,200**;
+- exact match to STD-01 `ordered_units=16`, `revenue=27,200`.
+
+The exact reconciliation includes two postings that are currently cancelled (one FBO, one FBS). Therefore the benchmark metric semantics are:
+
+`ANALYTICS_REVENUE_ORDERED_UNITS_ARE_ORDER_CREATION_METRICS_NOT_CURRENT_NONCANCELLED_POSTING_TOTALS`
+
+Final warehouse ranking under the same STD-01 ordered metric semantics:
+1. `Златоуст Чёт` — **4 units / 6,800 RUB** (FBS);
+2. `СПБ_ШУШАРЫ_РФЦ` — **2 / 3,400** (FBO);
+3. ten FBO warehouses — **1 / 1,700** each: `НОВОСИБИРСК_3_РФЦ`, `КРАСНОЯРСК_СТАРЦЕВО_РФЦ`, `РОСТОВ-НА-ДОНУ_РФЦ`, `САНКТ-ПЕТЕРБУРГ_РФЦ`, `НЕВИННОМЫССК_РФЦ`, `ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ`, `ВАТУТИНКИ_РФЦ`, `ПУШКИНО_1_РФЦ`, `НИЖНИЙ_НОВГОРОД_2_РФЦ`, `ХОРУГВИНО_РФЦ`.
+
+STD-09 classification: `PASS`
+Operational reliability: `PASS_WITH_EXPECTED_LOCAL_PRIVACY_GATE_AND_EXPLICIT_OPERATOR_RETRY`
+Operator intervention: `YES_PRIVACY_SETTING_TOGGLE`
+Provider incidents: none.
+
+Detailed STD-09 evidence and requirements:
+- `live-runs/STD_09_RUN_1_FBO_WAREHOUSE_ATTRIBUTION_2026-09-02.md`
+- `live-runs/STD_09_RUN_2_FBS_PRIVACY_POLICY_BLOCK_2026-09-02.md`
+- `live-runs/STD_09_RUN_3_FBS_WAREHOUSE_RECONCILIATION_2026-09-02.md`
+- `OZON_AI_WORKER_AGGREGATE_FBS_ANALYTICS_PRIVACY_REQUIREMENT_2026-09-02.md`
+- `OZON_AI_WORKER_ORDERED_REVENUE_POSTING_STATUS_SEMANTICS_REQUIREMENT_2026-09-02.md`
+
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_08_COMPLETE_STD_09_READY`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_09_COMPLETE_STD_10_READY`
