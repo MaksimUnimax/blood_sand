@@ -35,16 +35,19 @@ The gate remains evidence-driven and expandable if later live testing identifies
 
 ## Result ledgers
 
-Historical/current rows 1-40 remain in:
+Authoritative current master table:
+`OZON_AI_WORKER_PRIMARY_GATE_LIVE_RESULTS_TABLE_2026-09-02.md`
+
+Historical rows 1-40 are retained in:
 `OZON_AI_WORKER_40_TEST_LIVE_RESULTS_TABLE_2026-09-02.md`
 
-Rows 41+ are recorded in:
+The earlier extension-only ledger is retained for traceability:
 `OZON_AI_WORKER_PRIMARY_GATE_EXTENSION_RESULTS_2026-09-02.md`
 
 Detailed run evidence remains under:
 `research/product/live-runs/`
 
-The legacy filename containing `40_TEST` is retained to preserve history and references; it no longer defines a hard gate-size limit.
+The legacy filename containing `40_TEST` is retained to preserve history and references; it no longer defines a hard gate-size limit. All future gate result updates should be written to the primary master table.
 
 ## New capability authority
 
