@@ -1,0 +1,62 @@
+{
+  "schema": "OZON_CURRENT_SWAGGER_CLUSTER_AD_LIVE_REPAIR_REGRESSION_V1",
+  "date": "2026-09-02",
+  "mode": "refinements",
+  "bridge_base": "/home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared",
+  "details": {
+    "refinements": {
+      "marker": "OZON_GENERATED_REFINEMENT_EXECUTABILITY_PASS",
+      "generated_command_count": 8,
+      "generated_requests": [
+        {
+          "id": "next_page",
+          "operation": "performance_campaigns",
+          "method": "GET",
+          "path": "/api/client/campaign"
+        },
+        {
+          "id": "active_campaigns",
+          "operation": "performance_campaigns",
+          "method": "GET",
+          "path": "/api/client/campaign"
+        },
+        {
+          "id": "latest_created",
+          "operation": "performance_campaigns",
+          "method": "GET",
+          "path": "/api/client/campaign"
+        },
+        {
+          "id": "latest_updated",
+          "operation": "performance_campaigns",
+          "method": "GET",
+          "path": "/api/client/campaign"
+        },
+        {
+          "id": "specific_campaign_ids",
+          "operation": "performance_campaigns",
+          "method": "GET",
+          "path": "/api/client/campaign"
+        },
+        {
+          "id": "campaign_products",
+          "operation": "performance_campaign_products",
+          "method": "GET",
+          "path": "/api/client/campaign/37130644/v2/products"
+        },
+        {
+          "id": "campaign_product_statistics",
+          "operation": "performance_campaign_product",
+          "method": "GET",
+          "path": "/api/client/statistics/campaign/product/json"
+        },
+        {
+          "id": "sku_statistics",
+          "operation": "performance_sku_statistics",
+          "method": "POST",
+          "path": "/api/client/statistics/products/sku"
+        }
+      ]
+    }
+  }
+}

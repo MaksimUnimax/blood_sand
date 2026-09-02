@@ -527,7 +527,7 @@ This is the execution order. Update the status table after every step and commit
 | Step | Work item | Status | Evidence required |
 |---:|---|---|---|
 | 1 | Fix cyclic/shared-reference bug in `specific_campaign_ids` | COMPLETE | production diff + focused tests |
-| 2 | Add regression for actual executability of generated refinement | PENDING | test names/markers and PASS output |
+| 2 | Add regression for actual executability of generated refinement | COMPLETE | test names/markers and PASS output |
 | 3 | Fix entitlement metadata for both new Seller READs | PENDING | deterministic entitlement assertions |
 | 4 | Build a new deterministic candidate | PENDING | artifact path, file count, SHA-256, fresh extraction verification |
 | 5 | Repeat live test #6 with campaign ID `37130644` | PENDING | one physical request, HTTP 200, only requested campaign, no retry/pagination |
@@ -622,3 +622,15 @@ Status: **COMPLETE**
 - Focused marker: OZON_SPECIFIC_CAMPAIGN_IDS_REPAIR_PASS.
 - Production file SHA-256: 90e27c430d86fe8dbc0bb1cf3df4e590923f851305d03ab6b3588452ca224898.
 - Evidence: validation/live-repair-2026-09-02/STEP1_SPECIFIC_CAMPAIGN_IDS_REPAIR_RESULT.json.
+
+
+<!-- OZON-ROADMAP-STEP-2-COMPLETE -->
+### 2026-09-02 — Step 2: generated refinement executability regression added and passing
+
+Status: **COMPLETE**
+
+- Step 1 production commit: 87afac858df47b61a041515ac6a09a725dd619ff.
+- All eight advertising refinement objects are JSON trees without repeated object identity.
+- Every generated command passes normalizeCommand and buildPerformanceRequest.
+- Focused marker: OZON_GENERATED_REFINEMENT_EXECUTABILITY_PASS.
+- Evidence: validation/live-repair-2026-09-02/STEP2_GENERATED_REFINEMENT_EXECUTABILITY_RESULT.json.
