@@ -1,4 +1,4 @@
-# STD-10 REOPENED Run 10 — report list empty; historical baseline blocked by missing full-read implementation
+# STD-10 REOPENED Run 10 — report list empty; historical baseline unavailable through accepted read surface
 
 Date: 2026-09-02
 Canonical question: `На складе Ozon был пожар или авария. Был ли там мой товар, что с ним сейчас и что мне нужно контролировать?`
@@ -9,7 +9,7 @@ Incident date: 2026-08-22, Chapayevsk, Samara region.
 
 After Runs 7–9 proved zero ordinary FBO postings from Samara throughout local 2026-08-22..2026-09-02, attack the load-bearing missing left side of the stock balance: exact historical stock at Samara immediately before the incident.
 
-The current Bridge does not expose an `as_of` parameter on current stock endpoints. Therefore Run 10 tests whether an already generated historical placement/storage/stock report exists and can be followed through `report_info`.
+The current Bridge does not expose an `as_of` parameter on current stock endpoints. Therefore Run 10 tests whether an already generated historical placement/storage/stock report exists and can be followed through the accepted read operation `report_info`.
 
 ## Bridge run
 
@@ -37,25 +37,32 @@ The provider returned:
 
 Therefore there are **no already formed reports of any type** available through `report_list` in this seller account at this moment.
 
-This is stronger than merely finding no placement report: the existing report-discovery inventory is completely empty, so there is no report code that can be followed with `report_info` to recover the pre-incident Samara stock baseline.
-
 Supported statement:
 
 `REPORT_LIST_TOTAL_ZERO_NO_EXISTING_REPORT_PATH_TO_PREINCIDENT_SAMARA_BASELINE`.
 
-## Corrected implementation interpretation
+## Final semantic classification of placement report creation
 
-Do **not** classify the missing workflow as a legitimate optional capability boundary.
+The later/final Seller 463/463 terminal matrix supersedes the older intermediate 268-operation coverage artifact.
 
-The accepted 463/463 coverage model defined 268 operations in the full read rollout, including 40 explicit read workflows for reports/files/documents/status, and explicitly states that report creation belongs to its business cluster. Historical workflow inventory lists `POST /v1/report/placement/by-products/create` as a server-side generation/workflow-start candidate requiring exact schema review. Current runtime does not register it.
+Final Seller classification:
+- 245 admissible reads;
+- 218 terminal-unavailable operations;
+- unresolved/pending = 0.
 
-The correct classification is therefore an implementation omission against the accepted full-read scope:
+The final matrix explicitly classifies:
 
-`FULL_READ_ROLLOUT_INCOMPLETE_FOR_PLACEMENT_REPORT_WORKFLOW`
+`POST /v1/report/placement/by-products/create`
 
-Provider Swagger defines the path as an `Admin read only` report workflow with required `date_from` and `date_to`, maximum interval 31 days, returning report `code` for subsequent `POST /v1/report/info`.
+as:
 
-So the problem exposed by Run 10 is not that Ozon or the intended Bridge design cannot support the read workflow. The current implementation failed to carry this intended read workflow into the executable registry/file-ingestion path.
+`REJECT_SERVER_SIDE_GENERATION_OR_CREATION`
+
+because it initiates server-side report/artifact generation.
+
+Therefore the absence of this endpoint from Bridge v0.1.19 is **intentional under the final accepted read-only surface**, not an implementation omission. The earlier same-day claim `FULL_READ_ROLLOUT_INCOMPLETE_FOR_PLACEMENT_REPORT_WORKFLOW` is withdrawn.
+
+`report_list` and `report_info` remain accepted reads; report `/create` generation endpoints remain terminal unavailable by design.
 
 ## Damage-reconstruction state after Run 10
 
@@ -71,20 +78,13 @@ Proven:
 Still unproven:
 - exact per-SKU stock physically/accountedly present at Samara immediately before the incident;
 - post-incident FBO returns/inbound to Samara;
-- internal Ozon transfers or generic inventory adjustments not exposed by tested surfaces;
+- internal Ozon transfers or generic inventory adjustments not exposed by tested admissible read surfaces;
 - write-off evidence outside the tested `compensation` transaction type;
 - exact destroyed/lost unit count.
 
-## Required project action
+## Next step
 
-Before accepting the historical-baseline limit as terminal, fix the missing accepted read-workflow implementation:
-1. add `POST /v1/report/placement/by-products/create` with exact Swagger validation;
-2. expose the returned report code;
-3. use explicit `report_info` reads without hidden polling;
-4. provide a safe report-file download/ingestion path;
-5. then rerun the historical Samara baseline attempt.
-
-Other observable movement reads such as `returns_list` may still be useful, but they are not a substitute for fixing the missing full-read workflow.
+Continue the incident reconstruction using only accepted read operations. Next inspect `returns_list`, filtered to the target Samara warehouse and post-incident logistic-return date. If the admissible read surfaces cannot reconstruct an exact historical baseline, record that as a read-only forensic coverage limit rather than reclassifying a deliberately excluded generation endpoint as a missing read.
 
 Checkpoint:
-`STD_10_REOPENED_RUN10_REPORT_LIST_TOTAL_ZERO_FULL_READ_PLACEMENT_WORKFLOW_IMPLEMENTATION_DEFECT_MUST_FIX_BEFORE_TERMINAL_BASELINE_LIMIT`
+`STD_10_REOPENED_RUN10_REPORT_LIST_TOTAL_ZERO_PLACEMENT_CREATE_INTENTIONAL_GENERATION_EXCLUSION_SAMARA_RETURNS_NEXT`
