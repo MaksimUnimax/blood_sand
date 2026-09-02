@@ -60,8 +60,8 @@ Despite the historical filename, that document now defines an expandable capabil
 
 ## Current Layer-A execution checkpoint
 
-- STD-01…STD-06 complete.
-- STD-07 ready.
+- STD-01…STD-07 complete.
+- STD-08 ready.
 
 ### STD-06 completed
 
@@ -82,23 +82,52 @@ Final business priority:
 3. **Complete the four fresh `DATA_FILLING` orders before the 2026-09-05 deadline.** They are upcoming work, not current failures.
 4. Ratings/penalties are not a current urgent issue.
 
-STD-06 classification:
-`PASS`
+STD-06 classification: `PASS`
+Operational reliability: `PASS_ALL_STD06_PROVIDER_READS`
+Operator business steering: `NO`
 
-Operational reliability:
-`PASS_ALL_STD06_PROVIDER_READS`
+### STD-07 completed
 
-Operator business steering:
-`NO`
+Question: `Какие товары у меня скоро закончатся, а какие лежат слишком долго? Что пополнять в первую очередь?`
 
-Detailed evidence:
-- `live-runs/STD_06_RUN_1_RATING_SUMMARY_2026-09-02.md`
-- `live-runs/STD_06_RUN_2_STOCK_TURNOVER_2026-09-02.md`
-- `live-runs/STD_06_RUN_3_SUPPLY_STATUS_COUNTER_2026-09-02.md`
-- `live-runs/STD_06_RUN_4_ACTIVE_SUPPLY_ORDER_IDS_2026-09-02.md`
-- `live-runs/STD_06_RUN_5_SUPPLY_ORDER_GET_2026-09-02.md`
-- `live-runs/STD_06_RUN_6_STALE_IN_TRANSIT_BUNDLE_2026-09-02.md`
+Runs 1–3 all reached the provider and returned HTTP 200.
+
+1. `stock_turnover_analytics`: identified both low-FBO/low-IDC candidates and a large `CRITICAL/RED/NOSALES` do-not-replenish group.
+2. `seller_product_info_list`: proved the selected low-FBO candidates still have substantial FBS stock, generally ~39–50 units; broad total-stock procurement emergency rejected. The business problem is primarily FBO allocation/distribution.
+3. `supply_order_bundle`: correlated the four fresh 2026-09-05 supply bundles. Most top FBO-risk candidates are already planned: Чур22, Алатырь21, Громовик11, Сварог7, Герб России6, Перун6, Шлем ужаса5, Молвинец2, Родимич1 and others.
+
+Highest uncovered next-FBO candidates after existing inbound is considered:
+- `1720141903` Водолей — free FBO 1, ~0.20/day ≈5 FBO days, FBS43;
+- `1720148880` Овен — FBO1, ~0.10/day ≈10 days, FBS41;
+- `1720124782` Стрелец — FBO0, ~0.10/day, FBS43;
+- `2186857668` Лев (Античность) — FBO0, ~0.12/day, FBS50;
+- `2271210394` Близнецы (Символы) — FBO0, ~0.15/day, FBS41.
+
+Do not replenish blindly:
+- Козерог (Античность) turnover794 / IDC400 CRITICAL;
+- Знич722 /450 CRITICAL;
+- Хорс596 /350 CRITICAL;
+- Козерог (Символы)467 /200 CRITICAL;
+- Рыбы442.67 /220 CRITICAL;
+- Весы (Античность) NOSALES with stock;
+- other RED/CRITICAL items should be demand-reviewed before any new supply.
+
+Final business answer:
+- no broad procurement emergency;
+- primary task is FBO allocation, not new purchasing;
+- complete existing fresh supplies and avoid duplicate replenishment;
+- next FBO candidates are Водолей, Овен, Стрелец, Лев (Античность), Близнецы (Символы);
+- keep the stale old IN_TRANSIT supply excluded from safe available stock until resolved.
+
+STD-07 classification: `PASS`
+Operational reliability: `PASS_ALL_STD07_PROVIDER_READS`
+Operator business steering: `NO`
+
+Detailed STD-07 evidence:
+- `live-runs/STD_07_RUN_1_STOCK_TURNOVER_2026-09-02.md`
+- `live-runs/STD_07_RUN_2_TOTAL_FBO_FBS_STOCK_CONFIRMATION_2026-09-02.md`
+- `live-runs/STD_07_RUN_3_FRESH_SUPPLY_BUNDLES_2026-09-02.md`
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_06_COMPLETE_STD_07_READY`
+`PRIMARY_GATE_43_BASELINE_EXPANDABLE_STD_01_TO_STD_07_COMPLETE_STD_08_READY`
