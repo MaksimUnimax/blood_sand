@@ -64,12 +64,16 @@ await assert.rejects(
 );
 assert.equal(calls.length, 1, "unknown ref must not execute network request");
 
-const file = await provider.executeCommandObject({ operation: "report_file_get", params: { file_ref: ref } }, {}, {});
+const file = await provider.executeCommandObject({ operation: "report_file_get", params: { file_ref: ref, offset: 0, limit: 200 } }, {}, {});
 assert.equal(file.ok, true);
 assert.equal(calls.length, 2, "file get must execute exactly one additional request");
 assert.equal(file.provider, "report_file");
-assert.equal(file.result?.encoding, "utf-8");
-assert.match(file.result?.content_text || "", /SAMARA;123;4/);
+assert.equal(file.result?.format, "csv");
+assert.deepEqual(file.result?.sheet?.columns, ["date", "warehouse", "sku", "qty"]);
+assert.deepEqual(file.result?.sheet?.rows, [["2026-08-21", "SAMARA", "123", "4"]]);
+assert.equal(file.result?.sheet?.row_count, 1);
+assert.equal(file.result?.sheet?.has_more, false);
+assert.ok(!JSON.stringify(file.result).includes("file_content_base64"), "base64 must not be exposed to AI");
 assert.ok(!file.report_text.includes(signedUrl), "signed URL leaked from file request report");
 
 assert.throws(() => globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl("http://cdn1.ozone.ru/report.csv"), /HTTPS/);
@@ -80,6 +84,7 @@ console.log("OZON_REPORT_FILE_OPAQUE_REF_PASS");
 console.log("OZON_REPORT_FILE_UNKNOWN_REF_ZERO_REQUEST_PASS");
 console.log("OZON_REPORT_FILE_ONE_EXPLICIT_GET_PASS");
 console.log("OZON_REPORT_FILE_NO_SELLER_CREDENTIAL_LEAK_PASS");
-console.log("OZON_REPORT_FILE_CSV_INGESTION_PASS");
+console.log("OZON_REPORT_FILE_CSV_STRUCTURED_ROWS_PASS");
+console.log("OZON_REPORT_FILE_NO_BASE64_AI_OUTPUT_PASS");
 console.log("OZON_REPORT_FILE_HOST_SSRF_GUARD_PASS");
 console.log("OZON_REPORT_FILE_WORKFLOW_GATE_PASS");
