@@ -33,7 +33,7 @@ The frozen report code belongs only to the forensic STD-10 workflow. NEW-06 uses
 | 3 | NEW-03 | `report_postings_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — lowercase fbo create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001; DEFECT-002/003 confirmed | PENDING |
 | 4 | NEW-04 | `report_discounted_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 5 | NEW-05 | `report_warehouse_stock` | COLLECTION_COMPLETE_PARTIAL_FAIL — real FBS setup PASS + create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
-| 6 | NEW-06 | `report_placement_by_products_create` | IN_PROGRESS — independent generic create PASS clean metadata; report_info NEXT | PENDING |
+| 6 | NEW-06 | `report_placement_by_products_create` | IN_PROGRESS — independent create PASS + report_info PASS; file read NEXT; no transform anomaly | PENDING |
 | 7 | NEW-07 | `report_placement_by_supplies_create` | PENDING | PENDING |
 | 8 | NEW-08 | `report_marked_products_sales_create` | PENDING | PENDING |
 | 9 | NEW-09 | `report_realization_posting_create` | PENDING | PENDING |
@@ -58,35 +58,57 @@ The frozen report code belongs only to the forensic STD-10 workflow. NEW-06 uses
 ## Defects collected
 
 - DEFECT-001: static privacy block on safe `report_file_get`, confirmed on 5 report types: `seller_products`, `seller_returns_v2`, `seller_postings`, `seller_discounted`, `seller_stocks`.
-- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean create counterexamples now include NEW-04, NEW-05 and NEW-06.
+- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean create counterexamples include NEW-04, NEW-05 and NEW-06; tested `report_info` paths are also clean.
 - DEFECT-003: `report_postings_create.delivery_schema` uppercase/lowercase mismatch (`FBO` 400 vs `fbo` 200).
 
 Defect authority:
 `OZON_AI_WORKER_REPAIRED_26_READS_DEFECT_LEDGER_2026-09-03.md`
 
-## NEW-06 Run1 — independent create PASS
+## NEW-06 independent chain
 
-Command:
-`report_placement_by_products_create` with completed interval `2026-09-01..2026-09-02`.
+### Run1 — create PASS
+
+`report_placement_by_products_create`, completed interval `2026-09-01..2026-09-02`:
 
 - request `5171ffdb-7762-4bb9-ae8a-1663f1932045`
 - HTTP200
 - physical requests 1
 - external request true
-- logical result count 1
 - logical fingerprint `85e4f38a`
 - physical fingerprint `85e4f38a`
 - transformed false
 - exact_request_preserved true
-- report code `REPORT_seller_placement_by_products_2093109_1788407770_01a06568-ee50-7d2e-bcca-9594563e3735`.
-
-This code is independent and must not be confused with frozen STD-10.
+- independent report code `REPORT_seller_placement_by_products_2093109_1788407770_01a06568-ee50-7d2e-bcca-9594563e3735`.
 
 RAW:
 `live-runs/repaired-26/raw/NEW_06_RUN_1_REPORT_PLACEMENT_BY_PRODUCTS_CREATE_RAW_2026-09-03.json`
 
 Parsed:
 `live-runs/NEW_06_RUN_1_REPORT_PLACEMENT_BY_PRODUCTS_CREATE_2026-09-03.md`
+
+### Run2 — report_info PASS
+
+- request `e78e1813-43de-41d9-ac9a-32d00c5fcc5c`
+- HTTP200
+- elapsed `1367 ms`
+- physical requests 1
+- external request true
+- status `success`
+- report type `seller_placement_by_products`
+- provider file `[REDACTED]`
+- opaque ref `rpf_ec4858fd-8af3-4da5-a7c3-ddd4ec1753b9`
+- fingerprints `c5855b10 == c5855b10`
+- transformed false
+- exact_request_preserved true
+- expires at `2026-09-03T06:56:10.706976Z`.
+
+No new defect. Run2 does not reproduce DEFECT-002.
+
+RAW:
+`live-runs/repaired-26/raw/NEW_06_RUN_2_REPORT_INFO_RAW_2026-09-03.json`
+
+Parsed:
+`live-runs/NEW_06_RUN_2_REPORT_INFO_READY_OPAQUE_FILE_REF_2026-09-03.md`
 
 ## Progress
 
@@ -100,10 +122,10 @@ Parsed:
 
 ## Exact next collection step
 
-NEW-06: one explicit `report_info` using only the independent NEW-06 report code:
-`REPORT_seller_placement_by_products_2093109_1788407770_01a06568-ee50-7d2e-bcca-9594563e3735`
+NEW-06 `report_file_get` using only NEW-06 opaque ref:
+`rpf_ec4858fd-8af3-4da5-a7c3-ddd4ec1753b9`
 
-If ready, later attempt `report_file_get` on the resulting NEW-06 opaque ref to scope DEFECT-001. Never inspect the frozen STD-10 code during this gate.
+Record whether DEFECT-001 extends to `seller_placement_by_products`. Do not patch. After persisting that result, advance to NEW-07. Never inspect or reuse the frozen STD-10 report code during this gate.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_06_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_06_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
