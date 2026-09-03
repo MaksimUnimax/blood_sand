@@ -1,0 +1,83 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "capability_probe": {
+    "performed": false,
+    "status": "not_needed",
+    "subscription_type": "UNKNOWN",
+    "http_status": 0,
+    "error_code": null
+  },
+  "query_planner": {
+    "status": "complete",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
+  },
+  "results": [
+    {
+      "bridge": "ozon-llm-api-bridge",
+      "version": "0.1.19",
+      "request_id": "d220db46-ad97-4744-b7e2-75cf91bf12ed",
+      "operation": "report_info",
+      "command": {
+        "operation": "report_info",
+        "fingerprint": "fcc2dd70"
+      },
+      "request_meta": {
+        "provider": "ozon",
+        "host_alias": "seller_api",
+        "http_method": "POST",
+        "path_alias": "report_info",
+        "external_request_executed": true,
+        "capability_probe_executed": false,
+        "capability_probe_http_status": 0
+      },
+      "http_status": 200,
+      "elapsed_ms": 1101,
+      "pagination": null,
+      "rate_limit": null,
+      "planning": {
+        "capability": {
+          "is_premium": null,
+          "probe_error_code": null,
+          "probe_http_status": 0,
+          "probe_performed": false,
+          "status": "not_needed",
+          "subscription_type": "UNKNOWN"
+        },
+        "entitlement": {
+          "capability_required": false,
+          "entitlement_key": "POST /v1/report/info",
+          "exact_request_preserved": true,
+          "partial": false,
+          "reason": "all_accounts",
+          "rule_source": "reviewed-openapi-463-2026-08-19",
+          "status": "SUPPORTED_AND_ENTITLED"
+        },
+        "execution": {
+          "logical_command_fingerprint": "fcc2dd70",
+          "physical_command_fingerprint": "fcc2dd70",
+          "command_transformed": false
+        }
+      },
+      "result": {
+        "result": {
+          "code": "REPORT_marked_products_sales_2093109_1788408823_01a06578-fdec-762d-869c-fe3b626796cc",
+          "status": "success",
+          "error": "",
+          "file": "[REDACTED]",
+          "report_type": "marked_products_sales",
+          "params": {},
+          "created_at": "2026-09-03T04:13:43.278246Z",
+          "expires_at": "2026-09-04T04:13:43.278246Z",
+          "additional_data": []
+        },
+        "report_file_ref": "rpf_e414b482-5e63-4211-99aa-be3ed53ff09b"
+      }
+    }
+  ]
+}
