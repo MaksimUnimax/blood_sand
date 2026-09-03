@@ -15,55 +15,52 @@ Do not patch runtime until standalone + required batch collection is exhausted. 
 Do not touch:
 `REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`
 
+That code belongs only to the frozen forensic workflow. NEW-06 must create and use a separate generic report code.
+
 ## Progress
 
 - final closed: `0/26`
 - standalone aliases exercised: `5/26`
-- collection-complete/partial-fail: `4/26`
+- collection-complete/partial-fail: `5/26`
 - batch coverage: `0/26`
 - open numbered defects: `3`
 
 ## Open defects
 
-- DEFECT-001: generic safe report-file reads privacy-blocked; confirmed on seller_products, seller_returns_v2, seller_postings, seller_discounted. NEW-05 seller_stocks file-read is the next scope check.
-- DEFECT-002: create planning metadata inconsistency on NEW-02/03; NEW-04/05 create and NEW-05 report_info are clean counterexamples.
-- DEFECT-003: report_postings delivery_schema case mismatch, `FBO` => 400, `fbo` => 200.
+- DEFECT-001: generic safe report-file reads privacy-blocked; confirmed on `seller_products`, `seller_returns_v2`, `seller_postings`, `seller_discounted`, `seller_stocks`.
+- DEFECT-002: create planning metadata inconsistency on NEW-02/03; NEW-04/05 create and tested `report_info` calls are clean counterexamples.
+- DEFECT-003: `report_postings_create.delivery_schema` case mismatch, `FBO` => 400, `fbo` => 200.
 
-## NEW-05 setup
+## NEW-05 preserved state
 
-Real FBS seller warehouse:
-- id `1020001773680000`
-- name `Златоуст Чёт`
-- type `fbs`.
-
-## NEW-05 current state
+Setup warehouse:
+- `1020001773680000`
+- `Златоуст Чёт`
+- `fbs`.
 
 Create PASS:
-- operation `report_warehouse_stock`
 - request `bd63066b-55bf-44cc-baec-98bed0d4ed47`
-- HTTP200
-- physical requests 1
-- external request true
-- fingerprints `f8e4cdac == f8e4cdac`
-- transformed false
-- report code `REPORT_seller_stocks_2093109_1788407283_01a06561-80f3-78d2-9c6a-3c829871385f`.
+- code `REPORT_seller_stocks_2093109_1788407283_01a06561-80f3-78d2-9c6a-3c829871385f`
+- HTTP200, physical1, transformed false.
 
 Report-info PASS:
 - request `f543d8bd-0f37-4f77-b7e2-21439f600870`
-- HTTP200
-- status `success`
 - report type `seller_stocks`
-- signed provider file redacted
-- opaque ref `rpf_304de093-ae1b-46f3-8be0-2a16793361b9`
-- fingerprints `83c2156b == 83c2156b`
-- transformed false
-- expires at `2026-09-03T04:18:03.956035Z`.
+- opaque ref `rpf_304de093-ae1b-46f3-8be0-2a16793361b9`.
+
+File-read block:
+- request `policy-af96433d-9756-4b57-82da-6a058e782aec`
+- HTTP0, physical0, external false
+- `POLICY_BLOCKED / personal_data_setting_off`
+- DEFECT-001 reproduction #5.
 
 ## Exact next command
 
-`OZON_API_V1 {"operation":"report_file_get","params":{"file_ref":"rpf_304de093-ae1b-46f3-8be0-2a16793361b9","offset":0,"limit":50}}`
+Start NEW-06 with an independent generic placement report over a completed interval:
 
-Persist whether DEFECT-001 reproduces on seller_stocks. Do not patch runtime. After recording, advance to NEW-06 using an independent generic placement report; never use the frozen STD-10 report code.
+`OZON_API_V1 {"operation":"report_placement_by_products_create","params":{"date_from":"2026-09-01","date_to":"2026-09-02"}}`
+
+Persist its RAW/result/code before any following command. Never call `report_info` on the frozen STD-10 code during this gate.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_05_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_05_COMPLETE_PARTIAL_FAIL_NEW_06_GENERIC_CREATE_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
