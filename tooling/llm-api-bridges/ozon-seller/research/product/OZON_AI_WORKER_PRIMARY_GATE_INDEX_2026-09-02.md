@@ -59,7 +59,7 @@ Historical filenames containing `40_TEST` are retained for traceability only. Th
 | 7 | STD-07 | PASS | Main inventory action is FBO allocation, not broad procurement. |
 | 8 | STD-08 | PASS | 247 FBO warehouse rows / 33 warehouses; pagination-guidance gap recorded. |
 | 9 | STD-09 | PASS | FBO+FBS exact reconciliation = 16 units / 27,200 RUB. |
-| 10 | STD-10 | REOPENED_READY | READ-classification blocker repaired and browser runtime certified; historical placement report is next. |
+| 10 | STD-10 | REOPENED_IN_PROGRESS | August placement report accepted by Ozon; concrete report code returned; `report_info` is next. |
 | 11 | STD-11 | PASS | Apparent FBO disappearance explained by active-order reservation. |
 | 12 | STD-12 | READY_PAUSED | Prepared; execution remains paused until STD-10 closes. |
 | 13 | STD-13 | PENDING | — |
@@ -91,6 +91,9 @@ Current forensic authority:
 Certified READ-repair/browser-package evidence:
 `live-runs/STD_10_READ_REPAIR_BROWSER_PACKAGE_CERTIFIED_2026-09-03.md`
 
+Latest live evidence:
+`live-runs/STD_10_REOPENED_RUN_11_PLACEMENT_BY_PRODUCTS_REPORT_CREATED_2026-09-03.md`
+
 Current proven evidence includes:
 
 - exact incident warehouse `САМАРА_РФЦ`, warehouse id `23128509046000`;
@@ -100,24 +103,24 @@ Current proven evidence includes:
 - no formal Samara removal/utilization rows in the complete accessible removal report;
 - Runs7–9: no Samara FBO postings across the tested post-incident windows;
 - Run10: `report_list` returned `reports=[]`, `total=0`;
-- subsequent READ re-audit proved at least 26 false-negative READ classifications, including the load-bearing placement-report creation surface;
-- the repaired runtime is now certified at 271 Seller READ aliases / 26 exact repaired schemas / 26-of-26 repaired workflows E2E;
-- deterministic browser extension package is certified on Ubuntu and Windows.
+- READ re-audit found and repaired the false-negative report/document/validation classification;
+- repaired runtime certified at 271 Seller READ aliases / 26 exact repaired schemas / 26-of-26 repaired workflows E2E;
+- deterministic browser extension package certified on Ubuntu and Windows;
+- Run11: live `report_placement_by_products_create` for `2026-08-01..2026-08-31` reached Ozon with one physical business request and HTTP200;
+- Run11 report code: `REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`.
 
-The blocker is therefore removed, but the historical stock/damage conclusion is still open.
+Run11 proves report acceptance only. It does not yet expose historical placement rows and therefore does not prove any burned/lost quantity.
 
 ## Exact next STD-10 evidence path
 
-After installing/reloading the certified browser extension, execute exactly one business request:
+Execute exactly one explicit `report_info` read for:
 
-`report_placement_by_products_create` for `2026-08-01..2026-08-31`.
+`REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`
 
-If that create request succeeds, continue the asynchronous report workflow one explicit READ at a time:
-
-`create -> report_info -> report_file_get`
+If the report is ready and an opaque `report_file_ref` is returned, the following operator step will be one explicit `report_file_get`. If the report is still processing, persist that state and do not skip ahead.
 
 Do not infer historical stock, fire causality or burned/lost units from the create acknowledgement alone.
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_STD_10_REOPENED_READ_REPAIR_CERTIFIED_BROWSER_PACKAGE_READY_PLACEMENT_BY_PRODUCTS_CREATE_NEXT_STD_12_PAUSED`
+`PRIMARY_GATE_43_STD_10_REOPENED_RUN11_PLACEMENT_REPORT_CREATED_REPORT_INFO_NEXT_STD_12_PAUSED`
