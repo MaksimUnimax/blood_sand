@@ -1,6 +1,6 @@
 # P1.3 PostgreSQL integration evidence — 2026-09-03
 
-Status: P1.3 implementation/evidence candidate awaiting ChatGPT acceptance.
+Status: ACCEPTED / P1.3 DONE.
 
 ## Baseline
 

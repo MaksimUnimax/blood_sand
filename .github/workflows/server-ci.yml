@@ -1,0 +1,66 @@
+name: Server CI
+
+on:
+  pull_request:
+    paths:
+      - 'server/**'
+      - '.github/workflows/server-ci.yml'
+  push:
+    paths:
+      - 'server/**'
+      - '.github/workflows/server-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18.0
+        env:
+          # CI DEVELOPMENT/TEST ONLY: disposable, non-production credentials.
+          POSTGRES_DB: product_control_plane_ci
+          POSTGRES_USER: product_control_plane_ci
+          POSTGRES_PASSWORD: ci_development_only_password
+        options: >-
+          --health-cmd "pg_isready -U product_control_plane_ci -d product_control_plane_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+        ports:
+          - 5432:5432
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.20.0
+          cache: pnpm
+          cache-dependency-path: server/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm test:integration
+        env:
+          DATABASE_URL: postgres://product_control_plane_ci:ci_development_only_password@127.0.0.1:5432/product_control_plane_ci
+      - run: pnpm db:migrate
+        env:
+          DATABASE_URL: postgres://product_control_plane_ci:ci_development_only_password@127.0.0.1:5432/product_control_plane_ci
+      - run: pnpm openapi:check
+      - run: pnpm bridge:guard
+      - run: pnpm build

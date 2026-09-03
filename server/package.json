@@ -3,7 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@10.15.1",
-  "engines": { "node": ">=24 <25", "pnpm": ">=10.15.1 <11" },
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=10.15.1 <11"
+  },
   "scripts": {
     "lint": "eslint . --max-warnings=0 && pnpm bridge:guard",
     "typecheck": "pnpm -r typecheck",
@@ -14,12 +17,16 @@
     "db:migrate": "pnpm --filter @product/db db:migrate",
     "api:dev": "pnpm --filter @product/api dev",
     "worker:dev": "pnpm --filter @product/worker dev",
-    "bridge:guard": "node scripts/check-bridge-boundary.mjs"
+    "bridge:guard": "node scripts/check-bridge-boundary.mjs",
+    "openapi:generate": "tsx apps/api/src/openapi.ts generate",
+    "openapi:check": "tsx apps/api/src/openapi.ts check",
+    "format:check": "prettier --check package.json apps/api/package.json apps/api/src/app.ts apps/api/src/openapi.ts apps/api/src/openapi.test.ts packages/contracts/src/index.ts"
   },
   "devDependencies": {
     "@eslint/js": "9.35.0",
     "@types/node": "24.3.0",
     "eslint": "9.35.0",
+    "prettier": "3.6.2",
     "typescript": "5.9.2",
     "typescript-eslint": "8.42.0",
     "vitest": "3.2.4"

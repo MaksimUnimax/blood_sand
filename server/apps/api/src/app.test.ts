@@ -13,6 +13,13 @@ describe('API foundation', () => {
     expect(response.json()).toEqual({ status: 'live' });
     await app.close();
   });
+  it('uses the stable error envelope when infrastructure is not ready', async () => {
+    const app = createApiApp({ config, isInfrastructureReady: async () => false });
+    const response = await app.inject('/health/ready');
+    expect(response.statusCode).toBe(503);
+    expect(ApiErrorEnvelopeV1Schema.parse(response.json()).error.code).toBe('SERVICE_UNAVAILABLE');
+    await app.close();
+  });
   it('generates and preserves allowed correlation IDs', async () => {
     const app = createApiApp({ config });
     const generated = await app.inject('/health/live');

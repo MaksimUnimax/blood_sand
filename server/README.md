@@ -24,6 +24,9 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm test:integration
+pnpm format:check
+pnpm openapi:generate
+pnpm openapi:check
 pnpm build
 pnpm api:dev
 pnpm worker:dev
@@ -35,6 +38,16 @@ is a separate real PostgreSQL suite: it requires `DATABASE_URL` to point at an
 available disposable PostgreSQL database and fails clearly if it is absent or
 unreachable. The P1 development Compose database is loopback-only at
 `127.0.0.1:55432`.
+
+`server/openapi/openapi.json` is a tracked generated OpenAPI 3.1 artifact. Generate
+it with `pnpm openapi:generate`; do not hand-edit it. `pnpm openapi:check` compares
+the current generated representation with the tracked bytes and fails on drift.
+`pnpm format:check` verifies the server source/config formatting baseline.
+
+The intended CI checks are frozen install, lint, formatting, typecheck, unit tests,
+real PostgreSQL integration, idempotent migration validation, OpenAPI drift, Bridge
+boundary guard, and build. GitHub Actions execution is pending repository
+synchronization; this local candidate does not claim a remote CI run.
 
 ## Local PostgreSQL development operations
 
