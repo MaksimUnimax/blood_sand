@@ -1,0 +1,74 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "capability_probe": {
+    "performed": false,
+    "status": "not_needed",
+    "subscription_type": "UNKNOWN",
+    "http_status": 0,
+    "error_code": null
+  },
+  "query_planner": {
+    "status": "complete",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
+  },
+  "results": [
+    {
+      "bridge": "ozon-llm-api-bridge",
+      "version": "0.1.19",
+      "request_id": "f32ff016-3582-4302-903f-af02f3afd699",
+      "operation": "report_marked_products_sales_create",
+      "command": {
+        "operation": "report_marked_products_sales_create",
+        "fingerprint": "0630aa10"
+      },
+      "request_meta": {
+        "provider": "ozon",
+        "host_alias": "seller_api",
+        "http_method": "POST",
+        "path_alias": "report_marked_products_sales_create",
+        "external_request_executed": true,
+        "capability_probe_executed": false,
+        "capability_probe_http_status": 0
+      },
+      "http_status": 200,
+      "elapsed_ms": 1516,
+      "pagination": null,
+      "rate_limit": null,
+      "planning": {
+        "capability": {
+          "is_premium": null,
+          "probe_error_code": null,
+          "probe_http_status": 0,
+          "probe_performed": false,
+          "status": "not_needed",
+          "subscription_type": "UNKNOWN"
+        },
+        "entitlement": {
+          "capability_required": false,
+          "entitlement_key": "POST /v1/report/marked-products-sales/create",
+          "exact_request_preserved": true,
+          "partial": false,
+          "reason": "all_accounts",
+          "rule_source": "reviewed-openapi-463-2026-08-19",
+          "status": "SUPPORTED_AND_ENTITLED"
+        },
+        "execution": {
+          "logical_command_fingerprint": "0630aa10",
+          "physical_command_fingerprint": "0630aa10",
+          "command_transformed": false
+        }
+      },
+      "result": {
+        "result": {
+          "code": "REPORT_marked_products_sales_2093109_1788408823_01a06578-fdec-762d-869c-fe3b626796cc"
+        }
+      }
+    }
+  ]
+}
