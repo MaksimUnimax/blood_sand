@@ -1,0 +1,49 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "query_planner": {
+    "status": "complete",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
+  },
+  "result": {
+    "request_id": "8ee3ff42-c8aa-4b98-9412-c73af369440b",
+    "operation": "fbs_act_list",
+    "command_fingerprint": "937e3a3f",
+    "request_meta": {
+      "provider": "ozon",
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "path_alias": "fbs_act_list",
+      "external_request_executed": true
+    },
+    "http_status": 400,
+    "elapsed_ms": 1515,
+    "entitlement": {
+      "status": "SUPPORTED_AND_ENTITLED",
+      "reason": "all_accounts",
+      "entitlement_key": "POST /v2/posting/fbs/act/list",
+      "exact_request_preserved": true
+    },
+    "execution": {
+      "logical_command_fingerprint": "937e3a3f",
+      "physical_command_fingerprint": "937e3a3f",
+      "command_transformed": false
+    },
+    "error": {
+      "source": "provider",
+      "category": "provider_request",
+      "http_status": 400,
+      "code": "3",
+      "automatic_retry": false,
+      "external_request_executed": true
+    }
+  },
+  "submitted_params": {
+    "limit": 50
+  }
+}
