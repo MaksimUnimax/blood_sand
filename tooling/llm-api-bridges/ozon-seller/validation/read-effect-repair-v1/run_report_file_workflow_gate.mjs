@@ -20,6 +20,13 @@ assert.equal(helper.privacy_policy, "opaque_ref_provenance_gate");
 assert.equal(helper.default_allowed, undefined);
 assert.equal(Object.keys(operations).length, 297);
 
+const manifestPath = path.join(repo, "tooling", "llm-api-bridges", "ozon-seller", "dist-step7-candidate", "manifest.json");
+const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+const hostPermissions = new Set(Array.isArray(manifest.host_permissions) ? manifest.host_permissions : []);
+for (const requiredPermission of ["https://ozon.ru/*", "https://*.ozon.ru/*", "https://ozone.ru/*", "https://*.ozone.ru/*"]) {
+  assert.ok(hostPermissions.has(requiredPermission), `manifest host_permissions must include trusted report host pattern: ${requiredPermission}`);
+}
+
 const signedUrl = "https://cdn1.ozone.ru/s3/reports/private-placement-report.csv?X-Signature=SECRET";
 const calls = [];
 const fetchImpl = async (url, options = {}) => {
@@ -80,6 +87,7 @@ assert.ok(!file.report_text.includes(signedUrl), "signed URL leaked from file re
 assert.throws(() => globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl("http://cdn1.ozone.ru/report.csv"), /HTTPS/);
 assert.throws(() => globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl("https://evil.example/report.csv"), /host/i);
 
+console.log("OZON_REPORT_FILE_MV3_HOST_PERMISSIONS_PASS");
 console.log("OZON_REPORT_FILE_INFO_URL_REDACTED_PASS");
 console.log("OZON_REPORT_FILE_OPAQUE_REF_PASS");
 console.log("OZON_REPORT_FILE_PROVENANCE_FAIL_CLOSED_PASS");

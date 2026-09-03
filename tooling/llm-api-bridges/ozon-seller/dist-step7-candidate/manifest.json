@@ -15,7 +15,11 @@
     "https://alice.yandex.ru/*",
     "https://api-seller.ozon.ru/*",
     "https://api-performance.ozon.ru/*",
-    "https://docs.ozon.ru/*"
+    "https://docs.ozon.ru/*",
+    "https://ozon.ru/*",
+    "https://*.ozon.ru/*",
+    "https://ozone.ru/*",
+    "https://*.ozone.ru/*"
   ],
   "background": {
     "service_worker": "service_worker.js"
