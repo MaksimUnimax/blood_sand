@@ -39,10 +39,6 @@ Latest NEW-11 reproduction:
 - automatic retry `false`;
 - stage `personal_data_policy`.
 
-Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_11_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_11_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
-
 ## DEFECT-002 — transformed create metadata inconsistent with exact_request_preserved
 
 Classification: `TRANSFORMED_COMMAND_METADATA_CONTRADICTS_EXACT_REQUEST_PRESERVED`
@@ -66,6 +62,7 @@ Clean counterexamples narrow the scope:
 - NEW-11 `report_info`: `e19249be == e19249be`, transformed false, HTTP200.
 - NEW-12 `finance_compensation_report`: `0fb59a8f == 0fb59a8f`, transformed false, exact_request_preserved true, provider HTTP404/code5.
 - NEW-13 `finance_decompensation_report`: `9a67428a == 9a67428a`, transformed false, exact_request_preserved true, provider HTTP404/code5.
+- NEW-14 `cargoes_label_create`: `151c4db3 == 151c4db3`, transformed false, exact_request_preserved true, provider HTTP429/code8.
 - other tested `report_info` steps also preserve identical fingerprints.
 
 Therefore DEFECT-002 is not universal; continue scope collection through remaining repaired paths and later batch tests.
@@ -97,40 +94,14 @@ Current Bridge result sanitization checks actual JSON property names/paths. `add
 
 NEW-11 Run2 `report_info` returned `additional_data: []`, so DEFECT-004 was not reproduced on `mutual_settlement`. This is only a scope counterexample and does not close the confirmed NEW-09 privacy defect.
 
-Evidence:
-- privacy-safe RAW `live-runs/repaired-26/raw/NEW_09_RUN_2_REPORT_INFO_PRIVACY_LEAK_SANITIZED_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_09_RUN_2_REPORT_INFO_PRIVACY_LEAK_2026-09-03.md`
-- NEW-11 clean RAW `live-runs/repaired-26/raw/NEW_11_RUN_2_REPORT_INFO_RAW_2026-09-03.json`
-- NEW-11 clean parsed `live-runs/NEW_11_RUN_2_REPORT_INFO_2026-09-03.md`
-
 ## DEFECT-005 — supply_order_list empty states template is provider-invalid
 
 Classification: `SUPPLY_ORDER_LIST_EMPTY_STATES_TEMPLATE_PROVIDER_INVALID`
 Status: `OPEN_CONFIRMED`
 
 NEW-14 setup A/B:
-
-### A — exact active registry template
-`{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}`
-
-Observed:
-- request `deba7764-b75b-4fbd-ada0-7e163844d109`;
-- HTTP400 / provider code `3`;
-- physical1, logical1, external true;
-- automatic retry false;
-- exact request preserved true;
-- fingerprints `d0967438 == d0967438`;
-- transformed false.
-
-### B — same endpoint with explicit non-empty runtime-valid states
-Observed:
-- request `3e5b9659-7664-4749-a34f-ad9a9af9ad42`;
-- HTTP200;
-- physical1, logical1, external true;
-- exact request preserved true;
-- fingerprints `bc9210cd == bc9210cd`;
-- transformed false;
-- 100 real order IDs returned; first `125820894`.
+- active runtime template with `filter.states=[]` => HTTP400/code3;
+- same endpoint with explicit non-empty runtime-valid states => HTTP200 and 100 real order IDs.
 
 Active runtime `normalizeSupplyOrderListParams` requires `filter.states` and validates it with `validateEnumArray`. `validateEnumArray` accepts an empty array because it only iterates and validates present elements. The operation registry simultaneously advertises the empty-array template. The successful non-empty A/B control confirms the endpoint is usable and isolates the defect to the bridge template/validation contract for empty `states`.
 
@@ -140,23 +111,33 @@ Evidence:
 - passing RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_RAW_2026-09-03.json`
 - passing parsed `live-runs/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_2026-09-03.md`
 
-Do not patch yet. Continue NEW-14 setup using returned real identifiers.
-
 ## NEW-12 provider outcome
 
-NEW-12 `finance_compensation_report` with `date=2026-08` produced one exact external provider request and returned HTTP404/code5. No automatic retry occurred, no report code was returned, and no downstream report read is possible. This is recorded as `COLLECTION_COMPLETE_PROVIDER_FAIL`, not as a new numbered bridge defect.
-
-Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_12_RUN_1_FINANCE_COMPENSATION_REPORT_PROVIDER_404_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_12_RUN_1_FINANCE_COMPENSATION_REPORT_PROVIDER_404_2026-09-03.md`
+`finance_compensation_report` with `date=2026-08`: HTTP404/code5, exactly one external request, no automatic retry, no report code. Recorded as `COLLECTION_COMPLETE_PROVIDER_FAIL`, not a new numbered defect.
 
 ## NEW-13 provider outcome
 
-NEW-13 `finance_decompensation_report` with `date=2026-08` produced one exact external provider request and returned HTTP404/code5. No automatic retry occurred, no report code was returned, and no downstream report read is possible. This is recorded as `COLLECTION_COMPLETE_PROVIDER_FAIL`, not as a new numbered bridge defect.
+`finance_decompensation_report` with `date=2026-08`: HTTP404/code5, exactly one external request, no automatic retry, no report code. Recorded as `COLLECTION_COMPLETE_PROVIDER_FAIL`, not a new numbered defect.
+
+## NEW-14 provider outcome
+
+Standalone `cargoes_label_create` used real provider-returned `supply_id=2000064871008` and returned provider HTTP429/code8 with `Retry-After: 1`.
+
+Observed:
+- request `b09f1156-6ada-42b7-9cef-8cface858ec1`;
+- physical1, logical1, external true;
+- automatic retry false;
+- exact request preserved true;
+- fingerprints `151c4db3 == 151c4db3`;
+- transformed false.
+
+Classification: `COLLECTION_COMPLETE_PROVIDER_RATE_LIMIT_FAIL`.
+
+No new bridge defect is established. The bridge correctly did not automatically retry. Per collection rules the same business request is not automatically repeated after HTTP429. No operation/status/document reference was returned, so the asynchronous label chain cannot continue from this attempt.
 
 Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_2026-09-03.md`
+- RAW `live-runs/repaired-26/raw/NEW_14_RUN_1_CARGOES_LABEL_CREATE_PROVIDER_429_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_14_RUN_1_CARGOES_LABEL_CREATE_PROVIDER_429_2026-09-03.md`
 
 ## Patch prohibition
 
