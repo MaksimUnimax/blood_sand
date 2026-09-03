@@ -35,7 +35,7 @@ Any test of `report_placement_by_products_create` inside this gate must use a se
 
 | # | ID | Alias | Class | Live state | Full-close requirement |
 |---:|---|---|---|---|---|
-| 1 | NEW-01 | `report_products_create` | report workflow | PENDING | create -> report_info -> file -> structured rows |
+| 1 | NEW-01 | `report_products_create` | report workflow | IN_PROGRESS — create PASS; `report_info` next | create -> report_info -> file -> structured rows |
 | 2 | NEW-02 | `report_returns_create_v2` | report workflow | PENDING | create -> report_info -> file -> structured rows |
 | 3 | NEW-03 | `report_postings_create` | report workflow | PENDING | create -> report_info -> file -> structured rows |
 | 4 | NEW-04 | `report_discounted_create` | report workflow | PENDING | create -> report_info -> file -> structured rows |
@@ -70,11 +70,34 @@ For every async workflow, finish that workflow completely before advancing to th
 
 When an operation requires a real account-specific identifier (posting, cargo, supply, warehouse, etc.), use already-proven IDs when valid; otherwise perform the minimum necessary existing READ discovery as a setup substep and persist it. Setup reads do not count as one of the 26 repaired commands.
 
+## NEW-01 live evidence
+
+Run1 `report_products_create`:
+
+- request id: `d1834261-fbc4-498a-ba2e-6873a6ead564`
+- physical business requests: `1`
+- external request executed: `true`
+- HTTP: `200`
+- elapsed: `1405 ms`
+- entitlement: `SUPPORTED_AND_ENTITLED / all_accounts`
+- exact request preserved: `true`
+- command transformed: `false`
+- returned report code: `REPORT_seller_products_2093109_1788403235_01a06523-ba89-7bab-b5a2-7512338e658e`.
+
+Create-step classification:
+`PASS_FIRST_LIVE_REPORT_PRODUCTS_CREATE`.
+
+NEW-01 remains `IN_PROGRESS` until the independent report is followed through `report_info` and, when available, `report_file_get` to usable structured rows.
+
+Detailed evidence:
+`live-runs/NEW_01_RUN_1_REPORT_PRODUCTS_CREATE_2026-09-03.md`.
+
 ## Current progress
 
 - Fully closed: `0 / 26`
+- NEW-01: create PASS; `report_info` next.
 - Partial external evidence: `NEW-06` create call succeeded live during STD-10 Run11, but its forensic code is frozen and not reusable for this gate.
-- Active next command: `NEW-01 report_products_create`.
+- Active next command: `NEW-01 report_info` for `REPORT_seller_products_2093109_1788403235_01a06523-ba89-7bab-b5a2-7512338e658e`.
 
 ## Frozen workstreams while this gate runs
 
@@ -91,4 +114,4 @@ Only after all 26 rows are `PASS` (or an explicitly accepted, evidence-backed pr
 First command on STD-10 resume remains the previously frozen `report_info` call for its preserved report code.
 
 Checkpoint:
-`REPAIRED_26_READS_LIVE_GATE_0_OF_26_COMPLETE_NEW_01_REPORT_PRODUCTS_CREATE_NEXT_STD_10_FROZEN`
+`REPAIRED_26_READS_LIVE_GATE_0_OF_26_COMPLETE_NEW_01_CREATE_PASS_REPORT_INFO_NEXT_STD_10_FROZEN`
