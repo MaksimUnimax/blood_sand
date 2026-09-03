@@ -55,6 +55,9 @@ jobs:
       - name: Verify generated document delivery
         shell: bash
         run: node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_generated_document_delivery_gate.mjs "$GITHUB_WORKSPACE"
+      - name: Verify all 26 repaired reads end to end
+        shell: bash
+        run: node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_all_26_e2e_gate.mjs "$GITHUB_WORKSPACE"
       - name: Build deterministic LF runtime artifact
         shell: bash
         run: |
@@ -64,7 +67,7 @@ jobs:
           rows=[]
           for p in sorted(src.glob('*.js')):
             t=out/p.name; t.write_text(p.read_text(encoding='utf-8'),encoding='utf-8',newline='\n'); b=t.read_bytes(); rows.append({'path':p.name,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
-          payload={'schema':'OZON_EFFECT_READ_REPAIR_RUNTIME_MANIFEST_V6','seller_enabled_reads':271,'seller_current_reads':269,'seller_beta_reads':2,'performance_aliases':25,'internal_report_file_helpers':1,'canonical_performance_reads':21,'canonical_api_reads':292,'registry_aliases':297,'exact_repaired_read_schemas':26,'report_file_ingestion':'structured_csv_xlsx','generated_documents':'opaque_ref_pdf_text_metadata','files':rows}
+          payload={'schema':'OZON_EFFECT_READ_REPAIR_RUNTIME_MANIFEST_V7','seller_enabled_reads':271,'seller_current_reads':269,'seller_beta_reads':2,'performance_aliases':25,'internal_report_file_helpers':1,'canonical_performance_reads':21,'canonical_api_reads':292,'registry_aliases':297,'exact_repaired_read_schemas':26,'all_26_repaired_reads_e2e':True,'report_file_ingestion':'structured_csv_xlsx','generated_documents':'opaque_ref_pdf_text_metadata','files':rows}
           pathlib.Path('out/ozon-effect-read-repair-runtime/runtime-manifest.json').write_text(json.dumps(payload,sort_keys=True,indent=2)+'\n',encoding='utf-8',newline='\n')
           PY
       - uses: actions/upload-artifact@v4
@@ -102,9 +105,10 @@ jobs:
           node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_file_workflow_gate.mjs "$GITHUB_WORKSPACE"
           node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_ai_readable_report_parser_gate.mjs "$GITHUB_WORKSPACE"
           node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_generated_document_delivery_gate.mjs "$GITHUB_WORKSPACE"
+          node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_all_26_e2e_gate.mjs "$GITHUB_WORKSPACE"
       - name: Commit frozen repaired runtime
         shell: bash
         run: |
           git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/{ozon_operation_registry.js,ozon_contract.js,ozon_entitlements.js,ozon_provider.js,provider_transport_core.js}
-          if ! git diff --cached --quiet; then git commit -m "freeze(ozon): persist exact 26-read schemas"; git push origin HEAD:repair/ozon-read-effect-reclassification-2026-09-02; fi
+          if ! git diff --cached --quiet; then git commit -m "freeze(ozon): persist full 26-read E2E repair"; git push origin HEAD:repair/ozon-read-effect-reclassification-2026-09-02; fi
