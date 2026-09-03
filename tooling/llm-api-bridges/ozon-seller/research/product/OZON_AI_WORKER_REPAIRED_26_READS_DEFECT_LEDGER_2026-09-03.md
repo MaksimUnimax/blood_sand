@@ -13,7 +13,7 @@ Collect the entire standalone + multi-command batch defect set before patching. 
 Classification: `OVERBROAD_STATIC_PERSONAL_DATA_POLICY_ON_GENERIC_REPORT_FILE_HELPER`
 Status: `OPEN_CONFIRMED_COLLECTING_SCOPE`
 
-Confirmed safe-report reproductions with personal-data setting OFF:
+Confirmed reproductions with personal-data setting OFF:
 1. NEW-01 `seller_products`;
 2. NEW-02 `seller_returns_v2`;
 3. NEW-03 `seller_postings`;
@@ -21,13 +21,25 @@ Confirmed safe-report reproductions with personal-data setting OFF:
 5. NEW-05 `seller_stocks`;
 6. NEW-06 `seller_placement_by_products`;
 7. NEW-07 `seller_placement_by_supplies`;
-8. NEW-08 `marked_products_sales`.
+8. NEW-08 `marked_products_sales`;
+9. NEW-09 `finance_realization_posting`.
 
-All eight file reads were locally `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
+All nine file reads were locally `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
 
-Latest evidence:
-- RAW `live-runs/repaired-26/raw/NEW_08_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_08_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
+NEW-09 reproduction:
+- opaque ref `rpf_daf0af28-8915-4ef5-9a27-d0d8f2562c95`;
+- request `policy-c52040e3-2327-4a14-be83-f786a928b053`;
+- fingerprint `928bfa76`;
+- HTTP `0`;
+- physical requests `0`;
+- external request `false`;
+- entitlement `POLICY_BLOCKED / personal_data_setting_off`;
+- error `OPERATION_DISABLED_BY_USER`;
+- stage `personal_data_policy`.
+
+Evidence:
+- RAW `live-runs/repaired-26/raw/NEW_09_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_09_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
 
 ## DEFECT-002 — transformed create metadata inconsistent with exact_request_preserved
 
@@ -71,37 +83,17 @@ Severity: privacy / personal-data disclosure
 
 NEW-09 Run2 `report_info` for `finance_realization_posting` returned HTTP200 while the operator's personal-data setting was OFF and exposed identifying receiver metadata inside `result.additional_data`.
 
-The leaked values are intentionally **not** copied into repository evidence. Persisted evidence masks every `additional_data.value` while retaining the structural field names needed to prove and reproduce the bypass.
+The leaked values are intentionally **not** copied into repository evidence. Persisted evidence masks every `additional_data.value` while retaining structural field names needed to prove and reproduce the bypass.
 
-Observed sensitive semantic keys included receiver identity/tax fields such as:
-- `ReceiverName`
-- `ReceiverInn`
-- `ReceiverKpp`
+Observed sensitive semantic keys included receiver identity/tax fields such as `ReceiverName`, `ReceiverInn`, `ReceiverKpp`.
 
-Transport/planner facts:
-- request `0ab507a4-3068-43f5-8a5d-54bdc3d09d55`
-- HTTP200
-- physical requests 1
-- external request true
-- fingerprints `604b53c9 == 604b53c9`
-- transformed false
-- exact_request_preserved true
-- report type `finance_realization_posting`
-- opaque ref `rpf_daf0af28-8915-4ef5-9a27-d0d8f2562c95`.
-
-### Root-cause evidence
-
-Current Bridge result sanitization checks actual JSON property names/paths. For `report_info` it explicitly redacts the top-level provider `file` field, and generic sensitive matching also operates on JSON field names.
-
-`additional_data` stores semantic field names as the **value** of a property named `key`, with the corresponding data in a sibling property named `value`. Thus objects shaped like `{key: "ReceiverName", value: <personal data>}` bypass a redactor that only evaluates the literal property names `key` and `value`.
-
-This explains why the provider file URL was correctly redacted while identifying receiver data in `additional_data` reached the AI chat.
+Current Bridge result sanitization checks actual JSON property names/paths. `additional_data` stores the semantic name in a field named `key` and corresponding data in sibling `value`; therefore `{key: <sensitive semantic>, value: <personal data>}` bypasses a redactor that only evaluates literal property names `key` and `value`.
 
 Evidence:
-- privacy-safe RAW: `live-runs/repaired-26/raw/NEW_09_RUN_2_REPORT_INFO_PRIVACY_LEAK_SANITIZED_RAW_2026-09-03.json`
-- parsed: `live-runs/NEW_09_RUN_2_REPORT_INFO_PRIVACY_LEAK_2026-09-03.md`
+- privacy-safe RAW `live-runs/repaired-26/raw/NEW_09_RUN_2_REPORT_INFO_PRIVACY_LEAK_SANITIZED_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_09_RUN_2_REPORT_INFO_PRIVACY_LEAK_2026-09-03.md`
 
-Do not patch yet. Continue scope collection through other finance/document report-info outputs to determine whether the same key/value encoding is reused.
+Do not patch yet. Continue scope collection through finance/document outputs.
 
 ## Patch prohibition
 
