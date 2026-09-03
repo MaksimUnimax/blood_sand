@@ -6,7 +6,7 @@ Mode: `COLLECT_ALL_DEFECTS_BEFORE_PATCHING`
 
 ## Governing rule
 
-During this phase, discovered defects are persisted but **not patched immediately**. Continue the complete standalone + multi-command batch inventory first. Patch only after the test sweep is exhausted, unless one defect makes further testing technically impossible.
+Collect the entire standalone + multi-command batch defect set before patching. Runtime patching is forbidden during collection unless one defect makes all further testing technically impossible.
 
 ## DEFECT-001 — report_file_get statically gated as personal-data read
 
@@ -15,64 +15,61 @@ Classification:
 
 Status: `OPEN_COLLECTING_SCOPE`
 
-Confirmed reproductions with personal-data setting OFF:
+Confirmed safe-report reproductions with personal-data setting OFF:
 
-1. NEW-01 `seller_products`: local `POLICY_BLOCKED`, physical requests `0`, external request `false`.
-2. NEW-02 `seller_returns_v2`: local `POLICY_BLOCKED`, physical requests `0`, external request `false`.
+1. NEW-01 `seller_products`: local POLICY_BLOCKED, physical requests 0, external request false.
+2. NEW-02 `seller_returns_v2`: local POLICY_BLOCKED, physical requests 0, external request false.
 
-Do not patch yet. Continue determining scope across remaining report/document classes.
+Continue establishing scope across remaining reports/documents. Do not patch yet.
 
 ## DEFECT-002 — transformed create metadata inconsistent with exact_request_preserved
 
-Status: `OPEN_CANDIDATE_COLLECTING_SCOPE`
+Status: `OPEN_CONFIRMED_COLLECTING_SCOPE`
 
-Confirmed on repaired create aliases:
+Confirmed on:
 
-### NEW-02 Run1 — report_returns_create_v2
+- NEW-02 Run1 `report_returns_create_v2`: `687fa368 -> d1fbfbfe`, transformed true, exact_request_preserved true, HTTP200.
+- NEW-03 Run1 `report_postings_create`: `ec963df4 -> 6274fae0`, transformed true, exact_request_preserved true, HTTP400.
+- NEW-03 Run2 `report_postings_create`: `34d187a7 -> a2721547`, transformed true, exact_request_preserved true, HTTP400.
+- NEW-03 Run3 `report_postings_create`: `0507ce87 -> 9f11d567`, transformed true, exact_request_preserved true, HTTP200.
 
-- logical fingerprint `687fa368`;
-- physical fingerprint `d1fbfbfe`;
-- `command_transformed=true`;
-- entitlement metadata `exact_request_preserved=true`;
-- provider HTTP 200.
+This is no longer a single-call candidate; it is a repeated planning/metadata inconsistency. Continue scope collection through remaining create aliases and batch tests. Do not patch yet.
 
-### NEW-03 Run1 — report_postings_create
+## DEFECT-003 — report_postings_create delivery_schema case contract/guidance mismatch
 
-- logical fingerprint `ec963df4`;
-- physical fingerprint `6274fae0`;
-- `command_transformed=true`;
-- entitlement metadata `exact_request_preserved=true`;
-- provider HTTP 400.
+Classification:
+`REPORT_POSTINGS_DELIVERY_SCHEMA_CASE_NOT_CONSTRAINED_OR_NORMALIZED`
 
-### NEW-03 Run2 — report_postings_create, wholly past window
+Status: `OPEN_CONFIRMED`
 
-- logical fingerprint `34d187a7`;
-- physical fingerprint `a2721547`;
-- `command_transformed=true`;
-- entitlement metadata `exact_request_preserved=true`;
-- provider HTTP 400.
+### Differential live evidence
 
-The metadata inconsistency therefore reproduces independently across NEW-02 and two distinct NEW-03 payloads. Do not patch until batch and remaining create aliases establish full scope.
+NEW-03 Run2 used a fully past interval and:
 
-## NEW-03 provider HTTP400 investigation — not yet numbered as a Bridge defect
+`delivery_schema=["FBO"]`
 
-NEW-03 Run1 returned HTTP400 with a future end boundary. Run2 changed the business payload to a fully past range (`2026-09-01T00:00:00Z` through `2026-09-02T23:59:59Z`) and still returned HTTP400, so the future-boundary hypothesis is rejected.
+Result:
+- provider HTTP400
+- physical requests 1
+- external request true.
 
-The exact runtime schema accepts:
+NEW-03 Run3 used the same fully past interval and changed only the semantic delivery-schema value to:
 
-- required `filter.processed_at_from` as date-time;
-- required `filter.processed_at_to` as date-time;
-- required `filter.delivery_schema` as an array of strings.
+`delivery_schema=["fbo"]`
 
-Bridge validation accepted both requests and each reached Ozon exactly once. Public examples for `/v1/report/postings/create` use lowercase delivery-schema values such as `fbs`, while the tested payload used uppercase `FBO`. The next diagnostic changes only this semantic value to lowercase `fbo` with the same fully past range.
+Result:
+- request `8e92df34-abdc-450f-a82b-dd55605bb7ac`
+- provider HTTP200
+- physical requests 1
+- external request true
+- returned report code `REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c`.
 
-If lowercase succeeds, promote a new Bridge contract/template/guidance defect: the runtime schema/template permits or suggests a provider-invalid uppercase delivery-schema value. If lowercase still fails, continue diagnosis without patching.
+The current repaired Bridge schema accepts `delivery_schema` as an unconstrained array of strings, and the runtime/template/guidance does not prevent the provider-invalid uppercase representation. Live A/B evidence proves lowercase `fbo` succeeds where uppercase `FBO` fails with otherwise equivalent completed-period payload.
 
 Evidence:
-
-- Run1 RAW: `live-runs/repaired-26/raw/NEW_03_RUN_1_REPORT_POSTINGS_CREATE_HTTP400_RAW_2026-09-03.json`
-- Run1 parsed: `live-runs/NEW_03_RUN_1_REPORT_POSTINGS_CREATE_HTTP400_2026-09-03.md`
 - Run2 RAW: `live-runs/repaired-26/raw/NEW_03_RUN_2_REPORT_POSTINGS_CREATE_HTTP400_PAST_WINDOW_RAW_2026-09-03.json`
 - Run2 parsed: `live-runs/NEW_03_RUN_2_REPORT_POSTINGS_CREATE_HTTP400_PAST_WINDOW_2026-09-03.md`
+- Run3 RAW: `live-runs/repaired-26/raw/NEW_03_RUN_3_REPORT_POSTINGS_CREATE_LOWERCASE_FBO_PASS_RAW_2026-09-03.json`
+- Run3 parsed: `live-runs/NEW_03_RUN_3_REPORT_POSTINGS_CREATE_LOWERCASE_FBO_PASS_2026-09-03.md`
 
-No runtime patch until collection sweep completes.
+Do not patch yet.
