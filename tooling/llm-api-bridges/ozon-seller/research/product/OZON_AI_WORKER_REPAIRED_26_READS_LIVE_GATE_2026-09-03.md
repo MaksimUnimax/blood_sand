@@ -41,7 +41,7 @@ That code belongs only to the frozen forensic STD-10 workflow.
 | 11 | NEW-11 | `finance_mutual_settlement_report` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS; report_info PASS; file read POLICY_BLOCKED = DEFECT-001 reproduction #10 | PENDING |
 | 12 | NEW-12 | `finance_compensation_report` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code | PENDING |
 | 13 | NEW-13 | `finance_decompensation_report` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code | PENDING |
-| 14 | NEW-14 | `cargoes_label_create` | SETUP_IN_PROGRESS — DEFECT-005 confirmed A/B; non-empty `supply_order_list` PASS returned 100 real order IDs; `supply_order_get` NEXT | PENDING |
+| 14 | NEW-14 | `cargoes_label_create` | SETUP_COMPLETE — DEFECT-005 confirmed A/B; real order `125820894` resolved to real integer supply `2000064871008`; standalone create NEXT | PENDING |
 | 15 | NEW-15 | `posting_fbs_act_container_labels` | PENDING | PENDING |
 | 16 | NEW-16 | `posting_fbs_package_label` | PENDING | PENDING |
 | 17 | NEW-17 | `posting_fbs_package_label_create` | PENDING | PENDING |
@@ -84,15 +84,24 @@ Defect authority:
 - fingerprints `bc9210cd == bc9210cd`
 - transformed false
 - returned 100 real order IDs
-- first order id `125820894`
-- last returned order id `57848502`
-- provider last_id present.
+- first order id `125820894`.
 
-This controlled A/B confirms DEFECT-005 and provides real identifiers for the next setup read.
+### Run3 — supply_order_get PASS, real supply id resolved
+- request `0d3a6203-fc53-4707-b72b-329ce10ce928`
+- HTTP200
+- physical1, logical1, external true
+- exact request preserved true
+- fingerprints `f41eda95 == f41eda95`
+- transformed false
+- input real order id `125820894`
+- returned order state `DATA_FILLING`
+- returned real integer `supply_id=2000064871008`
+- supply state `DATA_FILLING`
+- drop-off address redacted by bridge as intended.
 
-Evidence Run2:
-- RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_2026-09-03.md`
+Evidence Run3:
+- RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_3_SUPPLY_ORDER_GET_REAL_SUPPLY_ID_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_14_SETUP_RUN_3_SUPPLY_ORDER_GET_REAL_SUPPLY_ID_2026-09-03.md`
 
 ## Progress
 
@@ -106,10 +115,10 @@ Evidence Run2:
 
 ## Exact next collection command
 
-Use explicit safe READ `supply_order_get` with the first real returned order id only:
-`OZON_API_V1 {"operation":"supply_order_get","params":{"order_ids":[125820894]}}`
+Run standalone NEW-14 with the real provider-returned supply id:
+`OZON_API_V1 {"operation":"cargoes_label_create","params":{"supply_id":2000064871008}}`
 
-Persist the result before any further Ozon command. Resolve a real integer `supply_id` from the returned provider data; never invent one. Do not patch runtime. Do not touch frozen STD-10.
+Persist the result before any downstream status/document read or before advancing to NEW-15. Do not patch runtime. Do not touch frozen STD-10.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_14_SETUP_NONEMPTY_STATES_PASS_ORDER_125820894_SUPPLY_ORDER_GET_NEXT_DEFECTS_001_002_003_004_005_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_14_SETUP_COMPLETE_REAL_SUPPLY_2000064871008_CARGOES_LABEL_CREATE_NEXT_DEFECTS_001_002_003_004_005_OPEN_STD_10_FROZEN`
