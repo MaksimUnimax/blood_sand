@@ -1,39 +1,60 @@
-# Ozon Seller READ-effect repair checkpoint — 2026-09-02
+# Ozon Seller READ-effect repair checkpoint — final installable closure
 
-## Pause state
+## Status
 
-**PAUSED BY OPERATOR. Do not continue until an explicit command to resume.**
+**CLOSED / CERTIFIED on 2026-09-03.**
 
-Checkpoint marker:
+The previous pause marker `OZON_READ_EFFECT_REPAIR_PAUSED_AFTER_26_E2E_GATE_ADDED_BEFORE_WORKFLOW_WIRING` is superseded.
 
-`OZON_READ_EFFECT_REPAIR_PAUSED_AFTER_26_E2E_GATE_ADDED_BEFORE_WORKFLOW_WIRING`
+Final checkpoint marker:
+
+`OZON_READ_EFFECT_REPAIR_271_READS_26_OF_26_E2E_INSTALLABLE_BUNDLE_CERTIFIED`
 
 Branch:
 
 `repair/ozon-read-effect-reclassification-2026-09-02`
 
-Checkpoint source HEAD before this documentation commit:
+Certified installable HEAD:
 
-`b6911ce7e787ccacdeffc16d8ce24e9eb2f1ef10`
+`8e0a4707ba437318bcf2e0034a6f697b048504b0`
 
-That commit added the full mock end-to-end runner for all 26 repaired READ operations. The runner exists but is **not yet wired into the GitHub Actions workflow**, so it has not yet been executed by CI. Do not claim 26/26 E2E gate PASS until that happens.
+Commit message:
+
+`freeze(ozon): ship 271-read repaired installable bundle`
+
+Installable path:
+
+`tooling/llm-api-bridges/ozon-seller/dist/ozon-seller-mcp-nodebundle.js`
+
+Git blob SHA at the certified HEAD:
+
+`2d8d0ae6e37bd4a89932b1299f0a6a1bad29461d`
+
+Deterministic bundle SHA-256:
+
+`0f3d7d4f230e579d2c3fe6d9f831f67c819bab285449a2ffd9c7de21b5cab6c0`
+
+Bundle bytes:
+
+`659904`
 
 ## Governing semantic rule
 
 An operation is `READ` when it does not modify Seller/Ozon business/account data or business-process state. Passive generation of a report, label, PDF or validation result is treated as READ when the operation only materializes a representation of existing state and does not create/update/delete business state.
 
-## Current repaired surface
+## Final repaired surface
 
-Current registry partition verified by CI:
+Certified registry/runtime partition:
 
 - registry aliases: **297** including one internal report-file helper;
 - Seller enabled READ aliases: **271**;
 - Seller current READ aliases: **269**;
 - Seller beta READ aliases: **2**;
 - Performance enabled READ aliases: **25**;
-- internal `report_file_get`: **1**.
+- internal `report_file_get`: **1**;
+- exact repaired Seller READ workflows covered end to end: **26 / 26**.
 
-The 26 newly repaired Seller READ aliases are:
+The 26 repaired Seller READ aliases are:
 
 1. `report_products_create`
 2. `report_returns_create_v2`
@@ -66,151 +87,150 @@ The 26 newly repaired Seller READ aliases are:
 
 ### 1. READ reclassification and executable contracts
 
-The 26 operations were changed from rejected/server-side-generation classification into executable Seller READ operations, with entitlements and contract mappings.
+The 26 operations are executable Seller READ operations with entitlements and contract mappings.
 
 ### 2. Opaque report-file workflow
 
-Implemented internal `report_file_get`:
+`report_info.file` and generated document URLs are not exposed to GPT. Provider session state stores the trusted URL behind an opaque `rpf_*` reference. `report_file_get` performs the explicit trusted file read. Seller credentials are not forwarded to the file host. Unknown/expired refs fail closed before network execution.
 
-- `report_info.file` is redacted from GPT-visible output;
-- raw signed Ozon URL is stored only in provider session state;
-- GPT receives an opaque `rpf_*` reference;
-- URL-backed file reads use one explicit trusted HTTPS GET;
-- Seller credentials are never forwarded to the file host;
-- only trusted Ozon/Ozone HTTPS hosts are accepted;
-- unknown/expired refs fail before network execution.
+### 3. AI-readable report ingestion
 
-Key fix:
+The bridge supports bounded structured ingestion for CSV/XLSX and ZIP containers carrying those formats. GPT-visible output contains structured rows/columns and pagination metadata rather than raw report bytes/base64.
 
-- `report_file_get` uses provider `report_file`, request style `opaque_file_ref`;
-- it is exempted from the normal Seller GET/query-builder rule while `report_file` itself is restricted to `opaque_file_ref`.
+### 4. Generated PDF/document delivery
 
-### 3. AI-readable CSV/XLSX/ZIP report ingestion
+Generated labels/acts/documents expose opaque refs. Direct Seller PDF responses are kept in memory behind an opaque ref. `report_file_get` returns bounded PDF text/metadata without `file_content_base64`.
 
-Implemented pure-JS parser inside the bridge:
+### 5. Exact request-schema repair
 
-- CSV -> `columns + rows + row_count + has_more + next_offset`;
-- XLSX -> OOXML ZIP reader, workbook/sharedStrings/sheets parsing;
-- ZIP containing CSV/XLSX supported;
-- bounded `sheet`, `offset`, `limit` parameters;
-- unsupported formats fail closed;
-- report bytes/base64 are not exposed to GPT.
+All 26 repaired operations have explicit request-shape tests. Prior guessed schemas were corrected against the source Swagger, including finance month formats, marked-products date objects, postings filters, cargo payloads, package-label arrays, transport cargo identifiers and placement date-window constraints.
 
-### 4. Generated document/PDF delivery
+### 6. Full 26/26 E2E gate
 
-Implemented safe delivery for generated labels/acts/documents:
+`run_all_26_e2e_gate.mjs` is wired into the read-effect CI and passes on Linux, Windows and the frozen runtime. It covers:
 
-- status/get endpoints returning `file_url`, `cdn_url`, or `label_url` redact those URLs;
-- GPT receives `generated_file_ref`;
-- `report_file_get` resolves that opaque ref and returns PDF text/metadata;
-- direct Seller PDF endpoints convert returned bytes into an in-memory opaque ref;
-- subsequent `report_file_get` on an inline PDF performs **zero** extra network requests;
-- `file_content_base64` is removed from GPT-visible output;
-- PDF output currently exposes bounded text extraction metadata (`format`, `text_extract_available`, `text_extract`, `text_truncated`).
+- 13 report workflows through create -> report_info -> opaque ref -> structured file read;
+- 2 direct PDF workflows;
+- 7 async generated-document workflows;
+- 3 validation READs;
+- `chat_history_v3` with personal-data gating.
 
-Covered URL-backed retrieval operations:
+### 7. Installable nodebundle packaging boundary
 
-- `cargoes_label_get`
-- `posting_fbs_package_label_get_v1`
-- `cargoes_label_transport_by_order_status`
-- `cargoes_label_transport_status`
-- `fbp_act_from_get`
-- `fbp_act_to_get`
-- `fbp_label_get`
+The previous packaging gap is closed.
 
-Direct PDF operations:
+Before closure, `dist-step7-candidate/shared/*` contained the repaired runtime while `dist/ozon-seller-mcp-nodebundle.js` still contained the older embedded shared sections. Step9 treated the existing bundle as an input and therefore did not guarantee that the installable bundle matched the repaired candidate.
 
-- `posting_fbs_act_container_labels`
-- `posting_fbs_package_label`
+Added deterministic materializer:
 
-### 5. Exact Swagger request-schema repair for all 26
+`tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/materialize_installable_nodebundle.py`
 
-The initial repair patch contained several guessed/oversimplified schemas. These were explicitly corrected against the source Swagger.
+It preserves the existing nodebundle bootstrap/stdio shell and replaces the explicitly delimited `/* BEGIN shared/... */` / `/* END shared/... */` runtime sections from the frozen authoritative `dist-step7-candidate/shared` sources. It normalizes LF output, verifies marker uniqueness/order, requires all repaired sections and emits a deterministic manifest.
 
-Corrections include:
+Added bundle-level wrapper gate:
 
-- finance report `date` is `YYYY-MM`, not `YYYY-MM-DD`;
-- `report_marked_products_sales_create.date` is an object `{from,to}`;
-- `report_postings_create.filter` now uses the actual Swagger fields (`sku`, `status_alias`, `statuses`, `title`, `warehouse_id`, `delivery_method_id`, `is_express`, etc.) and removes the invented `status` field;
-- `cargoes_label_create.cargoes[]` uses objects with `cargo_id`;
-- `posting_fbs_package_label_create.posting_number` is an array;
-- `cargoes_transport_label_create.transport_cargo_ids[]` is string-valued and bounded;
-- realization report month numeric bound is enforced;
-- placement report date format/order and 31-calendar-day limit are enforced.
+`tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_installable_bundle_26_e2e_gate.mjs`
 
-## CI evidence already green
+The wrapper extracts the shared runtime sections actually embedded in the installable bundle, verifies the repaired sections are byte-equivalent to the frozen candidate, and executes the existing `run_all_26_e2e_gate.mjs` against those extracted bundle sections. Candidate and installable bundle therefore use the same 26-workflow acceptance logic.
 
-Latest fully completed CI run before pause:
+Added packaging CI:
 
-- workflow run: `33643793664`
-- source commit: `b6911ce7e787ccacdeffc16d8ce24e9eb2f1ef10`
-- conclusion: **success**
-- Ubuntu: success
-- Windows: success
-- freeze-runtime: success
+`.github/workflows/ozon-read-effect-packaging.yml`
 
-The run verified:
+The workflow requires:
 
-1. syntax-check repaired runtime;
-2. 271 Seller READ surface;
-3. exact schemas for all 26 repaired reads;
-4. opaque report-file workflow;
-5. AI-readable report parser;
-6. generated document delivery;
-7. deterministic runtime artifact build.
+1. deterministic nodebundle materialization;
+2. Node syntax PASS;
+3. candidate 26/26 E2E PASS;
+4. installable-bundle 26/26 E2E PASS using the same gate;
+5. deterministic fixed-point PASS;
+6. Linux artifact PASS;
+7. Windows artifact PASS;
+8. byte-identical Linux/Windows bundle and manifest;
+9. repository `dist` rematerialization identical to both platform artifacts;
+10. final bundle-level 26/26 PASS before committing `dist`.
 
-Important limitation: the newly added `run_all_26_e2e_gate.mjs` is not yet invoked by the workflow. Therefore the mock full-chain 26/26 E2E runner is **prepared, not CI-certified**.
+## Final packaging CI evidence
 
-## Important commits in this work segment
+Packaging source commit:
 
-- `728f89da20a6e4528f85b4fc16df440f2a74a5a4` — exempt opaque internal report-file GET from Seller query-builder rule; CI green.
-- `1adf3800285be18b0e60ce9b4719260210e2e5fb` — add AI-readable CSV/XLSX parser source patch.
-- `ec231cd266f83dbbc82ae78e2c30795c435c2761` — add deterministic XLSX/CSV parser gate.
-- `201ac000422fd70c46a14680553150739661b3bc` — wire report parser into CI.
-- `0d00e3a4544f931705cfa80881d7393b67d5e843` — update report-file gate to structured CSV rows; Linux/Windows/freeze green.
-- `3755dd6c9d50ef3e00e18ee98913b0892524e498` — add generated-document opaque delivery source patch.
-- `cad07572fbbb2e4428cd2fa013e60879be8ef408` — add generated PDF delivery gate.
-- `095dccbe02cebe58fe862551336dbf03a3bad243` — wire generated-document delivery into CI.
-- `7aabe374ed502f674d7423394e5ff2b151aebef1` — fix final generated-document test assertion.
-- `208a8b86cf79d7ef6d150c76913c51c49ee98014` — frozen runtime with generated-document opaque delivery.
-- `be3628a414e86ee222f90cace85f688ef5f57449` / `f57faac19135ef5c73a710f54b473afb03cef57e` — exact 26-schema repair source patch and numeric-bound refinement.
-- `39d5a0bf8b3b571e635463ddf43599a04e6873aa` — exact 26-schema gate.
-- `686a73c982768318094909a0bb6f26a81af64a2f` — wire exact 26-schema gate into CI.
-- `883c22d89f9ebc13706e224080e9f7b4757a3752` — complete 26-operation E2E delivery matrix.
-- `b6911ce7e787ccacdeffc16d8ce24e9eb2f1ef10` — add full mock `run_all_26_e2e_gate.mjs` runner.
+`ae4842aa032f0f62622edea3e72130669bbf63bb`
 
-## E2E matrix
+Workflow run:
 
-Authoritative prepared chain matrix:
+`33706019796`
+
+Conclusion:
+
+**SUCCESS**
+
+Platform/freeze result:
+
+- Ubuntu build-and-test: **PASS**
+- Windows build-and-test: **PASS**
+- deterministic fixed-point: **PASS** on both platforms
+- Linux/Windows internal bundle bytes: **IDENTICAL**
+- Linux/Windows materialization manifests: **IDENTICAL**
+- repository freeze materialization: **PASS**
+- final installable-bundle 26/26 gate: **PASS**
+- certified `dist` commit: **PASS**
+
+Materialization manifest recorded:
+
+- `section_count = 7`
+- `changed_section_count = 5`
+- `output_bytes = 659904`
+- `output_sha256 = 0f3d7d4f230e579d2c3fe6d9f831f67c819bab285449a2ffd9c7de21b5cab6c0`
+- `stdio_shell_preserved = true`
+- line endings: `LF`
+
+Exactly five embedded sections changed from the old installable bundle:
+
+- `shared/ozon_contract.js`
+- `shared/ozon_entitlements.js`
+- `shared/ozon_operation_registry.js`
+- `shared/ozon_provider.js`
+- `shared/provider_transport_core.js`
+
+The unchanged embedded sections were also rematerialized/verified from the authoritative candidate:
+
+- `shared/runtime_names.js`
+- `shared/ozon_credentials.js`
+
+The old installable template was 589363 bytes with SHA-256 `b961f7b0b7c080dfa13df197acdfd4e38b69dc3e6ff5141d696828274a242947`.
+
+## Important commits in the closure segment
+
+- `c012326d855b1a57ce83c9a839ac191545cdde8b` — wire full 26-read E2E gate into Linux/Windows/freeze CI.
+- `ae4842aa032f0f62622edea3e72130669bbf63bb` — add deterministic installable materializer, bundle 26/26 wrapper gate and cross-platform packaging workflow.
+- `8e0a4707ba437318bcf2e0034a6f697b048504b0` — freeze and ship the certified 271-read repaired installable nodebundle.
+
+## Authoritative 26-operation E2E matrix
 
 `tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/OZON_SELLER_26_REPAIRED_READ_E2E_MATRIX_2026-09-02.json`
 
-It records for each of the 26 aliases:
+It records endpoint, result class, first-call identifier/result, exact next READ for async workflows, opaque file step where applicable and GPT-consumable output shape.
 
-- endpoint;
-- result class;
-- first-call identifier/result;
-- exact next READ for async workflows;
-- opaque file step where applicable;
-- GPT-consumable output shape.
+## Repair decision
 
-## Exact resume point
+The READ-effect repair is now complete at all three relevant boundaries:
 
-On explicit operator command to continue, **do not return to live Ozon product tests yet**.
+1. **candidate/frozen shared runtime — certified**;
+2. **cross-platform generated runtime artifact — certified**;
+3. **actual installable `dist/ozon-seller-mcp-nodebundle.js` — certified and committed**.
 
-Resume in this order:
+Do not reopen this repair merely because the historical Step9 workflow accepted an already-existing bundle as input. That packaging gap is now covered by the dedicated deterministic installable packaging workflow.
 
-1. Wire `run_all_26_e2e_gate.mjs` into both matrix jobs and `freeze-runtime` in `.github/workflows/ozon-read-effect-repair.yml`.
-2. Run Linux + Windows + freeze.
-3. If any 26/26 mock chain fails, fix the exact chain/schema/result handling and rerun; do not skip failures.
-4. After the full mock 26/26 E2E gate is green, inspect the final frozen runtime and artifact manifest.
-5. Update this checkpoint/authority with the final green E2E run IDs and commit SHA.
-6. Only then decide whether to merge/port the repair and return to the paused live Ozon primary gate / STD-10 forensic workflow.
+## Next project resume point
 
-## Do not do while paused
+The repair branch itself needs no further functional work before returning to product validation.
 
-- Do not execute more GitHub writes except an explicit operator-requested correction to this checkpoint.
-- Do not start or resume live Ozon Seller API tests.
-- Do not resume STD-10/STD-12.
-- Do not resume the multi-AI workstream.
-- Do not claim the final all-26 E2E gate is green until `run_all_26_e2e_gate.mjs` is actually wired and passes on Linux and Windows.
+Next project action after this checkpoint:
+
+1. return to the paused Ozon product-demand primary gate;
+2. rebase/port/use the certified repaired installable runtime as required by the test environment;
+3. resume the previously paused STD-10 historical stock/damage forensic investigation from its authoritative checkpoint;
+4. preserve `NO_SKIP_ON_FAILURE` and one explicit Ozon business request at a time;
+5. keep STD-12 paused until STD-10 is closed.
+
+Do not resume the separate multi-AI workstream as part of this handoff.
