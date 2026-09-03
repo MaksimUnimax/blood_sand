@@ -23,58 +23,65 @@ That code belongs only to the frozen forensic workflow.
 - standalone aliases exercised: `13/26`
 - collection-complete/partial/provider-fail: `13/26`
 - batch coverage: `0/26`
-- open numbered defects: `4`
+- open numbered defects: `5`
 
 ## Open defects
 
 - DEFECT-001: generic report-file reads privacy-blocked; confirmed on 10 report classes through NEW-11.
-- DEFECT-002: planning metadata inconsistency on NEW-02/03; NEW-04/05/06/07/08/09/11/12/13 and tested report-info paths are clean counterexamples.
+- DEFECT-002: planning metadata inconsistency on NEW-02/03; multiple later create/report-info paths are clean counterexamples.
 - DEFECT-003: `report_postings_create.delivery_schema` case mismatch, `FBO` => 400, `fbo` => 200.
-- DEFECT-004: `report_info.additional_data` key/value privacy-redaction bypass; confirmed on NEW-09. NEW-11 did not reproduce it.
+- DEFECT-004: `report_info.additional_data` key/value privacy-redaction bypass; confirmed on NEW-09.
+- DEFECT-005: `supply_order_list` active template/validator accepts required `filter.states=[]`, but provider rejects the exact template with HTTP400/code3.
 
-## NEW-13 preserved state
+## NEW-14 setup preserved state
 
-Run1 `finance_decompensation_report` with `date=2026-08`:
-- request `2c794bbd-96fc-486c-ae22-04b36d5e98e7`
-- HTTP404 / provider code `5`
+Run1 exact runtime-template setup:
+`{"operation":"supply_order_list","params":{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}}`
+
+Observed:
+- request `deba7764-b75b-4fbd-ada0-7e163844d109`
+- HTTP400 / provider code `3`
 - physical requests `1`
 - logical business results `1`
 - external request `true`
 - automatic retry `false`
-- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
-- entitlement key `POST /v1/finance/decompensation`
 - exact request preserved `true`
-- fingerprints `9a67428a == 9a67428a`
-- transformed `false`
-- no report code returned.
+- fingerprints `d0967438 == d0967438`
+- transformed `false`.
+
+Runtime findings:
+- `normalizeSupplyOrderListParams` requires `filter.states`.
+- it delegates to `validateEnumArray`.
+- `validateEnumArray` permits empty arrays because it only validates present elements.
+- active registry template explicitly uses `states: []`.
 
 Classification:
-`COLLECTION_COMPLETE_PROVIDER_FAIL`
+`DEFECT-005 — SUPPLY_ORDER_LIST_EMPTY_STATES_TEMPLATE_PROVIDER_INVALID`
 
 Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_2026-09-03.md`
+- RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_1_SUPPLY_ORDER_LIST_EMPTY_STATES_PROVIDER_400_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_14_SETUP_RUN_1_SUPPLY_ORDER_LIST_EMPTY_STATES_PROVIDER_400_2026-09-03.md`
 
-## NEW-14 setup contract
+## Exact next action
 
-`cargoes_label_create` requires real integer `supply_id`.
+Issue a materially different `supply_order_list` setup command with a non-empty explicit array containing all allowed runtime states:
+- DATA_FILLING
+- READY_TO_SUPPLY
+- ACCEPTED_AT_SUPPLY_WAREHOUSE
+- IN_TRANSIT
+- ACCEPTANCE_AT_STORAGE_WAREHOUSE
+- REPORTS_CONFIRMATION_AWAITING
+- REPORT_REJECTED
+- COMPLETED
+- REJECTED_AT_SUPPLY_WAREHOUSE
+- CANCELLED
+- OVERDUE
 
-Verified registry setup READ:
-- alias `supply_order_list`
-- `POST /v3/supply-order/list`
-- effect `READ`
-- `safety_class: READ_SAFE`
-- template params: `filter.states=[]`, `limit=100`, `sort_by=ORDER_CREATION`, `sort_dir=DESC`.
+Keep `limit=100`, `sort_by=ORDER_CREATION`, `sort_dir=DESC`.
 
-If the setup returns only order ids, next use explicit `supply_order_get` / `supply_order_details` for a returned real order id to resolve an actual `supply_id`. Never invent IDs.
-
-## Exact next command
-
-`OZON_API_V1 {"operation":"supply_order_list","params":{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}}`
-
-Persist its result before any further Ozon command.
+Persist its result before any further Ozon command. If it returns real order ids, use explicit safe reads to resolve a real supply id. Never invent IDs.
 
 Do not touch frozen STD-10. Do not patch runtime.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_13_COMPLETE_NEW_14_SUPPLY_ORDER_LIST_SETUP_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_14_SETUP_DEFECT_005_NONEMPTY_ALL_STATES_NEXT_DEFECTS_001_002_003_004_005_OPEN_STD_10_FROZEN`
