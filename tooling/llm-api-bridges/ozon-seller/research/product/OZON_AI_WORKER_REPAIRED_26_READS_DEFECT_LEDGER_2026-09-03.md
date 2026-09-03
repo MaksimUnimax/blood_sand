@@ -25,24 +25,9 @@ Confirmed safe-report reproductions with personal-data setting OFF:
 
 All eight file reads were locally `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
 
-NEW-08 reproduction:
-- source code `REPORT_marked_products_sales_2093109_1788408823_01a06578-fdec-762d-869c-fe3b626796cc`;
-- opaque ref `rpf_e414b482-5e63-4211-99aa-be3ed53ff09b`;
-- request `policy-7fb3e562-2c99-43a9-a203-edae0701f579`;
-- fingerprint `c35d1869`;
-- HTTP `0`;
-- physical requests `0`;
-- external request `false`;
-- entitlement `POLICY_BLOCKED / personal_data_setting_off`;
-- error `OPERATION_DISABLED_BY_USER`;
-- stage `personal_data_policy`;
-- automatic retry `false`.
-
-Evidence:
+Latest evidence:
 - RAW `live-runs/repaired-26/raw/NEW_08_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
 - parsed `live-runs/NEW_08_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
-
-This eighth safe report class further confirms generic helper-policy behavior rather than report-type-specific sensitivity.
 
 ## DEFECT-002 — transformed create metadata inconsistent with exact_request_preserved
 
@@ -62,15 +47,10 @@ Clean counterexamples narrow the scope:
 - NEW-07 `report_placement_by_supplies_create`: `2a4cb92d == 2a4cb92d`, transformed false, HTTP200.
 - NEW-08 `report_marked_products_sales_create`: `0630aa10 == 0630aa10`, transformed false, HTTP200.
 - NEW-09 `report_realization_posting_create`: `50a8fdbc == 50a8fdbc`, transformed false, HTTP200.
-- tested `report_info` steps so far also preserve identical fingerprints.
+- NEW-09 `report_info`: `604b53c9 == 604b53c9`, transformed false, HTTP200.
+- other tested `report_info` steps also preserve identical fingerprints.
 
-NEW-09 is another clean repaired create-path counterexample, so DEFECT-002 remains specific to particular planner/normalization paths rather than repaired create aliases generally.
-
-NEW-09 evidence:
-- RAW `live-runs/repaired-26/raw/NEW_09_RUN_1_REPORT_REALIZATION_POSTING_CREATE_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_09_RUN_1_REPORT_REALIZATION_POSTING_CREATE_2026-09-03.md`
-
-Continue scope collection through remaining repaired create paths and later batch tests.
+Therefore DEFECT-002 is not universal; continue scope collection through remaining repaired paths and later batch tests.
 
 ## DEFECT-003 — report_postings_create delivery_schema case mismatch
 
@@ -83,6 +63,46 @@ Live A/B on the same fully past interval:
 
 Bridge accepts an unconstrained string array and does not prevent or safely normalize the provider-invalid uppercase value.
 
+## DEFECT-004 — report_info additional_data key/value privacy-redaction bypass
+
+Classification: `REPORT_INFO_ADDITIONAL_DATA_KEY_VALUE_PRIVACY_REDACTION_BYPASS`
+Status: `OPEN_CONFIRMED_COLLECTING_SCOPE`
+Severity: privacy / personal-data disclosure
+
+NEW-09 Run2 `report_info` for `finance_realization_posting` returned HTTP200 while the operator's personal-data setting was OFF and exposed identifying receiver metadata inside `result.additional_data`.
+
+The leaked values are intentionally **not** copied into repository evidence. Persisted evidence masks every `additional_data.value` while retaining the structural field names needed to prove and reproduce the bypass.
+
+Observed sensitive semantic keys included receiver identity/tax fields such as:
+- `ReceiverName`
+- `ReceiverInn`
+- `ReceiverKpp`
+
+Transport/planner facts:
+- request `0ab507a4-3068-43f5-8a5d-54bdc3d09d55`
+- HTTP200
+- physical requests 1
+- external request true
+- fingerprints `604b53c9 == 604b53c9`
+- transformed false
+- exact_request_preserved true
+- report type `finance_realization_posting`
+- opaque ref `rpf_daf0af28-8915-4ef5-9a27-d0d8f2562c95`.
+
+### Root-cause evidence
+
+Current Bridge result sanitization checks actual JSON property names/paths. For `report_info` it explicitly redacts the top-level provider `file` field, and generic sensitive matching also operates on JSON field names.
+
+`additional_data` stores semantic field names as the **value** of a property named `key`, with the corresponding data in a sibling property named `value`. Thus objects shaped like `{key: "ReceiverName", value: <personal data>}` bypass a redactor that only evaluates the literal property names `key` and `value`.
+
+This explains why the provider file URL was correctly redacted while identifying receiver data in `additional_data` reached the AI chat.
+
+Evidence:
+- privacy-safe RAW: `live-runs/repaired-26/raw/NEW_09_RUN_2_REPORT_INFO_PRIVACY_LEAK_SANITIZED_RAW_2026-09-03.json`
+- parsed: `live-runs/NEW_09_RUN_2_REPORT_INFO_PRIVACY_LEAK_2026-09-03.md`
+
+Do not patch yet. Continue scope collection through other finance/document report-info outputs to determine whether the same key/value encoding is reused.
+
 ## Patch prohibition
 
-Do not patch DEFECT-001..003 until the standalone + multi-command batch collection sweep is complete.
+Do not patch DEFECT-001..004 until the standalone + multi-command batch collection sweep is complete.
