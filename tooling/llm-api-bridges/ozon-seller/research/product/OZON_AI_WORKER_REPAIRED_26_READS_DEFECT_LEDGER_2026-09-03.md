@@ -6,9 +6,7 @@ Mode: `COLLECT_ALL_DEFECTS_BEFORE_PATCHING`
 
 ## Governing rule
 
-During this phase, discovered defects are persisted but **not patched immediately**. Continue the complete standalone + multi-command batch test inventory and collect all independent failures first. After the full test sweep is exhausted, patch the complete defect set, rebuild, and rerun affected tests.
-
-The only exception is a failure that makes further testing technically impossible across the remaining gate.
+During this phase, discovered defects are persisted but **not patched immediately**. Continue the complete standalone + multi-command batch inventory first. Patch only after the test sweep is exhausted, unless one defect makes further testing technically impossible.
 
 ## DEFECT-001 — report_file_get statically gated as personal-data read
 
@@ -17,72 +15,44 @@ Classification:
 
 Status: `OPEN_COLLECTING_SCOPE`
 
-### Discovery — NEW-01 Run3
+Confirmed reproductions with personal-data setting OFF:
 
-Source workflow:
-`report_products_create -> report_info -> report_file_get`
+1. NEW-01 `seller_products`: local `POLICY_BLOCKED`, physical requests `0`, external request `false`.
+2. NEW-02 `seller_returns_v2`: local `POLICY_BLOCKED`, physical requests `0`, external request `false`.
 
-Observed on safe `seller_products` report:
+Do not patch yet. Continue determining scope across remaining report/document classes.
 
-- opaque ref `rpf_bd4312a0-5525-4c5c-9332-be8fc2b912b8`;
-- personal-data setting OFF;
-- local `POLICY_BLOCKED`;
-- physical business requests `0`;
-- external request executed `false`;
-- `OPERATION_DISABLED_BY_USER`;
-- reason `personal_data_setting_off`.
-
-Evidence:
-- `live-runs/NEW_01_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
-
-### Reproduction — NEW-02 Run3
-
-Source workflow:
-`report_returns_create_v2 -> report_info -> report_file_get`
-
-Observed on independent safe `seller_returns_v2` report:
-
-- opaque ref `rpf_c5978670-1bbe-47f5-9838-e843614a2514`;
-- request id `policy-a9bcf2bf-18eb-46ca-a3fd-5b20b79438bf`;
-- local `POLICY_BLOCKED`;
-- physical business requests `0`;
-- external request executed `false`;
-- HTTP `0`;
-- error `OPERATION_DISABLED_BY_USER`;
-- reason `personal_data_setting_off`.
-
-Evidence:
-- raw: `live-runs/repaired-26/raw/NEW_02_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
-- parsed: `live-runs/NEW_02_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
-
-Confirmed affected safe report types so far:
-1. `seller_products`;
-2. `seller_returns_v2`.
-
-Do not patch yet. Continue testing remaining report/document classes to establish complete scope, including cases that legitimately require the personal-data gate.
-
-## DEFECT-002 — planning metadata inconsistency on transformed NEW-02 create
+## DEFECT-002 — transformed create metadata inconsistent with exact_request_preserved
 
 Status: `OPEN_CANDIDATE_COLLECTING_SCOPE`
 
-Discovered: NEW-02 Run1 `report_returns_create_v2`.
+### NEW-02 Run1
 
-Observed:
+`report_returns_create_v2`:
 
-- logical command fingerprint `687fa368`;
-- physical command fingerprint `d1fbfbfe`;
+- logical fingerprint `687fa368`;
+- physical fingerprint `d1fbfbfe`;
 - `command_transformed=true`;
-- entitlement metadata simultaneously reports `exact_request_preserved=true`;
-- Ozon provider request succeeded HTTP 200 and returned report code.
+- entitlement metadata `exact_request_preserved=true`;
+- provider HTTP 200.
 
-NEW-02 Run2 `report_info` did **not** reproduce the anomaly:
+### NEW-03 Run1 reproduction
 
-- logical fingerprint `2d41fb57`;
-- physical fingerprint `2d41fb57`;
-- `command_transformed=false`.
+`report_postings_create`:
 
-Interpretation:
+- logical fingerprint `ec963df4`;
+- physical fingerprint `6274fae0`;
+- `command_transformed=true`;
+- entitlement metadata `exact_request_preserved=true`;
+- provider HTTP 400.
 
-The anomaly is currently scoped to NEW-02 create/planner handling. Determine whether the transformation is legitimate normalization with misleading `exact_request_preserved`, or an actual request-shape mutation that should be surfaced differently. Batch tests must also verify transform metadata consistency.
+This expands the anomaly from NEW-02 to at least two repaired create aliases. The NEW-03 HTTP400 itself is **not yet a separate Bridge defect**: the logical payload passed the exact runtime schema, but the test used `processed_at_to=2026-09-03T23:59:59Z`, which was still in the future at execution time. A new diagnostic request with a wholly past window is required before classifying the provider rejection.
+
+Runtime contract confirms `report_postings_create.filter.delivery_schema` is an array of strings and both processed timestamps are `date-time`, so the logical payload shape was accepted by Bridge validation.
+
+Evidence:
+
+- RAW: `live-runs/repaired-26/raw/NEW_03_RUN_1_REPORT_POSTINGS_CREATE_HTTP400_RAW_2026-09-03.json`
+- parsed: `live-runs/NEW_03_RUN_1_REPORT_POSTINGS_CREATE_HTTP400_2026-09-03.md`
 
 Do not patch until collection sweep completes.
