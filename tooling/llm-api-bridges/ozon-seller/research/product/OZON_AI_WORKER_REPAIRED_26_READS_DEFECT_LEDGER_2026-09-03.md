@@ -22,26 +22,26 @@ Confirmed reproductions with personal-data setting OFF:
 6. NEW-06 `seller_placement_by_products`;
 7. NEW-07 `seller_placement_by_supplies`;
 8. NEW-08 `marked_products_sales`;
-9. NEW-09 `finance_realization_posting`.
+9. NEW-09 `finance_realization_posting`;
+10. NEW-11 `mutual_settlement`.
 
-All nine file reads were locally `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
+All ten file reads were locally `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
 
-NEW-09 reproduction:
-- opaque ref `rpf_daf0af28-8915-4ef5-9a27-d0d8f2562c95`;
-- request `policy-c52040e3-2327-4a14-be83-f786a928b053`;
-- fingerprint `928bfa76`;
+Latest NEW-11 reproduction:
+- opaque ref `rpf_18eb749e-08df-4b99-8107-f4dcbf0a2529`;
+- request `policy-58d43bb1-6126-4e4c-9178-7609dc7e858d`;
+- fingerprint `36df3b67`;
 - HTTP `0`;
 - physical requests `0`;
 - external request `false`;
 - entitlement `POLICY_BLOCKED / personal_data_setting_off`;
 - error `OPERATION_DISABLED_BY_USER`;
+- automatic retry `false`;
 - stage `personal_data_policy`.
 
 Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_09_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_09_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
-
-NEW-11 `mutual_settlement` has now reached a successful `report_info` with opaque ref `rpf_18eb749e-08df-4b99-8107-f4dcbf0a2529`; explicit `report_file_get` is next to determine whether DEFECT-001 scope extends to a tenth report class.
+- RAW `live-runs/repaired-26/raw/NEW_11_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_11_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
 
 ## DEFECT-002 — transformed create metadata inconsistent with exact_request_preserved
 
