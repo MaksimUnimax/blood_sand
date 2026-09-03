@@ -28,8 +28,8 @@ Do not touch:
 |---:|---|---|---|---|
 | 1 | NEW-01 | `report_products_create` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 2 | NEW-02 | `report_returns_create_v2` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001; create metadata = DEFECT-002 | PENDING |
-| 3 | NEW-03 | `report_postings_create` | IN_PROGRESS — lowercase fbo create PASS + report_info PASS; file read NEXT; DEFECT-002/003 confirmed | PENDING |
-| 4 | NEW-04 | `report_discounted_create` | PENDING | PENDING |
+| 3 | NEW-03 | `report_postings_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — lowercase fbo create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001; DEFECT-002/003 confirmed | PENDING |
+| 4 | NEW-04 | `report_discounted_create` | NEXT | PENDING |
 | 5 | NEW-05 | `report_warehouse_stock` | PENDING | PENDING |
 | 6 | NEW-06 | `report_placement_by_products_create` | PARTIAL_EXTERNAL_EVIDENCE — frozen STD-10 create cannot be reused | PENDING |
 | 7 | NEW-07 | `report_placement_by_supplies_create` | PENDING | PENDING |
@@ -57,61 +57,47 @@ Do not touch:
 
 ### DEFECT-001
 
-Generic safe report-file reads are statically privacy-blocked. Confirmed on NEW-01 and NEW-02; NEW-03 file read is now the next scope check.
+Generic safe report-file reads are statically privacy-blocked. Confirmed on three independent safe report types:
+- NEW-01 `seller_products`;
+- NEW-02 `seller_returns_v2`;
+- NEW-03 `seller_postings`.
+
+All three file reads: local `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
 
 ### DEFECT-002
 
-Repeated planning metadata inconsistency: physical fingerprint differs and `command_transformed=true` while entitlement reports `exact_request_preserved=true`. Confirmed on NEW-02 and NEW-03 create paths. NEW-03 Run4 `report_info` does not reproduce it.
+Repeated planning metadata inconsistency: physical fingerprint differs and `command_transformed=true` while entitlement reports `exact_request_preserved=true`. Confirmed on NEW-02 and NEW-03 create paths. NEW-03 `report_info` did not reproduce it.
 
 ### DEFECT-003
 
-`report_postings_create.filter.delivery_schema` case mismatch. Live A/B:
+`report_postings_create.filter.delivery_schema` case mismatch. Live A/B on same past range:
+- `["FBO"]` => HTTP400;
+- `["fbo"]` => HTTP200.
 
-- fully past range + `["FBO"]` => HTTP400;
-- same fully past range + `["fbo"]` => HTTP200 and report code.
+## NEW-03 final collection state
 
-Bridge schema accepts unconstrained strings and does not prevent/safely normalize the provider-invalid uppercase value.
-
-## NEW-03 evidence
-
-### Run3 — corrected lowercase create PASS
-
+Successful create:
 - request `8e92df34-abdc-450f-a82b-dd55605bb7ac`
-- HTTP200
-- physical requests 1
-- external request true
-- logical fingerprint `0507ce87`
-- physical fingerprint `9f11d567`
-- transformed true
-- exact_request_preserved true
 - report code `REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c`.
 
-RAW:
-`live-runs/repaired-26/raw/NEW_03_RUN_3_REPORT_POSTINGS_CREATE_LOWERCASE_FBO_PASS_RAW_2026-09-03.json`
-
-Parsed:
-`live-runs/NEW_03_RUN_3_REPORT_POSTINGS_CREATE_LOWERCASE_FBO_PASS_2026-09-03.md`
-
-### Run4 — report_info PASS
-
+Report-info PASS:
 - request `72342313-8c33-4e39-a047-56c01716cf28`
-- HTTP200
-- physical requests 1
-- external request true
-- report status `success`
+- status `success`
 - report type `seller_postings`
-- signed provider file field `[REDACTED]`
-- opaque ref `rpf_4619d324-8228-4c8e-b8be-c4c1ea05b92c`
-- logical fingerprint `9e13284f`
-- physical fingerprint `9e13284f`
-- transformed false
-- exact_request_preserved true.
+- opaque ref `rpf_4619d324-8228-4c8e-b8be-c4c1ea05b92c`.
+
+File-read policy block:
+- request `policy-5e9052c9-6106-4f28-846c-e1717fd88c1f`
+- HTTP0
+- physical requests 0
+- external request false
+- reason `personal_data_setting_off`.
 
 RAW:
-`live-runs/repaired-26/raw/NEW_03_RUN_4_REPORT_INFO_RAW_2026-09-03.json`
+`live-runs/repaired-26/raw/NEW_03_RUN_5_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
 
 Parsed:
-`live-runs/NEW_03_RUN_4_REPORT_INFO_READY_OPAQUE_FILE_REF_2026-09-03.md`
+`live-runs/NEW_03_RUN_5_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
 
 ## Progress
 
@@ -124,10 +110,7 @@ Parsed:
 
 ## Exact next collection step
 
-NEW-03 `report_file_get` for:
-`rpf_4619d324-8228-4c8e-b8be-c4c1ea05b92c`
-
-Record whether DEFECT-001 extends to the `seller_postings` report class. Do not patch during collection. After recording this result, advance to NEW-04 regardless of whether the existing static privacy defect reproduces.
+Start NEW-04 `report_discounted_create` with a fresh standalone create request. Persist its RAW/result before any following step. Do not patch any existing defect during collection.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_03_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_03_COLLECTION_COMPLETE_PARTIAL_FAIL_NEW_04_CREATE_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
