@@ -2,116 +2,150 @@
 
 Date: 2026-09-03
 Branch: `research/ozon-product-demand-2026-09-02`
-Status: `ACTIVE_PRIORITY_GATE`
+Status: `PAUSED_BY_OPERATOR_AFTER_NEW_01_RUN2`
 Rule: `NO_SKIP_ON_FAILURE`
 
 ## Purpose
 
-Before resuming the frozen product-demand/STD-10 investigation, fully validate all 26 Seller READ commands that were recovered by the READ-effect reclassification repair.
+Before resuming the frozen product-demand/STD-10 investigation, fully validate all 26 Seller READ commands recovered by the READ-effect reclassification repair against the real Ozon account/environment.
 
-This is a **live provider gate**, not a mock/CI gate. The existing 26/26 CI certification proves executable contracts and mocked end-to-end chains; this gate proves real Ozon behavior in the operator's account/environment.
+## Mandatory persistent evidence protocol
 
-## Global acceptance rule
+No live test or result may exist only in chat.
 
-A command is `PASS` only when its real provider behavior has been exercised to the strongest usable endpoint for its result class.
+Before any following operator command, every completed live step must be stored in GitHub as applicable:
 
-- Immediate JSON READ: one successful real provider request with semantically usable result.
-- Report generator: create request -> explicit `report_info` -> explicit `report_file_get` when a file is available; inspect structured rows. A create acknowledgement alone is `PARTIAL`, not `PASS`.
-- Direct PDF/document READ: real provider response -> opaque file ref -> explicit local `report_file_get`/document extraction path where applicable; verify no raw base64/signed URL leaks to GPT-visible result.
-- Async label/document generator: create -> explicit status/get retrieval -> opaque file ref -> explicit file read where the provider supplies a document.
-- Personal-data READ: verify existing Personal Data gate behavior and, after explicit operator enablement if required, real provider read.
+1. raw normalized `OZON_BATCH_RESULT_V1` / `OZON_RESULT_V1` under `live-runs/repaired-26/raw/`;
+2. parsed human-readable evidence with request ids, fingerprints, provider/HTTP/entitlement/execution metadata and semantic interpretation;
+3. this gate ledger updated to the exact current state;
+4. a recovery checkpoint preserving live codes/refs, frozen codes, completed steps and exact resume point;
+5. failures, policy blocks, processing states and parser failures are persisted before any retry/fix.
 
-On provider/business failure, stop immediately under `NO_SKIP_ON_FAILURE`; persist the failure and fix before advancing.
+## Two-dimensional final acceptance: standalone + batch
+
+Every repaired alias must pass both dimensions.
+
+### A. Standalone
+
+- Immediate JSON READ: successful real provider read with usable JSON.
+- Report workflow: create -> explicit `report_info` -> explicit `report_file_get` when file ready -> usable structured rows.
+- Direct PDF/document: provider response -> opaque file ref -> explicit local file/document read; no signed URL/base64 leak.
+- Async generated document: create -> explicit status/get -> opaque ref -> explicit document read where available.
+- Personal-data READ: verify privacy gate and then real provider read after explicit operator enablement if needed.
+
+### B. Multi-command batch
+
+Every repaired alias must also participate successfully in at least one real `OZON_API_V1` batch containing 2+ independent logical commands.
+
+For each batch verify and persist:
+
+- `result_count` equals expected delivered results;
+- `logical_business_result_count` matches logical commands;
+- `physical_business_request_count` matches actual provider requests after only permitted planner behavior;
+- result order matches command order;
+- each result has its own correct request_id, operation and fingerprint;
+- params/results do not cross-contaminate commands;
+- exact-request / transform metadata is correct per result;
+- unrelated commands are not unexpectedly coalesced;
+- controlled partial failure does not corrupt or misattribute other results.
+
+The 26-command gate cannot close until standalone and batch coverage are both complete.
 
 ## Isolation from frozen STD-10
 
-The frozen forensic report code must not be touched by this gate:
+Do not touch the frozen forensic report code during this gate:
 
 `REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`
 
-Any test of `report_placement_by_products_create` inside this gate must use a separate generic test report and must not call `report_info` on the frozen STD-10 code.
+NEW-06 must use a separate generic report chain.
 
 ## Gate inventory
 
-| # | ID | Alias | Class | Live state | Full-close requirement |
+| # | ID | Alias | Class | Standalone state | Batch state |
 |---:|---|---|---|---|---|
-| 1 | NEW-01 | `report_products_create` | report workflow | IN_PROGRESS — create PASS; `report_info` next | create -> report_info -> file -> structured rows |
-| 2 | NEW-02 | `report_returns_create_v2` | report workflow | PENDING | create -> report_info -> file -> structured rows |
-| 3 | NEW-03 | `report_postings_create` | report workflow | PENDING | create -> report_info -> file -> structured rows |
-| 4 | NEW-04 | `report_discounted_create` | report workflow | PENDING | create -> report_info -> file -> structured rows |
-| 5 | NEW-05 | `report_warehouse_stock` | report workflow | PENDING | create -> report_info -> file -> structured rows |
-| 6 | NEW-06 | `report_placement_by_products_create` | report workflow | PARTIAL_EXTERNAL_EVIDENCE | Run11 create PASS exists in STD-10, but frozen forensic code is off-limits; separate generic chain required for full gate PASS |
-| 7 | NEW-07 | `report_placement_by_supplies_create` | report workflow | PENDING | create -> report_info -> file -> structured rows |
-| 8 | NEW-08 | `report_marked_products_sales_create` | report workflow | PENDING | create -> report_info -> file -> structured rows |
-| 9 | NEW-09 | `report_realization_posting_create` | report workflow | PENDING | create -> report_info -> file -> structured rows |
-| 10 | NEW-10 | `finance_document_b2b_sales` | finance report/document | PENDING | real request + returned document/report retrieval to GPT-usable result |
-| 11 | NEW-11 | `finance_mutual_settlement_report` | finance report/document | PENDING | real request + returned document/report retrieval to GPT-usable result |
-| 12 | NEW-12 | `finance_compensation_report` | finance report/document | PENDING | real request + returned document/report retrieval to GPT-usable result |
-| 13 | NEW-13 | `finance_decompensation_report` | finance report/document | PENDING | real request + returned document/report retrieval to GPT-usable result |
-| 14 | NEW-14 | `cargoes_label_create` | async generated document | PENDING | create -> `cargoes_label_get` -> opaque ref -> document read |
-| 15 | NEW-15 | `posting_fbs_act_container_labels` | direct PDF/document | PENDING | direct PDF -> opaque ref -> document read |
-| 16 | NEW-16 | `posting_fbs_package_label` | direct PDF/document | PENDING | direct PDF -> opaque ref -> document read |
-| 17 | NEW-17 | `posting_fbs_package_label_create` | async generated document | PENDING | create -> `posting_fbs_package_label_get_v1` -> opaque ref -> document read |
-| 18 | NEW-18 | `cargoes_transport_label_by_order_create` | async generated document | PENDING | create -> `cargoes_label_transport_by_order_status` -> opaque ref -> document read |
-| 19 | NEW-19 | `cargoes_transport_label_create` | async generated document | PENDING | create -> `cargoes_label_transport_status` -> opaque ref -> document read |
-| 20 | NEW-20 | `fbp_act_from_create` | async generated document | PENDING | create -> `fbp_act_from_get` -> opaque ref -> document read |
-| 21 | NEW-21 | `fbp_act_to_create` | async generated document | PENDING | create -> `fbp_act_to_get` -> opaque ref -> document read |
-| 22 | NEW-22 | `fbp_label_create` | async generated document | PENDING | create -> `fbp_label_get` -> opaque ref -> document read |
-| 23 | NEW-23 | `fbp_draft_direct_product_validate` | immediate validation READ | PENDING | real provider JSON result |
-| 24 | NEW-24 | `fbp_draft_dropoff_product_validate` | immediate validation READ | PENDING | real provider JSON result |
-| 25 | NEW-25 | `fbp_draft_pickup_product_validate` | immediate validation READ | PENDING | real provider JSON result |
-| 26 | NEW-26 | `chat_history_v3` | gated sensitive READ | PENDING | privacy gate + explicit provider read + safe result |
+| 1 | NEW-01 | `report_products_create` | report workflow | IN_PROGRESS — create PASS + report_info PASS; file read remains | PENDING |
+| 2 | NEW-02 | `report_returns_create_v2` | report workflow | PENDING | PENDING |
+| 3 | NEW-03 | `report_postings_create` | report workflow | PENDING | PENDING |
+| 4 | NEW-04 | `report_discounted_create` | report workflow | PENDING | PENDING |
+| 5 | NEW-05 | `report_warehouse_stock` | report workflow | PENDING | PENDING |
+| 6 | NEW-06 | `report_placement_by_products_create` | report workflow | PARTIAL_EXTERNAL_EVIDENCE — frozen STD-10 create exists but cannot be reused | PENDING |
+| 7 | NEW-07 | `report_placement_by_supplies_create` | report workflow | PENDING | PENDING |
+| 8 | NEW-08 | `report_marked_products_sales_create` | report workflow | PENDING | PENDING |
+| 9 | NEW-09 | `report_realization_posting_create` | report workflow | PENDING | PENDING |
+| 10 | NEW-10 | `finance_document_b2b_sales` | finance report/document | PENDING | PENDING |
+| 11 | NEW-11 | `finance_mutual_settlement_report` | finance report/document | PENDING | PENDING |
+| 12 | NEW-12 | `finance_compensation_report` | finance report/document | PENDING | PENDING |
+| 13 | NEW-13 | `finance_decompensation_report` | finance report/document | PENDING | PENDING |
+| 14 | NEW-14 | `cargoes_label_create` | async generated document | PENDING | PENDING |
+| 15 | NEW-15 | `posting_fbs_act_container_labels` | direct PDF/document | PENDING | PENDING |
+| 16 | NEW-16 | `posting_fbs_package_label` | direct PDF/document | PENDING | PENDING |
+| 17 | NEW-17 | `posting_fbs_package_label_create` | async generated document | PENDING | PENDING |
+| 18 | NEW-18 | `cargoes_transport_label_by_order_create` | async generated document | PENDING | PENDING |
+| 19 | NEW-19 | `cargoes_transport_label_create` | async generated document | PENDING | PENDING |
+| 20 | NEW-20 | `fbp_act_from_create` | async generated document | PENDING | PENDING |
+| 21 | NEW-21 | `fbp_act_to_create` | async generated document | PENDING | PENDING |
+| 22 | NEW-22 | `fbp_label_create` | async generated document | PENDING | PENDING |
+| 23 | NEW-23 | `fbp_draft_direct_product_validate` | immediate validation READ | PENDING | PENDING |
+| 24 | NEW-24 | `fbp_draft_dropoff_product_validate` | immediate validation READ | PENDING | PENDING |
+| 25 | NEW-25 | `fbp_draft_pickup_product_validate` | immediate validation READ | PENDING | PENDING |
+| 26 | NEW-26 | `chat_history_v3` | gated sensitive READ | PENDING | PENDING |
 
-## Execution order
+## NEW-01 Run1 — create
 
-Default order is NEW-01 -> NEW-26. Do not batch unrelated commands.
+`report_products_create` live PASS:
 
-For every async workflow, finish that workflow completely before advancing to the next NEW-ID. If the provider reports `processing`, persist that state and re-check only with a later explicit command; do not silently poll.
+- request id `d1834261-fbc4-498a-ba2e-6873a6ead564`;
+- HTTP 200;
+- physical provider requests 1;
+- exact request preserved;
+- no transform;
+- code `REPORT_seller_products_2093109_1788403235_01a06523-ba89-7bab-b5a2-7512338e658e`.
 
-When an operation requires a real account-specific identifier (posting, cargo, supply, warehouse, etc.), use already-proven IDs when valid; otherwise perform the minimum necessary existing READ discovery as a setup substep and persist it. Setup reads do not count as one of the 26 repaired commands.
+Parsed evidence:
+`live-runs/NEW_01_RUN_1_REPORT_PRODUCTS_CREATE_2026-09-03.md`
 
-## NEW-01 live evidence
+Raw evidence:
+`live-runs/repaired-26/raw/NEW_01_RUN_1_REPORT_PRODUCTS_CREATE_RAW_2026-09-03.json`
 
-Run1 `report_products_create`:
+## NEW-01 Run2 — report_info
 
-- request id: `d1834261-fbc4-498a-ba2e-6873a6ead564`
-- physical business requests: `1`
-- external request executed: `true`
-- HTTP: `200`
-- elapsed: `1405 ms`
-- entitlement: `SUPPORTED_AND_ENTITLED / all_accounts`
-- exact request preserved: `true`
-- command transformed: `false`
-- returned report code: `REPORT_seller_products_2093109_1788403235_01a06523-ba89-7bab-b5a2-7512338e658e`.
+`report_info` live PASS:
 
-Create-step classification:
-`PASS_FIRST_LIVE_REPORT_PRODUCTS_CREATE`.
+- request id `067c8a20-6d5f-46bf-a156-b33f3f9952fd`;
+- HTTP 200;
+- physical provider requests 1;
+- status `success`;
+- report type `seller_products`;
+- signed provider file field redacted as `[REDACTED]`;
+- opaque bridge ref `rpf_bd4312a0-5525-4c5c-9332-be8fc2b912b8`;
+- exact request preserved;
+- no transform.
 
-NEW-01 remains `IN_PROGRESS` until the independent report is followed through `report_info` and, when available, `report_file_get` to usable structured rows.
+This live result proves the safe `report_info` handoff: provider URL is not exposed while an opaque file ref is available.
 
-Detailed evidence:
-`live-runs/NEW_01_RUN_1_REPORT_PRODUCTS_CREATE_2026-09-03.md`.
+Parsed evidence:
+`live-runs/NEW_01_RUN_2_REPORT_INFO_READY_OPAQUE_FILE_REF_2026-09-03.md`
 
-## Current progress
+Raw evidence:
+`live-runs/repaired-26/raw/NEW_01_RUN_2_REPORT_INFO_RAW_2026-09-03.json`
 
-- Fully closed: `0 / 26`
-- NEW-01: create PASS; `report_info` next.
-- Partial external evidence: `NEW-06` create call succeeded live during STD-10 Run11, but its forensic code is frozen and not reusable for this gate.
-- Active next command: `NEW-01 report_info` for `REPORT_seller_products_2093109_1788403235_01a06523-ba89-7bab-b5a2-7512338e658e`.
+## Current progress at pause
 
-## Frozen workstreams while this gate runs
+- Fully final-closed: `0 / 26`.
+- NEW-01 standalone: create PASS + report_info PASS; explicit `report_file_get` remains.
+- NEW-01 batch: PENDING.
+- NEW-02..NEW-26: not started except NEW-06 external partial create evidence from frozen STD-10.
+- STD-10 remains frozen after Run11.
 
-- STD-10: frozen after Run11.
-- STD-12: paused.
-- STD-13..STD-20: paused.
-- CAP-01..CAP-23: paused.
-- Multi-AI workstream: remains paused.
+## Exact standalone resume point
 
-## Resume condition for product-demand gate
+When the operator explicitly resumes this gate, NEW-01 continues from the already-issued opaque ref:
 
-Only after all 26 rows are `PASS` (or an explicitly accepted, evidence-backed provider entitlement boundary is resolved and recorded) may the product-demand gate resume.
+`rpf_bd4312a0-5525-4c5c-9332-be8fc2b912b8`
 
-First command on STD-10 resume remains the previously frozen `report_info` call for its preserved report code.
+The next standalone step is the explicit `report_file_get` for that ref. Do not recreate the product report and do not repeat `report_info` unless the ref has expired and that expiration is itself persisted as evidence.
+
+Batch coverage must also be scheduled and persisted before NEW-01 can be final-closed.
 
 Checkpoint:
-`REPAIRED_26_READS_LIVE_GATE_0_OF_26_COMPLETE_NEW_01_CREATE_PASS_REPORT_INFO_NEXT_STD_10_FROZEN`
+`REPAIRED_26_READS_LIVE_GATE_PAUSED_NEW_01_CREATE_AND_REPORT_INFO_PASS_FILE_READ_NEXT_BATCH_REQUIRED_STD_10_FROZEN`
