@@ -35,7 +35,7 @@ That code belongs only to the frozen forensic STD-10 workflow.
 | 5 | NEW-05 | `report_warehouse_stock` | COLLECTION_COMPLETE_PARTIAL_FAIL — real FBS setup PASS + create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 6 | NEW-06 | `report_placement_by_products_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — independent create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001; no transform anomaly | PENDING |
 | 7 | NEW-07 | `report_placement_by_supplies_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001; no transform anomaly | PENDING |
-| 8 | NEW-08 | `report_marked_products_sales_create` | NEXT | PENDING |
+| 8 | NEW-08 | `report_marked_products_sales_create` | IN_PROGRESS — create PASS clean metadata; report_info NEXT | PENDING |
 | 9 | NEW-09 | `report_realization_posting_create` | PENDING | PENDING |
 | 10 | NEW-10 | `finance_document_b2b_sales` | PENDING | PENDING |
 | 11 | NEW-11 | `finance_mutual_settlement_report` | PENDING | PENDING |
@@ -58,50 +58,42 @@ That code belongs only to the frozen forensic STD-10 workflow.
 ## Defects collected
 
 - DEFECT-001: static privacy block on safe `report_file_get`, confirmed on 7 report types: `seller_products`, `seller_returns_v2`, `seller_postings`, `seller_discounted`, `seller_stocks`, `seller_placement_by_products`, `seller_placement_by_supplies`.
-- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean repaired create counterexamples include NEW-04, NEW-05, NEW-06 and NEW-07; tested `report_info` paths are also clean.
+- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean repaired create counterexamples now include NEW-04, NEW-05, NEW-06, NEW-07 and NEW-08; tested `report_info` paths are also clean.
 - DEFECT-003: `report_postings_create.delivery_schema` uppercase/lowercase mismatch (`FBO` 400 vs `fbo` 200).
 
 Defect authority:
 `OZON_AI_WORKER_REPAIRED_26_READS_DEFECT_LEDGER_2026-09-03.md`
 
-## NEW-07 chain summary
+## NEW-08 Run1 — create PASS
 
-### Run1 — create PASS
-- request `5c5d7784-4989-4ed1-9724-70d3aa3adb5e`
-- HTTP200, physical1, external true
-- fingerprints `2a4cb92d == 2a4cb92d`
+Operation: `report_marked_products_sales_create`
+Completed date interval: `2026-09-01..2026-09-02`.
+
+- request `f32ff016-3582-4302-903f-af02f3afd699`
+- HTTP200
+- elapsed `1516 ms`
+- logical business result count `1`
+- physical business requests `1`
+- external request true
+- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
+- logical fingerprint `0630aa10`
+- physical fingerprint `0630aa10`
 - transformed false
-- report code `REPORT_seller_placement_by_supplies_2093109_1788408279_01a06570-b345-7114-9532-c1476a0c61e2`.
+- exact_request_preserved true
+- report code `REPORT_marked_products_sales_2093109_1788408823_01a06578-fdec-762d-869c-fe3b626796cc`.
 
-### Run2 — report_info PASS
-- request `c8c54b96-4560-4194-bf70-c85ac449689c`
-- HTTP200, status `success`
-- report type `seller_placement_by_supplies`
-- opaque ref `rpf_49f4be70-84e2-40b7-8224-6a58e409cf29`
-- fingerprints `08962c14 == 08962c14`
-- transformed false.
+No new defect. NEW-08 is another clean counterexample for DEFECT-002.
 
-### Run3 — report_file_get POLICY_BLOCKED
-- request `policy-a67134cb-346f-433b-881b-9f89e4410899`
-- fingerprint `baf1c4f3`
-- HTTP0
-- physical0
-- external false
-- `POLICY_BLOCKED / personal_data_setting_off`
-- error `OPERATION_DISABLED_BY_USER`.
+RAW:
+`live-runs/repaired-26/raw/NEW_08_RUN_1_REPORT_MARKED_PRODUCTS_SALES_CREATE_RAW_2026-09-03.json`
 
-This is DEFECT-001 reproduction #7. NEW-07 collection is complete enough to advance.
-
-RAW Run3:
-`live-runs/repaired-26/raw/NEW_07_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
-
-Parsed Run3:
-`live-runs/NEW_07_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
+Parsed:
+`live-runs/NEW_08_RUN_1_REPORT_MARKED_PRODUCTS_SALES_CREATE_2026-09-03.md`
 
 ## Progress
 
 - Fully final-closed: `0/26`.
-- Standalone aliases exercised: `7/26`.
+- Standalone aliases exercised: `8/26`.
 - Collection-complete/partial-fail rows: `7/26`.
 - Open numbered defects: `3`.
 - Batch coverage: `0/26`.
@@ -110,10 +102,10 @@ Parsed Run3:
 
 ## Exact next collection step
 
-Start NEW-08 `report_marked_products_sales_create`. Active runtime contract requires `params.date.from` and `params.date.to` as `date` strings. Use a fresh completed interval and persist the result before any following command.
+NEW-08: one explicit `report_info` for:
+`REPORT_marked_products_sales_2093109_1788408823_01a06578-fdec-762d-869c-fe3b626796cc`
 
-Exact next payload:
-`{"operation":"report_marked_products_sales_create","params":{"date":{"from":"2026-09-01","to":"2026-09-02"}}}`
+Persist the result before any following command. If ready, later call `report_file_get` on NEW-08's opaque ref to scope DEFECT-001. Do not patch runtime.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_07_COMPLETE_PARTIAL_FAIL_NEW_08_CREATE_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_08_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
