@@ -346,8 +346,8 @@ Architecture remains:
 ## P2 substeps
 
 - P2.1 `[DONE]` Identity/device persistence foundation.
-- P2.2 `[ACTIVE]` Email OTP request/verify, abuse controls, durable delivery and portal session.
-- P2.3 `[PLANNED]` Device authorization start/approve/deny/expire plus client idempotency.
+- P2.2 `[DONE]` Email OTP request/verify, abuse controls, durable delivery and portal session.
+- P2.3 `[NEXT]` Device authorization start/approve/deny/expire plus client idempotency.
 - P2.4 `[PLANNED]` Short-lived access-token auth plus opaque refresh rotation/reuse detection.
 - P2.5 `[PLANNED]` Device exchange/list/revoke/device limits and transactional audit.
 - P2.6 `[PLANNED]` Portal activation flow plus simulated extension client and E2E.

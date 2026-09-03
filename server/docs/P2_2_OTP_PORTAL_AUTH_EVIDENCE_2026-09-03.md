@@ -1,6 +1,6 @@
 # P2.2 OTP portal authentication evidence
 
-Status: LOCAL CANDIDATE — P2.2 ACTIVE  
+Status: CODE CI ACCEPTED — documentation acceptance pending final-head CI  
 Date: 2026-09-03
 
 ## Recovery and runtime
@@ -57,5 +57,8 @@ files remain byte-identical (SHA-256: `9a7cde34…5af56` for 0000 and
 - Audit/rate-limit T2 checks verify persisted data excludes raw email/IP, OTP,
   portal/CSRF tokens and delivery ciphertext; IP keys are HMAC pseudonyms.
 
-Remote CI acceptance, roadmap completion, and the durability bundle are pending
-the commit/push gates.
+Implementation commit `f1b493ad0602bebd5726dc275979b271c2c6025d` was accepted by
+Server CI push run `33743966576`:
+https://github.com/MaksimUnimax/blood_sand/actions/runs/33743966576.
+The workflow passed checkout, frozen setup, lint, format, typecheck, unit,
+real PostgreSQL integration, migration, OpenAPI, Bridge guard, and build.
