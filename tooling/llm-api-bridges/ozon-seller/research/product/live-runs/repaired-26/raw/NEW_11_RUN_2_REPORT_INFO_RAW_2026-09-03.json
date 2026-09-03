@@ -1,0 +1,48 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "query_planner": {
+    "status": "complete",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
+  },
+  "result": {
+    "request_id": "f56ad0ed-8795-4c66-8dd9-1da54eb3602c",
+    "operation": "report_info",
+    "command_fingerprint": "e19249be",
+    "provider": "ozon",
+    "host_alias": "seller_api",
+    "http_method": "POST",
+    "path_alias": "report_info",
+    "external_request_executed": true,
+    "http_status": 200,
+    "elapsed_ms": 1375,
+    "entitlement": {
+      "status": "SUPPORTED_AND_ENTITLED",
+      "reason": "all_accounts",
+      "entitlement_key": "POST /v1/report/info",
+      "exact_request_preserved": true
+    },
+    "execution": {
+      "logical_command_fingerprint": "e19249be",
+      "physical_command_fingerprint": "e19249be",
+      "command_transformed": false
+    },
+    "report": {
+      "code": "REPORT_mutual_settlement_2093109_1788412383_01a065af-5079-78cb-a6b5-1110c3c9686a",
+      "status": "success",
+      "error": "",
+      "file": "[REDACTED]",
+      "report_type": "mutual_settlement",
+      "params": {},
+      "created_at": "2026-09-03T05:13:03.401119Z",
+      "expires_at": "2026-09-06T05:13:03.401119Z",
+      "additional_data": []
+    },
+    "report_file_ref": "rpf_18eb749e-08df-4b99-8107-f4dcbf0a2529"
+  }
+}
