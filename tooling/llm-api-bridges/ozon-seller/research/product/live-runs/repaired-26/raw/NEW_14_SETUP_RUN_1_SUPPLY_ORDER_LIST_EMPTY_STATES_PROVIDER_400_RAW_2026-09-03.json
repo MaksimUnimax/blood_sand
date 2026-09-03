@@ -1,0 +1,62 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "query_planner": {
+    "status": "complete",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
+  },
+  "result": {
+    "request_id": "deba7764-b75b-4fbd-ada0-7e163844d109",
+    "operation": "supply_order_list",
+    "command": {
+      "operation": "supply_order_list",
+      "fingerprint": "d0967438"
+    },
+    "request_meta": {
+      "provider": "ozon",
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "path_alias": "supply_order_list",
+      "external_request_executed": true,
+      "capability_probe_executed": false,
+      "capability_probe_http_status": 0
+    },
+    "http_status": 400,
+    "elapsed_ms": 1342,
+    "planning": {
+      "entitlement": {
+        "status": "SUPPORTED_AND_ENTITLED",
+        "partial": false,
+        "reason": "all_accounts",
+        "entitlement_key": "POST /v3/supply-order/list",
+        "exact_request_preserved": true
+      },
+      "execution": {
+        "logical_command_fingerprint": "d0967438",
+        "physical_command_fingerprint": "d0967438",
+        "command_transformed": false
+      }
+    },
+    "result": {
+      "error": {
+        "source": "provider",
+        "category": "provider_request",
+        "http_status": 400,
+        "code": "3",
+        "automatic_retry": false,
+        "external_request_executed": true
+      }
+    }
+  },
+  "submitted_params": {
+    "filter": {"states": []},
+    "limit": 100,
+    "sort_by": "ORDER_CREATION",
+    "sort_dir": "DESC"
+  }
+}
