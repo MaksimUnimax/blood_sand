@@ -1,0 +1,73 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "capability_probe": {
+    "performed": false,
+    "status": "not_resolved",
+    "subscription_type": null,
+    "http_status": 0,
+    "error_code": null
+  },
+  "query_planner": {
+    "status": "pending",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 0,
+    "physical_business_request_count": 0
+  },
+  "results": [
+    {
+      "bridge": "ozon-llm-api-bridge",
+      "version": "0.1.19",
+      "request_id": "policy-52e5b3e8-47ac-4db0-87e0-a460dc070271",
+      "operation": "report_file_get",
+      "command": {
+        "operation": "report_file_get",
+        "fingerprint": "f96ec644"
+      },
+      "request_meta": {
+        "provider": "ozon",
+        "host_alias": "report_file",
+        "http_method": "GET",
+        "path_alias": "report_file_get",
+        "external_request_executed": false,
+        "capability_probe_executed": false,
+        "capability_probe_http_status": 0
+      },
+      "http_status": 0,
+      "elapsed_ms": 0,
+      "pagination": null,
+      "rate_limit": null,
+      "planning": {
+        "capability": {
+          "status": "not_needed",
+          "subscription_type": "UNKNOWN",
+          "probe_performed": false,
+          "probe_http_status": 0,
+          "probe_error_code": null
+        },
+        "entitlement": {
+          "status": "POLICY_BLOCKED",
+          "partial": false,
+          "reason": "personal_data_setting_off"
+        }
+      },
+      "result": {
+        "status": "personal_data_setting_required",
+        "error": {
+          "source": "bridge",
+          "category": "bridge_error",
+          "http_status": 0,
+          "code": "OPERATION_DISABLED_BY_USER",
+          "message": "Операция может передать личные данные в AI-чат. Чтобы выполнить запрос, включите «Показывать личные данные» в настройках Ozon Bridge, затем явно запустите новую команду.",
+          "automatic_retry": false,
+          "external_request_executed": false,
+          "stage": "personal_data_policy"
+        },
+        "operator_action": "enable_personal_data_setting_and_submit_new_command"
+      }
+    }
+  ]
+}
