@@ -13,7 +13,7 @@ Do not patch runtime until standalone + required batch sweep is exhausted. Every
 ## Frozen STD-10
 
 Do not touch:
-`REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-6ac5e04697cb`
+`REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`
 
 ## Current global progress
 
@@ -24,32 +24,42 @@ Do not touch:
 
 ## DEFECT-001
 
-NEW-01 safe seller-products report file read was locally `POLICY_BLOCKED / personal_data_setting_off` with physical requests `0`. Generic report-file helper appears overbroadly privacy-gated. Do not patch yet.
+Generic `report_file_get` static privacy block. Reproduced on:
 
-## DEFECT-002 candidate
+1. NEW-01 `seller_products` report;
+2. NEW-02 `seller_returns_v2` report.
 
-NEW-02 create had logical fingerprint `687fa368`, physical fingerprint `d1fbfbfe`, `command_transformed=true`, while entitlement metadata says `exact_request_preserved=true`. NEW-02 report_info did not reproduce this anomaly.
+Both: personal-data setting OFF, local POLICY_BLOCKED, physical requests 0, external request false. Do not patch yet.
 
-## NEW-02 state
+## DEFECT-002
 
-Create PASS:
-- request `8b963833-eb57-4fe8-9b34-ff609ddf735c`
-- code `REPORT_seller_returns_v2_2093109_1788405276_01a06542-ddb2-7a28-85ac-cd9447fa91a6`
+NEW-02 create metadata anomaly:
+- logical fingerprint `687fa368`;
+- physical fingerprint `d1fbfbfe`;
+- `command_transformed=true`;
+- `exact_request_preserved=true`.
 
-Report-info PASS:
-- request `fe38e833-2029-4f41-8f57-49ad5a258499`
-- status `success`
-- opaque ref `rpf_c5978670-1bbe-47f5-9838-e843614a2514`
-- report type `seller_returns_v2`
-- logical/physical fingerprint `2d41fb57`
-- transformed `false`
+NEW-02 `report_info` did not reproduce it. Do not patch yet.
+
+## NEW-01 preserved state
+
+- create PASS code: `REPORT_seller_products_2093109_1788403235_01a06523-ba89-7bab-b5a2-7512338e658e`
+- report_info PASS
+- opaque ref: `rpf_bd4312a0-5525-4c5c-9332-be8fc2b912b8`
+- file read blocked by DEFECT-001.
+
+## NEW-02 preserved state
+
+- create PASS request: `8b963833-eb57-4fe8-9b34-ff609ddf735c`
+- code: `REPORT_seller_returns_v2_2093109_1788405276_01a06542-ddb2-7a28-85ac-cd9447fa91a6`
+- report_info PASS request: `fe38e833-2029-4f41-8f57-49ad5a258499`
+- opaque ref: `rpf_c5978670-1bbe-47f5-9838-e843614a2514`
+- file read policy request: `policy-a9bcf2bf-18eb-46ca-a3fd-5b20b79438bf`
+- file read blocked by DEFECT-001; physical requests `0`.
 
 ## Exact next command
 
-`report_file_get` for:
-`rpf_c5978670-1bbe-47f5-9838-e843614a2514`
-
-If privacy block reproduces, persist it as another DEFECT-001 reproduction and then advance to NEW-03 without patching.
+Start NEW-03 with one explicit `report_postings_create` request. Persist RAW + parsed evidence + gate + this recovery checkpoint before the next step.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_02_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_01_02_EXERCISED_DEFECTS_001_002_OPEN_NEW_03_CREATE_NEXT_STD_10_FROZEN`
