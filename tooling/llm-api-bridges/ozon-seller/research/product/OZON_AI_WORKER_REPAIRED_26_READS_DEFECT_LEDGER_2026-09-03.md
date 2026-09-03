@@ -60,6 +60,7 @@ Clean counterexamples narrow the scope:
 - NEW-08 `report_marked_products_sales_create`: `0630aa10 == 0630aa10`, transformed false, HTTP200.
 - NEW-09 `report_realization_posting_create`: `50a8fdbc == 50a8fdbc`, transformed false, HTTP200.
 - NEW-09 `report_info`: `604b53c9 == 604b53c9`, transformed false, HTTP200.
+- NEW-11 `finance_mutual_settlement_report`: `29860803 == 29860803`, transformed false, HTTP200.
 - other tested `report_info` steps also preserve identical fingerprints.
 
 Therefore DEFECT-002 is not universal; continue scope collection through remaining repaired paths and later batch tests.
