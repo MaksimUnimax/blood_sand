@@ -118,7 +118,7 @@
       "POST /v1/warehouse/fbs/pickup/history/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v1/polygon/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v1/warehouse/fbs/pickup/planning/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
-      "POST /v1/fbp/warehouse/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/fbp/warehouse/list": { default_access: "UNKNOWN", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v2/warehouse/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v2/delivery-method/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v1/delivery-method/return/settings/get": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
@@ -576,11 +576,16 @@
     return [...current].sort();
   }
 
+  const LIVE_PROVIDER_ACCOUNT_PERMISSION_UNKNOWN = new Set(["POST /v1/fbp/warehouse/list"]);
+
   function requirementFor(command, snapshot = null, atMs = Date.now()) {
     const registryMeta = globalThis.OzonOperationRegistry?.operation?.(command?.operation) || null;
     if (!registryMeta || registryMeta.provider === "performance_api") return deepFreeze({ required: false, known: true, allowed_subscription_types: [], reasons: [], rule_source: "not_seller_or_missing" });
     const active = normalizeSnapshot(snapshot);
     const key = String(registryMeta.entitlement_key || `${registryMeta.method} ${registryMeta.path}`);
+    if (LIVE_PROVIDER_ACCOUNT_PERMISSION_UNKNOWN.has(key)) {
+      return deepFreeze({ required: false, known: false, allowed_subscription_types: [], reasons: ["provider_account_permission_unknown"], entitlement_key: key, rule_source: "live-provider-2026-09-03" });
+    }
     const rule = active.operations?.[key] || BUNDLED_SNAPSHOT.operations?.[key] || null;
     if (!rule) return deepFreeze({ required: false, known: false, allowed_subscription_types: [], reasons: ["entitlement_rule_unknown"], entitlement_key: key, rule_source: active.source?.source_hash || null });
     if (rule.default_access === "UNKNOWN") return deepFreeze({ required: false, known: false, allowed_subscription_types: [], reasons: ["entitlement_rule_unknown"], entitlement_key: key, rule_source: active.source?.source_hash || null });

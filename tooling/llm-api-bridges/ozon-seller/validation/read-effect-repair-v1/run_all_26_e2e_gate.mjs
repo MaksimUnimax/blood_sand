@@ -62,7 +62,7 @@ const fetchImpl = async (url, options={}) => {
   }
   const alias = pathToAlias.get(p);
   if (alias && REPORTS.includes(alias)) {
-    const code = `R${++reportCounter}_${alias}`;
+    const code = `REPORT_R${++reportCounter}_${alias}`;
     const payload = TOP_LEVEL_CODE.has(alias) ? {code} : {result:{code}};
     return new Response(JSON.stringify(payload),{status:200,headers:{"content-type":"application/json"}});
   }
@@ -100,6 +100,7 @@ for (const alias of REPORTS) {
   assert.equal(info.ok,true,`${alias} report_info`);
   assert.match(info.result?.report_file_ref || "",/^rpf_/);
   assert.ok(!JSON.stringify(info.result).includes("cdn1.ozone.ru"),`${alias} signed URL hidden`);
+  assert.deepEqual(provider.reportFileRefPolicy(info.result.report_file_ref),{known:true,personal_data_required:false},`${alias} safe provenance`);
   const file = await provider.executeCommandObject({operation:"report_file_get",params:{file_ref:info.result.report_file_ref,offset:0,limit:50}}, {}, {});
   assert.equal(file.ok,true,`${alias} file`);
   assert.equal(file.result?.format,"csv",`${alias} structured format`);
@@ -118,7 +119,7 @@ for (const alias of DIRECT_PDFS) {
   const file=await provider.executeCommandObject({operation:"report_file_get",params:{file_ref:first.result.generated_file_ref}}, {}, {});
   assert.equal(calls.length,before,`${alias} inline ref zero extra network`);
   assert.equal(file.result?.format,"pdf");
-  assert.match(file.result?.text_extract || "",/OZON DOC OK/);
+  assert.match(file.result?.text_extract || file.result?.text || "",/OZON DOC OK/);
 }
 console.log("OZON_ALL_2_DIRECT_PDF_WORKFLOWS_E2E_PASS");
 
@@ -134,7 +135,7 @@ for (const [createAlias, idPath, getAlias, buildParams] of ASYNC_DOCS) {
   const file=await provider.executeCommandObject({operation:"report_file_get",params:{file_ref:get.result.generated_file_ref}}, {}, {});
   assert.equal(calls.length,before+1,`${getAlias} exactly one explicit file GET`);
   assert.equal(file.result?.format,"pdf");
-  assert.match(file.result?.text_extract || "",/OZON DOC OK/);
+  assert.match(file.result?.text_extract || file.result?.text || "",/OZON DOC OK/);
 }
 console.log("OZON_ALL_7_ASYNC_DOCUMENT_WORKFLOWS_E2E_PASS");
 

@@ -135,7 +135,9 @@
     return Object.freeze({
       operation: alias,
       purpose: meta.purpose || "Read-only Ozon operation.",
-      template: meta.template || { operation: alias, params: {} },
+      template: meta.template_runnable === false ? null : (meta.template || { operation: alias, params: {} }),
+      template_runnable: meta.template_runnable !== false,
+      required_parameters: Array.isArray(meta.required_parameters) ? Object.freeze([...meta.required_parameters]) : Object.freeze([]),
       section: meta.section || null,
       safety_class: meta.safety_class || "READ_SAFE",
       privacy_policy: meta.privacy_policy || "safe_projection",

@@ -508,8 +508,8 @@
     fbp_warehouse_list: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/warehouse/list", effect: "READ", request_style: "no_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "ozon_warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/fbp/warehouse/list", workflow_role: "single_read",
-      purpose: "Получить список партнёрских складов FBP.", template: { operation: "fbp_warehouse_list", params: {} }
+      cluster: "warehouse_logistics", section: "ozon_warehouses", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/warehouse/list", workflow_role: "single_read",
+      purpose: "Получить список партнёрских складов FBP; доступ зависит от provider/account permission и не считается all-accounts.", template: { operation: "fbp_warehouse_list", params: {} }
     },
     seller_warehouse_list: {
       provider: "seller_api", method: "POST", path: "/v2/warehouse/list", effect: "READ", request_style: "json_body",
@@ -685,7 +685,7 @@
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
       cluster: "orders_postings", section: "fbs_postings", guidance_visibility: "conditional", entitlement_key: "POST /v4/posting/fbs/unfulfilled/list", workflow_role: "single_read",
-      purpose: "Получить список необработанных отправлений FBS; ответ может содержать данные покупателя/получателя.", template: { operation: "fbs_unfulfilled_list", params: { limit: 10 } }
+      purpose: "Получить список необработанных отправлений FBS; требуется ровно одна полная временная пара cutoff_* или delivering_date_*; ответ может содержать данные покупателя/получателя.", template: null, template_runnable: false, required_parameters: ["filter.cutoff_from + filter.cutoff_to OR filter.delivering_date_from + filter.delivering_date_to"]
     },
     posting_fbs_get: {
       provider: "seller_api", method: "POST", path: "/v3/posting/fbs/get", effect: "READ", request_style: "json_body",
@@ -710,7 +710,7 @@
       provider: "seller_api", method: "POST", path: "/v2/posting/fbs/act/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/act/list", workflow_role: "single_read",
-      purpose: "Получить список FBS-актов без скрытой пагинации.", template: { operation: "fbs_act_list", params: { limit: 50 } }
+      purpose: "Получить список FBS-актов без скрытой пагинации; provider требует filter.date_from/date_to в формате YYYY-MM-DD.", template: null, template_runnable: false, required_parameters: ["limit", "filter.date_from", "filter.date_to"]
     },
     fbs_act_check_status: {
       provider: "seller_api", method: "POST", path: "/v2/posting/fbs/act/check-status", effect: "READ", request_style: "json_body",
@@ -997,9 +997,9 @@
     },
     report_file_get: {
       provider: "report_file", method: "GET", path: "/__opaque_report_file__", effect: "READ", request_style: "opaque_file_ref", execution_enabled: true,
-      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "opaque_ref_provenance_gate",
       cluster: "finance", section: "documents_reports", guidance_visibility: "conditional", workflow_role: "explicit_workflow_read_step",
-      purpose: "Получить и безопасно разобрать готовый файл отчёта/документа по opaque ref без раскрытия signed URL или base64.", template: { operation: "report_file_get", params: { file_ref: "REPORT_FILE_REF", offset: 0, limit: 200 } }
+      purpose: "Получить и безопасно разобрать готовый файл отчёта/документа по opaque ref; personal-data gate наследуется от provenance ref, signed URL/base64 не раскрываются.", template: { operation: "report_file_get", params: { file_ref: "REPORT_FILE_REF", offset: 0, limit: 200 } }
     },
     report_products_create: {
       provider: "seller_api", method: "POST", path: "/v1/report/products/create", effect: "READ", request_style: "json_body", execution_enabled: true,
@@ -1017,7 +1017,7 @@
       provider: "seller_api", method: "POST", path: "/v1/report/postings/create", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "labels_documents",
       guidance_visibility: "user", entitlement_key: "POST /v1/report/postings/create", workflow_role: "explicit_workflow_read_step",
-      purpose: "Отчёт об отправлениях", template: {"operation":"report_postings_create","params":{"filter":{"processed_at_from":"2026-01-01T00:00:00Z","processed_at_to":"2026-01-01T00:00:00Z","delivery_schema":["FBO"]}}}
+      purpose: "Отчёт об отправлениях", template: {"operation":"report_postings_create","params":{"filter":{"processed_at_from":"2026-01-01T00:00:00Z","processed_at_to":"2026-01-01T00:00:00Z","delivery_schema":["fbo"]}}}
     },
     report_discounted_create: {
       provider: "seller_api", method: "POST", path: "/v1/report/discounted/create", effect: "READ", request_style: "json_body", execution_enabled: true,
@@ -1161,7 +1161,7 @@
       provider: "seller_api", method: "POST", path: "/v3/supply-order/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "user", entitlement_key: "POST /v3/supply-order/list", workflow_role: "single_read",
-      purpose: "Получить список идентификаторов заявок на поставку.", template: { operation: "supply_order_list", params: { filter: { states: [] }, limit: 100, sort_by: "ORDER_CREATION", sort_dir: "DESC" } }
+      purpose: "Получить список идентификаторов заявок на поставку; filter.states должен содержать хотя бы одно реальное состояние.", template: null, template_runnable: false, required_parameters: ["filter.states (non-empty)"]
     },
     supply_order_get: {
       provider: "seller_api", method: "POST", path: "/v3/supply-order/get", effect: "READ", request_style: "json_body",
@@ -1716,7 +1716,7 @@
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
       cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/archive/list", workflow_role: "single_read",
-      purpose: "Получить одну явную страницу завершённых FBP-поставок; контактные данные доступны только при включённой настройке личных данных.", template: { operation: "fbp_archive_list", params: { count: "100" } }
+      purpose: "Получить одну явную страницу завершённых FBP-поставок; Swagger-shaped default count=100 был отклонён live provider, поэтому автоматический runnable template не публикуется; контактные данные доступны только при включённой настройке личных данных.", template: null, template_runnable: false, required_parameters: ["provider-accepted FBP archive list request"]
     },
     fbp_draft_get: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/draft/get", effect: "READ", request_style: "json_body",
@@ -1744,7 +1744,7 @@
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
       cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/order/list", workflow_role: "single_read",
-      purpose: "Получить одну явную страницу FBP-поставок; контактные данные доступны только при включённой настройке личных данных.", template: { operation: "fbp_order_list", params: { count: 100 } }
+      purpose: "Получить одну явную страницу FBP-поставок; Swagger-shaped default count=100 был отклонён live provider, поэтому автоматический runnable template не публикуется; контактные данные доступны только при включённой настройке личных данных.", template: null, template_runnable: false, required_parameters: ["provider-accepted FBP order list request"]
     },
     delivery_check: {
       provider: "seller_api", method: "POST", path: "/v1/delivery/check", effect: "READ", request_style: "json_body",

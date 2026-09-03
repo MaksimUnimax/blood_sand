@@ -2734,6 +2734,16 @@ function formatCombinedBatchReport(entries, batch = null) {
   return parts.join("\n\n");
 }
 
+function commandRequiresPersonalDataPolicy(command) {
+  const meta = OzonOperationRegistry.operation(command?.operation);
+  if (meta?.policy_group === "personal_data_read") return true;
+  if (command?.operation !== "report_file_get") return false;
+  const refPolicy = typeof OzonProvider.reportFileRefPolicy === "function"
+    ? OzonProvider.reportFileRefPolicy(command?.params?.file_ref)
+    : null;
+  return refPolicy?.known === true && refPolicy.personal_data_required === true;
+}
+
 async function ensureBatchLocalPolicy({ ownerKind, ownerId, getOwner, mutateOwner, ownerMatches, isCollecting, failOwner }) {
   let owner = await getOwner();
   if (!owner || !ownerMatches(owner)) return { ok: false, code: "BATCH_OWNER_NOT_ACTIVE" };
@@ -2747,8 +2757,7 @@ async function ensureBatchLocalPolicy({ ownerKind, ownerId, getOwner, mutateOwne
   const personalDataEnabled = settings.personalDataEnabled === true;
   const nextEntries = (owner.batch.entries || []).map((entry) => {
     if (!entry || entry.kind !== "command" || !entry.command) return entry;
-    const meta = OzonOperationRegistry.operation(entry.command.operation);
-    if (meta?.policy_group !== "personal_data_read" || personalDataEnabled) return entry;
+    if (!commandRequiresPersonalDataPolicy(entry.command) || personalDataEnabled) return entry;
     return {
       ...entry,
       kind: "policy_error",

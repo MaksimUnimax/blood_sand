@@ -4,6 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import vm from "node:vm";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 function loadClassic(file) { vm.runInThisContext(fs.readFileSync(file, "utf8"), { filename: file, displayErrors: true }); }
 const repo = path.resolve(process.argv[2] || ".");
 const shared = path.join(repo, "tooling", "llm-api-bridges", "ozon-seller", "dist-step7-candidate", "shared");
@@ -57,3 +59,9 @@ console.log("OZON_EFFECT_READ_REPAIR_SELLER_ENABLED_271_PASS");
 console.log("OZON_EFFECT_READ_REPAIR_SELLER_CURRENT_269_BETA_2_PASS");
 console.log("OZON_EFFECT_READ_REPAIR_ALIASES_26_PASS");
 console.log("OZON_EFFECT_READ_REPAIR_GATE_PASS");
+const gateDir = path.dirname(fileURLToPath(import.meta.url));
+const corrective = spawnSync(process.execPath, [path.join(gateDir, "run_live_gate_corrective_regression.mjs"), repo], { encoding: "utf8" });
+if (corrective.stdout) process.stdout.write(corrective.stdout);
+if (corrective.stderr) process.stderr.write(corrective.stderr);
+assert.equal(corrective.status, 0, "live-gate corrective regression must pass inside package effect gate");
+console.log("OZON_EFFECT_READ_REPAIR_CORRECTIVE_REGRESSION_CHAIN_PASS");

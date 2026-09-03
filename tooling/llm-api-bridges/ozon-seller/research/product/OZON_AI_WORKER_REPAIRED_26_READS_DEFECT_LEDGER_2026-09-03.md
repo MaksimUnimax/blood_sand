@@ -186,3 +186,24 @@ Evidence:
 ## Patch prohibition
 
 Do not patch DEFECT-001..006 until the standalone + multi-command batch collection sweep is complete.
+
+
+## Corrective patch transition — 2026-09-03
+
+Marker: `OZON_LIVE_GATE_CORRECTIVE_PATCH_ALL_11_DEFECTS_APPLIED_AWAITING_CERTIFICATION`
+
+Mode: `PATCH_ALL_CONFIRMED_DEFECTS_ONE_COHERENT_CHANGE`
+
+The collection-time patch prohibition is superseded: the repaired-26 live sweep is complete with `LIVE_GATE_FAIL / PATCH_NOT_CERTIFIED / RETURN_TO_REPAIR_LOOP`; STD-10 remains frozen. Patch baseline: `de044c2f63db7d5b77f5f8509d34e3a035bddb8c`. Status: `PATCHED_AWAITING_CERTIFICATION`, not certified.
+
+- DEFECT-001: opaque-ref provenance-aware personal-data policy; safe refs are no longer statically blocked, personal/unknown provenance remains fail-closed.
+- DEFECT-002: exactness/transformation metadata share the same fingerprint truth.
+- DEFECT-003: lowercase single-value `delivery_schema` enum (`fbo|fbs`).
+- DEFECT-004: sensitive `report_info.additional_data[]` semantic values are redacted by the existing sanitizer.
+- DEFECT-005/008: `supply_order_list.filter.states` must be non-empty; one shared fix for the same root cause.
+- DEFECT-006: reviewed `fbs_act_list` filter/date/enums are enforced and no invented runnable default is advertised.
+- DEFECT-007: `fbs_unfulfilled_list` requires exactly one complete time family.
+- DEFECT-009/010: rejected FBP list defaults are no longer advertised runnable; no guessed replacement payloads.
+- DEFECT-011: `POST /v1/fbp/warehouse/list` access is UNKNOWN after live 403/code7, not `all_accounts`.
+
+Added `run_live_gate_corrective_regression.mjs` covering DEFECT-001..011 with zero real provider requests and chained it through the existing effect-repair gate already executed by package CI. Dependency-blocked NEW rows are not reclassified as PASS merely by this patch.

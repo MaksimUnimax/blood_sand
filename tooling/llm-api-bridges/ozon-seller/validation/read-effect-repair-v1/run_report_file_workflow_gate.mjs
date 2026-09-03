@@ -16,8 +16,8 @@ assert.ok(helper, "report_file_get descriptor");
 assert.equal(helper.provider, "report_file");
 assert.equal(helper.effect, "READ");
 assert.equal(helper.execution_enabled, true);
-assert.equal(helper.privacy_policy, "operator_personal_data_gate");
-assert.equal(helper.default_allowed, false);
+assert.equal(helper.privacy_policy, "opaque_ref_provenance_gate");
+assert.equal(helper.default_allowed, undefined);
 assert.equal(Object.keys(operations).length, 297);
 
 const signedUrl = "https://cdn1.ozone.ru/s3/reports/private-placement-report.csv?X-Signature=SECRET";
@@ -57,6 +57,7 @@ assert.match(info.result?.report_file_ref || "", /^rpf_[A-Za-z0-9_-]{12,120}$/);
 assert.ok(!info.report_text.includes(signedUrl), "signed report URL leaked into report_text");
 assert.ok(!JSON.stringify(info.result).includes("SECRET"), "signed report URL leaked into sanitized result");
 const ref = info.result.report_file_ref;
+assert.deepEqual(provider.reportFileRefPolicy(ref), { known: true, personal_data_required: true }, "unknown historical report provenance must fail closed");
 
 await assert.rejects(
   provider.executeCommandObject({ operation: "report_file_get", params: { file_ref: "rpf_aaaaaaaaaaaa" } }, {}, {}),
@@ -81,6 +82,7 @@ assert.throws(() => globalThis.ProviderTransportCore.normalizeTrustedReportFileU
 
 console.log("OZON_REPORT_FILE_INFO_URL_REDACTED_PASS");
 console.log("OZON_REPORT_FILE_OPAQUE_REF_PASS");
+console.log("OZON_REPORT_FILE_PROVENANCE_FAIL_CLOSED_PASS");
 console.log("OZON_REPORT_FILE_UNKNOWN_REF_ZERO_REQUEST_PASS");
 console.log("OZON_REPORT_FILE_ONE_EXPLICIT_GET_PASS");
 console.log("OZON_REPORT_FILE_NO_SELLER_CREDENTIAL_LEAK_PASS");

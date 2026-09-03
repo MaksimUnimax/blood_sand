@@ -45,8 +45,10 @@
     let performanceToken = null;
 
     const reportFileRefs = new Map();
+    const reportCodePolicies = new Map();
     const REPORT_FILE_REF_TTL_MS = 30 * 60 * 1000;
     const REPORT_FILE_REF_MAX = 128;
+    const REPORT_CODE_POLICY_MAX = 256;
 
     function pruneReportFileRefs() {
       const current = Number(now());
@@ -54,16 +56,46 @@
         if (!record || current - Number(record.created_at_ms || 0) > REPORT_FILE_REF_TTL_MS) reportFileRefs.delete(ref);
       }
       while (reportFileRefs.size > REPORT_FILE_REF_MAX) reportFileRefs.delete(reportFileRefs.keys().next().value);
+      for (const [code, record] of reportCodePolicies.entries()) {
+        if (!record || current - Number(record.created_at_ms || 0) > REPORT_FILE_REF_TTL_MS) reportCodePolicies.delete(code);
+      }
+      while (reportCodePolicies.size > REPORT_CODE_POLICY_MAX) reportCodePolicies.delete(reportCodePolicies.keys().next().value);
     }
 
-    function registerReportFile(rawUrl) {
+    function operationRequiresPersonalData(operation) {
+      const meta = globalThis.OzonOperationRegistry?.operation?.(operation) || null;
+      return meta?.policy_group === "personal_data_read";
+    }
+
+    function rememberReportCodePolicy(rawCode, operation) {
+      const code = String(rawCode || "").trim();
+      if (!/^REPORT_/i.test(code)) return;
+      pruneReportFileRefs();
+      reportCodePolicies.set(code, Object.freeze({ personal_data_required: operationRequiresPersonalData(operation), created_at_ms: Number(now()) }));
+      pruneReportFileRefs();
+    }
+
+    function reportInfoPersonalDataRequired(command) {
+      const code = String(command?.params?.code || "").trim();
+      const remembered = reportCodePolicies.get(code);
+      return remembered ? remembered.personal_data_required === true : true;
+    }
+
+    function registerReportFile(rawUrl, { personalDataRequired = true } = {}) {
       const trustedUrl = globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl(rawUrl);
       pruneReportFileRefs();
       const token = String(uuid()).replace(/[^A-Za-z0-9_-]/g, "");
       const ref = `rpf_${token}`;
-      reportFileRefs.set(ref, Object.freeze({ url: trustedUrl, created_at_ms: Number(now()) }));
+      reportFileRefs.set(ref, Object.freeze({ url: trustedUrl, personal_data_required: personalDataRequired === true, created_at_ms: Number(now()) }));
       pruneReportFileRefs();
       return ref;
+    }
+
+    function reportFileRefPolicy(ref) {
+      pruneReportFileRefs();
+      const record = reportFileRefs.get(String(ref || ""));
+      if (!record) return Object.freeze({ known: false, personal_data_required: false });
+      return Object.freeze({ known: true, personal_data_required: record.personal_data_required === true });
     }
 
     function resolveReportFileRef(ref) {
@@ -106,14 +138,14 @@
     });
     const DIRECT_PDF_OPERATIONS = new Set(["posting_fbs_act_container_labels", "posting_fbs_package_label"]);
 
-    function registerInlineGeneratedDocument(binaryPayload) {
+    function registerInlineGeneratedDocument(binaryPayload, { personalDataRequired = true } = {}) {
       const contentType = String(binaryPayload?.content_type || "application/octet-stream").toLowerCase();
       const base64 = String(binaryPayload?.file_content_base64 || "");
       if (!base64 || contentType !== "application/pdf") return null;
       pruneReportFileRefs();
       const token = String(uuid()).replace(/[^A-Za-z0-9_-]/g, "");
       const ref = `rpf_${token}`;
-      reportFileRefs.set(ref, Object.freeze({ inline_base64: base64, content_type: contentType, byte_length: Number(binaryPayload?.byte_length || 0), created_at_ms: Number(now()) }));
+      reportFileRefs.set(ref, Object.freeze({ inline_base64: base64, content_type: contentType, byte_length: Number(binaryPayload?.byte_length || 0), personal_data_required: personalDataRequired === true, created_at_ms: Number(now()) }));
       pruneReportFileRefs();
       return ref;
     }
@@ -263,10 +295,14 @@
         }
 
         result = contract.sanitizeResult(command, response.parsed ?? response.rawText);
+        if (command.operation !== "report_info") {
+          const rawReportCode = findFirstField(response.parsed, "code");
+          if (typeof rawReportCode === "string") rememberReportCodePolicy(rawReportCode, command.operation);
+        }
         if (command.operation === "report_info") {
           const rawFile = findFirstField(response.parsed, "file");
           if (typeof rawFile === "string" && rawFile.trim()) {
-            const fileRef = registerReportFile(rawFile.trim());
+            const fileRef = registerReportFile(rawFile.trim(), { personalDataRequired: reportInfoPersonalDataRequired(command) });
             result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), report_file_ref: fileRef });
           }
         }
@@ -275,12 +311,12 @@
         if (generatedUrlField) {
           const rawGeneratedUrl = findFirstField(response.parsed, generatedUrlField);
           if (typeof rawGeneratedUrl === "string" && rawGeneratedUrl.trim()) {
-            const generatedRef = registerReportFile(rawGeneratedUrl.trim());
+            const generatedRef = registerReportFile(rawGeneratedUrl.trim(), { personalDataRequired: operationRequiresPersonalData(command.operation) });
             result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), generated_file_ref: generatedRef });
           }
         }
         if (DIRECT_PDF_OPERATIONS.has(command.operation)) {
-          const generatedRef = registerInlineGeneratedDocument(response.parsed);
+          const generatedRef = registerInlineGeneratedDocument(response.parsed, { personalDataRequired: operationRequiresPersonalData(command.operation) });
           if (generatedRef) {
             const safe = result && typeof result === "object" && !Array.isArray(result) ? { ...result } : { result };
             delete safe.file_content_base64;
@@ -292,12 +328,17 @@
       } else {
         result = { error: errorPayload };
       }
+      const logicalFingerprint = contract.commandFingerprint(logicalCommand);
+      const physicalFingerprint = contract.commandFingerprint(command);
+      const exactRequestPreserved = logicalFingerprint === physicalFingerprint;
       const safePlanning = planning ? {
         ...planning,
+        entitlement: planning.entitlement ? { ...planning.entitlement, exact_request_preserved: exactRequestPreserved } : planning.entitlement,
         execution: {
-          logical_command_fingerprint: contract.commandFingerprint(logicalCommand),
-          physical_command_fingerprint: contract.commandFingerprint(command),
-          command_transformed: contract.commandFingerprint(logicalCommand) !== contract.commandFingerprint(command)
+          ...(planning.execution || {}),
+          logical_command_fingerprint: logicalFingerprint,
+          physical_command_fingerprint: physicalFingerprint,
+          command_transformed: !exactRequestPreserved
         }
       } : null;
       const reportText = contract.formatResultReport({
@@ -396,7 +437,7 @@
       }
     }
 
-    return Object.freeze({ executeCommand, executeCommandObject, resolveSellerCapability, testConnection, testPerformanceConnection, clearPerformanceToken });
+    return Object.freeze({ executeCommand, executeCommandObject, resolveSellerCapability, testConnection, testPerformanceConnection, clearPerformanceToken, reportFileRefPolicy });
   }
 
   const OzonProvider = createOzonProvider();

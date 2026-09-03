@@ -26,11 +26,13 @@ assert.deepEqual(ops.posting_fbs_package_label_create.template.params.posting_nu
 assert.deepEqual(ops.cargoes_transport_label_create.template.params.transport_cargo_ids, ["1"]);
 
 const goodPostings = contract.normalizeCommand({ operation: "report_postings_create", params: { filter: {
-  processed_at_from: "2026-01-01T00:00:00Z", processed_at_to: "2026-01-02T00:00:00Z", delivery_schema: ["FBO"],
+  processed_at_from: "2026-01-01T00:00:00Z", processed_at_to: "2026-01-02T00:00:00Z", delivery_schema: ["fbo"],
   sku: [1], status_alias: ["delivered"], statuses: [1], title: "x", warehouse_id: [1], delivery_method_id: [1], is_express: false
 }, with: { additional_data: false, analytics_data: true, customer_data: false, jewelry_codes: false } } });
 assert.equal(goodPostings.params.filter.sku[0], 1);
-assert.throws(() => contract.normalizeCommand({ operation: "report_postings_create", params: { filter: { processed_at_from: "2026-01-01T00:00:00Z", processed_at_to: "2026-01-02T00:00:00Z", delivery_schema: ["FBO"], status: ["delivered"] } } }), /неподдерживаем|недопуст|пол/i);
+assert.throws(() => contract.normalizeCommand({ operation: "report_postings_create", params: { filter: { processed_at_from: "2026-01-01T00:00:00Z", processed_at_to: "2026-01-02T00:00:00Z", delivery_schema: ["FBO"] } } }), /fbo|fbs|недопуст|допуст/i);
+assert.throws(() => contract.normalizeCommand({ operation: "report_postings_create", params: { filter: { processed_at_from: "2026-01-01T00:00:00Z", processed_at_to: "2026-01-02T00:00:00Z", delivery_schema: ["fbo","fbs"] } } }), /много|элемент/i);
+assert.throws(() => contract.normalizeCommand({ operation: "report_postings_create", params: { filter: { processed_at_from: "2026-01-01T00:00:00Z", processed_at_to: "2026-01-02T00:00:00Z", delivery_schema: ["fbo"], status: ["delivered"] } } }), /неподдерживаем|недопуст|пол/i);
 
 assert.doesNotThrow(() => contract.normalizeCommand({ operation: "report_marked_products_sales_create", params: { date: { from: "2026-01-01", to: "2026-01-31" } } }));
 assert.throws(() => contract.normalizeCommand({ operation: "report_marked_products_sales_create", params: { date: "2026-01-01" } }));
@@ -61,6 +63,7 @@ assert.throws(() => contract.normalizeCommand({ operation: "report_realization_p
 
 console.log("OZON_26_ALL_TEMPLATES_NORMALIZE_PASS");
 console.log("OZON_REPORT_POSTINGS_EXACT_FILTER_FIELDS_PASS");
+console.log("OZON_REPORT_POSTINGS_DELIVERY_SCHEMA_LOWERCASE_ENUM_PASS");
 console.log("OZON_MARKED_PRODUCTS_DATE_OBJECT_PASS");
 console.log("OZON_FINANCE_MONTH_EXACT_FORMAT_PASS");
 console.log("OZON_PLACEMENT_31_DAY_EXACT_BOUND_PASS");
