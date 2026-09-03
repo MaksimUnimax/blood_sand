@@ -1,0 +1,94 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "query_planner": {
+    "status": "complete",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
+  },
+  "result": {
+    "request_id": "0d3a6203-fc53-4707-b72b-329ce10ce928",
+    "operation": "supply_order_get",
+    "command_fingerprint": "f41eda95",
+    "request_meta": {
+      "provider": "ozon",
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "path_alias": "supply_order_get",
+      "external_request_executed": true
+    },
+    "http_status": 200,
+    "elapsed_ms": 1372,
+    "entitlement": {
+      "status": "SUPPORTED_AND_ENTITLED",
+      "reason": "all_accounts",
+      "entitlement_key": "POST /v3/supply-order/get",
+      "exact_request_preserved": true
+    },
+    "execution": {
+      "logical_command_fingerprint": "f41eda95",
+      "physical_command_fingerprint": "f41eda95",
+      "command_transformed": false
+    },
+    "provider_result": {
+      "orders": [
+        {
+          "order_id": 125820894,
+          "order_number": "2000064871008",
+          "created_date": "2026-08-30T11:17:57.980905Z",
+          "state": "DATA_FILLING",
+          "state_updated_date": "2026-08-30T11:17:58.843212Z",
+          "data_filling_deadline": "2026-09-05T06:00:00Z",
+          "drop_off_warehouse": {
+            "warehouse_id": 1020002322952000,
+            "address": "[REDACTED]",
+            "name": "ЗЛАТОУСТ_89"
+          },
+          "order_tags": {
+            "product_super_fbo": false,
+            "is_quant": false,
+            "is_econom": false,
+            "is_virtual": false,
+            "original_supply_id": 0,
+            "is_super_fbo": true,
+            "is_pickup": false,
+            "seller_warehouse_id": 0
+          },
+          "timeslot": {
+            "timeslot": {
+              "from": "2026-09-05T07:00:00Z",
+              "to": "2026-09-05T08:00:00Z"
+            },
+            "timezone_info": {
+              "offset": "18000s",
+              "iana_name": "Asia/Yekaterinburg"
+            }
+          },
+          "supplies": [
+            {
+              "state": "DATA_FILLING",
+              "supply_id": 2000064871008,
+              "storage_warehouse": null,
+              "supply_tags": {
+                "freeze_stock_for_marking": false,
+                "is_ettn_required": false,
+                "is_evsd_required": false,
+                "is_jewelry": false,
+                "is_marking_possible": false,
+                "is_marking_required": false,
+                "is_utd": false
+              },
+              "is_crossdock": true,
+              "bundle_id": "01a05264-2b43-7b21-b08c-c93a3d6df65f",
+              "macrolocal_cluster_id": "4007"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
