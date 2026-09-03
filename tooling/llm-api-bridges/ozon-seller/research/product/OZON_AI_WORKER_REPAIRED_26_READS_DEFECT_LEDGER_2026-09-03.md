@@ -61,16 +61,14 @@ Clean counterexamples narrow the scope:
 - NEW-06 `report_placement_by_products_create`: `85e4f38a == 85e4f38a`, transformed false, HTTP200.
 - NEW-07 `report_placement_by_supplies_create`: `2a4cb92d == 2a4cb92d`, transformed false, HTTP200.
 - NEW-08 `report_marked_products_sales_create`: `0630aa10 == 0630aa10`, transformed false, HTTP200.
-- NEW-08 `report_info`: `fcc2dd70 == fcc2dd70`, transformed false, HTTP200.
-- other tested `report_info` steps so far also preserve identical fingerprints.
+- NEW-09 `report_realization_posting_create`: `50a8fdbc == 50a8fdbc`, transformed false, HTTP200.
+- tested `report_info` steps so far also preserve identical fingerprints.
 
-NEW-08 create and report-info are additional clean paths, so DEFECT-002 remains specific to particular planner/normalization paths rather than repaired aliases generally.
+NEW-09 is another clean repaired create-path counterexample, so DEFECT-002 remains specific to particular planner/normalization paths rather than repaired create aliases generally.
 
-NEW-08 evidence:
-- create RAW `live-runs/repaired-26/raw/NEW_08_RUN_1_REPORT_MARKED_PRODUCTS_SALES_CREATE_RAW_2026-09-03.json`
-- create parsed `live-runs/NEW_08_RUN_1_REPORT_MARKED_PRODUCTS_SALES_CREATE_2026-09-03.md`
-- report-info RAW `live-runs/repaired-26/raw/NEW_08_RUN_2_REPORT_INFO_RAW_2026-09-03.json`
-- report-info parsed `live-runs/NEW_08_RUN_2_REPORT_INFO_READY_OPAQUE_FILE_REF_2026-09-03.md`
+NEW-09 evidence:
+- RAW `live-runs/repaired-26/raw/NEW_09_RUN_1_REPORT_REALIZATION_POSTING_CREATE_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_09_RUN_1_REPORT_REALIZATION_POSTING_CREATE_2026-09-03.md`
 
 Continue scope collection through remaining repaired create paths and later batch tests.
 
