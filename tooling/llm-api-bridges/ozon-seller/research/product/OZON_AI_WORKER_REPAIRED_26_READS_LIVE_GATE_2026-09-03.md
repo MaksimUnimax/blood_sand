@@ -15,32 +15,23 @@ Persistent evidence rule: `EVERY_TEST_AND_RESULT_TO_GITHUB_BEFORE_NEXT_COMMAND`
 5. Rebuild/certify and rerun affected cases.
 6. Resume frozen STD-10 only after the 26-command gate closes.
 
-A discovered defect does not stop unrelated test collection unless further testing is technically impossible. Runtime patching is forbidden during this collection phase.
-
-## Final acceptance dimensions
-
-Every repaired alias must eventually pass both:
-
-- standalone end-to-end behavior to its strongest usable result;
-- real multi-command batch participation with 2+ commands, correct ordering/counts/request IDs/fingerprints/params isolation/transform metadata/coalescing and controlled partial failure.
+Runtime patching is forbidden during collection.
 
 ## Frozen STD-10
 
-Do not touch forensic code:
+Do not touch:
 `REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`
-
-NEW-06 must use a separate generic report chain.
 
 ## Inventory
 
 | # | ID | Alias | Standalone collection | Batch |
 |---:|---|---|---|---|
 | 1 | NEW-01 | `report_products_create` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001 | PENDING |
-| 2 | NEW-02 | `report_returns_create_v2` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001 reproduced; create metadata = DEFECT-002 | PENDING |
-| 3 | NEW-03 | `report_postings_create` | NEXT | PENDING |
+| 2 | NEW-02 | `report_returns_create_v2` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001; create metadata = DEFECT-002 | PENDING |
+| 3 | NEW-03 | `report_postings_create` | IN_PROGRESS — Run1 provider HTTP400; logical schema valid; past-window diagnostic next; create metadata reproduces DEFECT-002 | PENDING |
 | 4 | NEW-04 | `report_discounted_create` | PENDING | PENDING |
 | 5 | NEW-05 | `report_warehouse_stock` | PENDING | PENDING |
-| 6 | NEW-06 | `report_placement_by_products_create` | PARTIAL_EXTERNAL_EVIDENCE — frozen STD-10 create exists but cannot be reused | PENDING |
+| 6 | NEW-06 | `report_placement_by_products_create` | PARTIAL_EXTERNAL_EVIDENCE — frozen STD-10 create cannot be reused | PENDING |
 | 7 | NEW-07 | `report_placement_by_supplies_create` | PENDING | PENDING |
 | 8 | NEW-08 | `report_marked_products_sales_create` | PENDING | PENDING |
 | 9 | NEW-09 | `report_realization_posting_create` | PENDING | PENDING |
@@ -62,68 +53,55 @@ NEW-06 must use a separate generic report chain.
 | 25 | NEW-25 | `fbp_draft_pickup_product_validate` | PENDING | PENDING |
 | 26 | NEW-26 | `chat_history_v3` | PENDING | PENDING |
 
-## Collected defects
+## Defects collected
 
-### DEFECT-001 — generic report_file_get static privacy block
+### DEFECT-001
 
-Reproduced on two independent safe report types:
+Generic safe report-file reads are statically privacy-blocked. Confirmed on NEW-01 and NEW-02.
 
-- NEW-01 `seller_products`;
-- NEW-02 `seller_returns_v2`.
+### DEFECT-002
 
-Both file reads were locally `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`. Scope collection continues; no patch yet.
+Transformed create metadata is inconsistent with `exact_request_preserved=true`.
 
-### DEFECT-002 — NEW-02 create planning metadata inconsistency
+Confirmed on:
+- NEW-02 create: `687fa368 -> d1fbfbfe`, transformed true, provider 200;
+- NEW-03 Run1 create: `ec963df4 -> 6274fae0`, transformed true, provider 400.
 
-NEW-02 create reported logical fingerprint `687fa368`, physical fingerprint `d1fbfbfe`, `command_transformed=true`, while entitlement metadata simultaneously said `exact_request_preserved=true`. `report_info` did not reproduce it. Scope collection continues.
+## NEW-03 Run1
 
-Defect authority:
-`OZON_AI_WORKER_REPAIRED_26_READS_DEFECT_LEDGER_2026-09-03.md`
+Alias: `report_postings_create`
 
-## NEW-02 evidence
+- request id `ea2ca56c-ccb4-4b09-85b5-5f45a048529f`;
+- HTTP 400;
+- physical business requests `1`;
+- external request `true`;
+- provider error code `3`;
+- automatic retry `false`;
+- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`;
+- logical fingerprint `ec963df4`;
+- physical fingerprint `6274fae0`;
+- transformed `true`;
+- entitlement also says exact_request_preserved `true`.
 
-### Run1 create — PASS
-
-- request `8b963833-eb57-4fe8-9b34-ff609ddf735c`
-- HTTP 200
-- code `REPORT_seller_returns_v2_2093109_1788405276_01a06542-ddb2-7a28-85ac-cd9447fa91a6`.
-
-### Run2 report_info — PASS
-
-- request `fe38e833-2029-4f41-8f57-49ad5a258499`
-- HTTP 200
-- status `success`
-- opaque ref `rpf_c5978670-1bbe-47f5-9838-e843614a2514`.
-
-### Run3 report_file_get — POLICY_BLOCKED
-
-- request `policy-a9bcf2bf-18eb-46ca-a3fd-5b20b79438bf`
-- physical requests `0`
-- external request `false`
-- HTTP `0`
-- reason `personal_data_setting_off`
-- error `OPERATION_DISABLED_BY_USER`.
-
-This reproduces DEFECT-001. NEW-02 collection is complete enough to advance; do not retry or patch now.
+The exact runtime schema accepts the logical request shape: `delivery_schema` is an array of strings and processed timestamps are date-time fields. The Run1 test, however, used an end timestamp later than the actual execution time. Therefore the provider HTTP400 is still under diagnosis and is not yet promoted to a separate defect.
 
 RAW:
-`live-runs/repaired-26/raw/NEW_02_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
+`live-runs/repaired-26/raw/NEW_03_RUN_1_REPORT_POSTINGS_CREATE_HTTP400_RAW_2026-09-03.json`
 
 Parsed:
-`live-runs/NEW_02_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
+`live-runs/NEW_03_RUN_1_REPORT_POSTINGS_CREATE_HTTP400_2026-09-03.md`
 
 ## Progress
 
 - Fully final-closed: `0/26`.
-- Standalone NEW-IDs exercised: `2/26`.
+- Standalone NEW-IDs exercised: `3/26`.
 - Open defects/candidates: `2`.
 - Batch coverage: `0/26`.
 - Runtime patching: **FORBIDDEN UNTIL COLLECTION COMPLETE**.
-- STD-10: frozen.
 
 ## Exact next collection step
 
-Start NEW-03 `report_postings_create` as a fresh independent report workflow. Continue its create -> report_info -> report_file_get chain as far as the current runtime permits, persisting each step before advancing.
+NEW-03 Run2 diagnostic: submit a new `report_postings_create` using the same schema but a wholly past date interval (`2026-09-01` through `2026-09-02`). This is a distinct diagnostic request, not an automatic retry of Run1. If it succeeds, continue its report_info/file chain; if it still returns 400, persist that and promote the rejection to a stronger defect candidate before advancing.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_2_OF_26_EXERCISED_DEFECTS_001_002_OPEN_NEW_03_NEXT_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_3_OF_26_EXERCISED_NEW_03_HTTP400_PAST_WINDOW_DIAGNOSTIC_NEXT_DEFECTS_001_002_OPEN_STD_10_FROZEN`
