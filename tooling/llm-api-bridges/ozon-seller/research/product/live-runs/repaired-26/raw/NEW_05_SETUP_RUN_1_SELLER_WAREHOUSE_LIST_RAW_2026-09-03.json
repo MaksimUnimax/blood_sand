@@ -1,0 +1,66 @@
+OZON_BATCH_RESULT_V1
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "capability_probe": {"performed": false, "status": "not_needed", "subscription_type": "UNKNOWN", "http_status": 0, "error_code": null},
+  "query_planner": {"status": "complete", "coalesced_group_count": 0, "coalesced_logical_count": 0, "logical_business_result_count": 1, "physical_business_request_count": 1}
+}
+
+OZON_RESULT_V1
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "request_id": "657a1c3c-a0d3-4160-9f2a-64f8ec681672",
+  "operation": "seller_warehouse_list",
+  "command": {"operation": "seller_warehouse_list", "fingerprint": "11b894f6"},
+  "request_meta": {"provider": "ozon", "host_alias": "seller_api", "http_method": "POST", "path_alias": "seller_warehouse_list", "external_request_executed": true, "capability_probe_executed": false, "capability_probe_http_status": 0},
+  "http_status": 200,
+  "elapsed_ms": 1352,
+  "pagination": null,
+  "rate_limit": null,
+  "planning": {
+    "capability": {"is_premium": null, "probe_error_code": null, "probe_http_status": 0, "probe_performed": false, "status": "not_needed", "subscription_type": "UNKNOWN"},
+    "entitlement": {"capability_required": false, "entitlement_key": "POST /v2/warehouse/list", "exact_request_preserved": true, "partial": false, "reason": "all_accounts", "rule_source": "reviewed-openapi-463-2026-08-19", "status": "SUPPORTED_AND_ENTITLED"},
+    "execution": {"logical_command_fingerprint": "11b894f6", "physical_command_fingerprint": "11b894f6", "command_transformed": false}
+  },
+  "result": {
+    "warehouses": [
+      {
+        "warehouse_id": 1020001773680000,
+        "name": "Златоуст Чёт",
+        "phone": "[REDACTED]",
+        "address_info": {"address": "Россия, Челябинская Область, Златоуст, улица Богдана Хмельницкого, 19", "latitude": 55.108816, "longitude": 59.729986, "utc": "UTC+05:00"},
+        "first_mile": {"type": "DROP_OFF", "dropoff_point_id": "1020002322952000", "timeslot_from": "11:29", "timeslot_to": "11:30", "timeslot_id": 493220, "first_mile_is_changing": false},
+        "timetable": {"timetable_from": "2026-09-03T00:00:00Z", "timetable_to": "2027-09-03T23:59:59Z", "working_hours": "[FULL WORKING_HOURS ARRAY PRESENT IN CHAT RESULT; OMITTED HERE ONLY BECAUSE THIS SETUP RAW IS NORMALIZED PERSISTENCE, ALL DECISION-RELEVANT FIELDS PRESERVED]"},
+        "carriage_label_type": "SMALL",
+        "working_days": ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"],
+        "courier_comment": "",
+        "courier_phones": "[REDACTED]",
+        "created_at": "2024-06-12T12:05:18.733688Z",
+        "updated_at": "2026-08-07T04:47:55.539806Z",
+        "has_entrusted_acceptance": false,
+        "is_auto_assembly": false,
+        "is_kgt": false,
+        "is_rfbs": false,
+        "is_waybill_enabled": false,
+        "with_item_list": false,
+        "has_postings_limit": false,
+        "postings_limit": -1,
+        "min_postings_limit": 10,
+        "sla_cut_in": 59,
+        "status": "created",
+        "cut_in_time": 630,
+        "is_comfort": false,
+        "is_express": false,
+        "warehouse_type": "fbs",
+        "pause_at": null
+      }
+    ],
+    "has_next": false,
+    "cursor": "eyJmaWVsZHMiOjEwMjAwMDE3NzM2ODAwMDB9"
+  }
+}
+
+NOTE: The chat-returned timetable.working_hours array was extremely large (daily rows through 2027-09-03). This persisted setup RAW intentionally normalizes that repetitive array while preserving its range and all fields material to NEW-05 setup. No provider/business field used for the next request is omitted.
