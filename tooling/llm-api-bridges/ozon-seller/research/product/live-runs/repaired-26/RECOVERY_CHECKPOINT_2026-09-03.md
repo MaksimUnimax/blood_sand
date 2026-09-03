@@ -29,47 +29,52 @@ Static privacy block on generic `report_file_get`, reproduced on three safe repo
 2. `seller_returns_v2`;
 3. `seller_postings`.
 
+NEW-04 `seller_discounted` file read is the next scope check.
+
 ## DEFECT-002
 
-Planning metadata inconsistency reproduced on NEW-02 and NEW-03 create paths: physical fingerprint differs / transformed true while exact_request_preserved remains true.
+Planning metadata inconsistency reproduced on NEW-02 and NEW-03 create paths. NEW-04 create and report_info are clean counterexamples:
+- create `02e64eda == 02e64eda`, transformed false;
+- report_info `d397b76a == d397b76a`, transformed false.
 
-NEW-04 Run1 is a clean counterexample:
-- logical fingerprint `02e64eda`
-- physical fingerprint `02e64eda`
-- transformed false
-- exact_request_preserved true
-- provider HTTP200.
-
-Therefore DEFECT-002 is not universal to all repaired create aliases.
+Therefore DEFECT-002 is not universal.
 
 ## DEFECT-003
 
-`report_postings_create` delivery-schema case mismatch confirmed by live A/B:
+`report_postings_create` delivery-schema case mismatch confirmed:
 - uppercase `FBO` => HTTP400;
 - lowercase `fbo` on same past range => HTTP200.
 
 ## NEW-04 current state
 
-`report_discounted_create` Run1 PASS:
+Create PASS:
 - request `51dfec0d-655b-4a77-9fba-ca4af1fb6f6e`
+- code `REPORT_seller_discounted_2093109_1788406644_01a06557-c01b-7f31-9c51-b82d2a402ca7`
 - HTTP200
-- physical requests `1`
-- external request true
-- report code `REPORT_seller_discounted_2093109_1788406644_01a06557-c01b-7f31-9c51-b82d2a402ca7`
 - no transform anomaly.
 
+Report-info PASS:
+- request `3f4eaf12-b7bf-4a3b-976d-d0439593ff83`
+- HTTP200
+- status `success`
+- report type `seller_discounted`
+- signed file redacted
+- opaque ref `rpf_b58f09ca-4ca1-4ca5-a362-68d6da57b6d2`
+- fingerprint `d397b76a`
+- transformed false.
+
 RAW:
-`live-runs/repaired-26/raw/NEW_04_RUN_1_REPORT_DISCOUNTED_CREATE_RAW_2026-09-03.json`
+`live-runs/repaired-26/raw/NEW_04_RUN_2_REPORT_INFO_RAW_2026-09-03.json`
 
 Parsed:
-`live-runs/NEW_04_RUN_1_REPORT_DISCOUNTED_CREATE_2026-09-03.md`
+`live-runs/NEW_04_RUN_2_REPORT_INFO_READY_OPAQUE_FILE_REF_2026-09-03.md`
 
 ## Exact next command
 
 NEW-04:
-`OZON_API_V1 {"operation":"report_info","params":{"code":"REPORT_seller_discounted_2093109_1788406644_01a06557-c01b-7f31-9c51-b82d2a402ca7"}}`
+`OZON_API_V1 {"operation":"report_file_get","params":{"file_ref":"rpf_b58f09ca-4ca1-4ca5-a362-68d6da57b6d2","offset":0,"limit":50}}`
 
-If ready, next separate step is `report_file_get` to scope DEFECT-001. Do not patch runtime.
+Persist whether DEFECT-001 reproduces on seller-discounted. Do not patch; after recording, advance to NEW-05.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_04_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_04_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
