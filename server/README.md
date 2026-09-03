@@ -1,73 +1,46 @@
 # Product Control Plane Server
 
-Commercial/server track for the browser bridge product.
+P1.1 candidate workspace foundation for the commercial control plane. It is not a completion marker for P1 or P1.1.
 
-## Current status
+## Requirements
 
-Architecture phase (`P0`) is being completed on:
+Use Node.js 24 and the pinned pnpm version from `package.json`. The supported reproducible validation environment is the official Node 24 Docker image; do not use the host Node runtime as acceptance evidence.
 
-`feature/product-control-plane-server-2026-09-03`
+## Structure
 
-The active Ozon Bridge continues independently under:
+- `apps/api` — Fastify liveness/readiness and error/correlation foundation.
+- `apps/worker` — buildable process and job-runner boundary.
+- `apps/portal`, `apps/admin` — minimal Next.js shells.
+- `apps/health-runner` — browser-family-neutral `BrowserDriver` boundary.
+- `packages/contracts`, `shared`, `observability`, `db` — shared foundation packages.
+- `infra/compose` — local PostgreSQL 18 only.
 
-`tooling/llm-api-bridges/ozon-seller/`
+## Commands
 
-The server project MUST depend on the versioned client/server contract, not on live Bridge implementation internals, until the explicit integration gate.
+From `server/` after `corepack enable && pnpm install --frozen-lockfile`:
 
-## Product role
+```sh
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm api:dev
+pnpm worker:dev
+pnpm db:migrate
+```
 
-The server is the product **control plane**:
+`pnpm test:integration` is prepared for P1.3 and intentionally has no real PostgreSQL acceptance claim in P1.1.
 
-- identity/accounts;
-- extension devices/sessions;
-- plans/prices/subscriptions;
-- billing;
-- entitlements/features;
-- signed remote configuration;
-- AI adapter/profile registry;
-- browser/extension compatibility;
-- AI compatibility Health;
-- safe diagnostics;
-- admin/audit;
-- notifications/operations.
+## Local PostgreSQL
 
-The baseline server is NOT the seller data plane. Ozon credentials and normal raw seller data remain in the browser/extension path.
+Copy `.env.example` as needed, then run:
 
-## Architecture index
+```sh
+docker compose -p product-control-plane-dev -f infra/compose/docker-compose.yml up -d
+```
 
-Read in this order before implementation:
+The development-only database is loopback-bound at `127.0.0.1:55432`; it does not use host PostgreSQL/MySQL or public binding.
 
-1. `docs/ARCHITECTURE.md` — system architecture and ownership boundaries.
-2. `docs/REQUIREMENTS.md` — complete functional/non-functional technical specification.
-3. `docs/ROADMAP.md` — two-level execution roadmap and current step.
-4. `docs/DEVELOPMENT_RULES.md` — mandatory architecture/Codex workflow rules.
-5. `docs/SECURITY.md` — trust boundaries, auth/session/config security.
-6. `docs/INTEGRATION_CONTRACT.md` — future Bridge <-> server seam.
-7. `docs/TECH_STACK.md` — approved implementation stack.
-8. `docs/DATA_MODEL.md` — logical database/domain model.
-9. `docs/API_CONTRACTS.md` — API surface/error/idempotency conventions.
-10. `docs/BILLING_AND_PLANS.md` — plan/price/subscription architecture.
-11. `docs/HEALTH_SYSTEM.md` — automated AI compatibility monitoring/repair loop.
-12. `docs/TEST_STRATEGY.md` — test and acceptance layers.
-13. `docs/ADR/` — accepted architecture decisions.
-14. `reference/bridge/` — pinned Bridge reference/provenance only.
+## Bridge boundary
 
-## First coding step
-
-No application implementation should begin until P0 architecture consistency is accepted.
-
-The prepared first Codex packet is:
-
-`docs/P1_CODEX_IMPLEMENTATION_PACKET.md`
-
-It creates only the reproducible engineering foundation: Node.js 24 LTS, pnpm/TypeScript/Fastify/PostgreSQL/Drizzle/test/CI shells. It intentionally does not implement auth/billing/AI Health/Ozon logic yet.
-
-## Core invariant
-
-`CONTROL PLANE != DATA PLANE`
-
-and
-
-`EFFECTIVE CLIENT CAPABILITY = PACKAGED CAPABILITY ∩ SERVER POLICY`
-
-Remote server configuration may restrict packaged behavior but may not become arbitrary executable extension/provider control.
+Server production modules must not import `tooling/llm-api-bridges/ozon-seller`. Bridge integration is deferred to P11; `pnpm bridge:guard` enforces this source boundary.

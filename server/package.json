@@ -1,0 +1,27 @@
+{
+  "name": "product-control-plane-server",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.15.1",
+  "engines": { "node": ">=24 <25", "pnpm": ">=10.15.1 <11" },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0 && pnpm bridge:guard",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test && pnpm bridge:guard",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "build": "pnpm --filter @product/api build && pnpm --filter @product/worker build && pnpm --filter @product/health-runner build && pnpm --filter @product/portal build && pnpm --filter @product/admin build",
+    "db:generate": "pnpm --filter @product/db db:generate",
+    "db:migrate": "pnpm --filter @product/db db:migrate",
+    "api:dev": "pnpm --filter @product/api dev",
+    "worker:dev": "pnpm --filter @product/worker dev",
+    "bridge:guard": "node scripts/check-bridge-boundary.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.35.0",
+    "@types/node": "24.3.0",
+    "eslint": "9.35.0",
+    "typescript": "5.9.2",
+    "typescript-eslint": "8.42.0",
+    "vitest": "3.2.4"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@product/health-runner",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": { ".": { "types": "./src/index.ts", "default": "./src/index.ts" } },
+  "scripts": { "typecheck": "tsc --noEmit", "test": "vitest run", "build": "tsup src/index.ts --format esm --target node24 --clean" },
+  "devDependencies": { "tsup": "8.5.0" }
+}

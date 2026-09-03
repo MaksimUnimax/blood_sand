@@ -1,0 +1,14 @@
+import pino, { type Logger, type LoggerOptions } from 'pino';
+
+export const SensitiveLogPaths = [
+  'authorization', 'cookie', '["set-cookie"]', 'password', 'token', 'refresh_token',
+  'access_token', 'api_key', 'secret', 'req.headers.authorization', 'req.headers.cookie', 'req.headers["set-cookie"]'
+] as const;
+
+export function createLogger(level: string): Logger {
+  const options: LoggerOptions = {
+    level,
+    redact: { paths: [...SensitiveLogPaths], censor: '[REDACTED]' }
+  };
+  return pino(options);
+}

@@ -1,0 +1,19 @@
+version: "3.3"
+services:
+  postgres:
+    image: postgres:18.0
+    environment:
+      POSTGRES_DB: product_control_plane
+      POSTGRES_USER: product_control_plane
+      POSTGRES_PASSWORD: development_only_password
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - product_control_plane_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product_control_plane -d product_control_plane"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+volumes:
+  product_control_plane_postgres_data:

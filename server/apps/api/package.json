@@ -1,0 +1,9 @@
+{
+  "name": "@product/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": { "dev": "tsx watch src/main.ts", "typecheck": "tsc --noEmit", "test": "vitest run", "build": "tsup src/main.ts --format esm --target node24 --clean" },
+  "dependencies": { "@product/contracts": "workspace:*", "@product/observability": "workspace:*", "@product/shared": "workspace:*", "fastify": "5.6.0", "pino": "9.9.4", "tsx": "4.20.5" },
+  "devDependencies": { "tsup": "8.5.0" }
+}
