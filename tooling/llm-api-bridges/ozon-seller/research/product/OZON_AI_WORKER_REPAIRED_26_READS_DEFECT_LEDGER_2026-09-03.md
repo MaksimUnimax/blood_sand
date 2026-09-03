@@ -19,26 +19,29 @@ Confirmed safe-report reproductions with personal-data setting OFF:
 3. NEW-03 `seller_postings`;
 4. NEW-04 `seller_discounted`;
 5. NEW-05 `seller_stocks`;
-6. NEW-06 `seller_placement_by_products`.
+6. NEW-06 `seller_placement_by_products`;
+7. NEW-07 `seller_placement_by_supplies`.
 
-All six file reads were locally `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
+All seven file reads were locally `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
 
-NEW-06 reproduction:
-- independent source code `REPORT_seller_placement_by_products_2093109_1788407770_01a06568-ee50-7d2e-bcca-9594563e3735`;
-- opaque ref `rpf_ec4858fd-8af3-4da5-a7c3-ddd4ec1753b9`;
-- request `policy-52e5b3e8-47ac-4db0-87e0-a460dc070271`;
-- fingerprint `f96ec644`;
+NEW-07 reproduction:
+- source code `REPORT_seller_placement_by_supplies_2093109_1788408279_01a06570-b345-7114-9532-c1476a0c61e2`;
+- opaque ref `rpf_49f4be70-84e2-40b7-8224-6a58e409cf29`;
+- request `policy-a67134cb-346f-433b-881b-9f89e4410899`;
+- fingerprint `baf1c4f3`;
 - HTTP `0`;
 - physical requests `0`;
 - external request `false`;
+- entitlement `POLICY_BLOCKED / personal_data_setting_off`;
 - error `OPERATION_DISABLED_BY_USER`;
-- stage `personal_data_policy`.
-
-The frozen STD-10 report code was not used or inspected in NEW-06.
+- stage `personal_data_policy`;
+- automatic retry `false`.
 
 Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_06_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_06_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
+- RAW `live-runs/repaired-26/raw/NEW_07_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_07_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
+
+This seventh safe report class further confirms generic helper-policy behavior rather than report-type-specific sensitivity.
 
 ## DEFECT-002 — transformed create metadata inconsistent with exact_request_preserved
 
@@ -58,13 +61,7 @@ Clean counterexamples narrow the scope:
 - NEW-07 `report_placement_by_supplies_create`: `2a4cb92d == 2a4cb92d`, transformed false, HTTP200.
 - tested `report_info` steps so far also preserve identical fingerprints.
 
-NEW-07 is an additional clean create-path counterexample, so DEFECT-002 remains specific to particular planner/normalization paths rather than repaired create aliases generally.
-
-Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_07_RUN_1_REPORT_PLACEMENT_BY_SUPPLIES_CREATE_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_07_RUN_1_REPORT_PLACEMENT_BY_SUPPLIES_CREATE_2026-09-03.md`
-
-Continue scope collection through remaining repaired create paths and later batch tests.
+Therefore DEFECT-002 is not universal; continue scope collection through remaining repaired create paths and later batch tests.
 
 ## DEFECT-003 — report_postings_create delivery_schema case mismatch
 
