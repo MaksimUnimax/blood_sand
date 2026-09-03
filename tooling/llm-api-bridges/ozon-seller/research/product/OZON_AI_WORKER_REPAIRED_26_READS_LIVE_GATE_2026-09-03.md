@@ -35,7 +35,7 @@ That code belongs only to the frozen forensic STD-10 workflow.
 | 5 | NEW-05 | `report_warehouse_stock` | COLLECTION_COMPLETE_PARTIAL_FAIL — real FBS setup PASS + create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 6 | NEW-06 | `report_placement_by_products_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — independent create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001; no transform anomaly | PENDING |
 | 7 | NEW-07 | `report_placement_by_supplies_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001; no transform anomaly | PENDING |
-| 8 | NEW-08 | `report_marked_products_sales_create` | IN_PROGRESS — create PASS clean metadata; report_info NEXT | PENDING |
+| 8 | NEW-08 | `report_marked_products_sales_create` | IN_PROGRESS — create PASS + report_info PASS; file read NEXT; no transform anomaly | PENDING |
 | 9 | NEW-09 | `report_realization_posting_create` | PENDING | PENDING |
 | 10 | NEW-10 | `finance_document_b2b_sales` | PENDING | PENDING |
 | 11 | NEW-11 | `finance_mutual_settlement_report` | PENDING | PENDING |
@@ -58,13 +58,15 @@ That code belongs only to the frozen forensic STD-10 workflow.
 ## Defects collected
 
 - DEFECT-001: static privacy block on safe `report_file_get`, confirmed on 7 report types: `seller_products`, `seller_returns_v2`, `seller_postings`, `seller_discounted`, `seller_stocks`, `seller_placement_by_products`, `seller_placement_by_supplies`.
-- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean repaired create counterexamples now include NEW-04, NEW-05, NEW-06, NEW-07 and NEW-08; tested `report_info` paths are also clean.
+- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean repaired paths include NEW-04, NEW-05, NEW-06, NEW-07 and NEW-08 create; NEW-08 report_info is also clean.
 - DEFECT-003: `report_postings_create.delivery_schema` uppercase/lowercase mismatch (`FBO` 400 vs `fbo` 200).
 
 Defect authority:
 `OZON_AI_WORKER_REPAIRED_26_READS_DEFECT_LEDGER_2026-09-03.md`
 
-## NEW-08 Run1 — create PASS
+## NEW-08 chain
+
+### Run1 — create PASS
 
 Operation: `report_marked_products_sales_create`
 Completed date interval: `2026-09-01..2026-09-02`.
@@ -82,13 +84,29 @@ Completed date interval: `2026-09-01..2026-09-02`.
 - exact_request_preserved true
 - report code `REPORT_marked_products_sales_2093109_1788408823_01a06578-fdec-762d-869c-fe3b626796cc`.
 
-No new defect. NEW-08 is another clean counterexample for DEFECT-002.
+### Run2 — report_info PASS
 
-RAW:
-`live-runs/repaired-26/raw/NEW_08_RUN_1_REPORT_MARKED_PRODUCTS_SALES_CREATE_RAW_2026-09-03.json`
+- request `d220db46-ad97-4744-b7e2-75cf91bf12ed`
+- HTTP200
+- elapsed `1101 ms`
+- physical business requests `1`
+- external request true
+- status `success`
+- report type `marked_products_sales`
+- provider file `[REDACTED]`
+- opaque ref `rpf_e414b482-5e63-4211-99aa-be3ed53ff09b`
+- fingerprints `fcc2dd70 == fcc2dd70`
+- transformed false
+- exact_request_preserved true
+- expires at `2026-09-04T04:13:43.278246Z`.
 
-Parsed:
-`live-runs/NEW_08_RUN_1_REPORT_MARKED_PRODUCTS_SALES_CREATE_2026-09-03.md`
+No new defect. Run2 does not reproduce DEFECT-002.
+
+RAW Run2:
+`live-runs/repaired-26/raw/NEW_08_RUN_2_REPORT_INFO_RAW_2026-09-03.json`
+
+Parsed Run2:
+`live-runs/NEW_08_RUN_2_REPORT_INFO_READY_OPAQUE_FILE_REF_2026-09-03.md`
 
 ## Progress
 
@@ -102,10 +120,10 @@ Parsed:
 
 ## Exact next collection step
 
-NEW-08: one explicit `report_info` for:
-`REPORT_marked_products_sales_2093109_1788408823_01a06578-fdec-762d-869c-fe3b626796cc`
+NEW-08 `report_file_get` using:
+`rpf_e414b482-5e63-4211-99aa-be3ed53ff09b`
 
-Persist the result before any following command. If ready, later call `report_file_get` on NEW-08's opaque ref to scope DEFECT-001. Do not patch runtime.
+Record whether DEFECT-001 extends to `marked_products_sales`. Persist the result before advancing to NEW-09. Do not patch runtime.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_08_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_08_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
