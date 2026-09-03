@@ -349,8 +349,8 @@ Architecture remains:
 - P2.2 `[DONE]` Email OTP request/verify, abuse controls, durable delivery and portal session.
 - P2.3 `[DONE]` Device authorization start/approve/deny/expire plus client idempotency.
 - P2.4 `[DONE]` Short-lived access-token auth plus opaque refresh rotation/reuse detection.
-- P2.5 `[ACTIVE]` Device exchange/list/revoke/device limits and transactional audit.
-- P2.6 `[PLANNED]` Portal activation flow plus simulated extension client and E2E.
+- P2.5 `[DONE]` Device exchange/list/revoke/device limits and transactional audit.
+- P2.6 `[NEXT]` Portal activation flow plus simulated extension client and E2E.
 - P2.7 `[PLANNED]` P2 security/architecture audit and final P2 acceptance/checkpoint.
 
 # Parallel Bridge rule

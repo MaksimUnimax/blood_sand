@@ -1,6 +1,6 @@
-# P2.5 device-management core T2 local evidence
+# P2.5 device-management core T2 evidence
 
-Status: **LOCAL T2 ACCEPTED — P2.5 ACTIVE**
+Status: **ACCEPTED — P2.5 DONE**
 
 ADR [0007](ADR/0007-p2-device-limit-and-activation-boundary.md) preserves the
 boundary: portal approval expresses human/account intent; exchange is the
@@ -62,5 +62,7 @@ DB-down and remains SHA-256
 
 The HTTP boundary candidate is documented separately in
 `P2_5_DEVICE_MANAGEMENT_HTTP_ACCEPTANCE_EVIDENCE_2026-09-03.md`; this core
-evidence remains T2 evidence until implementation CI has passed. P2 remains
-ACTIVE; P2.1–P2.4 are DONE; P2.5 is ACTIVE; P2.6–P2.7 are PLANNED.
+evidence is preserved as the T2 record. Implementation commit
+`e40b699e53176a71696be63416133a5d0b105fe6` passed Server CI run
+33761138559. P2 remains ACTIVE; P2.1–P2.5 are DONE; P2.6 is NEXT and P2.7 is
+PLANNED.

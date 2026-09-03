@@ -1,6 +1,6 @@
 # P2.5 device-management HTTP acceptance evidence
 
-Status: **LOCAL CANDIDATE — P2.5 ACTIVE**
+Status: **ACCEPTED — P2.5 DONE**
 
 ADR 0007 remains the authority: approval records intent, while exchange grants
 the capability. `DeviceLimitResolver` remains the adapter-only
@@ -36,5 +36,7 @@ PostgreSQL acceptance used 18.0. No device code or refresh token appears in a
 URL example. Bridge guard passed and the device-management package remains
 independent of Fastify, Drizzle, pg, and Next.js.
 
+Implementation commit `e40b699e53176a71696be63416133a5d0b105fe6` passed the
+exact Server CI push run [33761138559](https://github.com/MaksimUnimax/blood_sand/actions/runs/33761138559).
 Known limitation: P2.6 portal activation UI and simulated extension E2E are not
-implemented. This evidence is local-candidate only until code-bearing CI.
+implemented.
