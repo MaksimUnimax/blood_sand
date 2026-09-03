@@ -1,0 +1,48 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "query_planner": {
+    "status": "complete",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
+  },
+  "result": {
+    "request_id": "2c794bbd-96fc-486c-ae22-04b36d5e98e7",
+    "operation": "finance_decompensation_report",
+    "command_fingerprint": "9a67428a",
+    "request_meta": {
+      "provider": "ozon",
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "path_alias": "finance_decompensation_report",
+      "external_request_executed": true
+    },
+    "http_status": 404,
+    "elapsed_ms": 1476,
+    "planning": {
+      "entitlement": {
+        "status": "SUPPORTED_AND_ENTITLED",
+        "reason": "all_accounts",
+        "entitlement_key": "POST /v1/finance/decompensation",
+        "exact_request_preserved": true
+      },
+      "execution": {
+        "logical_command_fingerprint": "9a67428a",
+        "physical_command_fingerprint": "9a67428a",
+        "command_transformed": false
+      }
+    },
+    "error": {
+      "source": "provider",
+      "category": "provider_request",
+      "http_status": 404,
+      "code": "5",
+      "automatic_retry": false,
+      "external_request_executed": true
+    }
+  }
+}
