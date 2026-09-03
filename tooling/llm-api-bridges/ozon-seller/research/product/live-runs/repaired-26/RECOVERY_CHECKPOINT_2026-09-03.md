@@ -24,35 +24,40 @@ Do not touch:
 
 ## DEFECT-001
 
-Static privacy block on generic `report_file_get`, reproduced on safe NEW-01 seller-products and NEW-02 seller-returns report files.
+Static privacy block on generic `report_file_get`, reproduced on safe NEW-01 seller-products and NEW-02 seller-returns report files. NEW-03 seller-postings file read is next scope check.
 
 ## DEFECT-002
 
-Planning metadata inconsistency reproduced on NEW-02 and NEW-03 create paths: physical fingerprint differs / transformed true while exact_request_preserved remains true.
-
-NEW-03 Run3: `0507ce87 -> 9f11d567`, transformed true, exact_request_preserved true, provider HTTP200.
+Planning metadata inconsistency reproduced on NEW-02 and NEW-03 create paths. NEW-03 Run4 `report_info` did not reproduce it (`9e13284f == 9e13284f`, transformed false).
 
 ## DEFECT-003
 
-`report_postings_create` delivery schema case mismatch confirmed by live A/B:
-
-- fully past range + uppercase `FBO` => HTTP400;
-- same fully past range + lowercase `fbo` => HTTP200.
+`report_postings_create` delivery schema case mismatch confirmed:
+- uppercase `FBO` => HTTP400;
+- lowercase `fbo` on same past range => HTTP200.
 
 ## NEW-03 current state
 
-Run3 successful create:
+Successful create:
 - request `8e92df34-abdc-450f-a82b-dd55605bb7ac`
-- report code `REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c`
+- code `REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c`
+
+Report-info PASS:
+- request `72342313-8c33-4e39-a047-56c01716cf28`
 - HTTP200
-- physical requests 1.
+- status `success`
+- report type `seller_postings`
+- signed file redacted
+- opaque ref `rpf_4619d324-8228-4c8e-b8be-c4c1ea05b92c`
+- fingerprint `9e13284f`
+- transformed false.
 
 ## Exact next command
 
-NEW-03: one explicit `report_info` for:
-`REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c`
+NEW-03:
+`OZON_API_V1 {"operation":"report_file_get","params":{"file_ref":"rpf_4619d324-8228-4c8e-b8be-c4c1ea05b92c","offset":0,"limit":50}}`
 
-If ready, next separate command is `report_file_get`; record whether DEFECT-001 reproduces on seller-postings. Do not patch.
+Persist whether DEFECT-001 reproduces on seller-postings. Do not patch; after recording, advance to NEW-04.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_03_LOWERCASE_FBO_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_03_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
