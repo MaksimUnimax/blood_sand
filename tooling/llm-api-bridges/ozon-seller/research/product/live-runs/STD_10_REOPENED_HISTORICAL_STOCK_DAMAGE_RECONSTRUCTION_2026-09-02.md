@@ -4,7 +4,7 @@ Updated: 2026-09-03
 Canonical question: `На складе Ozon был пожар или авария. Был ли там мой товар, что с ним сейчас и что мне нужно контролировать?`
 Target warehouse: `САМАРА_РФЦ`, warehouse_id `23128509046000`.
 Incident: 2026-08-22, Chapayevsk, Samara region.
-Status: `REOPENED_READY_AFTER_CERTIFIED_READ_REPAIR`
+Status: `REOPENED_IN_PROGRESS_PLACEMENT_REPORT_CREATED_REPORT_INFO_NEXT`
 Rule: `NO_SKIP_ON_FAILURE`
 
 ## Why STD-10 remains reopened
@@ -96,7 +96,7 @@ That means no already-existing report was available through the list surface for
 
 It did **not** justify declaring the historical baseline unavailable, because the then-current READ registry had incorrectly excluded passive report creation workflows.
 
-## READ-classification blocker discovered after Run10
+## READ-classification blocker and repair
 
 The Step7 terminal-matrix re-audit found a generic false-negative rule that treated server-side report/document/label/validation generation as non-READ even where the operation only materialized existing business state.
 
@@ -104,11 +104,7 @@ At least 26 false-negative Seller READ aliases were confirmed, including the loa
 
 `report_placement_by_products_create` -> `POST /v1/report/placement/by-products/create`.
 
-`chat_history_v3` was also incorrectly removed instead of being handled through its Personal Data gate.
-
-Under `NO_SKIP_ON_FAILURE`, STD-10 was correctly blocked until this READ surface was repaired and certified.
-
-## READ repair is now certified and ported into the research lineage
+The repair is certified and ported into the research lineage.
 
 Repair authority closure:
 `72c5e972b2b122231509ce8e9199c341fd60f5f4`
@@ -140,62 +136,80 @@ Certified repaired surface:
 Detailed certification evidence:
 `live-runs/STD_10_READ_REPAIR_BROWSER_PACKAGE_CERTIFIED_2026-09-03.md`.
 
-## Historical baseline path is now testable
+## Reopened Run11 — live placement-by-products report creation
 
-The previous capability-gap statement is superseded for the repaired runtime. The Bridge now registers:
+The repaired capability has now been exercised against the real Ozon Seller API.
 
+Operation:
 `report_placement_by_products_create`
 
-Provider endpoint:
-`POST /v1/report/placement/by-products/create`
+Requested window:
+`2026-08-01..2026-08-31`
 
-Exact request shape:
+Execution evidence:
 
-- `date_from`: required `YYYY-MM-DD`
-- `date_to`: required `YYYY-MM-DD`
-- repaired Bridge limit: at most 31 calendar days inclusive.
+- bridge version: `0.1.19`
+- request id: `02abef62-83d6-4333-a2dd-813cf2f947fc`
+- query planner: `complete`
+- logical business results: `1`
+- physical business requests: `1`
+- external request executed: `true`
+- HTTP: `200`
+- elapsed: `346 ms`
+- entitlement: `SUPPORTED_AND_ENTITLED`
+- entitlement reason: `all_accounts`
+- exact request preserved: `true`
+- command transformed: `false`
+- command fingerprint: `973a081a`.
 
-The Bridge also now supports the explicit safe async report chain:
+Ozon accepted the historical placement report request and returned:
 
-1. create the placement-by-products report;
-2. call `report_info` with the returned report code;
-3. receive an opaque `report_file_ref` rather than a signed provider URL;
-4. call `report_file_get` explicitly;
-5. inspect bounded structured CSV/XLSX rows if the provider report uses a supported tabular format.
+`REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`
+
+Run11 classification:
+
+`PASS_REPORT_CREATE_REPORT_INFO_NEXT`
+
+Operational reliability:
+
+`PASS_FIRST_POST_REPAIR_LIVE_PLACEMENT_REPORT_CREATE`
+
+This is direct live proof that the repaired READ surface works in the operator's real Bridge environment.
+
+Detailed evidence:
+`live-runs/STD_10_REOPENED_RUN_11_PLACEMENT_BY_PRODUCTS_REPORT_CREATED_2026-09-03.md`.
+
+## What Run11 proves and does not prove
+
+Run11 proves only that Ozon accepted the report request and issued a report code. It does not expose the report rows.
+
+Therefore Run11 does **not** yet prove:
+
+- pre-incident Samara stock by SKU;
+- historical Samara quantity on 2026-08-21/22;
+- any burned/lost quantity;
+- incident causality for current Samara zero;
+- compensation liability.
+
+No damage conclusion may be advanced from the create acknowledgement alone.
+
+## Explicit safe report chain
+
+The repaired Bridge supports the async report path:
+
+1. `report_placement_by_products_create` — **completed in Run11**;
+2. `report_info` — **next**;
+3. receive an opaque `report_file_ref` if the provider report is ready;
+4. `report_file_get` — only as a later explicit business step;
+5. inspect bounded structured CSV/XLSX rows if returned in a supported format.
 
 ## Immediate next live read
 
-After the operator installs/reloads the certified browser package, create the full August 2026 placement-by-products report:
+Execute exactly one `report_info` request for:
 
-```text
-OZON_API_V1
-{
-  "operation": "report_placement_by_products_create",
-  "params": {
-    "date_from": "2026-08-01",
-    "date_to": "2026-08-31"
-  }
-}
-```
+`REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`
 
-Why the full month:
-
-- it stays inside the repaired 31-calendar-day limit;
-- it spans both the pre-incident and post-incident periods;
-- it gives the strongest chance of obtaining a daily/product placement history useful for the Samara baseline instead of sampling one isolated date.
-
-## What the create result is allowed to prove
-
-The create acknowledgement can only prove that the report request was accepted and provide its report identifier/code.
-
-It cannot by itself prove:
-
-- that seller stock was present at Samara at incident time;
-- how many units were present;
-- how many units were lost/destroyed;
-- whether Ozon owes or paid compensation.
-
-If the create call succeeds, the next action is exactly one explicit `report_info` read for the returned code. Do not batch `report_info` or `report_file_get` into the same operator step.
+If `report_info` says the report is still processing, record that state and do not skip ahead. If it exposes an opaque `report_file_ref`, then the following step will be one explicit `report_file_get`.
 
 ## Current forensic conclusion
 
@@ -205,7 +219,7 @@ Current evidence narrows the unexplained Samara-zero problem because, in the tes
 - formal Samara removal/utilization rows;
 - finance transactions classified as compensation.
 
-But there is still **no evidence-backed numerical burned/lost quantity**. The repaired historical placement report is now the next load-bearing evidence source.
+The historical placement report has now been successfully requested, but its data has not yet been retrieved. There is still **no evidence-backed numerical burned/lost quantity**.
 
 Checkpoint:
-`STD_10_REOPENED_READ_REPAIR_CERTIFIED_BROWSER_PACKAGE_READY_PLACEMENT_BY_PRODUCTS_CREATE_NEXT`
+`STD_10_REOPENED_RUN11_PLACEMENT_REPORT_CREATED_REPORT_INFO_NEXT`
