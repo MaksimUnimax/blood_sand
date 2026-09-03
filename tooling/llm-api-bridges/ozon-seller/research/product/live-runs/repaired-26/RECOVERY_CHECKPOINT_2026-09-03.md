@@ -25,8 +25,8 @@ Do not touch:
 
 ## Open defects
 
-- DEFECT-001: generic safe report-file reads privacy-blocked; confirmed on seller_products, seller_returns_v2, seller_postings, seller_discounted.
-- DEFECT-002: create planning metadata inconsistency on NEW-02/03; NEW-04/05 clean counterexamples.
+- DEFECT-001: generic safe report-file reads privacy-blocked; confirmed on seller_products, seller_returns_v2, seller_postings, seller_discounted. NEW-05 seller_stocks file-read is the next scope check.
+- DEFECT-002: create planning metadata inconsistency on NEW-02/03; NEW-04/05 create and NEW-05 report_info are clean counterexamples.
 - DEFECT-003: report_postings delivery_schema case mismatch, `FBO` => 400, `fbo` => 200.
 
 ## NEW-05 setup
@@ -48,11 +48,22 @@ Create PASS:
 - transformed false
 - report code `REPORT_seller_stocks_2093109_1788407283_01a06561-80f3-78d2-9c6a-3c829871385f`.
 
+Report-info PASS:
+- request `f543d8bd-0f37-4f77-b7e2-21439f600870`
+- HTTP200
+- status `success`
+- report type `seller_stocks`
+- signed provider file redacted
+- opaque ref `rpf_304de093-ae1b-46f3-8be0-2a16793361b9`
+- fingerprints `83c2156b == 83c2156b`
+- transformed false
+- expires at `2026-09-03T04:18:03.956035Z`.
+
 ## Exact next command
 
-`OZON_API_V1 {"operation":"report_info","params":{"code":"REPORT_seller_stocks_2093109_1788407283_01a06561-80f3-78d2-9c6a-3c829871385f"}}`
+`OZON_API_V1 {"operation":"report_file_get","params":{"file_ref":"rpf_304de093-ae1b-46f3-8be0-2a16793361b9","offset":0,"limit":50}}`
 
-If ready, next separate step is `report_file_get` to scope DEFECT-001 on seller_stocks. Do not patch runtime.
+Persist whether DEFECT-001 reproduces on seller_stocks. Do not patch runtime. After recording, advance to NEW-06 using an independent generic placement report; never use the frozen STD-10 report code.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_05_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_05_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
