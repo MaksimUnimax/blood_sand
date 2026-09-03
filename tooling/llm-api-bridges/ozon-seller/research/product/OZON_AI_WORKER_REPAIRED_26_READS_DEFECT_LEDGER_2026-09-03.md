@@ -63,7 +63,8 @@ Clean counterexamples narrow the scope:
 - NEW-12 `finance_compensation_report`: `0fb59a8f == 0fb59a8f`, transformed false, exact_request_preserved true, provider HTTP404/code5.
 - NEW-13 `finance_decompensation_report`: `9a67428a == 9a67428a`, transformed false, exact_request_preserved true, provider HTTP404/code5.
 - NEW-14 `cargoes_label_create`: `151c4db3 == 151c4db3`, transformed false, exact_request_preserved true, provider HTTP429/code8.
-- NEW-15 setup `fbs_act_list`: `937e3a3f == 937e3a3f`, transformed false, exact_request_preserved true, provider HTTP400/code3.
+- NEW-15 setup Run1 `fbs_act_list`: `937e3a3f == 937e3a3f`, transformed false, exact_request_preserved true, provider HTTP400/code3.
+- NEW-15 setup Run2 `fbs_act_list`: `e77fcc54 == e77fcc54`, transformed false, exact_request_preserved true, provider HTTP400/code3.
 - other tested `report_info` steps also preserve identical fingerprints.
 
 Therefore DEFECT-002 is not universal; continue scope collection through remaining repaired paths and later batch tests.
@@ -112,9 +113,9 @@ Evidence:
 - passing RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_RAW_2026-09-03.json`
 - passing parsed `live-runs/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_2026-09-03.md`
 
-## DEFECT-006 — fbs_act_list template omits provider-required filter
+## DEFECT-006 — fbs_act_list request contract permits provider-invalid forms
 
-Classification: `FBS_ACT_LIST_TEMPLATE_OMITS_PROVIDER_REQUIRED_FILTER`
+Classification: `FBS_ACT_LIST_REQUEST_CONTRACT_UNDERCONSTRAINED_PROVIDER_INVALID`
 Status: `OPEN_CONFIRMED_COLLECTING_SCOPE`
 
 NEW-15 setup Run1 used the exact active registry template:
@@ -129,13 +130,30 @@ Observed:
 - fingerprints `937e3a3f == 937e3a3f`;
 - transformed false.
 
-Active runtime `normalizeFbsActListParams` requires `limit`, allows `filter` to be omitted, and only requires `date_from`/`date_to` if a filter object is present. The operation registry advertises the filter-less `{limit:50}` template. Current public API documentation represents the request with a `filter` object containing `date_from` and `date_to`. The provider rejects the filter-less bridge-advertised form.
+NEW-15 setup Run2 used an explicit RFC3339 completed-month filter:
+`{"operation":"fbs_act_list","params":{"filter":{"date_from":"2026-08-01T00:00:00Z","date_to":"2026-08-31T23:59:59Z"},"limit":50}}`
 
-Classification is therefore a bridge contract/template mismatch, not a generic provider outage. A materially different request with explicit period filter is required for the A/B control. Do not patch during collection.
+Observed:
+- request `b886712a-3882-4050-ae0b-f930740cb7e4`;
+- HTTP400 / provider code `3`;
+- physical1, logical1, external true;
+- automatic retry false;
+- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`;
+- exact request preserved true;
+- fingerprints `e77fcc54 == e77fcc54`;
+- transformed false.
+
+Run2 disproves the narrower hypothesis that filter omission alone explains Run1. Active runtime `normalizeFbsActListParams` requires only `limit`; `filter` is optional, and when present it only checks that `date_from`/`date_to` are strings while `integration_type` is an unconstrained string and `status` is an unconstrained string array. It does not encode provider temporal constraints or provider enums.
+
+The confirmed bridge defect is therefore broader: the active advertised/validated request contract permits provider-invalid forms. The exact provider-side constraint causing code3 remains under collection. No runtime patch is allowed yet.
+
+Next controlled A/B is a narrow fully completed two-day interval using the same request shape. This is materially different from the rejected 31-day interval and tests whether the provider rejection is period-related without automatically retrying the same business request.
 
 Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_15_SETUP_RUN_1_FBS_ACT_LIST_TEMPLATE_PROVIDER_400_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_15_SETUP_RUN_1_FBS_ACT_LIST_TEMPLATE_PROVIDER_400_2026-09-03.md`
+- Run1 RAW `live-runs/repaired-26/raw/NEW_15_SETUP_RUN_1_FBS_ACT_LIST_TEMPLATE_PROVIDER_400_RAW_2026-09-03.json`
+- Run1 parsed `live-runs/NEW_15_SETUP_RUN_1_FBS_ACT_LIST_TEMPLATE_PROVIDER_400_2026-09-03.md`
+- Run2 RAW `live-runs/repaired-26/raw/NEW_15_SETUP_RUN_2_FBS_ACT_LIST_FILTERED_PROVIDER_400_RAW_2026-09-03.json`
+- Run2 parsed `live-runs/NEW_15_SETUP_RUN_2_FBS_ACT_LIST_FILTERED_PROVIDER_400_2026-09-03.md`
 
 ## NEW-12 provider outcome
 
