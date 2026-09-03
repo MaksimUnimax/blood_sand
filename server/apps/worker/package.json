@@ -12,6 +12,7 @@
   "dependencies": {
     "@product/auth": "workspace:*",
     "@product/db": "workspace:*",
+    "@product/device-auth": "workspace:*",
     "@product/email": "workspace:*",
     "@product/observability": "workspace:*",
     "@product/shared": "workspace:*",

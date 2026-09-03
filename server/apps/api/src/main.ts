@@ -1,17 +1,30 @@
-import { createAuthRepository, createDatabaseRuntime } from "@product/db";
+import {
+  createAuthRepository,
+  createDatabaseRuntime,
+  createDeviceAuthorizationRepository,
+} from "@product/db";
 import { AuthService, deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
+import {
+  DeviceAuthorizationService,
+  deriveDeviceAuthKeys,
+} from "@product/device-auth";
 import { loadConfig } from "@product/shared";
 import { createApiApp } from "./app.js";
 import { createInfrastructureReadiness } from "./infrastructure.js";
 
 const config = loadConfig(process.env);
 const database = createDatabaseRuntime(config.databaseUrl);
+const rootSecret = loadAuthRootSecret(process.env);
 const app = createApiApp({
   config,
   isInfrastructureReady: createInfrastructureReadiness(database),
   authService: new AuthService(
     createAuthRepository(database),
-    deriveAuthKeys(loadAuthRootSecret(process.env)),
+    deriveAuthKeys(rootSecret),
+  ),
+  deviceAuthorizationService: new DeviceAuthorizationService(
+    createDeviceAuthorizationRepository(database),
+    deriveDeviceAuthKeys(rootSecret),
   ),
 });
 let closing = false;

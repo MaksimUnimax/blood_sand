@@ -31,6 +31,8 @@ import {
   type AuthService as AuthServiceType,
 } from "@product/auth";
 import { registerAuthRoutes } from "./auth-routes.js";
+import type { DeviceAuthorizationService } from "@product/device-auth";
+import { registerDeviceAuthorizationRoutes } from "./device-authorization-routes.js";
 
 export class ControlledError extends Error {
   public constructor(
@@ -46,6 +48,7 @@ export interface ApiDependencies {
   readonly config: AppConfig;
   readonly isInfrastructureReady: () => Promise<boolean>;
   readonly authService?: AuthServiceType;
+  readonly deviceAuthorizationService?: DeviceAuthorizationService;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -170,6 +173,13 @@ export function createApiApp(
         new AuthService(unavailable, deriveAuthKeys(Buffer.alloc(32))),
       dependencies.config.environment === "production",
     );
+    if (dependencies.deviceAuthorizationService)
+      registerDeviceAuthorizationRoutes(
+        app,
+        dependencies.authService ??
+          new AuthService(unavailable, deriveAuthKeys(Buffer.alloc(32))),
+        dependencies.deviceAuthorizationService,
+      );
   });
   return app;
 }

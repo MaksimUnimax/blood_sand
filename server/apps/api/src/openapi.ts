@@ -8,6 +8,11 @@ import {
   deriveAuthKeys,
   type AuthRepository,
 } from "@product/auth";
+import {
+  DeviceAuthorizationService,
+  deriveDeviceAuthKeys,
+  type DeviceAuthorizationRepository,
+} from "@product/device-auth";
 
 type JsonPrimitive = boolean | null | number | string;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -56,6 +61,15 @@ export async function generateOpenApiRepresentation(): Promise<string> {
     config: generatorConfig,
     isInfrastructureReady: async () => true,
     authService: new AuthService(fake, deriveAuthKeys(Buffer.alloc(32, 1))),
+    deviceAuthorizationService: new DeviceAuthorizationService(
+      {
+        start: async () => ({ ok: false, code: "DEVICE_AUTH_INVALID" }),
+        approve: async () => ({ ok: false, code: "DEVICE_AUTH_INVALID" }),
+        deny: async () => ({ ok: false, code: "DEVICE_AUTH_INVALID" }),
+        expireDue: async () => 0,
+      } satisfies DeviceAuthorizationRepository,
+      deriveDeviceAuthKeys(Buffer.alloc(32, 1)),
+    ),
   });
   try {
     await app.ready();

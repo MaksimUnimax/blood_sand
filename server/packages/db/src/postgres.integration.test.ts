@@ -67,7 +67,7 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
     if (p1Directory) await rm(p1Directory, { recursive: true });
   });
 
-  it("migrates empty through P2.2, leaves no P1 probe, and is idempotent", async () => {
+  it("migrates empty through P2.3, leaves no P1 probe, and is idempotent", async () => {
     await resetDatabase();
     await runMigrations({ connectionString });
     await runMigrations({ connectionString });
@@ -89,7 +89,7 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
     const count = await runtime.db.execute<{ count: string }>(sql`
       SELECT count(*)::text AS "count" FROM drizzle."__drizzle_migrations"
     `);
-    expect(count.rows[0]?.count).toBe("3");
+    expect(count.rows[0]?.count).toBe("4");
     const probe = await runtime.db.execute<{ probe: string | null }>(sql`
       SELECT to_regclass('__p1_migration_probe') AS "probe"
     `);
@@ -116,10 +116,10 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
       sql`INSERT INTO portal_sessions (user_id, session_token_hash, expires_at) VALUES ('00000000-0000-0000-0000-000000000001', 'portal-hash-a', now() + interval '1 day')`,
     );
     await runtime.db.execute(
-      sql`INSERT INTO device_authorizations (id, device_code_hash, user_code_hash, requested_client_type, browser_family, expires_at) VALUES ('00000000-0000-0000-0000-000000000005', 'device-hash-a', 'user-hash-a', 'extension', 'chrome', now() + interval '1 day')`,
+      sql`INSERT INTO device_authorizations (id, device_code_hash, user_code_hash, requested_client_type, browser_family, expires_at) VALUES ('00000000-0000-0000-0000-000000000005', 'device-hash-a', 'user-hash-a', 'browser_extension', 'chrome', now() + interval '1 day')`,
     );
     await rejects(
-      sql`INSERT INTO device_authorizations (device_code_hash, user_code_hash, requested_client_type, browser_family, expires_at) VALUES ('device-hash-a', 'user-hash-b', 'extension', 'chrome', now() + interval '1 day')`,
+      sql`INSERT INTO device_authorizations (device_code_hash, user_code_hash, requested_client_type, browser_family, expires_at) VALUES ('device-hash-a', 'user-hash-b', 'browser_extension', 'chrome', now() + interval '1 day')`,
     );
     await rejects(
       sql`INSERT INTO otp_challenges (purpose, normalized_identity_target, verification_hash, attempt_count, max_attempts, expires_at) VALUES ('LOGIN', 'person@example.test', 'otp-hash-a', 2, 1, now() + interval '1 day')`,

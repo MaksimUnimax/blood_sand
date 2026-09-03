@@ -3,12 +3,19 @@ import {
   pgEnum,
   pgTable,
   timestamp,
+  customType,
   unique,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
 import { BrowserFamilies } from "@product/shared";
 import { accounts, users } from "./identity";
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
 
 export const browserFamily = pgEnum("browser_family", BrowserFamilies);
 export const deviceAuthorizationStatus = pgEnum("device_authorization_status", [
@@ -39,6 +46,11 @@ export const deviceAuthorizations = pgTable(
     browserVersion: varchar("browser_version", { length: 64 }),
     extensionVersion: varchar("extension_version", { length: 64 }),
     deviceLabel: varchar("device_label", { length: 256 }),
+    idempotencyKeyHash: varchar("idempotency_key_hash", { length: 128 }),
+    requestFingerprint: varchar("request_fingerprint", { length: 128 }),
+    startSecretCiphertext: bytea("start_secret_ciphertext"),
+    startSecretNonce: bytea("start_secret_nonce"),
+    startSecretAuthTag: bytea("start_secret_auth_tag"),
     approvedAccountId: uuid("approved_account_id").references(
       () => accounts.id,
       { onDelete: "restrict", onUpdate: "restrict" },
@@ -53,6 +65,7 @@ export const deviceAuthorizations = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
     deniedAt: timestamp("denied_at", { withTimezone: true }),
+    expiredAt: timestamp("expired_at", { withTimezone: true }),
     exchangedAt: timestamp("exchanged_at", { withTimezone: true }),
   },
   (table) => [

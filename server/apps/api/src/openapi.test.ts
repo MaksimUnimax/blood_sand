@@ -14,17 +14,22 @@ describe("OpenAPI foundation", () => {
     ).toBe(false);
   });
 
-  it("generates only the implemented health API surface", async () => {
+  it("generates only the implemented P2.3 API surface", async () => {
     const document = JSON.parse(await generateOpenApiRepresentation()) as {
       openapi: string;
       paths: Record<string, unknown>;
     };
     expect(document.openapi).toBe("3.1.0");
-    expect(document.paths).toHaveProperty("/health/live");
-    expect(document.paths).toHaveProperty("/health/ready");
-    expect(document.paths).toHaveProperty("/v1/auth/otp/request");
-    expect(document.paths).toHaveProperty("/v1/auth/otp/verify");
-    expect(document.paths).toHaveProperty("/v1/auth/logout");
+    expect(Object.keys(document.paths).sort()).toEqual([
+      "/health/live",
+      "/health/ready",
+      "/v1/auth/logout",
+      "/v1/auth/otp/request",
+      "/v1/auth/otp/verify",
+      "/v1/device-authorizations",
+      "/v1/device-authorizations/{id}/approve",
+      "/v1/device-authorizations/{id}/deny",
+    ]);
     expect(document.paths).not.toHaveProperty("/v1/bootstrap");
     expect(document.paths).not.toHaveProperty("/v1/billing/checkouts");
     expect(document.paths).not.toHaveProperty("/test-controlled-error");
