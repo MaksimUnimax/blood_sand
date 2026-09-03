@@ -51,7 +51,7 @@ Key decisions frozen for P1:
 
 Acceptance: `P0_ARCHITECTURE_AUDIT.md` = PASS.
 
-## P1 — Repository and engineering foundation `[ACTIVE]`
+## P1 — Repository and engineering foundation `[DONE]`
 
 Goal: create reproducible server workspace with infrastructure shells only.
 
@@ -88,9 +88,9 @@ Exit gate:
 - no Bridge import;
 - P1 evidence recorded.
 
-P1 implementation status: P1.1 `[DONE]`; P1.2 `[DONE]`; P1.3 `[DONE]`; P1.4 `[DONE]`; P1.5 `[NEXT]`; P1.6 `[PLANNED]`.
+P1 implementation status: P1.1 `[DONE]`; P1.2 `[DONE]`; P1.3 `[DONE]`; P1.4 `[DONE]`; P1.5 `[DONE]`; P1.6 `[DONE]`.
 
-## P2 — Accounts, OTP identity and device authorization `[PLANNED]`
+## P2 — Accounts, OTP identity and device authorization `[NEXT]`
 
 Goal: user can authenticate and authorize an extension installation.
 
@@ -334,14 +334,14 @@ Architecture remains:
 - P0.5 `[DONE]` run architecture consistency audit -> PASS.
 - P0.6 `[DONE]` prepare first bounded Codex packet `P1_CODEX_IMPLEMENTATION_PACKET.md`.
 
-## P1 next substeps
+## P1 completed substeps
 
 - P1.1 `[DONE]` Codex creates workspace/tooling skeleton exactly within P1 packet.
 - P1.2 `[DONE]` verify local install/build/lint/typecheck/unit tests.
-- P1.3 `[NEXT]` verify real PostgreSQL migration/integration baseline.
-- P1.4 `[PLANNED]` verify CI and generated contract baseline.
-- P1.5 `[PLANNED]` architecture review implementation vs P0 decisions.
-- P1.6 `[PLANNED]` record acceptance evidence and mark P1 DONE or issue corrective packet.
+- P1.3 `[DONE]` verify real PostgreSQL migration/integration baseline.
+- P1.4 `[DONE]` verify CI and generated contract baseline.
+- P1.5 `[DONE]` architecture review implementation vs P0 decisions.
+- P1.6 `[DONE]` close accepted findings, run final acceptance, and record P1 completion.
 
 # Parallel Bridge rule
 
