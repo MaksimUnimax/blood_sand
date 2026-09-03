@@ -20,15 +20,16 @@ Confirmed safe-report reproductions with personal-data setting OFF:
 4. NEW-04 `seller_discounted`;
 5. NEW-05 `seller_stocks`;
 6. NEW-06 `seller_placement_by_products`;
-7. NEW-07 `seller_placement_by_supplies`.
+7. NEW-07 `seller_placement_by_supplies`;
+8. NEW-08 `marked_products_sales`.
 
-All seven file reads were locally `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
+All eight file reads were locally `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
 
-NEW-07 reproduction:
-- source code `REPORT_seller_placement_by_supplies_2093109_1788408279_01a06570-b345-7114-9532-c1476a0c61e2`;
-- opaque ref `rpf_49f4be70-84e2-40b7-8224-6a58e409cf29`;
-- request `policy-a67134cb-346f-433b-881b-9f89e4410899`;
-- fingerprint `baf1c4f3`;
+NEW-08 reproduction:
+- source code `REPORT_marked_products_sales_2093109_1788408823_01a06578-fdec-762d-869c-fe3b626796cc`;
+- opaque ref `rpf_e414b482-5e63-4211-99aa-be3ed53ff09b`;
+- request `policy-7fb3e562-2c99-43a9-a203-edae0701f579`;
+- fingerprint `c35d1869`;
 - HTTP `0`;
 - physical requests `0`;
 - external request `false`;
@@ -38,10 +39,10 @@ NEW-07 reproduction:
 - automatic retry `false`.
 
 Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_07_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_07_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
+- RAW `live-runs/repaired-26/raw/NEW_08_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_08_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
 
-This seventh safe report class further confirms generic helper-policy behavior rather than report-type-specific sensitivity.
+This eighth safe report class further confirms generic helper-policy behavior rather than report-type-specific sensitivity.
 
 ## DEFECT-002 — transformed create metadata inconsistent with exact_request_preserved
 
