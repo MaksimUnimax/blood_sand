@@ -107,6 +107,8 @@ export const otpChallenges = pgTable(
     maxAttempts: integer("max_attempts").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
+    invalidationReason: varchar("invalidation_reason", { length: 64 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

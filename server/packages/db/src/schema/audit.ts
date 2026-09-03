@@ -16,7 +16,7 @@ export const auditEvents = pgTable(
     action: varchar("action", { length: 128 }).notNull(),
     targetType: varchar("target_type", { length: 64 }).notNull(),
     targetId: uuid("target_id"),
-    correlationId: uuid("correlation_id").notNull(),
+    correlationId: varchar("correlation_id", { length: 128 }).notNull(),
     reason: varchar("reason", { length: 512 }),
     safeMetadata: jsonb("safe_metadata"),
     createdAt: timestamp("created_at", { withTimezone: true })

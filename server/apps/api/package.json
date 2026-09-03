@@ -12,6 +12,8 @@
     "build": "tsup src/main.ts --format esm --target node24 --clean"
   },
   "dependencies": {
+    "@fastify/cookie": "11.1.2",
+    "@product/auth": "workspace:*",
     "@fastify/swagger": "9.8.1",
     "@product/contracts": "workspace:*",
     "@product/db": "workspace:*",

@@ -3,6 +3,11 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AppConfig } from "@product/shared";
 import { createApiApp } from "./app.js";
+import {
+  AuthService,
+  deriveAuthKeys,
+  type AuthRepository,
+} from "@product/auth";
 
 type JsonPrimitive = boolean | null | number | string;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -41,9 +46,16 @@ export function compareOpenApiArtifact(
 }
 
 export async function generateOpenApiRepresentation(): Promise<string> {
+  const fake: AuthRepository = {
+    requestOtp: async () => ({ ok: false, code: "AUTH_RATE_LIMITED" }),
+    verifyOtp: async () => ({ ok: false, code: "AUTH_OTP_INVALID" }),
+    authenticate: async () => undefined,
+    revoke: async () => "missing",
+  };
   const app = createApiApp({
     config: generatorConfig,
     isInfrastructureReady: async () => true,
+    authService: new AuthService(fake, deriveAuthKeys(Buffer.alloc(32, 1))),
   });
   try {
     await app.ready();

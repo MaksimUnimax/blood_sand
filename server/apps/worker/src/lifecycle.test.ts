@@ -18,6 +18,8 @@ function dependencies(): {
       close: vi.fn(async () => {
         events.push("database.close");
       }),
+      query: vi.fn(),
+      transaction: vi.fn(),
     },
     runner: {
       start: vi.fn(async () => {

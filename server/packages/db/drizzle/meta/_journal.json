@@ -15,6 +15,13 @@
       "when": 1788427181509,
       "tag": "0001_sturdy_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788429000000,
+      "tag": "0002_p2_2_otp_portal_auth",
+      "breakpoints": true
     }
   ]
 }

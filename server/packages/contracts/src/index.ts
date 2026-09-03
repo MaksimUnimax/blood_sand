@@ -12,6 +12,11 @@ export const ApiErrorCodeV1Schema = z.enum([
   "INTERNAL_ERROR",
   "INVALID_REQUEST",
   "SERVICE_UNAVAILABLE",
+  "AUTH_RATE_LIMITED",
+  "AUTH_OTP_INVALID",
+  "AUTH_LOGIN_DENIED",
+  "AUTH_SESSION_INVALID",
+  "AUTH_CSRF_INVALID",
 ]);
 export type ApiErrorCodeV1 = z.infer<typeof ApiErrorCodeV1Schema>;
 
@@ -34,3 +39,20 @@ export const HealthReadyResponseV1Schema = z.object({
   status: z.literal("ready"),
 });
 export type HealthReadyResponseV1 = z.infer<typeof HealthReadyResponseV1Schema>;
+
+export const OtpRequestBodyV1Schema = z.object({
+  email: z.string().min(1).max(320),
+});
+export const OtpRequestResponseV1Schema = z.object({
+  status: z.literal("accepted"),
+  challengeId: z.uuid(),
+  expiresAt: z.string().datetime(),
+});
+export const OtpVerifyBodyV1Schema = z.object({
+  challengeId: z.uuid(),
+  code: z.string().regex(/^\d{6}$/),
+});
+export const OtpVerifyResponseV1Schema = z.object({
+  status: z.literal("authenticated"),
+  expiresAt: z.string().datetime(),
+});

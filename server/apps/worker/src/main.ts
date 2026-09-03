@@ -1,7 +1,10 @@
 import { createDatabaseRuntime } from "@product/db";
 import { createLogger } from "@product/observability";
 import { loadConfig } from "@product/shared";
+import { deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
+import { loadSmtpConfig, SmtpEmailProvider } from "@product/email";
 import { startWorker, type JobRunner } from "./lifecycle.js";
+import { OtpEmailRunner } from "./otp-runner.js";
 
 export class NoopJobRunner implements JobRunner {
   async start(): Promise<void> {}
@@ -10,9 +13,14 @@ export class NoopJobRunner implements JobRunner {
 
 const config = loadConfig(process.env);
 const logger = createLogger(config.logLevel);
+const database = createDatabaseRuntime(config.databaseUrl);
 const runtime = await startWorker(
-  createDatabaseRuntime(config.databaseUrl),
-  new NoopJobRunner(),
+  database,
+  new OtpEmailRunner(
+    database,
+    deriveAuthKeys(loadAuthRootSecret(process.env)),
+    new SmtpEmailProvider(loadSmtpConfig(process.env)),
+  ),
   logger,
 );
 

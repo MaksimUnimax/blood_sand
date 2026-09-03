@@ -5,7 +5,13 @@ import type { DatabaseRuntime } from "./index.js";
 function createRuntime(
   close = vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
 ): DatabaseRuntime {
-  return { db: {} as DatabaseRuntime["db"], ready: vi.fn(), close };
+  return {
+    db: {} as DatabaseRuntime["db"],
+    ready: vi.fn(),
+    close,
+    query: vi.fn(),
+    transaction: vi.fn(),
+  };
 }
 
 describe("runMigrations", () => {

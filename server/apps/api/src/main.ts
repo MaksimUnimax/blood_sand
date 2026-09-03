@@ -1,4 +1,5 @@
-import { createDatabaseRuntime } from "@product/db";
+import { createAuthRepository, createDatabaseRuntime } from "@product/db";
+import { AuthService, deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
 import { loadConfig } from "@product/shared";
 import { createApiApp } from "./app.js";
 import { createInfrastructureReadiness } from "./infrastructure.js";
@@ -8,6 +9,10 @@ const database = createDatabaseRuntime(config.databaseUrl);
 const app = createApiApp({
   config,
   isInfrastructureReady: createInfrastructureReadiness(database),
+  authService: new AuthService(
+    createAuthRepository(database),
+    deriveAuthKeys(loadAuthRootSecret(process.env)),
+  ),
 });
 let closing = false;
 async function shutdown(signal: string): Promise<void> {

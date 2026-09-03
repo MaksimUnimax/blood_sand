@@ -20,6 +20,7 @@
     "db:migrate": "tsx src/migrate.ts"
   },
   "dependencies": {
+    "@product/auth": "workspace:*",
     "@product/shared": "workspace:*",
     "drizzle-orm": "0.44.5",
     "pg": "8.16.3"

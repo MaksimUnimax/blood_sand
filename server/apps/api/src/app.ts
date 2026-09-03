@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import swagger from "@fastify/swagger";
+import cookie from "@fastify/cookie";
 import Fastify, {
   type FastifyInstance,
   type FastifyRequest,
@@ -23,6 +24,13 @@ import {
 } from "@product/contracts";
 import { createLogger } from "@product/observability";
 import type { AppConfig } from "@product/shared";
+import {
+  AuthService,
+  deriveAuthKeys,
+  type AuthRepository,
+  type AuthService as AuthServiceType,
+} from "@product/auth";
+import { registerAuthRoutes } from "./auth-routes.js";
 
 export class ControlledError extends Error {
   public constructor(
@@ -37,6 +45,7 @@ export class ControlledError extends Error {
 export interface ApiDependencies {
   readonly config: AppConfig;
   readonly isInfrastructureReady: () => Promise<boolean>;
+  readonly authService?: AuthServiceType;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -66,6 +75,7 @@ export function createApiApp(
   });
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+  void app.register(cookie);
   void app.register(swagger, {
     openapi: {
       openapi: "3.1.0",
@@ -80,8 +90,13 @@ export function createApiApp(
   });
   app.setErrorHandler((error, request, reply) => {
     const controlled = error instanceof ControlledError;
-    const statusCode = controlled ? error.statusCode : 500;
-    const code: ApiErrorCodeV1 = controlled ? error.code : "INTERNAL_ERROR";
+    const validation = "validation" in error || error.name === "ZodError";
+    const statusCode = controlled ? error.statusCode : validation ? 400 : 500;
+    const code: ApiErrorCodeV1 = controlled
+      ? error.code
+      : validation
+        ? "INVALID_REQUEST"
+        : "INTERNAL_ERROR";
     if (!controlled)
       request.log.error(
         { err: error, correlationId: correlationId(request) },
@@ -90,7 +105,11 @@ export function createApiApp(
     const body = ApiErrorEnvelopeV1Schema.parse({
       error: {
         code,
-        message: controlled ? error.message : "Internal server error",
+        message: controlled
+          ? error.message
+          : validation
+            ? "Invalid request"
+            : "Internal server error",
         correlationId: correlationId(request),
       },
     });
@@ -138,6 +157,18 @@ export function createApiApp(
           }),
         );
       },
+    );
+    const unavailable: AuthRepository = {
+      requestOtp: async () => ({ ok: false, code: "AUTH_RATE_LIMITED" }),
+      verifyOtp: async () => ({ ok: false, code: "AUTH_OTP_INVALID" }),
+      authenticate: async () => undefined,
+      revoke: async () => "missing",
+    };
+    registerAuthRoutes(
+      app,
+      dependencies.authService ??
+        new AuthService(unavailable, deriveAuthKeys(Buffer.alloc(32))),
+      dependencies.config.environment === "production",
     );
   });
   return app;

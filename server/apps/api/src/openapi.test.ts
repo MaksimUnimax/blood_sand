@@ -22,7 +22,9 @@ describe("OpenAPI foundation", () => {
     expect(document.openapi).toBe("3.1.0");
     expect(document.paths).toHaveProperty("/health/live");
     expect(document.paths).toHaveProperty("/health/ready");
-    expect(document.paths).not.toHaveProperty("/v1/auth/otp/request");
+    expect(document.paths).toHaveProperty("/v1/auth/otp/request");
+    expect(document.paths).toHaveProperty("/v1/auth/otp/verify");
+    expect(document.paths).toHaveProperty("/v1/auth/logout");
     expect(document.paths).not.toHaveProperty("/v1/bootstrap");
     expect(document.paths).not.toHaveProperty("/v1/billing/checkouts");
     expect(document.paths).not.toHaveProperty("/test-controlled-error");
