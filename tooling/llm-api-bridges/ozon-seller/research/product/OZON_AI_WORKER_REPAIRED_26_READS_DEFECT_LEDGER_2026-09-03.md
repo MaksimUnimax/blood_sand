@@ -55,9 +55,16 @@ Clean counterexamples narrow the scope:
 - NEW-04 `report_discounted_create`: `02e64eda == 02e64eda`, transformed false, HTTP200.
 - NEW-05 `report_warehouse_stock`: `f8e4cdac == f8e4cdac`, transformed false, HTTP200.
 - NEW-06 `report_placement_by_products_create`: `85e4f38a == 85e4f38a`, transformed false, HTTP200.
+- NEW-07 `report_placement_by_supplies_create`: `2a4cb92d == 2a4cb92d`, transformed false, HTTP200.
 - tested `report_info` steps so far also preserve identical fingerprints.
 
-Therefore DEFECT-002 is not universal; continue scope collection through remaining repaired create paths and later batch tests.
+NEW-07 is an additional clean create-path counterexample, so DEFECT-002 remains specific to particular planner/normalization paths rather than repaired create aliases generally.
+
+Evidence:
+- RAW `live-runs/repaired-26/raw/NEW_07_RUN_1_REPORT_PLACEMENT_BY_SUPPLIES_CREATE_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_07_RUN_1_REPORT_PLACEMENT_BY_SUPPLIES_CREATE_2026-09-03.md`
+
+Continue scope collection through remaining repaired create paths and later batch tests.
 
 ## DEFECT-003 — report_postings_create delivery_schema case mismatch
 
