@@ -168,6 +168,7 @@
 
   function shouldRedactResultField(operation, fieldPath, key) {
     if ((operation === "report_list" || operation === "report_info") && String(key) === "file") return true;
+    if (["cargoes_label_get", "cargoes_label_transport_by_order_status", "cargoes_label_transport_status", "fbp_act_from_get", "fbp_act_to_get", "fbp_label_get", "posting_fbs_package_label_get_v1"].includes(operation) && ["file_url", "cdn_url", "label_url"].includes(String(key))) return true;
     if (operation === "posting_fbo_list") {
       if (/^postings\[\]\.legal_info(?:\.|$)/.test(fieldPath)) return true;
       if (/^postings\[\]\.products\[\]\.digital_codes$/.test(fieldPath)) return true;
@@ -440,26 +441,6 @@
     requireInteger(requireField(normalized, "limit"), "params.limit", { minimum: 1, maximum: 100 });
     normalized.value = requireString(requireField(normalized, "value"), "params.value");
     if (normalized.value.length < 2) fail("OZON_LIMIT_VIOLATION", "params.value: минимум 2 символа по контракту Ozon.");
-    return normalized;
-  }
-
-  function normalizeDescriptionCategoryDependentAttributesParams(params) {
-    const normalized = requirePlainObject(params, "params");
-    assertAllowedFields(normalized, ["description_category_id", "type_id"]);
-    requireSafeInt64Number(requireField(normalized, "description_category_id"), "params.description_category_id");
-    if (Object.prototype.hasOwnProperty.call(normalized, "type_id")) requireSafeInt64Number(normalized.type_id, "params.type_id");
-    return normalized;
-  }
-
-  function normalizeDescriptionCategoryDependentAttributeValuesParams(params) {
-    const normalized = requirePlainObject(params, "params");
-    assertAllowedFields(normalized, ["parent_attribute_id", "child_attribute_id", "description_category_id", "type_id", "limit", "cursor"]);
-    requireSafeInt64Number(requireField(normalized, "parent_attribute_id"), "params.parent_attribute_id");
-    requireSafeInt64Number(requireField(normalized, "child_attribute_id"), "params.child_attribute_id");
-    if (Object.prototype.hasOwnProperty.call(normalized, "description_category_id")) requireSafeInt64Number(normalized.description_category_id, "params.description_category_id");
-    if (Object.prototype.hasOwnProperty.call(normalized, "type_id")) requireSafeInt64Number(normalized.type_id, "params.type_id");
-    if (Object.prototype.hasOwnProperty.call(normalized, "limit")) requireInteger(normalized.limit, "params.limit", { minimum: 1, maximum: 1000 });
-    if (Object.prototype.hasOwnProperty.call(normalized, "cursor")) requireString(normalized.cursor, "params.cursor", { nonEmpty: false });
     return normalized;
   }
 
@@ -1524,6 +1505,75 @@
     return normalized;
   }
 
+
+  const EFFECT_REPAIR_PARAM_SCHEMAS = deepFreeze({"report_products_create":{"type":"object","properties":{"language":{"type":"string"},"offer_id":{"type":"array","items":{"type":"string"}},"search":{"type":"string"},"sku":{"type":"array","items":{"type":"integer"}},"visibility":{"type":"string","enum":["ALL","VALIDATION_STATE_FAIL","TO_SUPPLY","IN_SALE","REMOVED_FROM_SALE","PARTIAL_APPROVED","IMAGE_ABSENT","ARCHIVED","AUTO_ARCHIVED","MANUAL_ARCHIVED"]}}},"report_returns_create_v2":{"type":"object","required":["filter"],"properties":{"filter":{"type":"object","required":["date_from","date_to","status"],"properties":{"delivery_schema":{"type":"string","enum":["FBS","FBO","ALL"]},"date_from":{"type":"string","format":"date-time"},"date_to":{"type":"string","format":"date-time"},"status":{"type":"string","enum":["DisputeOpened","OnSellerApproval","ArrivedAtReturnPlace","OnSellerClarification","OnSellerClarificationAfterPartialCompensation","OfferedPartialCompensation","ReturnMoneyApproved","PartialCompensationReturned","CancelledDisputeNotOpen","Rejected","CrmRejected","Cancelled","Approved","ApprovedByOzon","ReceivedBySeller","MovingToSeller","ReturnCompensated","ReturningToSellerByCourier","Utilizing","Utilized","MoneyReturned","PartialCompensationInProcess","DisputeYouOpened","CompensationRejected","DisputeOpening","CompensationOffered","WaitingCompensation","SendingError","CompensationRejectedBySla","CompensationRejectedBySeller","MovingToOzon","ReturnedToOzon","MoneyReturnedBySystem","WaitingShipment"]}}},"language":{"type":"string"}}},"report_postings_create":{"type":"object","required":["filter"],"properties":{"filter":{"type":"object","required":["processed_at_from","processed_at_to","delivery_schema"],"properties":{"cancel_reason_id":{"type":"array","items":{"type":"integer"}},"delivery_schema":{"type":"array","items":{"type":"string"}},"offer_id":{"type":"string"},"processed_at_from":{"type":"string","format":"date-time"},"processed_at_to":{"type":"string","format":"date-time"},"sku":{"type":"array","items":{"type":"integer"}},"status_alias":{"type":"array","items":{"type":"string"}},"statuses":{"type":"array","items":{"type":"integer"}},"title":{"type":"string"},"warehouse_id":{"type":"array","items":{"type":"integer"}},"delivery_method_id":{"type":"array","items":{"type":"integer"}},"is_express":{"type":"boolean"}}},"language":{"type":"string"},"with":{"type":"object","properties":{"additional_data":{"type":"boolean"},"analytics_data":{"type":"boolean"},"customer_data":{"type":"boolean"},"jewelry_codes":{"type":"boolean"}}}}},"report_discounted_create":{"type":"object"},"report_warehouse_stock":{"type":"object","required":["warehouseId"],"properties":{"language":{"type":"string"},"warehouseId":{"type":"array","items":{"type":"string"}}}},"report_placement_by_products_create":{"type":"object","required":["date_from","date_to"],"properties":{"date_from":{"type":"string","format":"date"},"date_to":{"type":"string","format":"date"}}},"report_placement_by_supplies_create":{"type":"object","required":["date_from","date_to"],"properties":{"date_from":{"type":"string","format":"date"},"date_to":{"type":"string","format":"date"}}},"report_marked_products_sales_create":{"type":"object","required":["date"],"properties":{"date":{"type":"object","required":["from","to"],"properties":{"from":{"type":"string","format":"date"},"to":{"type":"string","format":"date"}}}}},"report_realization_posting_create":{"type":"object","required":["month","year"],"properties":{"month":{"type":"integer","minimum":1,"maximum":12},"year":{"type":"integer","minimum":2023}}},"finance_document_b2b_sales":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"finance_mutual_settlement_report":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"finance_compensation_report":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"finance_decompensation_report":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"cargoes_label_create":{"type":"object","required":["supply_id"],"properties":{"cargoes":{"type":"array","items":{"type":"object","properties":{"cargo_id":{"type":"integer"}}}},"supply_id":{"type":"integer"}}},"posting_fbs_act_container_labels":{"type":"object","required":["id"],"properties":{"id":{"type":"integer"}}},"posting_fbs_package_label":{"type":"object","required":["posting_number"],"properties":{"posting_number":{"type":"array","items":{"type":"string"},"maxItems":20}}},"posting_fbs_package_label_create":{"type":"object","required":["posting_number"],"properties":{"posting_number":{"type":"array","items":{"type":"string"}}}},"cargoes_transport_label_by_order_create":{"type":"object","required":["order_id"],"properties":{"order_id":{"type":"integer"}}},"cargoes_transport_label_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"integer"},"transport_cargo_ids":{"type":"array","maxItems":40,"items":{"type":"string"}}}},"fbp_act_from_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"string"}}},"fbp_act_to_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"string"}}},"fbp_label_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"string"}}},"fbp_draft_direct_product_validate":{"type":"object","required":["skus","warehouse_id"],"properties":{"skus":{"type":"array","items":{"type":"object","required":["count","sku"],"properties":{"count":{"type":"integer"},"sku":{"type":"integer"}}}},"warehouse_id":{"type":"integer"}}},"fbp_draft_dropoff_product_validate":{"type":"object","required":["skus","warehouse_id"],"properties":{"skus":{"type":"array","items":{"type":"object","required":["count","sku"],"properties":{"count":{"type":"integer"},"sku":{"type":"integer"}}}},"warehouse_id":{"type":"integer"}}},"fbp_draft_pickup_product_validate":{"type":"object","required":["skus","warehouse_id"],"properties":{"skus":{"type":"array","items":{"type":"object","required":["count","sku"],"properties":{"count":{"type":"integer"},"sku":{"type":"integer"}}}},"warehouse_id":{"type":"integer"}}},"chat_history_v3":{"type":"object","required":["chat_id"],"properties":{"chat_id":{"type":"string"},"direction":{"type":"string"},"filter":{"type":"object","properties":{"message_ids":{"type":"array","items":{"type":"string"}}}},"from_message_id":{"type":"integer"},"limit":{"type":"integer"}}}});
+
+  function validateEffectRepairValue(value, schema, path) {
+    if (!schema || typeof schema !== "object") return;
+    if (Array.isArray(schema.enum) && schema.enum.length && !schema.enum.includes(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть одним из: ${schema.enum.join(", ")}.`);
+    const type = schema.type;
+    if (type === "object") {
+      const object = requirePlainObject(value, path);
+      const properties = schema.properties || {};
+      assertAllowedFields(object, Object.keys(properties));
+      for (const key of schema.required || []) requireField(object, key);
+      for (const [key, child] of Object.entries(object)) if (Object.prototype.hasOwnProperty.call(properties, key)) validateEffectRepairValue(child, properties[key], `${path}.${key}`);
+      return;
+    }
+    if (type === "array") {
+      const array = requireArray(value, path);
+      if (Number.isInteger(schema.maxItems) && array.length > schema.maxItems) fail("INVALID_OPERATION_PARAMS", `${path} содержит слишком много элементов.`);
+      if (Number.isInteger(schema.minItems) && array.length < schema.minItems) fail("INVALID_OPERATION_PARAMS", `${path} содержит слишком мало элементов.`);
+      for (let index = 0; index < array.length; index += 1) validateEffectRepairValue(array[index], schema.items || {}, `${path}[${index}]`);
+      return;
+    }
+    if (type === "integer") { if (!Number.isInteger(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть целым числом.`); if (Number.isFinite(schema.minimum) && value < schema.minimum) fail("INVALID_OPERATION_PARAMS", `${path} должен быть >= ${schema.minimum}.`); if (Number.isFinite(schema.maximum) && value > schema.maximum) fail("INVALID_OPERATION_PARAMS", `${path} должен быть <= ${schema.maximum}.`); return; }
+    if (type === "number") { if (typeof value !== "number" || !Number.isFinite(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть конечным числом.`); return; }
+    if (type === "boolean") { if (typeof value !== "boolean") fail("INVALID_OPERATION_PARAMS", `${path} должен быть boolean.`); return; }
+    if (type === "string" || !type) {
+      if (typeof value !== "string") fail("INVALID_OPERATION_PARAMS", `${path} должен быть строкой.`);
+      if (Number.isInteger(schema.maxLength) && value.length > schema.maxLength) fail("INVALID_OPERATION_PARAMS", `${path} длиннее допустимого.`);
+      if (schema.format === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть датой YYYY-MM-DD.`);
+      if (schema.format === "month" && !/^\d{4}-(0[1-9]|1[0-2])$/.test(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть периодом YYYY-MM.`);
+      if (schema.format === "date-time" && !Number.isFinite(Date.parse(value))) fail("INVALID_OPERATION_PARAMS", `${path} должен быть ISO date-time.`);
+    }
+  }
+
+  function normalizeEffectRepairParams(operation, params) {
+    const schema = EFFECT_REPAIR_PARAM_SCHEMAS[operation];
+    if (!schema) fail("INVALID_OPERATION_PARAMS", `Для ${operation} отсутствует effect-repair schema.`);
+    const normalized = requirePlainObject(params, "params");
+    validateEffectRepairValue(normalized, schema, "params");
+
+    if (operation === "report_placement_by_products_create" || operation === "report_placement_by_supplies_create") {
+      const start = Date.parse(`${normalized.date_from}T00:00:00Z`);
+      const end = Date.parse(`${normalized.date_to}T00:00:00Z`);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) fail("INVALID_OPERATION_PARAMS", "params.date_to должен быть не раньше params.date_from.");
+      if ((end - start) / 86400000 > 30) fail("INVALID_OPERATION_PARAMS", "Период placement-отчёта не может превышать 31 календарный день.");
+    }
+    if (operation === "report_marked_products_sales_create") {
+      const start = Date.parse(`${normalized.date.from}T00:00:00Z`);
+      const end = Date.parse(`${normalized.date.to}T00:00:00Z`);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) fail("INVALID_OPERATION_PARAMS", "params.date.to должен быть не раньше params.date.from.");
+    }
+    return normalized;
+  }
+
+
+  function normalizeReportFileGetParams(params) {
+    const normalized = requirePlainObject(params, "params");
+    assertAllowedFields(normalized, ["file_ref", "sheet", "offset", "limit"]);
+    const value = requireString(requireField(normalized, "file_ref"), "params.file_ref");
+    if (!/^rpf_[A-Za-z0-9_-]{12,120}$/.test(value)) fail("INVALID_OPERATION_PARAMS", "params.file_ref должен быть opaque report file ref bridge.");
+    normalized.file_ref = value;
+    if (Object.prototype.hasOwnProperty.call(normalized, "sheet")) requireString(normalized.sheet, "params.sheet");
+    if (!Object.prototype.hasOwnProperty.call(normalized, "offset")) normalized.offset = 0;
+    if (!Object.prototype.hasOwnProperty.call(normalized, "limit")) normalized.limit = 200;
+    requireInteger(normalized.offset, "params.offset", { minimum: 0, maximum: 1000000 });
+    requireInteger(normalized.limit, "params.limit", { minimum: 1, maximum: 500 });
+    return normalized;
+  }
+
   function normalizeSupplyOrderListParams(params) {
     const normalized = requirePlainObject(params, "params");
     assertAllowedFields(normalized, ["filter", "last_id", "limit", "sort_by", "sort_dir"]);
@@ -2309,13 +2359,9 @@
     return normalized;
   }
 
-  const PERFORMANCE_CAMPAIGN_LOCAL_SORTS = deepFreeze([
-    "created_at_desc", "created_at_asc", "updated_at_desc", "updated_at_asc", "from_date_desc", "from_date_asc"
-  ]);
-
   function normalizePerformanceCampaignsParams(params) {
     const normalized = requirePlainObject(params, "params");
-    assertAllowedFields(normalized, ["campaignIds", "advObjectType", "state", "page", "pageSize", "local_sort", "local_limit"]);
+    assertAllowedFields(normalized, ["campaignIds", "advObjectType", "state", "page", "pageSize"]);
     if (Object.prototype.hasOwnProperty.call(normalized, "campaignIds")) validateOptionalCampaignIds(normalized.campaignIds, "params.campaignIds");
     if (Object.prototype.hasOwnProperty.call(normalized, "advObjectType")) {
       normalized.advObjectType = String(normalized.advObjectType ?? "").trim();
@@ -2325,102 +2371,9 @@
       normalized.state = String(normalized.state ?? "").trim();
       if (!["CAMPAIGN_STATE_UNKNOWN", "CAMPAIGN_STATE_RUNNING", "CAMPAIGN_STATE_PLANNED", "CAMPAIGN_STATE_STOPPED", "CAMPAIGN_STATE_INACTIVE", "CAMPAIGN_STATE_ARCHIVED", "CAMPAIGN_STATE_MODERATION_DRAFT", "CAMPAIGN_STATE_MODERATION_IN_PROGRESS", "CAMPAIGN_STATE_MODERATION_FAILED", "CAMPAIGN_STATE_FINISHED"].includes(normalized.state)) fail("INVALID_OPERATION_PARAMS", "params.state содержит неподдерживаемое состояние кампании.");
     }
-    const localSortPresent = Object.prototype.hasOwnProperty.call(normalized, "local_sort");
-    if (localSortPresent) {
-      normalized.local_sort = String(normalized.local_sort ?? "").trim();
-      if (!PERFORMANCE_CAMPAIGN_LOCAL_SORTS.includes(normalized.local_sort)) fail("INVALID_OPERATION_PARAMS", "params.local_sort содержит неподдерживаемую локальную сортировку.");
-      if (Object.prototype.hasOwnProperty.call(normalized, "page") || Object.prototype.hasOwnProperty.call(normalized, "pageSize")) {
-        fail("INVALID_OPERATION_PARAMS", "params.local_sort нельзя совмещать с provider page/pageSize: глобальная локальная сортировка требует одного полного provider response.");
-      }
-      if (!Object.prototype.hasOwnProperty.call(normalized, "local_limit")) normalized.local_limit = 100;
-      requireInteger(normalized.local_limit, "params.local_limit", { minimum: 1, maximum: 100 });
-    } else {
-      if (Object.prototype.hasOwnProperty.call(normalized, "local_limit")) fail("INVALID_OPERATION_PARAMS", "params.local_limit используется только вместе с params.local_sort.");
-      if (!Object.prototype.hasOwnProperty.call(normalized, "page")) normalized.page = 1;
-      if (!Object.prototype.hasOwnProperty.call(normalized, "pageSize")) normalized.pageSize = 100;
-      requireInteger(normalized.page, "params.page", { minimum: 1 });
-      requireInteger(normalized.pageSize, "params.pageSize", { minimum: 1, maximum: 100 });
-    }
+    if (Object.prototype.hasOwnProperty.call(normalized, "page")) requireInteger(normalized.page, "params.page", { minimum: 1 });
+    if (Object.prototype.hasOwnProperty.call(normalized, "pageSize")) requireInteger(normalized.pageSize, "params.pageSize", { minimum: 1 });
     return normalized;
-  }
-
-  function performanceCampaignSortSpec(value) {
-    const map = {
-      created_at_desc: { field: "createdAt", direction: "DESC" }, created_at_asc: { field: "createdAt", direction: "ASC" },
-      updated_at_desc: { field: "updatedAt", direction: "DESC" }, updated_at_asc: { field: "updatedAt", direction: "ASC" },
-      from_date_desc: { field: "fromDate", direction: "DESC" }, from_date_asc: { field: "fromDate", direction: "ASC" }
-    };
-    return map[String(value || "")] || null;
-  }
-
-  function performanceCampaignDateValue(item, field) {
-    const raw = item && typeof item === "object" ? item[field] : null;
-    if (typeof raw !== "string" || !raw.trim()) return Number.NEGATIVE_INFINITY;
-    const parsed = Date.parse(field === "fromDate" && /^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T00:00:00Z` : raw);
-    return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
-  }
-
-  function detachedCampaignRefinementFilters(params) {
-    const filters = {};
-    if (Object.prototype.hasOwnProperty.call(params, "campaignIds")) {
-      filters.campaignIds = params.campaignIds.map((campaignId) => String(campaignId));
-    }
-    for (const key of ["advObjectType", "state"]) {
-      if (Object.prototype.hasOwnProperty.call(params, key)) filters[key] = params[key];
-    }
-    return filters;
-  }
-
-  function campaignRefinementChoices(params, sourceCount) {
-    const filters = () => detachedCampaignRefinementFilters(params);
-    const choices = [];
-    if (!params.local_sort) {
-      const page = Number(params.page || 1), pageSize = Number(params.pageSize || 100);
-      choices.push({
-        id: "next_page", purpose: "Получить следующую явную страницу кампаний без hidden pagination.",
-        command: { operation: "performance_campaigns", params: { ...filters(), page: page + 1, pageSize } }
-      });
-    }
-    choices.push(
-      { id: "active_campaigns", purpose: "Только активные кампании.", command: { operation: "performance_campaigns", params: { ...filters(), state: "CAMPAIGN_STATE_RUNNING", page: 1, pageSize: 100 } } },
-      { id: "latest_created", purpose: "Самые новые по createdAt; один provider request, затем локальная сортировка Bridge.", command: { operation: "performance_campaigns", params: { ...filters(), local_sort: "created_at_desc", local_limit: 100 } } },
-      { id: "latest_updated", purpose: "Последние изменённые по updatedAt; один provider request, затем локальная сортировка Bridge.", command: { operation: "performance_campaigns", params: { ...filters(), local_sort: "updated_at_desc", local_limit: 100 } } },
-      { id: "specific_campaign_ids", purpose: "Только конкретные кампании.", template: { operation: "performance_campaigns", params: { campaignIds: ["CAMPAIGN_ID"], page: 1, pageSize: 100 } } },
-      { id: "campaign_products", purpose: "Товары конкретной рекламной кампании.", template: { operation: "performance_campaign_products", params: { campaignId: "CAMPAIGN_ID", page: 1, pageSize: 100 } } },
-      { id: "campaign_product_statistics", purpose: "Статистика кампаний в разрезе товаров за период.", template: { operation: "performance_campaign_product", params: { campaignIds: ["CAMPAIGN_ID"], dateFrom: "YYYY-MM-DD", dateTo: "YYYY-MM-DD" } } },
-      { id: "sku_statistics", purpose: "SKU-статистика по рекламным кампаниям за период.", template: { operation: "performance_sku_statistics", params: { campaignIds: ["CAMPAIGN_ID"], dateFrom: "YYYY-MM-DD", dateTo: "YYYY-MM-DD" } } }
-    );
-    return { source_count: Number(sourceCount || 0), choices };
-  }
-
-  function performanceCampaignsResult(rawResult, context = {}) {
-    const source = rawResult && typeof rawResult === "object" && !Array.isArray(rawResult) ? rawResult : {};
-    const originalList = Array.isArray(source.list) ? source.list : [];
-    const params = context?.params && typeof context.params === "object" ? context.params : {};
-    let list = [...originalList];
-    const sort = performanceCampaignSortSpec(params.local_sort);
-    if (sort) {
-      const direction = sort.direction === "ASC" ? 1 : -1;
-      list.sort((a, b) => direction * (performanceCampaignDateValue(a, sort.field) - performanceCampaignDateValue(b, sort.field)));
-    }
-    const limit = sort ? Number(params.local_limit || 100) : Math.min(Number(params.pageSize || 100), 100);
-    const visible = list.slice(0, Math.max(1, limit));
-    const refinements = campaignRefinementChoices(params, originalList.length);
-    return safeReadResult({
-      ...source,
-      list: visible,
-      bridge_view: {
-        provider_items_received: originalList.length,
-        items_returned_to_ai: visible.length,
-        result_bounded: originalList.length > visible.length,
-        provider_page: sort ? null : Number(params.page || 1),
-        provider_page_size: sort ? null : Number(params.pageSize || 100),
-        local_sort: sort ? { ...sort, scope: "single_full_provider_response", additional_provider_requests: 0 } : null,
-        hidden_pagination_requests: 0,
-        automatic_retry_requests: 0
-      },
-      refinement_choices: refinements.choices
-    }, { operation: "performance_campaigns" });
   }
 
   function normalizePerformanceDateRangeParams(params) {
@@ -2613,7 +2566,7 @@
     if (!/^(GET|POST)$/.test(String(meta.method))) fail("INVALID_REGISTRY_METHOD", `${name}: неподдерживаемый HTTP method.`);
     if (!/^\/[^?#]*$/.test(String(meta.path)) || String(meta.path).includes("..")) fail("INVALID_REGISTRY_PATH", `${name}: небезопасный fixed path.`);
     const provider = String(meta.provider || "seller_api");
-    if (!["seller_api", "performance_api"].includes(provider)) fail("INVALID_REGISTRY_PROVIDER", `${name}: неизвестный provider.`);
+    if (!["seller_api", "performance_api", "report_file"].includes(provider)) fail("INVALID_REGISTRY_PROVIDER", `${name}: неизвестный provider.`);
     if (provider === "performance_api") {
       assertPerformanceMutationBlocked(meta.method, meta.path);
       assertPerformanceAsyncReportSideEffectBlocked(meta.method, meta.path);
@@ -2633,7 +2586,8 @@
     if (meta.execution_enabled === true) {
       if (typeof meta.normalizeParams !== "function") fail("PARAM_SCHEMA_NOT_READY", `${name}: нет request normalizer.`);
       if (typeof meta.sanitizeResult !== "function") fail("RESULT_POLICY_NOT_READY", `${name}: нет result/PII policy.`);
-      if (meta.method === "GET" && meta.request_style !== "query") fail("REQUEST_STYLE_NOT_READY", `${name}: GET требует query builder.`);
+      if (meta.method === "GET" && meta.request_style !== "query" && !(provider === "report_file" && meta.request_style === "opaque_file_ref")) fail("REQUEST_STYLE_NOT_READY", `${name}: GET требует query builder.`);
+      if (provider === "report_file" && meta.request_style !== "opaque_file_ref") fail("REQUEST_STYLE_NOT_READY", `${name}: report_file требует opaque_file_ref builder.`);
       if (meta.method === "POST" && !["json_body", "no_body"].includes(meta.request_style)) fail("REQUEST_STYLE_NOT_READY", `${name}: POST требует fixed json_body/no_body builder.`);
     }
   }
@@ -3160,8 +3114,6 @@
     description_category_attributes: { normalizeParams: normalizeDescriptionCategoryAttributesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b15" },
     description_category_attribute_values: { normalizeParams: normalizeDescriptionCategoryAttributeValuesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b15_explicit_pagination" },
     description_category_attribute_values_search: { normalizeParams: normalizeDescriptionCategoryAttributeValuesSearchParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b15" },
-    description_category_dependent_attributes: { normalizeParams: normalizeDescriptionCategoryDependentAttributesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_09_01_beta_read" },
-    description_category_dependent_attribute_values: { normalizeParams: normalizeDescriptionCategoryDependentAttributeValuesParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_09_01_beta_read_explicit_cursor" },
     brand_company_certification_list: { normalizeParams: normalizeBrandCompanyCertificationListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b19_explicit_page" },
     product_certificate_product_status_list: { normalizeParams: normalizeNoBodyParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b19_no_body" },
     product_certificate_rejection_reasons: { normalizeParams: normalizeNoBodyParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_27_b19_no_body" },
@@ -3298,6 +3250,33 @@
     finance_products_buyout: { normalizeParams: normalizeFinanceProductsBuyoutParams, sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_08_28_b41_finance_buyout" },
     report_list: { normalizeParams: normalizeReportListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b5_existing_report_read" },
     report_info: { normalizeParams: normalizeReportInfoParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b5_existing_report_read" },
+    report_file_get: { normalizeParams: normalizeReportFileGetParams, sanitizeResult: authorizedPersonalDataReadResult, contract_state: "opaque_report_file_ref_v1" },
+    report_products_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_products_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_returns_create_v2: { normalizeParams: (params) => normalizeEffectRepairParams("report_returns_create_v2", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_postings_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_postings_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_discounted_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_discounted_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_warehouse_stock: { normalizeParams: (params) => normalizeEffectRepairParams("report_warehouse_stock", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_placement_by_products_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_placement_by_products_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_placement_by_supplies_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_placement_by_supplies_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_marked_products_sales_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_marked_products_sales_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_realization_posting_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_realization_posting_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    finance_document_b2b_sales: { normalizeParams: (params) => normalizeEffectRepairParams("finance_document_b2b_sales", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    finance_mutual_settlement_report: { normalizeParams: (params) => normalizeEffectRepairParams("finance_mutual_settlement_report", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    finance_compensation_report: { normalizeParams: (params) => normalizeEffectRepairParams("finance_compensation_report", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    finance_decompensation_report: { normalizeParams: (params) => normalizeEffectRepairParams("finance_decompensation_report", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    cargoes_label_create: { normalizeParams: (params) => normalizeEffectRepairParams("cargoes_label_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    posting_fbs_act_container_labels: { normalizeParams: (params) => normalizeEffectRepairParams("posting_fbs_act_container_labels", params), sanitizeResult: authorizedPersonalDataReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    posting_fbs_package_label: { normalizeParams: (params) => normalizeEffectRepairParams("posting_fbs_package_label", params), sanitizeResult: authorizedPersonalDataReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    posting_fbs_package_label_create: { normalizeParams: (params) => normalizeEffectRepairParams("posting_fbs_package_label_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    cargoes_transport_label_by_order_create: { normalizeParams: (params) => normalizeEffectRepairParams("cargoes_transport_label_by_order_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    cargoes_transport_label_create: { normalizeParams: (params) => normalizeEffectRepairParams("cargoes_transport_label_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    fbp_act_from_create: { normalizeParams: (params) => normalizeEffectRepairParams("fbp_act_from_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    fbp_act_to_create: { normalizeParams: (params) => normalizeEffectRepairParams("fbp_act_to_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    fbp_label_create: { normalizeParams: (params) => normalizeEffectRepairParams("fbp_label_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    fbp_draft_direct_product_validate: { normalizeParams: (params) => normalizeEffectRepairParams("fbp_draft_direct_product_validate", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    fbp_draft_dropoff_product_validate: { normalizeParams: (params) => normalizeEffectRepairParams("fbp_draft_dropoff_product_validate", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    fbp_draft_pickup_product_validate: { normalizeParams: (params) => normalizeEffectRepairParams("fbp_draft_pickup_product_validate", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    chat_history_v3: { normalizeParams: (params) => normalizeEffectRepairParams("chat_history_v3", params), sanitizeResult: authorizedPersonalDataReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
     supply_order_list: { normalizeParams: normalizeSupplyOrderListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_26_b8" },
     supply_order_get: { normalizeParams: normalizeSupplyOrderGetParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_26_b8_revalidated" },
     supply_order_status_counter: { normalizeParams: normalizeNoBodyParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_26_b8_no_body" },
@@ -3405,7 +3384,7 @@
     delivery_point_list: { normalizeParams: normalizeEmptyJsonBodyParams, sanitizeResult: safeReadResult, contract_state: "exact_operator_swagger_2026_08_25_step7_empty_json" },
     order_cancel_check: { normalizeParams: normalizeStep7OrderCancelCheckParams, sanitizeResult: safeReadResult, contract_state: "exact_operator_swagger_2026_08_25_step7" },
     posting_marks: { normalizeParams: normalizeStep7PostingMarksParams, sanitizeResult: safeReadResult, contract_state: "exact_operator_swagger_2026_08_25_step7" },
-    performance_campaigns: { normalizeParams: normalizePerformanceCampaignsParams, sanitizeResult: performanceCampaignsResult, contract_state: "official_performance_openapi_v2_0_bounded_refinement_v1" },
+    performance_campaigns: { normalizeParams: normalizePerformanceCampaignsParams, sanitizeResult: safeReadResult, contract_state: "official_performance_openapi_v2_0" },
     performance_campaign_objects: { normalizeParams: normalizePerformanceCampaignObjectParams, sanitizeResult: safeReadResult, contract_state: "official_performance_openapi_2026_08_26_b6" },
     performance_bid_limits: { normalizeParams: normalizeNoBodyParams, sanitizeResult: safeReadResult, contract_state: "official_performance_openapi_2026_08_26_b6" },
     performance_campaign_products: { normalizeParams: normalizePerformanceCampaignProductsParams, sanitizeResult: safeReadResult, contract_state: "official_performance_openapi_2026_08_26_b6" },
@@ -3760,10 +3739,6 @@
       }
       if (/[{}]/.test(fixedPath)) fail("INVALID_FIXED_PATH_TEMPLATE", "Performance API path содержит неподдерживаемый фиксированный placeholder.");
 
-      if (preflight.command.operation === "performance_campaigns") {
-        delete requestParams.local_sort;
-        delete requestParams.local_limit;
-      }
       const query = meta.request_style === "query" ? encodeQueryParams(requestParams) : "";
       const url = `${performanceApiBase}${fixedPath}${query ? `?${query}` : ""}`;
       return deepFreeze({
@@ -3781,7 +3756,7 @@
 
     function sanitizeResult(command, rawResult) {
       const preflight = preflightExecution(command);
-      const sanitized = preflight.meta.sanitizeResult(rawResult, { operation: preflight.command.operation, params: preflight.command.params });
+      const sanitized = preflight.meta.sanitizeResult(rawResult, { operation: preflight.command.operation });
       return deepFreeze(sanitizeJsonValue(sanitized, "result", { rejectTransportKeys: false }));
     }
 

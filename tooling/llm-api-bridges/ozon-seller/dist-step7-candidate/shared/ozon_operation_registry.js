@@ -22,28 +22,25 @@
 
   const CLUSTERS = deepFreeze({
     account_access: {
-      description: "Доступ API-ключа, профиль кабинета и уведомления продавца.",
+      description: "Доступ API-ключа и безопасная информация о кабинете продавца.",
       sections: {
         roles_access: "Роли и методы API-ключа.",
         seller_capability: "Подписка и возможности кабинета.",
-        seller_settings: "Профиль и безопасные настройки продавца.",
-        notifications: "Уведомления и типы push-уведомлений."
+        seller_settings: "Безопасные настройки и подключения продавца."
       },
-      clues: ["roles", "access", "permission", "seller", "notification", "роль", "прав", "доступ", "кабинет", "уведом"]
+      clues: ["roles", "access", "permission", "seller", "роль", "прав", "доступ", "кабинет"]
     },
     catalog_products: {
-      description: "Каталог товаров, карточки, характеристики, сертификация и справочные данные.",
+      description: "Каталог товаров, карточки, характеристики и справочные данные.",
       sections: {
-        product_list_info: "Списки, информация, видимость и связанные сведения о товарах.",
-        product_quant_placement: "Кванты и зоны размещения товаров.",
-        attributes_categories: "Категории, характеристики и зависимые характеристики.",
+        product_list_info: "Списки и информация о товарах.",
+        attributes_categories: "Категории и характеристики.",
         description_content: "Описание и rich content.",
         pictures: "Изображения товаров.",
-        certification: "Сертификаты, их статусы и товары.",
-        certification_reference: "Справочники и параметры сертификации.",
+        certification: "Сертификаты и справочники.",
         limits_diagnostics: "Лимиты и диагностика карточек."
       },
-      clues: ["product", "sku", "offer", "attribute", "category", "catalog", "certificate", "товар", "карточ", "характер", "категор", "сертифик"]
+      clues: ["product", "sku", "offer", "attribute", "category", "catalog", "товар", "карточ", "характер", "категор"]
     },
     stocks_inventory: {
       description: "Остатки и наличие товаров, включая разрез по складам FBO/FBS.",
@@ -57,14 +54,14 @@
       clues: ["stock", "stocks", "inventory", "warehouse stock", "остат", "налич"]
     },
     sales_analytics: {
-      description: "Продажи, выручка, рейтинги и бизнес-аналитика продавца.",
+      description: "Продажи, выручка и бизнес-аналитика продавца.",
       sections: {
         sales_revenue_units: "Выручка и заказанные единицы.",
-        delivery_returns_cancellations_metrics: "Рейтинги и метрики доставки, возвратов и отмен.",
+        delivery_returns_cancellations_metrics: "Метрики доставки, возвратов и отмен.",
         period_product_category: "Периодная аналитика по товарам и категориям.",
         turnover_delivery_time: "Оборачиваемость и скорость доставки."
       },
-      clues: ["analytics", "sales", "revenue", "turnover", "rating", "ordered_units", "продаж", "выруч", "оборот", "аналит", "рейтинг"]
+      clues: ["analytics", "sales", "revenue", "turnover", "ordered_units", "продаж", "выруч", "оборот", "аналит"]
     },
     search_visibility: {
       description: "Поисковые запросы покупателей и видимость товаров.",
@@ -76,85 +73,66 @@
       clues: ["search", "query", "queries", "visibility", "поиск", "запрос", "видим"]
     },
     prices_promotions: {
-      description: "Цены, ценовые стратегии, акции, скидки и задания на скидку — только чтение.",
+      description: "Цены, ценовые стратегии, акции и скидки — только чтение.",
       sections: {
-        prices: "Информация о ценах и скидках по количеству.",
+        prices: "Информация о ценах.",
         pricing_strategy: "Чтение ценовых стратегий.",
-        actions_promotions: "Акции и доступные для них товары.",
-        discount_tasks: "Задания и предложения на скидку."
+        actions_promotions: "Акции и доступные для них товары."
       },
       clues: ["price", "pricing", "action", "promo", "discount", "цен", "акци", "скид"]
     },
     orders_postings: {
-      description: "Отправления FBO/FBS/FBP, сборка, перевозки, акты и документы.",
+      description: "Отправления FBO/FBS/FBP, сборка, перевозки и документы.",
       sections: {
         fbo_postings: "Отправления FBO.",
-        fbs_postings: "Основные отправления FBS/rFBS.",
-        fbs_restrictions: "Ограничения, страны и traceable-справочники FBS.",
-        fbs_exemplars_marks: "Экземпляры, маркировка и pickup-code проверки FBS.",
+        fbs_postings: "Отправления FBS/rFBS.",
         fbp_postings: "Отправления FBP.",
-        assembly_carriage: "Сборка и основные перевозки.",
-        carriage_containers: "Контейнеры перевозок и их статусы.",
-        acts: "Акты и статусы актов/ЭТТН.",
+        assembly_carriage: "Сборка и перевозки.",
         labels_documents: "Этикетки и документы."
       },
-      clues: ["posting", "order", "fbo", "fbs", "fbp", "carriage", "shipment", "act", "container", "отправ", "заказ", "отгруз", "перевоз", "акт"]
+      clues: ["posting", "order", "fbo", "fbs", "fbp", "carriage", "shipment", "отправ", "заказ", "отгруз"]
     },
     supplies_fbo: {
-      description: "Поставки FBO/FBP, заявки, черновики, грузоместа, таймслоты и документы.",
+      description: "Поставки FBO/FBP, заявки, грузоместа и таймслоты.",
       sections: {
-        supply_orders: "Основные заявки на поставку и их содержимое.",
-        supply_status: "Статусы, проверки и обновления заявок.",
-        supply_acts: "Акты поставки и их содержимое.",
-        drafts: "Черновики FBO.",
-        fbp_drafts: "Черновики FBP.",
-        timeslots: "Интервалы поставки и расписания.",
-        cargoes: "Грузоместа и их состав.",
-        cargo_status: "Статусы операций с грузоместами и транспортом.",
-        cargo_labels: "Этикетки грузомест.",
-        fbp_archive: "Архив поставок FBP.",
-        fbp_orders: "Заявки/заказы FBP.",
-        acts: "Документы и ярлыки FBP."
+        supply_orders: "Заявки на поставку.",
+        supply_contents: "Состав поставок.",
+        drafts: "Черновики поставок.",
+        cargoes: "Грузоместа.",
+        timeslots: "Интервалы поставки.",
+        acts: "Акты поставки."
       },
-      clues: ["supply", "supply-order", "draft", "cargo", "timeslot", "fbp", "постав", "грузомест", "таймслот", "чернов"]
+      clues: ["supply", "supply-order", "draft", "cargo", "timeslot", "постав", "грузомест", "таймслот"]
     },
     warehouse_logistics: {
-      description: "Склады, кластеры, настройка FBS, методы и география доставки.",
+      description: "Склады, кластеры, методы доставки и логистические справочники.",
       sections: {
         clusters: "Кластеры Ozon.",
         ozon_warehouses: "Склады Ozon и партнёрские склады.",
-        seller_warehouses: "Склады продавца.",
-        warehouse_setup: "Drop-off и точки возврата при настройке склада.",
-        warehouse_timeslots_pickup: "Таймслоты, планирование и история pickup/drop-off.",
+        seller_warehouses: "Склады продавца и безопасные справочники их настройки.",
         delivery_methods: "Методы и полигоны доставки.",
-        delivery_geo: "Точки, карта и проверки географии доставки.",
-        warehouse_diagnostics: "Статусы и диагностика складской логистики."
+        warehouse_diagnostics: "Безопасные статусы и диагностика складской логистики."
       },
-      clues: ["warehouse", "cluster", "delivery-method", "delivery", "dropoff", "pickup", "logistics", "склад", "кластер", "достав", "логист"]
+      clues: ["warehouse", "cluster", "delivery-method", "logistics", "склад", "кластер", "логист"]
     },
     returns_cancellations: {
-      description: "Возвраты, утилизация/вывоз, возвратные отгрузки и отмены.",
+      description: "Возвраты, возвратные отгрузки и причины/заявки на отмену.",
       sections: {
         returns: "Возвраты товаров.",
-        utilization_removals: "Утилизация и вывоз со склада/поставки.",
         return_giveout: "Возвратные отгрузки.",
-        cancellations: "Причины и справочники отмен.",
-        cancellation_status: "Статусы, условные отмены и проверки возможности отмены."
+        cancellations: "Отмены и причины отмены."
       },
-      clues: ["return", "returns", "cancel", "cancellation", "utilization", "removal", "возврат", "отмен", "утилиз", "вывоз"]
+      clues: ["return", "returns", "cancel", "cancellation", "возврат", "отмен"]
     },
     finance: {
-      description: "Финансовые операции чтения, начисления, транзакции, реализация и документы.",
+      description: "Финансовые операции чтения, начисления, транзакции и реализация.",
       sections: {
         accruals_balance: "Начисления и баланс.",
         realization: "Реализация товаров.",
         transactions: "Транзакции.",
-        cashflow_buyout: "Движение денежных средств и выкупленные товары.",
-        documents_reports: "Список и состояние сформированных отчётов.",
-        receipts_invoices: "Чеки, счета и документы продавца.",
-        b2b: "B2B-продажи."
+        documents_reports: "Финансовые документы и отчёты чтения."
       },
-      clues: ["finance", "realization", "transaction", "balance", "accrual", "receipt", "invoice", "финанс", "баланс", "начисл", "реализац", "чек", "счет"]
+      clues: ["finance", "realization", "transaction", "balance", "accrual", "финанс", "баланс", "начисл", "реализац"]
     },
     reviews_questions: {
       description: "Отзывы, вопросы и ответы; персональные тексты регулируются настройкой оператора.",
@@ -169,17 +147,12 @@
     },
     advertising_performance: {
       provider: "performance_api",
-      description: "Рекламные кампании, товары, ставки, статистика и отчёты Performance API.",
+      description: "Рекламные кампании и статистика Performance API.",
       sections: {
-        campaigns: "Поиск и фильтрация рекламных кампаний; broad-result возвращает явные команды уточнения.",
-        campaign_products_objects: "Объекты и товары рекламных кампаний.",
-        bids: "Лимиты и минимальные/конкурентные ставки.",
-        statistics: "JSON-статистика расходов, дней, кампаний, товаров, media и SKU.",
-        statistics_exports: "CSV-выгрузки статистики.",
-        report_workflow: "Список, статус и скачивание подготовленных отчётов.",
-        external_traffic: "Vendor/external-traffic статистика и теги."
+        campaigns: "Кампании.",
+        statistics: "Статистика и расходы."
       },
-      clues: ["campaign", "advert", "expense", "performance", "bid", "sku statistics", "vendor", "реклам", "кампан", "расход", "ставк"]
+      clues: ["campaign", "advert", "expense", "performance", "реклам", "кампан", "расход"]
     }
   });
 
@@ -226,18 +199,6 @@
       cluster: "catalog_products", section: "attributes_categories", guidance_visibility: "user", entitlement_key: "POST /v1/description-category/attribute/values/search", workflow_role: "single_read",
       purpose: "Найти справочные значения характеристики по тексту без скрытой автопагинации.", template: { operation: "description_category_attribute_values_search", params: { attribute_id: 1, description_category_id: 1, limit: 100, type_id: 1, value: "Name" } }
     },
-    description_category_dependent_attributes: {
-      provider: "seller_api", method: "POST", path: "/v1/description-category/dependent-attributes", effect: "READ", request_style: "json_body",
-      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "catalog_products", section: "attributes_categories", guidance_visibility: "user", entitlement_key: "POST /v1/description-category/dependent-attributes", workflow_role: "single_read",
-      purpose: "Получить пары родительских и дочерних зависимых характеристик категории.", template: { operation: "description_category_dependent_attributes", params: { description_category_id: 1 } }
-    },
-    description_category_dependent_attribute_values: {
-      provider: "seller_api", method: "POST", path: "/v1/description-category/dependent-attributes/values", effect: "READ", request_style: "json_body",
-      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "catalog_products", section: "attributes_categories", guidance_visibility: "user", entitlement_key: "POST /v1/description-category/dependent-attributes/values", workflow_role: "single_read",
-      purpose: "Получить возможные значения дочерней характеристики для значений родительской с явным cursor/limit без скрытой автопагинации.", template: { operation: "description_category_dependent_attribute_values", params: { parent_attribute_id: 1, child_attribute_id: 1, limit: 100 } }
-    },
     brand_company_certification_list: {
       provider: "seller_api", method: "POST", path: "/v1/brand/company-certification/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
@@ -253,7 +214,7 @@
     product_certificate_rejection_reasons: {
       provider: "seller_api", method: "POST", path: "/v1/product/certificate/rejection_reasons/list", effect: "READ", request_style: "no_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "catalog_products", section: "certification_reference", guidance_visibility: "user", entitlement_key: "POST /v1/product/certificate/rejection_reasons/list", workflow_role: "single_read",
+      cluster: "catalog_products", section: "certification", guidance_visibility: "user", entitlement_key: "POST /v1/product/certificate/rejection_reasons/list", workflow_role: "single_read",
       purpose: "Получить справочник причин отклонения сертификатов.", template: { operation: "product_certificate_rejection_reasons", params: {} }
     },
     product_certificate_status_list: {
@@ -265,25 +226,25 @@
     product_certificate_types: {
       provider: "seller_api", method: "GET", path: "/v1/product/certificate/types", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "catalog_products", section: "certification_reference", guidance_visibility: "user", entitlement_key: "GET /v1/product/certificate/types", workflow_role: "single_read",
+      cluster: "catalog_products", section: "certification", guidance_visibility: "user", entitlement_key: "GET /v1/product/certificate/types", workflow_role: "single_read",
       purpose: "Получить справочник типов документов для сертификации товаров.", template: { operation: "product_certificate_types", params: {} }
     },
     product_certificate_accordance_types: {
       provider: "seller_api", method: "GET", path: "/v2/product/certificate/accordance-types/list", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "catalog_products", section: "certification_reference", guidance_visibility: "user", entitlement_key: "GET /v2/product/certificate/accordance-types/list", workflow_role: "single_read",
+      cluster: "catalog_products", section: "certification", guidance_visibility: "user", entitlement_key: "GET /v2/product/certificate/accordance-types/list", workflow_role: "single_read",
       purpose: "Получить актуальный справочник типов соответствия требованиям для сертификатов.", template: { operation: "product_certificate_accordance_types", params: {} }
     },
     product_certification_categories: {
       provider: "seller_api", method: "POST", path: "/v2/product/certification/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "catalog_products", section: "certification_reference", guidance_visibility: "user", entitlement_key: "POST /v2/product/certification/list", workflow_role: "single_read",
+      cluster: "catalog_products", section: "certification", guidance_visibility: "user", entitlement_key: "POST /v2/product/certification/list", workflow_role: "single_read",
       purpose: "Получить список категорий товаров, для которых требуется сертификация, с явной страницей без скрытой автопагинации.", template: { operation: "product_certification_categories", params: { page: 1, page_size: 100 } }
     },
     product_certification_options: {
       provider: "seller_api", method: "POST", path: "/v2/product/certification/options", effect: "READ", request_style: "no_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "catalog_products", section: "certification_reference", guidance_visibility: "user", entitlement_key: "POST /v2/product/certification/options", workflow_role: "single_read",
+      cluster: "catalog_products", section: "certification", guidance_visibility: "user", entitlement_key: "POST /v2/product/certification/options", workflow_role: "single_read",
       purpose: "Получить справочные параметры для создания сертификата качества.", template: { operation: "product_certification_options", params: {} }
     },
     product_certificate_info: {
@@ -481,55 +442,55 @@
     warehouse_fbs_create_dropoff_list: {
       provider: "seller_api", method: "POST", path: "/v1/warehouse/fbs/create/drop-off/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "warehouse_setup", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/create/drop-off/list", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "seller_warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/create/drop-off/list", workflow_role: "single_read",
       purpose: "Получить доступные drop-off пункты для настройки FBS-склада; адреса относятся только к логистическим пунктам.", template: { operation: "warehouse_fbs_create_dropoff_list", params: { country_code: "RU", is_kgt: false } }
     },
     warehouse_fbs_update_dropoff_list: {
       provider: "seller_api", method: "POST", path: "/v1/warehouse/fbs/update/drop-off/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "warehouse_setup", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/update/drop-off/list", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "seller_warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/update/drop-off/list", workflow_role: "single_read",
       purpose: "Получить доступные drop-off пункты для изменения настроек явно выбранного FBS-склада.", template: { operation: "warehouse_fbs_update_dropoff_list", params: { warehouse_id: 1 } }
     },
     warehouse_fbs_create_dropoff_timeslot_list: {
       provider: "seller_api", method: "POST", path: "/v1/warehouse/fbs/create/drop-off/timeslot/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "warehouse_timeslots_pickup", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/create/drop-off/timeslot/list", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "seller_warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/create/drop-off/timeslot/list", workflow_role: "single_read",
       purpose: "Получить таймслоты drop-off для создания FBS-склада по явно выбранному логистическому пункту.", template: { operation: "warehouse_fbs_create_dropoff_timeslot_list", params: { drop_off_point_id: 1 } }
     },
     warehouse_fbs_update_dropoff_timeslot_list: {
       provider: "seller_api", method: "POST", path: "/v1/warehouse/fbs/update/drop-off/timeslot/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "warehouse_timeslots_pickup", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/update/drop-off/timeslot/list", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "seller_warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/update/drop-off/timeslot/list", workflow_role: "single_read",
       purpose: "Получить таймслоты drop-off для изменения настроек явно выбранного FBS-склада.", template: { operation: "warehouse_fbs_update_dropoff_timeslot_list", params: { drop_off_point_id: 1, warehouse_id: 1 } }
     },
     warehouse_fbs_create_pickup_timeslot_list: {
       provider: "seller_api", method: "POST", path: "/v1/warehouse/fbs/create/pick-up/timeslot/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "warehouse_timeslots_pickup", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/create/pick-up/timeslot/list", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "seller_warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/create/pick-up/timeslot/list", workflow_role: "single_read",
       purpose: "Получить таймслоты pick-up для создания FBS-склада по явно заданным координатам склада.", template: { operation: "warehouse_fbs_create_pickup_timeslot_list", params: { is_kgt: false, address_coordinates: { latitude: 55.75, longitude: 37.62 } } }
     },
     warehouse_fbs_update_pickup_timeslot_list: {
       provider: "seller_api", method: "POST", path: "/v1/warehouse/fbs/update/pick-up/timeslot/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "warehouse_timeslots_pickup", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/update/pick-up/timeslot/list", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "seller_warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/update/pick-up/timeslot/list", workflow_role: "single_read",
       purpose: "Получить таймслоты pick-up для изменения настроек явно выбранного FBS-склада.", template: { operation: "warehouse_fbs_update_pickup_timeslot_list", params: { warehouse_id: 1 } }
     },
     warehouse_fbs_create_return_point_list: {
       provider: "seller_api", method: "POST", path: "/v1/warehouse/fbs/create/return-point/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "warehouse_setup", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/create/return-point/list", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "seller_warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/create/return-point/list", workflow_role: "single_read",
       purpose: "Получить логистические пункты возврата для создания FBS-склада; last_id продолжает выборку только отдельной явной командой.", template: { operation: "warehouse_fbs_create_return_point_list", params: { country_code: "RU", coordinates: { latitude: 55.75, longitude: 37.62 }, limit: 100 } }
     },
     warehouse_fbs_update_return_point_list: {
       provider: "seller_api", method: "POST", path: "/v1/warehouse/fbs/update/return-point/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "warehouse_setup", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/update/return-point/list", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "seller_warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/update/return-point/list", workflow_role: "single_read",
       purpose: "Получить логистические пункты возврата для изменения FBS-склада; last_id продолжает выборку только отдельной явной командой.", template: { operation: "warehouse_fbs_update_return_point_list", params: { warehouse_id: 1, limit: 100 } }
     },
     warehouse_fbs_pickup_history_list: {
       provider: "seller_api", method: "POST", path: "/v1/warehouse/fbs/pickup/history/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "warehouse_timeslots_pickup", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/pickup/history/list", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "seller_warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/pickup/history/list", workflow_role: "single_read",
       purpose: "Получить историю FBS-отгрузок курьеру; cursor продолжает выборку только отдельной явной командой.", template: { operation: "warehouse_fbs_pickup_history_list", params: { limit: 100 } }
     },
     delivery_polygon_list: {
@@ -541,7 +502,7 @@
     warehouse_fbs_pickup_planning_list: {
       provider: "seller_api", method: "POST", path: "/v1/warehouse/fbs/pickup/planning/list", effect: "READ", request_style: "no_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "warehouse_timeslots_pickup", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/pickup/planning/list", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "seller_warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/warehouse/fbs/pickup/planning/list", workflow_role: "single_read",
       purpose: "Получить список складов, доступных для планирования FBS-отгрузок курьеру.", template: { operation: "warehouse_fbs_pickup_planning_list", params: {} }
     },
     fbp_warehouse_list: {
@@ -733,6 +694,12 @@
       cluster: "orders_postings", section: "fbs_postings", guidance_visibility: "conditional", entitlement_key: "POST /v3/posting/fbs/get", workflow_role: "single_read",
       purpose: "Получить подробную информацию об отправлении FBS; ответ может содержать данные покупателя/получателя.", template: { operation: "posting_fbs_get", params: { posting_number: "12345678-0001-1" } }
     },
+    fbs_carriage_available_list: {
+      provider: "seller_api", method: "POST", path: "/v1/posting/carriage-available/list", effect: "READ", request_style: "json_body",
+      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
+      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v1/posting/carriage-available/list", workflow_role: "single_read",
+      purpose: "Получить доступные перевозки для метода доставки и, при необходимости, явной даты отгрузки.", template: { operation: "fbs_carriage_available_list", params: { delivery_method_id: 1 } }
+    },
     fbs_carriage_get: {
       provider: "seller_api", method: "POST", path: "/v1/carriage/get", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
@@ -742,13 +709,13 @@
     fbs_act_list: {
       provider: "seller_api", method: "POST", path: "/v2/posting/fbs/act/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "acts", guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/act/list", workflow_role: "single_read",
+      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/act/list", workflow_role: "single_read",
       purpose: "Получить список FBS-актов без скрытой пагинации.", template: { operation: "fbs_act_list", params: { limit: 50 } }
     },
     fbs_act_check_status: {
       provider: "seller_api", method: "POST", path: "/v2/posting/fbs/act/check-status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "acts", guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/act/check-status", workflow_role: "single_read",
+      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/act/check-status", workflow_role: "single_read",
       purpose: "Проверить статус явно указанного задания формирования FBS-акта без автоматического polling.", template: { operation: "fbs_act_check_status", params: { id: 1 } }
     },
     assembly_carriage_posting_list: {
@@ -778,49 +745,49 @@
     fbs_carriage_container_get: {
       provider: "seller_api", method: "POST", path: "/v1/carriage/container/get", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "carriage_containers", guidance_visibility: "user", entitlement_key: "POST /v1/carriage/container/get", workflow_role: "single_read",
+      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v1/carriage/container/get", workflow_role: "single_read",
       purpose: "Получить безопасную информацию об одном явно указанном грузоместе FBS.", template: { operation: "fbs_carriage_container_get", params: { container_id: 1 } }
     },
     fbs_carriage_container_list: {
       provider: "seller_api", method: "POST", path: "/v1/carriage/container/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "carriage_containers", guidance_visibility: "user", entitlement_key: "POST /v1/carriage/container/list", workflow_role: "single_read",
+      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v1/carriage/container/list", workflow_role: "single_read",
       purpose: "Получить список грузомест FBS без скрытого продолжения cursor.", template: { operation: "fbs_carriage_container_list", params: {} }
     },
     fbs_carriage_container_status_get: {
       provider: "seller_api", method: "POST", path: "/v1/carriage/container/status/get", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "carriage_containers", guidance_visibility: "user", entitlement_key: "POST /v1/carriage/container/status/get", workflow_role: "single_read",
+      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v1/carriage/container/status/get", workflow_role: "single_read",
       purpose: "Получить статусы явно переданного набора грузомест FBS.", template: { operation: "fbs_carriage_container_status_get", params: { container_ids: ["1"] } }
     },
     fbs_carriage_container_task_info: {
       provider: "seller_api", method: "POST", path: "/v1/carriage/container/task/info", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "carriage_containers", guidance_visibility: "user", entitlement_key: "POST /v1/carriage/container/task/info", workflow_role: "single_read",
+      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v1/carriage/container/task/info", workflow_role: "single_read",
       purpose: "Получить статус задачи грузового места без автоматического polling.", template: { operation: "fbs_carriage_container_task_info", params: { task_id: 1 } }
     },
     fbs_product_country_list: {
       provider: "seller_api", method: "POST", path: "/v2/posting/fbs/product/country/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "fbs_restrictions", guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/product/country/list", workflow_role: "single_read",
+      cluster: "orders_postings", section: "fbs_postings", guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/product/country/list", workflow_role: "single_read",
       purpose: "Получить справочник доступных стран-изготовителей FBS без скрытых дополнительных запросов.", template: { operation: "fbs_product_country_list", params: {} }
     },
     fbs_posting_restrictions: {
       provider: "seller_api", method: "POST", path: "/v1/posting/fbs/restrictions", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "fbs_restrictions", guidance_visibility: "user", entitlement_key: "POST /v1/posting/fbs/restrictions", workflow_role: "single_read",
+      cluster: "orders_postings", section: "fbs_postings", guidance_visibility: "user", entitlement_key: "POST /v1/posting/fbs/restrictions", workflow_role: "single_read",
       purpose: "Получить габаритные, весовые и ценовые ограничения пункта приёма для явно указанного FBS-отправления.", template: { operation: "fbs_posting_restrictions", params: { posting_number: "12345678-0001-1" } }
     },
     fbs_posting_timeslot_change_restrictions: {
       provider: "seller_api", method: "POST", path: "/v1/posting/fbs/timeslot/change-restrictions", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "fbs_restrictions", guidance_visibility: "user", entitlement_key: "POST /v1/posting/fbs/timeslot/change-restrictions", workflow_role: "single_read",
+      cluster: "orders_postings", section: "fbs_postings", guidance_visibility: "user", entitlement_key: "POST /v1/posting/fbs/timeslot/change-restrictions", workflow_role: "single_read",
       purpose: "Получить доступный интервал переноса доставки и оставшееся число переносов для одного явно указанного FBS/rFBS-отправления.", template: { operation: "fbs_posting_timeslot_change_restrictions", params: { posting_number: "12345678-0001-1" } }
     },
     fbs_act_get_postings: {
       provider: "seller_api", method: "POST", path: "/v2/posting/fbs/act/get-postings", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "acts", guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/act/get-postings", workflow_role: "single_read",
+      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/act/get-postings", workflow_role: "single_read",
       purpose: "Получить отправления одного явно указанного FBS-акта без fanout и вторичных запросов.", template: { operation: "fbs_act_get_postings", params: { id: 1 } }
     },
     product_import_info: {
@@ -838,13 +805,13 @@
     fbs_carriage_ettn_status: {
       provider: "seller_api", method: "POST", path: "/v1/carriage/ettn/status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "acts", guidance_visibility: "user", entitlement_key: "POST /v1/carriage/ettn/status", workflow_role: "single_read",
+      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v1/carriage/ettn/status", workflow_role: "single_read",
       purpose: "Получить статус проверки электронной ТТН для явно указанной FBS-перевозки без polling и документов.", template: { operation: "fbs_carriage_ettn_status", params: { carriage_id: 1 } }
     },
     fbs_traceable_attribute_list: {
       provider: "seller_api", method: "POST", path: "/v1/posting/fbs/product/traceable/attribute", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "fbs_restrictions", guidance_visibility: "user", entitlement_key: "POST /v1/posting/fbs/product/traceable/attribute", workflow_role: "single_read",
+      cluster: "orders_postings", section: "fbs_postings", guidance_visibility: "user", entitlement_key: "POST /v1/posting/fbs/product/traceable/attribute", workflow_role: "single_read",
       purpose: "Получить список незаполненных прослеживаемых атрибутов для явно указанного FBS-отправления.", template: { operation: "fbs_traceable_attribute_list", params: { posting_number: "12345678-0001-1" } }
     },
     returns_list: {
@@ -863,25 +830,25 @@
     returns_utilization_history: {
       provider: "seller_api", method: "POST", path: "/v1/returns/settings/utilization/history", effect: "READ", request_style: "no_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "returns_cancellations", section: "utilization_removals", guidance_visibility: "user", entitlement_key: "POST /v1/returns/settings/utilization/history", workflow_role: "single_read",
+      cluster: "returns_cancellations", section: "returns", guidance_visibility: "user", entitlement_key: "POST /v1/returns/settings/utilization/history", workflow_role: "single_read",
       purpose: "Получить историю изменений настроек автоутилизации возвратов.", template: { operation: "returns_utilization_history", params: {} }
     },
     returns_utilization_info: {
       provider: "seller_api", method: "POST", path: "/v1/returns/settings/utilization/info", effect: "READ", request_style: "no_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "returns_cancellations", section: "utilization_removals", guidance_visibility: "user", entitlement_key: "POST /v1/returns/settings/utilization/info", workflow_role: "single_read",
+      cluster: "returns_cancellations", section: "returns", guidance_visibility: "user", entitlement_key: "POST /v1/returns/settings/utilization/info", workflow_role: "single_read",
       purpose: "Получить текущие настройки автоутилизации возвратов.", template: { operation: "returns_utilization_info", params: {} }
     },
     removal_from_stock_list: {
       provider: "seller_api", method: "POST", path: "/v1/removal/from-stock/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "returns_cancellations", section: "utilization_removals", guidance_visibility: "user", entitlement_key: "POST /v1/removal/from-stock/list", workflow_role: "single_read",
+      cluster: "returns_cancellations", section: "returns", guidance_visibility: "user", entitlement_key: "POST /v1/removal/from-stock/list", workflow_role: "single_read",
       purpose: "Получить отчёт по вывозу и утилизации со стока FBO; следующая страница только отдельной явной командой с last_id.", template: { operation: "removal_from_stock_list", params: { date_from: "2026-08-01", date_to: "2026-08-28", limit: 100 } }
     },
     removal_from_supply_list: {
       provider: "seller_api", method: "POST", path: "/v1/removal/from-supply/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "returns_cancellations", section: "utilization_removals", guidance_visibility: "user", entitlement_key: "POST /v1/removal/from-supply/list", workflow_role: "single_read",
+      cluster: "returns_cancellations", section: "returns", guidance_visibility: "user", entitlement_key: "POST /v1/removal/from-supply/list", workflow_role: "single_read",
       purpose: "Получить отчёт по вывозу и утилизации с поставки FBO; следующая страница только отдельной явной командой с last_id.", template: { operation: "removal_from_supply_list", params: { date_from: "2026-08-01", date_to: "2026-08-28", limit: 100 } }
     },
     returns_company_fbs_info: {
@@ -947,13 +914,13 @@
     order_cancel_status: {
       provider: "seller_api", method: "POST", path: "/v1/order/cancel/status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "returns_cancellations", section: "cancellation_status", guidance_visibility: "user", entitlement_key: "POST /v1/order/cancel/status", workflow_role: "single_read",
+      cluster: "returns_cancellations", section: "cancellations", guidance_visibility: "user", entitlement_key: "POST /v1/order/cancel/status", workflow_role: "single_read",
       purpose: "Получить статус отмены заказа.", template: { operation: "order_cancel_status", params: { order_number: "12345678-0001" } }
     },
     posting_cancel_status: {
       provider: "seller_api", method: "POST", path: "/v1/posting/cancel/status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "returns_cancellations", section: "cancellation_status", guidance_visibility: "user", entitlement_key: "POST /v1/posting/cancel/status", workflow_role: "single_read",
+      cluster: "returns_cancellations", section: "cancellations", guidance_visibility: "user", entitlement_key: "POST /v1/posting/cancel/status", workflow_role: "single_read",
       purpose: "Проверить статус отмены отправления.", template: { operation: "posting_cancel_status", params: { posting_number: "12345678-0001-1" } }
     },
     finance_accrual_postings: {
@@ -977,7 +944,7 @@
     finance_cash_flow_statement_list: {
       provider: "seller_api", method: "POST", path: "/v1/finance/cash-flow-statement/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "finance", section: "cashflow_buyout", guidance_visibility: "user", entitlement_key: "POST /v1/finance/cash-flow-statement/list", workflow_role: "single_read",
+      cluster: "finance", section: "documents_reports", guidance_visibility: "user", entitlement_key: "POST /v1/finance/cash-flow-statement/list", workflow_role: "single_read",
       purpose: "Получить финансовый отчёт денежных потоков; следующая страница только отдельной явной командой.", template: { operation: "finance_cash_flow_statement_list", params: { date: { from: "2026-08-01T00:00:00Z", to: "2026-08-28T23:59:59Z" }, page: 1, page_size: 100, with_details: true } }
     },
     finance_transaction_list_v3: {
@@ -1013,7 +980,7 @@
     finance_products_buyout: {
       provider: "seller_api", method: "POST", path: "/v1/finance/products/buyout", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "finance", section: "cashflow_buyout", guidance_visibility: "user", entitlement_key: "POST /v1/finance/products/buyout", workflow_role: "single_read",
+      cluster: "finance", section: "documents_reports", guidance_visibility: "user", entitlement_key: "POST /v1/finance/products/buyout", workflow_role: "single_read",
       purpose: "Получить прямой JSON-отчёт о товарах, выкупленных Ozon, за явно заданный период без скрытых дополнительных запросов.", template: { operation: "finance_products_buyout", params: { date_from: "2026-08-01", date_to: "2026-08-28" } }
     },
     report_list: {
@@ -1027,6 +994,168 @@
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "finance", section: "documents_reports", guidance_visibility: "user", entitlement_key: "POST /v1/report/info", workflow_role: "single_read",
       purpose: "Получить информацию об уже созданном отчёте по его коду; файл автоматически не загружается.", template: { operation: "report_info", params: { code: "REPORT_CODE" } }
+    },
+    report_file_get: {
+      provider: "report_file", method: "GET", path: "/__opaque_report_file__", effect: "READ", request_style: "opaque_file_ref", execution_enabled: true,
+      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false,
+      cluster: "finance", section: "documents_reports", guidance_visibility: "conditional", workflow_role: "explicit_workflow_read_step",
+      purpose: "Получить и безопасно разобрать готовый файл отчёта/документа по opaque ref без раскрытия signed URL или base64.", template: { operation: "report_file_get", params: { file_ref: "REPORT_FILE_REF", offset: 0, limit: 200 } }
+    },
+    report_products_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/products/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/products/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт по товарам", template: {"operation":"report_products_create","params":{}}
+    },
+    report_returns_create_v2: {
+      provider: "seller_api", method: "POST", path: "/v2/report/returns/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "returns_cancellations", section: "returns",
+      guidance_visibility: "user", entitlement_key: "POST /v2/report/returns/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт о возвратах", template: {"operation":"report_returns_create_v2","params":{"filter":{"date_from":"2026-01-01T00:00:00Z","date_to":"2026-01-01T00:00:00Z","status":"DisputeOpened"}}}
+    },
+    report_postings_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/postings/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "labels_documents",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/postings/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт об отправлениях", template: {"operation":"report_postings_create","params":{"filter":{"processed_at_from":"2026-01-01T00:00:00Z","processed_at_to":"2026-01-01T00:00:00Z","delivery_schema":["FBO"]}}}
+    },
+    report_discounted_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/discounted/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/discounted/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт об уценённых товарах", template: {"operation":"report_discounted_create","params":{}}
+    },
+    report_warehouse_stock: {
+      provider: "seller_api", method: "POST", path: "/v1/report/warehouse/stock", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "stocks_inventory", section: "warehouse_fbs",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/warehouse/stock", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт об остатках на FBS-складе", template: {"operation":"report_warehouse_stock","params":{"warehouseId":["1"]}}
+    },
+    report_placement_by_products_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/placement/by-products/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "stocks_inventory", section: "stock_movement_turnover",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/placement/by-products/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Получить отчёт о стоимости размещения по товарам", template: {"operation":"report_placement_by_products_create","params":{"date_from":"2026-01-01","date_to":"2026-01-01"}}
+    },
+    report_placement_by_supplies_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/placement/by-supplies/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "supply_orders",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/placement/by-supplies/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Получить отчёт о стоимости размещения по поставкам", template: {"operation":"report_placement_by_supplies_create","params":{"date_from":"2026-01-01","date_to":"2026-01-01"}}
+    },
+    report_marked_products_sales_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/marked-products-sales/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "sales_analytics", section: "period_product_category",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/marked-products-sales/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать отчёт по продажам товаров с маркировкой", template: {"operation":"report_marked_products_sales_create","params":{"date":{"from":"2026-01-01","to":"2026-01-01"}}}
+    },
+    report_realization_posting_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/realization/posting/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "realization",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/realization/posting/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Получить позаказный отчёт о реализации товаров", template: {"operation":"report_realization_posting_create","params":{"month":8,"year":2026}}
+    },
+    finance_document_b2b_sales: {
+      provider: "seller_api", method: "POST", path: "/v1/finance/document-b2b-sales", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/finance/document-b2b-sales", workflow_role: "explicit_workflow_read_step",
+      purpose: "Реестр продаж юридическим лицам", template: {"operation":"finance_document_b2b_sales","params":{"date":"2026-01"}}
+    },
+    finance_mutual_settlement_report: {
+      provider: "seller_api", method: "POST", path: "/v1/finance/mutual-settlement", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/finance/mutual-settlement", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт о взаиморасчётах", template: {"operation":"finance_mutual_settlement_report","params":{"date":"2026-01"}}
+    },
+    finance_compensation_report: {
+      provider: "seller_api", method: "POST", path: "/v1/finance/compensation", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/finance/compensation", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт о компенсациях", template: {"operation":"finance_compensation_report","params":{"date":"2026-01"}}
+    },
+    finance_decompensation_report: {
+      provider: "seller_api", method: "POST", path: "/v1/finance/decompensation", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/finance/decompensation", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт о декомпенсациях", template: {"operation":"finance_decompensation_report","params":{"date":"2026-01"}}
+    },
+    cargoes_label_create: {
+      provider: "seller_api", method: "POST", path: "/v1/cargoes-label/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
+      guidance_visibility: "user", entitlement_key: "POST /v1/cargoes-label/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать этикетки для грузомест", template: {"operation":"cargoes_label_create","params":{"supply_id":1,"cargoes":[{"cargo_id":1}]}}
+    },
+    posting_fbs_act_container_labels: {
+      provider: "seller_api", method: "POST", path: "/v2/posting/fbs/act/get-container-labels", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false, cluster: "orders_postings", section: "labels_documents",
+      guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/act/get-container-labels", workflow_role: "single_read", response_style: "binary", response_content_types: ["application/pdf"],
+      purpose: "Этикетки для грузового места", template: {"operation":"posting_fbs_act_container_labels","params":{"id":1}}
+    },
+    posting_fbs_package_label: {
+      provider: "seller_api", method: "POST", path: "/v2/posting/fbs/package-label", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false, cluster: "orders_postings", section: "labels_documents",
+      guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/package-label", workflow_role: "single_read", response_style: "binary", response_content_types: ["application/pdf"],
+      purpose: "Напечатать этикетку", template: {"operation":"posting_fbs_package_label","params":{"posting_number":["POSTING_NUMBER"]}}
+    },
+    posting_fbs_package_label_create: {
+      provider: "seller_api", method: "POST", path: "/v2/posting/fbs/package-label/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "labels_documents",
+      guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/package-label/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Создать задание на формирование этикеток", template: {"operation":"posting_fbs_package_label_create","params":{"posting_number":["POSTING_NUMBER"]}}
+    },
+    cargoes_transport_label_by_order_create: {
+      provider: "seller_api", method: "POST", path: "/v1/cargoes/label/transport-by-order/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
+      guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/label/transport-by-order/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать этикетки для транспортных грузомест по заявке", template: {"operation":"cargoes_transport_label_by_order_create","params":{"order_id":1}}
+    },
+    cargoes_transport_label_create: {
+      provider: "seller_api", method: "POST", path: "/v1/cargoes/label/transport/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
+      guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/label/transport/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать этикетки транспортных грузомест", template: {"operation":"cargoes_transport_label_create","params":{"supply_id":1,"transport_cargo_ids":["1"]}}
+    },
+    fbp_act_from_create: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/act-from/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "acts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/act-from/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать акт приёмки", template: {"operation":"fbp_act_from_create","params":{"supply_id":"1"}}
+    },
+    fbp_act_to_create: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/act-to/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "acts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/act-to/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать транспортную накладную", template: {"operation":"fbp_act_to_create","params":{"supply_id":"1"}}
+    },
+    fbp_label_create: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/label/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/label/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Cоздать задание на генерацию этикеток", template: {"operation":"fbp_label_create","params":{"supply_id":"1"}}
+    },
+    fbp_draft_direct_product_validate: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/draft/direct/product/validate", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "drafts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/direct/product/validate", workflow_role: "single_read",
+      purpose: "Проверить список товаров для склада партнёра", template: {"operation":"fbp_draft_direct_product_validate","params":{"skus":[{"count":1,"sku":1}],"warehouse_id":1}}
+    },
+    fbp_draft_dropoff_product_validate: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/draft/drop-off/product/validate", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "drafts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/drop-off/product/validate", workflow_role: "single_read",
+      purpose: "Проверить список товаров, которые склад партнёра может принять", template: {"operation":"fbp_draft_dropoff_product_validate","params":{"skus":[{"count":1,"sku":1}],"warehouse_id":1}}
+    },
+    fbp_draft_pickup_product_validate: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/draft/pick-up/product/validate", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "drafts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/pick-up/product/validate", workflow_role: "single_read",
+      purpose: "Провалидировать список товаров для pick-up поставки", template: {"operation":"fbp_draft_pickup_product_validate","params":{"skus":[{"count":1,"sku":1}],"warehouse_id":1}}
+    },
+    chat_history_v3: {
+      provider: "seller_api", method: "POST", path: "/v3/chat/history", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false, cluster: "reviews_questions", section: "chats",
+      guidance_visibility: "conditional", entitlement_key: "POST /v3/chat/history", workflow_role: "single_read",
+      purpose: "История чата", template: {"operation":"chat_history_v3","params":{"chat_id":"1"}}
     },
     supply_order_list: {
       provider: "seller_api", method: "POST", path: "/v3/supply-order/list", effect: "READ", request_style: "json_body",
@@ -1067,49 +1196,49 @@
     supply_order_act_accept_status: {
       provider: "seller_api", method: "POST", path: "/v1/supply-order/act/accept/status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "supply_acts", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/act/accept/status", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/act/accept/status", workflow_role: "single_read",
       purpose: "Получить статус согласования акта по явному operation_id; без автоматического polling.", template: { operation: "supply_order_act_accept_status", params: { operation_id: "OPERATION_ID" } }
     },
     supply_order_act_product_get: {
       provider: "seller_api", method: "POST", path: "/v1/supply-order/act/product/get", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "supply_acts", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/act/product/get", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/act/product/get", workflow_role: "single_read",
       purpose: "Получить информацию о товарах в акте по идентификатору поставки.", template: { operation: "supply_order_act_product_get", params: { supply_id: 1 } }
     },
     supply_order_act_summary_get: {
       provider: "seller_api", method: "POST", path: "/v1/supply-order/act/summary/get", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "supply_acts", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/act/summary/get", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/act/summary/get", workflow_role: "single_read",
       purpose: "Получить информацию об акте по идентификатору заявки на поставку.", template: { operation: "supply_order_act_summary_get", params: { order_id: 1 } }
     },
     supply_order_cancel_status: {
       provider: "seller_api", method: "POST", path: "/v1/supply-order/cancel/status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "supply_status", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/cancel/status", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/cancel/status", workflow_role: "single_read",
       purpose: "Получить статус ранее запущенной отмены по явному operation_id; без автоматического polling.", template: { operation: "supply_order_cancel_status", params: { operation_id: "OPERATION_ID" } }
     },
     supply_order_content_update_status: {
       provider: "seller_api", method: "POST", path: "/v1/supply-order/content/update/status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "supply_status", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/content/update/status", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/content/update/status", workflow_role: "single_read",
       purpose: "Получить статус ранее запущенного редактирования состава по явному operation_id; без polling.", template: { operation: "supply_order_content_update_status", params: { operation_id: "OPERATION_ID" } }
     },
     supply_order_content_update_validation: {
       provider: "seller_api", method: "POST", path: "/v1/supply-order/content/update/validation", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "supply_status", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/content/update/validation", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/content/update/validation", workflow_role: "single_read",
       purpose: "Проверить новый товарный состав поставки без применения изменения.", template: { operation: "supply_order_content_update_validation", params: { new_bundle_id: "BUNDLE_ID", supply_id: 1 } }
     },
     supply_order_pass_status: {
       provider: "seller_api", method: "POST", path: "/v1/supply-order/pass/status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "supply_status", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/pass/status", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/pass/status", workflow_role: "single_read",
       purpose: "Получить статус ввода данных о водителе и автомобиле по явному operation_id; без polling.", template: { operation: "supply_order_pass_status", params: { operation_id: "OPERATION_ID" } }
     },
     supply_order_timeslot_status: {
       provider: "seller_api", method: "POST", path: "/v1/supply-order/timeslot/status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "supply_status", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/timeslot/status", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "user", entitlement_key: "POST /v1/supply-order/timeslot/status", workflow_role: "single_read",
       purpose: "Получить статус ранее запущенного изменения интервала по явному operation_id; без polling.", template: { operation: "supply_order_timeslot_status", params: { operation_id: "OPERATION_ID" } }
     },
     fbo_draft_create_info: {
@@ -1145,13 +1274,13 @@
     fbp_draft_dropoff_province_list: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/draft/drop-off/province/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "fbp_drafts", guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/drop-off/province/list", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "drafts", guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/drop-off/province/list", workflow_role: "single_read",
       purpose: "Получить список провинций для планирования FBP drop-off по явному warehouse_id.", template: { operation: "fbp_draft_dropoff_province_list", params: { warehouse_id: 1 } }
     },
     fbp_draft_dropoff_point_list: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/draft/drop-off/point/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "fbp_drafts", guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/drop-off/point/list", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "drafts", guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/drop-off/point/list", workflow_role: "single_read",
       purpose: "Получить drop-off пункты выбранной провинции; продолжение страницы только отдельной явной командой.", template: { operation: "fbp_draft_dropoff_point_list", params: { page_size: 50, province_uuid: "PROVINCE_UUID", warehouse_id: 1 } }
     },
     fbp_draft_dropoff_point_timetable: {
@@ -1193,7 +1322,7 @@
     fbo_cargoes_delete_status: {
       provider: "seller_api", method: "POST", path: "/v1/cargoes/delete/status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "cargo_status", guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/delete/status", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "cargoes", guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/delete/status", workflow_role: "single_read",
       purpose: "Получить статус ранее запущенного удаления грузоместа по явному operation_id без автоматического polling.", template: { operation: "fbo_cargoes_delete_status", params: { operation_id: "OPERATION_ID" } }
     },
     fbo_cargoes_rules_get: {
@@ -1211,19 +1340,19 @@
     fbo_cargoes_v2_delete_status: {
       provider: "seller_api", method: "POST", path: "/v2/cargoes/delete/status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "cargo_status", guidance_visibility: "user", entitlement_key: "POST /v2/cargoes/delete/status", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "cargoes", guidance_visibility: "user", entitlement_key: "POST /v2/cargoes/delete/status", workflow_role: "single_read",
       purpose: "Получить статус ранее запущенного удаления грузомест по явному operation_id без автоматического polling.", template: { operation: "fbo_cargoes_v2_delete_status", params: { operation_id: "OPERATION_ID" } }
     },
     fbo_cargoes_transport_activate_status: {
       provider: "seller_api", method: "POST", path: "/v1/cargoes/transport/activate/status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "cargo_status", guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/transport/activate/status", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "cargoes", guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/transport/activate/status", workflow_role: "single_read",
       purpose: "Получить статус включения или отключения транспортных грузомест по явному operation_id без автоматического polling.", template: { operation: "fbo_cargoes_transport_activate_status", params: { operation_id: "OPERATION_ID" } }
     },
     fbo_cargoes_transport_bind_status: {
       provider: "seller_api", method: "POST", path: "/v1/cargoes/transport/bind/status", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "supplies_fbo", section: "cargo_status", guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/transport/bind/status", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "cargoes", guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/transport/bind/status", workflow_role: "single_read",
       purpose: "Получить статус связывания или отвязывания грузомест по явному operation_id без автоматического polling.", template: { operation: "fbo_cargoes_transport_bind_status", params: { operation_id: "OPERATION_ID" } }
     },
     fbo_cargoes_supplies_get: {
@@ -1241,19 +1370,19 @@
     product_quant_list: {
       provider: "seller_api", method: "POST", path: "/v1/product/quant/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "catalog_products", section: "product_quant_placement", guidance_visibility: "user", entitlement_key: "POST /v1/product/quant/list", workflow_role: "single_read",
+      cluster: "catalog_products", section: "product_list_info", guidance_visibility: "user", entitlement_key: "POST /v1/product/quant/list", workflow_role: "single_read",
       purpose: "Получить список эконом-товаров одним явным запросом без скрытой пагинации.", template: { operation: "product_quant_list", params: { limit: 100 } }
     },
     product_quant_info: {
       provider: "seller_api", method: "POST", path: "/v1/product/quant/info", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "catalog_products", section: "product_quant_placement", guidance_visibility: "user", entitlement_key: "POST /v1/product/quant/info", workflow_role: "single_read",
+      cluster: "catalog_products", section: "product_list_info", guidance_visibility: "user", entitlement_key: "POST /v1/product/quant/info", workflow_role: "single_read",
       purpose: "Получить информацию об эконом-товарах по явно переданным кодам квантов.", template: { operation: "product_quant_info", params: { quant_code: ["QUANT_CODE"] } }
     },
     product_placement_zone_info: {
       provider: "seller_api", method: "POST", path: "/v1/product/placement-zone/info", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "catalog_products", section: "product_quant_placement", guidance_visibility: "user", entitlement_key: "POST /v1/product/placement-zone/info", workflow_role: "single_read",
+      cluster: "catalog_products", section: "product_list_info", guidance_visibility: "user", entitlement_key: "POST /v1/product/placement-zone/info", workflow_role: "single_read",
       purpose: "Получить зоны размещения товаров по явно переданным SKU перед поставкой.", template: { operation: "product_placement_zone_info", params: { skus: ["1"] } }
     },
     product_stairway_discount_by_quantity_get: {
@@ -1348,27 +1477,27 @@
     },
     product_certificate_accordance_types_v1: {
       provider: "seller_api", method: "GET", path: "/v1/product/certificate/accordance-types", effect: "READ", request_style: "query", execution_enabled: true,
-      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "catalog_products", section: "certification_reference", guidance_visibility: "user",
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "catalog_products", section: "certification", guidance_visibility: "user",
       entitlement_key: "GET /v1/product/certificate/accordance-types", workflow_role: "single_read", purpose: "Список типов соответствия требованиям (версия 1)", template: {"operation":"product_certificate_accordance_types_v1","params":{}}
     },
     cargoes_label_get: {
       provider: "seller_api", method: "POST", path: "/v1/cargoes-label/get", effect: "READ", request_style: "json_body", execution_enabled: true,
-      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargo_labels", guidance_visibility: "user",
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes", guidance_visibility: "user",
       entitlement_key: "POST /v1/cargoes-label/get", workflow_role: "explicit_workflow_read_step", purpose: "Получить идентификатор этикетки для грузомест", template: {"operation":"cargoes_label_get","params":{"operation_id":"op-1"}}
     },
     cargoes_label_transport_by_order_status: {
       provider: "seller_api", method: "POST", path: "/v1/cargoes/label/transport-by-order/status", effect: "READ", request_style: "json_body", execution_enabled: true,
-      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargo_status", guidance_visibility: "user",
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes", guidance_visibility: "user",
       entitlement_key: "POST /v1/cargoes/label/transport-by-order/status", workflow_role: "explicit_workflow_read_step", purpose: "Получить статус генерации этикеток для транспортных грузомеcт по идентификатору поставки", template: {"operation":"cargoes_label_transport_by_order_status","params":{"operation_id":"op-1"}}
     },
     cargoes_label_transport_status: {
       provider: "seller_api", method: "POST", path: "/v1/cargoes/label/transport/status", effect: "READ", request_style: "json_body", execution_enabled: true,
-      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargo_status", guidance_visibility: "user",
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes", guidance_visibility: "user",
       entitlement_key: "POST /v1/cargoes/label/transport/status", workflow_role: "explicit_workflow_read_step", purpose: "Получить статус генерации этикеток транспортных грузомест по идентификатору грузоместа", template: {"operation":"cargoes_label_transport_status","params":{"operation_id":"op-1"}}
     },
     cargoes_transport_create_status: {
       provider: "seller_api", method: "POST", path: "/v1/cargoes/transport/create/status", effect: "READ", request_style: "json_body", execution_enabled: true,
-      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargo_status", guidance_visibility: "user",
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes", guidance_visibility: "user",
       entitlement_key: "POST /v1/cargoes/transport/create/status", workflow_role: "single_read", purpose: "Получить статус создания транспортного грузоместа", template: {"operation":"cargoes_transport_create_status","params":{"operation_id":"op-1"}}
     },
     carriage_act_discrepancy_pdf: {
@@ -1393,7 +1522,7 @@
     },
     delivery_point_info: {
       provider: "seller_api", method: "POST", path: "/v1/delivery/point/info", effect: "READ", request_style: "json_body", execution_enabled: true,
-      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "warehouse_logistics", section: "delivery_geo", guidance_visibility: "user",
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "warehouse_logistics", section: "delivery_methods", guidance_visibility: "user",
       entitlement_key: "POST /v1/delivery/point/info", workflow_role: "single_read", purpose: "Получить информацию о точке самовывоза", template: {"operation":"delivery_point_info","params":{"map_point_ids":["1"]}}
     },
     fbp_act_from_get: {
@@ -1416,10 +1545,15 @@
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "labels_documents", guidance_visibility: "user",
       entitlement_key: "POST /v1/posting/fbs/package-label/get", workflow_role: "explicit_workflow_read_step", purpose: "Получить файл с этикетками", template: {"operation":"posting_fbs_package_label_get_v1","params":{"task_id":1}}
     },
+    fbs_stock_by_warehouse_v1: {
+      provider: "seller_api", method: "POST", path: "/v1/product/info/stocks-by-warehouse/fbs", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "stocks_inventory", section: "warehouse_fbs", guidance_visibility: "user",
+      entitlement_key: "POST /v1/product/info/stocks-by-warehouse/fbs", workflow_role: "single_read", purpose: "Информация об остатках на складах продавца (FBS и rFBS)", template: {"operation":"fbs_stock_by_warehouse_v1","params":{"sku":["1"]}}
+    },
     receipts_get: {
       provider: "seller_api", method: "POST", path: "/v1/receipts/get", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false, cluster: "finance",
-      section: "receipts_invoices", guidance_visibility: "user", entitlement_key: "POST /v1/receipts/get", workflow_role: "single_read", purpose: "Получить чек в формате PDF", template: {"operation":"receipts_get","params":{"receipt_id":"1"}}
+      section: "documents_reports", guidance_visibility: "user", entitlement_key: "POST /v1/receipts/get", workflow_role: "single_read", purpose: "Получить чек в формате PDF", template: {"operation":"receipts_get","params":{"receipt_id":"1"}}
     },
     return_giveout_barcode: {
       provider: "seller_api", method: "POST", path: "/v1/return/giveout/barcode", effect: "READ", request_style: "json_body", execution_enabled: true,
@@ -1443,7 +1577,7 @@
     },
     invoice_get: {
       provider: "seller_api", method: "POST", path: "/v2/invoice/get", effect: "READ", request_style: "json_body", execution_enabled: true,
-      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "receipts_invoices", guidance_visibility: "user",
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports", guidance_visibility: "user",
       entitlement_key: "POST /v2/invoice/get", workflow_role: "single_read", purpose: "Получить информацию о счёте-фактуре", template: {"operation":"invoice_get","params":{"posting_number":"1"}}
     },
     posting_fbs_act_get_barcode: {
@@ -1468,17 +1602,17 @@
     },
     product_certification_params_v2: {
       provider: "seller_api", method: "POST", path: "/v2/product/certification/params", effect: "READ", request_style: "json_body", execution_enabled: true,
-      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "catalog_products", section: "certification_reference", guidance_visibility: "user",
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "catalog_products", section: "certification", guidance_visibility: "user",
       entitlement_key: "POST /v2/product/certification/params", workflow_role: "single_read", purpose: "Получить обязательные параметры для создания сертификата качества", template: {"operation":"product_certification_params_v2","params":{}}
     },
     fbs_posting_product_exemplar_status_v5: {
       provider: "seller_api", method: "POST", path: "/v5/fbs/posting/product/exemplar/status", effect: "READ", request_style: "json_body", execution_enabled: true,
-      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "fbs_exemplars_marks", guidance_visibility: "user",
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "fbs_postings", guidance_visibility: "user",
       entitlement_key: "POST /v5/fbs/posting/product/exemplar/status", workflow_role: "single_read", purpose: "Получить статус добавления экземпляров", template: {"operation":"fbs_posting_product_exemplar_status_v5","params":{"posting_number":"1"}}
     },
     fbs_posting_product_exemplar_create_or_get_v6: {
       provider: "seller_api", method: "POST", path: "/v6/fbs/posting/product/exemplar/create-or-get", effect: "READ", request_style: "json_body", execution_enabled: true,
-      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "fbs_exemplars_marks", guidance_visibility: "user",
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "fbs_postings", guidance_visibility: "user",
       entitlement_key: "POST /v6/fbs/posting/product/exemplar/create-or-get", workflow_role: "single_read", purpose: "Получить данные созданных экземпляров", template: {"operation":"fbs_posting_product_exemplar_create_or_get_v6","params":{"posting_number":"1"}}
     },
     arrival_pass_list: {
@@ -1491,7 +1625,7 @@
     fbs_product_exemplar_validate: {
       provider: "seller_api", method: "POST", path: "/v5/fbs/posting/product/exemplar/validate", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "fbs_exemplars_marks", guidance_visibility: "user", entitlement_key: "POST /v5/fbs/posting/product/exemplar/validate", workflow_role: "single_read",
+      cluster: "orders_postings", section: "fbs_postings", guidance_visibility: "user", entitlement_key: "POST /v5/fbs/posting/product/exemplar/validate", workflow_role: "single_read",
       purpose: "Проверить коды маркировки перед явной операцией с отправлением без изменения его состояния.", template: { operation: "fbs_product_exemplar_validate", params: { posting_number: "POSTING_NUMBER", products: [{ product_id: 1, exemplars: [{}] }] } }
     },
     carriage_delivery_list_v2: {
@@ -1503,7 +1637,7 @@
     posting_fbs_pickup_code_verify: {
       provider: "seller_api", method: "POST", path: "/v1/posting/fbs/pick-up-code/verify", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "fbs_exemplars_marks", guidance_visibility: "user", entitlement_key: "POST /v1/posting/fbs/pick-up-code/verify", workflow_role: "single_read",
+      cluster: "orders_postings", section: "fbs_postings", guidance_visibility: "user", entitlement_key: "POST /v1/posting/fbs/pick-up-code/verify", workflow_role: "single_read",
       purpose: "Проверить предоставленный код курьера для отправления без изменения состояния отправления.", template: { operation: "posting_fbs_pickup_code_verify", params: { pickup_code: "000000", posting_number: "POSTING_NUMBER" } }
     },
     posting_global_etgb: {
@@ -1523,7 +1657,7 @@
       provider: "seller_api", method: "POST", path: "/v2/conditional-cancellation/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
-      cluster: "returns_cancellations", section: "cancellation_status", guidance_visibility: "conditional", entitlement_key: "POST /v2/conditional-cancellation/list", workflow_role: "single_read",
+      cluster: "returns_cancellations", section: "cancellations", guidance_visibility: "conditional", entitlement_key: "POST /v2/conditional-cancellation/list", workflow_role: "single_read",
       purpose: "Получить одну явную страницу заявок на отмену rFBS; пользовательские данные доступны только при включённой настройке личных данных.", template: { operation: "conditional_cancellation_list", params: { limit: 100 } }
     },
     chat_list_v3: {
@@ -1536,20 +1670,20 @@
       provider: "seller_api", method: "POST", path: "/v1/finance/document-b2b-sales/json", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
-      cluster: "finance", section: "b2b", guidance_visibility: "conditional", entitlement_key: "POST /v1/finance/document-b2b-sales/json", workflow_role: "single_read",
+      cluster: "finance", section: "documents_reports", guidance_visibility: "conditional", entitlement_key: "POST /v1/finance/document-b2b-sales/json", workflow_role: "single_read",
       purpose: "Получить реестр продаж юридическим лицам в JSON; реквизиты доступны только при включённой настройке личных данных.", template: { operation: "finance_b2b_sales_json", params: { date: "2019-01" } }
     },
     receipts_seller_list: {
       provider: "seller_api", method: "POST", path: "/v1/receipts/seller/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "finance", section: "receipts_invoices", guidance_visibility: "user", entitlement_key: "POST /v1/receipts/seller/list", workflow_role: "single_read",
+      cluster: "finance", section: "documents_reports", guidance_visibility: "user", entitlement_key: "POST /v1/receipts/seller/list", workflow_role: "single_read",
       purpose: "Получить одну явную страницу чеков продавца с безопасной проекцией результата.", template: { operation: "receipts_seller_list", params: { page: 0, page_size: 100 } }
     },
     discount_task_list_v2: {
       provider: "seller_api", method: "POST", path: "/v2/actions/discounts-task/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
-      cluster: "prices_promotions", section: "discount_tasks", guidance_visibility: "conditional", entitlement_key: "POST /v2/actions/discounts-task/list", workflow_role: "single_read",
+      cluster: "prices_promotions", section: "actions_promotions", guidance_visibility: "conditional", entitlement_key: "POST /v2/actions/discounts-task/list", workflow_role: "single_read",
       purpose: "Получить одну явную страницу заявок покупателей на скидку; пользовательские данные доступны только при включённой настройке личных данных.", template: { operation: "discount_task_list_v2", params: { limit: 50, status: "ALL" } }
     },
     posting_digital_list_v2: {
@@ -1561,123 +1695,123 @@
     notification_list: {
       provider: "seller_api", method: "POST", path: "/v1/notification/list", effect: "READ", request_style: "no_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "account_access", section: "notifications", guidance_visibility: "user", entitlement_key: "POST /v1/notification/list", workflow_role: "single_read",
+      cluster: "account_access", section: "seller_settings", guidance_visibility: "user", entitlement_key: "POST /v1/notification/list", workflow_role: "single_read",
       purpose: "Получить информацию о подключённых URL уведомлений без выполнения webhook-проверки.", template: { operation: "notification_list", params: {} }
     },
     notification_push_type_list: {
       provider: "seller_api", method: "POST", path: "/v1/notification/push-type/list", effect: "READ", request_style: "no_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "account_access", section: "notifications", guidance_visibility: "user", entitlement_key: "POST /v1/notification/push-type/list", workflow_role: "single_read",
+      cluster: "account_access", section: "seller_settings", guidance_visibility: "user", entitlement_key: "POST /v1/notification/push-type/list", workflow_role: "single_read",
       purpose: "Получить справочник типов push-уведомлений.", template: { operation: "notification_push_type_list", params: {} }
     },
     fbp_archive_get: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/archive/get", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
-      cluster: "supplies_fbo", section: "fbp_archive", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/archive/get", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/archive/get", workflow_role: "single_read",
       purpose: "Получить завершённую FBP-поставку; контактные данные доступны только при включённой настройке личных данных.", template: { operation: "fbp_archive_get", params: { supply_id: "1" } }
     },
     fbp_archive_list: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/archive/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
-      cluster: "supplies_fbo", section: "fbp_archive", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/archive/list", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/archive/list", workflow_role: "single_read",
       purpose: "Получить одну явную страницу завершённых FBP-поставок; контактные данные доступны только при включённой настройке личных данных.", template: { operation: "fbp_archive_list", params: { count: "100" } }
     },
     fbp_draft_get: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/draft/get", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
-      cluster: "supplies_fbo", section: "fbp_drafts", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/draft/get", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "drafts", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/draft/get", workflow_role: "single_read",
       purpose: "Получить черновик FBP-поставки; контактные данные доступны только при включённой настройке личных данных.", template: { operation: "fbp_draft_get", params: { supply_id: "1" } }
     },
     fbp_draft_list: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/draft/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
-      cluster: "supplies_fbo", section: "fbp_drafts", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/draft/list", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "drafts", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/draft/list", workflow_role: "single_read",
       purpose: "Получить одну явную страницу черновиков FBP-поставки; контактные данные доступны только при включённой настройке личных данных.", template: { operation: "fbp_draft_list", params: { count: 100 } }
     },
     fbp_order_get: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/order/get", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
-      cluster: "supplies_fbo", section: "fbp_orders", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/order/get", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/order/get", workflow_role: "single_read",
       purpose: "Получить FBP-поставку; контактные данные доступны только при включённой настройке личных данных.", template: { operation: "fbp_order_get", params: { supply_id: "1" } }
     },
     fbp_order_list: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/order/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
-      cluster: "supplies_fbo", section: "fbp_orders", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/order/list", workflow_role: "single_read",
+      cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/order/list", workflow_role: "single_read",
       purpose: "Получить одну явную страницу FBP-поставок; контактные данные доступны только при включённой настройке личных данных.", template: { operation: "fbp_order_list", params: { count: 100 } }
     },
     delivery_check: {
       provider: "seller_api", method: "POST", path: "/v1/delivery/check", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
-      cluster: "warehouse_logistics", section: "delivery_geo", guidance_visibility: "conditional", entitlement_key: "POST /v1/delivery/check", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "delivery_methods", guidance_visibility: "conditional", entitlement_key: "POST /v1/delivery/check", workflow_role: "single_read",
       purpose: "Проверить доступность доставки для номера покупателя только при включённой настройке личных данных.", template: { operation: "delivery_check", params: { client_phone: "79990000000" } }
     },
     delivery_checkout_v2: {
       provider: "seller_api", method: "POST", path: "/v2/delivery/checkout", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
-      cluster: "warehouse_logistics", section: "delivery_geo", guidance_visibility: "conditional", entitlement_key: "POST /v2/delivery/checkout", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "delivery_methods", guidance_visibility: "conditional", entitlement_key: "POST /v2/delivery/checkout", workflow_role: "single_read",
       purpose: "Получить доступные варианты доставки с номером покупателя только при включённой настройке личных данных.", template: { operation: "delivery_checkout_v2", params: { buyer_phone: "79990000000", delivery_schema: "MIX", items: [{ sku: 1, quantity: 1 }] } }
     },
     delivery_map: {
       provider: "seller_api", method: "POST", path: "/v1/delivery/map", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "delivery_geo", guidance_visibility: "user", entitlement_key: "POST /v1/delivery/map", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "delivery_methods", guidance_visibility: "user", entitlement_key: "POST /v1/delivery/map", workflow_role: "single_read",
       purpose: "Получить точки доставки для явно указанной области карты.", template: { operation: "delivery_map", params: { viewport: { left_bottom: { lat: 55, long: 37 }, right_top: { lat: 56, long: 38 } }, zoom: 10 } }
     },
     delivery_point_list: {
       provider: "seller_api", method: "POST", path: "/v1/delivery/point/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "delivery_geo", guidance_visibility: "user", entitlement_key: "POST /v1/delivery/point/list", workflow_role: "single_read",
+      cluster: "warehouse_logistics", section: "delivery_methods", guidance_visibility: "user", entitlement_key: "POST /v1/delivery/point/list", workflow_role: "single_read",
       purpose: "Получить список точек самовывоза.", template: { operation: "delivery_point_list", params: {} }
     },
     order_cancel_check: {
       provider: "seller_api", method: "POST", path: "/v1/order/cancel/check", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "returns_cancellations", section: "cancellation_status", guidance_visibility: "user", entitlement_key: "POST /v1/order/cancel/check", workflow_role: "single_read",
+      cluster: "returns_cancellations", section: "cancellations", guidance_visibility: "user", entitlement_key: "POST /v1/order/cancel/check", workflow_role: "single_read",
       purpose: "Проверить возможность отмены заказа без изменения его состояния.", template: { operation: "order_cancel_check", params: { order_number: "ORDER_NUMBER" } }
     },
     posting_marks: {
       provider: "seller_api", method: "POST", path: "/v1/posting/marks", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "fbs_exemplars_marks", guidance_visibility: "user", entitlement_key: "POST /v1/posting/marks", workflow_role: "single_read",
+      cluster: "orders_postings", section: "fbs_postings", guidance_visibility: "user", entitlement_key: "POST /v1/posting/marks", workflow_role: "single_read",
       purpose: "Получить маркировки экземпляров для явно указанных отправлений.", template: { operation: "posting_marks", params: { posting_numbers: ["POSTING_NUMBER"] } }
     },
     performance_campaigns: {
       provider: "performance_api", method: "GET", path: "/api/client/campaign", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "advertising_performance", section: "campaigns", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/campaign", workflow_role: "single_read",
-      purpose: "Получить одну ограниченную страницу рекламных кампаний; ответ содержит явные команды для фильтрации, локальной сортировки по датам и перехода к товарам/статистике без скрытых запросов.", template: { operation: "performance_campaigns", params: { page: 1, pageSize: 100 } }
+      purpose: "Получить список рекламных кампаний.", template: { operation: "performance_campaigns", params: {} }
     },
     performance_campaign_objects: {
       provider: "performance_api", method: "GET", path: "/api/client/campaign/{campaignId}/objects", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "campaign_products_objects", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/campaign/{campaignId}/objects", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "campaigns", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/campaign/{campaignId}/objects", workflow_role: "single_read",
       purpose: "Получить список продвигаемых объектов в кампании.", template: { operation: "performance_campaign_objects", params: { campaignId: "1" } }
     },
     performance_bid_limits: {
       provider: "performance_api", method: "GET", path: "/api/client/limits/list", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "bids", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/limits/list", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "campaigns", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/limits/list", workflow_role: "single_read",
       purpose: "Получить лимиты ставок для инструментов продвижения.", template: { operation: "performance_bid_limits", params: {} }
     },
     performance_campaign_products: {
       provider: "performance_api", method: "GET", path: "/api/client/campaign/{campaignId}/v2/products", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "campaign_products_objects", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/campaign/{campaignId}/v2/products", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "campaigns", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/campaign/{campaignId}/v2/products", workflow_role: "single_read",
       purpose: "Получить список товаров кампании без скрытой автопагинации.", template: { operation: "performance_campaign_products", params: { campaignId: "1", page: 1, pageSize: 100 } }
     },
     performance_search_promo_products: {
       provider: "performance_api", method: "POST", path: "/api/client/campaign/search_promo/v2/products", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "campaign_products_objects", guidance_visibility: "user", entitlement_key: "PERFORMANCE POST /api/client/campaign/search_promo/v2/products", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "campaigns", guidance_visibility: "user", entitlement_key: "PERFORMANCE POST /api/client/campaign/search_promo/v2/products", workflow_role: "single_read",
       purpose: "Получить список товаров в продвижении с оплатой за заказ без скрытой автопагинации.", template: { operation: "performance_search_promo_products", params: { page: 1, pageSize: 100 } }
     },
     performance_expense: {
@@ -1713,96 +1847,96 @@
     performance_min_bid_by_sku: {
       provider: "performance_api", method: "POST", path: "/api/client/min/sku", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "bids", guidance_visibility: "user", entitlement_key: "PERFORMANCE POST /api/client/min/sku", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "campaigns", guidance_visibility: "user", entitlement_key: "PERFORMANCE POST /api/client/min/sku", workflow_role: "single_read",
       purpose: "Получить минимальную ставку для товаров по SKU.", template: { operation: "performance_min_bid_by_sku", params: { sku: ["1"] } }
     },
     performance_products_with_bonuses: {
       provider: "performance_api", method: "GET", path: "/api/client/products_with_bonuses", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "campaign_products_objects", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/products_with_bonuses", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "campaigns", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/products_with_bonuses", workflow_role: "single_read",
       purpose: "Получить список SKU товаров с бонусами.", template: { operation: "performance_products_with_bonuses", params: {} }
     },
     performance_statistics_status: {
       provider: "performance_api", method: "GET", path: "/api/client/statistics/{UUID}", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "report_workflow", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/{UUID}", workflow_role: "explicit_workflow_read_step",
+      cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/{UUID}", workflow_role: "explicit_workflow_read_step",
       purpose: "Получить статус ранее явно запрошенного отчёта.", template: { operation: "performance_statistics_status", params: { UUID: "00000000-0000-0000-0000-000000000000" } }
     },
     performance_statistics_list_ui: {
       provider: "performance_api", method: "GET", path: "/api/client/statistics/list", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "report_workflow", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/list", workflow_role: "explicit_workflow_read_step",
+      cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/list", workflow_role: "explicit_workflow_read_step",
       purpose: "Получить одну явную страницу отчётов, созданных через интерфейс.", template: { operation: "performance_statistics_list_ui", params: { page: 1, pageSize: 100 } }
     },
     performance_statistics_list_api: {
       provider: "performance_api", method: "GET", path: "/api/client/statistics/externallist", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "report_workflow", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/externallist", workflow_role: "explicit_workflow_read_step",
+      cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/externallist", workflow_role: "explicit_workflow_read_step",
       purpose: "Получить одну явную страницу отчётов, созданных через API.", template: { operation: "performance_statistics_list_api", params: { page: 1, pageSize: 100 } }
     },
     performance_statistics_report_download: {
       provider: "performance_api", method: "GET", path: "/api/client/statistics/report", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "report_workflow", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/report", workflow_role: "explicit_workflow_read_step",
+      cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/report", workflow_role: "explicit_workflow_read_step",
       response_style: "binary", response_content_types: ["text/csv", "application/zip"],
       purpose: "Скачать ранее подготовленный Performance отчёт одним явным запросом.", template: { operation: "performance_statistics_report_download", params: { UUID: "00000000-0000-0000-0000-000000000000" } }
     },
     performance_media_csv: {
       provider: "performance_api", method: "GET", path: "/api/client/statistics/campaign/media", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "statistics_exports", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/campaign/media", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/campaign/media", workflow_role: "single_read",
       response_style: "binary", response_content_types: ["text/csv"],
       purpose: "Получить статистику по медийным кампаниям в документированном CSV-формате.", template: { operation: "performance_media_csv", params: { dateFrom: "2026-01-01", dateTo: "2026-01-07" } }
     },
     performance_campaign_product_csv: {
       provider: "performance_api", method: "GET", path: "/api/client/statistics/campaign/product", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "statistics_exports", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/campaign/product", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/campaign/product", workflow_role: "single_read",
       response_style: "binary", response_content_types: ["text/csv"],
       purpose: "Получить статистику кампаний и товаров в документированном CSV-формате.", template: { operation: "performance_campaign_product_csv", params: { dateFrom: "2026-01-01", dateTo: "2026-01-07" } }
     },
     performance_expense_csv: {
       provider: "performance_api", method: "GET", path: "/api/client/statistics/expense", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "statistics_exports", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/expense", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/expense", workflow_role: "single_read",
       response_style: "binary", response_content_types: ["text/csv"],
       purpose: "Получить статистику расходов в документированном CSV-формате.", template: { operation: "performance_expense_csv", params: { dateFrom: "2026-01-01", dateTo: "2026-01-07" } }
     },
     performance_daily_csv: {
       provider: "performance_api", method: "GET", path: "/api/client/statistics/daily", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "statistics_exports", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/daily", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/statistics/daily", workflow_role: "single_read",
       response_style: "binary", response_content_types: ["text/csv"],
       purpose: "Получить дневную статистику в документированном CSV-формате.", template: { operation: "performance_daily_csv", params: { dateFrom: "2026-01-01", dateTo: "2026-01-07" } }
     },
     performance_competitive_bids: {
       provider: "performance_api", method: "GET", path: "/api/client/campaign/{campaignId}/products/bids/competitive", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "bids", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/campaign/{campaignId}/products/bids/competitive", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "campaigns", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/campaign/{campaignId}/products/bids/competitive", workflow_role: "single_read",
       purpose: "Получить конкурентные ставки для явно указанных SKU кампании.", template: { operation: "performance_competitive_bids", params: { campaignId: "1", skus: ["1"] } }
     },
     performance_cpo_min_bids: {
       provider: "performance_api", method: "POST", path: "/api/client/search_promo/get_cpo_min_bids", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "bids", guidance_visibility: "user", entitlement_key: "PERFORMANCE POST /api/client/search_promo/get_cpo_min_bids", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "campaigns", guidance_visibility: "user", entitlement_key: "PERFORMANCE POST /api/client/search_promo/get_cpo_min_bids", workflow_role: "single_read",
       purpose: "Получить фиксированные CPO-ставки для явно указанных SKU.", template: { operation: "performance_cpo_min_bids", params: { skus: ["1"] } }
     },
     performance_vendor_statistics_list: {
       provider: "performance_api", method: "GET", path: "/api/client/vendors/statistics/list", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "external_traffic", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/vendors/statistics/list", workflow_role: "explicit_workflow_read_step",
+      cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/vendors/statistics/list", workflow_role: "explicit_workflow_read_step",
       purpose: "Получить одну явную страницу отчётов аналитики внешнего трафика.", template: { operation: "performance_vendor_statistics_list", params: { page: 1, pageSize: 100 } }
     },
     performance_vendor_statistics_status: {
       provider: "performance_api", method: "GET", path: "/api/client/vendors/statistics/{UUID}", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "external_traffic", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/vendors/statistics/{UUID}", workflow_role: "explicit_workflow_read_step",
+      cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/vendors/statistics/{UUID}", workflow_role: "explicit_workflow_read_step",
       purpose: "Получить статус ранее явно запрошенного отчёта внешнего трафика.", template: { operation: "performance_vendor_statistics_status", params: { UUID: "00000000-0000-0000-0000-000000000000", vendor: true } }
     },
     performance_vendor_tag: {
       provider: "performance_api", method: "GET", path: "/api/client/organisation/vendor_tag", effect: "READ", request_style: "query",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "advertising_performance", section: "external_traffic", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/organisation/vendor_tag", workflow_role: "single_read",
+      cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE GET /api/client/organisation/vendor_tag", workflow_role: "single_read",
       purpose: "Получить префикс UTM-метки организации.", template: { operation: "performance_vendor_tag", params: { orgId: "1" } }
     }
   });
