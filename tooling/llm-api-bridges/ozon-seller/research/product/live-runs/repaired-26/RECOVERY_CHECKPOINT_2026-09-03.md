@@ -20,7 +20,7 @@ That code belongs only to the frozen forensic workflow.
 ## Progress
 
 - final closed: `0/26`
-- standalone aliases exercised: `7/26`
+- standalone aliases exercised: `8/26`
 - collection-complete/partial-fail: `7/26`
 - batch coverage: `0/26`
 - open numbered defects: `3`
@@ -28,51 +28,34 @@ That code belongs only to the frozen forensic workflow.
 ## Open defects
 
 - DEFECT-001: generic safe report-file reads privacy-blocked; confirmed on `seller_products`, `seller_returns_v2`, `seller_postings`, `seller_discounted`, `seller_stocks`, `seller_placement_by_products`, `seller_placement_by_supplies`.
-- DEFECT-002: create planning metadata inconsistency on NEW-02/03; NEW-04/05/06/07 create paths and tested `report_info` calls are clean counterexamples.
+- DEFECT-002: create planning metadata inconsistency on NEW-02/03; NEW-04/05/06/07/08 create paths and tested `report_info` calls are clean counterexamples.
 - DEFECT-003: `report_postings_create.delivery_schema` case mismatch, `FBO` => 400, `fbo` => 200.
 
-## NEW-07 preserved state
+## NEW-08 current state
 
 Create PASS:
-- request `5c5d7784-4989-4ed1-9724-70d3aa3adb5e`
-- report code `REPORT_seller_placement_by_supplies_2093109_1788408279_01a06570-b345-7114-9532-c1476a0c61e2`
-- HTTP200, physical1
-- fingerprints `2a4cb92d == 2a4cb92d`
-- transformed false.
+- operation `report_marked_products_sales_create`
+- completed date interval `2026-09-01..2026-09-02`
+- request `f32ff016-3582-4302-903f-af02f3afd699`
+- HTTP200
+- physical requests 1
+- external request true
+- fingerprints `0630aa10 == 0630aa10`
+- transformed false
+- exact_request_preserved true
+- report code `REPORT_marked_products_sales_2093109_1788408823_01a06578-fdec-762d-869c-fe3b626796cc`.
 
-Report-info PASS:
-- request `c8c54b96-4560-4194-bf70-c85ac449689c`
-- report type `seller_placement_by_supplies`
-- opaque ref `rpf_49f4be70-84e2-40b7-8224-6a58e409cf29`
-- fingerprints `08962c14 == 08962c14`
-- transformed false.
+RAW:
+`live-runs/repaired-26/raw/NEW_08_RUN_1_REPORT_MARKED_PRODUCTS_SALES_CREATE_RAW_2026-09-03.json`
 
-File-read block:
-- request `policy-a67134cb-346f-433b-881b-9f89e4410899`
-- fingerprint `baf1c4f3`
-- HTTP0, physical0, external false
-- `POLICY_BLOCKED / personal_data_setting_off`
-- DEFECT-001 reproduction #7.
+Parsed:
+`live-runs/NEW_08_RUN_1_REPORT_MARKED_PRODUCTS_SALES_CREATE_2026-09-03.md`
 
-NEW-07 is `COLLECTION_COMPLETE_PARTIAL_FAIL`.
+## Exact next command
 
-RAW Run3:
-`live-runs/repaired-26/raw/NEW_07_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
+`OZON_API_V1 {"operation":"report_info","params":{"code":"REPORT_marked_products_sales_2093109_1788408823_01a06578-fdec-762d-869c-fe3b626796cc"}}`
 
-Parsed Run3:
-`live-runs/NEW_07_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
-
-## Exact next action
-
-Start NEW-08. Active runtime contract for `report_marked_products_sales_create` requires:
-- `params.date` object;
-- `params.date.from` date string;
-- `params.date.to` date string.
-
-Exact next command:
-`OZON_API_V1 {"operation":"report_marked_products_sales_create","params":{"date":{"from":"2026-09-01","to":"2026-09-02"}}}`
-
-Persist its result before any continuation. Do not patch runtime.
+Persist that result before any following command. If ready, subsequent separate step is `report_file_get` on NEW-08's opaque ref to scope DEFECT-001. Do not patch runtime.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_07_COMPLETE_PARTIAL_FAIL_NEW_08_CREATE_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_08_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
