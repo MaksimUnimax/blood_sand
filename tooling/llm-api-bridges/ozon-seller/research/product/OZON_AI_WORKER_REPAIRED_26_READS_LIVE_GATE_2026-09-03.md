@@ -37,11 +37,11 @@ That code belongs only to the frozen forensic STD-10 workflow.
 | 7 | NEW-07 | `report_placement_by_supplies_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 8 | NEW-08 | `report_marked_products_sales_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 9 | NEW-09 | `report_realization_posting_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS; report_info PASS with DEFECT-004 privacy leak; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
-| 10 | NEW-10 | `finance_document_b2b_sales` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code; no new bridge defect opened | PENDING |
-| 11 | NEW-11 | `finance_mutual_settlement_report` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS clean; report_info PASS clean; file read POLICY_BLOCKED = DEFECT-001 reproduction #10 | PENDING |
-| 12 | NEW-12 | `finance_compensation_report` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code; no new bridge defect opened | PENDING |
-| 13 | NEW-13 | `finance_decompensation_report` | NEXT | PENDING |
-| 14 | NEW-14 | `cargoes_label_create` | PENDING | PENDING |
+| 10 | NEW-10 | `finance_document_b2b_sales` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code | PENDING |
+| 11 | NEW-11 | `finance_mutual_settlement_report` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS; report_info PASS; file read POLICY_BLOCKED = DEFECT-001 reproduction #10 | PENDING |
+| 12 | NEW-12 | `finance_compensation_report` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code | PENDING |
+| 13 | NEW-13 | `finance_decompensation_report` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code | PENDING |
+| 14 | NEW-14 | `cargoes_label_create` | SETUP_NEXT — requires real integer `supply_id`; do not invent | PENDING |
 | 15 | NEW-15 | `posting_fbs_act_container_labels` | PENDING | PENDING |
 | 16 | NEW-16 | `posting_fbs_package_label` | PENDING | PENDING |
 | 17 | NEW-17 | `posting_fbs_package_label_create` | PENDING | PENDING |
@@ -57,45 +57,42 @@ That code belongs only to the frozen forensic STD-10 workflow.
 
 ## Defects collected
 
-- DEFECT-001: generic `report_file_get` is statically privacy-blocked; confirmed on 10 report classes through NEW-11, including `mutual_settlement`.
-- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean counterexamples include NEW-04/05/06/07/08/09/11/12 and tested report_info paths.
+- DEFECT-001: generic `report_file_get` is statically privacy-blocked; confirmed on 10 report classes through NEW-11.
+- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean counterexamples now include NEW-04/05/06/07/08/09/11/12/13 and tested report_info paths.
 - DEFECT-003: `report_postings_create.delivery_schema` uppercase/lowercase mismatch (`FBO` 400 vs `fbo` 200).
-- DEFECT-004: `report_info.additional_data` key/value representation bypasses personal-data redaction; confirmed on NEW-09 finance realization. NEW-11 `mutual_settlement` returned empty `additional_data` and did not reproduce it.
+- DEFECT-004: `report_info.additional_data` key/value representation bypasses personal-data redaction; confirmed on NEW-09. NEW-11 did not reproduce it.
 
 Defect authority:
 `OZON_AI_WORKER_REPAIRED_26_READS_DEFECT_LEDGER_2026-09-03.md`
 
-## NEW-12 summary — provider 404, no new bridge defect
+## NEW-13 summary — provider 404, no new bridge defect
 
-Submitted:
-`finance_compensation_report` with `date=2026-08`.
+Submitted `finance_decompensation_report` with `date=2026-08`.
 
 Observed:
-- request `27840128-438a-4e03-8b70-97ee571c55de`
-- HTTP404, provider code `5`
+- request `2c794bbd-96fc-486c-ae22-04b36d5e98e7`
+- HTTP404 / provider code `5`
 - physical requests `1`, logical results `1`
 - external request `true`
 - automatic retry `false`
 - entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
-- entitlement key `POST /v1/finance/compensation`
+- entitlement key `POST /v1/finance/decompensation`
 - exact request preserved `true`
-- fingerprints `0fb59a8f == 0fb59a8f`
+- fingerprints `9a67428a == 9a67428a`
 - transformed `false`
 - no report code returned.
 
 Classification: `COLLECTION_COMPLETE_PROVIDER_FAIL`.
 
-No downstream `report_info` or `report_file_get` is possible from this run. Do not automatically repeat the same 4xx business request.
-
 Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_12_RUN_1_FINANCE_COMPENSATION_REPORT_PROVIDER_404_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_12_RUN_1_FINANCE_COMPENSATION_REPORT_PROVIDER_404_2026-09-03.md`
+- RAW `live-runs/repaired-26/raw/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_2026-09-03.md`
 
 ## Progress
 
 - Fully final-closed: `0/26`.
-- Standalone aliases exercised: `12/26`.
-- Collection-complete/partial/provider-fail rows: `12/26`.
+- Standalone aliases exercised: `13/26`.
+- Collection-complete/partial/provider-fail rows: `13/26`.
 - Open numbered defects: `4`.
 - Batch coverage: `0/26`.
 - Runtime patching: **FORBIDDEN UNTIL COLLECTION COMPLETE**.
@@ -103,7 +100,9 @@ Evidence:
 
 ## Exact next collection step
 
-Start NEW-13 `finance_decompensation_report` with completed month `2026-08`. Persist its provider result before any downstream report/document read. On provider 4xx/5xx/error do not automatically repeat the same business request. Do not touch frozen STD-10. Do not patch runtime.
+NEW-14 `cargoes_label_create` requires a real integer `supply_id`. Do not invent an ID. First run the exact safe provider READ/setup operation that returns current supply/order data and persist that setup evidence. Only then submit NEW-14 with a real returned `supply_id`.
+
+Do not patch runtime. Do not touch frozen STD-10.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_12_PROVIDER_404_COMPLETE_NEW_13_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_13_PROVIDER_404_COMPLETE_NEW_14_REAL_SUPPLY_ID_SETUP_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
