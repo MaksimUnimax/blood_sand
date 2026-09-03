@@ -63,6 +63,7 @@ Clean counterexamples narrow the scope:
 - NEW-12 `finance_compensation_report`: `0fb59a8f == 0fb59a8f`, transformed false, exact_request_preserved true, provider HTTP404/code5.
 - NEW-13 `finance_decompensation_report`: `9a67428a == 9a67428a`, transformed false, exact_request_preserved true, provider HTTP404/code5.
 - NEW-14 `cargoes_label_create`: `151c4db3 == 151c4db3`, transformed false, exact_request_preserved true, provider HTTP429/code8.
+- NEW-15 setup `fbs_act_list`: `937e3a3f == 937e3a3f`, transformed false, exact_request_preserved true, provider HTTP400/code3.
 - other tested `report_info` steps also preserve identical fingerprints.
 
 Therefore DEFECT-002 is not universal; continue scope collection through remaining repaired paths and later batch tests.
@@ -111,6 +112,31 @@ Evidence:
 - passing RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_RAW_2026-09-03.json`
 - passing parsed `live-runs/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_2026-09-03.md`
 
+## DEFECT-006 — fbs_act_list template omits provider-required filter
+
+Classification: `FBS_ACT_LIST_TEMPLATE_OMITS_PROVIDER_REQUIRED_FILTER`
+Status: `OPEN_CONFIRMED_COLLECTING_SCOPE`
+
+NEW-15 setup Run1 used the exact active registry template:
+`{"operation":"fbs_act_list","params":{"limit":50}}`
+
+Observed:
+- request `8ee3ff42-c8aa-4b98-9412-c73af369440b`;
+- HTTP400 / provider code `3`;
+- physical1, logical1, external true;
+- automatic retry false;
+- exact request preserved true;
+- fingerprints `937e3a3f == 937e3a3f`;
+- transformed false.
+
+Active runtime `normalizeFbsActListParams` requires `limit`, allows `filter` to be omitted, and only requires `date_from`/`date_to` if a filter object is present. The operation registry advertises the filter-less `{limit:50}` template. Current public API documentation represents the request with a `filter` object containing `date_from` and `date_to`. The provider rejects the filter-less bridge-advertised form.
+
+Classification is therefore a bridge contract/template mismatch, not a generic provider outage. A materially different request with explicit period filter is required for the A/B control. Do not patch during collection.
+
+Evidence:
+- RAW `live-runs/repaired-26/raw/NEW_15_SETUP_RUN_1_FBS_ACT_LIST_TEMPLATE_PROVIDER_400_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_15_SETUP_RUN_1_FBS_ACT_LIST_TEMPLATE_PROVIDER_400_2026-09-03.md`
+
 ## NEW-12 provider outcome
 
 `finance_compensation_report` with `date=2026-08`: HTTP404/code5, exactly one external request, no automatic retry, no report code. Recorded as `COLLECTION_COMPLETE_PROVIDER_FAIL`, not a new numbered defect.
@@ -141,4 +167,4 @@ Evidence:
 
 ## Patch prohibition
 
-Do not patch DEFECT-001..005 until the standalone + multi-command batch collection sweep is complete.
+Do not patch DEFECT-001..006 until the standalone + multi-command batch collection sweep is complete.
