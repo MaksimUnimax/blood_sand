@@ -1,6 +1,6 @@
 # P2.1 identity/device persistence evidence — 2026-09-03
 
-Status: local acceptance complete; P2.1 remains ACTIVE pending remote CI.
+Status: ACCEPTED.
 
 ## Authority and scope
 
@@ -44,6 +44,10 @@ metadata only.
   foreign keys, and bounded plaintext-secret-column gate: PASS.
 - OpenAPI SHA before/after: `b5ef282f343899344af731859c551d075a32c4d288adc4aad3bb9bc4584b8485`.
 - Bridge boundary guard: PASS.
+- Implementation Server CI: [33738679480](https://github.com/MaksimUnimax/blood_sand/actions/runs/33738679480),
+  push event for `451374c26c919f7e89deb50a08967102e47bd21d`: PASS (checkout,
+  pnpm/Node setup, frozen install, lint, format, typecheck, unit, real
+  PostgreSQL integration, migration, OpenAPI, Bridge guard, and build).
 
 ## Non-goals and next step
 
