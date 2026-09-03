@@ -55,7 +55,9 @@ Confirmed on:
 
 NEW-03 Run4 `report_info` did not reproduce the anomaly: logical/physical fingerprints both `9e13284f`, transformed false.
 
-This is a repeated planning/metadata inconsistency on create paths. Continue scope collection through remaining repaired create aliases and batch tests. Do not patch yet.
+NEW-04 Run1 `report_discounted_create` is a clean counterexample: logical/physical fingerprints both `02e64eda`, `command_transformed=false`, `exact_request_preserved=true`, provider HTTP200. Therefore DEFECT-002 is not universal to every repaired create alias and must be scoped to particular planner/normalization paths.
+
+Continue scope collection through remaining repaired create aliases and batch tests. Do not patch yet.
 
 ## DEFECT-003 — report_postings_create delivery_schema case contract/guidance mismatch
 
