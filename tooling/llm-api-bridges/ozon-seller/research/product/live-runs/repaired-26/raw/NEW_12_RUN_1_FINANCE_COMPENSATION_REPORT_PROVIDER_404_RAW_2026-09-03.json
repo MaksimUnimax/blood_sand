@@ -1,0 +1,76 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "capability_probe": {
+    "performed": false,
+    "status": "not_needed",
+    "subscription_type": "UNKNOWN",
+    "http_status": 0,
+    "error_code": null
+  },
+  "query_planner": {
+    "status": "complete",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
+  },
+  "result": {
+    "request_id": "27840128-438a-4e03-8b70-97ee571c55de",
+    "operation": "finance_compensation_report",
+    "command": {
+      "operation": "finance_compensation_report",
+      "fingerprint": "0fb59a8f"
+    },
+    "request_meta": {
+      "provider": "ozon",
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "path_alias": "finance_compensation_report",
+      "external_request_executed": true,
+      "capability_probe_executed": false,
+      "capability_probe_http_status": 0
+    },
+    "http_status": 404,
+    "elapsed_ms": 1365,
+    "pagination": null,
+    "rate_limit": null,
+    "planning": {
+      "capability": {
+        "is_premium": null,
+        "probe_error_code": null,
+        "probe_http_status": 0,
+        "probe_performed": false,
+        "status": "not_needed",
+        "subscription_type": "UNKNOWN"
+      },
+      "entitlement": {
+        "capability_required": false,
+        "entitlement_key": "POST /v1/finance/compensation",
+        "exact_request_preserved": true,
+        "partial": false,
+        "reason": "all_accounts",
+        "rule_source": "reviewed-openapi-463-2026-08-19",
+        "status": "SUPPORTED_AND_ENTITLED"
+      },
+      "execution": {
+        "logical_command_fingerprint": "0fb59a8f",
+        "physical_command_fingerprint": "0fb59a8f",
+        "command_transformed": false
+      }
+    },
+    "result": {
+      "error": {
+        "source": "provider",
+        "category": "provider_request",
+        "http_status": 404,
+        "code": "5",
+        "message": "Ozon API request failed. Raw provider error text is withheld from AI output; inspect local sanitized diagnostics.",
+        "automatic_retry": false,
+        "external_request_executed": true
+      }
+    }
+  }
+}
