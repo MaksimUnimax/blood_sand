@@ -17,9 +17,25 @@ Confirmed safe-report reproductions with personal-data setting OFF:
 1. NEW-01 `seller_products`;
 2. NEW-02 `seller_returns_v2`;
 3. NEW-03 `seller_postings`;
-4. NEW-04 `seller_discounted`.
+4. NEW-04 `seller_discounted`;
+5. NEW-05 `seller_stocks`.
 
-All four file reads were locally `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
+All five file reads were locally `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
+
+NEW-05 reproduction:
+- source code `REPORT_seller_stocks_2093109_1788407283_01a06561-80f3-78d2-9c6a-3c829871385f`;
+- opaque ref `rpf_304de093-ae1b-46f3-8be0-2a16793361b9`;
+- request `policy-af96433d-9756-4b57-82da-6a058e782aec`;
+- fingerprint `b2613b49`;
+- HTTP `0`;
+- physical requests `0`;
+- external request `false`;
+- error `OPERATION_DISABLED_BY_USER`;
+- stage `personal_data_policy`.
+
+Evidence:
+- RAW `live-runs/repaired-26/raw/NEW_05_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_05_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
 
 ## DEFECT-002 — transformed create metadata inconsistent with exact_request_preserved
 
