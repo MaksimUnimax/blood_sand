@@ -1074,6 +1074,168 @@
       cluster: "finance", section: "documents_reports", guidance_visibility: "user", entitlement_key: "POST /v1/report/info", workflow_role: "single_read",
       purpose: "Получить информацию об уже созданном отчёте по его коду; файл автоматически не загружается.", template: { operation: "report_info", params: { code: "REPORT_CODE" } }
     },
+    report_file_get: {
+      provider: "report_file", method: "GET", path: "/__opaque_report_file__", effect: "READ", request_style: "opaque_file_ref", execution_enabled: true,
+      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false,
+      cluster: "finance", section: "documents_reports", guidance_visibility: "conditional", workflow_role: "explicit_workflow_read_step",
+      purpose: "Получить и безопасно разобрать готовый файл отчёта/документа по opaque ref без раскрытия signed URL или base64.", template: { operation: "report_file_get", params: { file_ref: "REPORT_FILE_REF", offset: 0, limit: 200 } }
+    },
+    report_products_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/products/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/products/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт по товарам", template: {"operation":"report_products_create","params":{}}
+    },
+    report_returns_create_v2: {
+      provider: "seller_api", method: "POST", path: "/v2/report/returns/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "returns_cancellations", section: "returns",
+      guidance_visibility: "user", entitlement_key: "POST /v2/report/returns/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт о возвратах", template: {"operation":"report_returns_create_v2","params":{"filter":{"date_from":"2026-01-01T00:00:00Z","date_to":"2026-01-01T00:00:00Z","status":"DisputeOpened"}}}
+    },
+    report_postings_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/postings/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "labels_documents",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/postings/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт об отправлениях", template: {"operation":"report_postings_create","params":{"filter":{"processed_at_from":"2026-01-01T00:00:00Z","processed_at_to":"2026-01-01T00:00:00Z","delivery_schema":["FBO"]}}}
+    },
+    report_discounted_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/discounted/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/discounted/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт об уценённых товарах", template: {"operation":"report_discounted_create","params":{}}
+    },
+    report_warehouse_stock: {
+      provider: "seller_api", method: "POST", path: "/v1/report/warehouse/stock", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "stocks_inventory", section: "warehouse_fbs",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/warehouse/stock", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт об остатках на FBS-складе", template: {"operation":"report_warehouse_stock","params":{"warehouseId":["1"]}}
+    },
+    report_placement_by_products_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/placement/by-products/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "stocks_inventory", section: "stock_movement_turnover",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/placement/by-products/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Получить отчёт о стоимости размещения по товарам", template: {"operation":"report_placement_by_products_create","params":{"date_from":"2026-01-01","date_to":"2026-01-01"}}
+    },
+    report_placement_by_supplies_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/placement/by-supplies/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "supply_orders",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/placement/by-supplies/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Получить отчёт о стоимости размещения по поставкам", template: {"operation":"report_placement_by_supplies_create","params":{"date_from":"2026-01-01","date_to":"2026-01-01"}}
+    },
+    report_marked_products_sales_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/marked-products-sales/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "sales_analytics", section: "period_product_category",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/marked-products-sales/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать отчёт по продажам товаров с маркировкой", template: {"operation":"report_marked_products_sales_create","params":{"date":{"from":"2026-01-01","to":"2026-01-01"}}}
+    },
+    report_realization_posting_create: {
+      provider: "seller_api", method: "POST", path: "/v1/report/realization/posting/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "realization",
+      guidance_visibility: "user", entitlement_key: "POST /v1/report/realization/posting/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Получить позаказный отчёт о реализации товаров", template: {"operation":"report_realization_posting_create","params":{"month":8,"year":2026}}
+    },
+    finance_document_b2b_sales: {
+      provider: "seller_api", method: "POST", path: "/v1/finance/document-b2b-sales", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/finance/document-b2b-sales", workflow_role: "explicit_workflow_read_step",
+      purpose: "Реестр продаж юридическим лицам", template: {"operation":"finance_document_b2b_sales","params":{"date":"2026-01"}}
+    },
+    finance_mutual_settlement_report: {
+      provider: "seller_api", method: "POST", path: "/v1/finance/mutual-settlement", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/finance/mutual-settlement", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт о взаиморасчётах", template: {"operation":"finance_mutual_settlement_report","params":{"date":"2026-01"}}
+    },
+    finance_compensation_report: {
+      provider: "seller_api", method: "POST", path: "/v1/finance/compensation", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/finance/compensation", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт о компенсациях", template: {"operation":"finance_compensation_report","params":{"date":"2026-01"}}
+    },
+    finance_decompensation_report: {
+      provider: "seller_api", method: "POST", path: "/v1/finance/decompensation", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "finance", section: "documents_reports",
+      guidance_visibility: "user", entitlement_key: "POST /v1/finance/decompensation", workflow_role: "explicit_workflow_read_step",
+      purpose: "Отчёт о декомпенсациях", template: {"operation":"finance_decompensation_report","params":{"date":"2026-01"}}
+    },
+    cargoes_label_create: {
+      provider: "seller_api", method: "POST", path: "/v1/cargoes-label/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
+      guidance_visibility: "user", entitlement_key: "POST /v1/cargoes-label/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать этикетки для грузомест", template: {"operation":"cargoes_label_create","params":{"supply_id":1,"cargoes":[{"cargo_id":1}]}}
+    },
+    posting_fbs_act_container_labels: {
+      provider: "seller_api", method: "POST", path: "/v2/posting/fbs/act/get-container-labels", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false, cluster: "orders_postings", section: "labels_documents",
+      guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/act/get-container-labels", workflow_role: "single_read", response_style: "binary", response_content_types: ["application/pdf"],
+      purpose: "Этикетки для грузового места", template: {"operation":"posting_fbs_act_container_labels","params":{"id":1}}
+    },
+    posting_fbs_package_label: {
+      provider: "seller_api", method: "POST", path: "/v2/posting/fbs/package-label", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false, cluster: "orders_postings", section: "labels_documents",
+      guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/package-label", workflow_role: "single_read", response_style: "binary", response_content_types: ["application/pdf"],
+      purpose: "Напечатать этикетку", template: {"operation":"posting_fbs_package_label","params":{"posting_number":["POSTING_NUMBER"]}}
+    },
+    posting_fbs_package_label_create: {
+      provider: "seller_api", method: "POST", path: "/v2/posting/fbs/package-label/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "labels_documents",
+      guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/package-label/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Создать задание на формирование этикеток", template: {"operation":"posting_fbs_package_label_create","params":{"posting_number":["POSTING_NUMBER"]}}
+    },
+    cargoes_transport_label_by_order_create: {
+      provider: "seller_api", method: "POST", path: "/v1/cargoes/label/transport-by-order/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
+      guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/label/transport-by-order/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать этикетки для транспортных грузомест по заявке", template: {"operation":"cargoes_transport_label_by_order_create","params":{"order_id":1}}
+    },
+    cargoes_transport_label_create: {
+      provider: "seller_api", method: "POST", path: "/v1/cargoes/label/transport/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
+      guidance_visibility: "user", entitlement_key: "POST /v1/cargoes/label/transport/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать этикетки транспортных грузомест", template: {"operation":"cargoes_transport_label_create","params":{"supply_id":1,"transport_cargo_ids":["1"]}}
+    },
+    fbp_act_from_create: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/act-from/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "acts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/act-from/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать акт приёмки", template: {"operation":"fbp_act_from_create","params":{"supply_id":"1"}}
+    },
+    fbp_act_to_create: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/act-to/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "acts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/act-to/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Сгенерировать транспортную накладную", template: {"operation":"fbp_act_to_create","params":{"supply_id":"1"}}
+    },
+    fbp_label_create: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/label/create", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "cargoes",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/label/create", workflow_role: "explicit_workflow_read_step",
+      purpose: "Cоздать задание на генерацию этикеток", template: {"operation":"fbp_label_create","params":{"supply_id":"1"}}
+    },
+    fbp_draft_direct_product_validate: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/draft/direct/product/validate", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "drafts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/direct/product/validate", workflow_role: "single_read",
+      purpose: "Проверить список товаров для склада партнёра", template: {"operation":"fbp_draft_direct_product_validate","params":{"skus":[{"count":1,"sku":1}],"warehouse_id":1}}
+    },
+    fbp_draft_dropoff_product_validate: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/draft/drop-off/product/validate", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "drafts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/drop-off/product/validate", workflow_role: "single_read",
+      purpose: "Проверить список товаров, которые склад партнёра может принять", template: {"operation":"fbp_draft_dropoff_product_validate","params":{"skus":[{"count":1,"sku":1}],"warehouse_id":1}}
+    },
+    fbp_draft_pickup_product_validate: {
+      provider: "seller_api", method: "POST", path: "/v1/fbp/draft/pick-up/product/validate", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "supplies_fbo", section: "drafts",
+      guidance_visibility: "user", entitlement_key: "POST /v1/fbp/draft/pick-up/product/validate", workflow_role: "single_read",
+      purpose: "Провалидировать список товаров для pick-up поставки", template: {"operation":"fbp_draft_pickup_product_validate","params":{"skus":[{"count":1,"sku":1}],"warehouse_id":1}}
+    },
+    chat_history_v3: {
+      provider: "seller_api", method: "POST", path: "/v3/chat/history", effect: "READ", request_style: "json_body", execution_enabled: true,
+      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false, cluster: "reviews_questions", section: "chats",
+      guidance_visibility: "conditional", entitlement_key: "POST /v3/chat/history", workflow_role: "single_read",
+      purpose: "История чата", template: {"operation":"chat_history_v3","params":{"chat_id":"1"}}
+    },
     supply_order_list: {
       provider: "seller_api", method: "POST", path: "/v3/supply-order/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
@@ -2113,6 +2275,32 @@
       "POST /v1/finance/products/buyout": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v1/report/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v1/report/info": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/report/products/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v2/report/returns/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/report/postings/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/report/discounted/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/report/warehouse/stock": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/report/placement/by-products/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/report/placement/by-supplies/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/report/marked-products-sales/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/report/realization/posting/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/finance/document-b2b-sales": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/finance/mutual-settlement": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/finance/compensation": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/finance/decompensation": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/cargoes-label/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v2/posting/fbs/act/get-container-labels": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v2/posting/fbs/package-label": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v2/posting/fbs/package-label/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/cargoes/label/transport-by-order/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/cargoes/label/transport/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/fbp/act-from/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/fbp/act-to/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/fbp/label/create": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/fbp/draft/direct/product/validate": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/fbp/draft/drop-off/product/validate": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v1/fbp/draft/pick-up/product/validate": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
+      "POST /v3/chat/history": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v3/supply-order/list": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v3/supply-order/get": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
       "POST /v1/supply-order/status/counter": { default_access: "ALL_ACCOUNTS", endpoint_allowed_subscription_types: null, feature_rules: [] },
@@ -2785,6 +2973,433 @@
     });
   }
 
+
+  function normalizeTrustedReportFileUrl(rawUrl) {
+    let parsed;
+    try { parsed = new URL(String(rawUrl || "")); }
+    catch (_) { fail("UNTRUSTED_REPORT_FILE_URL", "Report file URL от Ozon некорректен."); }
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.port) fail("UNTRUSTED_REPORT_FILE_URL", "Report file URL должен быть HTTPS без credentials/нестандартного порта.");
+    const host = String(parsed.hostname || "").toLowerCase();
+    const allowed = host === "ozone.ru" || host.endsWith(".ozone.ru") || host === "ozon.ru" || host.endsWith(".ozon.ru");
+    if (!allowed) fail("UNTRUSTED_REPORT_FILE_HOST", `Неподдерживаемый Ozon report file host: ${host || "empty"}.`);
+    return parsed.toString();
+  }
+
+
+
+  function reportBase64ToBytes(value) {
+    const input = String(value || "").replace(/\s+/g, "");
+    if (!input || input.length % 4 !== 0) fail("INVALID_BASE64", "Некорректный base64 документ.");
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const lookup = new Map([...alphabet].map((ch, index) => [ch, index]));
+    const out = [];
+    for (let i = 0; i < input.length; i += 4) {
+      const a = lookup.get(input[i]), b = lookup.get(input[i + 1]);
+      const c = input[i + 2] === "=" ? 0 : lookup.get(input[i + 2]);
+      const d = input[i + 3] === "=" ? 0 : lookup.get(input[i + 3]);
+      if ([a,b,c,d].some((v) => v === undefined)) fail("INVALID_BASE64", "Некорректный base64 документ.");
+      const triple = (a << 18) | (b << 12) | (c << 6) | d;
+      out.push((triple >> 16) & 255);
+      if (input[i + 2] !== "=") out.push((triple >> 8) & 255);
+      if (input[i + 3] !== "=") out.push(triple & 255);
+    }
+    return new Uint8Array(out);
+  }
+
+  function reportLatin1(bytes) {
+    const source = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+    let out = "";
+    const chunk = 0x4000;
+    for (let i = 0; i < source.length; i += chunk) out += String.fromCharCode(...source.subarray(i, Math.min(source.length, i + chunk)));
+    return out;
+  }
+
+  function pdfDecodeLiteral(raw) {
+    let out = "";
+    const text = String(raw || "");
+    for (let i = 0; i < text.length; i += 1) {
+      if (text[i] !== "\\") { out += text[i]; continue; }
+      i += 1;
+      if (i >= text.length) break;
+      const ch = text[i];
+      const mapped = { n:"\n", r:"\r", t:"\t", b:"\b", f:"\f", "(":"(", ")":")", "\\":"\\" }[ch];
+      if (mapped !== undefined) { out += mapped; continue; }
+      if (/[0-7]/.test(ch)) {
+        let oct = ch;
+        for (let j = 0; j < 2 && /[0-7]/.test(text[i + 1] || ""); j += 1) { i += 1; oct += text[i]; }
+        out += String.fromCharCode(parseInt(oct, 8));
+        continue;
+      }
+      if (ch === "\r" && text[i + 1] === "\n") i += 1;
+      else if (ch !== "\r" && ch !== "\n") out += ch;
+    }
+    return out;
+  }
+
+  function pdfDecodeHex(raw) {
+    let hex = String(raw || "").replace(/\s+/g, "");
+    if (hex.length % 2) hex += "0";
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < bytes.length; i += 1) bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+      let out = "";
+      for (let i = 2; i + 1 < bytes.length; i += 2) out += String.fromCharCode((bytes[i] << 8) | bytes[i + 1]);
+      return out;
+    }
+    return reportLatin1(bytes);
+  }
+
+  function pdfExtractTextOperators(content) {
+    const text = String(content || "");
+    const pieces = [];
+    for (const match of text.matchAll(/\(((?:\\.|[^\\)])*)\)\s*Tj\b/g)) pieces.push(pdfDecodeLiteral(match[1]));
+    for (const match of text.matchAll(/<([0-9A-Fa-f\s]+)>\s*Tj\b/g)) pieces.push(pdfDecodeHex(match[1]));
+    for (const arrayMatch of text.matchAll(/\[([\s\S]*?)\]\s*TJ\b/g)) {
+      let joined = "";
+      for (const literal of arrayMatch[1].matchAll(/\(((?:\\.|[^\\)])*)\)/g)) joined += pdfDecodeLiteral(literal[1]);
+      for (const hex of arrayMatch[1].matchAll(/<([0-9A-Fa-f\s]+)>/g)) joined += pdfDecodeHex(hex[1]);
+      if (joined) pieces.push(joined);
+    }
+    return pieces.map((value) => String(value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]+/g, " ").trim()).filter(Boolean);
+  }
+
+  async function parsePdfDocumentBytes(bytes, { maxTextChars = 30000 } = {}) {
+    const source = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+    const latin = reportLatin1(source);
+    const pieces = pdfExtractTextOperators(latin);
+    const streamPattern = /<<([\s\S]{0,4096}?)>>\s*stream\r?\n/g;
+    let match;
+    while ((match = streamPattern.exec(latin)) !== null) {
+      const dataStart = streamPattern.lastIndex;
+      const end = latin.indexOf("endstream", dataStart);
+      if (end < 0) break;
+      let dataEnd = end;
+      while (dataEnd > dataStart && (latin[dataEnd - 1] === "\r" || latin[dataEnd - 1] === "\n")) dataEnd -= 1;
+      if (/\/FlateDecode\b/.test(match[1])) {
+        try {
+          if (typeof DecompressionStream !== "function") fail("PDF_DEFLATE_UNAVAILABLE", "Runtime не поддерживает PDF FlateDecode.");
+          const compressed = source.slice(dataStart, dataEnd);
+          const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate"));
+          const inflated = new Uint8Array(await new Response(stream).arrayBuffer());
+          pieces.push(...pdfExtractTextOperators(reportLatin1(inflated)));
+        } catch (_) {
+          // Some PDFs use predictors/font encodings; fail-soft on text extraction while preserving document metadata.
+        }
+      } else pieces.push(...pdfExtractTextOperators(latin.slice(dataStart, dataEnd)));
+      streamPattern.lastIndex = end + 9;
+    }
+    const unique = [];
+    const seen = new Set();
+    for (const piece of pieces) {
+      const normalized = piece.replace(/\s+/g, " ").trim();
+      if (normalized && !seen.has(normalized)) { seen.add(normalized); unique.push(normalized); }
+    }
+    const joined = unique.join("\n");
+    return Object.freeze({
+      format: "pdf",
+      text_extract_available: Boolean(joined),
+      text_extract: joined.slice(0, maxTextChars),
+      text_truncated: joined.length > maxTextChars
+    });
+  }
+
+  function reportXmlDecode(value) {
+    return String(value || "")
+      .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+      .replace(/&#([0-9]+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+      .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  }
+
+  function reportXmlAttr(tag, name) {
+    const escaped = String(name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const match = String(tag || "").match(new RegExp(`(?:\\s|^)${escaped}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, "i"));
+    return match ? reportXmlDecode(match[1] ?? match[2] ?? "") : null;
+  }
+
+  function reportColumnIndex(cellRef) {
+    const letters = String(cellRef || "").match(/^[A-Za-z]+/);
+    if (!letters) return null;
+    let value = 0;
+    for (const ch of letters[0].toUpperCase()) value = value * 26 + (ch.charCodeAt(0) - 64);
+    return value - 1;
+  }
+
+  function reportHeaders(values) {
+    const seen = new Map();
+    return values.map((value, index) => {
+      let base = String(value ?? "").trim();
+      if (!base) base = `column_${index + 1}`;
+      const count = (seen.get(base) || 0) + 1;
+      seen.set(base, count);
+      return count === 1 ? base : `${base}_${count}`;
+    });
+  }
+
+  function parseDelimitedReportText(rawText, { offset = 0, limit = 200, name = "Report" } = {}) {
+    const text = String(rawText || "").replace(/^\uFEFF/, "");
+    const firstLine = text.split(/\r?\n/, 1)[0] || "";
+    const candidates = [";", ",", "\t"];
+    let delimiter = ";";
+    let best = -1;
+    for (const candidate of candidates) {
+      let count = 0, quoted = false;
+      for (let i = 0; i < firstLine.length; i += 1) {
+        const ch = firstLine[i];
+        if (ch === '"') {
+          if (quoted && firstLine[i + 1] === '"') i += 1;
+          else quoted = !quoted;
+        } else if (!quoted && ch === candidate) count += 1;
+      }
+      if (count > best) { best = count; delimiter = candidate; }
+    }
+    const parsedRows = [];
+    let row = [], field = "", quoted = false;
+    for (let i = 0; i < text.length; i += 1) {
+      const ch = text[i];
+      if (quoted) {
+        if (ch === '"' && text[i + 1] === '"') { field += '"'; i += 1; }
+        else if (ch === '"') quoted = false;
+        else field += ch;
+      } else if (ch === '"') quoted = true;
+      else if (ch === delimiter) { row.push(field); field = ""; }
+      else if (ch === "\n") { row.push(field.replace(/\r$/, "")); parsedRows.push(row); row = []; field = ""; }
+      else field += ch;
+    }
+    if (field.length || row.length) { row.push(field.replace(/\r$/, "")); parsedRows.push(row); }
+    while (parsedRows.length && parsedRows[parsedRows.length - 1].every((v) => String(v).trim() === "")) parsedRows.pop();
+    const headerIndex = parsedRows.findIndex((r) => r.some((v) => String(v).trim() !== ""));
+    if (headerIndex < 0) return Object.freeze({ name, columns: [], row_count: 0, offset, limit, rows: [], has_more: false, next_offset: null });
+    const columns = reportHeaders(parsedRows[headerIndex]);
+    const data = parsedRows.slice(headerIndex + 1).filter((r) => r.some((v) => String(v).trim() !== ""));
+    const boundedOffset = Math.min(offset, data.length);
+    const selected = data.slice(boundedOffset, boundedOffset + limit).map((r) => {
+      const out = Array(columns.length).fill("");
+      for (let i = 0; i < Math.min(columns.length, r.length); i += 1) out[i] = r[i];
+      return out;
+    });
+    const next = boundedOffset + selected.length;
+    return Object.freeze({ name, columns, row_count: data.length, offset: boundedOffset, limit, rows: selected, has_more: next < data.length, next_offset: next < data.length ? next : null });
+  }
+
+  function zipView(bytes) { return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength); }
+  function zipU16(view, offset) { return view.getUint16(offset, true); }
+  function zipU32(view, offset) { return view.getUint32(offset, true); }
+
+  function createReportZipReader(bytes) {
+    const source = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+    const view = zipView(source);
+    let eocd = -1;
+    const minimum = Math.max(0, source.length - 65557);
+    for (let pos = source.length - 22; pos >= minimum; pos -= 1) {
+      if (zipU32(view, pos) === 0x06054b50) { eocd = pos; break; }
+    }
+    if (eocd < 0) fail("REPORT_ZIP_INVALID", "ZIP/XLSX: EOCD не найден.");
+    const total = zipU16(view, eocd + 10);
+    const centralOffset = zipU32(view, eocd + 16);
+    if (total === 0xffff || centralOffset === 0xffffffff) fail("REPORT_ZIP64_UNSUPPORTED", "ZIP64 отчёты пока не поддерживаются.");
+    const entries = new Map();
+    let pos = centralOffset;
+    const decoder = new TextDecoder("utf-8");
+    for (let index = 0; index < total; index += 1) {
+      if (pos + 46 > source.length || zipU32(view, pos) !== 0x02014b50) fail("REPORT_ZIP_INVALID", "ZIP central directory повреждён.");
+      const flags = zipU16(view, pos + 8);
+      const method = zipU16(view, pos + 10);
+      const compressedSize = zipU32(view, pos + 20);
+      const uncompressedSize = zipU32(view, pos + 24);
+      const nameLength = zipU16(view, pos + 28);
+      const extraLength = zipU16(view, pos + 30);
+      const commentLength = zipU16(view, pos + 32);
+      const localOffset = zipU32(view, pos + 42);
+      if ((flags & 1) !== 0) fail("REPORT_ZIP_ENCRYPTED_UNSUPPORTED", "Зашифрованный ZIP не поддерживается.");
+      if ([compressedSize, uncompressedSize, localOffset].some((v) => v === 0xffffffff)) fail("REPORT_ZIP64_UNSUPPORTED", "ZIP64 отчёты пока не поддерживаются.");
+      const nameStart = pos + 46;
+      const name = decoder.decode(source.slice(nameStart, nameStart + nameLength));
+      entries.set(name.replace(/\\/g, "/"), Object.freeze({ method, compressedSize, uncompressedSize, localOffset }));
+      pos = nameStart + nameLength + extraLength + commentLength;
+    }
+    async function get(name) {
+      const meta = entries.get(String(name || "").replace(/^\//, ""));
+      if (!meta) return null;
+      const local = meta.localOffset;
+      if (local + 30 > source.length || zipU32(view, local) !== 0x04034b50) fail("REPORT_ZIP_INVALID", `ZIP local header повреждён: ${name}`);
+      const nameLength = zipU16(view, local + 26);
+      const extraLength = zipU16(view, local + 28);
+      const dataStart = local + 30 + nameLength + extraLength;
+      const compressed = source.slice(dataStart, dataStart + meta.compressedSize);
+      if (meta.method === 0) return compressed;
+      if (meta.method !== 8) fail("REPORT_ZIP_METHOD_UNSUPPORTED", `ZIP compression method ${meta.method} не поддерживается.`);
+      if (typeof DecompressionStream !== "function") fail("REPORT_DEFLATE_UNAVAILABLE", "Runtime не поддерживает DecompressionStream(deflate-raw).");
+      const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+      const output = new Uint8Array(await new Response(stream).arrayBuffer());
+      if (meta.uncompressedSize && output.byteLength !== meta.uncompressedSize) fail("REPORT_ZIP_SIZE_MISMATCH", `ZIP entry size mismatch: ${name}`);
+      return output;
+    }
+    return Object.freeze({ names: Object.freeze([...entries.keys()]), get });
+  }
+
+  function reportJoinZipPath(base, target) {
+    const parts = String(base || "").split("/").filter(Boolean);
+    for (const piece of String(target || "").replace(/^\//, "").split("/")) {
+      if (!piece || piece === ".") continue;
+      if (piece === "..") parts.pop(); else parts.push(piece);
+    }
+    return parts.join("/");
+  }
+
+  function reportParseSharedStrings(xml) {
+    const values = [];
+    for (const match of String(xml || "").matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/gi)) {
+      let value = "";
+      for (const text of match[1].matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/gi)) value += reportXmlDecode(text[1]);
+      values.push(value);
+    }
+    return values;
+  }
+
+  function reportParseSheet(xml, sharedStrings, name, { offset = 0, limit = 200 } = {}) {
+    const physicalRows = [];
+    for (const rowMatch of String(xml || "").matchAll(/<row\b([^>]*)>([\s\S]*?)<\/row>/gi)) {
+      const rowNumber = Number(reportXmlAttr(rowMatch[1], "r")) || physicalRows.length + 1;
+      const values = [];
+      for (const cellMatch of rowMatch[2].matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/gi)) {
+        const attrs = cellMatch[1], body = cellMatch[2];
+        const index = reportColumnIndex(reportXmlAttr(attrs, "r"));
+        if (index === null) continue;
+        const type = reportXmlAttr(attrs, "t") || "n";
+        let raw = "";
+        if (type === "inlineStr") {
+          for (const text of body.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/gi)) raw += reportXmlDecode(text[1]);
+        } else {
+          const valueMatch = body.match(/<v\b[^>]*>([\s\S]*?)<\/v>/i);
+          raw = valueMatch ? reportXmlDecode(valueMatch[1]) : "";
+        }
+        let value = raw;
+        if (type === "s") value = sharedStrings[Number(raw)] ?? raw;
+        else if (type === "b") value = raw === "1";
+        else if ((type === "n" || !type) && raw !== "" && Number.isFinite(Number(raw))) value = Number(raw);
+        values[index] = value;
+      }
+      while (values.length && values[values.length - 1] === undefined) values.pop();
+      for (let i = 0; i < values.length; i += 1) if (values[i] === undefined) values[i] = "";
+      if (values.some((value) => String(value ?? "").trim() !== "")) physicalRows.push({ row_number: rowNumber, values });
+    }
+    if (!physicalRows.length) return Object.freeze({ name, columns: [], row_count: 0, offset, limit, rows: [], row_numbers: [], has_more: false, next_offset: null });
+    const columns = reportHeaders(physicalRows[0].values);
+    const data = physicalRows.slice(1);
+    const boundedOffset = Math.min(offset, data.length);
+    const page = data.slice(boundedOffset, boundedOffset + limit);
+    const rows = page.map(({ values }) => {
+      const out = Array(columns.length).fill("");
+      for (let i = 0; i < Math.min(columns.length, values.length); i += 1) out[i] = values[i];
+      return out;
+    });
+    const next = boundedOffset + rows.length;
+    return Object.freeze({ name, columns, row_count: data.length, offset: boundedOffset, limit, rows, row_numbers: page.map((r) => r.row_number), has_more: next < data.length, next_offset: next < data.length ? next : null });
+  }
+
+  async function parseXlsxReportBytes(bytes, options = {}) {
+    const reader = createReportZipReader(bytes);
+    const workbookBytes = await reader.get("xl/workbook.xml");
+    const relsBytes = await reader.get("xl/_rels/workbook.xml.rels");
+    if (!workbookBytes || !relsBytes) fail("REPORT_XLSX_INVALID", "XLSX workbook metadata отсутствует.");
+    const decoder = new TextDecoder("utf-8");
+    const workbookXml = decoder.decode(workbookBytes);
+    const relsXml = decoder.decode(relsBytes);
+    const relationships = new Map();
+    for (const match of relsXml.matchAll(/<Relationship\b([^>]*)\/?\s*>/gi)) {
+      const id = reportXmlAttr(match[1], "Id"), target = reportXmlAttr(match[1], "Target");
+      if (id && target) relationships.set(id, reportJoinZipPath("xl", target));
+    }
+    const sheets = [];
+    for (const match of workbookXml.matchAll(/<sheet\b([^>]*)\/?\s*>/gi)) {
+      const name = reportXmlAttr(match[1], "name") || `Sheet${sheets.length + 1}`;
+      const rid = reportXmlAttr(match[1], "r:id");
+      const target = rid ? relationships.get(rid) : null;
+      if (target) sheets.push({ name, target });
+    }
+    if (!sheets.length) fail("REPORT_XLSX_INVALID", "XLSX worksheets отсутствуют.");
+    const requested = options.sheet == null ? sheets[0] : sheets.find((item) => item.name === String(options.sheet));
+    if (!requested) fail("REPORT_SHEET_NOT_FOUND", `XLSX sheet не найден: ${options.sheet}`);
+    const sharedBytes = await reader.get("xl/sharedStrings.xml");
+    const shared = sharedBytes ? reportParseSharedStrings(decoder.decode(sharedBytes)) : [];
+    const sheetBytes = await reader.get(requested.target);
+    if (!sheetBytes) fail("REPORT_XLSX_INVALID", `XLSX sheet entry отсутствует: ${requested.target}`);
+    const sheet = reportParseSheet(decoder.decode(sheetBytes), shared, requested.name, options);
+    return Object.freeze({ format: "xlsx", available_sheets: Object.freeze(sheets.map((item) => item.name)), sheet });
+  }
+
+  async function parseAiReadableReportBytes(bytes, { contentType = "", pathname = "", sheet = null, offset = 0, limit = 200 } = {}) {
+    const source = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+    const ct = normalizedContentType(contentType);
+    const lower = String(pathname || "").toLowerCase();
+    const zipMagic = source.length >= 4 && source[0] === 0x50 && source[1] === 0x4b && source[2] === 0x03 && source[3] === 0x04;
+    if (ct === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || lower.endsWith(".xlsx")) {
+      return await parseXlsxReportBytes(source, { sheet, offset, limit });
+    }
+    if (["text/csv", "application/csv", "text/plain", "application/json"].includes(ct) || lower.endsWith(".csv") || lower.endsWith(".txt")) {
+      const text = new TextDecoder("utf-8").decode(source);
+      return Object.freeze({ format: "csv", available_sheets: Object.freeze(["Report"]), sheet: parseDelimitedReportText(text, { offset, limit, name: "Report" }) });
+    }
+    if (zipMagic || ct === "application/zip" || lower.endsWith(".zip")) {
+      const reader = createReportZipReader(source);
+      if (reader.names.includes("xl/workbook.xml")) return await parseXlsxReportBytes(source, { sheet, offset, limit });
+      const csvName = reader.names.find((name) => /\.(csv|txt)$/i.test(name));
+      if (csvName) {
+        const csv = await reader.get(csvName);
+        return Object.freeze({ format: "zip_csv", archive_entry: csvName, available_sheets: Object.freeze([csvName]), sheet: parseDelimitedReportText(new TextDecoder("utf-8").decode(csv), { offset, limit, name: csvName }) });
+      }
+      fail("REPORT_ZIP_CONTENT_UNSUPPORTED", "ZIP отчёт не содержит поддерживаемый XLSX/CSV файл.");
+    }
+    if (ct === "application/pdf" || lower.endsWith(".pdf")) return await parsePdfDocumentBytes(source);
+    if (ct === "application/vnd.ms-excel" || lower.endsWith(".xls")) fail("REPORT_XLS_BINARY_UNSUPPORTED", "Старый XLS binary формат не поддерживается; ожидается XLSX из report_info.");
+    fail("REPORT_FILE_FORMAT_UNSUPPORTED", `Неподдерживаемый формат отчёта: ${ct || lower || "unknown"}.`);
+  }
+
+  async function executeTrustedReportFileOnce({ fetchImpl, url, now = () => Date.now(), maxBytes = 16 * 1024 * 1024, parseOptions = {} }) {
+    if (typeof fetchImpl !== "function") fail("FETCH_IMPL_MISSING", "fetchImpl обязателен.");
+    const trustedUrl = normalizeTrustedReportFileUrl(url);
+    const started = now();
+    let response;
+    try {
+      response = await fetchImpl(trustedUrl, {
+        method: "GET",
+        headers: { Accept: "text/csv,text/plain,application/csv,application/octet-stream,application/zip,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+        redirect: "error",
+        credentials: "omit"
+      });
+    } catch (error) {
+      const wrapped = new Error(String(error?.message || error || "Report file fetch failed"));
+      wrapped.code = "REPORT_FILE_FETCH_FAILED";
+      wrapped.external_request_executed = true;
+      wrapped.request_attempted = true;
+      throw wrapped;
+    }
+    const received = await readResponse(response, { preserveBytes: Boolean(response.ok) });
+    if (received.byteLength > maxBytes) {
+      const error = new Error(`Report file превышает лимит bridge ${maxBytes} bytes.`);
+      error.code = "REPORT_FILE_TOO_LARGE";
+      error.http_status = Number(response.status || 0);
+      error.external_request_executed = true;
+      throw error;
+    }
+    const contentType = normalizedContentType(headerValue(response?.headers, "content-type"));
+    let parsed = null;
+    let rawText = received.rawText || "";
+    if (response.ok) {
+      const pathname = (() => { try { return new URL(trustedUrl).pathname.toLowerCase(); } catch (_) { return ""; } })();
+      const report = await parseAiReadableReportBytes(received.bytes || new Uint8Array(), {
+        contentType, pathname, sheet: parseOptions.sheet ?? null, offset: Number(parseOptions.offset || 0), limit: Number(parseOptions.limit || 200)
+      });
+      parsed = Object.freeze({ content_type: contentType || "application/octet-stream", byte_length: received.byteLength, ...report });
+    } else if (rawText.trim()) {
+      try { parsed = JSON.parse(rawText); } catch (_) { parsed = null; }
+    }
+    return Object.freeze({
+      httpStatus: Number(response.status || 0), ok: Boolean(response.ok), rawText, parsed,
+      byteLength: received.byteLength, elapsedMs: Math.max(0, Number(now() - started) || 0), responseMeta: safeResponseMeta(response)
+    });
+  }
+
   async function executePerformanceJsonOnce({ fetchImpl, request, now = () => Date.now() }) {
     if (typeof fetchImpl !== "function") fail("FETCH_IMPL_MISSING", "fetchImpl обязателен.");
     if (!request || typeof request !== "object") fail("INVALID_REQUEST", "Trusted request object обязателен.");
@@ -2846,6 +3461,11 @@
 
   globalThis.ProviderTransportCore = Object.freeze({
     readResponse,
+    normalizeTrustedReportFileUrl,
+    reportBase64ToBytes,
+    parsePdfDocumentBytes,
+    parseAiReadableReportBytes,
+    executeTrustedReportFileOnce,
     executeJsonOnce,
     executePerformanceJsonOnce
   });
@@ -3024,6 +3644,7 @@
 
   function shouldRedactResultField(operation, fieldPath, key) {
     if ((operation === "report_list" || operation === "report_info") && String(key) === "file") return true;
+    if (["cargoes_label_get", "cargoes_label_transport_by_order_status", "cargoes_label_transport_status", "fbp_act_from_get", "fbp_act_to_get", "fbp_label_get", "posting_fbs_package_label_get_v1"].includes(operation) && ["file_url", "cdn_url", "label_url"].includes(String(key))) return true;
     if (operation === "posting_fbo_list") {
       if (/^postings\[\]\.legal_info(?:\.|$)/.test(fieldPath)) return true;
       if (/^postings\[\]\.products\[\]\.digital_codes$/.test(fieldPath)) return true;
@@ -4360,6 +4981,75 @@
     return normalized;
   }
 
+
+  const EFFECT_REPAIR_PARAM_SCHEMAS = deepFreeze({"report_products_create":{"type":"object","properties":{"language":{"type":"string"},"offer_id":{"type":"array","items":{"type":"string"}},"search":{"type":"string"},"sku":{"type":"array","items":{"type":"integer"}},"visibility":{"type":"string","enum":["ALL","VALIDATION_STATE_FAIL","TO_SUPPLY","IN_SALE","REMOVED_FROM_SALE","PARTIAL_APPROVED","IMAGE_ABSENT","ARCHIVED","AUTO_ARCHIVED","MANUAL_ARCHIVED"]}}},"report_returns_create_v2":{"type":"object","required":["filter"],"properties":{"filter":{"type":"object","required":["date_from","date_to","status"],"properties":{"delivery_schema":{"type":"string","enum":["FBS","FBO","ALL"]},"date_from":{"type":"string","format":"date-time"},"date_to":{"type":"string","format":"date-time"},"status":{"type":"string","enum":["DisputeOpened","OnSellerApproval","ArrivedAtReturnPlace","OnSellerClarification","OnSellerClarificationAfterPartialCompensation","OfferedPartialCompensation","ReturnMoneyApproved","PartialCompensationReturned","CancelledDisputeNotOpen","Rejected","CrmRejected","Cancelled","Approved","ApprovedByOzon","ReceivedBySeller","MovingToSeller","ReturnCompensated","ReturningToSellerByCourier","Utilizing","Utilized","MoneyReturned","PartialCompensationInProcess","DisputeYouOpened","CompensationRejected","DisputeOpening","CompensationOffered","WaitingCompensation","SendingError","CompensationRejectedBySla","CompensationRejectedBySeller","MovingToOzon","ReturnedToOzon","MoneyReturnedBySystem","WaitingShipment"]}}},"language":{"type":"string"}}},"report_postings_create":{"type":"object","required":["filter"],"properties":{"filter":{"type":"object","required":["processed_at_from","processed_at_to","delivery_schema"],"properties":{"cancel_reason_id":{"type":"array","items":{"type":"integer"}},"delivery_schema":{"type":"array","items":{"type":"string"}},"offer_id":{"type":"string"},"processed_at_from":{"type":"string","format":"date-time"},"processed_at_to":{"type":"string","format":"date-time"},"sku":{"type":"array","items":{"type":"integer"}},"status_alias":{"type":"array","items":{"type":"string"}},"statuses":{"type":"array","items":{"type":"integer"}},"title":{"type":"string"},"warehouse_id":{"type":"array","items":{"type":"integer"}},"delivery_method_id":{"type":"array","items":{"type":"integer"}},"is_express":{"type":"boolean"}}},"language":{"type":"string"},"with":{"type":"object","properties":{"additional_data":{"type":"boolean"},"analytics_data":{"type":"boolean"},"customer_data":{"type":"boolean"},"jewelry_codes":{"type":"boolean"}}}}},"report_discounted_create":{"type":"object"},"report_warehouse_stock":{"type":"object","required":["warehouseId"],"properties":{"language":{"type":"string"},"warehouseId":{"type":"array","items":{"type":"string"}}}},"report_placement_by_products_create":{"type":"object","required":["date_from","date_to"],"properties":{"date_from":{"type":"string","format":"date"},"date_to":{"type":"string","format":"date"}}},"report_placement_by_supplies_create":{"type":"object","required":["date_from","date_to"],"properties":{"date_from":{"type":"string","format":"date"},"date_to":{"type":"string","format":"date"}}},"report_marked_products_sales_create":{"type":"object","required":["date"],"properties":{"date":{"type":"object","required":["from","to"],"properties":{"from":{"type":"string","format":"date"},"to":{"type":"string","format":"date"}}}}},"report_realization_posting_create":{"type":"object","required":["month","year"],"properties":{"month":{"type":"integer","minimum":1,"maximum":12},"year":{"type":"integer","minimum":2023}}},"finance_document_b2b_sales":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"finance_mutual_settlement_report":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"finance_compensation_report":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"finance_decompensation_report":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"cargoes_label_create":{"type":"object","required":["supply_id"],"properties":{"cargoes":{"type":"array","items":{"type":"object","properties":{"cargo_id":{"type":"integer"}}}},"supply_id":{"type":"integer"}}},"posting_fbs_act_container_labels":{"type":"object","required":["id"],"properties":{"id":{"type":"integer"}}},"posting_fbs_package_label":{"type":"object","required":["posting_number"],"properties":{"posting_number":{"type":"array","items":{"type":"string"},"maxItems":20}}},"posting_fbs_package_label_create":{"type":"object","required":["posting_number"],"properties":{"posting_number":{"type":"array","items":{"type":"string"}}}},"cargoes_transport_label_by_order_create":{"type":"object","required":["order_id"],"properties":{"order_id":{"type":"integer"}}},"cargoes_transport_label_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"integer"},"transport_cargo_ids":{"type":"array","maxItems":40,"items":{"type":"string"}}}},"fbp_act_from_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"string"}}},"fbp_act_to_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"string"}}},"fbp_label_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"string"}}},"fbp_draft_direct_product_validate":{"type":"object","required":["skus","warehouse_id"],"properties":{"skus":{"type":"array","items":{"type":"object","required":["count","sku"],"properties":{"count":{"type":"integer"},"sku":{"type":"integer"}}}},"warehouse_id":{"type":"integer"}}},"fbp_draft_dropoff_product_validate":{"type":"object","required":["skus","warehouse_id"],"properties":{"skus":{"type":"array","items":{"type":"object","required":["count","sku"],"properties":{"count":{"type":"integer"},"sku":{"type":"integer"}}}},"warehouse_id":{"type":"integer"}}},"fbp_draft_pickup_product_validate":{"type":"object","required":["skus","warehouse_id"],"properties":{"skus":{"type":"array","items":{"type":"object","required":["count","sku"],"properties":{"count":{"type":"integer"},"sku":{"type":"integer"}}}},"warehouse_id":{"type":"integer"}}},"chat_history_v3":{"type":"object","required":["chat_id"],"properties":{"chat_id":{"type":"string"},"direction":{"type":"string"},"filter":{"type":"object","properties":{"message_ids":{"type":"array","items":{"type":"string"}}}},"from_message_id":{"type":"integer"},"limit":{"type":"integer"}}}});
+
+  function validateEffectRepairValue(value, schema, path) {
+    if (!schema || typeof schema !== "object") return;
+    if (Array.isArray(schema.enum) && schema.enum.length && !schema.enum.includes(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть одним из: ${schema.enum.join(", ")}.`);
+    const type = schema.type;
+    if (type === "object") {
+      const object = requirePlainObject(value, path);
+      const properties = schema.properties || {};
+      assertAllowedFields(object, Object.keys(properties));
+      for (const key of schema.required || []) requireField(object, key);
+      for (const [key, child] of Object.entries(object)) if (Object.prototype.hasOwnProperty.call(properties, key)) validateEffectRepairValue(child, properties[key], `${path}.${key}`);
+      return;
+    }
+    if (type === "array") {
+      const array = requireArray(value, path);
+      if (Number.isInteger(schema.maxItems) && array.length > schema.maxItems) fail("INVALID_OPERATION_PARAMS", `${path} содержит слишком много элементов.`);
+      if (Number.isInteger(schema.minItems) && array.length < schema.minItems) fail("INVALID_OPERATION_PARAMS", `${path} содержит слишком мало элементов.`);
+      for (let index = 0; index < array.length; index += 1) validateEffectRepairValue(array[index], schema.items || {}, `${path}[${index}]`);
+      return;
+    }
+    if (type === "integer") { if (!Number.isInteger(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть целым числом.`); if (Number.isFinite(schema.minimum) && value < schema.minimum) fail("INVALID_OPERATION_PARAMS", `${path} должен быть >= ${schema.minimum}.`); if (Number.isFinite(schema.maximum) && value > schema.maximum) fail("INVALID_OPERATION_PARAMS", `${path} должен быть <= ${schema.maximum}.`); return; }
+    if (type === "number") { if (typeof value !== "number" || !Number.isFinite(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть конечным числом.`); return; }
+    if (type === "boolean") { if (typeof value !== "boolean") fail("INVALID_OPERATION_PARAMS", `${path} должен быть boolean.`); return; }
+    if (type === "string" || !type) {
+      if (typeof value !== "string") fail("INVALID_OPERATION_PARAMS", `${path} должен быть строкой.`);
+      if (Number.isInteger(schema.maxLength) && value.length > schema.maxLength) fail("INVALID_OPERATION_PARAMS", `${path} длиннее допустимого.`);
+      if (schema.format === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть датой YYYY-MM-DD.`);
+      if (schema.format === "month" && !/^\d{4}-(0[1-9]|1[0-2])$/.test(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть периодом YYYY-MM.`);
+      if (schema.format === "date-time" && !Number.isFinite(Date.parse(value))) fail("INVALID_OPERATION_PARAMS", `${path} должен быть ISO date-time.`);
+    }
+  }
+
+  function normalizeEffectRepairParams(operation, params) {
+    const schema = EFFECT_REPAIR_PARAM_SCHEMAS[operation];
+    if (!schema) fail("INVALID_OPERATION_PARAMS", `Для ${operation} отсутствует effect-repair schema.`);
+    const normalized = requirePlainObject(params, "params");
+    validateEffectRepairValue(normalized, schema, "params");
+
+    if (operation === "report_placement_by_products_create" || operation === "report_placement_by_supplies_create") {
+      const start = Date.parse(`${normalized.date_from}T00:00:00Z`);
+      const end = Date.parse(`${normalized.date_to}T00:00:00Z`);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) fail("INVALID_OPERATION_PARAMS", "params.date_to должен быть не раньше params.date_from.");
+      if ((end - start) / 86400000 > 30) fail("INVALID_OPERATION_PARAMS", "Период placement-отчёта не может превышать 31 календарный день.");
+    }
+    if (operation === "report_marked_products_sales_create") {
+      const start = Date.parse(`${normalized.date.from}T00:00:00Z`);
+      const end = Date.parse(`${normalized.date.to}T00:00:00Z`);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) fail("INVALID_OPERATION_PARAMS", "params.date.to должен быть не раньше params.date.from.");
+    }
+    return normalized;
+  }
+
+
+  function normalizeReportFileGetParams(params) {
+    const normalized = requirePlainObject(params, "params");
+    assertAllowedFields(normalized, ["file_ref", "sheet", "offset", "limit"]);
+    const value = requireString(requireField(normalized, "file_ref"), "params.file_ref");
+    if (!/^rpf_[A-Za-z0-9_-]{12,120}$/.test(value)) fail("INVALID_OPERATION_PARAMS", "params.file_ref должен быть opaque report file ref bridge.");
+    normalized.file_ref = value;
+    if (Object.prototype.hasOwnProperty.call(normalized, "sheet")) requireString(normalized.sheet, "params.sheet");
+    if (!Object.prototype.hasOwnProperty.call(normalized, "offset")) normalized.offset = 0;
+    if (!Object.prototype.hasOwnProperty.call(normalized, "limit")) normalized.limit = 200;
+    requireInteger(normalized.offset, "params.offset", { minimum: 0, maximum: 1000000 });
+    requireInteger(normalized.limit, "params.limit", { minimum: 1, maximum: 500 });
+    return normalized;
+  }
+
   function normalizeSupplyOrderListParams(params) {
     const normalized = requirePlainObject(params, "params");
     assertAllowedFields(normalized, ["filter", "last_id", "limit", "sort_by", "sort_dir"]);
@@ -5352,7 +6042,7 @@
     if (!/^(GET|POST)$/.test(String(meta.method))) fail("INVALID_REGISTRY_METHOD", `${name}: неподдерживаемый HTTP method.`);
     if (!/^\/[^?#]*$/.test(String(meta.path)) || String(meta.path).includes("..")) fail("INVALID_REGISTRY_PATH", `${name}: небезопасный fixed path.`);
     const provider = String(meta.provider || "seller_api");
-    if (!["seller_api", "performance_api"].includes(provider)) fail("INVALID_REGISTRY_PROVIDER", `${name}: неизвестный provider.`);
+    if (!["seller_api", "performance_api", "report_file"].includes(provider)) fail("INVALID_REGISTRY_PROVIDER", `${name}: неизвестный provider.`);
     if (provider === "performance_api") {
       assertPerformanceMutationBlocked(meta.method, meta.path);
       assertPerformanceAsyncReportSideEffectBlocked(meta.method, meta.path);
@@ -5372,7 +6062,8 @@
     if (meta.execution_enabled === true) {
       if (typeof meta.normalizeParams !== "function") fail("PARAM_SCHEMA_NOT_READY", `${name}: нет request normalizer.`);
       if (typeof meta.sanitizeResult !== "function") fail("RESULT_POLICY_NOT_READY", `${name}: нет result/PII policy.`);
-      if (meta.method === "GET" && meta.request_style !== "query") fail("REQUEST_STYLE_NOT_READY", `${name}: GET требует query builder.`);
+      if (meta.method === "GET" && meta.request_style !== "query" && !(provider === "report_file" && meta.request_style === "opaque_file_ref")) fail("REQUEST_STYLE_NOT_READY", `${name}: GET требует query builder.`);
+      if (provider === "report_file" && meta.request_style !== "opaque_file_ref") fail("REQUEST_STYLE_NOT_READY", `${name}: report_file требует opaque_file_ref builder.`);
       if (meta.method === "POST" && !["json_body", "no_body"].includes(meta.request_style)) fail("REQUEST_STYLE_NOT_READY", `${name}: POST требует fixed json_body/no_body builder.`);
     }
   }
@@ -6035,6 +6726,33 @@
     finance_products_buyout: { normalizeParams: normalizeFinanceProductsBuyoutParams, sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_08_28_b41_finance_buyout" },
     report_list: { normalizeParams: normalizeReportListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b5_existing_report_read" },
     report_info: { normalizeParams: normalizeReportInfoParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b5_existing_report_read" },
+    report_file_get: { normalizeParams: normalizeReportFileGetParams, sanitizeResult: authorizedPersonalDataReadResult, contract_state: "opaque_report_file_ref_v1" },
+    report_products_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_products_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_returns_create_v2: { normalizeParams: (params) => normalizeEffectRepairParams("report_returns_create_v2", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_postings_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_postings_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_discounted_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_discounted_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_warehouse_stock: { normalizeParams: (params) => normalizeEffectRepairParams("report_warehouse_stock", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_placement_by_products_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_placement_by_products_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_placement_by_supplies_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_placement_by_supplies_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_marked_products_sales_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_marked_products_sales_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    report_realization_posting_create: { normalizeParams: (params) => normalizeEffectRepairParams("report_realization_posting_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    finance_document_b2b_sales: { normalizeParams: (params) => normalizeEffectRepairParams("finance_document_b2b_sales", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    finance_mutual_settlement_report: { normalizeParams: (params) => normalizeEffectRepairParams("finance_mutual_settlement_report", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    finance_compensation_report: { normalizeParams: (params) => normalizeEffectRepairParams("finance_compensation_report", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    finance_decompensation_report: { normalizeParams: (params) => normalizeEffectRepairParams("finance_decompensation_report", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    cargoes_label_create: { normalizeParams: (params) => normalizeEffectRepairParams("cargoes_label_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    posting_fbs_act_container_labels: { normalizeParams: (params) => normalizeEffectRepairParams("posting_fbs_act_container_labels", params), sanitizeResult: authorizedPersonalDataReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    posting_fbs_package_label: { normalizeParams: (params) => normalizeEffectRepairParams("posting_fbs_package_label", params), sanitizeResult: authorizedPersonalDataReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    posting_fbs_package_label_create: { normalizeParams: (params) => normalizeEffectRepairParams("posting_fbs_package_label_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    cargoes_transport_label_by_order_create: { normalizeParams: (params) => normalizeEffectRepairParams("cargoes_transport_label_by_order_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    cargoes_transport_label_create: { normalizeParams: (params) => normalizeEffectRepairParams("cargoes_transport_label_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    fbp_act_from_create: { normalizeParams: (params) => normalizeEffectRepairParams("fbp_act_from_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    fbp_act_to_create: { normalizeParams: (params) => normalizeEffectRepairParams("fbp_act_to_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    fbp_label_create: { normalizeParams: (params) => normalizeEffectRepairParams("fbp_label_create", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    fbp_draft_direct_product_validate: { normalizeParams: (params) => normalizeEffectRepairParams("fbp_draft_direct_product_validate", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    fbp_draft_dropoff_product_validate: { normalizeParams: (params) => normalizeEffectRepairParams("fbp_draft_dropoff_product_validate", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    fbp_draft_pickup_product_validate: { normalizeParams: (params) => normalizeEffectRepairParams("fbp_draft_pickup_product_validate", params), sanitizeResult: safeReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
+    chat_history_v3: { normalizeParams: (params) => normalizeEffectRepairParams("chat_history_v3", params), sanitizeResult: authorizedPersonalDataReadResult, contract_state: "exact_swagger_2026_09_02_effect_repair" },
     supply_order_list: { normalizeParams: normalizeSupplyOrderListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_26_b8" },
     supply_order_get: { normalizeParams: normalizeSupplyOrderGetParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_26_b8_revalidated" },
     supply_order_status_counter: { normalizeParams: normalizeNoBodyParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_26_b8_no_body" },
@@ -6901,6 +7619,80 @@
   } = {}) {
     let performanceToken = null;
 
+    const reportFileRefs = new Map();
+    const REPORT_FILE_REF_TTL_MS = 30 * 60 * 1000;
+    const REPORT_FILE_REF_MAX = 128;
+
+    function pruneReportFileRefs() {
+      const current = Number(now());
+      for (const [ref, record] of reportFileRefs.entries()) {
+        if (!record || current - Number(record.created_at_ms || 0) > REPORT_FILE_REF_TTL_MS) reportFileRefs.delete(ref);
+      }
+      while (reportFileRefs.size > REPORT_FILE_REF_MAX) reportFileRefs.delete(reportFileRefs.keys().next().value);
+    }
+
+    function registerReportFile(rawUrl) {
+      const trustedUrl = globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl(rawUrl);
+      pruneReportFileRefs();
+      const token = String(uuid()).replace(/[^A-Za-z0-9_-]/g, "");
+      const ref = `rpf_${token}`;
+      reportFileRefs.set(ref, Object.freeze({ url: trustedUrl, created_at_ms: Number(now()) }));
+      pruneReportFileRefs();
+      return ref;
+    }
+
+    function resolveReportFileRef(ref) {
+      pruneReportFileRefs();
+      const record = reportFileRefs.get(String(ref || ""));
+      if (!record) {
+        const error = new Error("Report file ref неизвестен или истёк. Повторите report_info отдельной командой.");
+        error.code = "REPORT_FILE_REF_NOT_FOUND";
+        error.external_request_executed = false;
+        throw error;
+      }
+      return record;
+    }
+
+    async function executeReportFileCommand(command) {
+      const record = resolveReportFileRef(command.params.file_ref);
+      if (record.inline_base64) {
+        const started = Number(now());
+        const bytes = globalThis.ProviderTransportCore.reportBase64ToBytes(record.inline_base64);
+        const parsedDocument = await globalThis.ProviderTransportCore.parseAiReadableReportBytes(bytes, { contentType: record.content_type || "application/pdf", pathname: "/inline-document.pdf", sheet: command.params.sheet ?? null, offset: Number(command.params.offset || 0), limit: Number(command.params.limit || 200) });
+        const response = Object.freeze({ httpStatus: 200, ok: true, rawText: "", parsed: Object.freeze({ content_type: record.content_type || "application/pdf", byte_length: bytes.byteLength, ...parsedDocument }), byteLength: bytes.byteLength, elapsedMs: Math.max(0, Number(now()) - started), responseMeta: Object.freeze({ content_type: record.content_type || "application/pdf", content_length: String(bytes.byteLength), request_id: null, retry_after: null }) });
+        const request = Object.freeze({ method: "GET", host_alias: "report_file", path: "/__opaque_inline_document__", operation: "report_file_get", response_style: "binary", response_content_types: null, external_request_executed: false });
+        return { request, response, auth_request_performed: false };
+      }
+      const response = await globalThis.ProviderTransportCore.executeTrustedReportFileOnce({ fetchImpl, url: record.url, now, parseOptions: command.params });
+      const request = Object.freeze({ method: "GET", host_alias: "report_file", path: "/__opaque_report_file__", operation: "report_file_get", response_style: "binary", response_content_types: null, external_request_executed: true });
+      return { request, response, auth_request_performed: false };
+    }
+
+
+
+    const GENERATED_DOCUMENT_URL_FIELD_BY_OPERATION = Object.freeze({
+      cargoes_label_get: "file_url",
+      cargoes_label_transport_by_order_status: "file_url",
+      cargoes_label_transport_status: "file_url",
+      fbp_act_from_get: "cdn_url",
+      fbp_act_to_get: "label_url",
+      fbp_label_get: "label_url",
+      posting_fbs_package_label_get_v1: "file_url"
+    });
+    const DIRECT_PDF_OPERATIONS = new Set(["posting_fbs_act_container_labels", "posting_fbs_package_label"]);
+
+    function registerInlineGeneratedDocument(binaryPayload) {
+      const contentType = String(binaryPayload?.content_type || "application/octet-stream").toLowerCase();
+      const base64 = String(binaryPayload?.file_content_base64 || "");
+      if (!base64 || contentType !== "application/pdf") return null;
+      pruneReportFileRefs();
+      const token = String(uuid()).replace(/[^A-Za-z0-9_-]/g, "");
+      const ref = `rpf_${token}`;
+      reportFileRefs.set(ref, Object.freeze({ inline_base64: base64, content_type: contentType, byte_length: Number(binaryPayload?.byte_length || 0), created_at_ms: Number(now()) }));
+      pruneReportFileRefs();
+      return ref;
+    }
+
     function clearPerformanceToken() {
       performanceToken = null;
     }
@@ -7014,9 +7806,11 @@
       }
       const preflight = contract.preflightExecution(command);
       const provider = String(preflight.meta.provider || "seller_api");
-      const execution = provider === "performance_api"
-        ? await executePerformanceCommand(command, rawPerformanceCredentials)
-        : await executeSellerCommand(command, rawCredentials);
+      const execution = provider === "report_file"
+        ? await executeReportFileCommand(command)
+        : (provider === "performance_api"
+          ? await executePerformanceCommand(command, rawPerformanceCredentials)
+          : await executeSellerCommand(command, rawCredentials));
       const { request, response } = execution;
       let effectiveQuota = quota;
       if (typeof onProviderResponse === "function") {
@@ -7042,7 +7836,34 @@
           verificationError.rate_limit = safeQuotaRateMeta(effectiveQuota, response.responseMeta.retry_after);
           throw verificationError;
         }
+
         result = contract.sanitizeResult(command, response.parsed ?? response.rawText);
+        if (command.operation === "report_info") {
+          const rawFile = findFirstField(response.parsed, "file");
+          if (typeof rawFile === "string" && rawFile.trim()) {
+            const fileRef = registerReportFile(rawFile.trim());
+            result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), report_file_ref: fileRef });
+          }
+        }
+
+        const generatedUrlField = GENERATED_DOCUMENT_URL_FIELD_BY_OPERATION[command.operation];
+        if (generatedUrlField) {
+          const rawGeneratedUrl = findFirstField(response.parsed, generatedUrlField);
+          if (typeof rawGeneratedUrl === "string" && rawGeneratedUrl.trim()) {
+            const generatedRef = registerReportFile(rawGeneratedUrl.trim());
+            result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), generated_file_ref: generatedRef });
+          }
+        }
+        if (DIRECT_PDF_OPERATIONS.has(command.operation)) {
+          const generatedRef = registerInlineGeneratedDocument(response.parsed);
+          if (generatedRef) {
+            const safe = result && typeof result === "object" && !Array.isArray(result) ? { ...result } : { result };
+            delete safe.file_content_base64;
+            safe.generated_file_ref = generatedRef;
+            safe.format = "pdf";
+            result = Object.freeze(safe);
+          }
+        }
       } else {
         result = { error: errorPayload };
       }
@@ -7061,7 +7882,7 @@
           host_alias: request.host_alias,
           http_method: request.method,
           path_alias: logicalCommand.operation,
-          external_request_executed: true,
+          external_request_executed: request.external_request_executed !== false,
           capability_probe_executed: planning?.capability?.probe_performed === true,
           capability_probe_http_status: Number(planning?.capability?.probe_http_status || 0)
         },
