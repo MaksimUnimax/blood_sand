@@ -28,7 +28,7 @@ Do not touch:
 |---:|---|---|---|---|
 | 1 | NEW-01 | `report_products_create` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 2 | NEW-02 | `report_returns_create_v2` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001; create metadata = DEFECT-002 | PENDING |
-| 3 | NEW-03 | `report_postings_create` | IN_PROGRESS — uppercase FBO HTTP400 twice; lowercase fbo create PASS; DEFECT-003 confirmed; report_info NEXT; DEFECT-002 reproduced | PENDING |
+| 3 | NEW-03 | `report_postings_create` | IN_PROGRESS — lowercase fbo create PASS + report_info PASS; file read NEXT; DEFECT-002/003 confirmed | PENDING |
 | 4 | NEW-04 | `report_discounted_create` | PENDING | PENDING |
 | 5 | NEW-05 | `report_warehouse_stock` | PENDING | PENDING |
 | 6 | NEW-06 | `report_placement_by_products_create` | PARTIAL_EXTERNAL_EVIDENCE — frozen STD-10 create cannot be reused | PENDING |
@@ -57,11 +57,11 @@ Do not touch:
 
 ### DEFECT-001
 
-Generic safe report-file reads are statically privacy-blocked. Confirmed on NEW-01 and NEW-02.
+Generic safe report-file reads are statically privacy-blocked. Confirmed on NEW-01 and NEW-02; NEW-03 file read is now the next scope check.
 
 ### DEFECT-002
 
-Repeated planning metadata inconsistency: physical fingerprint differs and `command_transformed=true` while entitlement reports `exact_request_preserved=true`. Confirmed on NEW-02 and NEW-03 create paths, including successful NEW-03 Run3.
+Repeated planning metadata inconsistency: physical fingerprint differs and `command_transformed=true` while entitlement reports `exact_request_preserved=true`. Confirmed on NEW-02 and NEW-03 create paths. NEW-03 Run4 `report_info` does not reproduce it.
 
 ### DEFECT-003
 
@@ -72,7 +72,9 @@ Repeated planning metadata inconsistency: physical fingerprint differs and `comm
 
 Bridge schema accepts unconstrained strings and does not prevent/safely normalize the provider-invalid uppercase value.
 
-## NEW-03 Run3
+## NEW-03 evidence
+
+### Run3 — corrected lowercase create PASS
 
 - request `8e92df34-abdc-450f-a82b-dd55605bb7ac`
 - HTTP200
@@ -90,6 +92,27 @@ RAW:
 Parsed:
 `live-runs/NEW_03_RUN_3_REPORT_POSTINGS_CREATE_LOWERCASE_FBO_PASS_2026-09-03.md`
 
+### Run4 — report_info PASS
+
+- request `72342313-8c33-4e39-a047-56c01716cf28`
+- HTTP200
+- physical requests 1
+- external request true
+- report status `success`
+- report type `seller_postings`
+- signed provider file field `[REDACTED]`
+- opaque ref `rpf_4619d324-8228-4c8e-b8be-c4c1ea05b92c`
+- logical fingerprint `9e13284f`
+- physical fingerprint `9e13284f`
+- transformed false
+- exact_request_preserved true.
+
+RAW:
+`live-runs/repaired-26/raw/NEW_03_RUN_4_REPORT_INFO_RAW_2026-09-03.json`
+
+Parsed:
+`live-runs/NEW_03_RUN_4_REPORT_INFO_READY_OPAQUE_FILE_REF_2026-09-03.md`
+
 ## Progress
 
 - Fully final-closed: `0/26`.
@@ -101,10 +124,10 @@ Parsed:
 
 ## Exact next collection step
 
-NEW-03 `report_info` for:
-`REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c`
+NEW-03 `report_file_get` for:
+`rpf_4619d324-8228-4c8e-b8be-c4c1ea05b92c`
 
-If ready, later attempt `report_file_get` and record whether DEFECT-001 extends to `seller_postings`.
+Record whether DEFECT-001 extends to the `seller_postings` report class. Do not patch during collection. After recording this result, advance to NEW-04 regardless of whether the existing static privacy defect reproduces.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_03_LOWERCASE_FBO_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_03_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
