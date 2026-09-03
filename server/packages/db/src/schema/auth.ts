@@ -59,10 +59,18 @@ export const refreshTokens = pgTable(
     consumedAt: timestamp("consumed_at", { withTimezone: true }),
     replacedByTokenId: uuid("replaced_by_token_id"),
     reuseDetectedAt: timestamp("reuse_detected_at", { withTimezone: true }),
+    rotationIdempotencyHash: varchar("rotation_idempotency_hash", {
+      length: 128,
+    }),
+    replayExpiresAt: timestamp("replay_expires_at", { withTimezone: true }),
   },
   (table) => [
     unique("refresh_tokens_token_hash_unique").on(table.tokenHash),
     index("refresh_tokens_session_id_index").on(table.sessionId),
+    index("refresh_tokens_rotation_replay_index").on(
+      table.rotationIdempotencyHash,
+      table.replayExpiresAt,
+    ),
     unique("refresh_tokens_session_id_generation_unique").on(
       table.sessionId,
       table.generation,

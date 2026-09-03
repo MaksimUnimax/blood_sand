@@ -69,6 +69,9 @@ importers:
       '@product/device-auth':
         specifier: workspace:*
         version: link:../../packages/device-auth
+      '@product/extension-auth':
+        specifier: workspace:*
+        version: link:../../packages/extension-auth
       '@product/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -172,6 +175,9 @@ importers:
       '@product/device-auth':
         specifier: workspace:*
         version: link:../device-auth
+      '@product/extension-auth':
+        specifier: workspace:*
+        version: link:../extension-auth
       '@product/shared':
         specifier: workspace:*
         version: link:../shared
@@ -216,6 +222,12 @@ importers:
       '@types/nodemailer':
         specifier: 6.4.19
         version: 6.4.19
+
+  packages/extension-auth:
+    dependencies:
+      jose:
+        specifier: 6.1.0
+        version: 6.1.0
 
   packages/observability:
     dependencies:
@@ -1810,6 +1822,9 @@ packages:
 
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
+
+  jose@6.1.0:
+    resolution: {integrity: sha512-TTQJyoEoKcC1lscpVDCSsVgYzUDg/0Bt3WE//WiTPK6uOCQC2KZS4MpugbMWt/zyjkopgZoXhZuCi00gLudfUA==}
 
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
@@ -3860,6 +3875,8 @@ snapshots:
   is-number@7.0.0: {}
 
   isexe@2.0.0: {}
+
+  jose@6.1.0: {}
 
   joycon@3.1.1: {}
 

@@ -67,7 +67,7 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
     if (p1Directory) await rm(p1Directory, { recursive: true });
   });
 
-  it("migrates empty through P2.3, leaves no P1 probe, and is idempotent", async () => {
+  it("migrates empty through P2.4, leaves no P1 probe, and is idempotent", async () => {
     await resetDatabase();
     await runMigrations({ connectionString });
     await runMigrations({ connectionString });
@@ -89,7 +89,7 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
     const count = await runtime.db.execute<{ count: string }>(sql`
       SELECT count(*)::text AS "count" FROM drizzle."__drizzle_migrations"
     `);
-    expect(count.rows[0]?.count).toBe("4");
+    expect(count.rows[0]?.count).toBe("5");
     const probe = await runtime.db.execute<{ probe: string | null }>(sql`
       SELECT to_regclass('__p1_migration_probe') AS "probe"
     `);

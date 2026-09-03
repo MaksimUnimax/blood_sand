@@ -2,12 +2,18 @@ import {
   createAuthRepository,
   createDatabaseRuntime,
   createDeviceAuthorizationRepository,
+  createExtensionAuthRepository,
 } from "@product/db";
 import { AuthService, deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
 import {
   DeviceAuthorizationService,
   deriveDeviceAuthKeys,
 } from "@product/device-auth";
+import {
+  ExtensionAuthService,
+  deriveExtensionAuthKeys,
+  loadAccessTokenSigningKey,
+} from "@product/extension-auth";
 import { loadConfig } from "@product/shared";
 import { createApiApp } from "./app.js";
 import { createInfrastructureReadiness } from "./infrastructure.js";
@@ -25,6 +31,12 @@ const app = createApiApp({
   deviceAuthorizationService: new DeviceAuthorizationService(
     createDeviceAuthorizationRepository(database),
     deriveDeviceAuthKeys(rootSecret),
+  ),
+  extensionAuthService: new ExtensionAuthService(
+    createExtensionAuthRepository(database),
+    deriveExtensionAuthKeys(rootSecret),
+    undefined,
+    loadAccessTokenSigningKey(process.env),
   ),
 });
 let closing = false;

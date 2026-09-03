@@ -33,6 +33,13 @@ import {
 import { registerAuthRoutes } from "./auth-routes.js";
 import type { DeviceAuthorizationService } from "@product/device-auth";
 import { registerDeviceAuthorizationRoutes } from "./device-authorization-routes.js";
+import {
+  ExtensionAuthService,
+  createEphemeralAccessTokenSigningKey,
+  deriveExtensionAuthKeys,
+  type ExtensionAuthRepository,
+} from "@product/extension-auth";
+import { registerRefreshRoutes } from "./refresh-routes.js";
 
 export class ControlledError extends Error {
   public constructor(
@@ -49,6 +56,7 @@ export interface ApiDependencies {
   readonly isInfrastructureReady: () => Promise<boolean>;
   readonly authService?: AuthServiceType;
   readonly deviceAuthorizationService?: DeviceAuthorizationService;
+  readonly extensionAuthService?: ExtensionAuthService;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -180,6 +188,23 @@ export function createApiApp(
           new AuthService(unavailable, deriveAuthKeys(Buffer.alloc(32))),
         dependencies.deviceAuthorizationService,
       );
+    const unavailableExtension: ExtensionAuthRepository = {
+      consumeRefreshRate: async () => ({ allowed: false }),
+      authorize: async () => undefined,
+      authorizeFromRefreshHash: async () => undefined,
+      createRefresh: async () => false,
+      rotateRefresh: async () => "invalid",
+    };
+    registerRefreshRoutes(
+      app,
+      dependencies.extensionAuthService ??
+        new ExtensionAuthService(
+          unavailableExtension,
+          deriveExtensionAuthKeys(Buffer.alloc(32)),
+          undefined,
+          createEphemeralAccessTokenSigningKey(),
+        ),
+    );
   });
   return app;
 }

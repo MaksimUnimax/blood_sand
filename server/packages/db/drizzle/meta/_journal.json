@@ -29,6 +29,13 @@
       "when": 1788430000000,
       "tag": "0003_p2_3_device_authorization",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788431000000,
+      "tag": "0004_p2_4_token_core",
+      "breakpoints": true
     }
   ]
 }

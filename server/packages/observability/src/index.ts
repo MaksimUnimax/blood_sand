@@ -19,6 +19,8 @@ export const SensitiveLogPaths = [
   "secret",
   "authRootSecret",
   "authRootSecretB64",
+  "accessTokenSigningPrivateKey",
+  "accessTokenSigningPrivateKeyPemB64",
   "smtpPassword",
   "req.headers.authorization",
   "req.headers.cookie",

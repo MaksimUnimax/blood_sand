@@ -17,6 +17,7 @@ export const ApiErrorCodeV1Schema = z.enum([
   "AUTH_LOGIN_DENIED",
   "AUTH_SESSION_INVALID",
   "AUTH_CSRF_INVALID",
+  "AUTH_REFRESH_INVALID",
   "DEVICE_AUTH_RATE_LIMITED",
   "DEVICE_AUTH_INVALID",
   "DEVICE_AUTH_FORBIDDEN",
@@ -61,6 +62,16 @@ export const OtpVerifyBodyV1Schema = z.object({
 export const OtpVerifyResponseV1Schema = z.object({
   status: z.literal("authenticated"),
   expiresAt: z.string().datetime(),
+});
+export const RefreshRequestBodyV1Schema = z
+  .object({ refreshToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/) })
+  .strict();
+export const RefreshResponseV1Schema = z.object({
+  tokenType: z.literal("Bearer"),
+  accessToken: z.string().min(1),
+  accessTokenExpiresAt: z.string().datetime(),
+  refreshToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+  refreshTokenExpiresAt: z.string().datetime(),
 });
 const SafeVersion = z
   .string()

@@ -22,6 +22,7 @@
   "dependencies": {
     "@product/auth": "workspace:*",
     "@product/device-auth": "workspace:*",
+    "@product/extension-auth": "workspace:*",
     "@product/shared": "workspace:*",
     "drizzle-orm": "0.44.5",
     "pg": "8.16.3"

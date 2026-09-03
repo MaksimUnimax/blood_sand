@@ -13,6 +13,12 @@ import {
   deriveDeviceAuthKeys,
   type DeviceAuthorizationRepository,
 } from "@product/device-auth";
+import {
+  ExtensionAuthService,
+  createEphemeralAccessTokenSigningKey,
+  deriveExtensionAuthKeys,
+  type ExtensionAuthRepository,
+} from "@product/extension-auth";
 
 type JsonPrimitive = boolean | null | number | string;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -69,6 +75,18 @@ export async function generateOpenApiRepresentation(): Promise<string> {
         expireDue: async () => 0,
       } satisfies DeviceAuthorizationRepository,
       deriveDeviceAuthKeys(Buffer.alloc(32, 1)),
+    ),
+    extensionAuthService: new ExtensionAuthService(
+      {
+        consumeRefreshRate: async () => ({ allowed: false }),
+        authorize: async () => undefined,
+        authorizeFromRefreshHash: async () => undefined,
+        createRefresh: async () => false,
+        rotateRefresh: async () => "invalid",
+      } satisfies ExtensionAuthRepository,
+      deriveExtensionAuthKeys(Buffer.alloc(32, 2)),
+      undefined,
+      createEphemeralAccessTokenSigningKey(),
     ),
   });
   try {
