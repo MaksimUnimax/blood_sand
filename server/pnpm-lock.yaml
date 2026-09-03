@@ -84,6 +84,10 @@ importers:
         version: 8.5.0(postcss@8.5.26)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.9.0)
 
   apps/health-runner:
+    dependencies:
+      '@product/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
     devDependencies:
       tsup:
         specifier: 8.5.0

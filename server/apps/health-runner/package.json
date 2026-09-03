@@ -14,6 +14,9 @@
     "test": "vitest run",
     "build": "tsup src/index.ts --format esm --target node24 --clean"
   },
+  "dependencies": {
+    "@product/shared": "workspace:*"
+  },
   "devDependencies": {
     "tsup": "8.5.0"
   }

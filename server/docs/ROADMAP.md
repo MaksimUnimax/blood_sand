@@ -90,7 +90,7 @@ Exit gate:
 
 P1 implementation status: P1.1 `[DONE]`; P1.2 `[DONE]`; P1.3 `[DONE]`; P1.4 `[DONE]`; P1.5 `[DONE]`; P1.6 `[DONE]`.
 
-## P2 — Accounts, OTP identity and device authorization `[NEXT]`
+## P2 — Accounts, OTP identity and device authorization `[ACTIVE]`
 
 Goal: user can authenticate and authorize an extension installation.
 
@@ -342,6 +342,16 @@ Architecture remains:
 - P1.4 `[DONE]` verify CI and generated contract baseline.
 - P1.5 `[DONE]` architecture review implementation vs P0 decisions.
 - P1.6 `[DONE]` close accepted findings, run final acceptance, and record P1 completion.
+
+## P2 substeps
+
+- P2.1 `[ACTIVE]` Identity/device persistence foundation.
+- P2.2 `[PLANNED]` Email OTP request/verify, abuse controls, durable delivery and portal session.
+- P2.3 `[PLANNED]` Device authorization start/approve/deny/expire plus client idempotency.
+- P2.4 `[PLANNED]` Short-lived access-token auth plus opaque refresh rotation/reuse detection.
+- P2.5 `[PLANNED]` Device exchange/list/revoke/device limits and transactional audit.
+- P2.6 `[PLANNED]` Portal activation flow plus simulated extension client and E2E.
+- P2.7 `[PLANNED]` P2 security/architecture audit and final P2 acceptance/checkpoint.
 
 # Parallel Bridge rule
 

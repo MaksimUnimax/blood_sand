@@ -21,3 +21,4 @@ export function loadConfig(environment: NodeJS.ProcessEnv): AppConfig {
     workerReadyDelayMs: environment.WORKER_READY_DELAY_MS,
   });
 }
+export * from "./browser";

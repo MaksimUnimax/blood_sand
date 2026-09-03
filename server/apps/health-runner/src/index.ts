@@ -1,4 +1,6 @@
-export type BrowserFamily = "chrome" | "yandex_chromium";
+import type { BrowserFamily } from "@product/shared";
+
+export type { BrowserFamily } from "@product/shared";
 export interface BrowserDriver {
   readonly family: BrowserFamily;
   start(): Promise<void>;
