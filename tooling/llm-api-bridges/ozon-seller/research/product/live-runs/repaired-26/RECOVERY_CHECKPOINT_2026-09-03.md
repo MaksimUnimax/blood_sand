@@ -20,8 +20,8 @@ That code belongs only to the frozen forensic workflow.
 ## Progress
 
 - final closed: `0/26`
-- standalone aliases exercised: `9/26`
-- collection-complete/partial-fail: `9/26`
+- standalone aliases exercised: `10/26`
+- collection-complete/partial/provider-fail: `10/26`
 - batch coverage: `0/26`
 - open numbered defects: `4`
 
@@ -32,39 +32,36 @@ That code belongs only to the frozen forensic workflow.
 - DEFECT-003: `report_postings_create.delivery_schema` case mismatch, `FBO` => 400, `fbo` => 200.
 - DEFECT-004: `report_info.additional_data` key/value privacy-redaction bypass; NEW-09 finance realization leaked identifying receiver metadata while personal-data setting was OFF. Do not repeat leaked values.
 
-## NEW-09 preserved state
+## NEW-10 preserved state
 
-Create PASS:
-- request `f69f3965-fe8a-417e-9a59-0e4d43651ed5`
-- report code `REPORT_finance_realization_posting_2093109_1788409408_01a06581-eacd-713e-b7b6-06a3e832b361`
-- HTTP200, physical1
-- fingerprints `50a8fdbc == 50a8fdbc`
-- transformed false.
+Submitted command:
+`finance_document_b2b_sales` with `date=2026-08`.
 
-Report-info PASS with privacy defect:
-- request `0ab507a4-3068-43f5-8a5d-54bdc3d09d55`
-- report type `finance_realization_posting`
-- opaque ref `rpf_daf0af28-8915-4ef5-9a27-d0d8f2562c95`
-- fingerprints `604b53c9 == 604b53c9`
-- transformed false
-- identifying `additional_data` values leaked; GitHub evidence masks them.
+Provider result:
+- request `7182d4dc-f32a-4c33-834f-d8922775cecb`
+- HTTP404 / provider code `5`
+- physical requests `1`
+- logical business results `1`
+- external request `true`
+- automatic retry `false`
+- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
+- entitlement key `POST /v1/finance/document-b2b-sales`
+- exact request preserved `true`
+- fingerprints `04d982c1 == 04d982c1`
+- transformed `false`.
 
-File-read block:
-- request `policy-c52040e3-2327-4a14-be83-f786a928b053`
-- fingerprint `928bfa76`
-- HTTP0, physical0, external false
-- `POLICY_BLOCKED / personal_data_setting_off`
-- DEFECT-001 reproduction #9.
+Classification:
+`COLLECTION_COMPLETE_PROVIDER_FAIL`
 
-NEW-09 is `COLLECTION_COMPLETE_PARTIAL_FAIL`.
+The current endpoint contract still accepts required `date` in `YYYY-MM` form, so this single provider 404 does not establish a new bridge defect. Do not automatically repeat the request after 4xx. No report code was returned, therefore no NEW-10 `report_info` / `report_file_get` can follow from this run.
 
-Evidence Run3:
-- RAW `live-runs/repaired-26/raw/NEW_09_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_09_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
+Evidence:
+- RAW `live-runs/repaired-26/raw/NEW_10_RUN_1_FINANCE_DOCUMENT_B2B_SALES_PROVIDER_404_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_10_RUN_1_FINANCE_DOCUMENT_B2B_SALES_PROVIDER_404_2026-09-03.md`
 
 ## Exact next action
 
-Start NEW-10 `finance_document_b2b_sales` only after confirming its exact runtime opaque-document flow. Use a completed month, persist the provider result, and then perform only the explicit document-read operation prescribed by runtime. Do not patch.
+Start NEW-11 `finance_mutual_settlement_report` with completed month `2026-08`. Persist its provider result before any downstream report/document read. If provider returns 4xx/5xx/error, do not automatically repeat the same business request. Do not patch.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_09_COMPLETE_PARTIAL_FAIL_NEW_10_DOCUMENT_FLOW_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_10_PROVIDER_404_COMPLETE_NEW_11_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
