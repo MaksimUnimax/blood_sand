@@ -38,7 +38,7 @@ That code belongs only to the frozen forensic STD-10 workflow.
 | 8 | NEW-08 | `report_marked_products_sales_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 9 | NEW-09 | `report_realization_posting_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS; report_info PASS with DEFECT-004 privacy leak; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 10 | NEW-10 | `finance_document_b2b_sales` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code; no new bridge defect opened | PENDING |
-| 11 | NEW-11 | `finance_mutual_settlement_report` | IN_PROGRESS — create PASS clean; report_info NEXT | PENDING |
+| 11 | NEW-11 | `finance_mutual_settlement_report` | IN_PROGRESS — create PASS clean; report_info PASS clean; file read NEXT | PENDING |
 | 12 | NEW-12 | `finance_compensation_report` | PENDING | PENDING |
 | 13 | NEW-13 | `finance_decompensation_report` | PENDING | PENDING |
 | 14 | NEW-14 | `cargoes_label_create` | PENDING | PENDING |
@@ -57,69 +57,28 @@ That code belongs only to the frozen forensic STD-10 workflow.
 
 ## Defects collected
 
-- DEFECT-001: generic `report_file_get` is statically privacy-blocked; confirmed on 9 report classes through NEW-09, including `finance_realization_posting`.
-- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean create counterexamples include NEW-04/05/06/07/08/09/11; tested report-info transform metadata is also clean.
+- DEFECT-001: generic `report_file_get` is statically privacy-blocked; confirmed on 9 report classes through NEW-09. NEW-11 `mutual_settlement` file read is the next scope probe.
+- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean create counterexamples include NEW-04/05/06/07/08/09/11; NEW-11 report_info is also clean.
 - DEFECT-003: `report_postings_create.delivery_schema` uppercase/lowercase mismatch (`FBO` 400 vs `fbo` 200).
-- DEFECT-004: `report_info.additional_data` key/value representation bypasses personal-data redaction; NEW-09 finance realization exposed identifying receiver metadata while personal-data setting was OFF.
+- DEFECT-004: `report_info.additional_data` key/value representation bypasses personal-data redaction; confirmed on NEW-09 finance realization. NEW-11 `mutual_settlement` returned empty `additional_data` and did not reproduce it.
 
 Defect authority:
 `OZON_AI_WORKER_REPAIRED_26_READS_DEFECT_LEDGER_2026-09-03.md`
 
-## NEW-09 chain summary
-
-### Run1 — create PASS
-- request `f69f3965-fe8a-417e-9a59-0e4d43651ed5`
-- HTTP200, physical1, external true
-- fingerprints `50a8fdbc == 50a8fdbc`
-- transformed false
-- report code `REPORT_finance_realization_posting_2093109_1788409408_01a06581-eacd-713e-b7b6-06a3e832b361`.
-
-### Run2 — report_info PASS with DEFECT-004
-- request `0ab507a4-3068-43f5-8a5d-54bdc3d09d55`
-- HTTP200, physical1, external true
-- report type `finance_realization_posting`
-- provider file redacted
-- opaque ref `rpf_daf0af28-8915-4ef5-9a27-d0d8f2562c95`
-- fingerprints `604b53c9 == 604b53c9`
-- identifying `additional_data` values leaked with personal-data setting OFF; repository evidence stores only masked values.
-
-### Run3 — report_file_get POLICY_BLOCKED
-- request `policy-c52040e3-2327-4a14-be83-f786a928b053`
-- fingerprint `928bfa76`
-- HTTP0
-- physical0
-- external false
-- `POLICY_BLOCKED / personal_data_setting_off`
-- error `OPERATION_DISABLED_BY_USER`.
-
-This is DEFECT-001 reproduction #9. NEW-09 collection is complete enough to advance.
-
-Evidence Run3:
-- RAW `live-runs/repaired-26/raw/NEW_09_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_09_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
-
 ## NEW-10 summary — provider 404, no new bridge defect
 
-Submitted:
-`finance_document_b2b_sales` with `date=2026-08`.
-
-Observed:
 - request `7182d4dc-f32a-4c33-834f-d8922775cecb`
-- HTTP404, provider code `5`
+- operation `finance_document_b2b_sales`, date `2026-08`
+- HTTP404 / provider code `5`
 - physical requests `1`, logical results `1`
 - external request `true`
 - automatic retry `false`
-- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
-- entitlement key `POST /v1/finance/document-b2b-sales`
 - exact request preserved `true`
 - fingerprints `04d982c1 == 04d982c1`
-- transformed `false`.
+- transformed `false`
+- no report code; downstream report read impossible.
 
-The endpoint and required `YYYY-MM` date contract remain current; one provider 404 is therefore recorded as `COLLECTION_COMPLETE_PROVIDER_FAIL`, not a new bridge defect. No automatic repeat is allowed after provider 4xx. No report code was returned, so downstream `report_info`/`report_file_get` is impossible for this run.
-
-Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_10_RUN_1_FINANCE_DOCUMENT_B2B_SALES_PROVIDER_404_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_10_RUN_1_FINANCE_DOCUMENT_B2B_SALES_PROVIDER_404_2026-09-03.md`
+Classification: `COLLECTION_COMPLETE_PROVIDER_FAIL`.
 
 ## NEW-11 active chain
 
@@ -127,20 +86,27 @@ Evidence:
 - operation `finance_mutual_settlement_report`
 - date `2026-08`
 - request `57544b21-6d26-4ad3-80fa-fb4bed1b9a85`
-- HTTP200
-- physical requests `1`, logical results `1`
-- external request `true`
-- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
+- HTTP200, physical1, logical1, external true
 - exact request preserved `true`
 - fingerprints `29860803 == 29860803`
 - transformed `false`
 - report code `REPORT_mutual_settlement_2093109_1788412383_01a065af-5079-78cb-a6b5-1110c3c9686a`.
 
-This is another clean counterexample narrowing DEFECT-002. No new defect is established by Run1.
+### Run2 — report_info PASS clean
+- request `f56ad0ed-8795-4c66-8dd9-1da54eb3602c`
+- HTTP200, physical1, logical1, external true
+- exact request preserved `true`
+- fingerprints `e19249be == e19249be`
+- transformed `false`
+- report status `success`
+- report type `mutual_settlement`
+- provider file field redacted
+- opaque ref `rpf_18eb749e-08df-4b99-8107-f4dcbf0a2529`
+- `additional_data=[]`; DEFECT-004 not reproduced on this report.
 
-Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_11_RUN_1_FINANCE_MUTUAL_SETTLEMENT_REPORT_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_11_RUN_1_FINANCE_MUTUAL_SETTLEMENT_REPORT_2026-09-03.md`
+Evidence Run2:
+- RAW `live-runs/repaired-26/raw/NEW_11_RUN_2_REPORT_INFO_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_11_RUN_2_REPORT_INFO_2026-09-03.md`
 
 ## Progress
 
@@ -154,10 +120,9 @@ Evidence:
 
 ## Exact next collection step
 
-Continue NEW-11 with explicit `report_info` for the independent NEW-11 report code:
-`REPORT_mutual_settlement_2093109_1788412383_01a065af-5079-78cb-a6b5-1110c3c9686a`.
-
-Persist the full provider result before any file/document read. Do not touch the frozen STD-10 code. Do not patch runtime.
+Run NEW-11 explicit `report_file_get` for opaque ref:
+`rpf_18eb749e-08df-4b99-8107-f4dcbf0a2529`
+with offset `0`, limit `50`, while personal-data setting remains OFF. Persist the result before advancing to NEW-12. Do not touch frozen STD-10. Do not patch runtime.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_11_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_11_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
