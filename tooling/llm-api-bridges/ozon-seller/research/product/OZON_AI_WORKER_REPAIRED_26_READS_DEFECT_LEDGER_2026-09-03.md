@@ -60,11 +60,12 @@ Clean counterexamples narrow the scope:
 - NEW-06 `report_placement_by_products_create`: `85e4f38a == 85e4f38a`, transformed false, HTTP200.
 - NEW-07 `report_placement_by_supplies_create`: `2a4cb92d == 2a4cb92d`, transformed false, HTTP200.
 - NEW-08 `report_marked_products_sales_create`: `0630aa10 == 0630aa10`, transformed false, HTTP200.
-- NEW-09 `report_realization_posting_create`: `50a8fdbc == 50a8fdbc`, transformed false, HTTP200.
+- NEW-09 `report_realization_posting_create`: `50a8f38a == 50a8f38a`, transformed false, HTTP200.
 - NEW-09 `report_info`: `604b53c9 == 604b53c9`, transformed false, HTTP200.
 - NEW-11 `finance_mutual_settlement_report`: `29860803 == 29860803`, transformed false, HTTP200.
 - NEW-11 `report_info`: `e19249be == e19249be`, transformed false, HTTP200.
 - NEW-12 `finance_compensation_report`: `0fb59a8f == 0fb59a8f`, transformed false, exact_request_preserved true, provider HTTP404/code5.
+- NEW-13 `finance_decompensation_report`: `9a67428a == 9a67428a`, transformed false, exact_request_preserved true, provider HTTP404/code5.
 - other tested `report_info` steps also preserve identical fingerprints.
 
 Therefore DEFECT-002 is not universal; continue scope collection through remaining repaired paths and later batch tests.
@@ -109,6 +110,14 @@ NEW-12 `finance_compensation_report` with `date=2026-08` produced one exact exte
 Evidence:
 - RAW `live-runs/repaired-26/raw/NEW_12_RUN_1_FINANCE_COMPENSATION_REPORT_PROVIDER_404_RAW_2026-09-03.json`
 - parsed `live-runs/NEW_12_RUN_1_FINANCE_COMPENSATION_REPORT_PROVIDER_404_2026-09-03.md`
+
+## NEW-13 provider outcome
+
+NEW-13 `finance_decompensation_report` with `date=2026-08` produced one exact external provider request and returned HTTP404/code5. No automatic retry occurred, no report code was returned, and no downstream report read is possible. This is recorded as `COLLECTION_COMPLETE_PROVIDER_FAIL`, not as a new numbered bridge defect.
+
+Evidence:
+- RAW `live-runs/repaired-26/raw/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_2026-09-03.md`
 
 ## Patch prohibition
 
