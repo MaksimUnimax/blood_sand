@@ -38,7 +38,7 @@ That code belongs only to the frozen forensic STD-10 workflow.
 | 8 | NEW-08 | `report_marked_products_sales_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 9 | NEW-09 | `report_realization_posting_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS; report_info PASS with DEFECT-004 privacy leak; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 10 | NEW-10 | `finance_document_b2b_sales` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code; no new bridge defect opened | PENDING |
-| 11 | NEW-11 | `finance_mutual_settlement_report` | NEXT | PENDING |
+| 11 | NEW-11 | `finance_mutual_settlement_report` | IN_PROGRESS — create PASS clean; report_info NEXT | PENDING |
 | 12 | NEW-12 | `finance_compensation_report` | PENDING | PENDING |
 | 13 | NEW-13 | `finance_decompensation_report` | PENDING | PENDING |
 | 14 | NEW-14 | `cargoes_label_create` | PENDING | PENDING |
@@ -58,7 +58,7 @@ That code belongs only to the frozen forensic STD-10 workflow.
 ## Defects collected
 
 - DEFECT-001: generic `report_file_get` is statically privacy-blocked; confirmed on 9 report classes through NEW-09, including `finance_realization_posting`.
-- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean create counterexamples include NEW-04/05/06/07/08/09; tested report-info transform metadata is also clean.
+- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean create counterexamples include NEW-04/05/06/07/08/09/11; tested report-info transform metadata is also clean.
 - DEFECT-003: `report_postings_create.delivery_schema` uppercase/lowercase mismatch (`FBO` 400 vs `fbo` 200).
 - DEFECT-004: `report_info.additional_data` key/value representation bypasses personal-data redaction; NEW-09 finance realization exposed identifying receiver metadata while personal-data setting was OFF.
 
@@ -121,10 +121,31 @@ Evidence:
 - RAW `live-runs/repaired-26/raw/NEW_10_RUN_1_FINANCE_DOCUMENT_B2B_SALES_PROVIDER_404_RAW_2026-09-03.json`
 - parsed `live-runs/NEW_10_RUN_1_FINANCE_DOCUMENT_B2B_SALES_PROVIDER_404_2026-09-03.md`
 
+## NEW-11 active chain
+
+### Run1 — create PASS clean
+- operation `finance_mutual_settlement_report`
+- date `2026-08`
+- request `57544b21-6d26-4ad3-80fa-fb4bed1b9a85`
+- HTTP200
+- physical requests `1`, logical results `1`
+- external request `true`
+- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
+- exact request preserved `true`
+- fingerprints `29860803 == 29860803`
+- transformed `false`
+- report code `REPORT_mutual_settlement_2093109_1788412383_01a065af-5079-78cb-a6b5-1110c3c9686a`.
+
+This is another clean counterexample narrowing DEFECT-002. No new defect is established by Run1.
+
+Evidence:
+- RAW `live-runs/repaired-26/raw/NEW_11_RUN_1_FINANCE_MUTUAL_SETTLEMENT_REPORT_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_11_RUN_1_FINANCE_MUTUAL_SETTLEMENT_REPORT_2026-09-03.md`
+
 ## Progress
 
 - Fully final-closed: `0/26`.
-- Standalone aliases exercised: `10/26`.
+- Standalone aliases exercised: `11/26`.
 - Collection-complete/partial/provider-fail rows: `10/26`.
 - Open numbered defects: `4`.
 - Batch coverage: `0/26`.
@@ -133,7 +154,10 @@ Evidence:
 
 ## Exact next collection step
 
-Start NEW-11 `finance_mutual_settlement_report` with a completed month. Persist its provider result before any downstream report/document read. On provider 4xx/5xx/error do not automatically repeat the same business request. Do not patch runtime.
+Continue NEW-11 with explicit `report_info` for the independent NEW-11 report code:
+`REPORT_mutual_settlement_2093109_1788412383_01a065af-5079-78cb-a6b5-1110c3c9686a`.
+
+Persist the full provider result before any file/document read. Do not touch the frozen STD-10 code. Do not patch runtime.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_10_PROVIDER_404_COMPLETE_NEW_11_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_11_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
