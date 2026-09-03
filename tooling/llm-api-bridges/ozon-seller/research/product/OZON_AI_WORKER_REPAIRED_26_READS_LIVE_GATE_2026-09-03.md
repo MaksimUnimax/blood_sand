@@ -30,7 +30,7 @@ Do not touch:
 | 2 | NEW-02 | `report_returns_create_v2` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001; create metadata = DEFECT-002 | PENDING |
 | 3 | NEW-03 | `report_postings_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — lowercase fbo create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001; DEFECT-002/003 confirmed | PENDING |
 | 4 | NEW-04 | `report_discounted_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
-| 5 | NEW-05 | `report_warehouse_stock` | IN_PROGRESS — setup warehouse PASS + create PASS clean metadata; report_info NEXT | PENDING |
+| 5 | NEW-05 | `report_warehouse_stock` | IN_PROGRESS — setup warehouse PASS + create PASS + report_info PASS; file read NEXT | PENDING |
 | 6 | NEW-06 | `report_placement_by_products_create` | PARTIAL_EXTERNAL_EVIDENCE — frozen STD-10 create cannot be reused | PENDING |
 | 7 | NEW-07 | `report_placement_by_supplies_create` | PENDING | PENDING |
 | 8 | NEW-08 | `report_marked_products_sales_create` | PENDING | PENDING |
@@ -55,8 +55,8 @@ Do not touch:
 
 ## Defects collected
 
-- DEFECT-001: static privacy block on safe `report_file_get`, confirmed on 4 report types.
-- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03, but NEW-04/05 are clean counterexamples.
+- DEFECT-001: static privacy block on safe `report_file_get`, confirmed on 4 report types; NEW-05 `seller_stocks` file read is the next scope check.
+- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03, while NEW-04/05 create and NEW-05 report_info are clean counterexamples.
 - DEFECT-003: `report_postings_create.delivery_schema` uppercase/lowercase mismatch (`FBO` 400 vs `fbo` 200).
 
 Defect authority:
@@ -93,6 +93,31 @@ RAW:
 Parsed:
 `live-runs/NEW_05_RUN_1_REPORT_WAREHOUSE_STOCK_CREATE_2026-09-03.md`
 
+## NEW-05 Run2 — report_info PASS
+
+- request `f543d8bd-0f37-4f77-b7e2-21439f600870`
+- HTTP200
+- elapsed `1349 ms`
+- physical requests 1
+- external request true
+- status `success`
+- report type `seller_stocks`
+- provider file field `[REDACTED]`
+- opaque ref `rpf_304de093-ae1b-46f3-8be0-2a16793361b9`
+- logical fingerprint `83c2156b`
+- physical fingerprint `83c2156b`
+- transformed false
+- exact_request_preserved true
+- expires at `2026-09-03T04:18:03.956035Z`.
+
+Run2 introduces no new defect and does not reproduce DEFECT-002.
+
+RAW:
+`live-runs/repaired-26/raw/NEW_05_RUN_2_REPORT_INFO_RAW_2026-09-03.json`
+
+Parsed:
+`live-runs/NEW_05_RUN_2_REPORT_INFO_READY_OPAQUE_FILE_REF_2026-09-03.md`
+
 ## Progress
 
 - Fully final-closed: `0/26`.
@@ -101,13 +126,14 @@ Parsed:
 - Open numbered defects: `3`.
 - Batch coverage: `0/26`.
 - Runtime patching: **FORBIDDEN UNTIL COLLECTION COMPLETE**.
+- STD-10: frozen.
 
 ## Exact next collection step
 
-NEW-05: one explicit `report_info` for:
-`REPORT_seller_stocks_2093109_1788407283_01a06561-80f3-78d2-9c6a-3c829871385f`
+NEW-05 `report_file_get` for:
+`rpf_304de093-ae1b-46f3-8be0-2a16793361b9`
 
-If ready, later attempt `report_file_get` and record whether DEFECT-001 extends to `seller_stocks`. Do not patch during collection.
+Record whether DEFECT-001 extends to the `seller_stocks` report class. Do not patch during collection. After persisting that result, advance to NEW-06 using a separate generic report chain; never touch the frozen STD-10 report code.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_05_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_05_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
