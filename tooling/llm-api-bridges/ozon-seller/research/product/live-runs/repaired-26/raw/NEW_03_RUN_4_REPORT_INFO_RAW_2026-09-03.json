@@ -1,0 +1,81 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "capability_probe": {
+    "performed": false,
+    "status": "not_needed",
+    "subscription_type": "UNKNOWN",
+    "http_status": 0,
+    "error_code": null
+  },
+  "query_planner": {
+    "status": "complete",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
+  },
+  "result": {
+    "bridge": "ozon-llm-api-bridge",
+    "version": "0.1.19",
+    "request_id": "72342313-8c33-4e39-a047-56c01716cf28",
+    "operation": "report_info",
+    "command": {
+      "operation": "report_info",
+      "fingerprint": "9e13284f"
+    },
+    "request_meta": {
+      "provider": "ozon",
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "path_alias": "report_info",
+      "external_request_executed": true,
+      "capability_probe_executed": false,
+      "capability_probe_http_status": 0
+    },
+    "http_status": 200,
+    "elapsed_ms": 1488,
+    "pagination": null,
+    "rate_limit": null,
+    "planning": {
+      "capability": {
+        "is_premium": null,
+        "probe_error_code": null,
+        "probe_http_status": 0,
+        "probe_performed": false,
+        "status": "not_needed",
+        "subscription_type": "UNKNOWN"
+      },
+      "entitlement": {
+        "capability_required": false,
+        "entitlement_key": "POST /v1/report/info",
+        "exact_request_preserved": true,
+        "partial": false,
+        "reason": "all_accounts",
+        "rule_source": "reviewed-openapi-463-2026-08-19",
+        "status": "SUPPORTED_AND_ENTITLED"
+      },
+      "execution": {
+        "logical_command_fingerprint": "9e13284f",
+        "physical_command_fingerprint": "9e13284f",
+        "command_transformed": false
+      }
+    },
+    "result": {
+      "result": {
+        "code": "REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c",
+        "status": "success",
+        "error": "",
+        "file": "[REDACTED]",
+        "report_type": "seller_postings",
+        "params": {},
+        "created_at": "2026-09-03T03:29:51.387332Z",
+        "expires_at": "2026-09-10T03:29:51.387332Z",
+        "additional_data": []
+      },
+      "report_file_ref": "rpf_4619d324-8228-4c8e-b8be-c4c1ea05b92c"
+    }
+  }
+}
