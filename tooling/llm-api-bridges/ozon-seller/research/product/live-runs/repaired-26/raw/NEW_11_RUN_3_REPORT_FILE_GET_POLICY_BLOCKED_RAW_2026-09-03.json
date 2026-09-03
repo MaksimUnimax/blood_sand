@@ -1,0 +1,52 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "capability_probe": {
+    "performed": false,
+    "status": "not_resolved",
+    "subscription_type": null,
+    "http_status": 0,
+    "error_code": null
+  },
+  "query_planner": {
+    "status": "pending",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 0,
+    "physical_business_request_count": 0
+  },
+  "result": {
+    "request_id": "policy-58d43bb1-6126-4e4c-9178-7609dc7e858d",
+    "operation": "report_file_get",
+    "command_fingerprint": "36df3b67",
+    "provider": "ozon",
+    "host_alias": "report_file",
+    "http_method": "GET",
+    "path_alias": "report_file_get",
+    "external_request_executed": false,
+    "http_status": 0,
+    "elapsed_ms": 0,
+    "entitlement": {
+      "status": "POLICY_BLOCKED",
+      "partial": false,
+      "reason": "personal_data_setting_off"
+    },
+    "status": "personal_data_setting_required",
+    "error": {
+      "source": "bridge",
+      "category": "bridge_error",
+      "http_status": 0,
+      "code": "OPERATION_DISABLED_BY_USER",
+      "automatic_retry": false,
+      "external_request_executed": false,
+      "stage": "personal_data_policy"
+    },
+    "operator_action": "enable_personal_data_setting_and_submit_new_command"
+  },
+  "source_report": {
+    "report_type": "mutual_settlement",
+    "report_file_ref": "rpf_18eb749e-08df-4b99-8107-f4dcbf0a2529"
+  }
+}
