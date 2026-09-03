@@ -52,25 +52,34 @@ Run2 materially different non-empty states setup:
 - fingerprints `bc9210cd == bc9210cd`
 - transformed false
 - returned 100 real order IDs
-- first order id `125820894`
-- last returned order id `57848502`
-- provider `last_id` present.
+- first order id `125820894`.
 
-The A/B confirms DEFECT-005 and proves the endpoint is otherwise usable.
+Run3 explicit `supply_order_get` using that real order id:
+- request `0d3a6203-fc53-4707-b72b-329ce10ce928`
+- HTTP200
+- physical1, logical1, external true
+- exact request preserved true
+- fingerprints `f41eda95 == f41eda95`
+- transformed false
+- order id `125820894`
+- order state `DATA_FILLING`
+- real provider-returned integer supply id `2000064871008`
+- supply state `DATA_FILLING`
+- address redacted correctly.
 
-Evidence Run2:
-- RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_2026-09-03.md`
+Evidence Run3:
+- RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_3_SUPPLY_ORDER_GET_REAL_SUPPLY_ID_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_14_SETUP_RUN_3_SUPPLY_ORDER_GET_REAL_SUPPLY_ID_2026-09-03.md`
 
 ## Exact next action
 
-Issue one explicit safe provider read using the first returned real order id:
+Run standalone NEW-14 with this exact real supply id only:
 
-`OZON_API_V1 {"operation":"supply_order_get","params":{"order_ids":[125820894]}}`
+`OZON_API_V1 {"operation":"cargoes_label_create","params":{"supply_id":2000064871008}}`
 
-Persist its result before any further Ozon command. Extract only a real provider-returned `supply_id` for NEW-14 `cargoes_label_create`; never invent IDs.
+Persist its result before any downstream status/document read or before advancing to NEW-15. Do not invent identifiers. Provider rejection due to business state, if any, is evidence and must not trigger an automatic retry.
 
 Do not touch frozen STD-10. Do not patch runtime.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_14_SETUP_NONEMPTY_STATES_PASS_ORDER_125820894_SUPPLY_ORDER_GET_NEXT_DEFECTS_001_002_003_004_005_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_14_SETUP_COMPLETE_REAL_SUPPLY_2000064871008_CARGOES_LABEL_CREATE_NEXT_DEFECTS_001_002_003_004_005_OPEN_STD_10_FROZEN`
