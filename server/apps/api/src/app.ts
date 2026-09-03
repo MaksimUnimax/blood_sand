@@ -36,7 +36,7 @@ export class ControlledError extends Error {
 
 export interface ApiDependencies {
   readonly config: AppConfig;
-  readonly isInfrastructureReady?: () => Promise<boolean>;
+  readonly isInfrastructureReady: () => Promise<boolean>;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -126,8 +126,7 @@ export function createApiApp(
         },
       },
       async (request, reply) => {
-        const ready = await (dependencies.isInfrastructureReady?.() ??
-          Promise.resolve(true));
+        const ready = await dependencies.isInfrastructureReady();
         if (ready) return reply.status(200).send({ status: "ready" });
         return reply.status(503).send(
           ApiErrorEnvelopeV1Schema.parse({

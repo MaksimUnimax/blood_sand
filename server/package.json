@@ -20,7 +20,7 @@
     "bridge:guard": "node scripts/check-bridge-boundary.mjs",
     "openapi:generate": "pnpm --filter @product/api openapi:generate",
     "openapi:check": "pnpm --filter @product/api openapi:check",
-    "format:check": "prettier --check package.json apps/api/package.json apps/api/src/app.ts apps/api/src/openapi.ts apps/api/src/openapi.test.ts packages/contracts/src/index.ts"
+    "format:check": "prettier --check \"{apps,packages,scripts,infra,integration}/**/*.{ts,tsx,js,mjs,cjs,json,css,scss,yml,yaml}\" package.json pnpm-workspace.yaml tsconfig.base.json eslint.config.mjs vitest.integration.config.ts ../.github/workflows/server-ci.yml"
   },
   "devDependencies": {
     "@eslint/js": "9.35.0",

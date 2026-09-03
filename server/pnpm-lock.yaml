@@ -57,6 +57,9 @@ importers:
       '@product/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@product/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@product/observability':
         specifier: workspace:*
         version: link:../../packages/observability

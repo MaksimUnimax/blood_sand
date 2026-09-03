@@ -1,5 +1,11 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
-export default function PortalLayout({ children }: Readonly<{ children: ReactNode }>) {
-  return <html lang="en"><body>{children}</body></html>;
+export default function PortalLayout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
 }

@@ -1,4 +1,4 @@
-import type { DatabaseRuntime } from '@product/db';
+import type { DatabaseRuntime } from "@product/db";
 
 export interface JobRunner {
   start(): Promise<void>;
@@ -16,7 +16,7 @@ export interface WorkerRuntime {
 export async function startWorker(
   database: DatabaseRuntime,
   runner: JobRunner,
-  logger: WorkerLogger
+  logger: WorkerLogger,
 ): Promise<WorkerRuntime> {
   let runnerStartAttempted = false;
 
@@ -40,18 +40,18 @@ export async function startWorker(
     throw error;
   }
 
-  logger.info({ state: 'ready' }, 'Worker ready');
+  logger.info({ state: "ready" }, "Worker ready");
   let closing = false;
   return {
     async shutdown(signal: string): Promise<void> {
       if (closing) return;
       closing = true;
-      logger.info({ signal }, 'Worker shutdown requested');
+      logger.info({ signal }, "Worker shutdown requested");
       try {
         await runner.stop();
       } finally {
         await database.close();
       }
-    }
+    },
   };
 }
