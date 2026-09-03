@@ -51,7 +51,8 @@ Confirmed transformed create paths:
 Clean counterexamples narrow the scope:
 - NEW-04 `report_discounted_create`: `02e64eda == 02e64eda`, transformed false, HTTP200.
 - NEW-05 `report_warehouse_stock`: `f8e4cdac == f8e4cdac`, transformed false, HTTP200.
-- `report_info` steps tested so far also preserve identical fingerprints.
+- NEW-06 `report_placement_by_products_create`: `85e4f38a == 85e4f38a`, transformed false, HTTP200.
+- tested `report_info` steps so far also preserve identical fingerprints.
 
 Therefore DEFECT-002 is not universal; continue scope collection through remaining repaired create paths and later batch tests.
 
