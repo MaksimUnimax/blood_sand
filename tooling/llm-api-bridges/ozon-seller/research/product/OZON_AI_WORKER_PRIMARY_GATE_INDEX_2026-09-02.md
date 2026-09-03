@@ -2,7 +2,7 @@
 
 Updated: 2026-09-03
 Branch: `research/ozon-product-demand-2026-09-02`
-Status: AUTHORITATIVE GATE-SIZE / LEDGER INDEX
+Status: AUTHORITATIVE GATE-SIZE / LEDGER INDEX — PRODUCT GATE FROZEN
 
 ## Gate policy
 
@@ -12,115 +12,88 @@ Primary gate expands only for materially distinct commercial capabilities or mea
 
 `EXPAND_GATE_FOR_DISTINCT_COMMERCIAL_CAPABILITY_NOT_FOR_TEST_COUNT`
 
-Do not add cosmetic date/sort/top-N variants merely to increase test count.
-
-Every promoted test must:
-- have a concrete commercial/product-logic reason;
-- be persisted before execution;
-- preserve `NO_SKIP_ON_FAILURE`;
-- persist every meaningful run/result;
-- record capability, entitlement, recovery and coverage gaps.
+Every promoted test must preserve `NO_SKIP_ON_FAILURE`, persist meaningful runs/results, and record capability/entitlement/recovery/coverage gaps.
 
 ## Current primary gate
 
 Current baseline size: **43 rows**.
 
 - Rows 1–20: `STD-01` … `STD-20`.
-- Rows 21–40: `CAP-01` … `CAP-20`.
-- Row 41: `CAP-21` own-card SEO / semantic core.
-- Row 42: `CAP-22` competitor SEO / positioning benchmark.
-- Row 43: `CAP-23` category/search position & coverage boundary.
-
-The gate remains evidence-driven and expandable if later live testing identifies another materially distinct commercial capability.
-
-## Result ledgers
+- Rows 21–43: `CAP-01` … `CAP-23`.
 
 Authoritative live-result master:
 `OZON_AI_WORKER_PRIMARY_GATE_LIVE_RESULTS_TABLE_2026-09-02.md`
 
-Historical rows 1–40:
-`OZON_AI_WORKER_40_TEST_LIVE_RESULTS_TABLE_2026-09-02.md`
-
 Detailed run evidence:
 `research/product/live-runs/`
 
-Historical filenames containing `40_TEST` are retained for traceability only. They do not define the current gate size or current execution state.
+## Operator freeze after STD-10 Run11
 
-## Current Layer-A execution state
+The entire product-demand primary gate is frozen after STD-10 Run11.
 
-| Row | ID | State | Current note |
-|---:|---|---|---|
-| 1 | STD-01 | PASS | 27,200 RUB / 16 ordered units; transient 429 recovered. |
-| 2 | STD-02 | PASS | 14-day sales completed. |
-| 3 | STD-03 | PASS | Top-20 by revenue completed. |
-| 4 | STD-04 | PASS | Day-over-day comparison completed. |
-| 5 | STD-05 | PASS_WITH_LIMITS | Strongest explanation normal demand/day-of-week variance; freshness limitation recorded. |
-| 6 | STD-06 | PASS | Stale `IN_TRANSIT` supply `122149074` is first operational priority. |
-| 7 | STD-07 | PASS | Main inventory action is FBO allocation, not broad procurement. |
-| 8 | STD-08 | PASS | 247 FBO warehouse rows / 33 warehouses; pagination-guidance gap recorded. |
-| 9 | STD-09 | PASS | FBO+FBS exact reconciliation = 16 units / 27,200 RUB. |
-| 10 | STD-10 | REOPENED_IN_PROGRESS | August placement report accepted by Ozon; concrete report code returned; `report_info` is next. |
-| 11 | STD-11 | PASS | Apparent FBO disappearance explained by active-order reservation. |
-| 12 | STD-12 | READY_PAUSED | Prepared; execution remains paused until STD-10 closes. |
-| 13 | STD-13 | PENDING | — |
-| 14 | STD-14 | PENDING | — |
-| 15 | STD-15 | PENDING | — |
-| 16 | STD-16 | PENDING | — |
-| 17 | STD-17 | PENDING | — |
-| 18 | STD-18 | PENDING | — |
-| 19 | STD-19 | PENDING | — |
-| 20 | STD-20 | PENDING | — |
+Frozen point:
 
-## Capability-layer state
+- `report_placement_by_products_create` live request succeeded;
+- Ozon returned HTTP200;
+- preserved report code:
+  `REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`;
+- `report_info` was **not** executed after the operator freeze.
 
-`CAP-01` … `CAP-23`: **PENDING**.
+Freeze authority:
+`live-runs/STD_10_FROZEN_AFTER_RUN11_PENDING_26_NEW_READS_LIVE_GATE_2026-09-03.md`
 
-Capability authority:
-`OZON_AI_WORKER_CAPABILITY_AWARENESS_LAYER_20_TESTS_2026-09-02.md`
-
-SEO / competitive-position authority:
-`OZON_AI_WORKER_SEO_COMPETITIVE_POSITION_CAPABILITY_REQUIREMENT_2026-09-02.md`
-
-## STD-10 current authority
-
-STD-10 is **not completed**. Any older index text that described STD-10 as completed after its original four-run pass is superseded.
-
-Current forensic authority:
+Forensic authority:
 `live-runs/STD_10_REOPENED_HISTORICAL_STOCK_DAMAGE_RECONSTRUCTION_2026-09-02.md`
 
-Certified READ-repair/browser-package evidence:
-`live-runs/STD_10_READ_REPAIR_BROWSER_PACKAGE_CERTIFIED_2026-09-03.md`
+## Layer-A state while frozen
 
-Latest live evidence:
-`live-runs/STD_10_REOPENED_RUN_11_PLACEMENT_BY_PRODUCTS_REPORT_CREATED_2026-09-03.md`
+| Row | ID | State |
+|---:|---|---|
+| 1 | STD-01 | PASS |
+| 2 | STD-02 | PASS |
+| 3 | STD-03 | PASS |
+| 4 | STD-04 | PASS |
+| 5 | STD-05 | PASS_WITH_LIMITS |
+| 6 | STD-06 | PASS |
+| 7 | STD-07 | PASS |
+| 8 | STD-08 | PASS |
+| 9 | STD-09 | PASS |
+| 10 | STD-10 | REOPENED_FROZEN_AFTER_RUN11 |
+| 11 | STD-11 | PASS |
+| 12 | STD-12 | FROZEN |
+| 13 | STD-13 | FROZEN |
+| 14 | STD-14 | FROZEN |
+| 15 | STD-15 | FROZEN |
+| 16 | STD-16 | FROZEN |
+| 17 | STD-17 | FROZEN |
+| 18 | STD-18 | FROZEN |
+| 19 | STD-19 | FROZEN |
+| 20 | STD-20 | FROZEN |
 
-Current proven evidence includes:
+`CAP-01` … `CAP-23`: **FROZEN/PENDING** until the repaired-26 live gate closes.
 
-- exact incident warehouse `САМАРА_РФЦ`, warehouse id `23128509046000`;
-- seller FBO flow through that warehouse immediately before the incident;
-- current sampled exposed-SKU Samara zero;
-- no finance transactions classified `compensation` in the tested post-incident window;
-- no formal Samara removal/utilization rows in the complete accessible removal report;
-- Runs7–9: no Samara FBO postings across the tested post-incident windows;
-- Run10: `report_list` returned `reports=[]`, `total=0`;
-- READ re-audit found and repaired the false-negative report/document/validation classification;
-- repaired runtime certified at 271 Seller READ aliases / 26 exact repaired schemas / 26-of-26 repaired workflows E2E;
-- deterministic browser extension package certified on Ubuntu and Windows;
-- Run11: live `report_placement_by_products_create` for `2026-08-01..2026-08-31` reached Ozon with one physical business request and HTTP200;
-- Run11 report code: `REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`.
+## Active priority gate
 
-Run11 proves report acceptance only. It does not yet expose historical placement rows and therefore does not prove any burned/lost quantity.
+`OZON_AI_WORKER_REPAIRED_26_READS_LIVE_GATE_2026-09-03.md`
 
-## Exact next STD-10 evidence path
+Purpose: fully live-test all 26 repaired Seller READ commands/workflows before returning to STD-10 or any other primary-gate row.
 
-Execute exactly one explicit `report_info` read for:
+Current live progress:
 
-`REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`
+- fully closed: **0 / 26**;
+- `NEW-06 report_placement_by_products_create`: partial external evidence exists from STD-10 Run11, but the forensic report code is frozen and cannot be consumed by this gate;
+- next gate item: `NEW-01 report_products_create`.
 
-If the report is ready and an opaque `report_file_ref` is returned, the following operator step will be one explicit `report_file_get`. If the report is still processing, persist that state and do not skip ahead.
+For reports and async generated documents, a create acknowledgement alone is not enough. The workflow must be taken to its strongest GPT-usable result through explicit reads, without hidden polling.
 
-Do not infer historical stock, fire causality or burned/lost units from the create acknowledgement alone.
+## Resume rule
+
+Do not resume STD-10 until the repaired-26 live gate is fully complete.
+
+When it is complete, the first resumed STD-10 command remains exactly one `report_info` request for the preserved Run11 code.
+
+Do not resume STD-12, later STD rows, capability rows, or the multi-AI workstream before that point.
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_STD_10_REOPENED_RUN11_PLACEMENT_REPORT_CREATED_REPORT_INFO_NEXT_STD_12_PAUSED`
+`PRIMARY_GATE_43_FROZEN_AFTER_STD10_RUN11_REPAIRED_26_READS_LIVE_GATE_ACTIVE_0_OF_26_NEW01_NEXT`
