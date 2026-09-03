@@ -1,12 +1,21 @@
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
-export interface DatabaseConnection {
+export interface DatabaseRuntime {
   db: NodePgDatabase;
+  ready(): Promise<void>;
   close(): Promise<void>;
 }
 
-export function createDatabaseConnection(connectionString: string): DatabaseConnection {
+export function createDatabaseRuntime(connectionString: string): DatabaseRuntime {
   const pool = new Pool({ connectionString });
-  return { db: drizzle({ client: pool }), close: () => pool.end() };
+  return {
+    db: drizzle({ client: pool }),
+    ready: async () => {
+      await pool.query('SELECT 1');
+    },
+    close: () => pool.end()
+  };
 }
+
+export const createDatabaseConnection = createDatabaseRuntime;

@@ -1,0 +1,46 @@
+import { describe, expect, it, vi } from 'vitest';
+import { migrationsFolder, runMigrations } from './migrations.js';
+import type { DatabaseRuntime } from './index.js';
+
+function createRuntime(close = vi.fn<() => Promise<void>>().mockResolvedValue(undefined)): DatabaseRuntime {
+  return { db: {} as DatabaseRuntime['db'], ready: vi.fn(), close };
+}
+
+describe('runMigrations', () => {
+  it('uses the supplied Drizzle migrator with the deterministic migration directory and closes on success', async () => {
+    const close = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    const runtime = createRuntime(close);
+    const migrator = vi.fn().mockResolvedValue(undefined);
+
+    await runMigrations({ connectionString: 'postgres://example.invalid/test', createRuntime: () => runtime, migrator });
+
+    expect(migrator).toHaveBeenCalledWith(runtime.db, { migrationsFolder });
+    expect(close).toHaveBeenCalledOnce();
+    expect(migrationsFolder).toMatch(/packages\/db\/drizzle$/);
+  });
+
+  it('closes resources and propagates migration failures', async () => {
+    const close = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    const runtime = createRuntime(close);
+    const failure = new Error('migration failed');
+
+    await expect(runMigrations({
+      connectionString: 'postgres://example.invalid/test',
+      createRuntime: () => runtime,
+      migrator: vi.fn().mockRejectedValue(failure)
+    })).rejects.toThrow(failure);
+
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it('preserves a migration failure when resource cleanup also fails', async () => {
+    const runtime = createRuntime(vi.fn<() => Promise<void>>().mockRejectedValue(new Error('close failed')));
+    const failure = new Error('migration failed');
+
+    await expect(runMigrations({
+      connectionString: 'postgres://example.invalid/test',
+      createRuntime: () => runtime,
+      migrator: vi.fn().mockRejectedValue(failure)
+    })).rejects.toThrow(failure);
+  });
+});
