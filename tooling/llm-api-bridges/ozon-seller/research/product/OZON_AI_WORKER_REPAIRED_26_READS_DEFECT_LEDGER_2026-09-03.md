@@ -26,9 +26,9 @@ Do not patch yet. Continue determining scope across remaining report/document cl
 
 Status: `OPEN_CANDIDATE_COLLECTING_SCOPE`
 
-### NEW-02 Run1
+Confirmed on repaired create aliases:
 
-`report_returns_create_v2`:
+### NEW-02 Run1 — report_returns_create_v2
 
 - logical fingerprint `687fa368`;
 - physical fingerprint `d1fbfbfe`;
@@ -36,9 +36,7 @@ Status: `OPEN_CANDIDATE_COLLECTING_SCOPE`
 - entitlement metadata `exact_request_preserved=true`;
 - provider HTTP 200.
 
-### NEW-03 Run1 reproduction
-
-`report_postings_create`:
+### NEW-03 Run1 — report_postings_create
 
 - logical fingerprint `ec963df4`;
 - physical fingerprint `6274fae0`;
@@ -46,13 +44,35 @@ Status: `OPEN_CANDIDATE_COLLECTING_SCOPE`
 - entitlement metadata `exact_request_preserved=true`;
 - provider HTTP 400.
 
-This expands the anomaly from NEW-02 to at least two repaired create aliases. The NEW-03 HTTP400 itself is **not yet a separate Bridge defect**: the logical payload passed the exact runtime schema, but the test used `processed_at_to=2026-09-03T23:59:59Z`, which was still in the future at execution time. A new diagnostic request with a wholly past window is required before classifying the provider rejection.
+### NEW-03 Run2 — report_postings_create, wholly past window
 
-Runtime contract confirms `report_postings_create.filter.delivery_schema` is an array of strings and both processed timestamps are `date-time`, so the logical payload shape was accepted by Bridge validation.
+- logical fingerprint `34d187a7`;
+- physical fingerprint `a2721547`;
+- `command_transformed=true`;
+- entitlement metadata `exact_request_preserved=true`;
+- provider HTTP 400.
+
+The metadata inconsistency therefore reproduces independently across NEW-02 and two distinct NEW-03 payloads. Do not patch until batch and remaining create aliases establish full scope.
+
+## NEW-03 provider HTTP400 investigation — not yet numbered as a Bridge defect
+
+NEW-03 Run1 returned HTTP400 with a future end boundary. Run2 changed the business payload to a fully past range (`2026-09-01T00:00:00Z` through `2026-09-02T23:59:59Z`) and still returned HTTP400, so the future-boundary hypothesis is rejected.
+
+The exact runtime schema accepts:
+
+- required `filter.processed_at_from` as date-time;
+- required `filter.processed_at_to` as date-time;
+- required `filter.delivery_schema` as an array of strings.
+
+Bridge validation accepted both requests and each reached Ozon exactly once. Public examples for `/v1/report/postings/create` use lowercase delivery-schema values such as `fbs`, while the tested payload used uppercase `FBO`. The next diagnostic changes only this semantic value to lowercase `fbo` with the same fully past range.
+
+If lowercase succeeds, promote a new Bridge contract/template/guidance defect: the runtime schema/template permits or suggests a provider-invalid uppercase delivery-schema value. If lowercase still fails, continue diagnosis without patching.
 
 Evidence:
 
-- RAW: `live-runs/repaired-26/raw/NEW_03_RUN_1_REPORT_POSTINGS_CREATE_HTTP400_RAW_2026-09-03.json`
-- parsed: `live-runs/NEW_03_RUN_1_REPORT_POSTINGS_CREATE_HTTP400_2026-09-03.md`
+- Run1 RAW: `live-runs/repaired-26/raw/NEW_03_RUN_1_REPORT_POSTINGS_CREATE_HTTP400_RAW_2026-09-03.json`
+- Run1 parsed: `live-runs/NEW_03_RUN_1_REPORT_POSTINGS_CREATE_HTTP400_2026-09-03.md`
+- Run2 RAW: `live-runs/repaired-26/raw/NEW_03_RUN_2_REPORT_POSTINGS_CREATE_HTTP400_PAST_WINDOW_RAW_2026-09-03.json`
+- Run2 parsed: `live-runs/NEW_03_RUN_2_REPORT_POSTINGS_CREATE_HTTP400_PAST_WINDOW_2026-09-03.md`
 
-Do not patch until collection sweep completes.
+No runtime patch until collection sweep completes.
