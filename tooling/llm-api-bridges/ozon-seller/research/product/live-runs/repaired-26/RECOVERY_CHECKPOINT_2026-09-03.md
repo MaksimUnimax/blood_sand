@@ -1,49 +1,55 @@
 # Repaired 26 READ live gate — recovery checkpoint
 
 Date: 2026-09-03
-Status: `ACTIVE_COLLECT_ALL_DEFECTS_FIRST`
+Status: `ACTIVE_COLLECT_ALL_DEFECTS_BEFORE_PATCHING`
 Branch: `research/ozon-product-demand-2026-09-02`
 
-## Rules
+## Governing mode
 
-- Test everything first; patch only after the complete standalone + batch sweep.
-- Persist every RAW result and parsed evidence before advancing.
-- STD-10 remains frozen.
-- Fully closed: `0/26`.
-- Standalone NEW-IDs exercised: `2/26`.
-- Batch coverage: `0/26`.
+`COLLECT_ALL_DEFECTS_FIRST_THEN_PATCH`
 
-## Open defects
+Do not patch runtime until standalone + required batch sweep is exhausted. Every result must be persisted before the next command.
 
-- `DEFECT-001`: NEW-01 `report_file_get` blocked by personal-data policy for a safe seller-products report. Unpatched.
-- `DEFECT-002`: NEW-02 returned `command_transformed=true` with differing logical/physical fingerprints while also reporting `exact_request_preserved=true`. Unpatched candidate.
+## Frozen STD-10
 
-Defect authority:
-`research/product/OZON_AI_WORKER_REPAIRED_26_READS_LIVE_DEFECT_LEDGER_2026-09-03.md`
+Do not touch:
+`REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-6ac5e04697cb`
 
-## NEW-01
+## Current global progress
 
-Standalone partial: create PASS, report_info PASS, file read policy-blocked. Batch pending.
+- Fully final-closed: `0/26`
+- Standalone aliases exercised: `2/26`
+- Batch coverage: `0/26`
+- Open defects/candidates: `2`
 
-## NEW-02
+## DEFECT-001
 
-Create PASS.
+NEW-01 safe seller-products report file read was locally `POLICY_BLOCKED / personal_data_setting_off` with physical requests `0`. Generic report-file helper appears overbroadly privacy-gated. Do not patch yet.
 
-Request id:
-`8b963833-eb57-4fe8-9b34-ff609ddf735c`
+## DEFECT-002 candidate
 
-Report code:
-`REPORT_seller_returns_v2_2093109_1788405276_01a06542-ddb2-7a28-85ac-cd9447fa91a6`
+NEW-02 create had logical fingerprint `687fa368`, physical fingerprint `d1fbfbfe`, `command_transformed=true`, while entitlement metadata says `exact_request_preserved=true`. NEW-02 report_info did not reproduce this anomaly.
 
-RAW:
-`live-runs/repaired-26/raw/NEW_02_RUN_1_REPORT_RETURNS_CREATE_RAW_2026-09-03.json`
+## NEW-02 state
 
-Parsed:
-`live-runs/NEW_02_RUN_1_REPORT_RETURNS_CREATE_2026-09-03.md`
+Create PASS:
+- request `8b963833-eb57-4fe8-9b34-ff609ddf735c`
+- code `REPORT_seller_returns_v2_2093109_1788405276_01a06542-ddb2-7a28-85ac-cd9447fa91a6`
 
-## Exact resume point
+Report-info PASS:
+- request `fe38e833-2029-4f41-8f57-49ad5a258499`
+- status `success`
+- opaque ref `rpf_c5978670-1bbe-47f5-9838-e843614a2514`
+- report type `seller_returns_v2`
+- logical/physical fingerprint `2d41fb57`
+- transformed `false`
 
-Next command is one explicit `report_info` for the NEW-02 report code above.
+## Exact next command
 
-Checkpoint:
-`COLLECT_ALL_DEFECTS_NEW_02_CREATE_PASS_REPORT_INFO_NEXT_STD_10_FROZEN`
+`report_file_get` for:
+`rpf_c5978670-1bbe-47f5-9838-e843614a2514`
+
+If privacy block reproduces, persist it as another DEFECT-001 reproduction and then advance to NEW-03 without patching.
+
+Checkpoint marker:
+`COLLECT_ALL_DEFECTS_NEW_02_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_OPEN_STD_10_FROZEN`
