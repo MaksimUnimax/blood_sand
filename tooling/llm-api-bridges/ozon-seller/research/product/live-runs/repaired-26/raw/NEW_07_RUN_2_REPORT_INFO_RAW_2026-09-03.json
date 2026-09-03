@@ -1,0 +1,83 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "capability_probe": {
+    "performed": false,
+    "status": "not_needed",
+    "subscription_type": "UNKNOWN",
+    "http_status": 0,
+    "error_code": null
+  },
+  "query_planner": {
+    "status": "complete",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
+  },
+  "results": [
+    {
+      "bridge": "ozon-llm-api-bridge",
+      "version": "0.1.19",
+      "request_id": "c8c54b96-4560-4194-bf70-c85ac449689c",
+      "operation": "report_info",
+      "command": {
+        "operation": "report_info",
+        "fingerprint": "08962c14"
+      },
+      "request_meta": {
+        "provider": "ozon",
+        "host_alias": "seller_api",
+        "http_method": "POST",
+        "path_alias": "report_info",
+        "external_request_executed": true,
+        "capability_probe_executed": false,
+        "capability_probe_http_status": 0
+      },
+      "http_status": 200,
+      "elapsed_ms": 1334,
+      "pagination": null,
+      "rate_limit": null,
+      "planning": {
+        "capability": {
+          "is_premium": null,
+          "probe_error_code": null,
+          "probe_http_status": 0,
+          "probe_performed": false,
+          "status": "not_needed",
+          "subscription_type": "UNKNOWN"
+        },
+        "entitlement": {
+          "capability_required": false,
+          "entitlement_key": "POST /v1/report/info",
+          "exact_request_preserved": true,
+          "partial": false,
+          "reason": "all_accounts",
+          "rule_source": "reviewed-openapi-463-2026-08-19",
+          "status": "SUPPORTED_AND_ENTITLED"
+        },
+        "execution": {
+          "logical_command_fingerprint": "08962c14",
+          "physical_command_fingerprint": "08962c14",
+          "command_transformed": false
+        }
+      },
+      "result": {
+        "result": {
+          "code": "REPORT_seller_placement_by_supplies_2093109_1788408279_01a06570-b345-7114-9532-c1476a0c61e2",
+          "status": "success",
+          "error": "",
+          "file": "[REDACTED]",
+          "report_type": "seller_placement_by_supplies",
+          "params": {},
+          "created_at": "2026-09-03T04:04:39.877709Z",
+          "expires_at": "2026-09-03T07:04:39.877709Z",
+          "additional_data": []
+        },
+        "report_file_ref": "rpf_49f4be70-84e2-40b7-8224-6a58e409cf29"
+      }
+    }
+  ]
+}
