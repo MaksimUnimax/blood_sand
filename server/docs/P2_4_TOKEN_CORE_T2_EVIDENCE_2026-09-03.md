@@ -1,6 +1,6 @@
 # P2.4 Token Core T2 Evidence — 2026-09-03
 
-Status: LOCAL CANDIDATE — P2.4 ACTIVE.
+Status: ACCEPTED — P2.4 DONE.
 
 An initial local token-core candidate was later found incomplete during final API
 closeout: it derived the Ed25519 access signing key from `AUTH_ROOT_SECRET_B64`
@@ -21,3 +21,6 @@ attempts per 15 minutes; only an HMAC pseudonym is persisted.
 
 Migration `0004_p2_4_token_core.sql` remains limited to refresh rotation
 metadata. No P2.5 scope is included.
+
+Implementation commit: `0616cbcf007c1f36ddd08d7801dfcc8f1a5848d6`.
+GitHub Server CI push run: `33755515868` — success.
