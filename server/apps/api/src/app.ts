@@ -40,6 +40,8 @@ import {
   type ExtensionAuthRepository,
 } from "@product/extension-auth";
 import { registerRefreshRoutes } from "./refresh-routes.js";
+import type { DeviceManagementService } from "@product/device-management";
+import { registerDeviceManagementRoutes } from "./device-management-routes.js";
 
 export class ControlledError extends Error {
   public constructor(
@@ -57,6 +59,7 @@ export interface ApiDependencies {
   readonly authService?: AuthServiceType;
   readonly deviceAuthorizationService?: DeviceAuthorizationService;
   readonly extensionAuthService?: ExtensionAuthService;
+  readonly deviceManagementService?: DeviceManagementService;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -187,6 +190,13 @@ export function createApiApp(
         dependencies.authService ??
           new AuthService(unavailable, deriveAuthKeys(Buffer.alloc(32))),
         dependencies.deviceAuthorizationService,
+      );
+    if (dependencies.deviceManagementService)
+      registerDeviceManagementRoutes(
+        app,
+        dependencies.authService ??
+          new AuthService(unavailable, deriveAuthKeys(Buffer.alloc(32))),
+        dependencies.deviceManagementService,
       );
     const unavailableExtension: ExtensionAuthRepository = {
       consumeRefreshRate: async () => ({ allowed: false }),

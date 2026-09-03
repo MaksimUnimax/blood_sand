@@ -7,11 +7,13 @@ import {
   REFRESH_REPLAY_WINDOW_MS,
   REFRESH_TOKEN_TTL_MS,
   deriveExtensionAuthKeys,
+  deriveActivationRefreshToken,
   deriveReplacementRefreshToken,
   generateRefreshToken,
   issueAccessToken,
   loadAccessTokenSigningKey,
   refreshIdempotencyHash,
+  refreshRateKey,
   refreshTokenHash,
   validRefreshIdempotencyKey,
   verifyAccessToken,
@@ -122,6 +124,33 @@ describe("extension token core", () => {
         "A".repeat(16),
       ),
     ).not.toBe(one);
+  });
+
+  it("T1 derives a separated deterministic activation refresh credential", () => {
+    const code = generateRefreshToken(Buffer.alloc(32, 13));
+    const one = deriveActivationRefreshToken(keys, code, "A".repeat(16));
+    expect(one).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(deriveActivationRefreshToken(keys, code, "A".repeat(16))).toBe(one);
+    expect(deriveActivationRefreshToken(keys, code, "B".repeat(16))).not.toBe(
+      one,
+    );
+    expect(
+      deriveActivationRefreshToken(
+        keys,
+        generateRefreshToken(Buffer.alloc(32, 14)),
+        "A".repeat(16),
+      ),
+    ).not.toBe(one);
+    expect(one).not.toBe(
+      deriveReplacementRefreshToken(keys, code, "A".repeat(16)),
+    );
+    expect(refreshTokenHash(keys, one)).not.toContain(one);
+    expect(keys.activationRefresh.equals(keys.refreshHash)).toBe(false);
+    expect(keys.activationRefresh.equals(keys.refreshDerivation)).toBe(false);
+    expect(keys.activationRefresh.equals(keys.idempotency)).toBe(false);
+    expect(keys.activationRefresh.equals(keys.rateLimit)).toBe(false);
+    expect(refreshIdempotencyHash(keys, one)).not.toContain(one);
+    expect(refreshRateKey(keys, "203.0.113.9")).not.toContain("203.0.113.9");
   });
 
   it("T1 freezes 30-day sliding refresh and two-minute replay policy", () => {

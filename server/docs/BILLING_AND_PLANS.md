@@ -281,7 +281,7 @@ Policy can decide whether:
 
 `device.max_active` is an integer entitlement.
 
-On device approval:
+Approval is intent-only. At device exchange/activation, the capability-granting transaction atomically enforces the active-device limit:
 
 - resolve current account entitlement;
 - count active devices according to policy;

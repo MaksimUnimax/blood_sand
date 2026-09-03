@@ -69,6 +69,9 @@ importers:
       '@product/device-auth':
         specifier: workspace:*
         version: link:../../packages/device-auth
+      '@product/device-management':
+        specifier: workspace:*
+        version: link:../../packages/device-management
       '@product/extension-auth':
         specifier: workspace:*
         version: link:../../packages/extension-auth
@@ -175,6 +178,9 @@ importers:
       '@product/device-auth':
         specifier: workspace:*
         version: link:../device-auth
+      '@product/device-management':
+        specifier: workspace:*
+        version: link:../device-management
       '@product/extension-auth':
         specifier: workspace:*
         version: link:../extension-auth
@@ -200,6 +206,18 @@ importers:
 
   packages/device-auth:
     dependencies:
+      '@product/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/device-management:
+    dependencies:
+      '@product/device-auth':
+        specifier: workspace:*
+        version: link:../device-auth
+      '@product/extension-auth':
+        specifier: workspace:*
+        version: link:../extension-auth
       '@product/shared':
         specifier: workspace:*
         version: link:../shared

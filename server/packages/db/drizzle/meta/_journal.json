@@ -36,6 +36,13 @@
       "when": 1788431000000,
       "tag": "0004_p2_4_token_core",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788432000000,
+      "tag": "0005_p2_5_device_management",
+      "breakpoints": true
     }
   ]
 }

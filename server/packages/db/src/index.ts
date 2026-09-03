@@ -4,6 +4,7 @@ import * as schema from "./schema.js";
 export { createAuthRepository } from "./auth-repository.js";
 export { createDeviceAuthorizationRepository } from "./device-authorization-repository.js";
 export { createExtensionAuthRepository } from "./extension-auth-repository.js";
+export { createDeviceManagementRepository } from "./device-management-repository.js";
 
 export interface DatabaseRuntime {
   db: NodePgDatabase<typeof schema>;

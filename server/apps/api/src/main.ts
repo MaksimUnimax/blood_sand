@@ -3,6 +3,7 @@ import {
   createDatabaseRuntime,
   createDeviceAuthorizationRepository,
   createExtensionAuthRepository,
+  createDeviceManagementRepository,
 } from "@product/db";
 import { AuthService, deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
 import {
@@ -14,6 +15,10 @@ import {
   deriveExtensionAuthKeys,
   loadAccessTokenSigningKey,
 } from "@product/extension-auth";
+import {
+  DeviceManagementService,
+  PreEntitlementDeviceLimitResolver,
+} from "@product/device-management";
 import { loadConfig } from "@product/shared";
 import { createApiApp } from "./app.js";
 import { createInfrastructureReadiness } from "./infrastructure.js";
@@ -37,6 +42,12 @@ const app = createApiApp({
     deriveExtensionAuthKeys(rootSecret),
     undefined,
     loadAccessTokenSigningKey(process.env),
+  ),
+  deviceManagementService: new DeviceManagementService(
+    createDeviceManagementRepository(database),
+    rootSecret,
+    loadAccessTokenSigningKey(process.env),
+    new PreEntitlementDeviceLimitResolver(),
   ),
 });
 let closing = false;

@@ -67,6 +67,20 @@ export const deviceAuthorizations = pgTable(
     deniedAt: timestamp("denied_at", { withTimezone: true }),
     expiredAt: timestamp("expired_at", { withTimezone: true }),
     exchangedAt: timestamp("exchanged_at", { withTimezone: true }),
+    exchangeIdempotencyKeyHash: varchar("exchange_idempotency_key_hash", {
+      length: 128,
+    }),
+    exchangeReplayUntil: timestamp("exchange_replay_until", {
+      withTimezone: true,
+    }),
+    exchangedDeviceId: uuid("exchanged_device_id").references(
+      () => devices.id,
+      { onDelete: "restrict", onUpdate: "restrict" },
+    ),
+    exchangedSessionId: uuid("exchanged_session_id").references(
+      () => sessions.id,
+      { onDelete: "restrict", onUpdate: "restrict" },
+    ),
   },
   (table) => [
     unique("device_authorizations_device_code_hash_unique").on(

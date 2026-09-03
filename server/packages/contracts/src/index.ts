@@ -24,6 +24,10 @@ export const ApiErrorCodeV1Schema = z.enum([
   "DEVICE_AUTH_STATE_CONFLICT",
   "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
   "DEVICE_AUTH_CLOSED",
+  "DEVICE_AUTH_PENDING",
+  "DEVICE_LIMIT_REACHED",
+  "DEVICE_FORBIDDEN",
+  "DEVICE_NOT_FOUND",
 ]);
 export type ApiErrorCodeV1 = z.infer<typeof ApiErrorCodeV1Schema>;
 
@@ -133,4 +137,47 @@ export const DeviceAuthorizationApprovedResponseV1Schema = z.object({
 export const DeviceAuthorizationDeniedResponseV1Schema = z.object({
   status: z.literal("denied"),
   authorizationId: z.uuid(),
+});
+export const DeviceAuthorizationExchangeBodyV1Schema = z
+  .object({ deviceCode: z.string().regex(/^[A-Za-z0-9_-]{43}$/) })
+  .strict();
+export const DeviceAuthorizationExchangeResponseV1Schema = z.object({
+  status: z.literal("activated"),
+  deviceId: z.uuid(),
+  sessionId: z.uuid(),
+  tokenType: z.literal("Bearer"),
+  accessToken: z.string().min(1),
+  accessTokenExpiresAt: z.string().datetime(),
+  refreshToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+  refreshTokenExpiresAt: z.string().datetime(),
+});
+export const DeviceListQueryV1Schema = z
+  .object({
+    accountId: z.uuid(),
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+    cursor: z.uuid().optional(),
+  })
+  .strict();
+export const DeviceListItemV1Schema = z.object({
+  id: z.uuid(),
+  status: z.enum(["ACTIVE", "REVOKED"]),
+  label: z.string().nullable(),
+  browserFamily: z.enum(["chrome", "yandex_chromium"]),
+  browserVersionLastSeen: z.string().nullable(),
+  extensionVersionLastSeen: z.string().nullable(),
+  createdAt: z.string().datetime(),
+  activatedAt: z.string().datetime().nullable(),
+  lastSeenAt: z.string().datetime().nullable(),
+  revokedAt: z.string().datetime().nullable(),
+});
+export const DeviceListResponseV1Schema = z.object({
+  devices: z.array(DeviceListItemV1Schema),
+  nextCursor: z.uuid().nullable(),
+});
+export const DeviceRevokeParamsV1Schema = z
+  .object({ device_id: z.uuid() })
+  .strict();
+export const DeviceRevokeResponseV1Schema = z.object({
+  status: z.literal("revoked"),
+  deviceId: z.uuid(),
 });

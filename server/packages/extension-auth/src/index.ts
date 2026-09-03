@@ -24,6 +24,8 @@ const salt = Buffer.from("product-control-plane/extension-auth/hkdf-salt/v1");
 const labels = {
   refreshHash: "product-control-plane/extension-auth/refresh-hash/v1",
   refreshDerivation: "product-control-plane/extension-auth/refresh-derive/v1",
+  activationRefresh:
+    "product-control-plane/extension-auth/activation-refresh/v1",
   idempotency: "product-control-plane/extension-auth/refresh-idempotency/v1",
   rateLimit: "product-control-plane/extension-auth/rate-limit/v1",
 } as const;
@@ -84,6 +86,22 @@ export function deriveReplacementRefreshToken(
     .update(Buffer.from(previous, "utf8"))
     .update(Buffer.from("\0", "utf8"))
     .update(Buffer.from(idempotencyKey, "utf8"))
+    .digest("base64url");
+}
+/** Deterministic, single-use initial credential for a P2.5 activation replay. */
+export function deriveActivationRefreshToken(
+  keys: ExtensionAuthKeys,
+  deviceCode: string,
+  exchangeIdempotencyKey: string,
+): string {
+  const code = Buffer.from(deviceCode, "utf8");
+  const key = Buffer.from(exchangeIdempotencyKey, "utf8");
+  return createHmac("sha256", keys.activationRefresh)
+    .update(Buffer.from("v1:activation:"))
+    .update(Buffer.from(String(code.length) + ":"))
+    .update(code)
+    .update(Buffer.from(":" + String(key.length) + ":"))
+    .update(key)
     .digest("base64url");
 }
 export interface AccessTokenSigningKey {

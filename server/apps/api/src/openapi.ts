@@ -19,6 +19,10 @@ import {
   deriveExtensionAuthKeys,
   type ExtensionAuthRepository,
 } from "@product/extension-auth";
+import {
+  DeviceManagementService,
+  type DeviceManagementRepository,
+} from "@product/device-management";
 
 type JsonPrimitive = boolean | null | number | string;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -86,6 +90,16 @@ export async function generateOpenApiRepresentation(): Promise<string> {
       } satisfies ExtensionAuthRepository,
       deriveExtensionAuthKeys(Buffer.alloc(32, 2)),
       undefined,
+      createEphemeralAccessTokenSigningKey(),
+    ),
+    deviceManagementService: new DeviceManagementService(
+      {
+        consumeExchangeRate: async () => ({ allowed: false }),
+        exchange: async () => ({ kind: "closed" }),
+        list: async () => ({ kind: "forbidden" }),
+        revoke: async () => "not-found",
+      } satisfies DeviceManagementRepository,
+      Buffer.alloc(32, 3),
       createEphemeralAccessTokenSigningKey(),
     ),
   });
