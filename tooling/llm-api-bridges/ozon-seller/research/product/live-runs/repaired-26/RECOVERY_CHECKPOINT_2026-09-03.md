@@ -30,11 +30,11 @@ Do not touch:
 - DEFECT-003: `report_postings_create.delivery_schema` case mismatch, `FBO` => 400, `fbo` => 200.
 - DEFECT-004: `report_info.additional_data` key/value privacy-redaction bypass; confirmed on NEW-09.
 - DEFECT-005: `supply_order_list` template/validator accepts required `filter.states=[]`, provider rejects it; non-empty states control returns HTTP200.
-- DEFECT-006: `fbs_act_list` runtime template omits filter and is provider-invalid; exact `{limit:50}` request returned HTTP400/code3.
+- DEFECT-006: `fbs_act_list` request contract is underconstrained/provider-invalid. Both the filter-less registry template and the explicit 31-day RFC3339 period request returned provider HTTP400/code3. Missing filter alone is not the diagnosis.
 
 ## NEW-15 setup preserved state
 
-Run1 exact active registry template:
+Run1:
 - command `fbs_act_list` with `limit=50`, no filter;
 - request `8ee3ff42-c8aa-4b98-9412-c73af369440b`;
 - HTTP400 / provider code `3`;
@@ -46,21 +46,36 @@ Run1 exact active registry template:
 - fingerprints `937e3a3f == 937e3a3f`;
 - transformed `false`.
 
-Runtime `normalizeFbsActListParams` permits filter omission. When filter is supplied it requires `date_from` and `date_to`. Registry advertises the filter-less template. This mismatch is DEFECT-006; no patch yet.
+Run2:
+- command `fbs_act_list` with `limit=50` and filter `2026-08-01T00:00:00Z .. 2026-08-31T23:59:59Z`;
+- request `b886712a-3882-4050-ae0b-f930740cb7e4`;
+- HTTP400 / provider code `3`;
+- physical requests `1`;
+- logical business results `1`;
+- external request `true`;
+- automatic retry `false`;
+- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`;
+- exact request preserved `true`;
+- fingerprints `e77fcc54 == e77fcc54`;
+- transformed `false`.
+
+Active runtime `normalizeFbsActListParams` permits filter omission and, when filter exists, constrains `date_from`/`date_to` only to strings, `integration_type` to a string, and `status` to a string array. Exact provider-side code3 condition remains under collection; no patch yet.
 
 Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_15_SETUP_RUN_1_FBS_ACT_LIST_TEMPLATE_PROVIDER_400_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_15_SETUP_RUN_1_FBS_ACT_LIST_TEMPLATE_PROVIDER_400_2026-09-03.md`
+- Run1 RAW `live-runs/repaired-26/raw/NEW_15_SETUP_RUN_1_FBS_ACT_LIST_TEMPLATE_PROVIDER_400_RAW_2026-09-03.json`
+- Run1 parsed `live-runs/NEW_15_SETUP_RUN_1_FBS_ACT_LIST_TEMPLATE_PROVIDER_400_2026-09-03.md`
+- Run2 RAW `live-runs/repaired-26/raw/NEW_15_SETUP_RUN_2_FBS_ACT_LIST_FILTERED_PROVIDER_400_RAW_2026-09-03.json`
+- Run2 parsed `live-runs/NEW_15_SETUP_RUN_2_FBS_ACT_LIST_FILTERED_PROVIDER_400_2026-09-03.md`
 
 ## Exact next action
 
-Issue materially different setup command with explicit completed-period filter:
+Issue a controlled materially different narrow completed-period setup command:
 
-`OZON_API_V1 {"operation":"fbs_act_list","params":{"filter":{"date_from":"2026-08-01T00:00:00Z","date_to":"2026-08-31T23:59:59Z"},"limit":50}}`
+`OZON_API_V1 {"operation":"fbs_act_list","params":{"filter":{"date_from":"2026-09-01T00:00:00Z","date_to":"2026-09-02T23:59:59Z"},"limit":50}}`
 
-Persist the result before any further Ozon command. If it returns real act ids, use only a provider-returned id for NEW-15 `posting_fbs_act_container_labels`. If provider returns another 4xx/5xx/error, do not automatically repeat that same request.
+This tests whether the rejected 31-day interval is the provider constraint while keeping the request shape constant. Persist the result before any further Ozon command. If it returns real act ids, use only a provider-returned id for NEW-15 `posting_fbs_act_container_labels`. If it returns another 4xx/5xx/error, do not automatically repeat that same business request.
 
 Do not touch frozen STD-10. Do not patch runtime.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_15_SETUP_TEMPLATE_400_DEFECT_006_PERIOD_FILTER_AB_NEXT_DEFECTS_001_002_003_004_005_006_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_15_SETUP_TWO_400S_DEFECT_006_REFINED_NARROW_PERIOD_AB_NEXT_DEFECTS_001_002_003_004_005_006_OPEN_STD_10_FROZEN`
