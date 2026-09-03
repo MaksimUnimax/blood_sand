@@ -40,7 +40,7 @@ Do not touch:
 | 12 | NEW-12 | `finance_compensation_report` | COLLECTION_COMPLETE_PROVIDER_FAIL — HTTP404/code5, no retry, no report code | PENDING |
 | 13 | NEW-13 | `finance_decompensation_report` | COLLECTION_COMPLETE_PROVIDER_FAIL — HTTP404/code5, no retry, no report code | PENDING |
 | 14 | NEW-14 | `cargoes_label_create` | COLLECTION_COMPLETE_PROVIDER_RATE_LIMIT_FAIL — real supply id; one exact request; HTTP429/code8; no auto retry; no downstream ref | PENDING |
-| 15 | NEW-15 | `posting_fbs_act_container_labels` | SETUP_NEXT — obtain real FBS act id using safe `fbs_act_list` | PENDING |
+| 15 | NEW-15 | `posting_fbs_act_container_labels` | SETUP_IN_PROGRESS — exact `fbs_act_list {limit:50}` template provider 400 = DEFECT-006; explicit period-filter A/B NEXT | PENDING |
 | 16 | NEW-16 | `posting_fbs_package_label` | PENDING | PENDING |
 | 17 | NEW-17 | `posting_fbs_package_label_create` | PENDING | PENDING |
 | 18 | NEW-18 | `cargoes_transport_label_by_order_create` | PENDING | PENDING |
@@ -56,59 +56,49 @@ Do not touch:
 ## Defects collected
 
 - DEFECT-001: generic `report_file_get` statically privacy-blocked; confirmed on 10 report classes.
-- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Later paths including NEW-14 are clean counterexamples.
+- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Multiple later paths are clean counterexamples.
 - DEFECT-003: `report_postings_create.delivery_schema` case mismatch (`FBO` 400 vs `fbo` 200).
 - DEFECT-004: `report_info.additional_data` key/value privacy-redaction bypass; confirmed on NEW-09.
 - DEFECT-005: `supply_order_list` template/validator accepts `filter.states=[]`, provider rejects it; non-empty A/B passes.
+- DEFECT-006: `fbs_act_list` registry/validator allows and advertises `{limit:50}` without filter, provider rejects that form HTTP400/code3; explicit period-filter control pending.
 
-## NEW-14 summary
+## NEW-15 setup Run1
 
-Setup produced real `supply_id=2000064871008` from real `order_id=125820894`.
+Exact active registry template:
+`OZON_API_V1 {"operation":"fbs_act_list","params":{"limit":50}}`
 
-Standalone NEW-14:
-- request `b09f1156-6ada-42b7-9cef-8cface858ec1`
-- HTTP429 / provider code `8`
-- Retry-After `1`
+Observed:
+- request `8ee3ff42-c8aa-4b98-9412-c73af369440b`
+- HTTP400 / provider code `3`
 - physical1, logical1, external true
 - automatic retry false
 - entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
 - exact request preserved true
-- fingerprints `151c4db3 == 151c4db3`
+- fingerprints `937e3a3f == 937e3a3f`
 - transformed false.
 
-Classification: `COLLECTION_COMPLETE_PROVIDER_RATE_LIMIT_FAIL`.
-No new defect. Same business request must not be automatically repeated after 429. No operation/status/document reference was returned, so downstream chain cannot continue from this attempt.
+Runtime `normalizeFbsActListParams` requires `limit`, treats `filter` as optional, and requires `date_from` + `date_to` only when filter exists. Current API documentation shows the list request with the period filter. This establishes DEFECT-006 scope and requires a materially different A/B request, not a retry of the same business request.
 
 Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_14_RUN_1_CARGOES_LABEL_CREATE_PROVIDER_429_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_14_RUN_1_CARGOES_LABEL_CREATE_PROVIDER_429_2026-09-03.md`
-
-## NEW-15 setup contract
-
-Active registry confirms safe READ:
-- alias `fbs_act_list`
-- endpoint `POST /v2/posting/fbs/act/list`
-- `READ_SAFE`
-- purpose: list FBS act identifiers without hidden pagination
-- runtime template: `{"operation":"fbs_act_list","params":{"limit":50}}`.
-
-Use this exact safe setup read to obtain a real act `id` for NEW-15. Do not invent identifiers.
+- RAW `live-runs/repaired-26/raw/NEW_15_SETUP_RUN_1_FBS_ACT_LIST_TEMPLATE_PROVIDER_400_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_15_SETUP_RUN_1_FBS_ACT_LIST_TEMPLATE_PROVIDER_400_2026-09-03.md`
 
 ## Progress
 
 - Fully final-closed: `0/26`.
 - Standalone aliases exercised: `14/26`.
 - Collection-complete/partial/provider-fail rows: `14/26`.
-- Open numbered defects: `5`.
+- Open numbered defects: `6`.
 - Batch coverage: `0/26`.
 - Runtime patching: **FORBIDDEN UNTIL COLLECTION COMPLETE**.
 - STD-10: frozen.
 
 ## Exact next collection command
 
-`OZON_API_V1 {"operation":"fbs_act_list","params":{"limit":50}}`
+Run materially different safe setup read with explicit completed-period filter:
+`OZON_API_V1 {"operation":"fbs_act_list","params":{"filter":{"date_from":"2026-08-01T00:00:00Z","date_to":"2026-08-31T23:59:59Z"},"limit":50}}`
 
-Persist its result before any further Ozon command. Do not patch runtime. Do not touch frozen STD-10.
+The active runtime accepts date fields as strings; current public request documentation requires the period fields when using the filter. Persist the result before any further Ozon command. Do not patch runtime. Do not touch frozen STD-10.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_14_PROVIDER_429_COMPLETE_NEW_15_FBS_ACT_LIST_SETUP_NEXT_DEFECTS_001_002_003_004_005_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_15_SETUP_TEMPLATE_400_DEFECT_006_PERIOD_FILTER_AB_NEXT_DEFECTS_001_002_003_004_005_006_OPEN_STD_10_FROZEN`
