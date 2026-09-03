@@ -20,27 +20,30 @@ Confirmed safe-report reproductions with personal-data setting OFF:
 1. NEW-01 `seller_products`: local `POLICY_BLOCKED`, physical requests `0`, external request `false`.
 2. NEW-02 `seller_returns_v2`: local `POLICY_BLOCKED`, physical requests `0`, external request `false`.
 3. NEW-03 `seller_postings`: local `POLICY_BLOCKED`, physical requests `0`, external request `false`.
+4. NEW-04 `seller_discounted`: local `POLICY_BLOCKED`, physical requests `0`, external request `false`.
 
-NEW-03 reproduction details:
+NEW-04 reproduction details:
 
-- source report code `REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c`;
-- opaque ref `rpf_4619d324-8228-4c8e-b8be-c4c1ea05b92c`;
-- policy request `policy-5e9052c9-6106-4f28-846c-e1717fd88c1f`;
-- command fingerprint `c314bcd6`;
+- source report code `REPORT_seller_discounted_2093109_1788406644_01a06557-c01b-7f31-9c51-b82d2a402ca7`;
+- opaque ref `rpf_b58f09ca-4ca1-4ca5-a362-68d6da57b6d2`;
+- policy request `policy-111ff6bd-fd2e-4a71-aacf-e89bf4557f11`;
+- fingerprint `1aa43c3f`;
 - HTTP `0`;
 - elapsed `0 ms`;
-- `POLICY_BLOCKED / personal_data_setting_off`;
+- entitlement `POLICY_BLOCKED`;
+- reason `personal_data_setting_off`;
 - error `OPERATION_DISABLED_BY_USER`;
 - stage `personal_data_policy`;
 - automatic retry `false`.
 
-This third independent safe report class confirms that the issue is generic helper policy behavior rather than a single report-type anomaly. Continue establishing scope across remaining reports/documents; do not patch yet.
+Four independent safe report classes now confirm generic helper-policy behavior rather than a report-specific anomaly. Continue scope collection across remaining report/document classes; do not patch yet.
 
 Evidence:
-- NEW-01: `live-runs/NEW_01_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
-- NEW-02: `live-runs/NEW_02_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
-- NEW-03 RAW: `live-runs/repaired-26/raw/NEW_03_RUN_5_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
+- NEW-01 parsed: `live-runs/NEW_01_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
+- NEW-02 parsed: `live-runs/NEW_02_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
 - NEW-03 parsed: `live-runs/NEW_03_RUN_5_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
+- NEW-04 RAW: `live-runs/repaired-26/raw/NEW_04_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
+- NEW-04 parsed: `live-runs/NEW_04_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
 
 ## DEFECT-002 — transformed create metadata inconsistent with exact_request_preserved
 
@@ -53,11 +56,13 @@ Confirmed on:
 - NEW-03 Run2 `report_postings_create`: `34d187a7 -> a2721547`, transformed true, exact_request_preserved true, HTTP400.
 - NEW-03 Run3 `report_postings_create`: `0507ce87 -> 9f11d567`, transformed true, exact_request_preserved true, HTTP200.
 
-NEW-03 Run4 `report_info` did not reproduce the anomaly: logical/physical fingerprints both `9e13284f`, transformed false.
+Clean counterexamples:
 
-NEW-04 Run1 `report_discounted_create` is a clean counterexample: logical/physical fingerprints both `02e64eda`, `command_transformed=false`, `exact_request_preserved=true`, provider HTTP200. Therefore DEFECT-002 is not universal to every repaired create alias and must be scoped to particular planner/normalization paths.
+- NEW-03 Run4 `report_info`: `9e13284f == 9e13284f`, transformed false.
+- NEW-04 Run1 `report_discounted_create`: `02e64eda == 02e64eda`, transformed false.
+- NEW-04 Run2 `report_info`: `d397b76a == d397b76a`, transformed false.
 
-Continue scope collection through remaining repaired create aliases and batch tests. Do not patch yet.
+Therefore DEFECT-002 is not universal to every repaired create alias and must be scoped to particular planner/normalization paths. Continue scope collection through remaining repaired aliases and batch tests. Do not patch yet.
 
 ## DEFECT-003 — report_postings_create delivery_schema case contract/guidance mismatch
 
