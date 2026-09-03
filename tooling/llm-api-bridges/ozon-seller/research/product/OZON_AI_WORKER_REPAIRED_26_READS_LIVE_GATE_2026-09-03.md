@@ -6,69 +6,61 @@ Status: `ACTIVE_COLLECT_ALL_DEFECTS_BEFORE_PATCHING`
 Primary rule: `COLLECT_ALL_DEFECTS_FIRST_THEN_PATCH`
 Persistent evidence rule: `EVERY_TEST_AND_RESULT_TO_GITHUB_BEFORE_NEXT_COMMAND`
 
-## Execution policy
+## Phase order
 
-The test phase and repair phase are separate.
+1. Exhaust standalone tests for NEW-01..NEW-26.
+2. Exhaust required multi-command batch tests.
+3. Persist all failures/blocks/metadata anomalies.
+4. Only then patch the complete defect set.
+5. Rebuild/certify and rerun affected cases.
+6. Resume frozen STD-10 only after the 26-command gate closes.
 
-1. Exercise all 26 repaired aliases standalone to the strongest reachable result.
-2. Exercise all 26 aliases in real multi-command batches with 2+ independent logical commands.
-3. Persist every RAW result, parsed evidence, defect, gate state and recovery checkpoint.
-4. A discovered defect does not stop unrelated testing unless it makes further testing technically impossible.
-5. **Do not patch runtime during collection.**
-6. After the complete defect set is collected, group and patch defects, rebuild/certify, then rerun affected tests.
-7. STD-10 remains frozen until the repaired-26 gate is ultimately closed.
+A discovered defect does not stop unrelated test collection unless further testing is technically impossible. Runtime patching is forbidden during this collection phase.
 
-## Standalone acceptance
+## Mandatory persistence
 
-- Immediate JSON: real provider response with usable JSON.
-- Report: create -> `report_info` -> `report_file_get` when reachable -> usable structured rows.
-- Direct document/PDF: provider response -> opaque ref -> explicit document read.
-- Async document: create -> status/get -> opaque ref -> document read.
-- Sensitive READ: privacy-gate behavior plus real provider read when enabled.
-
-During collection, a blocked/failed later step is recorded as a defect/partial result and testing continues to the next independent NEW-ID.
-
-## Batch acceptance
-
-Every repaired alias must later appear in at least one real batch with 2+ independent logical commands. Persist and verify:
-
-- `result_count`;
-- logical and physical business request counts;
-- result order;
-- per-result request IDs, aliases and fingerprints;
-- params/result isolation;
-- transform metadata;
-- coalescing behavior;
-- controlled partial-failure isolation.
-
-## Persistent evidence
-
-RAW results: `research/product/live-runs/repaired-26/raw/`
+Every live step must be stored before the next command as:
+- RAW bridge result;
+- parsed evidence;
+- this gate state;
+- recovery checkpoint;
+- defect ledger entry when applicable.
 
 Defect authority:
-`OZON_AI_WORKER_REPAIRED_26_READS_LIVE_DEFECT_LEDGER_2026-09-03.md`
+`OZON_AI_WORKER_REPAIRED_26_READS_DEFECT_LEDGER_2026-09-03.md`
 
-Recovery authority:
-`live-runs/repaired-26/RECOVERY_CHECKPOINT_2026-09-03.md`
+## Final acceptance dimensions
+
+Every repaired alias must eventually pass:
+
+### Standalone
+
+- report: create -> report_info -> report_file_get -> usable rows;
+- direct/async document: provider operation -> retrieval/status when needed -> opaque ref -> readable document;
+- immediate validation: usable provider JSON;
+- sensitive READ: privacy-gate behavior + real provider read where permitted.
+
+### Multi-command batch
+
+Each repaired alias must participate in a real batch with 2+ independent commands. Verify result_count, logical/physical request counts, ordering, request ids, fingerprints, params/result isolation, transform metadata, coalescing behavior and controlled partial-failure behavior.
 
 ## Frozen STD-10
 
-Do not touch:
-
-`REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`
+Do not touch forensic code:
+`REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-6ac5e04697cb`
 
 NEW-06 must use a separate generic report chain.
 
-## Gate inventory
+## Inventory
 
-| # | ID | Alias | Standalone collection state | Batch |
+| # | ID | Alias | Standalone collection | Batch |
 |---:|---|---|---|---|
-| 1 | NEW-01 | `report_products_create` | PARTIAL_FAIL — create PASS, info PASS, file POLICY_BLOCKED = DEFECT-001 | PENDING |
-| 2 | NEW-02 | `report_returns_create_v2` | IN_PROGRESS — create PASS; `report_info` next; DEFECT-002 candidate | PENDING |
+| 1 | NEW-01 | `report_products_create` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001 | PENDING |
+| 2 | NEW-02 | `report_returns_create_v2` | IN_PROGRESS — create PASS, report_info PASS, file read NEXT; create metadata = DEFECT-002 candidate | PENDING |
 | 3 | NEW-03 | `report_postings_create` | PENDING | PENDING |
 | 4 | NEW-04 | `report_discounted_create` | PENDING | PENDING |
 | 5 | NEW-05 | `report_warehouse_stock` | PENDING | PENDING |
-| 6 | NEW-06 | `report_placement_by_products_create` | PARTIAL_EXTERNAL_EVIDENCE — frozen STD-10 create cannot be reused | PENDING |
+| 6 | NEW-06 | `report_placement_by_products_create` | PARTIAL_EXTERNAL_EVIDENCE — frozen STD-10 create exists but cannot be reused | PENDING |
 | 7 | NEW-07 | `report_placement_by_supplies_create` | PENDING | PENDING |
 | 8 | NEW-08 | `report_marked_products_sales_create` | PENDING | PENDING |
 | 9 | NEW-09 | `report_realization_posting_create` | PENDING | PENDING |
@@ -90,43 +82,31 @@ NEW-06 must use a separate generic report chain.
 | 25 | NEW-25 | `fbp_draft_pickup_product_validate` | PENDING | PENDING |
 | 26 | NEW-26 | `chat_history_v3` | PENDING | PENDING |
 
-## NEW-01 collected evidence
+## Collected defects
 
-Run1 create PASS:
-- request `d1834261-fbc4-498a-ba2e-6873a6ead564`
-- HTTP 200
-- code `REPORT_seller_products_2093109_1788403235_01a06523-ba89-7bab-b5a2-7512338e658e`.
+### DEFECT-001 — report_file_get static privacy block
 
-Run2 report_info PASS:
-- request `067c8a20-6d5f-46bf-a156-b33f3f9952fd`
-- status `success`
-- signed file redacted
-- opaque ref `rpf_bd4312a0-5525-4c5c-9332-be8fc2b912b8`.
+NEW-01 safe seller-products report reached report_info successfully, but report_file_get was locally blocked with personal_data_setting_off before any external file request. Scope must be established across remaining report/document workflows before patching.
 
-Run3 report_file_get:
-- policy request `policy-558df595-6ff0-4eb6-b5f6-03eb658ebe6c`
-- physical requests `0`
-- external request `false`
-- `POLICY_BLOCKED / personal_data_setting_off`.
+### DEFECT-002 candidate — NEW-02 create planning metadata inconsistency
 
-This is `DEFECT-001`: generic report-file helper is overbroadly privacy-gated for a safe seller-products report. No patch during collection.
+NEW-02 create:
+- logical fingerprint `687fa368`;
+- physical fingerprint `d1fbfbfe`;
+- `command_transformed=true`;
+- entitlement metadata simultaneously says `exact_request_preserved=true`.
 
-## NEW-02 collected evidence
+Do not patch until sweep complete.
 
-Run1 create PASS:
-- alias `report_returns_create_v2`
+## NEW-02 evidence
+
+### Run1 create — PASS
+
 - request `8b963833-eb57-4fe8-9b34-ff609ddf735c`
 - HTTP 200
-- physical requests `1`
-- external request `true`
-- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
-- returned code `REPORT_seller_returns_v2_2093109_1788405276_01a06542-ddb2-7a28-85ac-cd9447fa91a6`.
-
-Planning metadata defect candidate (`DEFECT-002`):
-- logical fingerprint `687fa368`
-- physical fingerprint `d1fbfbfe`
-- `command_transformed=true`
-- while `exact_request_preserved=true`.
+- physical requests 1
+- code `REPORT_seller_returns_v2_2093109_1788405276_01a06542-ddb2-7a28-85ac-cd9447fa91a6`
+- DEFECT-002 candidate observed in planning metadata.
 
 RAW:
 `live-runs/repaired-26/raw/NEW_02_RUN_1_REPORT_RETURNS_CREATE_RAW_2026-09-03.json`
@@ -134,22 +114,41 @@ RAW:
 Parsed:
 `live-runs/NEW_02_RUN_1_REPORT_RETURNS_CREATE_2026-09-03.md`
 
-## Current collection progress
+### Run2 report_info — PASS
 
-- Fully final-closed: `0 / 26`.
-- Standalone NEW-IDs exercised: `2 / 26`.
+- request `fe38e833-2029-4f41-8f57-49ad5a258499`
+- HTTP 200
+- status `success`
+- report type `seller_returns_v2`
+- provider file field `[REDACTED]`
+- opaque ref `rpf_c5978670-1bbe-47f5-9838-e843614a2514`
+- logical fingerprint `2d41fb57`
+- physical fingerprint `2d41fb57`
+- `command_transformed=false`.
+
+This step does not reproduce DEFECT-002; the anomaly remains scoped to NEW-02 create/planner behavior so far.
+
+RAW:
+`live-runs/repaired-26/raw/NEW_02_RUN_2_REPORT_INFO_RAW_2026-09-03.md`
+
+Parsed:
+`live-runs/NEW_02_RUN_2_REPORT_INFO_READY_OPAQUE_FILE_REF_2026-09-03.md`
+
+## Progress
+
+- Fully final-closed: `0/26`.
+- Standalone NEW-IDs exercised: `2/26`.
 - Open defects/candidates: `2`.
-- Batch coverage: `0 / 26`.
+- Batch coverage: `0/26`.
 - Runtime patching: **FORBIDDEN UNTIL COLLECTION COMPLETE**.
 - STD-10: frozen.
 
 ## Exact next collection step
 
-Continue NEW-02 with one explicit `report_info` for:
+NEW-02: explicit `report_file_get` for:
+`rpf_c5978670-1bbe-47f5-9838-e843614a2514`
 
-`REPORT_seller_returns_v2_2093109_1788405276_01a06542-ddb2-7a28-85ac-cd9447fa91a6`
-
-If file-ready, attempt `report_file_get` as a later explicit step even though DEFECT-001 may reproduce; record the result rather than patching.
+If DEFECT-001 reproduces, persist it as another reproduction and continue to NEW-03 without patching.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_2_OF_26_EXERCISED_DEFECTS_001_002_OPEN_NEW_02_REPORT_INFO_NEXT_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_2_OF_26_EXERCISED_NEW_02_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_OPEN_STD_10_FROZEN`
