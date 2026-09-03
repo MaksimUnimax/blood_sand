@@ -41,6 +41,8 @@ Evidence:
 - RAW `live-runs/repaired-26/raw/NEW_09_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
 - parsed `live-runs/NEW_09_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
 
+NEW-11 `mutual_settlement` has now reached a successful `report_info` with opaque ref `rpf_18eb749e-08df-4b99-8107-f4dcbf0a2529`; explicit `report_file_get` is next to determine whether DEFECT-001 scope extends to a tenth report class.
+
 ## DEFECT-002 — transformed create metadata inconsistent with exact_request_preserved
 
 Classification: `TRANSFORMED_COMMAND_METADATA_CONTRADICTS_EXACT_REQUEST_PRESERVED`
@@ -61,6 +63,7 @@ Clean counterexamples narrow the scope:
 - NEW-09 `report_realization_posting_create`: `50a8fdbc == 50a8fdbc`, transformed false, HTTP200.
 - NEW-09 `report_info`: `604b53c9 == 604b53c9`, transformed false, HTTP200.
 - NEW-11 `finance_mutual_settlement_report`: `29860803 == 29860803`, transformed false, HTTP200.
+- NEW-11 `report_info`: `e19249be == e19249be`, transformed false, HTTP200.
 - other tested `report_info` steps also preserve identical fingerprints.
 
 Therefore DEFECT-002 is not universal; continue scope collection through remaining repaired paths and later batch tests.
@@ -90,9 +93,13 @@ Observed sensitive semantic keys included receiver identity/tax fields such as `
 
 Current Bridge result sanitization checks actual JSON property names/paths. `additional_data` stores the semantic name in a field named `key` and corresponding data in sibling `value`; therefore `{key: <sensitive semantic>, value: <personal data>}` bypasses a redactor that only evaluates literal property names `key` and `value`.
 
+NEW-11 Run2 `report_info` returned `additional_data: []`, so DEFECT-004 was not reproduced on `mutual_settlement`. This is only a scope counterexample and does not close the confirmed NEW-09 privacy defect.
+
 Evidence:
 - privacy-safe RAW `live-runs/repaired-26/raw/NEW_09_RUN_2_REPORT_INFO_PRIVACY_LEAK_SANITIZED_RAW_2026-09-03.json`
 - parsed `live-runs/NEW_09_RUN_2_REPORT_INFO_PRIVACY_LEAK_2026-09-03.md`
+- NEW-11 clean RAW `live-runs/repaired-26/raw/NEW_11_RUN_2_REPORT_INFO_RAW_2026-09-03.json`
+- NEW-11 clean parsed `live-runs/NEW_11_RUN_2_REPORT_INFO_2026-09-03.md`
 
 Do not patch yet. Continue scope collection through finance/document outputs.
 
