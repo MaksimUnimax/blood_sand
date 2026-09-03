@@ -1,0 +1,142 @@
+name: Ozon research browser extension package
+run-name: Ozon research browser extension · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [research/ozon-product-demand-2026-09-02]
+    paths:
+      - .github/workflows/ozon-research-browser-extension-package.yml
+      - tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/**
+      - tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ozon-research-browser-extension-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SELLER_ROOT: tooling/llm-api-bridges/ozon-seller
+  EXT_ROOT: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE_ROOT: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
+  PACKAGE_NAME: OZON_BRIDGE_v0.1.19_READ_EFFECT_REPAIR_RESEARCH_CERTIFIED.zip
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Disable Git line-ending conversion
+        shell: bash
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax-check browser extension runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$EXT_ROOT/content_script.js"
+          node --check "$EXT_ROOT/service_worker.js"
+          node --check "$EXT_ROOT/popup.js"
+          for f in "$EXT_ROOT"/shared/*.js; do node --check "$f"; done
+      - name: Verify certified repaired READ surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$GATE_ROOT/run_effect_read_repair_gate.mjs" "$GITHUB_WORKSPACE"
+          node "$GATE_ROOT/run_exact_26_schema_gate.mjs" "$GITHUB_WORKSPACE"
+          node "$GATE_ROOT/run_report_file_workflow_gate.mjs" "$GITHUB_WORKSPACE"
+          node "$GATE_ROOT/run_ai_readable_report_parser_gate.mjs" "$GITHUB_WORKSPACE"
+          node "$GATE_ROOT/run_generated_document_delivery_gate.mjs" "$GITHUB_WORKSPACE"
+          node "$GATE_ROOT/run_all_26_e2e_gate.mjs" "$GITHUB_WORKSPACE"
+      - name: Build deterministic browser extension ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, pathlib, zipfile
+          src = pathlib.Path(os.environ['EXT_ROOT'])
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'ozon-research-browser-package'
+          out.mkdir(parents=True, exist_ok=True)
+          package = out / os.environ['PACKAGE_NAME']
+          rows = []
+          files = sorted(p for p in src.rglob('*') if p.is_file())
+          with zipfile.ZipFile(package, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+              for p in files:
+                  rel = p.relative_to(src).as_posix()
+                  data = p.read_bytes()
+                  rows.append({'path': rel, 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()})
+                  info = zipfile.ZipInfo(rel, date_time=(2020, 1, 1, 0, 0, 0))
+                  info.compress_type = zipfile.ZIP_DEFLATED
+                  info.create_system = 3
+                  info.external_attr = (0o100644 & 0xFFFF) << 16
+                  zf.writestr(info, data, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+          package_bytes = package.read_bytes()
+          digest = hashlib.sha256(package_bytes).hexdigest()
+          (out / (os.environ['PACKAGE_NAME'] + '.sha256.txt')).write_text(f'{digest}  {os.environ["PACKAGE_NAME"]}\n', encoding='utf-8', newline='\n')
+          manifest = {
+              'schema': 'OZON_RESEARCH_BROWSER_EXTENSION_PACKAGE_V1',
+              'status': 'PASS',
+              'source_commit': os.environ['GITHUB_SHA'],
+              'seller_enabled_reads': 271,
+              'exact_repaired_read_schemas': 26,
+              'all_26_repaired_reads_e2e': True,
+              'package': os.environ['PACKAGE_NAME'],
+              'package_bytes': len(package_bytes),
+              'package_sha256': digest,
+              'files': rows,
+          }
+          (out / 'package-manifest.json').write_text(json.dumps(manifest, sort_keys=True, indent=2) + '\n', encoding='utf-8', newline='\n')
+          print(f'OZON_RESEARCH_BROWSER_PACKAGE_PASS files={len(rows)} bytes={len(package_bytes)} sha256={digest}')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-research-browser-extension-${{ runner.os }}
+          path: ${{ runner.temp }}/ozon-research-browser-package/
+          if-no-files-found: error
+          retention-days: 14
+
+  certify:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-research-browser-extension-Linux
+          path: ${{ runner.temp }}/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-research-browser-extension-Windows
+          path: ${{ runner.temp }}/windows
+      - name: Prove cross-platform browser package identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmp "$RUNNER_TEMP/linux/$PACKAGE_NAME" "$RUNNER_TEMP/windows/$PACKAGE_NAME"
+          cmp "$RUNNER_TEMP/linux/$PACKAGE_NAME.sha256.txt" "$RUNNER_TEMP/windows/$PACKAGE_NAME.sha256.txt"
+          cmp "$RUNNER_TEMP/linux/package-manifest.json" "$RUNNER_TEMP/windows/package-manifest.json"
+          echo OZON_RESEARCH_BROWSER_EXTENSION_CROSS_PLATFORM_IDENTICAL_PASS
+      - name: Prepare canonical certified artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/certified"
+          cp "$RUNNER_TEMP/linux/$PACKAGE_NAME" "$RUNNER_TEMP/certified/$PACKAGE_NAME"
+          cp "$RUNNER_TEMP/linux/$PACKAGE_NAME.sha256.txt" "$RUNNER_TEMP/certified/$PACKAGE_NAME.sha256.txt"
+          cp "$RUNNER_TEMP/linux/package-manifest.json" "$RUNNER_TEMP/certified/package-manifest.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-research-browser-extension-certified
+          path: ${{ runner.temp }}/certified/
+          if-no-files-found: error
+          retention-days: 14
