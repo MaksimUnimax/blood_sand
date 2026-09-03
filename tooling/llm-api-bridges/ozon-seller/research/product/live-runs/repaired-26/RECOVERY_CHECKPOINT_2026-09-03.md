@@ -8,7 +8,7 @@ Branch: `research/ozon-product-demand-2026-09-02`
 
 `COLLECT_ALL_DEFECTS_FIRST_THEN_PATCH`
 
-No runtime patch until standalone + batch collection sweep is exhausted. Persist every result before the next Ozon command.
+No runtime patch until standalone + required batch collection sweep is exhausted. Persist every result before the next Ozon command.
 
 ## Frozen STD-10
 
@@ -20,7 +20,7 @@ Do not touch:
 - final closed: `0/26`
 - standalone aliases exercised: `3/26`
 - batch coverage: `0/26`
-- open numbered defects/candidates: `2`
+- open numbered defects/candidates: `3`
 
 ## DEFECT-001
 
@@ -28,36 +28,31 @@ Static privacy block on generic `report_file_get`, reproduced on safe NEW-01 sel
 
 ## DEFECT-002
 
-Create planning metadata inconsistency:
+Planning metadata inconsistency reproduced on NEW-02 and NEW-03 create paths: physical fingerprint differs / transformed true while exact_request_preserved remains true.
 
-- NEW-02 `687fa368 -> d1fbfbfe`, transformed true, exact_request_preserved true, provider 200.
-- NEW-03 Run1 `ec963df4 -> 6274fae0`, transformed true, exact_request_preserved true, provider 400.
-- NEW-03 Run2 `34d187a7 -> a2721547`, transformed true, exact_request_preserved true, provider 400.
+NEW-03 Run3: `0507ce87 -> 9f11d567`, transformed true, exact_request_preserved true, provider HTTP200.
 
-## NEW-03 provider rejection investigation
+## DEFECT-003
 
-Run1:
-- request `ea2ca56c-ccb4-4b09-85b5-5f45a048529f`
-- HTTP 400
-- payload included a future end timestamp.
+`report_postings_create` delivery schema case mismatch confirmed by live A/B:
 
-Run2:
-- request `279835dd-389b-4b1a-980c-03986d27d40b`
-- HTTP 400
-- fully past interval `2026-09-01T00:00:00Z..2026-09-02T23:59:59Z`
-- delivery schema `FBO` uppercase
-- physical requests 1
-- external request true.
+- fully past range + uppercase `FBO` => HTTP400;
+- same fully past range + lowercase `fbo` => HTTP200.
 
-Therefore future-time hypothesis is rejected. Runtime schema accepts delivery_schema as an unconstrained string array. Public endpoint examples use lowercase values such as `fbs`.
+## NEW-03 current state
+
+Run3 successful create:
+- request `8e92df34-abdc-450f-a82b-dd55605bb7ac`
+- report code `REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c`
+- HTTP200
+- physical requests 1.
 
 ## Exact next command
 
-NEW-03 Run3: same fully past interval, change only semantic delivery schema to lowercase `fbo`.
+NEW-03: one explicit `report_info` for:
+`REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c`
 
-`OZON_API_V1 {"operation":"report_postings_create","params":{"filter":{"processed_at_from":"2026-09-01T00:00:00Z","processed_at_to":"2026-09-02T23:59:59Z","delivery_schema":["fbo"]}}}`
-
-If 200: promote separate Bridge contract/template/guidance defect and continue report_info/file chain. If 400: persist and continue diagnosis. Do not patch.
+If ready, next separate command is `report_file_get`; record whether DEFECT-001 reproduces on seller-postings. Do not patch.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_03_RUN2_400_LOWERCASE_DELIVERY_SCHEMA_NEXT_DEFECTS_001_002_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_03_LOWERCASE_FBO_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
