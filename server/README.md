@@ -23,13 +23,18 @@ From `server/` after `corepack enable && pnpm install --frozen-lockfile`:
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm test:integration
 pnpm build
 pnpm api:dev
 pnpm worker:dev
 pnpm db:migrate
 ```
 
-`pnpm test:integration` is prepared for P1.3 and intentionally has no real PostgreSQL acceptance claim in P1.1.
+`pnpm test` is the database-independent unit/foundation suite. `pnpm test:integration`
+is a separate real PostgreSQL suite: it requires `DATABASE_URL` to point at an
+available disposable PostgreSQL database and fails clearly if it is absent or
+unreachable. The P1 development Compose database is loopback-only at
+`127.0.0.1:55432`.
 
 ## Local PostgreSQL development operations
 
