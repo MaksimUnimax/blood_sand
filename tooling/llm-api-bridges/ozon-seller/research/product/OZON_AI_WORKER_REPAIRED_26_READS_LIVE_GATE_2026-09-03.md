@@ -28,7 +28,7 @@ Do not touch:
 |---:|---|---|---|---|
 | 1 | NEW-01 | `report_products_create` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 2 | NEW-02 | `report_returns_create_v2` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001; create metadata = DEFECT-002 | PENDING |
-| 3 | NEW-03 | `report_postings_create` | IN_PROGRESS — Run1 provider HTTP400; logical schema valid; past-window diagnostic next; create metadata reproduces DEFECT-002 | PENDING |
+| 3 | NEW-03 | `report_postings_create` | IN_PROGRESS — Run1 HTTP400, Run2 wholly-past HTTP400; lowercase `delivery_schema` diagnostic NEXT; transform metadata = DEFECT-002 | PENDING |
 | 4 | NEW-04 | `report_discounted_create` | PENDING | PENDING |
 | 5 | NEW-05 | `report_warehouse_stock` | PENDING | PENDING |
 | 6 | NEW-06 | `report_placement_by_products_create` | PARTIAL_EXTERNAL_EVIDENCE — frozen STD-10 create cannot be reused | PENDING |
@@ -65,43 +65,51 @@ Transformed create metadata is inconsistent with `exact_request_preserved=true`.
 
 Confirmed on:
 - NEW-02 create: `687fa368 -> d1fbfbfe`, transformed true, provider 200;
-- NEW-03 Run1 create: `ec963df4 -> 6274fae0`, transformed true, provider 400.
+- NEW-03 Run1: `ec963df4 -> 6274fae0`, transformed true, provider 400;
+- NEW-03 Run2: `34d187a7 -> a2721547`, transformed true, provider 400.
 
-## NEW-03 Run1
+## NEW-03 evidence
 
-Alias: `report_postings_create`
+### Run1
 
-- request id `ea2ca56c-ccb4-4b09-85b5-5f45a048529f`;
-- HTTP 400;
-- physical business requests `1`;
-- external request `true`;
-- provider error code `3`;
-- automatic retry `false`;
-- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`;
-- logical fingerprint `ec963df4`;
-- physical fingerprint `6274fae0`;
-- transformed `true`;
-- entitlement also says exact_request_preserved `true`.
+- request `ea2ca56c-ccb4-4b09-85b5-5f45a048529f`
+- HTTP 400
+- tested end timestamp still in future at execution time.
 
-The exact runtime schema accepts the logical request shape: `delivery_schema` is an array of strings and processed timestamps are date-time fields. The Run1 test, however, used an end timestamp later than the actual execution time. Therefore the provider HTTP400 is still under diagnosis and is not yet promoted to a separate defect.
+### Run2
 
-RAW:
-`live-runs/repaired-26/raw/NEW_03_RUN_1_REPORT_POSTINGS_CREATE_HTTP400_RAW_2026-09-03.json`
+- request `279835dd-389b-4b1a-980c-03986d27d40b`
+- HTTP 400
+- fully past interval `2026-09-01T00:00:00Z..2026-09-02T23:59:59Z`
+- physical requests `1`
+- external request `true`
+- provider error code `3`
+- logical fingerprint `34d187a7`
+- physical fingerprint `a2721547`
+- transformed `true`
+- entitlement still says `exact_request_preserved=true`.
 
-Parsed:
-`live-runs/NEW_03_RUN_1_REPORT_POSTINGS_CREATE_HTTP400_2026-09-03.md`
+Run2 rejects the future-time hypothesis. The exact Bridge schema accepts `delivery_schema` as an unconstrained string array. Public examples of the provider endpoint use lowercase values such as `fbs`; the next diagnostic changes the tested value from uppercase `FBO` to lowercase `fbo` while keeping the same wholly past interval.
+
+RAW Run2:
+`live-runs/repaired-26/raw/NEW_03_RUN_2_REPORT_POSTINGS_CREATE_HTTP400_PAST_WINDOW_RAW_2026-09-03.json`
+
+Parsed Run2:
+`live-runs/NEW_03_RUN_2_REPORT_POSTINGS_CREATE_HTTP400_PAST_WINDOW_2026-09-03.md`
 
 ## Progress
 
 - Fully final-closed: `0/26`.
 - Standalone NEW-IDs exercised: `3/26`.
-- Open defects/candidates: `2`.
+- Open numbered defects/candidates: `2`.
+- NEW-03 provider rejection: under diagnosis, not yet separately numbered.
 - Batch coverage: `0/26`.
 - Runtime patching: **FORBIDDEN UNTIL COLLECTION COMPLETE**.
+- STD-10: frozen.
 
 ## Exact next collection step
 
-NEW-03 Run2 diagnostic: submit a new `report_postings_create` using the same schema but a wholly past date interval (`2026-09-01` through `2026-09-02`). This is a distinct diagnostic request, not an automatic retry of Run1. If it succeeds, continue its report_info/file chain; if it still returns 400, persist that and promote the rejection to a stronger defect candidate before advancing.
+NEW-03 Run3: submit a new `report_postings_create` with the same fully past interval and `delivery_schema:["fbo"]`. This is a distinct diagnostic payload, not an automatic retry. If it succeeds, promote the uppercase/provider-value acceptance issue to a separate Bridge contract/template defect and continue report_info/file collection. If it fails, persist it and continue provider-contract diagnosis without patching.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_3_OF_26_EXERCISED_NEW_03_HTTP400_PAST_WINDOW_DIAGNOSTIC_NEXT_DEFECTS_001_002_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_03_RUN2_400_LOWERCASE_DELIVERY_SCHEMA_DIAGNOSTIC_NEXT_DEFECTS_001_002_OPEN_STD_10_FROZEN`
