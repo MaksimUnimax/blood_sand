@@ -51,21 +51,30 @@ Run1 `finance_decompensation_report` with `date=2026-08`:
 Classification:
 `COLLECTION_COMPLETE_PROVIDER_FAIL`
 
-No downstream `report_info` or file/document read can follow from this run. Do not automatically retry the same 4xx provider request.
-
 Evidence:
 - RAW `live-runs/repaired-26/raw/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_RAW_2026-09-03.json`
 - parsed `live-runs/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_2026-09-03.md`
 
-## NEW-14 setup requirement
+## NEW-14 setup contract
 
-`cargoes_label_create` requires a real integer `supply_id`. Do not invent it. First use an exact safe provider READ/setup operation that returns current supply/order data; persist that setup result, then use only a returned real `supply_id` for NEW-14.
+`cargoes_label_create` requires real integer `supply_id`.
 
-## Exact next action
+Verified registry setup READ:
+- alias `supply_order_list`
+- `POST /v3/supply-order/list`
+- effect `READ`
+- `safety_class: READ_SAFE`
+- template params: `filter.states=[]`, `limit=100`, `sort_by=ORDER_CREATION`, `sort_dir=DESC`.
 
-Issue one safe READ/setup command for supply/order data after verifying its exact active-runtime schema. Persist the result before NEW-14 itself.
+If the setup returns only order ids, next use explicit `supply_order_get` / `supply_order_details` for a returned real order id to resolve an actual `supply_id`. Never invent IDs.
+
+## Exact next command
+
+`OZON_API_V1 {"operation":"supply_order_list","params":{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}}`
+
+Persist its result before any further Ozon command.
 
 Do not touch frozen STD-10. Do not patch runtime.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_13_PROVIDER_404_COMPLETE_NEW_14_REAL_SUPPLY_ID_SETUP_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_13_COMPLETE_NEW_14_SUPPLY_ORDER_LIST_SETUP_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
