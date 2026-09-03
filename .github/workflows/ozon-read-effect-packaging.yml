@@ -1,0 +1,145 @@
+name: Ozon read-effect installable packaging
+run-name: Ozon installable packaging · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-read-effect-reclassification-2026-09-02]
+    paths:
+      - .github/workflows/ozon-read-effect-packaging.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/materialize_installable_nodebundle.py
+      - tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_installable_bundle_26_e2e_gate.mjs
+      - tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_all_26_e2e_gate.mjs
+      - tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/**
+      - tooling/llm-api-bridges/ozon-seller/dist/ozon-seller-mcp-nodebundle.js
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-read-effect-installable-packaging-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BUNDLE_REL: tooling/llm-api-bridges/ozon-seller/dist/ozon-seller-mcp-nodebundle.js
+  MATERIALIZER: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/materialize_installable_nodebundle.py
+  CANDIDATE_GATE: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_all_26_e2e_gate.mjs
+  BUNDLE_GATE: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_installable_bundle_26_e2e_gate.mjs
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Disable Git line-ending conversion
+        shell: bash
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Materialize deterministic installable bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/ozon-installable-package"
+          rm -rf "$out"
+          mkdir -p "$out"
+          python "$MATERIALIZER" \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --template "$GITHUB_WORKSPACE/$BUNDLE_REL" \
+            --output "$out/ozon-seller-mcp-nodebundle.js" \
+            --manifest "$out/materialization-manifest.json"
+          node --check "$out/ozon-seller-mcp-nodebundle.js"
+      - name: Verify candidate and installable bundle with the same 26-read E2E gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/ozon-installable-package"
+          node "$CANDIDATE_GATE" "$GITHUB_WORKSPACE"
+          node "$BUNDLE_GATE" "$GITHUB_WORKSPACE" "$out/ozon-seller-mcp-nodebundle.js"
+      - name: Verify deterministic fixed point
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/ozon-installable-package"
+          python "$MATERIALIZER" \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --template "$out/ozon-seller-mcp-nodebundle.js" \
+            --output "$RUNNER_TEMP/ozon-seller-mcp-nodebundle.fixed.js"
+          cmp "$out/ozon-seller-mcp-nodebundle.js" "$RUNNER_TEMP/ozon-seller-mcp-nodebundle.fixed.js"
+          echo OZON_INSTALLABLE_NODEBUNDLE_FIXED_POINT_PASS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-installable-nodebundle-${{ runner.os }}
+          path: ${{ runner.temp }}/ozon-installable-package/
+          if-no-files-found: error
+          retention-days: 14
+
+  freeze-installable-dist:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+    steps:
+      - name: Disable Git line-ending conversion
+        shell: bash
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/ozon-read-effect-reclassification-2026-09-02
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-installable-nodebundle-Linux
+          path: ${{ runner.temp }}/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-installable-nodebundle-Windows
+          path: ${{ runner.temp }}/windows
+      - name: Prove Linux and Windows bundle bytes are identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmp "$RUNNER_TEMP/linux/ozon-seller-mcp-nodebundle.js" "$RUNNER_TEMP/windows/ozon-seller-mcp-nodebundle.js"
+          cmp "$RUNNER_TEMP/linux/materialization-manifest.json" "$RUNNER_TEMP/windows/materialization-manifest.json"
+          echo OZON_INSTALLABLE_NODEBUNDLE_CROSS_PLATFORM_IDENTICAL_PASS
+      - name: Materialize repository dist and verify against both platform artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$MATERIALIZER" \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --template "$GITHUB_WORKSPACE/$BUNDLE_REL" \
+            --output "$GITHUB_WORKSPACE/$BUNDLE_REL" \
+            --manifest "$RUNNER_TEMP/freeze-materialization-manifest.json"
+          cmp "$GITHUB_WORKSPACE/$BUNDLE_REL" "$RUNNER_TEMP/linux/ozon-seller-mcp-nodebundle.js"
+          cmp "$GITHUB_WORKSPACE/$BUNDLE_REL" "$RUNNER_TEMP/windows/ozon-seller-mcp-nodebundle.js"
+          node --check "$GITHUB_WORKSPACE/$BUNDLE_REL"
+          node "$BUNDLE_GATE" "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/$BUNDLE_REL"
+          echo OZON_INSTALLABLE_NODEBUNDLE_FREEZE_ACCEPTANCE_PASS
+      - name: Commit certified installable dist
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$BUNDLE_REL"
+          if git diff --cached --quiet; then
+            echo OZON_INSTALLABLE_NODEBUNDLE_ALREADY_FROZEN
+          else
+            git commit -m "freeze(ozon): ship 271-read repaired installable bundle"
+            git push origin HEAD:repair/ozon-read-effect-reclassification-2026-09-02
+            echo OZON_INSTALLABLE_NODEBUNDLE_COMMITTED
+          fi
