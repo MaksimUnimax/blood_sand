@@ -1,7 +1,11 @@
-# P2.3 device authorization evidence — local candidate
+# P2.3 device authorization acceptance evidence
 
-Status: **LOCAL CANDIDATE — P2.3 ACTIVE**
+Status: **ACCEPTED — P2.3 DONE**
 Date: 2026-09-03
+
+Implementation commit: `93308d251fc137caff1def244b94761814b99043`. GitHub
+Server CI passed: run `33750837628`,
+<https://github.com/MaksimUnimax/blood_sand/actions/runs/33750837628>.
 
 Authority remains the P0 architecture/requirements/security/API-contract documents,
 ADR 0006, and the P2.1/P2.2 acceptance evidence.  This candidate adds the P2.3
@@ -81,8 +85,8 @@ migration tests cover empty history, P2.2-to-0003 upgrade and second migrator.
 Bridge isolation is enforced by `pnpm bridge:guard`; no Ozon runtime import,
 credential path or seller payload is introduced.
 
-Known limitations: this is a local candidate pending implementation commit and
-the exact GitHub Server CI run. No external production deployment is claimed.
+Known limitations: no external production deployment is claimed. P2.4 token
+authentication/refresh rotation and P2.5 activation/exchange remain out of scope.
 
 Defects fixed during closeout: collision exhaustion was previously surfaced as
 the frozen invalid-device outcome; it is now the generic service-unavailable
