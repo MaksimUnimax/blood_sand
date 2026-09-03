@@ -1,0 +1,67 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "capability_probe": {
+    "performed": false,
+    "status": "not_needed",
+    "subscription_type": "UNKNOWN",
+    "http_status": 0,
+    "error_code": null
+  },
+  "query_planner": {
+    "status": "complete",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
+  },
+  "result": {
+    "request_id": "b09f1156-6ada-42b7-9cef-8cface858ec1",
+    "operation": "cargoes_label_create",
+    "command_fingerprint": "151c4db3",
+    "request_meta": {
+      "provider": "ozon",
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "path_alias": "cargoes_label_create",
+      "external_request_executed": true,
+      "capability_probe_executed": false,
+      "capability_probe_http_status": 0
+    },
+    "http_status": 429,
+    "elapsed_ms": 1342,
+    "rate_limit": {
+      "retry_after": "1",
+      "automatic_retry": false
+    },
+    "planning": {
+      "entitlement": {
+        "status": "SUPPORTED_AND_ENTITLED",
+        "partial": false,
+        "reason": "all_accounts",
+        "entitlement_key": "POST /v1/cargoes-label/create",
+        "rule_source": "reviewed-openapi-463-2026-08-19",
+        "exact_request_preserved": true
+      },
+      "execution": {
+        "logical_command_fingerprint": "151c4db3",
+        "physical_command_fingerprint": "151c4db3",
+        "command_transformed": false
+      }
+    },
+    "provider_error": {
+      "source": "provider",
+      "category": "rate_limit",
+      "http_status": 429,
+      "code": "8",
+      "automatic_retry": false,
+      "external_request_executed": true
+    },
+    "input": {
+      "supply_id": 2000064871008,
+      "source_order_id": 125820894
+    }
+  }
+}
