@@ -41,7 +41,7 @@ That code belongs only to the frozen forensic STD-10 workflow.
 | 11 | NEW-11 | `finance_mutual_settlement_report` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS; report_info PASS; file read POLICY_BLOCKED = DEFECT-001 reproduction #10 | PENDING |
 | 12 | NEW-12 | `finance_compensation_report` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code | PENDING |
 | 13 | NEW-13 | `finance_decompensation_report` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code | PENDING |
-| 14 | NEW-14 | `cargoes_label_create` | SETUP_NEXT — requires real integer `supply_id`; do not invent | PENDING |
+| 14 | NEW-14 | `cargoes_label_create` | SETUP_NEXT — exact safe `supply_order_list` command pinned to obtain real order/supply identifiers | PENDING |
 | 15 | NEW-15 | `posting_fbs_act_container_labels` | PENDING | PENDING |
 | 16 | NEW-16 | `posting_fbs_package_label` | PENDING | PENDING |
 | 17 | NEW-17 | `posting_fbs_package_label_create` | PENDING | PENDING |
@@ -67,26 +67,27 @@ Defect authority:
 
 ## NEW-13 summary — provider 404, no new bridge defect
 
-Submitted `finance_decompensation_report` with `date=2026-08`.
-
-Observed:
 - request `2c794bbd-96fc-486c-ae22-04b36d5e98e7`
 - HTTP404 / provider code `5`
-- physical requests `1`, logical results `1`
-- external request `true`
-- automatic retry `false`
-- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
-- entitlement key `POST /v1/finance/decompensation`
-- exact request preserved `true`
+- physical1, logical1, external true
+- automatic retry false
+- exact request preserved true
 - fingerprints `9a67428a == 9a67428a`
-- transformed `false`
-- no report code returned.
+- transformed false
+- no report code.
 
 Classification: `COLLECTION_COMPLETE_PROVIDER_FAIL`.
 
 Evidence:
 - RAW `live-runs/repaired-26/raw/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_RAW_2026-09-03.json`
 - parsed `live-runs/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_2026-09-03.md`
+
+## NEW-14 setup contract
+
+Registry confirms `supply_order_list` is a READ_SAFE Seller API operation on `POST /v3/supply-order/list`. Its runtime template is:
+`{"operation":"supply_order_list","params":{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}}`.
+
+Use this exact setup command to obtain real supply-order identifiers. Persist the result. If an order id is returned, use explicit `supply_order_get` / `supply_order_details` as needed to obtain a real integer `supply_id`; never invent one.
 
 ## Progress
 
@@ -98,11 +99,11 @@ Evidence:
 - Runtime patching: **FORBIDDEN UNTIL COLLECTION COMPLETE**.
 - STD-10: frozen.
 
-## Exact next collection step
+## Exact next collection command
 
-NEW-14 `cargoes_label_create` requires a real integer `supply_id`. Do not invent an ID. First run the exact safe provider READ/setup operation that returns current supply/order data and persist that setup evidence. Only then submit NEW-14 with a real returned `supply_id`.
+`OZON_API_V1 {"operation":"supply_order_list","params":{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}}`
 
-Do not patch runtime. Do not touch frozen STD-10.
+Persist this setup result before any further Ozon command. Do not patch runtime. Do not touch frozen STD-10.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_13_PROVIDER_404_COMPLETE_NEW_14_REAL_SUPPLY_ID_SETUP_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_13_COMPLETE_NEW_14_SUPPLY_ORDER_LIST_SETUP_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
