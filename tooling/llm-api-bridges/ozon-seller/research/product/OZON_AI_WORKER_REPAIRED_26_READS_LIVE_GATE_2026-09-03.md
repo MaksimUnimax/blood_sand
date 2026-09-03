@@ -8,9 +8,9 @@ Persistent evidence rule: `EVERY_TEST_AND_RESULT_TO_GITHUB_BEFORE_NEXT_COMMAND`
 
 ## Phase order
 
-1. Exhaust standalone tests for NEW-01..NEW-26.
-2. Exhaust required multi-command batch tests.
-3. Persist all failures/blocks/metadata anomalies.
+1. Exhaust standalone NEW-01..NEW-26.
+2. Exhaust required multi-command batch coverage.
+3. Persist all successes/failures/policy blocks/metadata anomalies.
 4. Only then patch the complete defect set.
 5. Rebuild/certify and rerun affected cases.
 6. Resume frozen STD-10 only after the 26-command gate closes.
@@ -28,7 +28,7 @@ Do not touch:
 |---:|---|---|---|---|
 | 1 | NEW-01 | `report_products_create` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 2 | NEW-02 | `report_returns_create_v2` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001; create metadata = DEFECT-002 | PENDING |
-| 3 | NEW-03 | `report_postings_create` | IN_PROGRESS — Run1 HTTP400, Run2 wholly-past HTTP400; lowercase `delivery_schema` diagnostic NEXT; transform metadata = DEFECT-002 | PENDING |
+| 3 | NEW-03 | `report_postings_create` | IN_PROGRESS — uppercase FBO HTTP400 twice; lowercase fbo create PASS; DEFECT-003 confirmed; report_info NEXT; DEFECT-002 reproduced | PENDING |
 | 4 | NEW-04 | `report_discounted_create` | PENDING | PENDING |
 | 5 | NEW-05 | `report_warehouse_stock` | PENDING | PENDING |
 | 6 | NEW-06 | `report_placement_by_products_create` | PARTIAL_EXTERNAL_EVIDENCE — frozen STD-10 create cannot be reused | PENDING |
@@ -61,55 +61,50 @@ Generic safe report-file reads are statically privacy-blocked. Confirmed on NEW-
 
 ### DEFECT-002
 
-Transformed create metadata is inconsistent with `exact_request_preserved=true`.
+Repeated planning metadata inconsistency: physical fingerprint differs and `command_transformed=true` while entitlement reports `exact_request_preserved=true`. Confirmed on NEW-02 and NEW-03 create paths, including successful NEW-03 Run3.
 
-Confirmed on:
-- NEW-02 create: `687fa368 -> d1fbfbfe`, transformed true, provider 200;
-- NEW-03 Run1: `ec963df4 -> 6274fae0`, transformed true, provider 400;
-- NEW-03 Run2: `34d187a7 -> a2721547`, transformed true, provider 400.
+### DEFECT-003
 
-## NEW-03 evidence
+`report_postings_create.filter.delivery_schema` case mismatch. Live A/B:
 
-### Run1
+- fully past range + `["FBO"]` => HTTP400;
+- same fully past range + `["fbo"]` => HTTP200 and report code.
 
-- request `ea2ca56c-ccb4-4b09-85b5-5f45a048529f`
-- HTTP 400
-- tested end timestamp still in future at execution time.
+Bridge schema accepts unconstrained strings and does not prevent/safely normalize the provider-invalid uppercase value.
 
-### Run2
+## NEW-03 Run3
 
-- request `279835dd-389b-4b1a-980c-03986d27d40b`
-- HTTP 400
-- fully past interval `2026-09-01T00:00:00Z..2026-09-02T23:59:59Z`
-- physical requests `1`
-- external request `true`
-- provider error code `3`
-- logical fingerprint `34d187a7`
-- physical fingerprint `a2721547`
-- transformed `true`
-- entitlement still says `exact_request_preserved=true`.
+- request `8e92df34-abdc-450f-a82b-dd55605bb7ac`
+- HTTP200
+- physical requests 1
+- external request true
+- logical fingerprint `0507ce87`
+- physical fingerprint `9f11d567`
+- transformed true
+- exact_request_preserved true
+- report code `REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c`.
 
-Run2 rejects the future-time hypothesis. The exact Bridge schema accepts `delivery_schema` as an unconstrained string array. Public examples of the provider endpoint use lowercase values such as `fbs`; the next diagnostic changes the tested value from uppercase `FBO` to lowercase `fbo` while keeping the same wholly past interval.
+RAW:
+`live-runs/repaired-26/raw/NEW_03_RUN_3_REPORT_POSTINGS_CREATE_LOWERCASE_FBO_PASS_RAW_2026-09-03.json`
 
-RAW Run2:
-`live-runs/repaired-26/raw/NEW_03_RUN_2_REPORT_POSTINGS_CREATE_HTTP400_PAST_WINDOW_RAW_2026-09-03.json`
-
-Parsed Run2:
-`live-runs/NEW_03_RUN_2_REPORT_POSTINGS_CREATE_HTTP400_PAST_WINDOW_2026-09-03.md`
+Parsed:
+`live-runs/NEW_03_RUN_3_REPORT_POSTINGS_CREATE_LOWERCASE_FBO_PASS_2026-09-03.md`
 
 ## Progress
 
 - Fully final-closed: `0/26`.
-- Standalone NEW-IDs exercised: `3/26`.
-- Open numbered defects/candidates: `2`.
-- NEW-03 provider rejection: under diagnosis, not yet separately numbered.
+- Standalone aliases exercised: `3/26`.
+- Open numbered defects/candidates: `3`.
 - Batch coverage: `0/26`.
 - Runtime patching: **FORBIDDEN UNTIL COLLECTION COMPLETE**.
 - STD-10: frozen.
 
 ## Exact next collection step
 
-NEW-03 Run3: submit a new `report_postings_create` with the same fully past interval and `delivery_schema:["fbo"]`. This is a distinct diagnostic payload, not an automatic retry. If it succeeds, promote the uppercase/provider-value acceptance issue to a separate Bridge contract/template defect and continue report_info/file collection. If it fails, persist it and continue provider-contract diagnosis without patching.
+NEW-03 `report_info` for:
+`REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c`
+
+If ready, later attempt `report_file_get` and record whether DEFECT-001 extends to `seller_postings`.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_03_RUN2_400_LOWERCASE_DELIVERY_SCHEMA_DIAGNOSTIC_NEXT_DEFECTS_001_002_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_03_LOWERCASE_FBO_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
