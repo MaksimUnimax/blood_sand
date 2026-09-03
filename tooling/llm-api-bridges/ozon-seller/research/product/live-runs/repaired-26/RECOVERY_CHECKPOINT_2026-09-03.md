@@ -18,51 +18,53 @@ Do not touch:
 ## Progress
 
 - final closed: `0/26`
-- standalone aliases exercised: `4/26`
+- standalone repaired aliases exercised: `4/26`
 - standalone collection complete/partial-fail: `4/26`
+- NEW-05 setup: PASS
 - batch coverage: `0/26`
 - open numbered defects/candidates: `3`
 
-## DEFECT-001
+## Open defects
 
-Static privacy block on generic `report_file_get`, reproduced on four safe report types:
-1. `seller_products`;
-2. `seller_returns_v2`;
-3. `seller_postings`;
-4. `seller_discounted`.
+### DEFECT-001
+Static privacy block on generic `report_file_get`, reproduced on safe `seller_products`, `seller_returns_v2`, `seller_postings`, and `seller_discounted` report files.
 
-NEW-04 reproduction:
-- request `policy-111ff6bd-fd2e-4a71-aacf-e89bf4557f11`
-- ref `rpf_b58f09ca-4ca1-4ca5-a362-68d6da57b6d2`
-- HTTP0
-- physical requests 0
-- external request false
-- `POLICY_BLOCKED / personal_data_setting_off`.
+### DEFECT-002
+Create planning metadata inconsistency on NEW-02 and NEW-03: different physical fingerprint / transformed true while `exact_request_preserved=true`. NEW-04 and NEW-05 setup are clean counterexamples.
 
-## DEFECT-002
+### DEFECT-003
+`report_postings_create` delivery-schema case mismatch: uppercase `FBO` => HTTP400; lowercase `fbo` on same past range => HTTP200.
 
-Planning metadata inconsistency reproduced on NEW-02 and NEW-03 create paths. NEW-04 is a clean counterexample:
-- create `02e64eda == 02e64eda`, transformed false;
-- report_info `d397b76a == d397b76a`, transformed false.
+## NEW-05 setup state
 
-## DEFECT-003
+Existing setup READ:
+`seller_warehouse_list`
 
-`report_postings_create` delivery-schema case mismatch confirmed:
-- uppercase `FBO` => HTTP400;
-- lowercase `fbo` on same past range => HTTP200.
+- request `657a1c3c-a0d3-4160-9f2a-64f8ec681672`
+- HTTP200
+- physical requests 1
+- external request true
+- fingerprint `11b894f6`
+- transformed false
+- returned real seller warehouse ID `1020001773680000`
+- name `Златоуст Чёт`
+- warehouse_type `fbs`
+- status `created`
+- has_next `false`
+- phone/courier phones redacted.
 
-## NEW-04 preserved state
+RAW:
+`live-runs/repaired-26/raw/NEW_05_SETUP_RUN_1_SELLER_WAREHOUSE_LIST_RAW_2026-09-03.json`
 
-- create PASS request `51dfec0d-655b-4a77-9fba-ca4af1fb6f6e`
-- report code `REPORT_seller_discounted_2093109_1788406644_01a06557-c01b-7f31-9c51-b82d2a402ca7`
-- report_info PASS request `3f4eaf12-b7bf-4a3b-976d-d0439593ff83`
-- report type `seller_discounted`
-- opaque ref `rpf_b58f09ca-4ca1-4ca5-a362-68d6da57b6d2`
-- file read blocked by DEFECT-001.
+Parsed:
+`live-runs/NEW_05_SETUP_RUN_1_SELLER_WAREHOUSE_LIST_2026-09-03.md`
 
-## Exact next action
+## Exact next command
 
-NEW-05 requires a valid seller FBS warehouse ID. First run the minimum existing seller-warehouse-list READ as setup, persist it, then call `report_warehouse_stock` with one real returned warehouse ID. Setup read does not count toward repaired 26 coverage.
+NEW-05 repaired alias:
+`OZON_API_V1 {"operation":"report_warehouse_stock","params":{"warehouseId":["1020001773680000"]}}`
+
+After the result, persist RAW + parsed + gate + this checkpoint. If create succeeds, continue explicit report_info/file chain. Do not patch runtime during collection.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_04_COMPLETE_PARTIAL_FAIL_NEW_05_WAREHOUSE_ID_SETUP_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_05_SETUP_PASS_WAREHOUSE_STOCK_CREATE_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
