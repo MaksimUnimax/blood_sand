@@ -41,7 +41,7 @@ That code belongs only to the frozen forensic STD-10 workflow.
 | 11 | NEW-11 | `finance_mutual_settlement_report` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS; report_info PASS; file read POLICY_BLOCKED = DEFECT-001 reproduction #10 | PENDING |
 | 12 | NEW-12 | `finance_compensation_report` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code | PENDING |
 | 13 | NEW-13 | `finance_decompensation_report` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code | PENDING |
-| 14 | NEW-14 | `cargoes_label_create` | SETUP_NEXT — exact safe `supply_order_list` command pinned to obtain real order/supply identifiers | PENDING |
+| 14 | NEW-14 | `cargoes_label_create` | SETUP_IN_PROGRESS — registry template `supply_order_list filter.states=[]` returned provider 400 = DEFECT-005; non-empty states setup NEXT | PENDING |
 | 15 | NEW-15 | `posting_fbs_act_container_labels` | PENDING | PENDING |
 | 16 | NEW-16 | `posting_fbs_package_label` | PENDING | PENDING |
 | 17 | NEW-17 | `posting_fbs_package_label_create` | PENDING | PENDING |
@@ -58,52 +58,51 @@ That code belongs only to the frozen forensic STD-10 workflow.
 ## Defects collected
 
 - DEFECT-001: generic `report_file_get` is statically privacy-blocked; confirmed on 10 report classes through NEW-11.
-- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean counterexamples now include NEW-04/05/06/07/08/09/11/12/13 and tested report_info paths.
+- DEFECT-002: transformed create metadata conflicts with `exact_request_preserved=true`; confirmed on NEW-02/03. Clean counterexamples include NEW-04/05/06/07/08/09/11/12/13 and tested report_info paths.
 - DEFECT-003: `report_postings_create.delivery_schema` uppercase/lowercase mismatch (`FBO` 400 vs `fbo` 200).
 - DEFECT-004: `report_info.additional_data` key/value representation bypasses personal-data redaction; confirmed on NEW-09. NEW-11 did not reproduce it.
+- DEFECT-005: `supply_order_list` runtime template and validator allow/advertise `filter.states=[]`, but provider rejects that exact shape with HTTP400/code3.
 
 Defect authority:
 `OZON_AI_WORKER_REPAIRED_26_READS_DEFECT_LEDGER_2026-09-03.md`
 
-## NEW-13 summary — provider 404, no new bridge defect
+## NEW-14 setup Run1 — DEFECT-005
 
-- request `2c794bbd-96fc-486c-ae22-04b36d5e98e7`
-- HTTP404 / provider code `5`
+Submitted exact runtime template:
+`{"operation":"supply_order_list","params":{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}}`.
+
+Observed:
+- request `deba7764-b75b-4fbd-ada0-7e163844d109`
+- HTTP400 / provider code `3`
 - physical1, logical1, external true
 - automatic retry false
 - exact request preserved true
-- fingerprints `9a67428a == 9a67428a`
-- transformed false
-- no report code.
+- fingerprints `d0967438 == d0967438`
+- transformed false.
 
-Classification: `COLLECTION_COMPLETE_PROVIDER_FAIL`.
+Runtime validator requires `filter.states`, but `validateEnumArray` accepts an empty array. Registry template uses that same empty array. Therefore this setup result establishes DEFECT-005.
 
 Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_13_RUN_1_FINANCE_DECOMPENSATION_REPORT_PROVIDER_404_2026-09-03.md`
-
-## NEW-14 setup contract
-
-Registry confirms `supply_order_list` is a READ_SAFE Seller API operation on `POST /v3/supply-order/list`. Its runtime template is:
-`{"operation":"supply_order_list","params":{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}}`.
-
-Use this exact setup command to obtain real supply-order identifiers. Persist the result. If an order id is returned, use explicit `supply_order_get` / `supply_order_details` as needed to obtain a real integer `supply_id`; never invent one.
+- RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_1_SUPPLY_ORDER_LIST_EMPTY_STATES_PROVIDER_400_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_14_SETUP_RUN_1_SUPPLY_ORDER_LIST_EMPTY_STATES_PROVIDER_400_2026-09-03.md`
 
 ## Progress
 
 - Fully final-closed: `0/26`.
 - Standalone aliases exercised: `13/26`.
 - Collection-complete/partial/provider-fail rows: `13/26`.
-- Open numbered defects: `4`.
+- Open numbered defects: `5`.
 - Batch coverage: `0/26`.
 - Runtime patching: **FORBIDDEN UNTIL COLLECTION COMPLETE**.
 - STD-10: frozen.
 
 ## Exact next collection command
 
-`OZON_API_V1 {"operation":"supply_order_list","params":{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}}`
+Retry the NEW-14 setup as a distinct business request with an explicit non-empty set containing all currently allowed supply-order states. This is not an automatic retry of the same failed request; params materially differ.
 
-Persist this setup result before any further Ozon command. Do not patch runtime. Do not touch frozen STD-10.
+Persist the setup result before any further Ozon command. If real order ids are returned, resolve a real `supply_id` via explicit safe reads only. Never invent provider IDs.
+
+Do not patch runtime. Do not touch frozen STD-10.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_13_COMPLETE_NEW_14_SUPPLY_ORDER_LIST_SETUP_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_14_SETUP_EMPTY_STATES_DEFECT_005_NONEMPTY_STATES_NEXT_DEFECTS_001_002_003_004_005_OPEN_STD_10_FROZEN`
