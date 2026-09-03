@@ -108,8 +108,10 @@ Evidence:
 Classification: `SUPPLY_ORDER_LIST_EMPTY_STATES_TEMPLATE_PROVIDER_INVALID`
 Status: `OPEN_CONFIRMED`
 
-NEW-14 setup used the exact active registry template for `supply_order_list`:
-`{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}`.
+NEW-14 setup A/B:
+
+### A — exact active registry template
+`{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}`
 
 Observed:
 - request `deba7764-b75b-4fbd-ada0-7e163844d109`;
@@ -120,13 +122,25 @@ Observed:
 - fingerprints `d0967438 == d0967438`;
 - transformed false.
 
-Active runtime `normalizeSupplyOrderListParams` requires `filter.states` and validates it with `validateEnumArray`. `validateEnumArray` accepts an empty array because it only iterates and validates present elements. The operation registry simultaneously advertises the empty-array template. Therefore bridge validation/template accepts and recommends a shape rejected by the provider.
+### B — same endpoint with explicit non-empty runtime-valid states
+Observed:
+- request `3e5b9659-7664-4749-a34f-ad9a9af9ad42`;
+- HTTP200;
+- physical1, logical1, external true;
+- exact request preserved true;
+- fingerprints `bc9210cd == bc9210cd`;
+- transformed false;
+- 100 real order IDs returned; first `125820894`.
+
+Active runtime `normalizeSupplyOrderListParams` requires `filter.states` and validates it with `validateEnumArray`. `validateEnumArray` accepts an empty array because it only iterates and validates present elements. The operation registry simultaneously advertises the empty-array template. The successful non-empty A/B control confirms the endpoint is usable and isolates the defect to the bridge template/validation contract for empty `states`.
 
 Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_1_SUPPLY_ORDER_LIST_EMPTY_STATES_PROVIDER_400_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_14_SETUP_RUN_1_SUPPLY_ORDER_LIST_EMPTY_STATES_PROVIDER_400_2026-09-03.md`
+- failing RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_1_SUPPLY_ORDER_LIST_EMPTY_STATES_PROVIDER_400_RAW_2026-09-03.json`
+- failing parsed `live-runs/NEW_14_SETUP_RUN_1_SUPPLY_ORDER_LIST_EMPTY_STATES_PROVIDER_400_2026-09-03.md`
+- passing RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_RAW_2026-09-03.json`
+- passing parsed `live-runs/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_2026-09-03.md`
 
-Do not patch yet. Continue NEW-14 setup with a distinct non-empty explicit state set to obtain real provider identifiers.
+Do not patch yet. Continue NEW-14 setup using returned real identifiers.
 
 ## NEW-12 provider outcome
 
