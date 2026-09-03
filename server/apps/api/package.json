@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
+    "openapi:generate": "tsx src/openapi.ts generate",
+    "openapi:check": "tsx src/openapi.ts check",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build": "tsup src/main.ts --format esm --target node24 --clean"
