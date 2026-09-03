@@ -103,6 +103,31 @@ Evidence:
 - NEW-11 clean RAW `live-runs/repaired-26/raw/NEW_11_RUN_2_REPORT_INFO_RAW_2026-09-03.json`
 - NEW-11 clean parsed `live-runs/NEW_11_RUN_2_REPORT_INFO_2026-09-03.md`
 
+## DEFECT-005 — supply_order_list empty states template is provider-invalid
+
+Classification: `SUPPLY_ORDER_LIST_EMPTY_STATES_TEMPLATE_PROVIDER_INVALID`
+Status: `OPEN_CONFIRMED`
+
+NEW-14 setup used the exact active registry template for `supply_order_list`:
+`{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}`.
+
+Observed:
+- request `deba7764-b75b-4fbd-ada0-7e163844d109`;
+- HTTP400 / provider code `3`;
+- physical1, logical1, external true;
+- automatic retry false;
+- exact request preserved true;
+- fingerprints `d0967438 == d0967438`;
+- transformed false.
+
+Active runtime `normalizeSupplyOrderListParams` requires `filter.states` and validates it with `validateEnumArray`. `validateEnumArray` accepts an empty array because it only iterates and validates present elements. The operation registry simultaneously advertises the empty-array template. Therefore bridge validation/template accepts and recommends a shape rejected by the provider.
+
+Evidence:
+- RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_1_SUPPLY_ORDER_LIST_EMPTY_STATES_PROVIDER_400_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_14_SETUP_RUN_1_SUPPLY_ORDER_LIST_EMPTY_STATES_PROVIDER_400_2026-09-03.md`
+
+Do not patch yet. Continue NEW-14 setup with a distinct non-empty explicit state set to obtain real provider identifiers.
+
 ## NEW-12 provider outcome
 
 NEW-12 `finance_compensation_report` with `date=2026-08` produced one exact external provider request and returned HTTP404/code5. No automatic retry occurred, no report code was returned, and no downstream report read is possible. This is recorded as `COLLECTION_COMPLETE_PROVIDER_FAIL`, not as a new numbered bridge defect.
@@ -121,4 +146,4 @@ Evidence:
 
 ## Patch prohibition
 
-Do not patch DEFECT-001..004 until the standalone + multi-command batch collection sweep is complete.
+Do not patch DEFECT-001..005 until the standalone + multi-command batch collection sweep is complete.
