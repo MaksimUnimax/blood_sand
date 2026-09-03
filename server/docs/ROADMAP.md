@@ -51,7 +51,7 @@ Key decisions frozen for P1:
 
 Acceptance: `P0_ARCHITECTURE_AUDIT.md` = PASS.
 
-## P1 — Repository and engineering foundation `[NEXT]`
+## P1 — Repository and engineering foundation `[ACTIVE]`
 
 Goal: create reproducible server workspace with infrastructure shells only.
 
@@ -334,9 +334,9 @@ Architecture remains:
 
 ## P1 next substeps
 
-- P1.1 `[NEXT]` Codex creates workspace/tooling skeleton exactly within P1 packet.
-- P1.2 `[PLANNED]` verify local install/build/lint/typecheck/unit tests.
-- P1.3 `[PLANNED]` verify real PostgreSQL migration/integration baseline.
+- P1.1 `[DONE]` Codex creates workspace/tooling skeleton exactly within P1 packet.
+- P1.2 `[DONE]` verify local install/build/lint/typecheck/unit tests.
+- P1.3 `[NEXT]` verify real PostgreSQL migration/integration baseline.
 - P1.4 `[PLANNED]` verify CI and generated contract baseline.
 - P1.5 `[PLANNED]` architecture review implementation vs P0 decisions.
 - P1.6 `[PLANNED]` record acceptance evidence and mark P1 DONE or issue corrective packet.
