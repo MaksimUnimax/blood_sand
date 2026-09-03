@@ -88,7 +88,7 @@ Exit gate:
 - no Bridge import;
 - P1 evidence recorded.
 
-P1 implementation status: P1.1 `[DONE]`; P1.2 `[DONE]`; P1.3 `[DONE]`; P1.4 `[ACTIVE]`; P1.5 `[PLANNED]`; P1.6 `[PLANNED]`.
+P1 implementation status: P1.1 `[DONE]`; P1.2 `[DONE]`; P1.3 `[DONE]`; P1.4 `[DONE]`; P1.5 `[NEXT]`; P1.6 `[PLANNED]`.
 
 ## P2 — Accounts, OTP identity and device authorization `[PLANNED]`
 

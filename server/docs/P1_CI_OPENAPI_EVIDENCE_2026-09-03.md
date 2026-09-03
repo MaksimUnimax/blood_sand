@@ -1,11 +1,12 @@
 # P1.4 CI and OpenAPI evidence — 2026-09-03
 
-Status: LOCAL CANDIDATE. P1.4 is not marked DONE because no GitHub-hosted run has
-occurred.
+Status: ACCEPTED. P1.4 is marked DONE after the exact corrective push completed
+the GitHub-hosted Server CI run successfully.
 
 ## Baseline and versions
 
-- base: `7f373ed1c5c1c1c139920125e90e0affb8f07f17`;
+- base: `8f56f43db14ae01bd20c02dc0f4c8921c665252c`;
+- corrective: `6e8a1982cbb1506789c77c598f08f69793849ef9`;
 - P1.3: ACCEPTED / DONE;
 - Node: `24.20.0` (`node:24-bookworm`);
 - pnpm: `10.15.1`;
@@ -71,7 +72,26 @@ Cleanup removed only the P1.4 disposable container, volume, and network. Ports
 
 ## Remote CI
 
-`GITHUB_ACTIONS_REMOTE_RUN: NOT_RUN`.
+Original failed run: `33731109777`.
 
-Reason: the accepted local branch is not yet synchronized to GitHub. Actual GitHub
-Actions execution remains required for P1.4 DONE.
+- failed step: `pnpm openapi:check`;
+- exact error: `sh: 1: tsx: not found`;
+- root cause: the workspace root invoked unowned `tsx`; `@product/api` already
+  owns `tsx@4.20.5`;
+- corrective: root OpenAPI scripts delegate to `@product/api`, whose local scripts
+  execute `tsx src/openapi.ts generate|check`;
+- OpenAPI drift: NO; the generated artifact SHA-256 remained
+  `b5ef282f343899344af731859c551d075a32c4d288adc4aad3bb9bc4584b8485`.
+
+Successful GitHub Actions run:
+
+- run: [`33732127238`](https://github.com/MaksimUnimax/blood_sand/actions/runs/33732127238);
+- event: `push`;
+- head branch: `feature/product-control-plane-server-2026-09-03`;
+- head SHA: `6e8a1982cbb1506789c77c598f08f69793849ef9`;
+- conclusion: `success`.
+
+All required actual steps passed: checkout, pnpm setup, Node setup, frozen
+install, lint, format check, typecheck, unit tests, PostgreSQL integration,
+`db:migrate`, `openapi:check`, `bridge:guard`, and build. The remote OpenAPI
+generator comparison executed and passed.
