@@ -29,8 +29,8 @@ Do not touch:
 | 1 | NEW-01 | `report_products_create` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 2 | NEW-02 | `report_returns_create_v2` | PARTIAL_FAIL — create PASS, report_info PASS, file read POLICY_BLOCKED = DEFECT-001; create metadata = DEFECT-002 | PENDING |
 | 3 | NEW-03 | `report_postings_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — lowercase fbo create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001; DEFECT-002/003 confirmed | PENDING |
-| 4 | NEW-04 | `report_discounted_create` | IN_PROGRESS — create PASS clean metadata + report_info PASS; file read NEXT | PENDING |
-| 5 | NEW-05 | `report_warehouse_stock` | PENDING | PENDING |
+| 4 | NEW-04 | `report_discounted_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001; no transform anomaly | PENDING |
+| 5 | NEW-05 | `report_warehouse_stock` | NEXT — requires valid seller FBS warehouse ID setup | PENDING |
 | 6 | NEW-06 | `report_placement_by_products_create` | PARTIAL_EXTERNAL_EVIDENCE — frozen STD-10 create cannot be reused | PENDING |
 | 7 | NEW-07 | `report_placement_by_supplies_create` | PENDING | PENDING |
 | 8 | NEW-08 | `report_marked_products_sales_create` | PENDING | PENDING |
@@ -57,16 +57,17 @@ Do not touch:
 
 ### DEFECT-001
 
-Generic safe report-file reads are statically privacy-blocked. Confirmed on three independent safe report types:
+Generic safe report-file reads are statically privacy-blocked. Confirmed on four independent safe report types:
 - NEW-01 `seller_products`;
 - NEW-02 `seller_returns_v2`;
-- NEW-03 `seller_postings`.
+- NEW-03 `seller_postings`;
+- NEW-04 `seller_discounted`.
 
-All three file reads: local `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
+All four file reads: local `POLICY_BLOCKED / personal_data_setting_off`, physical requests `0`, external request `false`.
 
 ### DEFECT-002
 
-Repeated planning metadata inconsistency: physical fingerprint differs and `command_transformed=true` while entitlement reports `exact_request_preserved=true`. Confirmed on NEW-02 and NEW-03 create paths. NEW-04 create and NEW-04 report_info are clean counterexamples, so the defect is not universal.
+Repeated planning metadata inconsistency: physical fingerprint differs and `command_transformed=true` while entitlement reports `exact_request_preserved=true`. Confirmed on NEW-02 and NEW-03 create paths. NEW-04 create and report_info are clean counterexamples, so the defect is not universal.
 
 ### DEFECT-003
 
@@ -74,58 +75,54 @@ Repeated planning metadata inconsistency: physical fingerprint differs and `comm
 - `["FBO"]` => HTTP400;
 - `["fbo"]` => HTTP200.
 
+Defect authority:
+`OZON_AI_WORKER_REPAIRED_26_READS_DEFECT_LEDGER_2026-09-03.md`
+
 ## NEW-04 evidence
 
 ### Run1 — create PASS
 
-Alias: `report_discounted_create`
-
 - request `51dfec0d-655b-4a77-9fba-ca4af1fb6f6e`
 - HTTP200
-- elapsed `1407 ms`
 - physical requests `1`
 - external request `true`
-- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
-- logical fingerprint `02e64eda`
-- physical fingerprint `02e64eda`
-- `command_transformed=false`
-- `exact_request_preserved=true`
+- logical/physical fingerprint `02e64eda`
+- transformed false
 - report code `REPORT_seller_discounted_2093109_1788406644_01a06557-c01b-7f31-9c51-b82d2a402ca7`.
-
-RAW:
-`live-runs/repaired-26/raw/NEW_04_RUN_1_REPORT_DISCOUNTED_CREATE_RAW_2026-09-03.json`
-
-Parsed:
-`live-runs/NEW_04_RUN_1_REPORT_DISCOUNTED_CREATE_2026-09-03.md`
 
 ### Run2 — report_info PASS
 
 - request `3f4eaf12-b7bf-4a3b-976d-d0439593ff83`
 - HTTP200
-- elapsed `1353 ms`
-- physical requests `1`
-- external request `true`
 - status `success`
 - report type `seller_discounted`
-- signed provider file field `[REDACTED]`
 - opaque ref `rpf_b58f09ca-4ca1-4ca5-a362-68d6da57b6d2`
-- logical fingerprint `d397b76a`
-- physical fingerprint `d397b76a`
-- `command_transformed=false`
-- `exact_request_preserved=true`.
+- logical/physical fingerprint `d397b76a`
+- transformed false.
 
-Run2 introduces no new defect and does not reproduce DEFECT-002.
+### Run3 — report_file_get POLICY_BLOCKED
 
-RAW:
-`live-runs/repaired-26/raw/NEW_04_RUN_2_REPORT_INFO_RAW_2026-09-03.json`
+- request `policy-111ff6bd-fd2e-4a71-aacf-e89bf4557f11`
+- fingerprint `1aa43c3f`
+- HTTP0
+- physical requests `0`
+- external request `false`
+- reason `personal_data_setting_off`
+- error `OPERATION_DISABLED_BY_USER`.
 
-Parsed:
-`live-runs/NEW_04_RUN_2_REPORT_INFO_READY_OPAQUE_FILE_REF_2026-09-03.md`
+This is the fourth DEFECT-001 reproduction. NEW-04 collection is complete enough to advance.
+
+RAW Run3:
+`live-runs/repaired-26/raw/NEW_04_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
+
+Parsed Run3:
+`live-runs/NEW_04_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
 
 ## Progress
 
 - Fully final-closed: `0/26`.
 - Standalone aliases exercised: `4/26`.
+- Standalone collection-complete or partial-fail rows: `4/26`.
 - Open numbered defects/candidates: `3`.
 - Batch coverage: `0/26`.
 - Runtime patching: **FORBIDDEN UNTIL COLLECTION COMPLETE**.
@@ -133,10 +130,7 @@ Parsed:
 
 ## Exact next collection step
 
-NEW-04 `report_file_get` for:
-`rpf_b58f09ca-4ca1-4ca5-a362-68d6da57b6d2`
-
-Record whether DEFECT-001 extends to the `seller_discounted` report class. Do not patch during collection. After recording that result, advance to NEW-05.
+NEW-05 `report_warehouse_stock` needs a real seller FBS warehouse ID (`warehouseId` is an array of strings). Use a minimum existing READ setup operation to obtain the seller warehouse list before exercising NEW-05. Setup reads do not count as repaired-command coverage. Persist the setup result before the NEW-05 create call.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_04_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_04_COMPLETE_PARTIAL_FAIL_NEW_05_WAREHOUSE_ID_SETUP_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
