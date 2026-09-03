@@ -28,60 +28,49 @@ That code belongs only to the frozen forensic workflow.
 ## Open defects
 
 - DEFECT-001: generic report-file reads privacy-blocked; confirmed on 10 report classes through NEW-11.
-- DEFECT-002: planning metadata inconsistency on NEW-02/03; multiple later create/report-info paths are clean counterexamples.
+- DEFECT-002: planning metadata inconsistency on NEW-02/03; multiple later paths are clean counterexamples.
 - DEFECT-003: `report_postings_create.delivery_schema` case mismatch, `FBO` => 400, `fbo` => 200.
 - DEFECT-004: `report_info.additional_data` key/value privacy-redaction bypass; confirmed on NEW-09.
-- DEFECT-005: `supply_order_list` active template/validator accepts required `filter.states=[]`, but provider rejects the exact template with HTTP400/code3.
+- DEFECT-005: `supply_order_list` active template/validator accepts required `filter.states=[]`, provider rejects it HTTP400/code3; explicit non-empty states control returns HTTP200.
 
 ## NEW-14 setup preserved state
 
-Run1 exact runtime-template setup:
-`{"operation":"supply_order_list","params":{"filter":{"states":[]},"limit":100,"sort_by":"ORDER_CREATION","sort_dir":"DESC"}}`
-
-Observed:
+Run1 exact registry-template setup:
+- `states=[]`
 - request `deba7764-b75b-4fbd-ada0-7e163844d109`
-- HTTP400 / provider code `3`
-- physical requests `1`
-- logical business results `1`
-- external request `true`
-- automatic retry `false`
-- exact request preserved `true`
-- fingerprints `d0967438 == d0967438`
-- transformed `false`.
+- HTTP400/code3
+- physical1, logical1, external true
+- exact request preserved true
+- `d0967438 == d0967438`
+- transformed false.
 
-Runtime findings:
-- `normalizeSupplyOrderListParams` requires `filter.states`.
-- it delegates to `validateEnumArray`.
-- `validateEnumArray` permits empty arrays because it only validates present elements.
-- active registry template explicitly uses `states: []`.
+Run2 materially different non-empty states setup:
+- request `3e5b9659-7664-4749-a34f-ad9a9af9ad42`
+- HTTP200
+- physical1, logical1, external true
+- exact request preserved true
+- fingerprints `bc9210cd == bc9210cd`
+- transformed false
+- returned 100 real order IDs
+- first order id `125820894`
+- last returned order id `57848502`
+- provider `last_id` present.
 
-Classification:
-`DEFECT-005 — SUPPLY_ORDER_LIST_EMPTY_STATES_TEMPLATE_PROVIDER_INVALID`
+The A/B confirms DEFECT-005 and proves the endpoint is otherwise usable.
 
-Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_1_SUPPLY_ORDER_LIST_EMPTY_STATES_PROVIDER_400_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_14_SETUP_RUN_1_SUPPLY_ORDER_LIST_EMPTY_STATES_PROVIDER_400_2026-09-03.md`
+Evidence Run2:
+- RAW `live-runs/repaired-26/raw/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_14_SETUP_RUN_2_SUPPLY_ORDER_LIST_NONEMPTY_STATES_PASS_2026-09-03.md`
 
 ## Exact next action
 
-Issue a materially different `supply_order_list` setup command with a non-empty explicit array containing all allowed runtime states:
-- DATA_FILLING
-- READY_TO_SUPPLY
-- ACCEPTED_AT_SUPPLY_WAREHOUSE
-- IN_TRANSIT
-- ACCEPTANCE_AT_STORAGE_WAREHOUSE
-- REPORTS_CONFIRMATION_AWAITING
-- REPORT_REJECTED
-- COMPLETED
-- REJECTED_AT_SUPPLY_WAREHOUSE
-- CANCELLED
-- OVERDUE
+Issue one explicit safe provider read using the first returned real order id:
 
-Keep `limit=100`, `sort_by=ORDER_CREATION`, `sort_dir=DESC`.
+`OZON_API_V1 {"operation":"supply_order_get","params":{"order_ids":[125820894]}}`
 
-Persist its result before any further Ozon command. If it returns real order ids, use explicit safe reads to resolve a real supply id. Never invent IDs.
+Persist its result before any further Ozon command. Extract only a real provider-returned `supply_id` for NEW-14 `cargoes_label_create`; never invent IDs.
 
 Do not touch frozen STD-10. Do not patch runtime.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_14_SETUP_DEFECT_005_NONEMPTY_ALL_STATES_NEXT_DEFECTS_001_002_003_004_005_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_14_SETUP_NONEMPTY_STATES_PASS_ORDER_125820894_SUPPLY_ORDER_GET_NEXT_DEFECTS_001_002_003_004_005_OPEN_STD_10_FROZEN`
