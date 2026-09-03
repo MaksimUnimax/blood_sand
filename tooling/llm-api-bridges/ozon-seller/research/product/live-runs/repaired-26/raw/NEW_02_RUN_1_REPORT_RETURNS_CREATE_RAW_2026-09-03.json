@@ -1,0 +1,78 @@
+{
+  "schema": "OZON_BATCH_RESULT_V1_CAPTURE",
+  "captured_from_operator_chat": true,
+  "batch": {
+    "bridge": "ozon-llm-api-bridge",
+    "version": "0.1.19",
+    "delivery_mode": "sequential_batch_single_delivery",
+    "result_count": 1,
+    "capability_probe": {
+      "performed": false,
+      "status": "not_needed",
+      "subscription_type": "UNKNOWN",
+      "http_status": 0,
+      "error_code": null
+    },
+    "query_planner": {
+      "status": "complete",
+      "coalesced_group_count": 0,
+      "coalesced_logical_count": 0,
+      "logical_business_result_count": 1,
+      "physical_business_request_count": 1
+    }
+  },
+  "results": [
+    {
+      "bridge": "ozon-llm-api-bridge",
+      "version": "0.1.19",
+      "request_id": "8b963833-eb57-4fe8-9b34-ff609ddf735c",
+      "operation": "report_returns_create_v2",
+      "command": {
+        "operation": "report_returns_create_v2",
+        "fingerprint": "687fa368"
+      },
+      "request_meta": {
+        "provider": "ozon",
+        "host_alias": "seller_api",
+        "http_method": "POST",
+        "path_alias": "report_returns_create_v2",
+        "external_request_executed": true,
+        "capability_probe_executed": false,
+        "capability_probe_http_status": 0
+      },
+      "http_status": 200,
+      "elapsed_ms": 1386,
+      "pagination": null,
+      "rate_limit": null,
+      "planning": {
+        "capability": {
+          "is_premium": null,
+          "probe_error_code": null,
+          "probe_http_status": 0,
+          "probe_performed": false,
+          "status": "not_needed",
+          "subscription_type": "UNKNOWN"
+        },
+        "entitlement": {
+          "capability_required": false,
+          "entitlement_key": "POST /v2/report/returns/create",
+          "exact_request_preserved": true,
+          "partial": false,
+          "reason": "all_accounts",
+          "rule_source": "reviewed-openapi-463-2026-08-19",
+          "status": "SUPPORTED_AND_ENTITLED"
+        },
+        "execution": {
+          "logical_command_fingerprint": "687fa368",
+          "physical_command_fingerprint": "d1fbfbfe",
+          "command_transformed": true
+        }
+      },
+      "result": {
+        "result": {
+          "code": "REPORT_seller_returns_v2_2093109_1788405276_01a06542-ddb2-7a28-85ac-cd9447fa91a6"
+        }
+      }
+    }
+  ]
+}
