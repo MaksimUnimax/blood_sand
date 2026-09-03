@@ -27,37 +27,10 @@ That code belongs only to the frozen forensic workflow.
 
 ## Open defects
 
-- DEFECT-001: generic report-file reads privacy-blocked; confirmed on 9 report classes through NEW-09.
-- DEFECT-002: create planning metadata inconsistency on NEW-02/03; NEW-04/05/06/07/08/09/11 create and tested report-info paths are clean counterexamples.
+- DEFECT-001: generic report-file reads privacy-blocked; confirmed on 9 report classes through NEW-09. NEW-11 file read is next scope probe.
+- DEFECT-002: planning metadata inconsistency on NEW-02/03; NEW-04/05/06/07/08/09/11 create and tested report-info paths are clean counterexamples.
 - DEFECT-003: `report_postings_create.delivery_schema` case mismatch, `FBO` => 400, `fbo` => 200.
-- DEFECT-004: `report_info.additional_data` key/value privacy-redaction bypass; NEW-09 finance realization leaked identifying receiver metadata while personal-data setting was OFF. Do not repeat leaked values.
-
-## NEW-10 preserved state
-
-Submitted command:
-`finance_document_b2b_sales` with `date=2026-08`.
-
-Provider result:
-- request `7182d4dc-f32a-4c33-834f-d8922775cecb`
-- HTTP404 / provider code `5`
-- physical requests `1`
-- logical business results `1`
-- external request `true`
-- automatic retry `false`
-- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
-- entitlement key `POST /v1/finance/document-b2b-sales`
-- exact request preserved `true`
-- fingerprints `04d982c1 == 04d982c1`
-- transformed `false`.
-
-Classification:
-`COLLECTION_COMPLETE_PROVIDER_FAIL`
-
-The current endpoint contract still accepts required `date` in `YYYY-MM` form, so this single provider 404 does not establish a new bridge defect. Do not automatically repeat the request after 4xx. No report code was returned, therefore no NEW-10 `report_info` / `report_file_get` can follow from this run.
-
-Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_10_RUN_1_FINANCE_DOCUMENT_B2B_SALES_PROVIDER_404_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_10_RUN_1_FINANCE_DOCUMENT_B2B_SALES_PROVIDER_404_2026-09-03.md`
+- DEFECT-004: `report_info.additional_data` key/value privacy-redaction bypass; confirmed on NEW-09. NEW-11 `additional_data=[]` and did not reproduce it.
 
 ## NEW-11 active state
 
@@ -72,21 +45,37 @@ Run1 `finance_mutual_settlement_report` with `date=2026-08`:
 - transformed `false`
 - report code `REPORT_mutual_settlement_2093109_1788412383_01a065af-5079-78cb-a6b5-1110c3c9686a`.
 
+Run2 `report_info`:
+- request `f56ad0ed-8795-4c66-8dd9-1da54eb3602c`
+- HTTP200
+- physical requests `1`
+- logical business results `1`
+- external request `true`
+- exact request preserved `true`
+- fingerprints `e19249be == e19249be`
+- transformed `false`
+- report status `success`
+- report type `mutual_settlement`
+- file `[REDACTED]`
+- opaque ref `rpf_18eb749e-08df-4b99-8107-f4dcbf0a2529`
+- additional_data empty.
+
 Classification:
-`IN_PROGRESS_CREATE_PASS_REPORT_INFO_NEXT`
+`IN_PROGRESS_CREATE_PASS_REPORT_INFO_PASS_FILE_GET_NEXT`
 
-No new defect from Run1. The unchanged fingerprints are another clean counterexample for DEFECT-002.
+No new defect from Run2. DEFECT-002 gets another clean counterexample. DEFECT-004 was not reproduced because `additional_data` is empty.
 
-Evidence:
-- RAW `live-runs/repaired-26/raw/NEW_11_RUN_1_FINANCE_MUTUAL_SETTLEMENT_REPORT_RAW_2026-09-03.json`
-- parsed `live-runs/NEW_11_RUN_1_FINANCE_MUTUAL_SETTLEMENT_REPORT_2026-09-03.md`
+Evidence Run2:
+- RAW `live-runs/repaired-26/raw/NEW_11_RUN_2_REPORT_INFO_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_11_RUN_2_REPORT_INFO_2026-09-03.md`
 
 ## Exact next action
 
-Run NEW-11 `report_info` for this exact independent code only:
-`REPORT_mutual_settlement_2093109_1788412383_01a065af-5079-78cb-a6b5-1110c3c9686a`.
+Run NEW-11 `report_file_get` for this exact opaque ref only:
+`rpf_18eb749e-08df-4b99-8107-f4dcbf0a2529`
+with `offset=0`, `limit=50`, personal-data setting still OFF.
 
-Persist the result before any explicit file/document read. Do not touch frozen STD-10. Do not patch runtime.
+Persist the result before NEW-12. Do not touch frozen STD-10. Do not patch runtime.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_11_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_11_REPORT_INFO_PASS_FILE_GET_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
