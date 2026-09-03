@@ -18,28 +18,29 @@ Do not touch:
 ## Progress
 
 - final closed: `0/26`
-- standalone aliases exercised: `3/26`
+- standalone aliases exercised: `4/26`
 - batch coverage: `0/26`
 - open numbered defects/candidates: `3`
 
 ## DEFECT-001
 
-Static privacy block on generic `report_file_get`, now reproduced on three safe report types:
+Static privacy block on generic `report_file_get`, reproduced on three safe report types:
 1. `seller_products`;
 2. `seller_returns_v2`;
 3. `seller_postings`.
 
-NEW-03 file-read reproduction:
-- request `policy-5e9052c9-6106-4f28-846c-e1717fd88c1f`
-- ref `rpf_4619d324-8228-4c8e-b8be-c4c1ea05b92c`
-- HTTP0
-- physical requests 0
-- external request false
-- `POLICY_BLOCKED / personal_data_setting_off`.
-
 ## DEFECT-002
 
-Create planning metadata inconsistency reproduced on NEW-02 and NEW-03 create paths. Physical fingerprint differs / transformed true while exact_request_preserved remains true.
+Planning metadata inconsistency reproduced on NEW-02 and NEW-03 create paths: physical fingerprint differs / transformed true while exact_request_preserved remains true.
+
+NEW-04 Run1 is a clean counterexample:
+- logical fingerprint `02e64eda`
+- physical fingerprint `02e64eda`
+- transformed false
+- exact_request_preserved true
+- provider HTTP200.
+
+Therefore DEFECT-002 is not universal to all repaired create aliases.
 
 ## DEFECT-003
 
@@ -47,21 +48,28 @@ Create planning metadata inconsistency reproduced on NEW-02 and NEW-03 create pa
 - uppercase `FBO` => HTTP400;
 - lowercase `fbo` on same past range => HTTP200.
 
-## NEW-03 preserved state
+## NEW-04 current state
 
-- successful create request `8e92df34-abdc-450f-a82b-dd55605bb7ac`
-- report code `REPORT_seller_postings_2093109_1788406191_01a06550-d51a-7587-9280-b9432c90825c`
-- report_info PASS request `72342313-8c33-4e39-a047-56c01716cf28`
-- report type `seller_postings`
-- opaque ref `rpf_4619d324-8228-4c8e-b8be-c4c1ea05b92c`
-- file read blocked by DEFECT-001.
+`report_discounted_create` Run1 PASS:
+- request `51dfec0d-655b-4a77-9fba-ca4af1fb6f6e`
+- HTTP200
+- physical requests `1`
+- external request true
+- report code `REPORT_seller_discounted_2093109_1788406644_01a06557-c01b-7f31-9c51-b82d2a402ca7`
+- no transform anomaly.
+
+RAW:
+`live-runs/repaired-26/raw/NEW_04_RUN_1_REPORT_DISCOUNTED_CREATE_RAW_2026-09-03.json`
+
+Parsed:
+`live-runs/NEW_04_RUN_1_REPORT_DISCOUNTED_CREATE_2026-09-03.md`
 
 ## Exact next command
 
-Start NEW-04:
-`OZON_API_V1 {"operation":"report_discounted_create","params":{}}`
+NEW-04:
+`OZON_API_V1 {"operation":"report_info","params":{"code":"REPORT_seller_discounted_2093109_1788406644_01a06557-c01b-7f31-9c51-b82d2a402ca7"}}`
 
-Persist RAW + parsed evidence + gate + checkpoint before any following command. Do not patch runtime.
+If ready, next separate step is `report_file_get` to scope DEFECT-001. Do not patch runtime.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_03_COMPLETE_PARTIAL_FAIL_NEW_04_CREATE_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_04_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
