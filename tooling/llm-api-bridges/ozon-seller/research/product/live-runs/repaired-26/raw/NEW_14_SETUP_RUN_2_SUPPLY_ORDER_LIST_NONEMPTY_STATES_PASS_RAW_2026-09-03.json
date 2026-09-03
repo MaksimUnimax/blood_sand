@@ -1,0 +1,42 @@
+{
+  "bridge": "ozon-llm-api-bridge",
+  "version": "0.1.19",
+  "delivery_mode": "sequential_batch_single_delivery",
+  "result_count": 1,
+  "query_planner": {
+    "status": "complete",
+    "coalesced_group_count": 0,
+    "coalesced_logical_count": 0,
+    "logical_business_result_count": 1,
+    "physical_business_request_count": 1
+  },
+  "result": {
+    "request_id": "3e5b9659-7664-4749-a34f-ad9a9af9ad42",
+    "operation": "supply_order_list",
+    "command_fingerprint": "bc9210cd",
+    "request_meta": {
+      "provider": "ozon",
+      "host_alias": "seller_api",
+      "http_method": "POST",
+      "path_alias": "supply_order_list",
+      "external_request_executed": true
+    },
+    "http_status": 200,
+    "elapsed_ms": 1359,
+    "entitlement": {
+      "status": "SUPPORTED_AND_ENTITLED",
+      "reason": "all_accounts",
+      "entitlement_key": "POST /v3/supply-order/list",
+      "exact_request_preserved": true
+    },
+    "execution": {
+      "logical_command_fingerprint": "bc9210cd",
+      "physical_command_fingerprint": "bc9210cd",
+      "command_transformed": false
+    },
+    "provider_result": {
+      "order_ids": [125820894,125819631,125819295,125818485,125818083,123543323,123539995,123539680,123539222,122150199,122149074,122146084,118601243,117742593,116705461,116705273,115576685,115568662,115566892,111524273,111523942,111026022,111025700,109467534,109466636,107910228,105042779,103674757,103674719,102119810,100694408,100694094,98027163,98027013,94016283,92700315,92699539,90383625,90383599,90383517,89177969,89177900,88231105,87109971,85989190,85062049,83988908,83988652,81770004,81471746,80562535,80008777,79286209,78551219,78104172,76918712,76447271,76447122,76445908,75324251,75028370,75028325,75028044,75023132,75023066,75023028,75023002,74673153,74657124,74656824,74626106,74626066,74625964,74073098,74070749,74069796,73154340,73149705,73036257,72404649,72017009,71427824,71139938,70717814,70289799,69806831,69806629,69801298,69717718,68950613,67554786,65177742,64485961,63584103,63440385,62529142,60814655,59767017,59031548,57848502],
+      "last_id": "CLblyhsSBgjQ6rDDBg=="
+    }
+  }
+}
