@@ -37,8 +37,8 @@ That code belongs only to the frozen forensic STD-10 workflow.
 | 7 | NEW-07 | `report_placement_by_supplies_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 8 | NEW-08 | `report_marked_products_sales_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS + report_info PASS; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
 | 9 | NEW-09 | `report_realization_posting_create` | COLLECTION_COMPLETE_PARTIAL_FAIL — create PASS; report_info PASS with DEFECT-004 privacy leak; file read POLICY_BLOCKED = DEFECT-001 | PENDING |
-| 10 | NEW-10 | `finance_document_b2b_sales` | NEXT | PENDING |
-| 11 | NEW-11 | `finance_mutual_settlement_report` | PENDING | PENDING |
+| 10 | NEW-10 | `finance_document_b2b_sales` | COLLECTION_COMPLETE_PROVIDER_FAIL — one exact external request, HTTP404/code5, no retry, no report code; no new bridge defect opened | PENDING |
+| 11 | NEW-11 | `finance_mutual_settlement_report` | NEXT | PENDING |
 | 12 | NEW-12 | `finance_compensation_report` | PENDING | PENDING |
 | 13 | NEW-13 | `finance_decompensation_report` | PENDING | PENDING |
 | 14 | NEW-14 | `cargoes_label_create` | PENDING | PENDING |
@@ -98,11 +98,34 @@ Evidence Run3:
 - RAW `live-runs/repaired-26/raw/NEW_09_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_RAW_2026-09-03.json`
 - parsed `live-runs/NEW_09_RUN_3_REPORT_FILE_GET_POLICY_BLOCKED_2026-09-03.md`
 
+## NEW-10 summary — provider 404, no new bridge defect
+
+Submitted:
+`finance_document_b2b_sales` with `date=2026-08`.
+
+Observed:
+- request `7182d4dc-f32a-4c33-834f-d8922775cecb`
+- HTTP404, provider code `5`
+- physical requests `1`, logical results `1`
+- external request `true`
+- automatic retry `false`
+- entitlement `SUPPORTED_AND_ENTITLED / all_accounts`
+- entitlement key `POST /v1/finance/document-b2b-sales`
+- exact request preserved `true`
+- fingerprints `04d982c1 == 04d982c1`
+- transformed `false`.
+
+The endpoint and required `YYYY-MM` date contract remain current; one provider 404 is therefore recorded as `COLLECTION_COMPLETE_PROVIDER_FAIL`, not a new bridge defect. No automatic repeat is allowed after provider 4xx. No report code was returned, so downstream `report_info`/`report_file_get` is impossible for this run.
+
+Evidence:
+- RAW `live-runs/repaired-26/raw/NEW_10_RUN_1_FINANCE_DOCUMENT_B2B_SALES_PROVIDER_404_RAW_2026-09-03.json`
+- parsed `live-runs/NEW_10_RUN_1_FINANCE_DOCUMENT_B2B_SALES_PROVIDER_404_2026-09-03.md`
+
 ## Progress
 
 - Fully final-closed: `0/26`.
-- Standalone aliases exercised: `9/26`.
-- Collection-complete/partial-fail rows: `9/26`.
+- Standalone aliases exercised: `10/26`.
+- Collection-complete/partial/provider-fail rows: `10/26`.
 - Open numbered defects: `4`.
 - Batch coverage: `0/26`.
 - Runtime patching: **FORBIDDEN UNTIL COLLECTION COMPLETE**.
@@ -110,7 +133,7 @@ Evidence Run3:
 
 ## Exact next collection step
 
-Start NEW-10 `finance_document_b2b_sales` only after verifying its exact runtime document/opaque-reference flow. Use a completed month and persist the provider result before any explicit document read. Do not patch runtime.
+Start NEW-11 `finance_mutual_settlement_report` with a completed month. Persist its provider result before any downstream report/document read. On provider 4xx/5xx/error do not automatically repeat the same business request. Do not patch runtime.
 
 Checkpoint:
-`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_09_COMPLETE_PARTIAL_FAIL_NEW_10_DOCUMENT_FLOW_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
+`REPAIRED_26_READS_COLLECT_ALL_DEFECTS_NEW_10_PROVIDER_404_COMPLETE_NEW_11_NEXT_DEFECTS_001_002_003_004_OPEN_STD_10_FROZEN`
