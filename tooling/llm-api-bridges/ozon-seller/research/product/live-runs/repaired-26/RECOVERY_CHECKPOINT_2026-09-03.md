@@ -15,12 +15,12 @@ Do not patch runtime until standalone + required batch collection is exhausted. 
 Do not touch:
 `REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`
 
-That code belongs only to the frozen forensic workflow. NEW-06 used its own independent report code and opaque ref.
+That code belongs only to the frozen forensic workflow.
 
 ## Progress
 
 - final closed: `0/26`
-- standalone aliases exercised: `6/26`
+- standalone aliases exercised: `7/26`
 - collection-complete/partial-fail: `6/26`
 - batch coverage: `0/26`
 - open numbered defects: `3`
@@ -28,37 +28,34 @@ That code belongs only to the frozen forensic workflow. NEW-06 used its own inde
 ## Open defects
 
 - DEFECT-001: generic safe report-file reads privacy-blocked; confirmed on `seller_products`, `seller_returns_v2`, `seller_postings`, `seller_discounted`, `seller_stocks`, `seller_placement_by_products`.
-- DEFECT-002: create planning metadata inconsistency on NEW-02/03; NEW-04/05/06 create and tested `report_info` calls are clean counterexamples.
+- DEFECT-002: create planning metadata inconsistency on NEW-02/03; NEW-04/05/06/07 create paths and tested `report_info` calls are clean counterexamples.
 - DEFECT-003: `report_postings_create.delivery_schema` case mismatch, `FBO` => 400, `fbo` => 200.
 
-## NEW-06 preserved state
+## NEW-07 current state
 
-Independent create PASS:
-- request `5171ffdb-7762-4bb9-ae8a-1663f1932045`
-- code `REPORT_seller_placement_by_products_2093109_1788407770_01a06568-ee50-7d2e-bcca-9594563e3735`
-- HTTP200, physical1
-- fingerprints `85e4f38a == 85e4f38a`
-- transformed false.
+Create PASS:
+- operation `report_placement_by_supplies_create`
+- completed date range `2026-09-01..2026-09-02`
+- request `5c5d7784-4989-4ed1-9724-70d3aa3adb5e`
+- HTTP200
+- physical requests 1
+- external request true
+- fingerprints `2a4cb92d == 2a4cb92d`
+- transformed false
+- exact_request_preserved true
+- report code `REPORT_seller_placement_by_supplies_2093109_1788408279_01a06570-b345-7114-9532-c1476a0c61e2`.
 
-Report-info PASS:
-- request `e78e1813-43de-41d9-ac9a-32d00c5fcc5c`
-- report type `seller_placement_by_products`
-- opaque ref `rpf_ec4858fd-8af3-4da5-a7c3-ddd4ec1753b9`
-- fingerprints `c5855b10 == c5855b10`
-- transformed false.
+RAW:
+`live-runs/repaired-26/raw/NEW_07_RUN_1_REPORT_PLACEMENT_BY_SUPPLIES_CREATE_RAW_2026-09-03.json`
 
-File-read block:
-- request `policy-52e5b3e8-47ac-4db0-87e0-a460dc070271`
-- fingerprint `f96ec644`
-- HTTP0, physical0, external false
-- `POLICY_BLOCKED / personal_data_setting_off`
-- DEFECT-001 reproduction #6.
+Parsed:
+`live-runs/NEW_07_RUN_1_REPORT_PLACEMENT_BY_SUPPLIES_CREATE_2026-09-03.md`
 
-NEW-06 is `COLLECTION_COMPLETE_PARTIAL_FAIL`. Frozen STD-10 remained untouched.
+## Exact next command
 
-## Exact next action
+`OZON_API_V1 {"operation":"report_info","params":{"code":"REPORT_seller_placement_by_supplies_2093109_1788408279_01a06570-b345-7114-9532-c1476a0c61e2"}}`
 
-Start NEW-07 `report_placement_by_supplies_create` with a fresh standalone payload satisfying the exact runtime contract. Persist RAW/result before continuing its report-info/file chain. Do not patch.
+Persist that result before any following command. If ready, subsequent separate step is `report_file_get` on NEW-07's opaque ref to scope DEFECT-001. Do not patch runtime.
 
 Checkpoint marker:
-`COLLECT_ALL_DEFECTS_NEW_06_COMPLETE_PARTIAL_FAIL_NEW_07_CREATE_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
+`COLLECT_ALL_DEFECTS_NEW_07_CREATE_PASS_REPORT_INFO_NEXT_DEFECTS_001_002_003_OPEN_STD_10_FROZEN`
