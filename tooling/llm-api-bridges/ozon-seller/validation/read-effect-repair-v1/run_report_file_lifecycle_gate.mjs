@@ -157,7 +157,7 @@ assert.equal(calls.length, beforeExpired);
 // Session storage failures are explicit; they never fabricate safe state.
 const readFailStore = { async get() { throw new Error("read down"); }, async set() {} };
 await assert.rejects(
-  globalThis.OzonProviderFactory.createOzonProvider({ fetchImpl, reportStateStore: readFailStore }).executeCommandObject({ operation: "report_file_get", params: { file_ref: "rpf_s_any" } }, {}, {}),
+  globalThis.OzonProviderFactory.createOzonProvider({ fetchImpl, reportStateStore: readFailStore }).executeCommandObject({ operation: "report_file_get", params: { file_ref: "rpf_s_storage_read_failure" } }, {}, {}),
   (error) => error?.code === "REPORT_FILE_SESSION_STATE_READ_FAILED" && error?.external_request_executed === false
 );
 const writeFailStore = { async get() { return null; }, async set() { throw new Error("write down"); } };
