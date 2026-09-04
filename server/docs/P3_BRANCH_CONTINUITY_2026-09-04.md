@@ -13,3 +13,7 @@ The canonical continuation branch is
 `feature/product-control-plane-server-2026-09-04`, created exactly from the
 accepted P3.2 SHA. The dirty P3.3 candidate was preserved byte-equivalently
 through the branch transition.
+
+P3.3 was accepted on `feature/product-control-plane-server-2026-09-04` after
+the implementation commit `6c8114761ba083ee7bec5c420824950709eacb24` passed
+the canonical push-triggered Server CI and remote content review.

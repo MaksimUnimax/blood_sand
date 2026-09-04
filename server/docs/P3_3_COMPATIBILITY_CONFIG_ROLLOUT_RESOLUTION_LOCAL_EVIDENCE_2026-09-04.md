@@ -1,6 +1,6 @@
 # P3.3 local acceptance evidence — 2026-09-04
 
-**Status: LOCAL ACCEPTED — P3.3 ACTIVE**
+**Status: ACCEPTED — P3.3 DONE**
 
 ## Continuity and attempt history
 
@@ -85,8 +85,17 @@ conversation storage, executable config, arbitrary URL/method/headers, Bridge
 runtime import, production database URL, or tracked SSH private key. Test-only
 in-memory keys remain permitted.
 
-Start remote checks (two) and final remote checks (three) all returned
-`d6fae7cd4f49d70eac7b8dda9e189f317dc31052` for the canonical ref. Host Node,
-PostgreSQL, pnpm, MySQL, protected services, and product deployment were not
-changed. Roadmap remains P0/P1/P2 done, P3 active, P3.1/P3.2 done, P3.3 active,
-P3.4–P3.7 and P4–P15 planned.
+Remote acceptance completed on canonical branch
+`feature/product-control-plane-server-2026-09-04`. Implementation commit
+`6c8114761ba083ee7bec5c420824950709eacb24` passed push-triggered Server CI
+run [33858689916](https://github.com/MaksimUnimax/blood_sand/actions/runs/33858689916).
+The remote review found only expected P3.3 paths, no unrelated history, no P3.4
+implementation, and no Bridge runtime change. Migration state is exactly
+0000–0007, latest `0007_p3_3_features_rollouts.sql`, with no 0008. OpenAPI
+remains 14 routes at SHA-256
+`3fd8ad9a61c8146c314d86912a47f1a154cf1eea6d73c3ad9dabfde52f2eeef0`, without
+`/v1/bootstrap`.
+
+Host Node, PostgreSQL, pnpm, MySQL, protected services, and product deployment
+were not changed. Roadmap is P0/P1/P2 done, P3 active, P3.1/P3.2/P3.3 done,
+P3.4 next, P3.5–P3.7 and P4–P15 planned.
