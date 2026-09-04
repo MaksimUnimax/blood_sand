@@ -96,7 +96,7 @@ Classification: **NOT_DATE_RELATED**.
 
 These classifications are important for exhaustive closure: they count as reviewed operations rather than unexamined gaps.
 
-## 3. `finance_b2b_sales_json` — month syntax closed, business-history boundary still open
+## 3. `finance_b2b_sales_json` — month syntax closed; provider-history wording ambiguous
 
 Operation: `POST /v1/finance/document-b2b-sales/json`.
 
@@ -106,16 +106,99 @@ Executable baseline:
 - enforces lexical `YYYY-MM` with month `01..12`;
 - registry template uses `2019-01`.
 
-Current provider material describes the request as a monthly reporting period in `YYYY-MM` form. Therefore the primitive wire-shape dimension is consistent.
+Current provider schema:
+
+- marks `date` required;
+- describes the reporting period as `YYYY-MM`;
+- also contains the wording `Отчёт доступен до января 2019 включительно.`
+
+That historical sentence is semantically suspicious for a method introduced years later and conflicts with the normal interpretation of an ongoing monthly report surface. It is not safe evidence for inventing either `date <= 2019-01` or `date >= 2019-01` locally.
 
 Classification:
 
+- **MATCH — requiredness**;
 - **MATCH — `YYYY-MM` lexical/month-domain format**;
-- **PENDING — earliest/latest supported business period**, because the currently available prose must be resolved unambiguously before introducing any additional boundary. No historical limit is invented from ambiguous wording.
+- **PROVIDER_DOCUMENTATION_AMBIGUITY — historical boundary unresolved**.
 
-This operation remains in the queue only for business-period semantics, not for basic month syntax.
+No new local historical guard is authorized from ambiguous prose. If the boundary later matters for repair or a safe test, it requires an unambiguous provider source or live clarification after STD-06 is unfrozen.
 
-## 4. Corrected effect-repair cross-reference
+## 4. Other schema-driven monthly finance reports — MATCH on published date contract
+
+The shared effect-repair schema uses `format: month`, implemented as exact `YYYY-(01..12)`, for all four operations below. It also marks `date` required.
+
+### `finance_document_b2b_sales` — `POST /v1/finance/document-b2b-sales`
+
+Current provider schema:
+
+- `date` required;
+- reporting period documented as `YYYY-MM`;
+- no separate earliest/latest business-period bound is published in the inspected request schema.
+
+Classification: **MATCH — requiredness + month format**.
+
+### `finance_mutual_settlement_report` — `POST /v1/finance/mutual-settlement`
+
+Current provider schema:
+
+- `date` required;
+- reporting period documented as `YYYY-MM`;
+- no separate earliest/latest business-period bound is published in the inspected request schema.
+
+Classification: **MATCH — requiredness + month format**.
+
+### `finance_compensation_report` — `POST /v1/finance/compensation`
+
+Current provider schema:
+
+- `date` required;
+- reporting period documented as `YYYY-MM`;
+- request example uses a valid month value (`2023-09`);
+- no separate earliest/latest business-period bound is published in the inspected request schema.
+
+Classification: **MATCH — requiredness + month format**.
+
+### `finance_decompensation_report` — `POST /v1/finance/decompensation`
+
+Current provider schema is parallel to the compensation report:
+
+- `date` required;
+- reporting period documented as `YYYY-MM`;
+- request example uses a valid month value (`2023-09`);
+- no separate earliest/latest business-period bound is published in the inspected request schema.
+
+Classification: **MATCH — requiredness + month format**.
+
+No additional date-bound defect is opened for these four operations without provider evidence.
+
+## 5. `posting_digital_list_v2` — date-time format MATCH; no undocumented limit invented
+
+Operation: `POST /v2/posting/digital/list`.
+
+Current provider contract:
+
+- request body itself is required, but its `filter` is optional;
+- `filter.since` and `filter.to`, when supplied, are `format: date-time`;
+- current request example uses RFC3339 timestamps;
+- the inspected schema does not publish a maximum interval or make the date pair required;
+- v2 is the replacement for retired `/v1/posting/digital/list`.
+
+Executable baseline:
+
+- `normalizeStep7PostingDigitalListParams` makes `filter` optional;
+- optional `since/to` are each validated through strict `requireRfc3339DateTime()`;
+- authority registry template is `{limit:100}` and does not hard-code dates;
+- authority registry uses `/v2/posting/digital/list`.
+
+Classification:
+
+- **MATCH — optionality**;
+- **MATCH — RFC3339 date-time format**;
+- **MATCH — lifecycle version**;
+- **NO PROVIDER-GROUNDED MAX-PERIOD RULE FOUND**.
+
+Do not borrow the one-year limit from `/v4/posting/fbs/list`: the provider does not publish that rule for this digital-list schema in the inspected contract.
+
+## 6. Corrected effect-repair cross-reference
 
 During this continuation the existing `DEFECT_015_EFFECT_REPAIR_DATE_SCHEMA_SWEEP_2026-09-04.md` was corrected after direct executable-baseline readback.
 
@@ -128,16 +211,16 @@ Corrected facts:
 
 This correction prevents the repair scope from adding redundant endpoint-specific guards while missing the actual shared date-validity defect.
 
-## 5. Remaining static queue
+## 7. Remaining static queue
 
 Continue, without live calls, through:
 
-1. `posting_digital_list_v2` — resolve current provider period semantics beyond the already-known strict RFC3339 Bridge behavior;
-2. every still-unmapped `requireRfc3339DateTime()` call site;
-3. every remaining `requireDateYmd()` / mixed analytics / month-period operation;
-4. remaining schema-driven date/date-time/month fields;
-5. dynamic/current-state templates that cannot truthfully be universal runnable defaults;
-6. remaining provider lifecycle/deprecation notices;
-7. explicit `NOT_DATE_RELATED` classification for every remaining registered operation until the full registry population is accounted for.
+1. every still-unmapped `requireRfc3339DateTime()` call site;
+2. every remaining `requireDateYmd()` / mixed analytics operation;
+3. remaining schema-driven date/date-time fields and endpoint-specific prose limits;
+4. dynamic/current-state templates that cannot truthfully be universal runnable defaults;
+5. remaining provider lifecycle/deprecation notices;
+6. explicit `NOT_DATE_RELATED` classification for every remaining registered operation until the full registry population is accounted for;
+7. `finance_b2b_sales_json` historical boundary only if an unambiguous source resolves the provider wording; do not block unrelated static closure on that ambiguity.
 
 STD-06 remains **FROZEN ON LIVE FAIL**. No executable repair and no new live Ozon request is authorized by this artifact.
