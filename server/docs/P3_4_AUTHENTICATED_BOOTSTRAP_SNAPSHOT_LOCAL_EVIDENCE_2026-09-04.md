@@ -1,6 +1,6 @@
 # P3.4 authenticated bootstrap snapshot — local evidence
 
-**Status: LOCAL ACCEPTED — P3.4 ACTIVE**
+**Status: ACCEPTED — P3.4 DONE**
 
 ## Attempt history and base
 
@@ -64,3 +64,20 @@ Security review found no tracked config signing private key, DB private-key
 column, private-key HTTP/log output, raw bootstrap-body/detectedAi logging,
 bridge runtime import, P3.5 lifecycle implementation, or P3.6 offline cache.
 ADR-0012 and the roadmap retain P3.4 ACTIVE; P3.5/P3.6 remain planned.
+
+## Remote acceptance review
+
+- Implementation SHA: `0d094dc6e809b95e2273406059e0ac66e061e8ef`.
+- Canonical branch: `feature/product-control-plane-server-2026-09-04`.
+- Code CI run: `33869699019` (`https://github.com/MaksimUnimax/blood_sand/actions/runs/33869699019`).
+- Remote review result: PASS (expected files only, expected behavior checks, no OUT_OF_SCOPE).
+- Final counts:
+  - Unit tests: 145 passed.
+  - Integration tests: 81 passed.
+  - P3.4 integration cases: 9/9.
+  - E2E tests: 13 passed.
+- OpenAPI:
+  - route count: 15
+  - `POST /v1/bootstrap`: 1
+  - SHA-256: `1d4869210b66d48c7f51978f85ebf21869d61a29d9a47d7fa2ffae0a9f9a8cff`
+- Migration state: `0000` through `0007` only; no `0008`.
