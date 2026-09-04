@@ -16,6 +16,10 @@ replacements = [
         "r'execution_enabled: (?:true|false), currentness: \"[^\"]+\"',",
         "r'execution_enabled: (?:true|false),\\s*currentness: \"[^\"]+\"',",
     ),
+    (
+        'text = replace_once(text, "JSON.parse(JSON.stringify(operations[alias].template))", "commandFor(alias)", "e2e alias command fixture")',
+        'text = text.replace("JSON.parse(JSON.stringify(operations[alias].template))", "commandFor(alias)")',
+    ),
 ]
 for old, new in replacements:
     count = source.count(old)
