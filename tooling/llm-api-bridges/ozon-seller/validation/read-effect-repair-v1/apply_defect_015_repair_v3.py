@@ -28,3 +28,13 @@ for old, new in replacements:
     source = source.replace(old, new, 1)
 namespace = {"__name__": "__main__", "__file__": str(v1)}
 exec(compile(source, str(v1), "exec"), namespace, namespace)
+
+gate = Path(__file__).with_name("run_defect_015_date_repair_gate.mjs")
+gate_text = gate.read_text(encoding="utf-8")
+old = "registry.OPERATIONS.fbs_stock_by_warehouse_v2.execution_enabled"
+new = "registry.OPERATIONS.fbs_stock_by_warehouse.execution_enabled"
+if old in gate_text:
+    gate_text = gate_text.replace(old, new, 1)
+elif new not in gate_text:
+    raise RuntimeError("DEFECT-015 gate FBS stock replacement assertion not found")
+gate.write_text(gate_text, encoding="utf-8", newline="\n")
