@@ -14,6 +14,8 @@ This document is a blocking process gate. It does not authorize a patch and it d
 
 **ЗАПРЕЩЕНО ПЕРЕДАВАТЬ ПАТЧ, СБОРКУ ИЛИ АРТЕФАКТ КАК ГОТОВЫЙ, ПОКА НЕ ПРОВЕРЕНЫ ВСЕ ДО ЕДИНОЙ ЗАВИСИМОСТИ, КОТОРЫЕ ДОБАВЛЕНЫ, ИЗМЕНЕНЫ ИЛИ МОГУТ БЫТЬ ЗАТРОНУТЫ ПАТЧЕМ. ДЛЯ КАЖДОЙ ТАКОЙ ЗАВИСИМОСТИ ОБЯЗАТЕЛЬНО ПРОЙТИ ПОЛНУЮ ЦЕПОЧКУ ОТ МЕСТА, ГДЕ ОНА СОЗДАЕТСЯ/ОПРЕДЕЛЯЕТСЯ, ДО КАЖДОГО МЕСТА, ГДЕ ОНА ЧИТАЕТСЯ, СРАВНИВАЕТСЯ, ВЕТВИТ ЛОГИКУ, ИЗМЕНЯЕТСЯ, СОХРАНЯЕТСЯ, ВОССТАНАВЛИВАЕТСЯ, ПЕРЕДАЕТСЯ, ИСПОЛЬЗУЕТСЯ ДЛЯ ПРАВ/ПОЛИТИК/ПЛАНИРОВАНИЯ/ЗАПРОСОВ/УЧЕТА/БЕЗОПАСНОСТИ, ПОПАДАЕТ В РЕЗУЛЬТАТ ИЛИ ПРОВЕРЯЕТСЯ ТЕСТАМИ. ХОТЯ БЫ ОДИН НЕПРОВЕРЕННЫЙ ПОТРЕБИТЕЛЬ, ВЕТКА, ПЕРЕХОД, ХРАНИЛИЩЕ, ВЫВОД ИЛИ ТЕСТ = `BLOCKED`; НЕЛЬЗЯ ГОВОРИТЬ `PASS`, `ГОТОВО`, `ЗАКРЫТО` И НЕЛЬЗЯ ОТДАВАТЬ ПАТЧ. ИСПРАВЛЕНИЕ ИСХОДНОГО СИМПТОМА НЕ ЯВЛЯЕТСЯ ДОКАЗАТЕЛЬСТВОМ ЗАКРЫТИЯ ЗАВИСИМОСТЕЙ.**
 
+**ГЕЙТ ОБЯЗАН БЫТЬ ВЫПОЛНИМ В ПРЕДЕЛАХ ФАКТИЧЕСКИ ДОСТУПНЫХ ИНСТРУМЕНТОВ. ЗАПРЕЩЕНО ОТКАЗЫВАТЬСЯ СОБИРАТЬ ИЛИ ПЕРЕДАВАТЬ КАНДИДАТ ТОЛЬКО ПО ПРИЧИНЕ «НЕТ ИНСТРУМЕНТА ДЛЯ ЭТОГО ТЕСТА». ВСЁ, ЧТО МОЖНО ДОКАЗАТЬ ЧЕРЕЗ ИСХОДНЫЙ КОД, ПОЛНЫЙ ПОИСК ЗАВИСИМОСТЕЙ, СТАТИЧЕСКУЮ ПРОВЕРКУ, ДЕТЕРМИНИРОВАННЫЙ ТЕСТ, PACKAGE/ARTIFACT ПРОВЕРКУ, GITHUB ACTIONS/CI ИЛИ ДРУГОЙ ДОСТУПНЫЙ ЭКВИВАЛЕНТНЫЙ СПОСОБ, ДОЛЖНО БЫТЬ ПРОВЕРЕНО ЭТИМ СПОСОБОМ. ПРОВЕРКА, КОТОРАЯ ПО СВОЕЙ ПРИРОДЕ ВОЗМОЖНА ТОЛЬКО ПОСЛЕ УСТАНОВКИ В РЕАЛЬНЫЙ БРАУЗЕР ИЛИ НА ЖИВОМ OZON, ДОЛЖНА БЫТЬ ВЫНЕСЕНА В `LIVE-GATE` КАК `PENDING POST-INSTALL`, А НЕ ПРЕВРАЩЕНА В ИСКУССТВЕННЫЙ PRE-HANDOFF `FAIL/NOT RUN` И НЕ МОЖЕТ БЫТЬ ПРИЧИНОЙ ОТКАЗА СОБРАТЬ КАНДИДАТ. ПРИ ЭТОМ ЗАПРЕЩЕНО ВЫДАВАТЬ НЕВЫПОЛНЕННЫЙ LIVE-ТЕСТ ЗА `PASS`.**
+
 **PRE-HANDOFF PASS НИКОГДА НЕ НАЗЫВАТЬ LIVE PASS. ПОСЛЕ УСТАНОВКИ ПАТЧА LIVE-ЗАКРЫТИЕ ИДЁТ ОТДЕЛЬНО И МОЖЕТ БЫТЬ ТОЛЬКО ПО ФАКТИЧЕСКОМУ LIVE EVIDENCE.**
 
 Every patch handoff message must reproduce the complete checklist result, not merely link to this file.
@@ -71,9 +73,11 @@ For each path, record:
 3. storage location and lifetime, if any: local variable, module memory, provider instance, service-worker global, `chrome.storage.session`, `chrome.storage.local`, provider/server, or other store;
 4. every boundary crossing;
 5. final request, policy, entitlement, accounting, security, user-visible output, or terminal failure behavior;
-6. the test that proves the path on the final candidate.
+6. the test/evidence that proves the path on the final candidate.
 
-Every branch and consumer must have an explicit final status: `PASS` or a separately documented intentional non-applicability. Any `UNKNOWN`, `NOT CHECKED`, assumed behavior, skipped consumer, or untested terminal effect = **FAIL / BLOCKED**.
+Use the strongest available proof method for each path. If direct browser/live execution is not available pre-handoff but the property can be proved by source analysis, static assertion, deterministic execution, package inspection, or CI, use that proof instead of marking the path `NOT RUN` merely because a preferred tool is unavailable.
+
+Every branch and consumer must have an explicit final status: `PASS` or a separately documented intentional non-applicability. A truly live-only property may be `PENDING POST-INSTALL` only in the corresponding LIVE-GATE, not as a fake pre-handoff failure. Any unexplained `UNKNOWN`, assumed behavior, skipped consumer, or missing available proof = **FAIL / BLOCKED**.
 
 ### GATE-09 — Architecture-invariant comparison
 Compare the proposed repair with existing bridge architecture patterns. If the bridge already has a durability, privacy, request-accounting, retry, correlation, session, provider-routing, entitlement, policy, storage, or output invariant, explicitly verify **every dependency path from GATE-07/GATE-08** follows it rather than inventing or inheriting an inconsistent exception.
@@ -94,7 +98,7 @@ Every state item needed by a later separately issued command must be one of:
 Anything unclassified is **FAIL**.
 
 ### GATE-12 — Forced recreation between dependent commands
-For every multi-command workflow with state dependencies, the deterministic acceptance test must destroy/recreate the provider/service-worker-equivalent runtime between each dependent command boundary.
+For every multi-command workflow with state dependencies, deterministic acceptance must recreate the provider/service-worker-equivalent runtime between each dependent command boundary. If actual Chrome worker termination is unavailable pre-handoff, use an equivalent deterministic recreation of the runtime/state boundary and reserve actual installed-browser confirmation for LIVE-GATE-02.
 
 ### GATE-13 — Same-instance test is supplemental only
 A same-provider/same-worker test may exist, but it can never be the sole certification evidence for a multi-command MV3 workflow.
@@ -109,14 +113,16 @@ Verify that after lifecycle recreation an unknown/stale ref or missing durable s
 
 ## 4. Browser/package boundary gate
 
-### GATE-16 — Test the browser boundary, not only mocked transport
-If runtime behavior depends on MV3 permissions, CSP, host permissions, extension storage, service-worker lifetime, or browser APIs, include deterministic/static assertions for that browser boundary. A mocked `fetch` alone is insufficient.
+### GATE-16 — Test the browser boundary with available proof, then reserve true live-only behavior for live certification
+If runtime behavior depends on MV3 permissions, CSP, host permissions, extension storage, service-worker lifetime, or browser APIs, include all available deterministic/static/package assertions for that browser boundary. A mocked `fetch` alone is insufficient when manifest/package evidence can also be checked.
+
+Lack of a direct interactive-browser tool must **not** by itself block building the candidate. Prove everything that is provable from the final package, manifest, source, deterministic runtime recreation, and CI. Any property that can only be established in an actually installed browser remains `PENDING POST-INSTALL` under LIVE-GATE-02/05 and must not be mislabeled as pre-handoff PASS.
 
 ### GATE-17 — Manifest/runtime endpoint parity
 Enumerate all runtime network destinations introduced or relied on by the patch and verify the packaged manifest grants exactly the required trusted hosts. Verify this in the packaged artifact, not merely source.
 
 ### GATE-18 — Installed-artifact parity
-Run tests against the exact build tree/archive intended for installation. Record commit, tree, archive name, archive bytes, and SHA-256. Source-tree PASS does not certify a different package.
+Build and test the exact archive intended for installation. Record commit, tree, archive name, archive bytes, and SHA-256, and prove that the tested package bytes are the bytes handed to the operator. Actual installation/use belongs to post-install LIVE gates; lack of an installation-control tool is not a reason to refuse to build or hand off a pre-handoff-certified candidate.
 
 ### GATE-19 — Rebuild invalidates previous package evidence
 Any executable/config/manifest change after a package test invalidates the prior package result. Rebuild and rerun the complete applicable PRE-HANDOFF gate.
@@ -148,7 +154,7 @@ Unknown provider/account permission must remain `UNKNOWN`/fail-honest. Do not ov
 For operations requiring personal-data authorization, verify policy OFF fails closed before the provider request where that is the contract. Record zero physical request / external false when expected.
 
 ### GATE-26 — Provenance-aware privacy path
-For operations whose privacy decision depends on provenance, test both known-safe and unknown/historical provenance, including a lifecycle recreation between provenance producer and consumer.
+For operations whose privacy decision depends on provenance, test both known-safe and unknown/historical provenance, including deterministic lifecycle recreation before handoff and real installed behavior where applicable after installation.
 
 ### GATE-27 — Semantic redaction
 Test sensitive semantic keys/values, not only fixed field names. Provider URLs, receiver identifiers, personal values, and other protected content must be redacted according to contract.
@@ -172,9 +178,9 @@ Run all relevant previously repaired-defect regression guards that intersect the
 In addition, every added/changed dependency from GATE-07 must have regression coverage for all affected shared consumers, including consumers outside the originally failing feature. A test that calls a lower-level helper directly does not cover skipped planner/policy/routing/accounting/output layers.
 
 ### GATE-32 — Full exact workflow and dependency-closure gate
-After targeted unit/regression checks pass, run a deterministic end-to-end reproduction of the complete operator-observed workflow **through the same layers used by the real product**, then verify the complete output contract, not only the originally broken symptom.
+After targeted unit/regression checks pass, run a deterministic end-to-end reproduction of the complete operator-observed workflow **through the same layers used by the real product that are available pre-handoff**, then verify the complete output contract, not only the originally broken symptom.
 
-Before PASS, cross-check that every dependency and consumer recorded in GATE-07/GATE-08 is exercised by an applicable test or has an explicit proven non-applicability. Isolated helper/transport success is not sufficient. Any dependency-closure gap = **FAIL / BLOCKED**.
+Before PASS, cross-check that every dependency and consumer recorded in GATE-07/GATE-08 is exercised by an applicable available test/proof or has an explicit proven non-applicability. A truly installed-browser/live-provider-only check is transferred to the corresponding LIVE-GATE, not treated as an excuse to avoid candidate assembly. Isolated helper/transport success is not sufficient. Any dependency-closure gap that could have been checked with available tools = **FAIL / BLOCKED**.
 
 ### GATE-33 — No stale or fabricated dependencies
 Every test dependency must come from the current test flow or an explicitly documented real prerequisite. Do not fabricate IDs/refs/payloads and do not silently reuse an old live ref to make a test pass.
@@ -183,9 +189,9 @@ Every test dependency must come from the current test flow or an explicitly docu
 For read-repair validation, confirm tests do not mutate provider business state. Any required provider-side mutation must be separately authorized.
 
 ### GATE-35 — Full green run after final candidate
-After the last candidate change, run the entire applicable PRE-HANDOFF suite once more from the final artifact. Partial green results from earlier revisions cannot be combined into a final PASS.
+After the last candidate change, run the entire applicable PRE-HANDOFF suite once more from the final artifact using all available execution paths: local/deterministic tests where available, static/package checks, and CI workflows where available. Partial green results from earlier revisions cannot be combined into a final PASS.
 
-`GATE-35 PASS` additionally requires an explicit final dependency-closure statement for GATE-07/GATE-08: all added/changed/affected dependencies, all consumers, all branches, all boundary crossings, all final outputs, and all applicable tests are accounted for with no `UNKNOWN`, `NOT CHECKED`, or assumed path. Without that statement and evidence, GATE-35 is **FAIL / BLOCKED** even if every executed test is green.
+`GATE-35 PASS` additionally requires an explicit final dependency-closure statement for GATE-07/GATE-08: all added/changed/affected dependencies, all consumers, all branches, all boundary crossings, all final outputs, and all applicable pre-handoff proofs are accounted for with no unexplained `UNKNOWN`, `NOT CHECKED`, or assumed path. Live-only items must be listed separately as `PENDING POST-INSTALL`; they do not block candidate assembly but they do block `LIVE CERTIFICATION: PASS`.
 
 ---
 
@@ -197,7 +203,7 @@ These checks are mandatory for final LIVE closure but are not falsely represente
 Run the exact failing live workflow against the installed candidate, with fresh dependencies generated in that workflow.
 
 ### LIVE-GATE-02 — Lifecycle-sensitive live path
-Where practical, allow/force a real command boundary capable of MV3 worker recreation and verify the durable workflow still succeeds. Do not rely on one unusually long-lived worker session.
+Where practical in the installed environment, allow/force a real command boundary capable of MV3 worker recreation and verify the durable workflow still succeeds. Do not rely on one unusually long-lived worker session. Lack of direct pre-handoff browser-control tooling does not block candidate assembly; this gate is intentionally post-install.
 
 ### LIVE-GATE-03 — Complete real-result validation
 Verify real logical/physical request counts, `external_request_executed`, HTTP result, retry status, provider classification, entitlement metadata, transformation/exactness metadata, privacy/redaction state, and all other contract fields touched by the patch. Do not mark a live test PASS merely because the original failure symptom disappeared.
@@ -206,7 +212,7 @@ Verify real logical/physical request counts, `external_request_executed`, HTTP r
 Rerun the minimum live guards needed to prove the patch did not regress privacy, redaction, request preservation, entitlement honesty, provider classification, or other surfaces touched by the patch and its dependency closure.
 
 ### LIVE-GATE-05 — CI/package PASS is not LIVE PASS
-Do not close a live gate from deterministic CI/package evidence. Final LIVE PASS requires actual installed live evidence.
+Do not close a live gate from deterministic CI/package evidence. Final LIVE PASS requires actual installed live evidence. Conversely, live-only evidence is not a prerequisite to physically building and handing off a candidate that has a complete PRE-HANDOFF PASS.
 
 ---
 
@@ -249,6 +255,11 @@ Past failure: a new `report_file` provider/category was added while older code s
 
 Guard: GATE-07, GATE-08, GATE-09, GATE-21, GATE-24, GATE-31, GATE-32, and GATE-35. Any new or changed dependency/category requires exhaustive producer-to-consumer closure before handoff. Green tests cannot override an incomplete dependency audit.
 
+### HIST-10 — Unavailable preferred test tool used as an excuse to block candidate assembly
+Past failure mode to forbid: a required property is left unverified or the candidate is not built merely because the preferred interactive/browser test tool is unavailable, even though equivalent source/static/deterministic/package/CI evidence is available, or the check is genuinely live-only and belongs after installation.
+
+Guard: the non-negotiable capability rule plus GATE-08, GATE-12, GATE-16, GATE-18, GATE-32, GATE-35, and LIVE-GATE-05. Use every available proof method; move only genuinely live-only checks to post-install. Never fake a live PASS, but never refuse candidate assembly solely because a live-control tool is unavailable pre-handoff.
+
 ---
 
 ## 10. Mandatory patch handoff report format
@@ -264,7 +275,8 @@ Candidate: <commit/tree>
 Artifact: <name>
 Bytes: <bytes>
 SHA-256: <sha256>
-Dependency closure: PASS|FAIL  <explicit producer-to-all-consumers evidence; no unknown paths>
+Dependency closure: PASS|FAIL  <explicit producer-to-all-consumers evidence; no unknown pre-handoff paths>
+Capability coverage: PASS|FAIL <all available proof methods exhausted; live-only checks explicitly separated>
 
 GATE-01  PASS|FAIL|UNKNOWN|NOT RUN  <evidence>
 GATE-02  PASS|FAIL|UNKNOWN|NOT RUN  <evidence>
@@ -280,10 +292,11 @@ LIVE CERTIFICATION: PENDING|PASS|FAIL
 ```
 
 Rules for the verdict:
-- `PRE-HANDOFF VERDICT: PASS` only if every applicable GATE-01..GATE-35 is PASS **and** `Dependency closure: PASS` is backed by the complete GATE-07/GATE-08 inventory and evidence.
-- Any mandatory applicable `FAIL`, `UNKNOWN`, or `NOT RUN`, or any missing/unverified dependency consumer/path, means `PRE-HANDOFF VERDICT: BLOCKED`.
+- `PRE-HANDOFF VERDICT: PASS` only if every applicable PRE-HANDOFF GATE-01..GATE-35 is PASS, `Dependency closure: PASS` is backed by the complete GATE-07/GATE-08 inventory/evidence, and `Capability coverage: PASS` confirms every available proof method was used where needed.
+- Any mandatory applicable pre-handoff `FAIL`, unexplained `UNKNOWN`, avoidable `NOT RUN`, missing/unverified dependency consumer/path, or available-but-unused proof method means `PRE-HANDOFF VERDICT: BLOCKED`.
+- A genuinely live-only check is reported only under LIVE-GATE as `PENDING POST-INSTALL`; it does **not** turn a complete pre-handoff candidate into `BLOCKED` and does **not** justify refusing to build or hand off the candidate.
 - A green targeted test, green CI, successful package build, or disappearance of the original symptom cannot override a dependency-closure failure.
-- `LIVE CERTIFICATION: PASS` only after all required LIVE-GATE checks have real installed-build evidence.
+- `LIVE CERTIFICATION: PASS` only after all required LIVE-GATE checks have real installed live evidence.
 - A patch may never be described as live-certified while live checks are pending.
 
 ---
@@ -292,9 +305,9 @@ Rules for the verdict:
 
 Until DEFECT-013 and the current read-effect repair cycle are fully closed, every candidate touching report/provider/policy/transport/storage/manifest code must explicitly include:
 
-1. Safe report `create -> report_info` with personal-data OFF and forced provider/worker recreation between commands; safe provenance must remain known-safe.
+1. Safe report `create -> report_info` with personal-data OFF and deterministic provider/worker-equivalent recreation between commands before handoff; installed-worker confirmation remains live evidence.
 2. Unknown/historical `report_info` provenance with personal-data OFF; it must fail closed according to policy.
-3. `report_info -> report_file_get` with forced provider/worker recreation; freshly issued opaque ref must remain resolvable if the product contract requires cross-command use.
+3. `report_info -> report_file_get` with deterministic provider/worker-equivalent recreation; freshly issued opaque ref must remain resolvable if the product contract requires cross-command use.
 4. Unknown/stale report-file ref; zero unsafe request and explicit local failure.
 5. Trusted report-file HTTPS fetch; exactly one GET, no seller credentials, structured output, no signed URL/base64 leak.
 6. Manifest trusted-host permission check against the final packaged artifact.
@@ -302,9 +315,10 @@ Until DEFECT-013 and the current read-effect repair cycle are fully closed, ever
 8. Exact/transformed request metadata regression.
 9. Personal-data OFF regression guard for personal-data operations.
 10. Fail-honest FBP warehouse entitlement regression.
-11. Full `report_*_create -> report_info -> report_file_get` deterministic workflow with lifecycle recreation at both command boundaries.
+11. Full `report_*_create -> report_info -> report_file_get` deterministic workflow with lifecycle-equivalent recreation at both command boundaries.
 12. Final post-install live replay of the exact three-command workflow with fresh report code and fresh ref.
 13. Full provider/dependency taxonomy audit for `seller_api`, `performance_api`, `report_file`, and any future provider/category: every planner, entitlement, policy, credentials, quota/cache, request-builder, accounting, output, diagnostic, guidance, storage, lifecycle, generated-copy, and test consumer must be enumerated and proven correct. Any catch-all assumption such as `not A => B` must be explicitly reviewed.
 14. `report_file_get` must be tested through the real planning path, not only by direct provider invocation, and the full planning/output metadata must be asserted for semantic correctness.
+15. For every item above, use all available pre-handoff proof methods. If an actual installed-browser/live-Ozon action is the only remaining proof, list that exact item under LIVE-GATE `PENDING POST-INSTALL`; do not use absence of direct browser-control tooling as a reason not to build the candidate.
 
 This special matrix may be expanded by newly discovered defects; it must not be silently reduced while the repair cycle remains open.
