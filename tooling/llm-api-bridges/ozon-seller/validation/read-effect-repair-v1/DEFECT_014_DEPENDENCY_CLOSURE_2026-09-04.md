@@ -55,3 +55,5 @@ Executable changes are limited to `dist-step7-candidate/shared/ozon_contract.js`
 ## Handoff rule
 
 This file is the final clean-tree CI trigger. PRE-HANDOFF may pass only if the ordinary cross-platform package workflow is fully green on the final commit/tree and produces the exact artifact handed to the operator. Real installed-browser/Ozon confirmation remains `PENDING POST-INSTALL` until the operator installs that exact artifact.
+
+Final clean-tree certification trigger after removal of all temporary apply workflow/script files: 2026-09-04.
