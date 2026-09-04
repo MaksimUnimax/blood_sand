@@ -89,6 +89,30 @@ export function createDeviceAuthorizationRepository(
   runtime: DatabaseRuntime,
 ): DeviceAuthorizationRepository {
   return {
+    async previewPendingAuthorization(id, now) {
+      const result = await runtime.query<{
+        id: string;
+        browser_family: "chrome" | "yandex_chromium";
+        browser_version: string | null;
+        extension_version: string;
+        device_label: string | null;
+        expires_at: Date;
+      }>(
+        `SELECT id,browser_family,browser_version,extension_version,device_label,expires_at FROM device_authorizations WHERE id=$1 AND status='PENDING' AND expires_at>$2`,
+        [id, now],
+      );
+      const row = result.rows[0];
+      return row
+        ? {
+            id: row.id,
+            browserFamily: row.browser_family,
+            browserVersion: row.browser_version,
+            extensionVersion: row.extension_version,
+            deviceLabel: row.device_label,
+            expiresAt: date(row.expires_at),
+          }
+        : undefined;
+    },
     async start(input) {
       try {
         return await runtime.transaction(async (tx) => {

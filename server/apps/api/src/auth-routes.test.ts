@@ -31,6 +31,7 @@ function appFor(
 }
 function repository(): AuthRepository {
   return {
+    listOwnedAccounts: vi.fn(async () => []),
     requestOtp: vi.fn(async (input) => ({
       ok: true as const,
       value: { challengeId: input.challengeId, expiresAt: input.expiresAt },

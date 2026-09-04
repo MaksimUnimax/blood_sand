@@ -14,7 +14,7 @@ describe("OpenAPI foundation", () => {
     ).toBe(false);
   });
 
-  it("generates only the implemented P2.5 API surface", async () => {
+  it("generates only the implemented P2.6 API surface", async () => {
     const document = JSON.parse(await generateOpenApiRepresentation()) as {
       openapi: string;
       paths: Record<string, unknown>;
@@ -23,12 +23,14 @@ describe("OpenAPI foundation", () => {
     expect(Object.keys(document.paths).sort()).toEqual([
       "/health/live",
       "/health/ready",
+      "/v1/accounts",
       "/v1/auth/logout",
       "/v1/auth/otp/request",
       "/v1/auth/otp/verify",
       "/v1/auth/refresh",
       "/v1/device-authorizations",
       "/v1/device-authorizations/token",
+      "/v1/device-authorizations/{id}",
       "/v1/device-authorizations/{id}/approve",
       "/v1/device-authorizations/{id}/deny",
       "/v1/devices",

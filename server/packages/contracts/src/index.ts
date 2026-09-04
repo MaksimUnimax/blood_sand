@@ -129,6 +129,31 @@ export const DeviceAuthorizationDenyBodyV1Schema = z
 export const DeviceAuthorizationParamsV1Schema = z
   .object({ id: z.uuid() })
   .strict();
+export const OwnedAccountV1Schema = z
+  .object({
+    id: z.uuid(),
+    displayName: z.string().nullable(),
+    status: z.enum(["ACTIVE", "SUSPENDED"]),
+  })
+  .strict();
+export const OwnedAccountsResponseV1Schema = z
+  .object({ accounts: z.array(OwnedAccountV1Schema) })
+  .strict();
+export const DeviceAuthorizationPreviewParamsV1Schema = z
+  .object({ id: z.uuid() })
+  .strict();
+export const DeviceAuthorizationPreviewResponseV1Schema = z
+  .object({
+    status: z.literal("pending"),
+    authorizationId: z.uuid(),
+    clientType: z.literal("browser_extension"),
+    browserFamily: z.enum(["chrome", "yandex_chromium"]),
+    browserVersion: z.string().nullable(),
+    extensionVersion: z.string(),
+    deviceLabel: z.string().nullable(),
+    expiresAt: z.string().datetime(),
+  })
+  .strict();
 export const DeviceAuthorizationApprovedResponseV1Schema = z.object({
   status: z.literal("approved"),
   authorizationId: z.uuid(),

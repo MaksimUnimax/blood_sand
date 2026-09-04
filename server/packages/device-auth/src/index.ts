@@ -74,6 +74,20 @@ type DeviceAuthRepositoryResult<T> =
   | DeviceAuthResult<T>
   | { ok: false; code: "DEVICE_AUTH_COLLISION" };
 export interface DeviceAuthorizationRepository {
+  previewPendingAuthorization(
+    id: string,
+    now: Date,
+  ): Promise<
+    | {
+        id: string;
+        browserFamily: "chrome" | "yandex_chromium";
+        browserVersion: string | null;
+        extensionVersion: string;
+        deviceLabel: string | null;
+        expiresAt: Date;
+      }
+    | undefined
+  >;
   start(input: {
     record: DeviceAuthorizationRecord;
     ipKey: string;
@@ -288,6 +302,9 @@ export class DeviceAuthorizationService {
       rawUserCode: generateUserCode(),
     }),
   ) {}
+  async previewPendingAuthorization(id: string) {
+    return this.repository.previewPendingAuthorization(id, this.now());
+  }
   async start(
     body: {
       clientType: "browser_extension";

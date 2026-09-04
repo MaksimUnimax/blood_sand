@@ -62,6 +62,7 @@ export function compareOpenApiArtifact(
 
 export async function generateOpenApiRepresentation(): Promise<string> {
   const fake: AuthRepository = {
+    listOwnedAccounts: async () => [],
     requestOtp: async () => ({ ok: false, code: "AUTH_RATE_LIMITED" }),
     verifyOtp: async () => ({ ok: false, code: "AUTH_OTP_INVALID" }),
     authenticate: async () => undefined,
@@ -73,6 +74,7 @@ export async function generateOpenApiRepresentation(): Promise<string> {
     authService: new AuthService(fake, deriveAuthKeys(Buffer.alloc(32, 1))),
     deviceAuthorizationService: new DeviceAuthorizationService(
       {
+        previewPendingAuthorization: async () => undefined,
         start: async () => ({ ok: false, code: "DEVICE_AUTH_INVALID" }),
         approve: async () => ({ ok: false, code: "DEVICE_AUTH_INVALID" }),
         deny: async () => ({ ok: false, code: "DEVICE_AUTH_INVALID" }),

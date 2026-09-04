@@ -12,6 +12,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test && pnpm bridge:guard",
     "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:e2e": "PRODUCT_CONTROL_PLANE_E2E=1 playwright test --config e2e/playwright.config.ts",
     "build": "pnpm --filter @product/api build && pnpm --filter @product/worker build && pnpm --filter @product/health-runner build && pnpm --filter @product/portal build && pnpm --filter @product/admin build",
     "db:generate": "pnpm --filter @product/db db:generate",
     "db:migrate": "pnpm --filter @product/db db:migrate",
@@ -23,6 +24,7 @@
     "format:check": "prettier --check \"{apps,packages,scripts,infra,integration}/**/*.{ts,tsx,js,mjs,cjs,json,css,scss,yml,yaml}\" package.json pnpm-workspace.yaml tsconfig.base.json eslint.config.mjs vitest.integration.config.ts ../.github/workflows/server-ci.yml"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@eslint/js": "9.35.0",
     "@types/node": "24.3.0",
     "eslint": "9.35.0",

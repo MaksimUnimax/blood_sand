@@ -42,6 +42,7 @@ import {
 import { registerRefreshRoutes } from "./refresh-routes.js";
 import type { DeviceManagementService } from "@product/device-management";
 import { registerDeviceManagementRoutes } from "./device-management-routes.js";
+import { registerPortalSupportRoutes } from "./portal-support-routes.js";
 
 export class ControlledError extends Error {
   public constructor(
@@ -173,6 +174,7 @@ export function createApiApp(
       },
     );
     const unavailable: AuthRepository = {
+      listOwnedAccounts: async () => [],
       requestOtp: async () => ({ ok: false, code: "AUTH_RATE_LIMITED" }),
       verifyOtp: async () => ({ ok: false, code: "AUTH_OTP_INVALID" }),
       authenticate: async () => undefined,
@@ -186,6 +188,13 @@ export function createApiApp(
     );
     if (dependencies.deviceAuthorizationService)
       registerDeviceAuthorizationRoutes(
+        app,
+        dependencies.authService ??
+          new AuthService(unavailable, deriveAuthKeys(Buffer.alloc(32))),
+        dependencies.deviceAuthorizationService,
+      );
+    if (dependencies.deviceAuthorizationService)
+      registerPortalSupportRoutes(
         app,
         dependencies.authService ??
           new AuthService(unavailable, deriveAuthKeys(Buffer.alloc(32))),

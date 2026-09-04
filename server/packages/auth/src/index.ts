@@ -182,6 +182,13 @@ export type AuthResult<T> =
         | "AUTH_CSRF_INVALID";
     };
 export interface AuthRepository {
+  listOwnedAccounts(userId: string): Promise<
+    ReadonlyArray<{
+      id: string;
+      displayName: string | null;
+      status: "ACTIVE" | "SUSPENDED";
+    }>
+  >;
   requestOtp(input: {
     email: string;
     ipKey: string;
@@ -216,6 +223,9 @@ export class AuthService {
     private readonly now: () => Date = () => new Date(),
     private readonly otpGenerator = generateOtp,
   ) {}
+  listOwnedAccounts(userId: string) {
+    return this.repository.listOwnedAccounts(userId);
+  }
   async requestOtp(
     emailInput: string,
     ip: string,

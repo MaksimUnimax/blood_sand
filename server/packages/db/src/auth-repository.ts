@@ -21,6 +21,21 @@ async function consume(
 }
 export function createAuthRepository(runtime: DatabaseRuntime): AuthRepository {
   return {
+    async listOwnedAccounts(userId) {
+      const result = await runtime.query<{
+        id: string;
+        display_name: string | null;
+        status: "ACTIVE" | "SUSPENDED";
+      }>(
+        `SELECT a.id,a.display_name,a.status FROM accounts a JOIN account_memberships m ON m.account_id=a.id WHERE m.user_id=$1 AND m.role='OWNER' AND a.status IN ('ACTIVE','SUSPENDED') ORDER BY a.created_at ASC,a.id ASC`,
+        [userId],
+      );
+      return result.rows.map((row) => ({
+        id: row.id,
+        displayName: row.display_name,
+        status: row.status,
+      }));
+    },
     async requestOtp(input) {
       return runtime.transaction(async (tx) => {
         const now = new Date();
