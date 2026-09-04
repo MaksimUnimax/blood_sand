@@ -1,7 +1,7 @@
 # P3.1 signed bootstrap contract / crypto — local acceptance evidence
 
 Date: 2026-09-04
-Status: **LOCAL ACCEPTED — P3.1 ACTIVE**
+Status: **ACCEPTED — P3.1 DONE**
 
 ## Base and recovery
 
@@ -142,7 +142,28 @@ Node container:
 - Executable remote configuration: none; signed data remains declarative and
   cannot introduce executable/network/auth capabilities.
 - Roadmap remains P0 `[DONE]`, P1 `[DONE]`, P2 `[DONE]`, P3 `[ACTIVE]`, P3.1
-  `[ACTIVE]`, P3.2–P3.7 `[PLANNED]`, and P4–P15 `[PLANNED]`.
+  `[DONE]`, P3.2 `[NEXT]`, P3.3–P3.7 `[PLANNED]`, and P4–P15 `[PLANNED]`.
+
+## Remote acceptance
+
+- Implementation SHA: `bde40d98571c1e5f541322f4c888d37ce5aab665`.
+- Code-bearing Server CI: run `33840264779`,
+  `https://github.com/MaksimUnimax/blood_sand/actions/runs/33840264779` —
+  push event on that exact implementation SHA, conclusion: **success**.
+- Reviewed Server CI steps all passed: immutable checkout, immutable pnpm setup,
+  immutable Node setup, frozen install, lint, format, typecheck, unit,
+  integration, migration, OpenAPI, Bridge guard, build, Playwright Chromium
+  install, and T4 E2E.
+- Remote content was compared directly on GitHub from
+  `0ca219b078294bd57eb575a0ebf08ae32070237b` through the implementation SHA.
+  It contains only the P3.1 contracts, remote-config package, crypto tests,
+  ADR-0008, ADR-0009, roadmap, evidence, and required workspace lock wiring.
+  The remote source bytes for the reviewed contracts, crypto, tests, ADRs,
+  roadmap, and evidence match the committed implementation bytes.
+- Final implementation OpenAPI state: 14 routes, SHA-256
+  `3fd8ad9a61c8146c314d86912a47f1a154cf1eea6d73c3ad9dabfde52f2eeef0`,
+  and no `/v1/bootstrap` route.
+- Final implementation migration state: no new migration; latest remains `0005`.
 
 All disposable containers, validation copy, temporary pnpm store, Playwright
 payload, test output, and logs are to be removed after this evidence is written;

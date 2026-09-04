@@ -355,8 +355,8 @@ Architecture remains:
 
 ## P3 substeps
 
-- P3.1 `[ACTIVE]` Signed bootstrap contract and cryptographic foundation.
-- P3.2 `[PLANNED]` Compatibility/config/signing persistence foundation.
+- P3.1 `[DONE]` Signed bootstrap contract and cryptographic foundation.
+- P3.2 `[NEXT]` Compatibility/config/signing persistence foundation.
 - P3.3 `[PLANNED]` Compatibility, config-release and rollout resolution.
 - P3.4 `[PLANNED]` Authenticated `/v1/bootstrap` and coherent signed snapshot service.
 - P3.5 `[PLANNED]` Simulated-client signature verification and signing-key rotation.
