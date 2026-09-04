@@ -6,6 +6,12 @@ Audit branch: `audit/ozon-date-contract-sweep-2026-09-04`.
 
 This artifact continues the evidence-only date-contract audit after the previously persisted finance, performance, YMD, effect-repair, FBO-draft-timeslot and provider-lifecycle sweeps. It records only static contract conclusions. No executable Bridge file is changed here and no new live Ozon request is authorized or performed. STD-06 remains frozen at the live `finance_balance` failure.
 
+## Audit correction
+
+A later bare-field/`since` sweep re-read the executable `normalizePostingFboListParams` and found that the first version of this artifact incorrectly described `posting_fbo_list` as using strict `requireRfc3339DateTime()`.
+
+The actual baseline uses `new Date(filter.since/to)` only when both boundaries are present. Therefore the earlier `MATCH — date format` conclusion for `posting_fbo_list` is superseded below by **MISSING_GUARD — strict RFC3339**. The one-year maximum-period guard remains a valid `MATCH` finding.
+
 ## Classification rule
 
 - `MATCH` means only the audited date/period dimension matches the current provider contract.
@@ -64,11 +70,17 @@ Provider contract:
 - optional `filter.since` / `filter.to`, both `date-time`;
 - provider documentation explicitly rejects a period longer than one year (`PERIOD_IS_TOO_LONG`).
 
-Bridge:
-- strict RFC3339;
-- explicit one-year maximum guard is present.
+Actual executable Bridge behavior:
+- if **both** `filter.since` and `filter.to` are present, it constructs JavaScript `Date` objects and rejects only values that JavaScript cannot parse;
+- it then enforces the one-year maximum period;
+- it does **not** use `requireRfc3339DateTime()` for these fields;
+- if only one boundary is present, this normalizer does not date-validate that lone boundary at all.
 
-Classification: **MATCH — date format + one-year maximum period**.
+Classification:
+- **MISSING_GUARD — strict RFC3339 validation for every present `since/to` field**;
+- **MATCH — one-year maximum-period guard when both boundaries are present**.
+
+No pair-requiredness defect is asserted without provider evidence that both optional boundaries must always be supplied together.
 
 #### `fbp_posting_list` — `POST /v1/posting/fbp/list`
 
@@ -256,18 +268,18 @@ This is a preflight defect even though the endpoint itself is a read/parameter-d
 
 ## New defect summary from this continuation
 
-Newly identified repair candidates in this continuation:
+Repair candidates identified in this continuation:
 
-1. `ozon_auto_add_products` — dynamic provider-derived `auto_add_date` is incorrectly represented by a static runnable template.
-2. `ozon_auto_add_candidates` — same dynamic-template defect.
-3. `product_certification_params_v2` — missing mutual-exclusion guard for `expired_date.date` vs `expired_date.infinite`.
+1. `posting_fbo_list` — strict RFC3339 is not actually enforced for optional `filter.since/to`; both-boundary validation uses permissive `new Date()`, and a lone boundary is not date-validated.
+2. `ozon_auto_add_products` — dynamic provider-derived `auto_add_date` is incorrectly represented by a static runnable template.
+3. `ozon_auto_add_candidates` — same dynamic-template defect.
+4. `product_certification_params_v2` — missing mutual-exclusion guard for `expired_date.date` vs `expired_date.infinite`.
 
-Newly closed `MATCH`/`NOT_DATE_RELATED` surfaces:
+Closed `MATCH`/`NOT_DATE_RELATED` surfaces in this artifact:
 
 - `review_list`;
 - `review_comment_list`;
 - `question_list`;
-- `posting_fbo_list`;
 - `fbp_posting_list`;
 - `fbp_draft_direct_timeslot_get`;
 - `fbp_order_direct_timeslot_list`;
@@ -282,14 +294,6 @@ Newly closed `MATCH`/`NOT_DATE_RELATED` surfaces:
 
 ## Remaining queue after this artifact
 
-Continue static audit, still without live calls, through:
-
-1. all remaining `requireRfc3339DateTime()` call sites not yet mapped to a resolved operation;
-2. loose `Date.parse()` / `new Date()` validators and their provider-specific period/currentness rules;
-3. remaining dedicated date structures (including pass/receipt/conditional-cancellation and any other operation-specific date fields);
-4. schema-driven EFFECT_REPAIR date/date-time fields not already covered by the existing effect-repair sweep;
-5. dynamic/current-state registry templates whose provider fields cannot be represented by a universal concrete default;
-6. remaining lifecycle/deprecation notices;
-7. explicit `NOT_DATE_RELATED` closure for the rest of the registered command surface.
+Later companion sweeps exhaust the named helper families, direct JavaScript parser paths, schema-driven dates and field vocabulary. The terminal remaining task is full operation-registry accounting: every registered read must be assigned either a date-audited verdict or an explicit `NOT_DATE_RELATED`/lifecycle/ambiguity class.
 
 STD-06 remains **FROZEN ON LIVE FAIL**. No new live Ozon request was made in this continuation.
