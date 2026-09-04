@@ -12,6 +12,10 @@ replacements = [
         'anchor = "  const IMPLEMENTATION_BINDINGS = deepFreeze({"',
         'anchor = "  const IMPLEMENTATION_BINDINGS = Object.freeze({"',
     ),
+    (
+        "r'execution_enabled: (?:true|false), currentness: \\\"[^\\\"]+\\\"',",
+        "r'execution_enabled: (?:true|false),\\s*currentness: \\\"[^\\\"]+\\\"',",
+    ),
 ]
 for old, new in replacements:
     count = source.count(old)
