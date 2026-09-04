@@ -980,3 +980,7 @@ The feature is accepted only when a weak or misinformed AI can recover from an i
 - all security, ownership, delivery, quota, cache and no-replay invariants remain intact.
 
 The fallback cluster dialogue is the correctness mechanism. Synonym classification is only an optimization that removes one dialogue step when evidence is strong.
+
+## DEFECT_015_GUIDANCE_CURRENTNESS_POLICY_V1
+
+Guidance must not present a retired/sunset-disabled route, a provider-derived dynamic selector, or a current-relative date request with a fixed historical date as a self-contained runnable command. Such operations use `template_runnable: false` plus explicit `required_parameters`/dependency guidance until the caller supplies current provider-valid input. Normal guidance must prefer current replacement operations.

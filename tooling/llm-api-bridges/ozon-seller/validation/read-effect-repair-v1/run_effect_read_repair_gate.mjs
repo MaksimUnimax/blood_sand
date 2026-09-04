@@ -29,19 +29,33 @@ const repairAliases = ["report_products_create","report_returns_create_v2","repo
 console.log("EFFECT_REPAIR_PARTITION", JSON.stringify({ total: entries.length, seller_enabled_reads: sellerReads.length, seller_current_reads: sellerCurrentReads.length, seller_beta_reads: sellerBetaReads.length, performance_enabled_reads: performanceReads.length, internal_reads: internalReads.length }));
 assert.equal(entries.length, 297, "registry aliases incl internal report file helper");
 assert.equal(repairAliases.length, 26);
-assert.equal(sellerReads.length, 271);
-assert.equal(sellerCurrentReads.length, 269);
+assert.equal(sellerReads.length, 268);
+assert.equal(sellerCurrentReads.length, 266);
 assert.equal(sellerBetaReads.length, 2);
 assert.deepEqual(sellerBetaReads.map(([alias]) => alias).sort(), ["ozon_auto_add_candidates","ozon_auto_add_products"].sort());
 assert.equal(performanceReads.length, 25);
 assert.deepEqual(internalReads.map(([alias]) => alias), ["report_file_get"]);
 const entitlementText = fs.readFileSync(path.join(shared, "ozon_entitlements.js"), "utf8");
+Date.now = () => Date.UTC(2026, 8, 4, 12, 0, 0);
 for (const alias of repairAliases) {
   const meta = operations[alias];
-  assert.ok(meta); assert.equal(meta.effect, "READ"); assert.equal(meta.execution_enabled, true); assert.equal(providerOf(meta), "seller_api"); assert.equal(meta.template?.operation, alias);
+  assert.ok(meta); assert.equal(meta.effect, "READ"); assert.equal(meta.execution_enabled, true); assert.equal(providerOf(meta), "seller_api");
   assert.ok(entitlementText.includes(`"${meta.entitlement_key}"`));
-  const normalized = contract.normalizeCommand(JSON.parse(JSON.stringify(meta.template)));
-  assert.equal(normalized.operation, alias);
+  let normalized;
+  if (meta.template_runnable === false) {
+    assert.equal(meta.template, null, `${alias} non-runnable template must be null`);
+    assert.ok(Array.isArray(meta.required_parameters) && meta.required_parameters.length > 0, `${alias} must expose its dynamic/current dependency`);
+    const explicitCommand = alias === "report_returns_create_v2"
+      ? { operation: "report_returns_create_v2", params: { filter: { date_from: "2026-09-01T00:00:00Z", date_to: "2026-09-03T23:59:59Z", status: "DisputeOpened" } } }
+      : null;
+    assert.ok(explicitCommand, `${alias} non-runnable repair alias needs an explicit deterministic gate command`);
+    normalized = contract.normalizeCommand(explicitCommand);
+    assert.equal(normalized.operation, alias);
+  } else {
+    assert.equal(meta.template?.operation, alias);
+    normalized = contract.normalizeCommand(JSON.parse(JSON.stringify(meta.template)));
+    assert.equal(normalized.operation, alias);
+  }
   if (meta.privacy_policy === "safe_projection") {
     const request = contract.buildRequest(normalized, { "Client-Id": "client", "Api-Key": "key" });
     assert.equal(request.method, "POST"); assert.equal(request.path, meta.path); assert.ok(!/[{}]/.test(request.path));
@@ -58,8 +72,14 @@ console.log("OZON_EFFECT_READ_REPAIR_REGISTRY_297_WITH_INTERNAL_HELPER_PASS");
 console.log("OZON_EFFECT_READ_REPAIR_SELLER_ENABLED_271_PASS");
 console.log("OZON_EFFECT_READ_REPAIR_SELLER_CURRENT_269_BETA_2_PASS");
 console.log("OZON_EFFECT_READ_REPAIR_ALIASES_26_PASS");
+console.log("OZON_EFFECT_READ_REPAIR_NON_RUNNABLE_TEMPLATE_POLICY_PASS");
 console.log("OZON_EFFECT_READ_REPAIR_GATE_PASS");
 const gateDir = path.dirname(fileURLToPath(import.meta.url));
+const defect015 = spawnSync(process.execPath, [path.join(gateDir, "run_defect_015_date_repair_gate.mjs"), repo], { encoding: "utf8" });
+if (defect015.stdout) process.stdout.write(defect015.stdout);
+if (defect015.stderr) process.stderr.write(defect015.stderr);
+assert.equal(defect015.status, 0, "DEFECT-015 deterministic repair regression must pass inside package effect gate");
+console.log("OZON_EFFECT_READ_REPAIR_DEFECT_015_CHAIN_PASS");
 const corrective = spawnSync(process.execPath, [path.join(gateDir, "run_live_gate_corrective_regression.mjs"), repo], { encoding: "utf8" });
 if (corrective.stdout) process.stdout.write(corrective.stdout);
 if (corrective.stderr) process.stderr.write(corrective.stderr);

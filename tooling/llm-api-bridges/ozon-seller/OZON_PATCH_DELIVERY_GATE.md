@@ -322,3 +322,9 @@ Until DEFECT-013 and the current read-effect repair cycle are fully closed, ever
 15. For every item above, use all available pre-handoff proof methods. If an actual installed-browser/live-Ozon action is the only remaining proof, list that exact item under LIVE-GATE `PENDING POST-INSTALL`; do not use absence of direct browser-control tooling as a reason not to build the candidate.
 
 This special matrix may be expanded by newly discovered defects; it must not be silently reduced while the repair cycle remains open.
+
+## DEFECT_015_DATE_CURRENTNESS_GATE_V1 — mandatory provider date/business/currentness closure
+
+A package touching Ozon request contracts or operation metadata is not deliverable until the deterministic DEFECT-015 gate and the ordinary read-effect package gate pass on the exact candidate. Required checks include: strict real YMD and RFC3339 validation; provider-specific period/recency rules; fail-closed retired/sunset operations; non-runnable treatment of dynamic/current-relative templates; and source/bundle/package coherence. A fresh Swagger/OpenAPI entry by itself is not proof that a provider route is current or that a primitive date format is effective.
+
+Mandatory commands for this repair family include `node validation/read-effect-repair-v1/run_defect_015_date_repair_gate.mjs .` and `node validation/read-effect-repair-v1/run_effect_read_repair_gate.mjs .`. Provider-invalid deterministic negatives must terminate before transport with zero physical provider requests. Live Ozon verification remains a separate post-install gate and cannot be substituted for deterministic preflight closure.

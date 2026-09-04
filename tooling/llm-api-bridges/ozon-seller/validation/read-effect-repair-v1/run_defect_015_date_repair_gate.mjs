@@ -197,7 +197,7 @@ for (const alias of ["fbs_stock_by_warehouse_v1", "fbs_carriage_available_list",
   const visible = registry.operationsForCluster(registry.OPERATIONS[alias].cluster, null, { includeConditional: true, includeHidden: false }).map((row) => row.alias);
   assert.ok(!visible.includes(alias), `${alias} must not be ordinary guidance-visible`);
 }
-assert.equal(registry.OPERATIONS.fbs_stock_by_warehouse_v2.execution_enabled, true);
+assert.equal(registry.OPERATIONS.fbs_stock_by_warehouse.execution_enabled, true);
 assert.equal(registry.OPERATIONS.carriage_delivery_list_v2.execution_enabled, true);
 console.log("DEFECT_015_PROVIDER_LIFECYCLE_FAIL_CLOSED_GATE_PASS");
 

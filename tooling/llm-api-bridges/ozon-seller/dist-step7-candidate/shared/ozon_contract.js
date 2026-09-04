@@ -297,10 +297,15 @@
 
   function requireRfc3339DateTime(value, path) {
     const text = requireString(value, path).trim();
-    const rfc3339 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
-    if (!rfc3339.test(text) || Number.isNaN(Date.parse(text))) fail("INVALID_OPERATION_PARAMS", `${path} должен быть RFC3339 date-time с часовым поясом.`);
+    const match = text.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/);
+    if (!match) fail("INVALID_OPERATION_PARAMS", `${path} должен быть RFC3339 date-time с часовым поясом.`);
+    requireDateYmd(match[1], path);
+    if (Number(match[2]) > 23 || Number(match[3]) > 59 || Number(match[4]) > 59 || Number.isNaN(Date.parse(text))) {
+      fail("INVALID_OPERATION_PARAMS", `${path} должен быть корректным RFC3339 date-time с часовым поясом.`);
+    }
     return text;
   }
+  // DEFECT_015_STRICT_RFC3339_V1
 
   function requireAnalyticsDate(value, path) {
     const text = requireString(value, path).trim();
@@ -1328,10 +1333,11 @@
   function normalizeFinanceBalanceParams(params) {
     const normalized = requirePlainObject(params, "params");
     assertAllowedFields(normalized, ["date_from", "date_to"]);
-    normalized.date_from = requireRfc3339DateTime(requireField(normalized, "date_from"), "params.date_from");
-    normalized.date_to = requireRfc3339DateTime(requireField(normalized, "date_to"), "params.date_to");
+    normalized.date_from = requireDateYmd(requireField(normalized, "date_from"), "params.date_from");
+    normalized.date_to = requireDateYmd(requireField(normalized, "date_to"), "params.date_to");
     return normalized;
   }
+  // DEFECT_015_FINANCE_BALANCE_YMD_V1
 
   function normalizeFinanceRealizationByDayParams(params) {
     const normalized = requirePlainObject(params, "params");
@@ -1542,9 +1548,9 @@
     if (type === "string" || !type) {
       if (typeof value !== "string") fail("INVALID_OPERATION_PARAMS", `${path} должен быть строкой.`);
       if (Number.isInteger(schema.maxLength) && value.length > schema.maxLength) fail("INVALID_OPERATION_PARAMS", `${path} длиннее допустимого.`);
-      if (schema.format === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть датой YYYY-MM-DD.`);
+      if (schema.format === "date") requireDateYmd(value, path);
       if (schema.format === "month" && !/^\d{4}-(0[1-9]|1[0-2])$/.test(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть периодом YYYY-MM.`);
-      if (schema.format === "date-time" && !Number.isFinite(Date.parse(value))) fail("INVALID_OPERATION_PARAMS", `${path} должен быть ISO date-time.`);
+      if (schema.format === "date-time") requireRfc3339DateTime(value, path);
     }
   }
 
@@ -3115,6 +3121,208 @@
     return normalized;
   }
 
+
+  // DEFECT_015_CONSOLIDATED_GUARDS_V1
+  const DEFECT_015_DAY_MS = 86400000;
+
+  function defect015YmdParts(value, path) {
+    const text = requireDateYmd(value, path);
+    const [year, month, day] = text.split("-").map(Number);
+    return { text, year, month, day, ms: Date.parse(`${text}T00:00:00Z`) };
+  }
+
+  function defect015TodayYmd(atMs) {
+    return new Date(atMs).toISOString().slice(0, 10);
+  }
+
+  function defect015AddDaysYmd(ymd, days) {
+    const base = defect015YmdParts(ymd, "date").ms;
+    return new Date(base + Number(days) * DEFECT_015_DAY_MS).toISOString().slice(0, 10);
+  }
+
+  function defect015SubtractCalendarMonthsYmd(ymd, months) {
+    const source = defect015YmdParts(ymd, "date");
+    const first = new Date(Date.UTC(source.year, source.month - 1 - Number(months), 1));
+    const year = first.getUTCFullYear();
+    const monthIndex = first.getUTCMonth();
+    const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+    const day = Math.min(source.day, lastDay);
+    return new Date(Date.UTC(year, monthIndex, day)).toISOString().slice(0, 10);
+  }
+
+  function defect015AssertYmdRange(fromValue, toValue, path, { maxInclusiveDays = null, maxDifferenceDays = null } = {}) {
+    const from = defect015YmdParts(fromValue, `${path}.from`);
+    const to = defect015YmdParts(toValue, `${path}.to`);
+    if (to.ms < from.ms) fail("INVALID_OPERATION_PARAMS", `${path}: конец периода не может быть раньше начала.`);
+    const differenceDays = (to.ms - from.ms) / DEFECT_015_DAY_MS;
+    if (Number.isInteger(maxInclusiveDays) && differenceDays > maxInclusiveDays - 1) {
+      fail("OZON_LIMIT_VIOLATION", `${path}: период не может превышать ${maxInclusiveDays} календарных дней.`);
+    }
+    if (Number.isInteger(maxDifferenceDays) && differenceDays > maxDifferenceDays) {
+      fail("OZON_LIMIT_VIOLATION", `${path}: расстояние между границами не может превышать ${maxDifferenceDays} дней.`);
+    }
+    return { from, to, differenceDays };
+  }
+
+  function defect015OneCalendarMonthAfterMs(rfc3339) {
+    const parsed = new Date(Date.parse(rfc3339));
+    const year = parsed.getUTCFullYear();
+    const month = parsed.getUTCMonth();
+    const day = parsed.getUTCDate();
+    const firstTarget = new Date(Date.UTC(year, month + 1, 1));
+    const targetYear = firstTarget.getUTCFullYear();
+    const targetMonth = firstTarget.getUTCMonth();
+    const lastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+    return Date.UTC(
+      targetYear,
+      targetMonth,
+      Math.min(day, lastDay),
+      parsed.getUTCHours(),
+      parsed.getUTCMinutes(),
+      parsed.getUTCSeconds(),
+      parsed.getUTCMilliseconds()
+    );
+  }
+
+  function defect015AssertRfc3339Pair(object, fromKey, toKey, path) {
+    const hasFrom = Object.prototype.hasOwnProperty.call(object || {}, fromKey);
+    const hasTo = Object.prototype.hasOwnProperty.call(object || {}, toKey);
+    if (hasFrom) requireRfc3339DateTime(object[fromKey], `${path}.${fromKey}`);
+    if (hasTo) requireRfc3339DateTime(object[toKey], `${path}.${toKey}`);
+    if (hasFrom && hasTo && Date.parse(object[toKey]) < Date.parse(object[fromKey])) {
+      fail("INVALID_OPERATION_PARAMS", `${path}.${toKey} не может быть раньше ${path}.${fromKey}.`);
+    }
+    return { hasFrom, hasTo };
+  }
+
+  function defect015AssertHalfMonthPeriod(date) {
+    const fromText = requireRfc3339DateTime(date.from, "params.date.from");
+    const toText = requireRfc3339DateTime(date.to, "params.date.to");
+    const from = defect015YmdParts(fromText.slice(0, 10), "params.date.from");
+    const to = defect015YmdParts(toText.slice(0, 10), "params.date.to");
+    if (from.year !== to.year || from.month !== to.month) {
+      fail("OZON_LIMIT_VIOLATION", "params.date: cash-flow период должен быть одной половиной одного календарного месяца.");
+    }
+    const lastDay = new Date(Date.UTC(from.year, from.month, 0)).getUTCDate();
+    const valid = (from.day === 1 && to.day === 15) || (from.day === 16 && to.day === lastDay);
+    if (!valid) fail("OZON_LIMIT_VIOLATION", "params.date: допустим только период 1–15 или 16–последний день месяца.");
+  }
+
+  function validateDefect015OperationParams(operation, params, atMs = Date.now()) {
+    const p = params && typeof params === "object" ? params : {};
+
+    if (operation === "posting_fbo_list" && p.filter && typeof p.filter === "object") {
+      defect015AssertRfc3339Pair(p.filter, "since", "to", "params.filter");
+    }
+
+    if (operation === "finance_cash_flow_statement_list" && p.date && typeof p.date === "object") {
+      defect015AssertHalfMonthPeriod(p.date);
+    }
+
+    if (operation === "finance_transaction_list_v3" && p.filter?.date && typeof p.filter.date === "object") {
+      const date = p.filter.date;
+      const pair = defect015AssertRfc3339Pair(date, "from", "to", "params.filter.date");
+      if (pair.hasFrom && pair.hasTo && Date.parse(date.to) > defect015OneCalendarMonthAfterMs(date.from)) {
+        fail("OZON_LIMIT_VIOLATION", "params.filter.date: период finance_transaction_list_v3 не может превышать один календарный месяц.");
+      }
+    }
+
+    if (operation === "finance_balance") {
+      defect015AssertYmdRange(p.date_from, p.date_to, "params", { maxDifferenceDays: 30 });
+    }
+
+    if (operation === "finance_realization_by_day") {
+      const year = Number(p.year);
+      const month = Number(p.month);
+      const day = Number(p.day);
+      const ymd = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const requested = defect015YmdParts(ymd, "params.day/month/year");
+      const today = defect015YmdParts(defect015TodayYmd(atMs), "current_date");
+      if ((today.ms - requested.ms) / DEFECT_015_DAY_MS > 32) {
+        fail("OZON_LIMIT_VIOLATION", "params.day/month/year: realization by-day доступен не старше 32 календарных дней от текущей даты.");
+      }
+    }
+
+    if (operation === "finance_realization_posting" || operation === "finance_realization_v2") {
+      const month = Number(p.month);
+      const year = Number(p.year);
+      if (!Number.isInteger(month) || month < 1 || month > 12) fail("INVALID_OPERATION_PARAMS", "params.month должен быть в диапазоне 1..12.");
+      if (!Number.isInteger(year) || year * 12 + month < 2023 * 12 + 8) {
+        fail("OZON_LIMIT_VIOLATION", "Период realization не может быть раньше 2023-08.");
+      }
+    }
+
+    if (operation === "finance_products_buyout") {
+      defect015AssertYmdRange(p.date_from, p.date_to, "params", { maxInclusiveDays: 31 });
+    }
+
+    if (operation === "fbo_draft_timeslot_info") {
+      const range = defect015AssertYmdRange(p.date_from, p.date_to, "params");
+      const today = defect015TodayYmd(atMs);
+      const maxDate = defect015AddDaysYmd(today, 27);
+      if (range.from.text < today || range.to.text > maxDate) {
+        fail("OZON_LIMIT_VIOLATION", "params.date_from/date_to должны находиться в 28-дневном окне, начинающемся с текущей даты.");
+      }
+    }
+
+    if (operation === "carriage_delivery_list_v2" && p.filter && Object.prototype.hasOwnProperty.call(p.filter, "departure_date")) {
+      requireDateYmd(p.filter.departure_date, "params.filter.departure_date");
+    }
+
+    if (operation === "report_returns_create_v2" && p.filter && typeof p.filter === "object") {
+      const from = requireRfc3339DateTime(p.filter.date_from, "params.filter.date_from");
+      requireRfc3339DateTime(p.filter.date_to, "params.filter.date_to");
+      const earliest = defect015SubtractCalendarMonthsYmd(defect015TodayYmd(atMs), 3);
+      if (from.slice(0, 10) < earliest) fail("OZON_LIMIT_VIOLATION", "params.filter.date_from: отчёт по возвратам доступен только за последние три месяца.");
+    }
+
+    if (operation === "report_realization_posting_create") {
+      const month = Number(p.month);
+      const year = Number(p.year);
+      if (year * 12 + month < 2023 * 12 + 8) fail("OZON_LIMIT_VIOLATION", "Период отчёта realization не может быть раньше 2023-08.");
+    }
+
+    if (operation === "product_certification_params_v2" && p.params?.expired_date && typeof p.params.expired_date === "object") {
+      const expired = p.params.expired_date;
+      if (Object.prototype.hasOwnProperty.call(expired, "date") && Object.prototype.hasOwnProperty.call(expired, "infinite")) {
+        fail("INVALID_OPERATION_PARAMS", "params.params.expired_date: date и infinite взаимоисключающие представления срока действия.");
+      }
+    }
+
+    const strictPerformanceAlt = new Set([
+      "performance_campaign_product",
+      "performance_media",
+      "performance_campaign_product_csv",
+      "performance_media_csv"
+    ]);
+    if (strictPerformanceAlt.has(operation)) defect015AssertRfc3339Pair(p, "from", "to", "params");
+
+    const performance62 = new Set([
+      "performance_expense",
+      "performance_daily",
+      "performance_media",
+      "performance_expense_csv",
+      "performance_daily_csv",
+      "performance_media_csv"
+    ]);
+    if (performance62.has(operation)) {
+      if (p.dateFrom != null && p.dateTo != null) {
+        defect015AssertYmdRange(p.dateFrom, p.dateTo, "params", { maxInclusiveDays: 62 });
+      } else if (p.from != null && p.to != null) {
+        const from = requireRfc3339DateTime(p.from, "params.from");
+        const to = requireRfc3339DateTime(p.to, "params.to");
+        if (Date.parse(to) < Date.parse(from)) fail("INVALID_OPERATION_PARAMS", "params.to не может быть раньше params.from.");
+        if (Date.parse(to) - Date.parse(from) > 62 * DEFECT_015_DAY_MS) fail("OZON_LIMIT_VIOLATION", "Performance statistics export не может превышать 62 дня.");
+      }
+    }
+
+    if (operation === "performance_sku_statistics" && p.dateFrom != null) {
+      const from = requireDateYmd(p.dateFrom, "params.dateFrom");
+      const earliest = defect015AddDaysYmd(defect015TodayYmd(atMs), -1);
+      if (from < earliest) fail("OZON_LIMIT_VIOLATION", "params.dateFrom для SKU statistics не может быть раньше предыдущего дня.");
+    }
+  }
+
   const IMPLEMENTATION_BINDINGS = Object.freeze({
     seller_product_list: { normalizeParams: normalizeSellerProductListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b1" },
     seller_product_info_list: { normalizeParams: normalizeSellerProductInfoListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b1" },
@@ -3460,6 +3668,7 @@
       const normalizedParams = meta.execution_enabled === true && typeof meta.normalizeParams === "function"
         ? sanitizeJsonValue(meta.normalizeParams(params), "normalized_params")
         : params;
+      validateDefect015OperationParams(operation, normalizedParams, Date.now());
       return deepFreeze({ operation, params: normalizedParams });
     }
 

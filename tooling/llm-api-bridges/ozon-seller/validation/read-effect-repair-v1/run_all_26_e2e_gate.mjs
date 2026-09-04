@@ -10,6 +10,12 @@ const repo = path.resolve(process.argv[2] || ".");
 const shared = path.join(repo, "tooling", "llm-api-bridges", "ozon-seller", "dist-step7-candidate", "shared");
 for (const file of ["ozon_operation_registry.js","ozon_contract.js","ozon_credentials.js","provider_transport_core.js","ozon_provider.js"]) loadClassic(path.join(shared, file));
 const operations = globalThis.OzonOperationRegistry.OPERATIONS;
+// DEFECT_015_TEST_COMMANDS_V1
+Date.now = () => Date.UTC(2026, 8, 4, 12, 0, 0);
+const DEFECT_015_TEST_COMMANDS = Object.freeze({
+  report_returns_create_v2: { operation: "report_returns_create_v2", params: { filter: { date_from: "2026-09-01T00:00:00Z", date_to: "2026-09-03T23:59:59Z", status: "DisputeOpened" } } }
+});
+const commandFor = (alias) => JSON.parse(JSON.stringify(DEFECT_015_TEST_COMMANDS[alias] || operations[alias].template));
 
 const REPORTS = [
   "report_products_create","report_returns_create_v2","report_postings_create","report_discounted_create","report_warehouse_stock",
@@ -92,7 +98,7 @@ const provider = globalThis.OzonProviderFactory.createOzonProvider({fetchImpl,uu
 const creds={clientId:"client",apiKey:"key"};
 
 for (const alias of REPORTS) {
-  const first = await provider.executeCommandObject(JSON.parse(JSON.stringify(operations[alias].template)),creds,{});
+  const first = await provider.executeCommandObject(commandFor(alias),creds,{});
   assert.equal(first.ok,true,`${alias} create`);
   const code = first.result?.result?.code ?? first.result?.code;
   assert.ok(code,`${alias} code`);
@@ -111,7 +117,7 @@ for (const alias of REPORTS) {
 console.log("OZON_ALL_13_REPORT_WORKFLOWS_E2E_PASS");
 
 for (const alias of DIRECT_PDFS) {
-  const first = await provider.executeCommandObject(JSON.parse(JSON.stringify(operations[alias].template)),creds,{});
+  const first = await provider.executeCommandObject(commandFor(alias),creds,{});
   assert.equal(first.ok,true,alias);
   assert.match(first.result?.generated_file_ref || "",/^rpf_/);
   assert.ok(!JSON.stringify(first.result).includes("file_content_base64"));
@@ -140,7 +146,7 @@ for (const [createAlias, idPath, getAlias, buildParams] of ASYNC_DOCS) {
 console.log("OZON_ALL_7_ASYNC_DOCUMENT_WORKFLOWS_E2E_PASS");
 
 for (const alias of VALIDATIONS) {
-  const first=await provider.executeCommandObject(JSON.parse(JSON.stringify(operations[alias].template)),creds,{});
+  const first=await provider.executeCommandObject(commandFor(alias),creds,{});
   assert.equal(first.ok,true,alias);
   assert.equal(first.result?.bundle_generated,false);
 }

@@ -11,11 +11,17 @@ const shared = path.join(repo, "tooling", "llm-api-bridges", "ozon-seller", "dis
 for (const file of ["ozon_operation_registry.js", "ozon_contract.js"]) loadClassic(path.join(shared, file));
 const ops = globalThis.OzonOperationRegistry.OPERATIONS;
 const contract = globalThis.OzonContract;
+// DEFECT_015_TEST_COMMANDS_V1
+Date.now = () => Date.UTC(2026, 8, 4, 12, 0, 0);
+const DEFECT_015_TEST_COMMANDS = Object.freeze({
+  report_returns_create_v2: { operation: "report_returns_create_v2", params: { filter: { date_from: "2026-09-01T00:00:00Z", date_to: "2026-09-03T23:59:59Z", status: "DisputeOpened" } } }
+});
+const commandFor = (alias) => JSON.parse(JSON.stringify(DEFECT_015_TEST_COMMANDS[alias] || ops[alias].template));
 const aliases = ["report_products_create","report_returns_create_v2","report_postings_create","report_discounted_create","report_warehouse_stock","report_placement_by_products_create","report_placement_by_supplies_create","report_marked_products_sales_create","report_realization_posting_create","finance_document_b2b_sales","finance_mutual_settlement_report","finance_compensation_report","finance_decompensation_report","cargoes_label_create","posting_fbs_act_container_labels","posting_fbs_package_label","posting_fbs_package_label_create","cargoes_transport_label_by_order_create","cargoes_transport_label_create","fbp_act_from_create","fbp_act_to_create","fbp_label_create","fbp_draft_direct_product_validate","fbp_draft_dropoff_product_validate","fbp_draft_pickup_product_validate","chat_history_v3"];
 for (const alias of aliases) {
   const meta = ops[alias];
   assert.ok(meta, alias);
-  const normalized = contract.normalizeCommand(JSON.parse(JSON.stringify(meta.template)));
+  const normalized = contract.normalizeCommand(commandFor(alias));
   assert.equal(normalized.operation, alias);
 }
 

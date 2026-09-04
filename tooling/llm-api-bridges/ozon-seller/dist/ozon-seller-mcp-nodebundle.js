@@ -480,13 +480,13 @@
       provider: "seller_api", method: "POST", path: "/v1/actions/auto-add/products/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "beta", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "prices_promotions", section: "actions_promotions", guidance_visibility: "user", entitlement_key: "POST /v1/actions/auto-add/products/list", workflow_role: "single_read",
-      purpose: "Получить beta-список товаров с автодобавлением в акцию без скрытой offset-пагинации.", template: { operation: "ozon_auto_add_products", params: { action_id: 1, auto_add_date: "2035-08-28T14:00:00Z", limit: 100 } }
+      purpose: "Получить beta-список товаров с автодобавлением в акцию без скрытой offset-пагинации.", template: null, template_runnable: false, required_parameters: ["action_id + current auto_add_date returned by /v1/actions"]
     },
     ozon_auto_add_candidates: {
       provider: "seller_api", method: "POST", path: "/v1/actions/auto-add/products/candidates", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "beta", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "prices_promotions", section: "actions_promotions", guidance_visibility: "user", entitlement_key: "POST /v1/actions/auto-add/products/candidates", workflow_role: "single_read",
-      purpose: "Получить beta-список кандидатов для автодобавления в акцию без скрытой offset-пагинации.", template: { operation: "ozon_auto_add_candidates", params: { action_id: 1, auto_add_date: "2035-08-28T14:00:00Z", limit: 100 } }
+      purpose: "Получить beta-список кандидатов для автодобавления в акцию без скрытой offset-пагинации.", template: null, template_runnable: false, required_parameters: ["action_id + current auto_add_date returned by /v1/actions"]
     },
     stock_on_warehouses_v2: {
       provider: "seller_api", method: "POST", path: "/v2/analytics/stock_on_warehouses", effect: "READ", request_style: "json_body",
@@ -587,8 +587,8 @@
     fbp_warehouse_list: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/warehouse/list", effect: "READ", request_style: "no_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "warehouse_logistics", section: "ozon_warehouses", guidance_visibility: "user", entitlement_key: "POST /v1/fbp/warehouse/list", workflow_role: "single_read",
-      purpose: "Получить список партнёрских складов FBP.", template: { operation: "fbp_warehouse_list", params: {} }
+      cluster: "warehouse_logistics", section: "ozon_warehouses", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/warehouse/list", workflow_role: "single_read",
+      purpose: "Получить список партнёрских складов FBP; доступ зависит от provider/account permission и не считается all-accounts.", template: { operation: "fbp_warehouse_list", params: {} }
     },
     seller_warehouse_list: {
       provider: "seller_api", method: "POST", path: "/v2/warehouse/list", effect: "READ", request_style: "json_body",
@@ -764,7 +764,7 @@
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
       cluster: "orders_postings", section: "fbs_postings", guidance_visibility: "conditional", entitlement_key: "POST /v4/posting/fbs/unfulfilled/list", workflow_role: "single_read",
-      purpose: "Получить список необработанных отправлений FBS; ответ может содержать данные покупателя/получателя.", template: { operation: "fbs_unfulfilled_list", params: { limit: 10 } }
+      purpose: "Получить список необработанных отправлений FBS; требуется ровно одна полная временная пара cutoff_* или delivering_date_*; ответ может содержать данные покупателя/получателя.", template: null, template_runnable: false, required_parameters: ["filter.cutoff_from + filter.cutoff_to OR filter.delivering_date_from + filter.delivering_date_to"]
     },
     posting_fbs_get: {
       provider: "seller_api", method: "POST", path: "/v3/posting/fbs/get", effect: "READ", request_style: "json_body",
@@ -775,9 +775,9 @@
     },
     fbs_carriage_available_list: {
       provider: "seller_api", method: "POST", path: "/v1/posting/carriage-available/list", effect: "READ", request_style: "json_body",
-      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v1/posting/carriage-available/list", workflow_role: "single_read",
-      purpose: "Получить доступные перевозки для метода доставки и, при необходимости, явной даты отгрузки.", template: { operation: "fbs_carriage_available_list", params: { delivery_method_id: 1 } }
+      execution_enabled: false, currentness: "retired", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
+      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "hidden", entitlement_key: "POST /v1/posting/carriage-available/list", workflow_role: "single_read",
+      purpose: "Получить доступные перевозки для метода доставки и, при необходимости, явной даты отгрузки.", template: null, template_runnable: false, required_parameters: ["retired provider route; use carriage_delivery_list_v2"]
     },
     fbs_carriage_get: {
       provider: "seller_api", method: "POST", path: "/v1/carriage/get", effect: "READ", request_style: "json_body",
@@ -789,7 +789,7 @@
       provider: "seller_api", method: "POST", path: "/v2/posting/fbs/act/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v2/posting/fbs/act/list", workflow_role: "single_read",
-      purpose: "Получить список FBS-актов без скрытой пагинации.", template: { operation: "fbs_act_list", params: { limit: 50 } }
+      purpose: "Получить список FBS-актов без скрытой пагинации; provider требует filter.date_from/date_to в формате YYYY-MM-DD.", template: null, template_runnable: false, required_parameters: ["limit", "filter.date_from", "filter.date_to"]
     },
     fbs_act_check_status: {
       provider: "seller_api", method: "POST", path: "/v2/posting/fbs/act/check-status", effect: "READ", request_style: "json_body",
@@ -1024,19 +1024,19 @@
       provider: "seller_api", method: "POST", path: "/v1/finance/cash-flow-statement/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "finance", section: "documents_reports", guidance_visibility: "user", entitlement_key: "POST /v1/finance/cash-flow-statement/list", workflow_role: "single_read",
-      purpose: "Получить финансовый отчёт денежных потоков; следующая страница только отдельной явной командой.", template: { operation: "finance_cash_flow_statement_list", params: { date: { from: "2026-08-01T00:00:00Z", to: "2026-08-28T23:59:59Z" }, page: 1, page_size: 100, with_details: true } }
+      purpose: "Получить финансовый отчёт денежных потоков; следующая страница только отдельной явной командой.", template: null, template_runnable: false, required_parameters: ["date.from/date.to must be exactly one provider half-month plus page/page_size"]
     },
     finance_transaction_list_v3: {
       provider: "seller_api", method: "POST", path: "/v3/finance/transaction/list", effect: "READ", request_style: "json_body",
-      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "finance", section: "transactions", guidance_visibility: "user", entitlement_key: "POST /v3/finance/transaction/list", workflow_role: "single_read",
-      purpose: "Получить список финансовых транзакций; page продолжает выборку только отдельной явной командой.", template: { operation: "finance_transaction_list_v3", params: { page: 1, page_size: 100, filter: { date: { from: "2026-08-01T00:00:00Z", to: "2026-08-28T23:59:59Z" } } } }
+      execution_enabled: false, currentness: "sunset_2026_09_08", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
+      cluster: "finance", section: "transactions", guidance_visibility: "hidden", entitlement_key: "POST /v3/finance/transaction/list", workflow_role: "single_read",
+      purpose: "Получить список финансовых транзакций; page продолжает выборку только отдельной явной командой.", template: null, template_runnable: false, required_parameters: ["provider shutdown 2026-09-08; use finance accrual replacement operations"]
     },
     finance_balance: {
       provider: "seller_api", method: "POST", path: "/v1/finance/balance", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "finance", section: "accruals_balance", guidance_visibility: "user", entitlement_key: "POST /v1/finance/balance", workflow_role: "single_read",
-      purpose: "Получить отчёт о балансе за явно заданный период.", template: { operation: "finance_balance", params: { date_from: "2026-08-01T00:00:00Z", date_to: "2026-08-28T23:59:59Z" } }
+      purpose: "Получить отчёт о балансе за явно заданный период.", template: { operation: "finance_balance", params: { date_from: "2026-08-01", date_to: "2026-08-28" } }
     },
     finance_realization_by_day: {
       provider: "seller_api", method: "POST", path: "/v1/finance/realization/by-day", effect: "READ", request_style: "json_body",
@@ -1076,9 +1076,9 @@
     },
     report_file_get: {
       provider: "report_file", method: "GET", path: "/__opaque_report_file__", effect: "READ", request_style: "opaque_file_ref", execution_enabled: true,
-      currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate", policy_group: "personal_data_read", default_allowed: false,
+      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "opaque_ref_provenance_gate",
       cluster: "finance", section: "documents_reports", guidance_visibility: "conditional", workflow_role: "explicit_workflow_read_step",
-      purpose: "Получить и безопасно разобрать готовый файл отчёта/документа по opaque ref без раскрытия signed URL или base64.", template: { operation: "report_file_get", params: { file_ref: "REPORT_FILE_REF", offset: 0, limit: 200 } }
+      purpose: "Получить и безопасно разобрать готовый файл отчёта/документа по opaque ref; personal-data gate наследуется от provenance ref, signed URL/base64 не раскрываются.", template: { operation: "report_file_get", params: { file_ref: "REPORT_FILE_REF", offset: 0, limit: 200 } }
     },
     report_products_create: {
       provider: "seller_api", method: "POST", path: "/v1/report/products/create", effect: "READ", request_style: "json_body", execution_enabled: true,
@@ -1090,13 +1090,13 @@
       provider: "seller_api", method: "POST", path: "/v2/report/returns/create", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "returns_cancellations", section: "returns",
       guidance_visibility: "user", entitlement_key: "POST /v2/report/returns/create", workflow_role: "explicit_workflow_read_step",
-      purpose: "Отчёт о возвратах", template: {"operation":"report_returns_create_v2","params":{"filter":{"date_from":"2026-01-01T00:00:00Z","date_to":"2026-01-01T00:00:00Z","status":"DisputeOpened"}}}
+      purpose: "Отчёт о возвратах", template: null, template_runnable: false, required_parameters: ["explicit current RFC3339 range inside the provider last-three-month window + status"]
     },
     report_postings_create: {
       provider: "seller_api", method: "POST", path: "/v1/report/postings/create", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "orders_postings", section: "labels_documents",
       guidance_visibility: "user", entitlement_key: "POST /v1/report/postings/create", workflow_role: "explicit_workflow_read_step",
-      purpose: "Отчёт об отправлениях", template: {"operation":"report_postings_create","params":{"filter":{"processed_at_from":"2026-01-01T00:00:00Z","processed_at_to":"2026-01-01T00:00:00Z","delivery_schema":["FBO"]}}}
+      purpose: "Отчёт об отправлениях", template: {"operation":"report_postings_create","params":{"filter":{"processed_at_from":"2026-01-01T00:00:00Z","processed_at_to":"2026-01-01T00:00:00Z","delivery_schema":["fbo"]}}}
     },
     report_discounted_create: {
       provider: "seller_api", method: "POST", path: "/v1/report/discounted/create", effect: "READ", request_style: "json_body", execution_enabled: true,
@@ -1240,7 +1240,7 @@
       provider: "seller_api", method: "POST", path: "/v3/supply-order/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "user", entitlement_key: "POST /v3/supply-order/list", workflow_role: "single_read",
-      purpose: "Получить список идентификаторов заявок на поставку.", template: { operation: "supply_order_list", params: { filter: { states: [] }, limit: 100, sort_by: "ORDER_CREATION", sort_dir: "DESC" } }
+      purpose: "Получить список идентификаторов заявок на поставку; filter.states должен содержать хотя бы одно реальное состояние.", template: null, template_runnable: false, required_parameters: ["filter.states (non-empty)"]
     },
     supply_order_get: {
       provider: "seller_api", method: "POST", path: "/v3/supply-order/get", effect: "READ", request_style: "json_body",
@@ -1348,7 +1348,7 @@
       provider: "seller_api", method: "POST", path: "/v2/draft/timeslot/info", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "supplies_fbo", section: "timeslots", guidance_visibility: "user", entitlement_key: "POST /v2/draft/timeslot/info", workflow_role: "single_read",
-      purpose: "Получить доступные таймслоты для явно выбранного FBO-черновика и складов кластера; без скрытых дополнительных запросов.", template: { operation: "fbo_draft_timeslot_info", params: { date_from: "2026-08-28", date_to: "2026-08-29", draft_id: 1, supply_type: "DIRECT", selected_cluster_warehouses: [{ macrolocal_cluster_id: 1, storage_warehouse_id: 1 }] } }
+      purpose: "Получить доступные таймслоты для явно выбранного FBO-черновика и складов кластера; без скрытых дополнительных запросов.", template: null, template_runnable: false, required_parameters: ["explicit current/future date_from/date_to inside the provider 28-day horizon + draft parameters"]
     },
     fbp_draft_dropoff_province_list: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/draft/drop-off/province/list", effect: "READ", request_style: "json_body",
@@ -1625,9 +1625,8 @@
       entitlement_key: "POST /v1/posting/fbs/package-label/get", workflow_role: "explicit_workflow_read_step", purpose: "Получить файл с этикетками", template: {"operation":"posting_fbs_package_label_get_v1","params":{"task_id":1}}
     },
     fbs_stock_by_warehouse_v1: {
-      provider: "seller_api", method: "POST", path: "/v1/product/info/stocks-by-warehouse/fbs", effect: "READ", request_style: "json_body", execution_enabled: true,
-      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "stocks_inventory", section: "warehouse_fbs", guidance_visibility: "user",
-      entitlement_key: "POST /v1/product/info/stocks-by-warehouse/fbs", workflow_role: "single_read", purpose: "Информация об остатках на складах продавца (FBS и rFBS)", template: {"operation":"fbs_stock_by_warehouse_v1","params":{"sku":["1"]}}
+      provider: "seller_api", method: "POST", path: "/v1/product/info/stocks-by-warehouse/fbs", effect: "READ", request_style: "json_body", execution_enabled: false, currentness: "retired", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "stocks_inventory", section: "warehouse_fbs", guidance_visibility: "hidden",
+      entitlement_key: "POST /v1/product/info/stocks-by-warehouse/fbs", workflow_role: "single_read", purpose: "Информация об остатках на складах продавца (FBS и rFBS)", template: null, template_runnable: false, required_parameters: ["retired provider route; use fbs_stock_by_warehouse_v2"]
     },
     receipts_get: {
       provider: "seller_api", method: "POST", path: "/v1/receipts/get", effect: "READ", request_style: "json_body", execution_enabled: true,
@@ -1795,7 +1794,7 @@
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
       cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/archive/list", workflow_role: "single_read",
-      purpose: "Получить одну явную страницу завершённых FBP-поставок; контактные данные доступны только при включённой настройке личных данных.", template: { operation: "fbp_archive_list", params: { count: "100" } }
+      purpose: "Получить одну явную страницу завершённых FBP-поставок; Swagger-shaped default count=100 был отклонён live provider, поэтому автоматический runnable template не публикуется; контактные данные доступны только при включённой настройке личных данных.", template: null, template_runnable: false, required_parameters: ["provider-accepted FBP archive list request"]
     },
     fbp_draft_get: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/draft/get", effect: "READ", request_style: "json_body",
@@ -1823,7 +1822,7 @@
       execution_enabled: true, currentness: "current", safety_class: "PERSONAL_DATA_READ_GATED", privacy_policy: "operator_personal_data_gate",
       policy_group: "personal_data_read", default_allowed: false,
       cluster: "supplies_fbo", section: "supply_orders", guidance_visibility: "conditional", entitlement_key: "POST /v1/fbp/order/list", workflow_role: "single_read",
-      purpose: "Получить одну явную страницу FBP-поставок; контактные данные доступны только при включённой настройке личных данных.", template: { operation: "fbp_order_list", params: { count: 100 } }
+      purpose: "Получить одну явную страницу FBP-поставок; Swagger-shaped default count=100 был отклонён live provider, поэтому автоматический runnable template не публикуется; контактные данные доступны только при включённой настройке личных данных.", template: null, template_runnable: false, required_parameters: ["provider-accepted FBP order list request"]
     },
     delivery_check: {
       provider: "seller_api", method: "POST", path: "/v1/delivery/check", effect: "READ", request_style: "json_body",
@@ -1921,7 +1920,7 @@
       provider: "performance_api", method: "POST", path: "/api/client/statistics/products/sku", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE POST /api/client/statistics/products/sku", workflow_role: "single_read",
-      purpose: "Получить статистику по товарам в оплате за клик.", template: { operation: "performance_sku_statistics", params: { dateFrom: "2026-01-01", dateTo: "2026-01-07" } }
+      purpose: "Получить статистику по товарам в оплате за клик.", template: null, template_runnable: false, required_parameters: ["explicit near-current dateFrom/dateTo; dateFrom may not be earlier than the previous day"]
     },
     performance_min_bid_by_sku: {
       provider: "performance_api", method: "POST", path: "/api/client/min/sku", effect: "READ", request_style: "json_body",
@@ -3642,6 +3641,14 @@
     return false;
   }
 
+  const REPORT_INFO_SENSITIVE_ADDITIONAL_DATA_KEYS = new Set(["receivername", "receiverinn", "receiverkpp"]);
+
+  function shouldRedactReportInfoAdditionalDataValue(operation, objectPath, objectValue) {
+    if (operation !== "report_info" || !objectValue || typeof objectValue !== "object" || Array.isArray(objectValue)) return false;
+    if (!/(?:^|\.)additional_data\[\]$/.test(String(objectPath || ""))) return false;
+    return REPORT_INFO_SENSITIVE_ADDITIONAL_DATA_KEYS.has(normalizedKey(objectValue.key || ""));
+  }
+
   function shouldRedactResultField(operation, fieldPath, key) {
     if ((operation === "report_list" || operation === "report_info") && String(key) === "file") return true;
     if (["cargoes_label_get", "cargoes_label_transport_by_order_status", "cargoes_label_transport_status", "fbp_act_from_get", "fbp_act_to_get", "fbp_label_get", "posting_fbs_package_label_get_v1"].includes(operation) && ["file_url", "cdn_url", "label_url"].includes(String(key))) return true;
@@ -3690,9 +3697,10 @@
         continue;
       }
 
+      const redactSemanticValue = shouldRedactReportInfoAdditionalDataValue(operation, frame.path, frame.source);
       for (const [key, child] of Object.entries(frame.source)) {
         const fieldPath = resultPath(frame.path, key, false);
-        if (shouldRedactResultField(operation, fieldPath, key)) {
+        if ((redactSemanticValue && String(key) === "value") || shouldRedactResultField(operation, fieldPath, key)) {
           frame.target[key] = "[REDACTED]";
           continue;
         }
@@ -3764,10 +3772,15 @@
 
   function requireRfc3339DateTime(value, path) {
     const text = requireString(value, path).trim();
-    const rfc3339 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
-    if (!rfc3339.test(text) || Number.isNaN(Date.parse(text))) fail("INVALID_OPERATION_PARAMS", `${path} должен быть RFC3339 date-time с часовым поясом.`);
+    const match = text.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/);
+    if (!match) fail("INVALID_OPERATION_PARAMS", `${path} должен быть RFC3339 date-time с часовым поясом.`);
+    requireDateYmd(match[1], path);
+    if (Number(match[2]) > 23 || Number(match[3]) > 59 || Number(match[4]) > 59 || Number.isNaN(Date.parse(text))) {
+      fail("INVALID_OPERATION_PARAMS", `${path} должен быть корректным RFC3339 date-time с часовым поясом.`);
+    }
     return text;
   }
+  // DEFECT_015_STRICT_RFC3339_V1
 
   function requireAnalyticsDate(value, path) {
     const text = requireString(value, path).trim();
@@ -4593,12 +4606,12 @@
     if (Object.prototype.hasOwnProperty.call(normalized, "sort_dir")) normalized.sort_dir = requireEnum(normalized.sort_dir, "params.sort_dir", ["ASC", "DESC"]);
     if (Object.prototype.hasOwnProperty.call(normalized, "translit") && typeof normalized.translit !== "boolean") fail("INVALID_OPERATION_PARAMS", "params.translit должен быть boolean.");
     if (Object.prototype.hasOwnProperty.call(normalized, "with")) validateBooleanFields(normalized.with, ["analytics_data", "barcodes", "financial_data", "legal_info"], "params.with");
-    if (Object.prototype.hasOwnProperty.call(normalized, "filter")) {
-      const filter = requirePlainObject(normalized.filter, "params.filter");
+    {
+      const filter = requirePlainObject(requireField(normalized, "filter"), "params.filter");
       assertAllowedFields(filter, ["cutoff_from", "cutoff_to", "delivering_date_from", "delivering_date_to", "delivery_method_ids", "last_changed_status_date", "provider_ids", "statuses", "warehouse_ids"], "params.filter");
       const cutoffPresent = Object.prototype.hasOwnProperty.call(filter, "cutoff_from") || Object.prototype.hasOwnProperty.call(filter, "cutoff_to");
       const deliveryPresent = Object.prototype.hasOwnProperty.call(filter, "delivering_date_from") || Object.prototype.hasOwnProperty.call(filter, "delivering_date_to");
-      if (cutoffPresent && deliveryPresent) fail("INVALID_OPERATION_PARAMS", "params.filter: cutoff и delivering_date нельзя использовать вместе по контракту Ozon.");
+      if (cutoffPresent === deliveryPresent) fail("INVALID_OPERATION_PARAMS", "params.filter: укажите ровно одну полную пару cutoff_from/cutoff_to или delivering_date_from/delivering_date_to по контракту Ozon.");
       if (cutoffPresent) {
         filter.cutoff_from = requireRfc3339DateTime(requireField(filter, "cutoff_from", "params.filter"), "params.filter.cutoff_from");
         filter.cutoff_to = requireRfc3339DateTime(requireField(filter, "cutoff_to", "params.filter"), "params.filter.cutoff_to");
@@ -4795,10 +4808,11 @@
   function normalizeFinanceBalanceParams(params) {
     const normalized = requirePlainObject(params, "params");
     assertAllowedFields(normalized, ["date_from", "date_to"]);
-    normalized.date_from = requireRfc3339DateTime(requireField(normalized, "date_from"), "params.date_from");
-    normalized.date_to = requireRfc3339DateTime(requireField(normalized, "date_to"), "params.date_to");
+    normalized.date_from = requireDateYmd(requireField(normalized, "date_from"), "params.date_from");
+    normalized.date_to = requireDateYmd(requireField(normalized, "date_to"), "params.date_to");
     return normalized;
   }
+  // DEFECT_015_FINANCE_BALANCE_YMD_V1
 
   function normalizeFinanceRealizationByDayParams(params) {
     const normalized = requirePlainObject(params, "params");
@@ -4982,7 +4996,7 @@
   }
 
 
-  const EFFECT_REPAIR_PARAM_SCHEMAS = deepFreeze({"report_products_create":{"type":"object","properties":{"language":{"type":"string"},"offer_id":{"type":"array","items":{"type":"string"}},"search":{"type":"string"},"sku":{"type":"array","items":{"type":"integer"}},"visibility":{"type":"string","enum":["ALL","VALIDATION_STATE_FAIL","TO_SUPPLY","IN_SALE","REMOVED_FROM_SALE","PARTIAL_APPROVED","IMAGE_ABSENT","ARCHIVED","AUTO_ARCHIVED","MANUAL_ARCHIVED"]}}},"report_returns_create_v2":{"type":"object","required":["filter"],"properties":{"filter":{"type":"object","required":["date_from","date_to","status"],"properties":{"delivery_schema":{"type":"string","enum":["FBS","FBO","ALL"]},"date_from":{"type":"string","format":"date-time"},"date_to":{"type":"string","format":"date-time"},"status":{"type":"string","enum":["DisputeOpened","OnSellerApproval","ArrivedAtReturnPlace","OnSellerClarification","OnSellerClarificationAfterPartialCompensation","OfferedPartialCompensation","ReturnMoneyApproved","PartialCompensationReturned","CancelledDisputeNotOpen","Rejected","CrmRejected","Cancelled","Approved","ApprovedByOzon","ReceivedBySeller","MovingToSeller","ReturnCompensated","ReturningToSellerByCourier","Utilizing","Utilized","MoneyReturned","PartialCompensationInProcess","DisputeYouOpened","CompensationRejected","DisputeOpening","CompensationOffered","WaitingCompensation","SendingError","CompensationRejectedBySla","CompensationRejectedBySeller","MovingToOzon","ReturnedToOzon","MoneyReturnedBySystem","WaitingShipment"]}}},"language":{"type":"string"}}},"report_postings_create":{"type":"object","required":["filter"],"properties":{"filter":{"type":"object","required":["processed_at_from","processed_at_to","delivery_schema"],"properties":{"cancel_reason_id":{"type":"array","items":{"type":"integer"}},"delivery_schema":{"type":"array","items":{"type":"string"}},"offer_id":{"type":"string"},"processed_at_from":{"type":"string","format":"date-time"},"processed_at_to":{"type":"string","format":"date-time"},"sku":{"type":"array","items":{"type":"integer"}},"status_alias":{"type":"array","items":{"type":"string"}},"statuses":{"type":"array","items":{"type":"integer"}},"title":{"type":"string"},"warehouse_id":{"type":"array","items":{"type":"integer"}},"delivery_method_id":{"type":"array","items":{"type":"integer"}},"is_express":{"type":"boolean"}}},"language":{"type":"string"},"with":{"type":"object","properties":{"additional_data":{"type":"boolean"},"analytics_data":{"type":"boolean"},"customer_data":{"type":"boolean"},"jewelry_codes":{"type":"boolean"}}}}},"report_discounted_create":{"type":"object"},"report_warehouse_stock":{"type":"object","required":["warehouseId"],"properties":{"language":{"type":"string"},"warehouseId":{"type":"array","items":{"type":"string"}}}},"report_placement_by_products_create":{"type":"object","required":["date_from","date_to"],"properties":{"date_from":{"type":"string","format":"date"},"date_to":{"type":"string","format":"date"}}},"report_placement_by_supplies_create":{"type":"object","required":["date_from","date_to"],"properties":{"date_from":{"type":"string","format":"date"},"date_to":{"type":"string","format":"date"}}},"report_marked_products_sales_create":{"type":"object","required":["date"],"properties":{"date":{"type":"object","required":["from","to"],"properties":{"from":{"type":"string","format":"date"},"to":{"type":"string","format":"date"}}}}},"report_realization_posting_create":{"type":"object","required":["month","year"],"properties":{"month":{"type":"integer","minimum":1,"maximum":12},"year":{"type":"integer","minimum":2023}}},"finance_document_b2b_sales":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"finance_mutual_settlement_report":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"finance_compensation_report":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"finance_decompensation_report":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"cargoes_label_create":{"type":"object","required":["supply_id"],"properties":{"cargoes":{"type":"array","items":{"type":"object","properties":{"cargo_id":{"type":"integer"}}}},"supply_id":{"type":"integer"}}},"posting_fbs_act_container_labels":{"type":"object","required":["id"],"properties":{"id":{"type":"integer"}}},"posting_fbs_package_label":{"type":"object","required":["posting_number"],"properties":{"posting_number":{"type":"array","items":{"type":"string"},"maxItems":20}}},"posting_fbs_package_label_create":{"type":"object","required":["posting_number"],"properties":{"posting_number":{"type":"array","items":{"type":"string"}}}},"cargoes_transport_label_by_order_create":{"type":"object","required":["order_id"],"properties":{"order_id":{"type":"integer"}}},"cargoes_transport_label_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"integer"},"transport_cargo_ids":{"type":"array","maxItems":40,"items":{"type":"string"}}}},"fbp_act_from_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"string"}}},"fbp_act_to_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"string"}}},"fbp_label_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"string"}}},"fbp_draft_direct_product_validate":{"type":"object","required":["skus","warehouse_id"],"properties":{"skus":{"type":"array","items":{"type":"object","required":["count","sku"],"properties":{"count":{"type":"integer"},"sku":{"type":"integer"}}}},"warehouse_id":{"type":"integer"}}},"fbp_draft_dropoff_product_validate":{"type":"object","required":["skus","warehouse_id"],"properties":{"skus":{"type":"array","items":{"type":"object","required":["count","sku"],"properties":{"count":{"type":"integer"},"sku":{"type":"integer"}}}},"warehouse_id":{"type":"integer"}}},"fbp_draft_pickup_product_validate":{"type":"object","required":["skus","warehouse_id"],"properties":{"skus":{"type":"array","items":{"type":"object","required":["count","sku"],"properties":{"count":{"type":"integer"},"sku":{"type":"integer"}}}},"warehouse_id":{"type":"integer"}}},"chat_history_v3":{"type":"object","required":["chat_id"],"properties":{"chat_id":{"type":"string"},"direction":{"type":"string"},"filter":{"type":"object","properties":{"message_ids":{"type":"array","items":{"type":"string"}}}},"from_message_id":{"type":"integer"},"limit":{"type":"integer"}}}});
+  const EFFECT_REPAIR_PARAM_SCHEMAS = deepFreeze({"report_products_create":{"type":"object","properties":{"language":{"type":"string"},"offer_id":{"type":"array","items":{"type":"string"}},"search":{"type":"string"},"sku":{"type":"array","items":{"type":"integer"}},"visibility":{"type":"string","enum":["ALL","VALIDATION_STATE_FAIL","TO_SUPPLY","IN_SALE","REMOVED_FROM_SALE","PARTIAL_APPROVED","IMAGE_ABSENT","ARCHIVED","AUTO_ARCHIVED","MANUAL_ARCHIVED"]}}},"report_returns_create_v2":{"type":"object","required":["filter"],"properties":{"filter":{"type":"object","required":["date_from","date_to","status"],"properties":{"delivery_schema":{"type":"string","enum":["FBS","FBO","ALL"]},"date_from":{"type":"string","format":"date-time"},"date_to":{"type":"string","format":"date-time"},"status":{"type":"string","enum":["DisputeOpened","OnSellerApproval","ArrivedAtReturnPlace","OnSellerClarification","OnSellerClarificationAfterPartialCompensation","OfferedPartialCompensation","ReturnMoneyApproved","PartialCompensationReturned","CancelledDisputeNotOpen","Rejected","CrmRejected","Cancelled","Approved","ApprovedByOzon","ReceivedBySeller","MovingToSeller","ReturnCompensated","ReturningToSellerByCourier","Utilizing","Utilized","MoneyReturned","PartialCompensationInProcess","DisputeYouOpened","CompensationRejected","DisputeOpening","CompensationOffered","WaitingCompensation","SendingError","CompensationRejectedBySla","CompensationRejectedBySeller","MovingToOzon","ReturnedToOzon","MoneyReturnedBySystem","WaitingShipment"]}}},"language":{"type":"string"}}},"report_postings_create":{"type":"object","required":["filter"],"properties":{"filter":{"type":"object","required":["processed_at_from","processed_at_to","delivery_schema"],"properties":{"cancel_reason_id":{"type":"array","items":{"type":"integer"}},"delivery_schema":{"type":"array","minItems":1,"maxItems":1,"items":{"type":"string","enum":["fbo","fbs"]}},"offer_id":{"type":"string"},"processed_at_from":{"type":"string","format":"date-time"},"processed_at_to":{"type":"string","format":"date-time"},"sku":{"type":"array","items":{"type":"integer"}},"status_alias":{"type":"array","items":{"type":"string"}},"statuses":{"type":"array","items":{"type":"integer"}},"title":{"type":"string"},"warehouse_id":{"type":"array","items":{"type":"integer"}},"delivery_method_id":{"type":"array","items":{"type":"integer"}},"is_express":{"type":"boolean"}}},"language":{"type":"string"},"with":{"type":"object","properties":{"additional_data":{"type":"boolean"},"analytics_data":{"type":"boolean"},"customer_data":{"type":"boolean"},"jewelry_codes":{"type":"boolean"}}}}},"report_discounted_create":{"type":"object"},"report_warehouse_stock":{"type":"object","required":["warehouseId"],"properties":{"language":{"type":"string"},"warehouseId":{"type":"array","items":{"type":"string"}}}},"report_placement_by_products_create":{"type":"object","required":["date_from","date_to"],"properties":{"date_from":{"type":"string","format":"date"},"date_to":{"type":"string","format":"date"}}},"report_placement_by_supplies_create":{"type":"object","required":["date_from","date_to"],"properties":{"date_from":{"type":"string","format":"date"},"date_to":{"type":"string","format":"date"}}},"report_marked_products_sales_create":{"type":"object","required":["date"],"properties":{"date":{"type":"object","required":["from","to"],"properties":{"from":{"type":"string","format":"date"},"to":{"type":"string","format":"date"}}}}},"report_realization_posting_create":{"type":"object","required":["month","year"],"properties":{"month":{"type":"integer","minimum":1,"maximum":12},"year":{"type":"integer","minimum":2023}}},"finance_document_b2b_sales":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"finance_mutual_settlement_report":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"finance_compensation_report":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"finance_decompensation_report":{"type":"object","required":["date"],"properties":{"date":{"type":"string","format":"month"},"language":{"type":"string"}}},"cargoes_label_create":{"type":"object","required":["supply_id"],"properties":{"cargoes":{"type":"array","items":{"type":"object","properties":{"cargo_id":{"type":"integer"}}}},"supply_id":{"type":"integer"}}},"posting_fbs_act_container_labels":{"type":"object","required":["id"],"properties":{"id":{"type":"integer"}}},"posting_fbs_package_label":{"type":"object","required":["posting_number"],"properties":{"posting_number":{"type":"array","items":{"type":"string"},"maxItems":20}}},"posting_fbs_package_label_create":{"type":"object","required":["posting_number"],"properties":{"posting_number":{"type":"array","items":{"type":"string"}}}},"cargoes_transport_label_by_order_create":{"type":"object","required":["order_id"],"properties":{"order_id":{"type":"integer"}}},"cargoes_transport_label_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"integer"},"transport_cargo_ids":{"type":"array","maxItems":40,"items":{"type":"string"}}}},"fbp_act_from_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"string"}}},"fbp_act_to_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"string"}}},"fbp_label_create":{"type":"object","required":["supply_id"],"properties":{"supply_id":{"type":"string"}}},"fbp_draft_direct_product_validate":{"type":"object","required":["skus","warehouse_id"],"properties":{"skus":{"type":"array","items":{"type":"object","required":["count","sku"],"properties":{"count":{"type":"integer"},"sku":{"type":"integer"}}}},"warehouse_id":{"type":"integer"}}},"fbp_draft_dropoff_product_validate":{"type":"object","required":["skus","warehouse_id"],"properties":{"skus":{"type":"array","items":{"type":"object","required":["count","sku"],"properties":{"count":{"type":"integer"},"sku":{"type":"integer"}}}},"warehouse_id":{"type":"integer"}}},"fbp_draft_pickup_product_validate":{"type":"object","required":["skus","warehouse_id"],"properties":{"skus":{"type":"array","items":{"type":"object","required":["count","sku"],"properties":{"count":{"type":"integer"},"sku":{"type":"integer"}}}},"warehouse_id":{"type":"integer"}}},"chat_history_v3":{"type":"object","required":["chat_id"],"properties":{"chat_id":{"type":"string"},"direction":{"type":"string"},"filter":{"type":"object","properties":{"message_ids":{"type":"array","items":{"type":"string"}}}},"from_message_id":{"type":"integer"},"limit":{"type":"integer"}}}});
 
   function validateEffectRepairValue(value, schema, path) {
     if (!schema || typeof schema !== "object") return;
@@ -5009,9 +5023,9 @@
     if (type === "string" || !type) {
       if (typeof value !== "string") fail("INVALID_OPERATION_PARAMS", `${path} должен быть строкой.`);
       if (Number.isInteger(schema.maxLength) && value.length > schema.maxLength) fail("INVALID_OPERATION_PARAMS", `${path} длиннее допустимого.`);
-      if (schema.format === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть датой YYYY-MM-DD.`);
+      if (schema.format === "date") requireDateYmd(value, path);
       if (schema.format === "month" && !/^\d{4}-(0[1-9]|1[0-2])$/.test(value)) fail("INVALID_OPERATION_PARAMS", `${path} должен быть периодом YYYY-MM.`);
-      if (schema.format === "date-time" && !Number.isFinite(Date.parse(value))) fail("INVALID_OPERATION_PARAMS", `${path} должен быть ISO date-time.`);
+      if (schema.format === "date-time") requireRfc3339DateTime(value, path);
     }
   }
 
@@ -5055,7 +5069,9 @@
     assertAllowedFields(normalized, ["filter", "last_id", "limit", "sort_by", "sort_dir"]);
     const filter = requirePlainObject(requireField(normalized, "filter"), "params.filter");
     assertAllowedFields(filter, ["dropoff_warehouse_ids", "order_number_search", "states", "timeslot_from_range"], "params.filter");
-    validateEnumArray(requireField(filter, "states", "params.filter"), "params.filter.states", SUPPLY_ORDER_STATES);
+    const states = requireField(filter, "states", "params.filter");
+    validateEnumArray(states, "params.filter.states", SUPPLY_ORDER_STATES);
+    if (states.length < 1) fail("INVALID_OPERATION_PARAMS", "params.filter.states должен содержать хотя бы одно состояние по контракту provider.");
     if (Object.prototype.hasOwnProperty.call(filter, "dropoff_warehouse_ids")) {
       validateIdentifierArray(filter.dropoff_warehouse_ids, "params.filter.dropoff_warehouse_ids", { int64: true });
     }
@@ -5336,18 +5352,14 @@
     const normalized = requirePlainObject(params, "params");
     assertAllowedFields(normalized, ["filter", "limit"]);
     requireSafeInt64Number(requireField(normalized, "limit"), "params.limit");
-    requireInteger(normalized.limit, "params.limit", { maximum: 50 });
-    if (Object.prototype.hasOwnProperty.call(normalized, "filter")) {
-      const filter = requirePlainObject(normalized.filter, "params.filter");
-      assertAllowedFields(filter, ["date_from", "date_to", "integration_type", "status"], "params.filter");
-      requireString(requireField(filter, "date_from", "params.filter"), "params.filter.date_from", { nonEmpty: false });
-      requireString(requireField(filter, "date_to", "params.filter"), "params.filter.date_to", { nonEmpty: false });
-      if (Object.prototype.hasOwnProperty.call(filter, "integration_type")) requireString(filter.integration_type, "params.filter.integration_type", { nonEmpty: false });
-      if (Object.prototype.hasOwnProperty.call(filter, "status")) {
-        const statuses = requireArray(filter.status, "params.filter.status");
-        for (let i = 0; i < statuses.length; i += 1) requireString(statuses[i], `params.filter.status[${i}]`, { nonEmpty: false });
-      }
-    }
+    requireInteger(normalized.limit, "params.limit", { minimum: 1, maximum: 50 });
+    const filter = requirePlainObject(requireField(normalized, "filter"), "params.filter");
+    assertAllowedFields(filter, ["date_from", "date_to", "integration_type", "status"], "params.filter");
+    filter.date_from = requireDateYmd(requireField(filter, "date_from", "params.filter"), "params.filter.date_from");
+    filter.date_to = requireDateYmd(requireField(filter, "date_to", "params.filter"), "params.filter.date_to");
+    if (filter.date_from > filter.date_to) fail("INVALID_OPERATION_PARAMS", "params.filter.date_from не может быть позже params.filter.date_to.");
+    if (Object.prototype.hasOwnProperty.call(filter, "integration_type")) filter.integration_type = requireEnum(filter.integration_type, "params.filter.integration_type", ["ozon", "aggregator", "3pl_tracking", "non_integrated"]);
+    if (Object.prototype.hasOwnProperty.call(filter, "status")) validateEnumArray(filter.status, "params.filter.status", ["new", "awaiting_retry", "in_process", "success", "error", "sended", "received", "formed", "cancelled", "pending", "completion_enqueued", "completion_processing", "completion_failed", "cancelation_enqueued", "cancelation_processing", "cancelation_failed", "completed", "closed"]);
     return normalized;
   }
 
@@ -6052,9 +6064,11 @@
     if (!["json", "binary"].includes(responseStyle)) fail("RESPONSE_STYLE_NOT_READY", `${name}: неподдерживаемый response_style.`);
     if (responseStyle === "binary") {
       const contentTypes = Array.isArray(meta.response_content_types) ? meta.response_content_types : [];
-      const allowedBinaryContentType = provider === "seller_api"
-        ? /^(application\/pdf|image\/png)$/
-        : /^(text\/csv|application\/zip)$/;
+      let allowedBinaryContentType = null;
+      if (provider === "seller_api") allowedBinaryContentType = /^(application\/pdf|image\/png)$/;
+      else if (provider === "performance_api") allowedBinaryContentType = /^(text\/csv|application\/zip)$/;
+      else if (provider === "report_file") fail("RESPONSE_STYLE_NOT_READY", `${name}: report_file binary response_style должен обрабатываться через opaque report-file transport.`);
+      else fail("INVALID_REGISTRY_PROVIDER", `${name}: неизвестный provider ${provider}.`);
       if (!contentTypes.length || contentTypes.some((item) => !allowedBinaryContentType.test(String(item)))) {
         fail("RESPONSE_STYLE_NOT_READY", `${name}: binary response содержит неподдерживаемый fixed content type для provider ${provider}.`);
       }
@@ -6582,6 +6596,208 @@
     return normalized;
   }
 
+
+  // DEFECT_015_CONSOLIDATED_GUARDS_V1
+  const DEFECT_015_DAY_MS = 86400000;
+
+  function defect015YmdParts(value, path) {
+    const text = requireDateYmd(value, path);
+    const [year, month, day] = text.split("-").map(Number);
+    return { text, year, month, day, ms: Date.parse(`${text}T00:00:00Z`) };
+  }
+
+  function defect015TodayYmd(atMs) {
+    return new Date(atMs).toISOString().slice(0, 10);
+  }
+
+  function defect015AddDaysYmd(ymd, days) {
+    const base = defect015YmdParts(ymd, "date").ms;
+    return new Date(base + Number(days) * DEFECT_015_DAY_MS).toISOString().slice(0, 10);
+  }
+
+  function defect015SubtractCalendarMonthsYmd(ymd, months) {
+    const source = defect015YmdParts(ymd, "date");
+    const first = new Date(Date.UTC(source.year, source.month - 1 - Number(months), 1));
+    const year = first.getUTCFullYear();
+    const monthIndex = first.getUTCMonth();
+    const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+    const day = Math.min(source.day, lastDay);
+    return new Date(Date.UTC(year, monthIndex, day)).toISOString().slice(0, 10);
+  }
+
+  function defect015AssertYmdRange(fromValue, toValue, path, { maxInclusiveDays = null, maxDifferenceDays = null } = {}) {
+    const from = defect015YmdParts(fromValue, `${path}.from`);
+    const to = defect015YmdParts(toValue, `${path}.to`);
+    if (to.ms < from.ms) fail("INVALID_OPERATION_PARAMS", `${path}: конец периода не может быть раньше начала.`);
+    const differenceDays = (to.ms - from.ms) / DEFECT_015_DAY_MS;
+    if (Number.isInteger(maxInclusiveDays) && differenceDays > maxInclusiveDays - 1) {
+      fail("OZON_LIMIT_VIOLATION", `${path}: период не может превышать ${maxInclusiveDays} календарных дней.`);
+    }
+    if (Number.isInteger(maxDifferenceDays) && differenceDays > maxDifferenceDays) {
+      fail("OZON_LIMIT_VIOLATION", `${path}: расстояние между границами не может превышать ${maxDifferenceDays} дней.`);
+    }
+    return { from, to, differenceDays };
+  }
+
+  function defect015OneCalendarMonthAfterMs(rfc3339) {
+    const parsed = new Date(Date.parse(rfc3339));
+    const year = parsed.getUTCFullYear();
+    const month = parsed.getUTCMonth();
+    const day = parsed.getUTCDate();
+    const firstTarget = new Date(Date.UTC(year, month + 1, 1));
+    const targetYear = firstTarget.getUTCFullYear();
+    const targetMonth = firstTarget.getUTCMonth();
+    const lastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+    return Date.UTC(
+      targetYear,
+      targetMonth,
+      Math.min(day, lastDay),
+      parsed.getUTCHours(),
+      parsed.getUTCMinutes(),
+      parsed.getUTCSeconds(),
+      parsed.getUTCMilliseconds()
+    );
+  }
+
+  function defect015AssertRfc3339Pair(object, fromKey, toKey, path) {
+    const hasFrom = Object.prototype.hasOwnProperty.call(object || {}, fromKey);
+    const hasTo = Object.prototype.hasOwnProperty.call(object || {}, toKey);
+    if (hasFrom) requireRfc3339DateTime(object[fromKey], `${path}.${fromKey}`);
+    if (hasTo) requireRfc3339DateTime(object[toKey], `${path}.${toKey}`);
+    if (hasFrom && hasTo && Date.parse(object[toKey]) < Date.parse(object[fromKey])) {
+      fail("INVALID_OPERATION_PARAMS", `${path}.${toKey} не может быть раньше ${path}.${fromKey}.`);
+    }
+    return { hasFrom, hasTo };
+  }
+
+  function defect015AssertHalfMonthPeriod(date) {
+    const fromText = requireRfc3339DateTime(date.from, "params.date.from");
+    const toText = requireRfc3339DateTime(date.to, "params.date.to");
+    const from = defect015YmdParts(fromText.slice(0, 10), "params.date.from");
+    const to = defect015YmdParts(toText.slice(0, 10), "params.date.to");
+    if (from.year !== to.year || from.month !== to.month) {
+      fail("OZON_LIMIT_VIOLATION", "params.date: cash-flow период должен быть одной половиной одного календарного месяца.");
+    }
+    const lastDay = new Date(Date.UTC(from.year, from.month, 0)).getUTCDate();
+    const valid = (from.day === 1 && to.day === 15) || (from.day === 16 && to.day === lastDay);
+    if (!valid) fail("OZON_LIMIT_VIOLATION", "params.date: допустим только период 1–15 или 16–последний день месяца.");
+  }
+
+  function validateDefect015OperationParams(operation, params, atMs = Date.now()) {
+    const p = params && typeof params === "object" ? params : {};
+
+    if (operation === "posting_fbo_list" && p.filter && typeof p.filter === "object") {
+      defect015AssertRfc3339Pair(p.filter, "since", "to", "params.filter");
+    }
+
+    if (operation === "finance_cash_flow_statement_list" && p.date && typeof p.date === "object") {
+      defect015AssertHalfMonthPeriod(p.date);
+    }
+
+    if (operation === "finance_transaction_list_v3" && p.filter?.date && typeof p.filter.date === "object") {
+      const date = p.filter.date;
+      const pair = defect015AssertRfc3339Pair(date, "from", "to", "params.filter.date");
+      if (pair.hasFrom && pair.hasTo && Date.parse(date.to) > defect015OneCalendarMonthAfterMs(date.from)) {
+        fail("OZON_LIMIT_VIOLATION", "params.filter.date: период finance_transaction_list_v3 не может превышать один календарный месяц.");
+      }
+    }
+
+    if (operation === "finance_balance") {
+      defect015AssertYmdRange(p.date_from, p.date_to, "params", { maxDifferenceDays: 30 });
+    }
+
+    if (operation === "finance_realization_by_day") {
+      const year = Number(p.year);
+      const month = Number(p.month);
+      const day = Number(p.day);
+      const ymd = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const requested = defect015YmdParts(ymd, "params.day/month/year");
+      const today = defect015YmdParts(defect015TodayYmd(atMs), "current_date");
+      if ((today.ms - requested.ms) / DEFECT_015_DAY_MS > 32) {
+        fail("OZON_LIMIT_VIOLATION", "params.day/month/year: realization by-day доступен не старше 32 календарных дней от текущей даты.");
+      }
+    }
+
+    if (operation === "finance_realization_posting" || operation === "finance_realization_v2") {
+      const month = Number(p.month);
+      const year = Number(p.year);
+      if (!Number.isInteger(month) || month < 1 || month > 12) fail("INVALID_OPERATION_PARAMS", "params.month должен быть в диапазоне 1..12.");
+      if (!Number.isInteger(year) || year * 12 + month < 2023 * 12 + 8) {
+        fail("OZON_LIMIT_VIOLATION", "Период realization не может быть раньше 2023-08.");
+      }
+    }
+
+    if (operation === "finance_products_buyout") {
+      defect015AssertYmdRange(p.date_from, p.date_to, "params", { maxInclusiveDays: 31 });
+    }
+
+    if (operation === "fbo_draft_timeslot_info") {
+      const range = defect015AssertYmdRange(p.date_from, p.date_to, "params");
+      const today = defect015TodayYmd(atMs);
+      const maxDate = defect015AddDaysYmd(today, 27);
+      if (range.from.text < today || range.to.text > maxDate) {
+        fail("OZON_LIMIT_VIOLATION", "params.date_from/date_to должны находиться в 28-дневном окне, начинающемся с текущей даты.");
+      }
+    }
+
+    if (operation === "carriage_delivery_list_v2" && p.filter && Object.prototype.hasOwnProperty.call(p.filter, "departure_date")) {
+      requireDateYmd(p.filter.departure_date, "params.filter.departure_date");
+    }
+
+    if (operation === "report_returns_create_v2" && p.filter && typeof p.filter === "object") {
+      const from = requireRfc3339DateTime(p.filter.date_from, "params.filter.date_from");
+      requireRfc3339DateTime(p.filter.date_to, "params.filter.date_to");
+      const earliest = defect015SubtractCalendarMonthsYmd(defect015TodayYmd(atMs), 3);
+      if (from.slice(0, 10) < earliest) fail("OZON_LIMIT_VIOLATION", "params.filter.date_from: отчёт по возвратам доступен только за последние три месяца.");
+    }
+
+    if (operation === "report_realization_posting_create") {
+      const month = Number(p.month);
+      const year = Number(p.year);
+      if (year * 12 + month < 2023 * 12 + 8) fail("OZON_LIMIT_VIOLATION", "Период отчёта realization не может быть раньше 2023-08.");
+    }
+
+    if (operation === "product_certification_params_v2" && p.params?.expired_date && typeof p.params.expired_date === "object") {
+      const expired = p.params.expired_date;
+      if (Object.prototype.hasOwnProperty.call(expired, "date") && Object.prototype.hasOwnProperty.call(expired, "infinite")) {
+        fail("INVALID_OPERATION_PARAMS", "params.params.expired_date: date и infinite взаимоисключающие представления срока действия.");
+      }
+    }
+
+    const strictPerformanceAlt = new Set([
+      "performance_campaign_product",
+      "performance_media",
+      "performance_campaign_product_csv",
+      "performance_media_csv"
+    ]);
+    if (strictPerformanceAlt.has(operation)) defect015AssertRfc3339Pair(p, "from", "to", "params");
+
+    const performance62 = new Set([
+      "performance_expense",
+      "performance_daily",
+      "performance_media",
+      "performance_expense_csv",
+      "performance_daily_csv",
+      "performance_media_csv"
+    ]);
+    if (performance62.has(operation)) {
+      if (p.dateFrom != null && p.dateTo != null) {
+        defect015AssertYmdRange(p.dateFrom, p.dateTo, "params", { maxInclusiveDays: 62 });
+      } else if (p.from != null && p.to != null) {
+        const from = requireRfc3339DateTime(p.from, "params.from");
+        const to = requireRfc3339DateTime(p.to, "params.to");
+        if (Date.parse(to) < Date.parse(from)) fail("INVALID_OPERATION_PARAMS", "params.to не может быть раньше params.from.");
+        if (Date.parse(to) - Date.parse(from) > 62 * DEFECT_015_DAY_MS) fail("OZON_LIMIT_VIOLATION", "Performance statistics export не может превышать 62 дня.");
+      }
+    }
+
+    if (operation === "performance_sku_statistics" && p.dateFrom != null) {
+      const from = requireDateYmd(p.dateFrom, "params.dateFrom");
+      const earliest = defect015AddDaysYmd(defect015TodayYmd(atMs), -1);
+      if (from < earliest) fail("OZON_LIMIT_VIOLATION", "params.dateFrom для SKU statistics не может быть раньше предыдущего дня.");
+    }
+  }
+
   const IMPLEMENTATION_BINDINGS = Object.freeze({
     seller_product_list: { normalizeParams: normalizeSellerProductListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b1" },
     seller_product_info_list: { normalizeParams: normalizeSellerProductInfoListParams, sanitizeResult: safeReadResult, contract_state: "official_swagger_2026_08_25_b1" },
@@ -6927,6 +7143,7 @@
       const normalizedParams = meta.execution_enabled === true && typeof meta.normalizeParams === "function"
         ? sanitizeJsonValue(meta.normalizeParams(params), "normalized_params")
         : params;
+      validateDefect015OperationParams(operation, normalizedParams, Date.now());
       return deepFreeze({ operation, params: normalizedParams });
     }
 
@@ -6988,11 +7205,18 @@
     function planCommandForSellerCapability(command, profile, atMs = Date.now(), entitlementSnapshot = null) {
       const normalized = normalizeCommand(command);
       const meta = resolveOperation(normalized.operation).meta;
-      if (String(meta.provider || "seller_api") !== "seller_api") {
+      const provider = String(meta.provider || "seller_api");
+      if (provider === "performance_api") {
         return planningExecute(normalized, normalized, { status: "not_needed", subscription_type: "UNKNOWN", is_premium: null, probe_performed: false }, {
           status: "SUPPORTED_AND_ENTITLED", partial: false, capability_required: false, reason: "performance_provider_not_seller_subscription"
         });
       }
+      if (provider === "report_file") {
+        return planningExecute(normalized, normalized, { status: "not_needed", subscription_type: "UNKNOWN", is_premium: null, probe_performed: false }, {
+          status: "SUPPORTED_AND_ENTITLED", partial: false, capability_required: false, reason: "report_file_provider_not_seller_subscription"
+        });
+      }
+      if (provider !== "seller_api") fail("INVALID_REGISTRY_PROVIDER", `${normalized.operation}: неизвестный provider ${provider}.`);
 
       const requirement = globalThis.OzonEntitlements?.requirementFor
         ? globalThis.OzonEntitlements.requirementFor(normalized, entitlementSnapshot, atMs)
@@ -7178,7 +7402,8 @@
     function buildRequest(command, headers) {
       const preflight = preflightExecution(command);
       const { meta } = preflight;
-      if (String(meta.provider || "seller_api") !== "seller_api") fail("WRONG_REQUEST_BUILDER", "Performance operation нельзя отправить через Seller request builder.");
+      const provider = String(meta.provider || "seller_api");
+      if (provider !== "seller_api") fail("WRONG_REQUEST_BUILDER", `Provider ${provider} нельзя отправить через Seller request builder.`);
       if (!/^https:\/\/api-seller\.ozon\.ru$/.test(sellerApiBase)) fail("INVALID_FIXED_HOST", "Seller API host не прошёл fixed-host guard.");
       return deepFreeze({
         url: `${sellerApiBase}${meta.path}`,
@@ -7196,7 +7421,8 @@
     function buildPerformanceRequest(command, headers) {
       const preflight = preflightExecution(command);
       const { meta } = preflight;
-      if (String(meta.provider || "seller_api") !== "performance_api") fail("WRONG_REQUEST_BUILDER", "Seller operation нельзя отправить через Performance request builder.");
+      const provider = String(meta.provider || "seller_api");
+      if (provider !== "performance_api") fail("WRONG_REQUEST_BUILDER", `Provider ${provider} нельзя отправить через Performance request builder.`);
       if (!/^https:\/\/api-performance\.ozon\.ru$/.test(performanceApiBase)) fail("INVALID_FIXED_HOST", "Performance API host не прошёл fixed-host guard.");
       assertPerformanceMutationBlocked(meta.method, meta.path);
       assertPerformanceAsyncReportSideEffectBlocked(meta.method, meta.path);

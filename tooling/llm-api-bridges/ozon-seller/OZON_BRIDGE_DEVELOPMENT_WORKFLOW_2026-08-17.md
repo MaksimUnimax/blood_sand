@@ -303,3 +303,7 @@ Unless a later reviewed feature explicitly changes them, preserve:
 - independent conversation/tab ownership;
 - provider quota/cache state is not reset by unrelated UI/delivery cleanup;
 - delivery recovery does not replay provider work.
+
+## DEFECT_015_WORKFLOW_CURRENTNESS_GATE_V1
+
+For request-contract changes, delivery now includes a provider-currentness review independent of Swagger presence, deterministic date/business-boundary regressions, and a check that registry templates/guidance remain runnable only when provider semantics are time-stable. Known retired paths must be blocked locally and may not re-enter generated/package mirrors as current+enabled.

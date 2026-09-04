@@ -101,3 +101,7 @@ Unless explicitly changed by a reviewed feature:
 - no hidden provider retry/pagination/fan-out/report polling;
 - provider quota/cache state is not reset by unrelated UI/delivery cleanup;
 - delivery recovery does not replay provider work.
+
+## DEFECT_015_ACTIVE_DATE_CONTRACT_POLICY_V1
+
+Date/time/period requests are validated against the effective provider contract, including documented prose/business constraints, rather than mechanical OpenAPI `format` alone. Dynamic provider-derived selectors and current/future-only date requests are not published as permanent runnable templates. Retired operations are fail-closed and hidden from ordinary guidance. The 2026-09-04 DEFECT-015 repair gate is mandatory for any future change that can alter these invariants.

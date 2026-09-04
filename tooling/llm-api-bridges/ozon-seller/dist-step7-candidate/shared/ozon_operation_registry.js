@@ -401,13 +401,13 @@
       provider: "seller_api", method: "POST", path: "/v1/actions/auto-add/products/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "beta", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "prices_promotions", section: "actions_promotions", guidance_visibility: "user", entitlement_key: "POST /v1/actions/auto-add/products/list", workflow_role: "single_read",
-      purpose: "Получить beta-список товаров с автодобавлением в акцию без скрытой offset-пагинации.", template: { operation: "ozon_auto_add_products", params: { action_id: 1, auto_add_date: "2035-08-28T14:00:00Z", limit: 100 } }
+      purpose: "Получить beta-список товаров с автодобавлением в акцию без скрытой offset-пагинации.", template: null, template_runnable: false, required_parameters: ["action_id + current auto_add_date returned by /v1/actions"]
     },
     ozon_auto_add_candidates: {
       provider: "seller_api", method: "POST", path: "/v1/actions/auto-add/products/candidates", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "beta", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "prices_promotions", section: "actions_promotions", guidance_visibility: "user", entitlement_key: "POST /v1/actions/auto-add/products/candidates", workflow_role: "single_read",
-      purpose: "Получить beta-список кандидатов для автодобавления в акцию без скрытой offset-пагинации.", template: { operation: "ozon_auto_add_candidates", params: { action_id: 1, auto_add_date: "2035-08-28T14:00:00Z", limit: 100 } }
+      purpose: "Получить beta-список кандидатов для автодобавления в акцию без скрытой offset-пагинации.", template: null, template_runnable: false, required_parameters: ["action_id + current auto_add_date returned by /v1/actions"]
     },
     stock_on_warehouses_v2: {
       provider: "seller_api", method: "POST", path: "/v2/analytics/stock_on_warehouses", effect: "READ", request_style: "json_body",
@@ -696,9 +696,9 @@
     },
     fbs_carriage_available_list: {
       provider: "seller_api", method: "POST", path: "/v1/posting/carriage-available/list", effect: "READ", request_style: "json_body",
-      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "user", entitlement_key: "POST /v1/posting/carriage-available/list", workflow_role: "single_read",
-      purpose: "Получить доступные перевозки для метода доставки и, при необходимости, явной даты отгрузки.", template: { operation: "fbs_carriage_available_list", params: { delivery_method_id: 1 } }
+      execution_enabled: false, currentness: "retired", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
+      cluster: "orders_postings", section: "assembly_carriage", guidance_visibility: "hidden", entitlement_key: "POST /v1/posting/carriage-available/list", workflow_role: "single_read",
+      purpose: "Получить доступные перевозки для метода доставки и, при необходимости, явной даты отгрузки.", template: null, template_runnable: false, required_parameters: ["retired provider route; use carriage_delivery_list_v2"]
     },
     fbs_carriage_get: {
       provider: "seller_api", method: "POST", path: "/v1/carriage/get", effect: "READ", request_style: "json_body",
@@ -945,19 +945,19 @@
       provider: "seller_api", method: "POST", path: "/v1/finance/cash-flow-statement/list", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "finance", section: "documents_reports", guidance_visibility: "user", entitlement_key: "POST /v1/finance/cash-flow-statement/list", workflow_role: "single_read",
-      purpose: "Получить финансовый отчёт денежных потоков; следующая страница только отдельной явной командой.", template: { operation: "finance_cash_flow_statement_list", params: { date: { from: "2026-08-01T00:00:00Z", to: "2026-08-28T23:59:59Z" }, page: 1, page_size: 100, with_details: true } }
+      purpose: "Получить финансовый отчёт денежных потоков; следующая страница только отдельной явной командой.", template: null, template_runnable: false, required_parameters: ["date.from/date.to must be exactly one provider half-month plus page/page_size"]
     },
     finance_transaction_list_v3: {
       provider: "seller_api", method: "POST", path: "/v3/finance/transaction/list", effect: "READ", request_style: "json_body",
-      execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
-      cluster: "finance", section: "transactions", guidance_visibility: "user", entitlement_key: "POST /v3/finance/transaction/list", workflow_role: "single_read",
-      purpose: "Получить список финансовых транзакций; page продолжает выборку только отдельной явной командой.", template: { operation: "finance_transaction_list_v3", params: { page: 1, page_size: 100, filter: { date: { from: "2026-08-01T00:00:00Z", to: "2026-08-28T23:59:59Z" } } } }
+      execution_enabled: false, currentness: "sunset_2026_09_08", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
+      cluster: "finance", section: "transactions", guidance_visibility: "hidden", entitlement_key: "POST /v3/finance/transaction/list", workflow_role: "single_read",
+      purpose: "Получить список финансовых транзакций; page продолжает выборку только отдельной явной командой.", template: null, template_runnable: false, required_parameters: ["provider shutdown 2026-09-08; use finance accrual replacement operations"]
     },
     finance_balance: {
       provider: "seller_api", method: "POST", path: "/v1/finance/balance", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "finance", section: "accruals_balance", guidance_visibility: "user", entitlement_key: "POST /v1/finance/balance", workflow_role: "single_read",
-      purpose: "Получить отчёт о балансе за явно заданный период.", template: { operation: "finance_balance", params: { date_from: "2026-08-01T00:00:00Z", date_to: "2026-08-28T23:59:59Z" } }
+      purpose: "Получить отчёт о балансе за явно заданный период.", template: { operation: "finance_balance", params: { date_from: "2026-08-01", date_to: "2026-08-28" } }
     },
     finance_realization_by_day: {
       provider: "seller_api", method: "POST", path: "/v1/finance/realization/by-day", effect: "READ", request_style: "json_body",
@@ -1011,7 +1011,7 @@
       provider: "seller_api", method: "POST", path: "/v2/report/returns/create", effect: "READ", request_style: "json_body", execution_enabled: true,
       currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "returns_cancellations", section: "returns",
       guidance_visibility: "user", entitlement_key: "POST /v2/report/returns/create", workflow_role: "explicit_workflow_read_step",
-      purpose: "Отчёт о возвратах", template: {"operation":"report_returns_create_v2","params":{"filter":{"date_from":"2026-01-01T00:00:00Z","date_to":"2026-01-01T00:00:00Z","status":"DisputeOpened"}}}
+      purpose: "Отчёт о возвратах", template: null, template_runnable: false, required_parameters: ["explicit current RFC3339 range inside the provider last-three-month window + status"]
     },
     report_postings_create: {
       provider: "seller_api", method: "POST", path: "/v1/report/postings/create", effect: "READ", request_style: "json_body", execution_enabled: true,
@@ -1269,7 +1269,7 @@
       provider: "seller_api", method: "POST", path: "/v2/draft/timeslot/info", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "supplies_fbo", section: "timeslots", guidance_visibility: "user", entitlement_key: "POST /v2/draft/timeslot/info", workflow_role: "single_read",
-      purpose: "Получить доступные таймслоты для явно выбранного FBO-черновика и складов кластера; без скрытых дополнительных запросов.", template: { operation: "fbo_draft_timeslot_info", params: { date_from: "2026-08-28", date_to: "2026-08-29", draft_id: 1, supply_type: "DIRECT", selected_cluster_warehouses: [{ macrolocal_cluster_id: 1, storage_warehouse_id: 1 }] } }
+      purpose: "Получить доступные таймслоты для явно выбранного FBO-черновика и складов кластера; без скрытых дополнительных запросов.", template: null, template_runnable: false, required_parameters: ["explicit current/future date_from/date_to inside the provider 28-day horizon + draft parameters"]
     },
     fbp_draft_dropoff_province_list: {
       provider: "seller_api", method: "POST", path: "/v1/fbp/draft/drop-off/province/list", effect: "READ", request_style: "json_body",
@@ -1546,9 +1546,8 @@
       entitlement_key: "POST /v1/posting/fbs/package-label/get", workflow_role: "explicit_workflow_read_step", purpose: "Получить файл с этикетками", template: {"operation":"posting_fbs_package_label_get_v1","params":{"task_id":1}}
     },
     fbs_stock_by_warehouse_v1: {
-      provider: "seller_api", method: "POST", path: "/v1/product/info/stocks-by-warehouse/fbs", effect: "READ", request_style: "json_body", execution_enabled: true,
-      currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "stocks_inventory", section: "warehouse_fbs", guidance_visibility: "user",
-      entitlement_key: "POST /v1/product/info/stocks-by-warehouse/fbs", workflow_role: "single_read", purpose: "Информация об остатках на складах продавца (FBS и rFBS)", template: {"operation":"fbs_stock_by_warehouse_v1","params":{"sku":["1"]}}
+      provider: "seller_api", method: "POST", path: "/v1/product/info/stocks-by-warehouse/fbs", effect: "READ", request_style: "json_body", execution_enabled: false, currentness: "retired", safety_class: "READ_SAFE", privacy_policy: "safe_projection", cluster: "stocks_inventory", section: "warehouse_fbs", guidance_visibility: "hidden",
+      entitlement_key: "POST /v1/product/info/stocks-by-warehouse/fbs", workflow_role: "single_read", purpose: "Информация об остатках на складах продавца (FBS и rFBS)", template: null, template_runnable: false, required_parameters: ["retired provider route; use fbs_stock_by_warehouse_v2"]
     },
     receipts_get: {
       provider: "seller_api", method: "POST", path: "/v1/receipts/get", effect: "READ", request_style: "json_body", execution_enabled: true,
@@ -1842,7 +1841,7 @@
       provider: "performance_api", method: "POST", path: "/api/client/statistics/products/sku", effect: "READ", request_style: "json_body",
       execution_enabled: true, currentness: "current", safety_class: "READ_SAFE", privacy_policy: "safe_projection",
       cluster: "advertising_performance", section: "statistics", guidance_visibility: "user", entitlement_key: "PERFORMANCE POST /api/client/statistics/products/sku", workflow_role: "single_read",
-      purpose: "Получить статистику по товарам в оплате за клик.", template: { operation: "performance_sku_statistics", params: { dateFrom: "2026-01-01", dateTo: "2026-01-07" } }
+      purpose: "Получить статистику по товарам в оплате за клик.", template: null, template_runnable: false, required_parameters: ["explicit near-current dateFrom/dateTo; dateFrom may not be earlier than the previous day"]
     },
     performance_min_bid_by_sku: {
       provider: "performance_api", method: "POST", path: "/api/client/min/sku", effect: "READ", request_style: "json_body",

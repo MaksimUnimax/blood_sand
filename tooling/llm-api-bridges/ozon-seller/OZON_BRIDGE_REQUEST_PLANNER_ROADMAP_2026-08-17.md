@@ -547,3 +547,7 @@ Before writing production code:
 10. prove protected DOM/delivery/provider-security dependencies unchanged or regression-tested.
 
 Only after those gates should a new extension candidate be assembled.
+
+## DEFECT_015_PLANNER_DATE_POLICY_V1
+
+Planner output must preserve the caller's exact valid date representation and fail closed on provider-invalid ranges before transport. It must not silently rewrite timestamps into dates, manufacture provider-derived selectors, or revive hidden retired operations. Current-relative requests require explicit current input or a separately proven dependency-resolution step.
