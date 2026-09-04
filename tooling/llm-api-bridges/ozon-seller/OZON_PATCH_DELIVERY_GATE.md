@@ -12,6 +12,8 @@ This document is a blocking process gate. It does not authorize a patch and it d
 
 **ПЕРЕД ПЕРЕДАЧЕЙ КАЖДОГО ПАТЧА ОПЕРАТОРУ ОБЯЗАТЕЛЬНО ПОЛНОСТЬЮ ПРОГНАТЬ ВСЕ ПРИМЕНИМЫЕ PRE-HANDOFF ПРОВЕРКИ ИЗ `OZON_PATCH_DELIVERY_GATE.md`; В СООБЩЕНИИ С ПАТЧЕМ ОБЯЗАТЕЛЬНО ПРИВЕСТИ ПОЛНЫЙ СПИСОК GATE-ID И ФАКТИЧЕСКИЙ РЕЗУЛЬТАТ КАЖДОЙ ПРОВЕРКИ. ЛЮБОЙ `FAIL`, `UNKNOWN` ИЛИ `NOT RUN` В ОБЯЗАТЕЛЬНОЙ PRE-HANDOFF ПРОВЕРКЕ БЛОКИРУЕТ ПЕРЕДАЧУ ПАТЧА КАК ГОТОВОГО.**
 
+**ЗАПРЕЩЕНО ПЕРЕДАВАТЬ ПАТЧ, СБОРКУ ИЛИ АРТЕФАКТ КАК ГОТОВЫЙ, ПОКА НЕ ПРОВЕРЕНЫ ВСЕ ДО ЕДИНОЙ ЗАВИСИМОСТИ, КОТОРЫЕ ДОБАВЛЕНЫ, ИЗМЕНЕНЫ ИЛИ МОГУТ БЫТЬ ЗАТРОНУТЫ ПАТЧЕМ. ДЛЯ КАЖДОЙ ТАКОЙ ЗАВИСИМОСТИ ОБЯЗАТЕЛЬНО ПРОЙТИ ПОЛНУЮ ЦЕПОЧКУ ОТ МЕСТА, ГДЕ ОНА СОЗДАЕТСЯ/ОПРЕДЕЛЯЕТСЯ, ДО КАЖДОГО МЕСТА, ГДЕ ОНА ЧИТАЕТСЯ, СРАВНИВАЕТСЯ, ВЕТВИТ ЛОГИКУ, ИЗМЕНЯЕТСЯ, СОХРАНЯЕТСЯ, ВОССТАНАВЛИВАЕТСЯ, ПЕРЕДАЕТСЯ, ИСПОЛЬЗУЕТСЯ ДЛЯ ПРАВ/ПОЛИТИК/ПЛАНИРОВАНИЯ/ЗАПРОСОВ/УЧЕТА/БЕЗОПАСНОСТИ, ПОПАДАЕТ В РЕЗУЛЬТАТ ИЛИ ПРОВЕРЯЕТСЯ ТЕСТАМИ. ХОТЯ БЫ ОДИН НЕПРОВЕРЕННЫЙ ПОТРЕБИТЕЛЬ, ВЕТКА, ПЕРЕХОД, ХРАНИЛИЩЕ, ВЫВОД ИЛИ ТЕСТ = `BLOCKED`; НЕЛЬЗЯ ГОВОРИТЬ `PASS`, `ГОТОВО`, `ЗАКРЫТО` И НЕЛЬЗЯ ОТДАВАТЬ ПАТЧ. ИСПРАВЛЕНИЕ ИСХОДНОГО СИМПТОМА НЕ ЯВЛЯЕТСЯ ДОКАЗАТЕЛЬСТВОМ ЗАКРЫТИЯ ЗАВИСИМОСТЕЙ.**
+
 **PRE-HANDOFF PASS НИКОГДА НЕ НАЗЫВАТЬ LIVE PASS. ПОСЛЕ УСТАНОВКИ ПАТЧА LIVE-ЗАКРЫТИЕ ИДЁТ ОТДЕЛЬНО И МОЖЕТ БЫТЬ ТОЛЬКО ПО ФАКТИЧЕСКОМУ LIVE EVIDENCE.**
 
 Every patch handoff message must reproduce the complete checklist result, not merely link to this file.
@@ -42,14 +44,41 @@ Reconstruct the operator-observed workflow end-to-end, including all commands, c
 ### GATE-06 — Do not stop at the first confirmed cause
 After finding one valid root cause, continue auditing the complete workflow for independent/latent failures. A first confirmed boundary is not proof that the full workflow has only one defect.
 
-### GATE-07 — State-dependency inventory
-For every command boundary, list all state produced by command N and consumed by command N+1: refs, provenance, policy decisions, IDs, caches, session state, timing state, credentials metadata, and any other implicit dependency.
+### GATE-07 — Exhaustive dependency-closure inventory
+For every value, type, provider, ref, ID, provenance flag, policy decision, entitlement result, cache entry, session value, timing value, credential metadata item, storage key, request metadata item, output field, enum/category, or other dependency that is added, changed, reinterpreted, or relied on by the patch, build an exhaustive producer-to-consumer inventory.
 
-### GATE-08 — Storage/lifetime classification
-For every state item from GATE-07, identify exactly where it lives and its lifetime: local variable, module memory, provider instance, service-worker global, `chrome.storage.session`, `chrome.storage.local`, provider/server, or other durable store.
+The inventory must start where the dependency is created/defined and enumerate **every** place where it is:
+- read or resolved;
+- compared or used in `if`/`switch`/dispatch logic;
+- validated or normalized;
+- transformed or copied;
+- used to choose provider, credentials, entitlement, policy, quota, cache, retry, request builder, host, transport, parser, redaction, accounting, or output metadata;
+- stored, restored, expired, migrated, pruned, or recreated;
+- passed across command/service-worker/provider boundaries;
+- exposed in user-visible results, diagnostics, guidance, status, errors, or package metadata;
+- covered or assumed by deterministic, package, browser, or live tests.
+
+Search must include direct references **and semantic assumptions** such as binary fallbacks (`not A => B`), default branches, catch-all conditions, legacy code paths, generated/bundled copies, and tests that bypass part of the real execution path.
+
+A dependency inventory is incomplete if any possible consumer, branch, transition, storage location, output path, generated copy, or test assumption remains unknown or unchecked. Incomplete inventory = **FAIL / BLOCKED**.
+
+### GATE-08 — Full dependency path proof and lifetime classification
+For every dependency from GATE-07, trace every listed path from the beginning of its logic to the final observable effect. Do not stop after confirming the originally broken helper or symptom.
+
+For each path, record:
+1. producer/definition;
+2. all intermediate readers/branches/transforms;
+3. storage location and lifetime, if any: local variable, module memory, provider instance, service-worker global, `chrome.storage.session`, `chrome.storage.local`, provider/server, or other store;
+4. every boundary crossing;
+5. final request, policy, entitlement, accounting, security, user-visible output, or terminal failure behavior;
+6. the test that proves the path on the final candidate.
+
+Every branch and consumer must have an explicit final status: `PASS` or a separately documented intentional non-applicability. Any `UNKNOWN`, `NOT CHECKED`, assumed behavior, skipped consumer, or untested terminal effect = **FAIL / BLOCKED**.
 
 ### GATE-09 — Architecture-invariant comparison
-Compare the proposed repair with existing bridge architecture patterns. If the bridge already has a durability, privacy, request-accounting, retry, correlation, or session invariant, explicitly verify the new code follows it rather than inventing an inconsistent exception.
+Compare the proposed repair with existing bridge architecture patterns. If the bridge already has a durability, privacy, request-accounting, retry, correlation, session, provider-routing, entitlement, policy, storage, or output invariant, explicitly verify **every dependency path from GATE-07/GATE-08** follows it rather than inventing or inheriting an inconsistent exception.
+
+When a new enum member, provider type, state kind, ref class, storage record, policy class, or other category is added, explicitly audit all existing binary/catch-all assumptions that previously treated the old set as exhaustive. A new category may not be certified until every such assumption has been reviewed and either updated or proven unaffected.
 
 ### GATE-10 — Separate bridge defects from provider/account blockers
 Classify provider permission, entitlement, empty-business-state, missing account data, and other external blockers separately. Do not “repair” a provider/account condition in bridge code.
@@ -100,7 +129,7 @@ Any executable/config/manifest change after a package test invalidates the prior
 When metadata claims `exact_request_preserved=true`, prove logical and physical request equivalence. If the command is transformed, fingerprints/metadata must truthfully show the transformation.
 
 ### GATE-21 — Logical/physical request accounting
-Verify logical request count, physical business request count, `external_request_executed`, HTTP status, and retry state match what actually happened.
+Verify logical request count, physical business request count, `external_request_executed`, HTTP status, retry state, provider classification, entitlement metadata, and other reported execution metadata match what actually happened. A target request succeeding does not make contradictory metadata acceptable.
 
 ### GATE-22 — No hidden retry or duplicate provider request
 For single-flight operations, assert exactly one provider request unless the documented contract explicitly allows retry. Any unexpected second request is **FAIL**.
@@ -109,7 +138,7 @@ For single-flight operations, assert exactly one provider request unless the doc
 For every validation/policy repair, test both sides: invalid/blocked input must reject locally with the expected zero-request behavior; the valid counterpart must execute with the expected request count and result metadata.
 
 ### GATE-24 — Fail-honest entitlement
-Unknown provider/account permission must remain `UNKNOWN`/fail-honest. Do not overstate it as supported for all accounts and do not convert a provider permission blocker into a bridge success.
+Unknown provider/account permission must remain `UNKNOWN`/fail-honest. Do not overstate it as supported for all accounts and do not convert a provider permission blocker into a bridge success. Provider classification and entitlement `reason` must also be semantically correct for the actual provider path; a generic/catch-all reason borrowed from a different provider is **FAIL**.
 
 ---
 
@@ -137,11 +166,15 @@ For report-file or other externally resolved URLs, test accepted trusted HTTPS h
 ### GATE-30 — Targeted regression for every defect in patch scope
 Each defect must have a deterministic regression that fails on the pre-fix authority for the intended reason and passes on the candidate for the intended reason whenever a deterministic reproduction is possible.
 
-### GATE-31 — Previous repaired-defect guards
+### GATE-31 — Previous repaired-defect and dependency guards
 Run all relevant previously repaired-defect regression guards that intersect the changed files or shared runtime surfaces. For the current repair family this includes at minimum the guards for DEFECT-001..DEFECT-013 that are affected by provider, policy, report, transport, manifest, entitlement, or lifecycle changes.
 
-### GATE-32 — Full exact workflow gate
-After targeted unit/regression checks pass, run a deterministic end-to-end reproduction of the complete operator-observed workflow. Isolated helper/transport success is not sufficient.
+In addition, every added/changed dependency from GATE-07 must have regression coverage for all affected shared consumers, including consumers outside the originally failing feature. A test that calls a lower-level helper directly does not cover skipped planner/policy/routing/accounting/output layers.
+
+### GATE-32 — Full exact workflow and dependency-closure gate
+After targeted unit/regression checks pass, run a deterministic end-to-end reproduction of the complete operator-observed workflow **through the same layers used by the real product**, then verify the complete output contract, not only the originally broken symptom.
+
+Before PASS, cross-check that every dependency and consumer recorded in GATE-07/GATE-08 is exercised by an applicable test or has an explicit proven non-applicability. Isolated helper/transport success is not sufficient. Any dependency-closure gap = **FAIL / BLOCKED**.
 
 ### GATE-33 — No stale or fabricated dependencies
 Every test dependency must come from the current test flow or an explicitly documented real prerequisite. Do not fabricate IDs/refs/payloads and do not silently reuse an old live ref to make a test pass.
@@ -151,6 +184,8 @@ For read-repair validation, confirm tests do not mutate provider business state.
 
 ### GATE-35 — Full green run after final candidate
 After the last candidate change, run the entire applicable PRE-HANDOFF suite once more from the final artifact. Partial green results from earlier revisions cannot be combined into a final PASS.
+
+`GATE-35 PASS` additionally requires an explicit final dependency-closure statement for GATE-07/GATE-08: all added/changed/affected dependencies, all consumers, all branches, all boundary crossings, all final outputs, and all applicable tests are accounted for with no `UNKNOWN`, `NOT CHECKED`, or assumed path. Without that statement and evidence, GATE-35 is **FAIL / BLOCKED** even if every executed test is green.
 
 ---
 
@@ -164,11 +199,11 @@ Run the exact failing live workflow against the installed candidate, with fresh 
 ### LIVE-GATE-02 — Lifecycle-sensitive live path
 Where practical, allow/force a real command boundary capable of MV3 worker recreation and verify the durable workflow still succeeds. Do not rely on one unusually long-lived worker session.
 
-### LIVE-GATE-03 — Request accounting from real live result
-Verify real logical/physical request counts, `external_request_executed`, HTTP result, retry status, and entitlement metadata.
+### LIVE-GATE-03 — Complete real-result validation
+Verify real logical/physical request counts, `external_request_executed`, HTTP result, retry status, provider classification, entitlement metadata, transformation/exactness metadata, privacy/redaction state, and all other contract fields touched by the patch. Do not mark a live test PASS merely because the original failure symptom disappeared.
 
 ### LIVE-GATE-04 — Relevant live regression guards
-Rerun the minimum live guards needed to prove the patch did not regress privacy, redaction, request preservation, entitlement honesty, or other surfaces touched by the patch.
+Rerun the minimum live guards needed to prove the patch did not regress privacy, redaction, request preservation, entitlement honesty, provider classification, or other surfaces touched by the patch and its dependency closure.
 
 ### LIVE-GATE-05 — CI/package PASS is not LIVE PASS
 Do not close a live gate from deterministic CI/package evidence. Final LIVE PASS requires actual installed live evidence.
@@ -209,6 +244,11 @@ Guard: GATE-32 plus LIVE-GATE-01; isolated PASS must be labeled isolated only.
 Past failure mode: deterministic/package evidence can be correct while real browser/provider behavior still contradicts it.
 Guard: LIVE-GATE-05.
 
+### HIST-09 — Added dependency/category was not audited through every consumer
+Past failure: a new `report_file` provider/category was added while older code still contained a binary assumption equivalent to `not seller_api => performance_api`. The report-file transport tests exercised the helper/provider path but skipped the planner layer, so the build could pass while live output falsely labeled `report_file` with Performance entitlement reasoning.
+
+Guard: GATE-07, GATE-08, GATE-09, GATE-21, GATE-24, GATE-31, GATE-32, and GATE-35. Any new or changed dependency/category requires exhaustive producer-to-consumer closure before handoff. Green tests cannot override an incomplete dependency audit.
+
 ---
 
 ## 10. Mandatory patch handoff report format
@@ -224,6 +264,7 @@ Candidate: <commit/tree>
 Artifact: <name>
 Bytes: <bytes>
 SHA-256: <sha256>
+Dependency closure: PASS|FAIL  <explicit producer-to-all-consumers evidence; no unknown paths>
 
 GATE-01  PASS|FAIL|UNKNOWN|NOT RUN  <evidence>
 GATE-02  PASS|FAIL|UNKNOWN|NOT RUN  <evidence>
@@ -239,8 +280,9 @@ LIVE CERTIFICATION: PENDING|PASS|FAIL
 ```
 
 Rules for the verdict:
-- `PRE-HANDOFF VERDICT: PASS` only if every applicable GATE-01..GATE-35 is PASS.
-- Any mandatory applicable `FAIL`, `UNKNOWN`, or `NOT RUN` means `PRE-HANDOFF VERDICT: BLOCKED`.
+- `PRE-HANDOFF VERDICT: PASS` only if every applicable GATE-01..GATE-35 is PASS **and** `Dependency closure: PASS` is backed by the complete GATE-07/GATE-08 inventory and evidence.
+- Any mandatory applicable `FAIL`, `UNKNOWN`, or `NOT RUN`, or any missing/unverified dependency consumer/path, means `PRE-HANDOFF VERDICT: BLOCKED`.
+- A green targeted test, green CI, successful package build, or disappearance of the original symptom cannot override a dependency-closure failure.
 - `LIVE CERTIFICATION: PASS` only after all required LIVE-GATE checks have real installed-build evidence.
 - A patch may never be described as live-certified while live checks are pending.
 
@@ -262,5 +304,7 @@ Until DEFECT-013 and the current read-effect repair cycle are fully closed, ever
 10. Fail-honest FBP warehouse entitlement regression.
 11. Full `report_*_create -> report_info -> report_file_get` deterministic workflow with lifecycle recreation at both command boundaries.
 12. Final post-install live replay of the exact three-command workflow with fresh report code and fresh ref.
+13. Full provider/dependency taxonomy audit for `seller_api`, `performance_api`, `report_file`, and any future provider/category: every planner, entitlement, policy, credentials, quota/cache, request-builder, accounting, output, diagnostic, guidance, storage, lifecycle, generated-copy, and test consumer must be enumerated and proven correct. Any catch-all assumption such as `not A => B` must be explicitly reviewed.
+14. `report_file_get` must be tested through the real planning path, not only by direct provider invocation, and the full planning/output metadata must be asserted for semantic correctness.
 
 This special matrix may be expanded by newly discovered defects; it must not be silently reduced while the repair cycle remains open.
