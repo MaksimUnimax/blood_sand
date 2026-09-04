@@ -4,6 +4,7 @@ import {
   createDeviceAuthorizationRepository,
   createExtensionAuthRepository,
   createDeviceManagementRepository,
+  createP3BootstrapPolicyCatalogRepository,
 } from "@product/db";
 import { AuthService, deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
 import {
@@ -19,6 +20,12 @@ import {
   DeviceManagementService,
   PreEntitlementDeviceLimitResolver,
 } from "@product/device-management";
+import { BootstrapService } from "@product/bootstrap";
+import { resolveP3BootstrapPolicy } from "@product/remote-config";
+import {
+  bindConfigSigningMaterial,
+  loadConfigSigningMaterial,
+} from "./bootstrap-signing.js";
 import { loadConfig } from "@product/shared";
 import { createApiApp } from "./app.js";
 import { createInfrastructureReadiness } from "./infrastructure.js";
@@ -26,6 +33,12 @@ import { createInfrastructureReadiness } from "./infrastructure.js";
 const config = loadConfig(process.env);
 const database = createDatabaseRuntime(config.databaseUrl);
 const rootSecret = loadAuthRootSecret(process.env);
+const bootstrapSigningMaterial = loadConfigSigningMaterial(process.env);
+const p3Catalog = createP3BootstrapPolicyCatalogRepository(database);
+bindConfigSigningMaterial(
+  bootstrapSigningMaterial,
+  await p3Catalog.findSigningKey(bootstrapSigningMaterial.keyId),
+);
 const app = createApiApp({
   config,
   isInfrastructureReady: createInfrastructureReadiness(database),
@@ -48,6 +61,10 @@ const app = createApiApp({
     rootSecret,
     loadAccessTokenSigningKey(process.env),
     new PreEntitlementDeviceLimitResolver(),
+  ),
+  bootstrapService: new BootstrapService(
+    { resolve: (input) => resolveP3BootstrapPolicy(input, p3Catalog) },
+    bootstrapSigningMaterial,
   ),
 });
 let closing = false;

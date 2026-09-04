@@ -23,6 +23,7 @@ import {
   DeviceManagementService,
   type DeviceManagementRepository,
 } from "@product/device-management";
+import { BootstrapService } from "@product/bootstrap";
 
 type JsonPrimitive = boolean | null | number | string;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -103,6 +104,30 @@ export async function generateOpenApiRepresentation(): Promise<string> {
       } satisfies DeviceManagementRepository,
       Buffer.alloc(32, 3),
       createEphemeralAccessTokenSigningKey(),
+    ),
+    bootstrapService: new BootstrapService(
+      {
+        resolve: async () => ({
+          configVersion: 1,
+          signingKeyId: "openapi-key",
+          sourceFingerprintSha256: "0".repeat(64),
+          compatibility: {
+            extension: { status: "SUPPORTED", minimumVersion: null },
+            browser: { status: "SUPPORTED" },
+          },
+          features: {},
+        }),
+      },
+      {
+        keyId: "openapi-key",
+        sign: () => ({
+          envelopeVersion: "bootstrap_envelope_v1",
+          algorithm: "Ed25519",
+          keyId: "openapi-key",
+          payload: "e30",
+          signature: "AA",
+        }),
+      },
     ),
   });
   try {

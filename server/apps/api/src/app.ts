@@ -43,6 +43,8 @@ import { registerRefreshRoutes } from "./refresh-routes.js";
 import type { DeviceManagementService } from "@product/device-management";
 import { registerDeviceManagementRoutes } from "./device-management-routes.js";
 import { registerPortalSupportRoutes } from "./portal-support-routes.js";
+import type { BootstrapService } from "@product/bootstrap";
+import { registerBootstrapRoutes } from "./bootstrap-routes.js";
 
 export class ControlledError extends Error {
   public constructor(
@@ -61,6 +63,7 @@ export interface ApiDependencies {
   readonly deviceAuthorizationService?: DeviceAuthorizationService;
   readonly extensionAuthService?: ExtensionAuthService;
   readonly deviceManagementService?: DeviceManagementService;
+  readonly bootstrapService?: BootstrapService;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -226,6 +229,12 @@ export function createApiApp(
           createEphemeralAccessTokenSigningKey(),
         ),
     );
+    if (dependencies.bootstrapService && dependencies.extensionAuthService)
+      registerBootstrapRoutes(
+        app,
+        dependencies.bootstrapService,
+        dependencies.extensionAuthService,
+      );
   });
   return app;
 }

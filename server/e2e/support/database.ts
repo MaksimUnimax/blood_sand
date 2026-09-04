@@ -16,7 +16,9 @@ export function assertE2eDatabase(): string {
   const loopback = ["127.0.0.1", "localhost", "::1"].includes(url.hostname);
   const namedE2eDatabase = /(?:e2e|test)/i.test(url.pathname);
   if (!loopback || !namedE2eDatabase)
-    throw new Error("E2E reset requires a loopback database explicitly named e2e or test");
+    throw new Error(
+      "E2E reset requires a loopback database explicitly named e2e or test",
+    );
   return url.toString();
 }
 
@@ -35,15 +37,32 @@ export async function resetE2eDatabase(): Promise<void> {
       device_authorizations, sessions, devices, account_memberships,
       user_identities, accounts, users, audit_events, auth_rate_limit_buckets
       RESTART IDENTITY CASCADE`);
+    await database.query(`TRUNCATE TABLE
+      config_release_rollout_revisions, config_release_feature_rules, rollouts,
+      feature_rule_revisions, feature_definitions,
+      config_release_compatibility_policies, config_releases,
+      signing_key_events, compatibility_policy_blocked_versions,
+      compatibility_policy_revisions, extension_release_browsers,
+      extension_release_contracts, extension_releases
+      RESTART IDENTITY CASCADE`);
   } finally {
     await database.close();
   }
 }
 
-export async function sql<T extends Record<string, unknown> = Record<string, unknown>>(
-  text: string,
-  values?: unknown[],
-): Promise<T[]> {
+/** Run only before the harness binds its one fresh per-run public signing key. */
+export async function resetE2eBootstrapSigningMetadata(): Promise<void> {
+  const database = createDatabaseRuntime(assertE2eDatabase());
+  try {
+    await database.query("TRUNCATE signing_keys CASCADE");
+  } finally {
+    await database.close();
+  }
+}
+
+export async function sql<
+  T extends Record<string, unknown> = Record<string, unknown>,
+>(text: string, values?: unknown[]): Promise<T[]> {
   const database = createDatabaseRuntime(assertE2eDatabase());
   try {
     return (await database.query<T>(text, values)).rows;

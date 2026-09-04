@@ -32,6 +32,9 @@ export const ApiErrorCodeV1Schema = z.enum([
   "DEVICE_LIMIT_REACHED",
   "DEVICE_FORBIDDEN",
   "DEVICE_NOT_FOUND",
+  "UNAUTHORIZED",
+  "DEVICE_MISMATCH",
+  "BOOTSTRAP_UNAVAILABLE",
 ]);
 export type ApiErrorCodeV1 = z.infer<typeof ApiErrorCodeV1Schema>;
 
@@ -287,6 +290,8 @@ export const BootstrapSnapshotPayloadV1Schema = z
     serverTime: IsoTimestampV1Schema,
     account: z.object({ status: z.literal("ACTIVE") }).strict(),
     subscription: SubscriptionV1Schema,
+    // The pre-P4 device limit is an internal device-management rule.  It is
+    // deliberately not part of the frozen bootstrap snapshot wire format.
     devicePolicy: z.object({ status: z.literal("ACTIVE") }).strict(),
     compatibility: z
       .object({

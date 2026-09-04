@@ -85,6 +85,9 @@ importers:
       '@product/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@product/bootstrap':
+        specifier: workspace:*
+        version: link:../../packages/bootstrap
       '@product/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -103,6 +106,9 @@ importers:
       '@product/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@product/remote-config':
+        specifier: workspace:*
+        version: link:../../packages/remote-config
       '@product/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -188,6 +194,15 @@ importers:
       '@product/shared':
         specifier: workspace:*
         version: link:../shared
+
+  packages/bootstrap:
+    dependencies:
+      '@product/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@product/remote-config':
+        specifier: workspace:*
+        version: link:../remote-config
 
   packages/compatibility:
     dependencies:

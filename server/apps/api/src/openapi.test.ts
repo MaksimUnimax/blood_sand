@@ -14,7 +14,7 @@ describe("OpenAPI foundation", () => {
     ).toBe(false);
   });
 
-  it("generates only the implemented P2.6 API surface", async () => {
+  it("generates the implemented P3.4 API surface", async () => {
     const document = JSON.parse(await generateOpenApiRepresentation()) as {
       openapi: string;
       paths: Record<string, unknown>;
@@ -28,6 +28,7 @@ describe("OpenAPI foundation", () => {
       "/v1/auth/otp/request",
       "/v1/auth/otp/verify",
       "/v1/auth/refresh",
+      "/v1/bootstrap",
       "/v1/device-authorizations",
       "/v1/device-authorizations/token",
       "/v1/device-authorizations/{id}",
@@ -36,7 +37,7 @@ describe("OpenAPI foundation", () => {
       "/v1/devices",
       "/v1/devices/{device_id}/revoke",
     ]);
-    expect(document.paths).not.toHaveProperty("/v1/bootstrap");
+    expect(document.paths).toHaveProperty("/v1/bootstrap");
     expect(document.paths).not.toHaveProperty("/v1/billing/checkouts");
     expect(document.paths).not.toHaveProperty("/test-controlled-error");
   });

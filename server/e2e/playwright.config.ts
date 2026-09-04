@@ -1,4 +1,17 @@
 import { defineConfig } from "@playwright/test";
+import { generateKeyPairSync } from "node:crypto";
+
+// Per-run only: the private half is passed to the disposable API process via
+// its environment and is never persisted or exposed by the test API.
+const e2eConfigSigningPair = generateKeyPairSync("ed25519");
+const e2eConfigSigningPrivateKeyPemB64 = Buffer.from(
+  e2eConfigSigningPair.privateKey.export({ format: "pem", type: "pkcs8" }),
+).toString("base64");
+// Playwright workers inherit this ephemeral process environment for public-key
+// verification; the private value is not written to disk or the database.
+process.env.CONFIG_SIGNING_KEY_ID = "e2e-config-signing-key";
+process.env.CONFIG_SIGNING_PRIVATE_KEY_PEM_B64 =
+  e2eConfigSigningPrivateKeyPemB64;
 
 export default defineConfig({
   testDir: ".",
@@ -10,7 +23,8 @@ export default defineConfig({
   globalSetup: "./support/global-setup.ts",
   webServer: [
     {
-      command: "pnpm --filter @product/api exec tsx ../../e2e/support/api-harness.ts",
+      command:
+        "pnpm db:migrate && pnpm --filter @product/api exec tsx ../../e2e/support/api-harness.ts",
       url: "http://127.0.0.1:3100/health/ready",
       timeout: 60_000,
       reuseExistingServer: false,
@@ -21,6 +35,8 @@ export default defineConfig({
         DATABASE_URL: process.env.DATABASE_URL ?? "",
         API_PORT: "3100",
         LOG_LEVEL: "warn",
+        CONFIG_SIGNING_KEY_ID: "e2e-config-signing-key",
+        CONFIG_SIGNING_PRIVATE_KEY_PEM_B64: e2eConfigSigningPrivateKeyPemB64,
       },
     },
     {
