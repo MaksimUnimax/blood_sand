@@ -70,3 +70,8 @@ if (lifecycle.stdout) process.stdout.write(lifecycle.stdout);
 if (lifecycle.stderr) process.stderr.write(lifecycle.stderr);
 assert.equal(lifecycle.status, 0, "report-file MV3 lifecycle regression must pass inside package effect gate");
 console.log("OZON_EFFECT_READ_REPAIR_REPORT_FILE_LIFECYCLE_CHAIN_PASS");
+const failClosed = spawnSync(process.execPath, [path.join(gateDir, "run_report_file_session_fail_closed_gate.mjs"), repo], { encoding: "utf8" });
+if (failClosed.stdout) process.stdout.write(failClosed.stdout);
+if (failClosed.stderr) process.stderr.write(failClosed.stderr);
+assert.equal(failClosed.status, 0, "report-file session malformed-state fail-closed regression must pass inside package effect gate");
+console.log("OZON_EFFECT_READ_REPAIR_REPORT_FILE_SESSION_FAIL_CLOSED_CHAIN_PASS");

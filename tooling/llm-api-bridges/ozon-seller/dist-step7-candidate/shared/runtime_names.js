@@ -39,6 +39,7 @@
     DIAGNOSTIC_SEQ: "ozmb_diagnostic_sequence",
     PROVIDER_QUOTA_STATE: "ozmb_provider_quota_state_v1",
     PROVIDER_RESULT_CACHE: "ozmb_provider_result_cache_v1",
+    REPORT_FILE_SESSION_STATE: "ozmb_report_file_session_state_v1",
     LAST_STATUS: "ozmb_last_status"
   });
   const DEFAULT_AUTO_START_TEXT = [

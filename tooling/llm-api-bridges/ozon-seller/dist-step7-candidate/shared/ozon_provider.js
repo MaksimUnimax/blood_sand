@@ -40,7 +40,7 @@
   const REPORT_FILE_REF_MAX = 128;
   const REPORT_CODE_POLICY_MAX = 256;
   const REPORT_SESSION_SCHEMA_VERSION = 1;
-  const REPORT_SESSION_STATE_KEY = "ozmb_report_file_session_state_v1";
+  const REPORT_SESSION_STATE_KEY = globalThis.OzonRuntime?.STORAGE_KEYS?.REPORT_FILE_SESSION_STATE || "ozmb_report_file_session_state_v1";
   let fallbackReportSessionState = null;
   let reportSessionWriteLock = Promise.resolve();
 
@@ -91,6 +91,7 @@
     for (const [rawCode, rawRecord] of Object.entries(rawCodePolicies)) {
       const code = String(rawCode || "").trim();
       if (!/^REPORT_/i.test(code) || !rawRecord || typeof rawRecord !== "object" || Array.isArray(rawRecord)) continue;
+      if (typeof rawRecord.personal_data_required !== "boolean") continue;
       const createdAt = Number(rawRecord.created_at_ms || 0);
       if (!Number.isFinite(createdAt) || createdAt <= 0 || current - createdAt > REPORT_FILE_REF_TTL_MS) continue;
       codePolicies.push([code, { personal_data_required: rawRecord.personal_data_required === true, created_at_ms: createdAt }]);
@@ -101,6 +102,7 @@
     for (const [rawRef, rawRecord] of Object.entries(rawFileRefs)) {
       const ref = String(rawRef || "").trim();
       if (!/^rpf_[sp]_[A-Za-z0-9_-]+$/.test(ref) || !rawRecord || typeof rawRecord !== "object" || Array.isArray(rawRecord)) continue;
+      if (typeof rawRecord.personal_data_required !== "boolean") continue;
       const createdAt = Number(rawRecord.created_at_ms || 0);
       if (!Number.isFinite(createdAt) || createdAt <= 0 || current - createdAt > REPORT_FILE_REF_TTL_MS) continue;
       const personalDataRequired = rawRecord.personal_data_required === true;
