@@ -208,16 +208,18 @@ export function createAuthRepository(runtime: DatabaseRuntime): AuthRepository {
         : undefined;
     },
     async revoke(hash, correlationId) {
-      const r = await runtime.query<{ id: string; user_id: string }>(
-        `UPDATE portal_sessions SET revoked_at=now(),revoke_reason='LOGOUT' WHERE session_token_hash=$1 AND revoked_at IS NULL AND expires_at>now() RETURNING id,user_id`,
-        [hash],
-      );
-      if (!r.rows[0]) return "missing";
-      await runtime.query(
-        `INSERT INTO audit_events(actor_type,actor_id,action,target_type,target_id,correlation_id) VALUES('USER',$1,'PORTAL_SESSION_REVOKED','PORTAL_SESSION',$2,$3)`,
-        [r.rows[0].user_id, r.rows[0].id, correlationId],
-      );
-      return "revoked";
+      return runtime.transaction(async (tx) => {
+        const r = await tx.query<{ id: string; user_id: string }>(
+          `UPDATE portal_sessions SET revoked_at=now(),revoke_reason='LOGOUT' WHERE session_token_hash=$1 AND revoked_at IS NULL AND expires_at>now() RETURNING id,user_id`,
+          [hash],
+        );
+        if (!r.rows[0]) return "missing";
+        await tx.query(
+          `INSERT INTO audit_events(actor_type,actor_id,action,target_type,target_id,correlation_id) VALUES('USER',$1,'PORTAL_SESSION_REVOKED','PORTAL_SESSION',$2,$3)`,
+          [r.rows[0].user_id, r.rows[0].id, correlationId],
+        );
+        return "revoked";
+      });
     },
   };
 }

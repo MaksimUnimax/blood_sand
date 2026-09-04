@@ -16,7 +16,7 @@
   "dependencies": {
     "@product/auth": "workspace:*",
     "@product/shared": "workspace:*",
-    "nodemailer": "6.10.1",
+    "nodemailer": "9.0.1",
     "zod": "4.1.5"
   },
   "devDependencies": {

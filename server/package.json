@@ -2,10 +2,16 @@
   "name": "product-control-plane-server",
   "private": true,
   "version": "0.1.0",
-  "packageManager": "pnpm@10.15.1",
+  "packageManager": "pnpm@10.34.5",
   "engines": {
     "node": ">=24 <25",
-    "pnpm": ">=10.15.1 <11"
+    "pnpm": ">=10.34.5 <11"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "8.5.18",
+      "sharp": "0.35.0"
+    }
   },
   "scripts": {
     "lint": "eslint . --max-warnings=0 && pnpm bridge:guard",
@@ -24,13 +30,13 @@
     "format:check": "prettier --check \"{apps,packages,scripts,infra,integration}/**/*.{ts,tsx,js,mjs,cjs,json,css,scss,yml,yaml}\" package.json pnpm-workspace.yaml tsconfig.base.json eslint.config.mjs vitest.integration.config.ts ../.github/workflows/server-ci.yml"
   },
   "devDependencies": {
-    "@playwright/test": "1.62.1",
     "@eslint/js": "9.35.0",
+    "@playwright/test": "1.62.1",
     "@types/node": "24.3.0",
     "eslint": "9.35.0",
     "prettier": "3.6.2",
     "typescript": "5.9.2",
     "typescript-eslint": "8.42.0",
-    "vitest": "3.2.4"
+    "vitest": "3.2.6"
   }
 }

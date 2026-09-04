@@ -44,6 +44,12 @@ Pin the supported major in repository tool configuration; do not float productio
 
 Use one workspace rooted at `server/`.
 
+The canonical package manager is pinned to pnpm `10.34.5` (major `10` only).
+This is a same-major security-maintenance baseline; CI uses Node `24.20.0`.
+For the P2 final checkpoint only, the read-only advisory scanner is ephemeral
+pnpm `11.25.0`: it queries npm's modern bulk advisory endpoint without
+installing, building, or changing the canonical workspace.
+
 Expected packages/apps:
 
 - `apps/api`;

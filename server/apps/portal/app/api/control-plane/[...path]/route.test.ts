@@ -3,6 +3,7 @@ import {
   allowedRoute,
   controlPlaneOrigin,
 } from "../../../../lib/control-plane-route.js";
+import config from "../../../../next.config.js";
 
 describe("portal control-plane BFF boundary", () => {
   const id = "123e4567-e89b-42d3-a456-426614174000";
@@ -45,5 +46,36 @@ describe("portal control-plane BFF boundary", () => {
       "/relative",
     ])
       expect(controlPlaneOrigin(value)).toBeUndefined();
+  });
+});
+
+describe("portal response security headers", () => {
+  it("sets the P2 production HTML security baseline and disables powered-by", async () => {
+    const environment = process.env as Record<string, string | undefined>;
+    const prior = environment.NODE_ENV;
+    environment.NODE_ENV = "production";
+    try {
+      const routes = await config.headers?.();
+      const headers = new Map(
+        routes?.[0]?.headers.map((header) => [
+          header.key.toLowerCase(),
+          header.value,
+        ]),
+      );
+      const csp = headers.get("content-security-policy");
+      expect(csp).toContain("default-src 'self'");
+      expect(csp).toContain("base-uri 'self'");
+      expect(csp).toContain("form-action 'self'");
+      expect(csp).toContain("frame-ancestors 'none'");
+      expect(csp).toContain("object-src 'none'");
+      expect(headers.get("x-content-type-options")).toBe("nosniff");
+      expect(headers.get("referrer-policy")).toBeTruthy();
+      expect(headers.get("permissions-policy")).toBeTruthy();
+      expect(headers.get("x-frame-options")).toBe("DENY");
+      expect(headers.get("strict-transport-security")).toContain("max-age=");
+      expect(config.poweredByHeader).toBe(false);
+    } finally {
+      environment.NODE_ENV = prior;
+    }
   });
 });

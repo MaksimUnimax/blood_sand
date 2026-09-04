@@ -105,7 +105,9 @@ export function createApiApp(
   });
   app.setErrorHandler((error, request, reply) => {
     const controlled = error instanceof ControlledError;
-    const validation = "validation" in error || error.name === "ZodError";
+    const validation =
+      error instanceof Error &&
+      ("validation" in error || error.name === "ZodError");
     const statusCode = controlled ? error.statusCode : validation ? 400 : 500;
     const code: ApiErrorCodeV1 = controlled
       ? error.code
