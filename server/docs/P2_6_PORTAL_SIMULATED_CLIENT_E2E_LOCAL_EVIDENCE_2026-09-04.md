@@ -1,6 +1,6 @@
 # P2.6 portal simulated-client local evidence
 
-Status: **LOCAL T4 ACCEPTED — P2.6 ACTIVE**
+Status: **ACCEPTED — P2.6 DONE**
 
 Technical ID: `PRODUCT-CONTROL-PLANE-P2.6-PORTAL-SIMULATED-CLIENT-E2E-LOCAL`  
 Attempt: 6  
@@ -111,15 +111,28 @@ is rejected.
   synthetic and confined to E2E support. No real production secret, database
   URL, cookie, device/user code, or browser binary is tracked.
 
-## Roadmap and limitation
+## Remote CI acceptance
 
-P2 remains ACTIVE. P2.1, P2.2, P2.3, P2.4, and P2.5 remain DONE. P2.6 remains
-ACTIVE; P2.7 remains PLANNED.
+Implementation commit `5b219415189251534471173a35a171995d05f5c6` passed the
+exact push-triggered Server CI run
+[`33830350184`](https://github.com/MaksimUnimax/blood_sand/actions/runs/33830350184).
+The job used the corrected disposable `product_control_plane_test` database and
+all required steps passed, including Playwright Chromium installation and final
+`pnpm test:e2e`. The local T4 evidence remains 2 spec files, **7 passed**, 0
+failed, 0 skipped, and 0 retries; the remote job API confirms the canonical T4
+step ran and passed without being skipped.
 
-Known limitation: P2.6 T4 is locally accepted but has not yet been integrated
-into GitHub Server CI.
+The CI database-name correction is accepted without reset-guard weakening.
+Playwright remains `1.62.1`, Chromium remains `151.0.7922.34`, OpenAPI remains
+the deterministic 14-route SHA-256
+`3fd8ad9a61c8146c314d86912a47f1a154cf1eea6d73c3ad9dabfde52f2eeef0`, and no
+migration `0006` exists.
 
-No commit, push, CI workflow edit, host Node change, host PostgreSQL install,
-MySQL change, protected-service change, or product deployment was made. All
-PostgreSQL/Node validation containers and disposable test output were removed
-after acceptance.
+## Roadmap
+
+P2 remains ACTIVE. P2.1, P2.2, P2.3, P2.4, P2.5, and P2.6 are DONE. P2.7 is
+NEXT; it has not been started.
+
+No host Node change, host PostgreSQL installation, MySQL change,
+protected-service change, or product deployment was made. Disposable test
+output was not tracked.
