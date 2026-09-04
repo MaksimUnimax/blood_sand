@@ -72,6 +72,15 @@ Verdict: **STALE_RETIRED_ENDPOINT — CONFIRMED**.
 - latest Ozon notice: `/v3/finance/transaction/list` and `/v3/finance/transaction/totals` will be disabled 2026-09-08.
 - replacements: `/v1/finance/accrual/postings`, `/v1/finance/accrual/types`, `/v1/finance/accrual/by-day`.
 - all three replacement read surfaces already exist in Bridge.
+- `/v3/finance/transaction/totals` is not present as a registered read operation in the audited Bridge authority.
+
+Supersession chain is important here:
+
+1. an earlier Ozon announcement stated that `/v3/finance/transaction/list` and `/v3/finance/transaction/totals` would be disabled on **2026-07-06**;
+2. Ozon then published a later notice on **2026-07-14** moving the shutdown date to **2026-09-08**;
+3. a later August reminder again states **2026-09-08**.
+
+The later provider notice supersedes the earlier July-6 deadline. A lifecycle auditor must use the latest applicable provider notice, not mechanically treat the earliest announced retirement date as final.
 
 Verdict: **LIFECYCLE_RISK — CONFIRMED**. Not a current provider failure on 2026-09-04, but repair/hardening must resolve it before the announced retirement date.
 
@@ -165,9 +174,11 @@ Official Ozon Seller API notification channel / documentation-news feed used in 
 - 2026-01-23 — discounts-task v1 deprecation;
 - 2026-02-16 — warehouse/carriage retirement dated 2026-03-20;
 - 2026-03-24 — FBS stock-by-warehouse/delivery-method/warehouse v1 retirement dated 2026-04-07;
+- earlier finance notice — transaction list/totals initially announced for 2026-07-06 shutdown;
 - 2026-06-09 — chat v2 removal;
 - 2026-07-10 — posting retirements dated 2026-08-31;
-- 2026-07-14 / later reminder — finance transaction retirement dated 2026-09-08;
+- 2026-07-14 — superseding finance transaction retirement date moved to 2026-09-08;
+- later August reminder — finance transaction shutdown remains 2026-09-08;
 - 2026-08-11 — old rFBS return-action removals;
 - late August/early September — certificate-products pagination deprecation notice.
 
