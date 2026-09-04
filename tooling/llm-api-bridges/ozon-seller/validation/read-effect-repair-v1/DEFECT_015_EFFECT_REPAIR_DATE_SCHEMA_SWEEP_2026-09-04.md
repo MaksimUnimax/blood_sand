@@ -8,6 +8,25 @@ Authority under audit:
 
 This file records a shared contract defect discovered while exhaustively auditing all date/time/period-bearing Seller reads after the live `finance_balance` failure.
 
+## Audit correction
+
+A later direct read of the executable baseline found that the first version of this artifact overstated the defect for the two placement-report operations.
+
+`normalizeEffectRepairParams()` already contains operation-specific logic for:
+
+- `report_placement_by_products_create`;
+- `report_placement_by_supplies_create`.
+
+That baseline logic already:
+
+1. parses `date_from` and `date_to` after appending `T00:00:00Z`;
+2. rejects a reversed interval (`date_to < date_from`);
+3. rejects a placement-report period greater than the documented 31 calendar days.
+
+`report_marked_products_sales_create` also already has an operation-specific ordering check for `date.from <= date.to`.
+
+Therefore the earlier statements that the placement reports were missing a 31-day period guard were incorrect and are superseded by this corrected version. The remaining confirmed defect is still real: the shared `format: date` validator checks lexical shape only, so an impossible calendar date can reach those later calculations and be normalized by JavaScript date parsing instead of being rejected locally.
+
 ## Shared root cause
 
 `EFFECT_REPAIR_PARAM_SCHEMAS` uses JSON-schema-like `format` values, but the common validator implements them too loosely:
@@ -22,7 +41,7 @@ Consequences:
 
 1. **`date-time` is not enforced as RFC3339/OpenAPI date-time.** A JavaScript-parseable string outside the provider's documented `date-time` syntax can pass local preflight.
 2. **`date` checks shape but not calendar validity.** Impossible dates such as `2026-02-31` match the regex and pass the shared validator.
-3. The generic validator does not enforce ordering for interval pairs and does not know endpoint-specific max/recency periods unless a separate operation-specific guard exists.
+3. The generic validator itself does not provide interval ordering or endpoint-specific max/recency rules. Some operations already add those rules in `normalizeEffectRepairParams()`; others do not. Audit conclusions therefore must be operation-specific rather than inferred from the generic validator alone.
 
 This is a shared-root-cause repair surface, not a collection of unrelated endpoint mistakes.
 
@@ -91,16 +110,18 @@ Provider contract:
 - both documented as `YYYY-MM-DD`;
 - `date_to` description explicitly says **maximum period — 31 days**.
 
-Bridge schema:
+Bridge:
 
-- uses `format: date`;
-- shared validator checks regex only, not a real calendar date;
-- no 31-day guard exists in the generic schema validation path.
+- shared schema uses `format: date`;
+- shared validator checks regex shape only, not a real calendar date;
+- operation-specific code already rejects reversed intervals;
+- operation-specific code already rejects a period greater than 31 calendar days.
 
 Verdict:
 
 - **MISSING_GUARD — representable calendar date**;
-- **MISSING_GUARD — maximum 31-day period**.
+- **MATCH — interval ordering guard**;
+- **MATCH — documented 31-day maximum-period guard**.
 
 Registry template uses a one-day historical interval and is not classified invalid from current provider evidence.
 
@@ -114,10 +135,13 @@ Provider contract is parallel to the products report:
 - `YYYY-MM-DD`;
 - maximum period **31 days**.
 
+Bridge uses the same shared date-format validation and the same operation-specific ordering/31-day logic as the products report.
+
 Verdict:
 
 - **MISSING_GUARD — representable calendar date**;
-- **MISSING_GUARD — maximum 31-day period**.
+- **MATCH — interval ordering guard**;
+- **MATCH — documented 31-day maximum-period guard**.
 
 ### `report_marked_products_sales_create`
 
@@ -128,21 +152,29 @@ Provider contract:
 - nested `date.from` and `date.to` are required in the current documentation change log/request contract;
 - both are documented as `YYYY-MM-DD` calendar dates.
 
-Bridge shared schema uses `format: date`; therefore malformed calendar combinations can pass if they match the regex.
+Bridge:
+
+- shared schema uses `format: date`, so impossible calendar combinations can pass the regex;
+- operation-specific code already rejects `date.to < date.from`.
 
 Verdict:
 
-- **MISSING_GUARD — representable calendar date**.
+- **MISSING_GUARD — representable calendar date**;
+- **MATCH — interval ordering guard**.
 
 No maximum period is claimed without current provider evidence.
 
 ## Shared interval-ordering status
 
-The generic validator does not enforce `from <= to` / `date_from <= date_to` for these schema-driven operations.
+The generic schema validator itself does not enforce `from <= to` / `date_from <= date_to`. This is not, by itself, proof that every schema-driven range operation lacks ordering validation.
 
-This is recorded as a **shared audit requirement**, but it must only be promoted to a provider-contract defect per operation where current provider semantics/documentation make the ordering requirement explicit enough. Do not fabricate undocumented limits.
+Confirmed baseline exceptions already protected by operation-specific logic:
 
-For repair design, an interval helper should normally validate ordering once the operation declares a date-range semantic, but test expectations must remain provider-grounded.
+- `report_placement_by_products_create` — ordering + 31-day maximum present;
+- `report_placement_by_supplies_create` — ordering + 31-day maximum present;
+- `report_marked_products_sales_create` — ordering present.
+
+For remaining schema-driven ranges, ordering or range limits are promoted to defects only where current provider evidence proves the rule and no downstream operation-specific guard is present. Do not fabricate undocumented limits.
 
 ## Month-format schemas in the same shared validator
 
@@ -155,7 +187,7 @@ The following operations use `format: month` and the shared regex does at least 
 
 These are **not automatically defects** from the shared format implementation. They still require separate provider audit for earliest/latest supported period and any current-period restrictions.
 
-`report_realization_posting_create` is also schema-driven, but its schema already includes `month` minimum/maximum and `year` minimum. It still needs its business-period boundary audited independently from the primitive schema.
+`report_realization_posting_create` is also schema-driven, but its schema already includes `month` minimum/maximum and `year` minimum. It still needs its business-period boundary audited independently from the primitive schema; that boundary is recorded separately in `DEFECT_015_FINANCE_REALIZATION_SWEEP_2026-09-04.md`.
 
 ## Required repair architecture when authorized
 
@@ -165,13 +197,15 @@ Required shared invariants:
 
 1. `format: date` -> exact `YYYY-MM-DD` **and real calendar date round-trip**;
 2. `format: date-time` -> strict RFC3339 date-time with timezone, matching the existing strong helper semantics;
-3. endpoint-specific range constraints remain explicit beside the schema:
+3. preserve existing operation-specific guards rather than reimplementing them inconsistently:
+   - placement reports: existing ordering + <=31-day logic remains authoritative;
+   - marked-products sales: existing ordering logic remains authoritative;
+4. add missing endpoint-specific constraints only where provider evidence proves them:
    - returns report: last 3 months;
-   - placement reports: <=31 days;
    - other operations only where current provider evidence proves a bound;
-4. preserve `exact_request_preserved` truthfulness: validation must reject locally rather than silently rewrite unless transformation is explicitly designed and surfaced;
-5. audit registry templates and guidance, not only the validator;
-6. update all source/dist/generated copies and deterministic regressions.
+5. preserve `exact_request_preserved` truthfulness: validation must reject locally rather than silently rewrite unless transformation is explicitly designed and surfaced;
+6. audit registry templates and guidance, not only the validator;
+7. update all source/dist/generated copies and deterministic regressions.
 
 ## Required deterministic controls
 
@@ -186,7 +220,8 @@ Shared controls:
 Operation-specific controls:
 
 - `report_returns_create_v2`: older than three months -> local reject; current valid range -> pass;
-- placement products/supplies: >31-day interval -> local reject; boundary interval -> pass;
+- placement products/supplies: preserve regression proving reversed range rejection and the existing 31-day boundary behavior;
+- marked-products sales: preserve regression proving reversed range rejection;
 - stale `report_returns_create_v2` registry template must no longer certify as runnable.
 
 ## Evidence sources
@@ -198,5 +233,7 @@ Current Seller OpenAPI snapshot generated from official Ozon Seller Swagger:
 - `v1CreatePlacementByProductsReportRequest`: `YYYY-MM-DD`, max 31 days;
 - `v1CreatePlacementBySuppliesReportRequest`: `YYYY-MM-DD`, max 31 days;
 - `ReportMarkedProductsSalesCreateRequestDate`: `from/to` as `YYYY-MM-DD`.
+
+Executable-baseline readback additionally confirms the operation-specific placement and marked-products range guards described above.
 
 STD-06 remains **FROZEN ON LIVE FAIL**. This evidence collection does not authorize executable changes or new live provider calls.
