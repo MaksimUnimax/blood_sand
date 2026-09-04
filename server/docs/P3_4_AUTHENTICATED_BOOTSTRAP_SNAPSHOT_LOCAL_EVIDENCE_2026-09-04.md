@@ -63,7 +63,7 @@ or offline-consumption behavior are absent.
 Security review found no tracked config signing private key, DB private-key
 column, private-key HTTP/log output, raw bootstrap-body/detectedAi logging,
 bridge runtime import, P3.5 lifecycle implementation, or P3.6 offline cache.
-ADR-0012 and the roadmap retain P3.4 ACTIVE; P3.5/P3.6 remain planned.
+ADR-0012 remains Accepted. P3.4 is DONE; P3.5 is NEXT; P3.6 is PLANNED.
 
 ## Remote acceptance review
 
@@ -81,3 +81,11 @@ ADR-0012 and the roadmap retain P3.4 ACTIVE; P3.5/P3.6 remain planned.
   - `POST /v1/bootstrap`: 1
   - SHA-256: `1d4869210b66d48c7f51978f85ebf21869d61a29d9a47d7fa2ffae0a9f9a8cff`
 - Migration state: `0000` through `0007` only; no `0008`.
+
+## Post-acceptance documentation correction
+
+- Previous docs SHA: `4dd3001a7a95ab816a8ebbaa0afd0743a542ad47`.
+- Reason: the final roadmap marker and one stale evidence sentence did not match
+  the intended accepted roadmap state.
+- Product implementation, schema and tests are unchanged; this is a
+  documentation-only correction, not a product defect.
