@@ -105,6 +105,21 @@ Every date-bearing operation will be classified as one of:
 
 The sweep must cover all producers/readers/normalizers/templates/request builders/generated copies/tests for each date-bearing operation.
 
+## Verified comparison rows
+
+| Bridge operation | Provider endpoint | Date fields | Bridge behavior | Current contract evidence | Classification |
+|---|---|---|---|---|---|
+| `finance_balance` | `POST /v1/finance/balance` | `date_from`, `date_to` | requires RFC3339 date-time | current SDK tied to `GetFinanceBalanceV1` documents `YYYY-MM-DD`; live exact RFC3339 request returned HTTP 400/code 3 | **BUG — LIVE CONFIRMED** |
+| `finance_cash_flow_statement_list` | finance cash-flow statement list | `date.from`, `date.to` | requires RFC3339 date-time | current SDK schema/tests use RFC3339 timestamps | **MATCH — wire format** |
+| `product_queries` | `/v1/analytics/product/queries` | `date_from`, `date_to` | RFC3339; Bridge requires `date_from` | current SDK schema uses RFC3339 examples | **MATCH — wire format**; requiredness still under verification |
+| `product_queries_details` | `/v1/analytics/product/queries/details` | `date_from`, `date_to` | RFC3339; Bridge requires `date_from` | current SDK schema uses RFC3339 examples | **MATCH — wire format**; requiredness still under verification |
+| `seller_rating_history` | rating history endpoint | `date_from`, `date_to` | requires RFC3339 | current SDK test uses RFC3339 date-times | **MATCH — wire format** |
+| `seller_fbs_error_postings` | `POST /v1/rating/index/fbs/posting/list` | `filter.date_from`, `filter.date_to` | requires RFC3339 date-time | current SDK method points to official `RatingAPI_ListFBSRatingIndexPostingsV1`; current SDK test sends `YYYY-MM-DD` date-only values | **STATIC BUG CANDIDATE — NEEDS OFFICIAL-OPENAPI + LIVE CONFIRMATION** |
+
+### Requiredness discrepancies are tracked separately
+
+Current SDK schemas model `date_from` / `date_to` as optional for `finance_balance`, `product_queries`, `product_queries_details`, and the rating-index FBS posting list, while the Bridge makes some or all of these fields mandatory. These are **not yet promoted to BUG** solely from SDK typing. They remain explicit contract discrepancies pending official-derived OpenAPI verification and, where needed, live proof.
+
 ## Verified control cases
 
 ### MATCH — `finance_cash_flow_statement_list`
@@ -120,6 +135,23 @@ Current external OzonAPI schema/tests for this operation use RFC3339 timestamps 
 Consequence: the shared RFC3339 helper is not globally wrong. DEFECT-015 must be repaired endpoint-specifically; a bulk conversion of all date/time fields to `YYYY-MM-DD` would create new defects.
 
 Period-length and any endpoint-specific range guards remain separate audit dimensions and are not implied PASS by the format match.
+
+## Primary static provider-contract source for the remaining sweep
+
+A current public repository `MissiaL/ozon-api` contains `src/main/resources/openapi/ozon-seller-openapi.json`, described as generated from Ozon Seller API Swagger and updated automatically from the official Ozon Seller Swagger source. The current inventory contains **463 operations** and includes the newly added `/v1/finance/balance` family.
+
+For the remaining exhaustive sweep this OpenAPI snapshot is the primary static field/type/requiredness source. SDK schemas/tests remain corroborating evidence. Real-provider behavior remains the authority for live certification.
+
+Required process for each Bridge date-bearing operation:
+
+1. resolve Bridge operation → method/path;
+2. resolve OpenAPI request schema and nested component refs;
+3. compare field presence, `required`, type/format, oneOf/anyOf constraints, enum and range metadata;
+4. compare Bridge normalizer/validator;
+5. compare template/default/guidance;
+6. compare generated/dist copies and deterministic tests;
+7. classify `MATCH / BUG / MISSING_GUARD / NEEDS_LIVE`;
+8. persist the row before moving on.
 
 ## Initial strict-RFC3339 suspect inventory
 
@@ -142,6 +174,16 @@ The following current validators use the shared RFC3339 requirement and are expl
 - rFBS return/posting date filters.
 
 The complete inventory is being generated from the actual registry/contract code and checked operation by operation.
+
+## Additional date-bearing validation families in scope
+
+The strict RFC3339 inventory is not the whole surface. The sweep additionally includes:
+
+- generic `requireDateYmd()` call sites;
+- Performance-specific `YYYY-MM-DD` validators;
+- `requireAnalyticsDate()` which currently accepts either date-only or RFC3339 and therefore may be over-permissive for endpoints that only accept one wire form;
+- loose JavaScript `Date.parse()` / `new Date(...)` paths;
+- schema-driven effect-repair operations, including `report_returns_create_v2`, `report_postings_create`, placement reports, marked-products sales reports, and month/year financial/report operations.
 
 ## Commercial-test state
 
