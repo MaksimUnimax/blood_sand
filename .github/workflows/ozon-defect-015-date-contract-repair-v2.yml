@@ -1,0 +1,287 @@
+name: Ozon DEFECT-015 date contract repair and certification v2
+
+on:
+  push:
+    branches:
+      - repair/ozon-date-contract-2026-09-04
+    paths:
+      - .github/workflows/ozon-defect-015-date-contract-repair-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply deterministic repair in working tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_defect_015_repair_v2.py
+          git diff --check
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_contract.js
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_operation_registry.js
+          node --check tooling/llm-api-bridges/ozon-seller/dist/ozon-seller-mcp-nodebundle.js
+
+      - name: Materialize exact repair patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p defect015-ci
+          git diff --binary > defect015-ci/defect015-repair.patch
+          test -s defect015-ci/defect015-repair.patch
+          sha256sum defect015-ci/defect015-repair.patch > defect015-ci/defect015-repair.patch.sha256
+          cat defect015-ci/defect015-repair.patch.sha256
+          git diff --stat
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: defect015-repair-patch-v2
+          path: defect015-ci/
+          if-no-files-found: error
+
+  gate:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: defect015-repair-patch-v2
+          path: defect015-ci
+
+      - name: Verify and apply exact prepared patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c defect015-ci/defect015-repair.patch.sha256
+          git apply --check defect015-ci/defect015-repair.patch
+          git apply defect015-ci/defect015-repair.patch
+          git diff --check
+
+      - name: Verify executable and MCP mirror syntax/coherence
+        shell: bash
+        run: |
+          set -euo pipefail
+          C=tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+          while IFS= read -r f; do node --check "$f" >/dev/null; done < <(find "$C" -type f -name '*.js' | sort)
+          node --check tooling/llm-api-bridges/ozon-seller/dist/ozon-seller-mcp-nodebundle.js
+          node <<'NODE'
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const p='tooling/llm-api-bridges/ozon-seller';
+          const bundle=fs.readFileSync(`${p}/dist/ozon-seller-mcp-nodebundle.js`,'utf8');
+          for (const rel of ['shared/ozon_operation_registry.js','shared/ozon_contract.js']) {
+            const src=fs.readFileSync(`${p}/dist-step7-candidate/${rel}`,'utf8').replace(/\n$/,'');
+            const begin=`/* BEGIN ${rel} */\n`;
+            const end=`\n\n/* END ${rel} */`;
+            const start=bundle.indexOf(begin);
+            assert.notEqual(start,-1,`${rel} BEGIN marker`);
+            const stop=bundle.indexOf(end,start+begin.length);
+            assert.notEqual(stop,-1,`${rel} END marker`);
+            assert.equal(bundle.slice(start+begin.length,stop),src,`${rel} bundle coherence`);
+          }
+          console.log('DEFECT_015_MCP_NODEBUNDLE_COHERENCE_PASS');
+          NODE
+
+      - name: Prove old authority is caught by the new gate
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          OLD=/tmp/ozon-defect015-old
+          rm -rf "$OLD"
+          git worktree add --detach "$OLD" 249029b0ba8d9e6f9e26182bf678adf42868c6d6
+          set +e
+          node tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_defect_015_date_repair_gate.mjs "$OLD" > /tmp/defect015-old-gate.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/defect015-old-gate.log
+          test "$rc" -ne 0
+          node - "$OLD" <<'NODE'
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const path=require('node:path');
+          const vm=require('node:vm');
+          const root=process.argv[2];
+          const shared=path.join(root,'tooling','llm-api-bridges','ozon-seller','dist-step7-candidate','shared');
+          for (const f of ['ozon_operation_registry.js','ozon_contract.js']) vm.runInThisContext(fs.readFileSync(path.join(shared,f),'utf8'),{filename:f});
+          const C=globalThis.OzonContract; const R=globalThis.OzonOperationRegistry;
+          assert.doesNotThrow(()=>C.normalizeCommand({operation:'finance_balance',params:{date_from:'2026-08-28T00:00:00Z',date_to:'2026-09-03T23:59:59Z'}}));
+          assert.throws(()=>C.normalizeCommand({operation:'finance_balance',params:{date_from:'2026-08-28',date_to:'2026-09-03'}}));
+          assert.doesNotThrow(()=>C.normalizeCommand({operation:'report_placement_by_products_create',params:{date_from:'2026-02-31',date_to:'2026-03-01'}}));
+          assert.notEqual(R.OPERATIONS.ozon_auto_add_products.template,null);
+          assert.equal(R.OPERATIONS.fbs_stock_by_warehouse_v1.execution_enabled,true);
+          console.log('DEFECT_015_OLD_BASELINE_BAD_BEHAVIOR_REPRO_PASS');
+          NODE
+          echo 'DEFECT_015_NEW_GATE_FAILS_OLD_BASELINE_PASS'
+
+      - name: Run complete read-effect repair gate family
+        shell: bash
+        run: |
+          set -euo pipefail
+          D=tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
+          for gate in "$D"/run_*.mjs; do
+            echo "=== $gate ==="
+            node "$gate" .
+          done
+          echo "DEFECT_015_FULL_GATE_FAMILY_${{ matrix.os }}_PASS"
+
+  publish:
+    needs: [prepare, gate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: defect015-repair-patch-v2
+          path: defect015-ci
+
+      - name: Apply exact matrix-certified patch and commit repair authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c defect015-ci/defect015-repair.patch.sha256
+          git apply --check defect015-ci/defect015-repair.patch
+          git apply defect015-ci/defect015-repair.patch
+          rm -rf defect015-ci
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -u
+          git commit -m 'fix(ozon): close DEFECT-015 date and provider-currentness contracts'
+          echo "REPAIR_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "REPAIR_TREE=$(git rev-parse HEAD^{tree})" >> "$GITHUB_ENV"
+          echo "REPAIR_SHORT=$(git rev-parse --short=12 HEAD)" >> "$GITHUB_ENV"
+
+      - name: Re-run mandatory gates on exact committed repair tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          D=tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
+          node "$D/run_defect_015_date_repair_gate.mjs" .
+          node "$D/run_effect_read_repair_gate.mjs" .
+          node "$D/run_exact_26_schema_gate.mjs" .
+          node "$D/run_all_26_e2e_gate.mjs" .
+          node "$D/run_generated_document_delivery_gate.mjs" .
+          node "$D/run_report_file_workflow_gate.mjs" .
+          echo 'DEFECT_015_EXACT_COMMITTED_TREE_CERTIFICATION_PASS'
+
+      - name: Build exact installable candidate and acceptance evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT=tooling/llm-api-bridges/ozon-seller
+          CANDIDATE="$PROJECT/dist-step7-candidate"
+          ARTIFACT_DIR="$PROJECT/artifacts"
+          NAME="OZON_BRIDGE_v0.1.19_DEFECT_015_DATE_CONTRACT_REPAIR_${REPAIR_SHORT}.zip"
+          BUILDINFO="${NAME}_BUILDINFO.txt"
+          mkdir -p "$ARTIFACT_DIR"
+          rm -f "$ARTIFACT_DIR/$NAME" "$ARTIFACT_DIR/$NAME.sha256.txt" "$ARTIFACT_DIR/$BUILDINFO"
+          (
+            cd "$CANDIDATE"
+            zip -X -q -r "$GITHUB_WORKSPACE/$ARTIFACT_DIR/$NAME" \
+              content_script.js manifest.json popup.css popup.html popup.js service_worker.js shared
+          )
+          ART_SHA=$(sha256sum "$ARTIFACT_DIR/$NAME" | awk '{print $1}')
+          printf '%s  %s\n' "$ART_SHA" "$NAME" > "$ARTIFACT_DIR/$NAME.sha256.txt"
+          PROD_TREE_SHA=$(python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          root=Path('tooling/llm-api-bridges/ozon-seller/dist-step7-candidate')
+          h=hashlib.sha256()
+          files=sorted(p for p in root.rglob('*') if p.is_file())
+          for p in files:
+              rel=p.relative_to(root).as_posix().encode()
+              data=p.read_bytes()
+              h.update(len(rel).to_bytes(4,'big')); h.update(rel)
+              h.update(len(data).to_bytes(8,'big')); h.update(data)
+          print(h.hexdigest())
+          PY
+          )
+          cat > "$ARTIFACT_DIR/$BUILDINFO" <<EOF
+          schema=OZON_DEFECT_015_DATE_CONTRACT_REPAIR_BUILDINFO_V1
+          repair_commit=$REPAIR_SHA
+          repair_tree=$REPAIR_TREE
+          source_plan_commit=50ced8f850a9c3f06caa344b2d2bcd943d69f0c1
+          executable_baseline_under_audit=249029b0ba8d9e6f9e26182bf678adf42868c6d6
+          matrix_linux=PASS
+          matrix_windows=PASS
+          old_baseline_regression=FAIL_AS_EXPECTED
+          exact_committed_tree_gates=PASS
+          live_ozon_calls=0
+          std06=FROZEN_PENDING_POST_INSTALL_FINANCE_BALANCE_RERUN
+          production_tree_sha256=$PROD_TREE_SHA
+          artifact_sha256=$ART_SHA
+          artifact_name=$NAME
+          EOF
+          sed -i 's/^          //' "$ARTIFACT_DIR/$BUILDINFO"
+          ACCEPT="$PROJECT/validation/read-effect-repair-v1/DEFECT_015_REPAIR_GATE_ACCEPTANCE_2026-09-04.md"
+          cat > "$ACCEPT" <<EOF
+          # DEFECT-015 repair gate acceptance — 2026-09-04
+
+          Repair commit: \`$REPAIR_SHA\`
+
+          Repair tree: \`$REPAIR_TREE\`
+
+          Production-tree SHA-256: \`$PROD_TREE_SHA\`
+
+          Artifact: \`$NAME\`
+
+          Artifact SHA-256: \`$ART_SHA\`
+
+          ## Certification
+
+          - Ubuntu complete \`run_*.mjs\` read-effect gate family: **PASS**.
+          - Windows complete \`run_*.mjs\` read-effect gate family: **PASS**.
+          - New DEFECT-015 gate against old authority \`249029b0...\`: **FAIL AS EXPECTED**, with independent reproduction of the old wrong finance/date/currentness behavior.
+          - Exact committed repair tree mandatory gate rerun: **PASS**.
+          - Candidate/MCP nodebundle repaired authority coherence: **PASS**.
+          - Installable ZIP built from the exact repaired candidate: **PASS**.
+          - Live Ozon calls during repair/certification: **0**.
+
+          STD-06 remains **FROZEN PENDING POST-INSTALL**. It may be unfrozen only after the operator installs this exact artifact and the previously failed \`finance_balance\` step is rerun with provider-valid date-only input and passes.
+          EOF
+          sed -i 's/^          //' "$ACCEPT"
+          echo "ARTIFACT_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "BUILDINFO_NAME=$BUILDINFO" >> "$GITHUB_ENV"
+          echo "ARTIFACT_SHA=$ART_SHA" >> "$GITHUB_ENV"
+          echo "PROD_TREE_SHA=$PROD_TREE_SHA" >> "$GITHUB_ENV"
+          cat "$ARTIFACT_DIR/$NAME.sha256.txt"
+
+      - name: Commit artifact and gate acceptance, then publish branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT=tooling/llm-api-bridges/ozon-seller
+          git add "$PROJECT/artifacts/$ARTIFACT_NAME" \
+                  "$PROJECT/artifacts/$ARTIFACT_NAME.sha256.txt" \
+                  "$PROJECT/artifacts/$BUILDINFO_NAME" \
+                  "$PROJECT/validation/read-effect-repair-v1/DEFECT_015_REPAIR_GATE_ACCEPTANCE_2026-09-04.md"
+          git commit -m 'artifact(ozon): publish gated DEFECT-015 repair candidate'
+          git push origin HEAD:repair/ozon-date-contract-2026-09-04
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OZON_DEFECT_015_DATE_CONTRACT_REPAIR_${{ env.REPAIR_SHORT }}
+          path: |
+            tooling/llm-api-bridges/ozon-seller/artifacts/${{ env.ARTIFACT_NAME }}
+            tooling/llm-api-bridges/ozon-seller/artifacts/${{ env.ARTIFACT_NAME }}.sha256.txt
+            tooling/llm-api-bridges/ozon-seller/artifacts/${{ env.BUILDINFO_NAME }}
+            tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/DEFECT_015_REPAIR_GATE_ACCEPTANCE_2026-09-04.md
+          if-no-files-found: error
