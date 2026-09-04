@@ -52,8 +52,17 @@ Executable changes are limited to `dist-step7-candidate/shared/ozon_contract.js`
 
 `run_effect_read_repair_gate.mjs` now chains the provider-taxonomy regression so normal package certification cannot bypass it.
 
+## Pre-fix proof
+
+The final `run_provider_taxonomy_gate.mjs` was executed against old authority `51ab3fbeb97ac6a3fc693fd40a0a81d5d818ca0a` and failed as required. A separate exact reproduction on that same old authority confirmed `report_file_get` was assigned the incorrect reason `performance_provider_not_seller_subscription`.
+
+Markers:
+
+- `OZON_DEFECT_014_FINAL_REGRESSION_FAILS_ON_51AB_PASS`
+- `OZON_DEFECT_014_OLD_WRONG_PERFORMANCE_REASON_REPRODUCED_PASS`
+
 ## Handoff rule
 
 This file is the final clean-tree CI trigger. PRE-HANDOFF may pass only if the ordinary cross-platform package workflow is fully green on the final commit/tree and produces the exact artifact handed to the operator. Real installed-browser/Ozon confirmation remains `PENDING POST-INSTALL` until the operator installs that exact artifact.
 
-Final clean-tree certification trigger after removal of all temporary apply workflow/script files: 2026-09-04.
+Final clean-tree certification trigger after removal of all temporary patch/proof workflow/script files: 2026-09-04.
