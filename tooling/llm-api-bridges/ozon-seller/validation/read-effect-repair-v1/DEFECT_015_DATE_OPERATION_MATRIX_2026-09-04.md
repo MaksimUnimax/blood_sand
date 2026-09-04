@@ -14,6 +14,7 @@ This matrix is the persistent row-by-row companion to `DEFECT_015_DATE_CONTRACT_
 - `INVALID_RUNNABLE_TEMPLATE` — the registry publishes a default request that conflicts with the provider contract.
 - `NEEDS_LIVE` — static evidence is contradictory/insufficient.
 - `NOT_DATE_RELATED` — no input date/time/period surface for this defect class.
+- `PROVIDER_DOCUMENTATION_AMBIGUITY` — provider wording is not unambiguous enough to justify a local boundary rule.
 
 ## Verified rows
 
@@ -21,14 +22,33 @@ This matrix is the persistent row-by-row companion to `DEFECT_015_DATE_CONTRACT_
 |---|---|---|---|---|---|---|
 | `finance_balance` | `POST /v1/finance/balance` | `date_from`, `date_to` | both required; strict RFC3339 timestamp; no 30-day guard | both required; OpenAPI mechanically says `date-time` but descriptions + request example say `YYYY-MM-DD`; max interval 30 days | **BUG — LIVE CONFIRMED** + **MISSING_GUARD** | Live exact RFC3339 request `81ce5592-9e9a-4325-b2c6-1695c294ab36` returned HTTP 400/code 3. Effective wire format is date-only. Registry runnable template also hard-codes RFC3339 timestamps, so the defect exists in both normalizer and published template. Add date-only, ordering and <=30-day guards in repair. |
 | `finance_cash_flow_statement_list` | `POST /v1/finance/cash-flow-statement/list` | `date.from`, `date.to` | both required; RFC3339; no half-month semantic check | nested `from/to` required and `date-time`; endpoint explicitly says report is only for periods **01–15** and **16–last day** and separate arbitrary days cannot be requested | **MATCH — wire format/requiredness** + **MISSING_GUARD — period semantics** + **INVALID_RUNNABLE_TEMPLATE** | Bridge normalizer currently checks types/fields only. Registry runnable template requests `2026-08-01` through `2026-08-28`, which violates the documented half-month period semantics, so the shipped default itself can produce a provider-invalid request. |
-| `finance_transaction_list_v3` | `POST /v3/finance/transaction/list` | `filter.date.from`, `filter.date.to` or `filter.posting_number` | date fields use RFC3339 when date branch is selected; page size <=1000; no provider one-month period guard found | current public docs use `dateTime`; maximum period is **1 month**; Ozon officially announced endpoint retirement on **2026-09-08** | **MATCH — wire format** + **MISSING_GUARD — max period** + **LIFECYCLE_RISK — CONFIRMED** | Latest Ozon Seller API notice says `/v3/finance/transaction/list` and `/v3/finance/transaction/totals` will be disabled 2026-09-08. Migrate to `/v1/finance/accrual/postings`, `/v1/finance/accrual/types`, `/v1/finance/accrual/by-day`. The Bridge already exposes the three replacement operations. |
-| `fbs_stock_by_warehouse_v1` | `POST /v1/product/info/stocks-by-warehouse/fbs` | none | registry marks `execution_enabled:true`, `currentness:"current"`, guidance-visible, with runnable template; contract still registers a dedicated normalizer and labels it `exact_operator_swagger_2026_08_25_step5` | Ozon announced this v1 endpoint retired **2026-04-07** and instructed migration to `/v2/product/info/stocks-by-warehouse/fbs` | **STALE_RETIRED_ENDPOINT — CONFIRMED** | As of audit date 2026-09-04 the retirement date is ~5 months past, yet the legacy v1 surface remains advertised as current/executable. The correct replacement already exists separately as `fbs_stock_by_warehouse` → `/v2/product/info/stocks-by-warehouse/fbs`. Contract registration confirms the stale route is not merely dead registry metadata. |
-| `fbs_carriage_available_list` | `POST /v1/posting/carriage-available/list` | optional `departure_date` | registry marks `execution_enabled:true`, `currentness:"current"`; contract still binds `normalizeFbsCarriageAvailableListParams` with state `exact_swagger_2026_08_28_b30` | Ozon announced `/v1/posting/carriage-available/list` retired **2026-03-20**, with migration to `/v2/carriage/delivery/list` | **STALE_RETIRED_ENDPOINT — CONFIRMED** | The correct replacement already exists separately as `carriage_delivery_list_v2` → `/v2/carriage/delivery/list`. A contract state dated 2026-08-28 still certified the old route months after Ozon's announced shutdown, so the audit must cover currentness-source/review logic as well as registry metadata. |
-| `analytics_data` | `POST /v1/analytics/data` | `date_from`, `date_to` | both required; `requireAnalyticsDate()` accepts either `YYYY-MM-DD` or RFC3339 timestamp | current provider examples and fresh contract-derived guides consistently send `YYYY-MM-DD`; no current provider evidence found yet that a full timestamp is accepted | **NEEDS_LIVE — TOO-PERMISSIVE CANDIDATE** | Date-only live calls are already proven on this account. Bridge acceptance of RFC3339 is broader than the documented/example surface. Do not promote to BUG until safe live timestamp evidence or direct unambiguous current OpenAPI restriction resolves effective behavior. STD-06 is frozen, so no live probe is issued during this sweep. |
-| `product_queries` | `POST /v1/analytics/product-queries` | `date_from`, `date_to` | `date_from` required; `date_to` optional; strict RFC3339 | `date_from` required, `date_to` optional; both `date-time`; request example RFC3339 | **MATCH — format + requiredness** | OpenAPI required list: `page_size`, `date_from`, `skus`. Endpoint notes older-than-one-month analytics may be weekly and uses `date_from`; no conflicting wire-format example found. |
+| `finance_transaction_list_v3` | `POST /v3/finance/transaction/list` | `filter.date.from`, `filter.date.to` or `filter.posting_number` | date fields use RFC3339 when date branch is selected; page size <=1000; no provider one-month period guard found | current public docs use `dateTime`; maximum period is **1 month**; latest superseding Ozon notice sets endpoint retirement to **2026-09-08** | **MATCH — wire format** + **MISSING_GUARD — max period** + **LIFECYCLE_RISK — CONFIRMED** | Earlier 2026-07-06 retirement announcement was superseded by a 2026-07-14 notice moving shutdown to 2026-09-08; later August reminder repeats 2026-09-08. Replacement accrual reads already exist in Bridge. |
+| `fbs_stock_by_warehouse_v1` | `POST /v1/product/info/stocks-by-warehouse/fbs` | none | registry marks `execution_enabled:true`, `currentness:"current"`, guidance-visible, with runnable template; contract still registers a dedicated normalizer and labels it `exact_operator_swagger_2026_08_25_step5` | Ozon announced this v1 endpoint retired **2026-04-07** and instructed migration to `/v2/product/info/stocks-by-warehouse/fbs` | **STALE_RETIRED_ENDPOINT — CONFIRMED** | As of audit date 2026-09-04 the retirement date is ~5 months past, yet the legacy v1 surface remains advertised as current/executable. The correct replacement already exists separately as `fbs_stock_by_warehouse` → `/v2/product/info/stocks-by-warehouse/fbs`. |
+| `fbs_carriage_available_list` | `POST /v1/posting/carriage-available/list` | optional `departure_date` | registry marks `execution_enabled:true`, `currentness:"current"`; contract still binds `normalizeFbsCarriageAvailableListParams` | Ozon announced `/v1/posting/carriage-available/list` retired **2026-03-20**, with migration to `/v2/carriage/delivery/list` | **STALE_RETIRED_ENDPOINT — CONFIRMED** | The replacement already exists separately as `carriage_delivery_list_v2` → `/v2/carriage/delivery/list`. Fresh August contract labeling did not prevent a retired route from remaining executable. |
+| `analytics_data` | `POST /v1/analytics/data` | `date_from`, `date_to` | both required; `requireAnalyticsDate()` accepts either `YYYY-MM-DD` or RFC3339 timestamp | current provider examples and fresh contract-derived guides consistently send `YYYY-MM-DD`; no current provider evidence found yet that a full timestamp is accepted | **NEEDS_LIVE — TOO-PERMISSIVE CANDIDATE** | Date-only live calls are already proven. Subscription-dependent >3-month history restriction is represented separately in executable entitlements. Do not promote the RFC3339 acceptance candidate to BUG until safe live or unambiguous provider evidence exists. |
+| `product_queries` | `POST /v1/analytics/product-queries` | `date_from`, `date_to` | `date_from` required; `date_to` optional; strict RFC3339 | `date_from` required, `date_to` optional; both `date-time`; request example RFC3339 | **MATCH — format + requiredness** | OpenAPI required list: `page_size`, `date_from`, `skus`. |
 | `product_queries_details` | `POST /v1/analytics/product-queries/details` | `date_from`, `date_to` | `date_from` required; `date_to` optional; strict RFC3339 | `date_from` required, `date_to` optional; both `date-time`; request example RFC3339 | **MATCH — format + requiredness** | OpenAPI required list: `page_size`, `date_from`, `skus`, `limit_by_sku`. |
-| `seller_rating_history` | `POST /v1/rating/history` | `date_from`, `date_to` | both required; strict RFC3339; validates `date_from <= date_to` | both required; both `date-time` | **MATCH — format + requiredness + ordering guard** | OpenAPI required list includes `ratings`, `date_from`, `date_to`. No contradictory date-only description/example found. |
+| `seller_rating_history` | `POST /v1/rating/history` | `date_from`, `date_to` | both required; strict RFC3339; validates `date_from <= date_to` | both required; both `date-time` | **MATCH — format + requiredness + ordering guard** | No contradictory date-only description/example found. |
 | `seller_fbs_error_postings` | `POST /v1/rating/index/fbs/posting/list` | `filter.date_from`, `filter.date_to` | both required; strict RFC3339; validates ordering | current OpenAPI filter requires both and marks both `date-time` | **MATCH — format + requiredness** | Earlier SDK date-only test was a false positive and is superseded by direct OpenAPI resolution. |
+| `returns_list` | `POST /v1/returns/list` | one of `logistic_return_date`, `storage_tariffication_start_date`, `visual_status_change_moment`; each `time_from/time_to` | counts selected time filters and rejects >1; selected boundaries validated by strict RFC3339 helper | provider documents the same three alternative time filters and says only one may be used per request; examples use RFC3339 | **MATCH — one-time-filter rule + RFC3339** | No provider-grounded max-period rule found; none invented. Field-vocabulary sweep made this operation explicit despite indirect validation through `validateFromToObject`. |
+| `rfbs_returns_list` | `POST /v2/returns/rfbs/list` | optional `filter.created_at.from/to` | `validateFromToObject()` → strict RFC3339 for present boundaries | current request example uses RFC3339 date-times | **MATCH — RFC3339 format** | No maximum period is asserted without provider evidence. Pair-requiredness is not invented unless current provider evidence proves it. |
+| `carriage_delivery_list_v2` | `POST /v2/carriage/delivery/list` | optional `filter.departure_date` | plain string + regex `^YYYY-MM-DD$`; no calendar round-trip | provider documents departure date as calendar date `YYYY-MM-DD` | **MATCH — lexical shape** + **MISSING_GUARD — representable calendar date** | `2026-02-31` passes the local regex even though it is not a real date. Registry template does not hard-code this field. |
+| `returns_company_fbs_info` | `POST /v1/returns/company/fbs/info` | none | request filter only `place_id` plus pagination | no request date/period selector in audited Bridge surface | **NOT_DATE_RELATED** | Explicitly closed so this returns-domain operation is not confused with date-bearing return-list methods. |
+
+## Additional verified families persisted in companion artifacts
+
+The matrix above is intentionally concise. The following date-bearing families have already been resolved and persisted in companion audit files:
+
+- `posting_fbo_list`, `fbs_posting_list`, `fbs_unfulfilled_list`, `posting_digital_list_v2` — current-version/date-range checks closed;
+- `fbp_posting_list`, FBP direct timeslots, supply-order timeslot ranges, assembly carriage/FBS families, ETGB — strict-date dimensions closed;
+- reviews/questions/comments — strict RFC3339 and relevant ordering/selector rules closed;
+- `requireDateYmd()` family — exhausted and closed;
+- Performance YMD/RFC3339/62-day/recency findings — persisted separately;
+- schema-driven report date/date-time/month fields — persisted separately, including the corrected placement-report range findings;
+- finance realization/buyout/monthly report boundaries — persisted separately;
+- `fbo_draft_timeslot_info` — raw-string/current-horizon/28-day defect persisted separately;
+- loose direct `Date.parse/new Date` family — exhausted and closed;
+- dynamic `auto_add_date` runnable-template dependency defect — persisted in strict-date continuation audit.
 
 ## Provider-retirement cross-checks already closed
 
@@ -43,45 +63,40 @@ Other checked migration families:
 
 - `seller_warehouse_list` → `/v2/warehouse/list` — lifecycle **MATCH** for the 2026-04-07 retirement of v1.
 - `seller_delivery_method_list` → `/v2/delivery-method/list` — lifecycle **MATCH** for the 2026-04-07 retirement of v1.
-- `carriage_delivery_list_v2` → `/v2/carriage/delivery/list` — current replacement exists, but stale `fbs_carriage_available_list` remains enabled alongside it.
-- `discount_task_list_v2` → `/v2/actions/discounts-task/list` — current replacement exists for deprecated v1; no v1 read operation has been found in the authority registry so far.
-- FBO draft read/status surfaces present in the registry use v2 where Ozon retired the corresponding v1 draft family on 2026-03-16; no stale v1 read/status duplicate has been identified so far.
+- `carriage_delivery_list_v2` → `/v2/carriage/delivery/list` — lifecycle **MATCH**, but its `departure_date` validator now has a separate calendar-validity defect.
+- `discount_task_list_v2` → `/v2/actions/discounts-task/list` — current replacement exists for deprecated v1; no v1 read operation found in the authority registry.
+- FBO draft read/status surfaces use v2 where Ozon retired corresponding v1 family; no stale v1 read/status duplicate identified so far.
 
-## Confirmed repair surface
+## Confirmed repair surface highlights
 
-### `finance_balance` — wrong wire format is also embedded in the registry template
+### `finance_balance`
 
-The registry publishes a runnable template using RFC3339 timestamps (`2026-08-01T00:00:00Z` through `2026-08-28T23:59:59Z`). Therefore dependency closure cannot stop at `normalizeFinanceBalanceParams`: the registry template, guidance/examples/tests and generated/bundled copies must all be audited and repaired.
+Wrong effective wire format is also embedded in the registry template. Repair must cover normalizer, registry template, guidance/examples/tests and generated/bundled copies, plus ordering and <=30-day semantics.
 
-### `finance_cash_flow_statement_list` — missing half-month period guard + invalid published template
+### `finance_cash_flow_statement_list`
 
-The current endpoint description states that this financial report is available only for periods from the 1st through the 15th and from the 16th through the last day of a month; it cannot be requested for arbitrary individual-day ranges. The Bridge's current normalizer requires `date.from`, `date.to`, `page`, and `page_size` and checks RFC3339 syntax, but it does not enforce the half-month period semantics. The registry's own runnable template spans August 1–28, so the published default violates the same provider rule.
+Primitive date-time shape matches, but half-month-only period semantics are missing and the published Aug 1–28 template itself violates the provider rule.
 
-### `finance_transaction_list_v3` — missing one-month guard + imminent endpoint retirement
+### `finance_transaction_list_v3`
 
-The current method documentation limits one request to a maximum period of one month. The Bridge validates date-time syntax but no equivalent one-month guard has been found in the operation normalizer. This must be treated as `MISSING_GUARD` unless a downstream guard is found during dependency closure.
+Missing one-month guard plus provider retirement deadline 2026-09-08. Latest retirement notice supersedes the earlier July-6 announcement.
 
-Separately, Ozon has announced that `/v3/finance/transaction/list` will be disabled on 2026-09-08. This is a confirmed lifecycle risk, four days after the date of this audit. It is not classified as a current provider failure on 2026-09-04. Repair/hardening must decide whether to remove/disable/deprecate the legacy operation and route guidance to the already-present accrual replacements before that date.
+### `carriage_delivery_list_v2`
 
-### `fbs_stock_by_warehouse_v1` — stale retired endpoint still advertised as current
+Current endpoint version is correct, but date-only regex validation does not establish a real calendar date. Eventual repair should reuse the strong YMD round-trip invariant rather than introduce another bespoke regex.
 
-The operation registry contains both the current v2 surface and an enabled v1 duplicate. The v1 duplicate must not remain a normal `current` user-visible executable operation after the provider-announced retirement. Contract registration confirms that the old operation is still executable through normal preflight. Dependency closure must audit entitlement rules, guidance/discovery, templates, generated/bundled copies and tests before deciding whether to remove it or fail closed with migration guidance.
+### stale lifecycle surfaces
 
-### `fbs_carriage_available_list` — second stale retired endpoint still advertised as current
+`fbs_stock_by_warehouse_v1` and `fbs_carriage_available_list` remain normal current/executable operations after provider retirement. Delivery certification needs a provider-currentness gate, not just fresh Swagger presence.
 
-Ozon announced on 2026-02-16 that `/v1/posting/carriage-available/list` would be disabled on 2026-03-20 and replaced by `/v2/carriage/delivery/list`. On the 2026-09-04 authority build, the old operation is still registered, current, enabled and has a dedicated contract normalizer; the replacement is also present. This is a confirmed stale-lifecycle surface and shows that the defect class is broader than one missed endpoint.
+## Audit queue — current state
 
-## Audit queue
+The helper-name phase is no longer open: strict RFC3339, strict YMD, mixed analytics helper and direct JavaScript date-parser families have been enumerated. Remaining static work is now narrower and more mechanical:
 
-Still unresolved in this matrix:
-
-1. all remaining provider deprecation/retirement notices affecting any of the 271 registered reads;
-2. remaining strict-RFC3339 families: FBO/FBP posting ranges, reviews/questions, supplies/timeslots, FBS carriage/assembly, certificates, ETGB, rFBS;
-3. `requireDateYmd()` families;
-4. `analytics_data` effective timestamp acceptance (`NEEDS_LIVE` once live testing is allowed to resume);
-5. loose `Date.parse()` / `new Date(...)` validators;
-6. schema-driven report date/date-time fields;
-7. month/year financial/report operations;
-8. all no-date operations, which must eventually be counted/classified `NOT_DATE_RELATED` so the full 271-command sweep has explicit closure.
+1. finish the date-field vocabulary sweep for bespoke/raw date structures not discoverable from helper names;
+2. finish provider lifecycle/currentness cross-match for all 271 registered Seller reads;
+3. build a terminal full-registry accounting that assigns every registered read to a date-audited verdict or explicit `NOT_DATE_RELATED`/lifecycle/ambiguity class;
+4. keep `analytics_data` RFC3339 acceptance as `NEEDS_LIVE` until live testing is allowed to resume;
+5. keep `finance_b2b_sales_json` historical wording as provider-documentation ambiguity unless an unambiguous provider source resolves it.
 
 STD-06 remains **FROZEN ON LIVE FAIL**. No new live Ozon command is authorized by this audit state.
