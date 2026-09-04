@@ -9,6 +9,7 @@ import {
   identityProvider,
   otpPurpose,
   sessionStatus,
+  signingKeyEventType,
   userStatus,
 } from "./schema.js";
 
@@ -30,6 +31,15 @@ it("exports the exact P2.1 lifecycle states", () => {
     "ACTIVE",
     "REVOKED",
     "COMPROMISED",
+  ]);
+});
+
+it("exports the exact P3.2 signing lifecycle values", () => {
+  expect(signingKeyEventType.enumValues).toEqual([
+    "REGISTERED",
+    "ACTIVATED",
+    "RETIRED",
+    "REVOKED",
   ]);
 });
 

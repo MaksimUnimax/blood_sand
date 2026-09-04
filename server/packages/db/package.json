@@ -21,10 +21,12 @@
   },
   "dependencies": {
     "@product/auth": "workspace:*",
+    "@product/compatibility": "workspace:*",
     "@product/device-auth": "workspace:*",
     "@product/device-management": "workspace:*",
     "@product/extension-auth": "workspace:*",
     "@product/shared": "workspace:*",
+    "@product/remote-config": "workspace:*",
     "drizzle-orm": "0.45.2",
     "pg": "8.16.3"
   },

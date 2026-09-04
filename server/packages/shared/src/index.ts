@@ -1,5 +1,19 @@
 import { z } from "zod";
 
+/** Shared P3 wire/persistence lexical rules.  These do not compare versions. */
+export const SemVerV1Schema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(
+    /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/,
+  );
+export const StableMachineIdentifierV1Schema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(/^[a-z0-9][a-z0-9._-]*$/);
+
 const EnvironmentSchema = z.enum(["development", "test", "production"]);
 export const AppConfigSchema = z.object({
   environment: EnvironmentSchema,

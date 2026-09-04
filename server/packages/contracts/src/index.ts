@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  SemVerV1Schema,
+  StableMachineIdentifierV1Schema,
+} from "@product/shared";
 
 /** Public contract convention: names use a V1 suffix until a breaking version is introduced. */
 export const CorrelationIdV1Schema = z
@@ -217,18 +221,6 @@ export const BootstrapEnvelopeVersionV1Schema = z.literal(
   "bootstrap_envelope_v1",
 );
 
-const SemVerV1Schema = z
-  .string()
-  .min(1)
-  .max(64)
-  .regex(
-    /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/,
-  );
-const StableMachineIdentifierV1Schema = z
-  .string()
-  .min(1)
-  .max(64)
-  .regex(/^[a-z0-9][a-z0-9._-]*$/);
 const IsoTimestampV1Schema = z.string().datetime({ offset: true });
 
 export const BootstrapRequestV1Schema = z

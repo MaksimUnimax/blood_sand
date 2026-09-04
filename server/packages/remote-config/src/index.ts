@@ -1,10 +1,71 @@
 import { sign, verify, type KeyObject } from "node:crypto";
+import { StableMachineIdentifierV1Schema } from "@product/shared";
+import { z } from "zod";
 import {
   BootstrapSnapshotPayloadV1Schema,
   SignedBootstrapEnvelopeV1Schema,
   type BootstrapSnapshotPayloadV1,
   type SignedBootstrapEnvelopeV1,
 } from "@product/contracts";
+
+const HashSchema = z.string().regex(/^[0-9a-f]{64}$/);
+const TimestampSchema = z.date();
+export const SigningKeyMetadataSchema = z
+  .object({
+    keyId: StableMachineIdentifierV1Schema,
+    algorithm: z.literal("Ed25519"),
+    publicKeySpkiDer: z.instanceof(Buffer).refine((value) => value.length > 0),
+    publicKeySha256: HashSchema,
+    createdAt: TimestampSchema,
+  })
+  .strict();
+export const SigningKeyEventSchema = z
+  .object({
+    id: z.uuid(),
+    keyId: StableMachineIdentifierV1Schema,
+    eventType: z.enum(["REGISTERED", "ACTIVATED", "RETIRED", "REVOKED"]),
+    occurredAt: TimestampSchema,
+    reasonCode: StableMachineIdentifierV1Schema.nullable(),
+    createdAt: TimestampSchema,
+  })
+  .strict();
+export const ConfigReleaseSchema = z
+  .object({
+    configVersion: z.number().int().positive(),
+    contractVersion: z.literal("control_plane_v1"),
+    snapshotVersion: z.literal("bootstrap_snapshot_v1"),
+    envelopeVersion: z.literal("bootstrap_envelope_v1"),
+    contentHashSha256: HashSchema,
+    sourceFingerprintSha256: HashSchema,
+    signingKeyId: StableMachineIdentifierV1Schema,
+    publishedAt: TimestampSchema,
+    createdAt: TimestampSchema,
+  })
+  .strict();
+export const ConfigReleaseCompatibilityPolicySchema = z
+  .object({
+    configVersion: z.number().int().positive(),
+    policyRevisionId: z.uuid(),
+  })
+  .strict();
+export type SigningKeyMetadata = z.infer<typeof SigningKeyMetadataSchema>;
+export type SigningKeyEvent = z.infer<typeof SigningKeyEventSchema>;
+export type ConfigRelease = z.infer<typeof ConfigReleaseSchema>;
+export type ConfigReleaseCompatibilityPolicy = z.infer<
+  typeof ConfigReleaseCompatibilityPolicySchema
+>;
+/** Read-only P3.2 persistence boundary; publication is deliberately deferred. */
+export interface RemoteConfigCatalogRepository {
+  findSigningKey(keyId: string): Promise<SigningKeyMetadata | undefined>;
+  listSigningKeyEvents(keyId: string): Promise<SigningKeyEvent[]>;
+  findConfigRelease(configVersion: number): Promise<ConfigRelease | undefined>;
+  findLatestConfigRelease(
+    contractVersion: "control_plane_v1",
+  ): Promise<ConfigRelease | undefined>;
+  listConfigReleaseCompatibilityPolicies(
+    configVersion: number,
+  ): Promise<ConfigReleaseCompatibilityPolicy[]>;
+}
 
 export const BOOTSTRAP_SIGNATURE_DOMAIN = Buffer.from(
   "product-control-plane/bootstrap-snapshot/v1\0",

@@ -43,6 +43,13 @@
       "when": 1788432000000,
       "tag": "0005_p2_5_device_management",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788520000000,
+      "tag": "0006_p3_2_compatibility_config_signing",
+      "breakpoints": true
     }
   ]
 }

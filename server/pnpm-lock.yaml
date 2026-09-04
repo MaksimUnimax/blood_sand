@@ -18,6 +18,24 @@ importers:
       '@playwright/test':
         specifier: 1.62.1
         version: 1.62.1
+      '@product/auth':
+        specifier: workspace:*
+        version: link:packages/auth
+      '@product/db':
+        specifier: workspace:*
+        version: link:packages/db
+      '@product/device-auth':
+        specifier: workspace:*
+        version: link:packages/device-auth
+      '@product/device-management':
+        specifier: workspace:*
+        version: link:packages/device-management
+      '@product/extension-auth':
+        specifier: workspace:*
+        version: link:packages/extension-auth
+      '@product/shared':
+        specifier: workspace:*
+        version: link:packages/shared
       '@types/node':
         specifier: 24.3.0
         version: 24.3.0
@@ -171,8 +189,20 @@ importers:
         specifier: workspace:*
         version: link:../shared
 
+  packages/compatibility:
+    dependencies:
+      '@product/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: 4.1.5
+        version: 4.1.5
+
   packages/contracts:
     dependencies:
+      '@product/shared':
+        specifier: workspace:*
+        version: link:../shared
       zod:
         specifier: 4.1.5
         version: 4.1.5
@@ -182,6 +212,9 @@ importers:
       '@product/auth':
         specifier: workspace:*
         version: link:../auth
+      '@product/compatibility':
+        specifier: workspace:*
+        version: link:../compatibility
       '@product/device-auth':
         specifier: workspace:*
         version: link:../device-auth
@@ -191,6 +224,9 @@ importers:
       '@product/extension-auth':
         specifier: workspace:*
         version: link:../extension-auth
+      '@product/remote-config':
+        specifier: workspace:*
+        version: link:../remote-config
       '@product/shared':
         specifier: workspace:*
         version: link:../shared
@@ -265,6 +301,12 @@ importers:
       '@product/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@product/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: 4.1.5
+        version: 4.1.5
 
   packages/shared:
     dependencies:
@@ -1294,6 +1336,7 @@ packages:
   '@smithy/node-http-handler@4.12.0':
     resolution: {integrity: sha512-0mq1pHadfyXCYCqm2cNpbjNIT+fbaUpNxewZb/YNr2L0IrEVMOb8gM/Fl4K6XvHCW3uSNDFwPl/+iKm0bx9jYg==}
     engines: {node: '>=18.0.0'}
+    deprecated: Depreacted due to a memory leak issue https://github.com/smithy-lang/smithy-typescript/issues/2258
 
   '@smithy/signature-v4@5.7.3':
     resolution: {integrity: sha512-7ImGm+FkHRLcBaRttIAMZ6bzJZWb2cJGoYjq46F2UjycujWzrL9GEN9h4w7eQyXJYnltrUhxbbieBAIRrdqpow==}

@@ -14,6 +14,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@product/contracts": "workspace:*"
+    "@product/contracts": "workspace:*",
+    "@product/shared": "workspace:*",
+    "zod": "4.1.5"
   }
 }
