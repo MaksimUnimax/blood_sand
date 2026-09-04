@@ -6,6 +6,7 @@ on:
       - repair/ozon-date-contract-2026-09-04
     paths:
       - .github/workflows/ozon-defect-015-date-contract-repair-v2.yml
+      - tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_defect_015_repair_v*.py
 
 permissions:
   contents: write
@@ -22,7 +23,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_defect_015_repair_v2.py
+          python3 tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_defect_015_repair_v3.py
           git diff --check
           node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_contract.js
           node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_operation_registry.js
