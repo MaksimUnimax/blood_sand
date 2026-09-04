@@ -93,7 +93,7 @@
       if (!/^REPORT_/i.test(code) || !rawRecord || typeof rawRecord !== "object" || Array.isArray(rawRecord)) continue;
       if (typeof rawRecord.personal_data_required !== "boolean") continue;
       const createdAt = Number(rawRecord.created_at_ms || 0);
-      if (!Number.isFinite(createdAt) || createdAt <= 0 || current - createdAt > REPORT_FILE_REF_TTL_MS) continue;
+      if (!Number.isFinite(createdAt) || createdAt <= 0 || createdAt > current || current - createdAt > REPORT_FILE_REF_TTL_MS) continue;
       codePolicies.push([code, { personal_data_required: rawRecord.personal_data_required === true, created_at_ms: createdAt }]);
     }
 
@@ -104,7 +104,7 @@
       if (!/^rpf_[sp]_[A-Za-z0-9_-]+$/.test(ref) || !rawRecord || typeof rawRecord !== "object" || Array.isArray(rawRecord)) continue;
       if (typeof rawRecord.personal_data_required !== "boolean") continue;
       const createdAt = Number(rawRecord.created_at_ms || 0);
-      if (!Number.isFinite(createdAt) || createdAt <= 0 || current - createdAt > REPORT_FILE_REF_TTL_MS) continue;
+      if (!Number.isFinite(createdAt) || createdAt <= 0 || createdAt > current || current - createdAt > REPORT_FILE_REF_TTL_MS) continue;
       const personalDataRequired = rawRecord.personal_data_required === true;
       const expectedMarker = personalDataRequired ? "p" : "s";
       if (!ref.startsWith(`rpf_${expectedMarker}_`)) continue;
