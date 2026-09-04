@@ -109,7 +109,7 @@ Scope:
 
 Exit: complete simulated extension activation/refresh/revoke/device-limit flow with security tests.
 
-## P3 — Bootstrap, compatibility and signed remote configuration `[NEXT]`
+## P3 — Bootstrap, compatibility and signed remote configuration `[ACTIVE]`
 
 Goal: authorized client receives a safe versioned policy/config snapshot.
 
@@ -352,6 +352,16 @@ Architecture remains:
 - P2.5 `[DONE]` Device exchange/list/revoke/device limits and transactional audit.
 - P2.6 `[DONE]` Portal activation flow plus simulated extension client and E2E.
 - P2.7 `[DONE]` P2 security/architecture audit and final P2 acceptance/checkpoint.
+
+## P3 substeps
+
+- P3.1 `[ACTIVE]` Signed bootstrap contract and cryptographic foundation.
+- P3.2 `[PLANNED]` Compatibility/config/signing persistence foundation.
+- P3.3 `[PLANNED]` Compatibility, config-release and rollout resolution.
+- P3.4 `[PLANNED]` Authenticated `/v1/bootstrap` and coherent signed snapshot service.
+- P3.5 `[PLANNED]` Simulated-client signature verification and signing-key rotation.
+- P3.6 `[PLANNED]` Offline grace, cached snapshot and unsupported-client/browser flows.
+- P3.7 `[PLANNED]` P3 security/architecture audit, E2E and final P3 acceptance.
 
 # Parallel Bridge rule
 

@@ -206,3 +206,165 @@ export const DeviceRevokeResponseV1Schema = z.object({
   status: z.literal("revoked"),
   deviceId: z.uuid(),
 });
+
+/** Frozen P3.1 control-plane bootstrap wire-contract identifiers. */
+export const ControlPlaneContractVersionV1Schema =
+  z.literal("control_plane_v1");
+export const BootstrapSnapshotVersionV1Schema = z.literal(
+  "bootstrap_snapshot_v1",
+);
+export const BootstrapEnvelopeVersionV1Schema = z.literal(
+  "bootstrap_envelope_v1",
+);
+
+const SemVerV1Schema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(
+    /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/,
+  );
+const StableMachineIdentifierV1Schema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(/^[a-z0-9][a-z0-9._-]*$/);
+const IsoTimestampV1Schema = z.string().datetime({ offset: true });
+
+export const BootstrapRequestV1Schema = z
+  .object({
+    contractVersion: ControlPlaneContractVersionV1Schema,
+    extensionVersion: SemVerV1Schema,
+    browser: z
+      .object({
+        family: z.enum(["chrome", "yandex_chromium"]),
+        version: z.string().min(1).max(64),
+      })
+      .strict(),
+    deviceId: z.uuid(),
+    lastConfigVersion: z.number().int().min(0).nullable(),
+    detectedAi: z
+      .object({
+        family: StableMachineIdentifierV1Schema,
+        surface: StableMachineIdentifierV1Schema,
+        variant: StableMachineIdentifierV1Schema.nullable().optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+export type BootstrapRequestV1 = z.infer<typeof BootstrapRequestV1Schema>;
+
+const EntitlementValueV1Schema = z.union([
+  z.boolean(),
+  z.number().int().safe(),
+  StableMachineIdentifierV1Schema,
+]);
+const BoundedEntitlementMapV1Schema = z
+  .record(StableMachineIdentifierV1Schema, EntitlementValueV1Schema)
+  .refine((value) => Object.keys(value).length <= 128, "too many entitlements");
+const BoundedFeatureMapV1Schema = z
+  .record(StableMachineIdentifierV1Schema, z.boolean())
+  .refine((value) => Object.keys(value).length <= 128, "too many features");
+const SubscriptionV1Schema = z.discriminatedUnion("state", [
+  z.object({ state: z.literal("NONE"), planRevision: z.null() }).strict(),
+  z
+    .object({
+      state: z.enum([
+        "TRIAL",
+        "ACTIVE",
+        "GRACE",
+        "PAST_DUE",
+        "CANCELED",
+        "EXPIRED",
+        "SUSPENDED",
+      ]),
+      planRevision: StableMachineIdentifierV1Schema,
+    })
+    .strict(),
+]);
+
+export const BootstrapSnapshotPayloadV1Schema = z
+  .object({
+    snapshotVersion: BootstrapSnapshotVersionV1Schema,
+    contractVersion: ControlPlaneContractVersionV1Schema,
+    configVersion: z.number().int().positive(),
+    issuedAt: IsoTimestampV1Schema,
+    expiresAt: IsoTimestampV1Schema,
+    offlineGraceUntil: IsoTimestampV1Schema,
+    serverTime: IsoTimestampV1Schema,
+    account: z.object({ status: z.literal("ACTIVE") }).strict(),
+    subscription: SubscriptionV1Schema,
+    devicePolicy: z.object({ status: z.literal("ACTIVE") }).strict(),
+    compatibility: z
+      .object({
+        extension: z
+          .object({
+            status: z.enum([
+              "SUPPORTED",
+              "UPDATE_RECOMMENDED",
+              "UPDATE_REQUIRED",
+            ]),
+            minimumVersion: SemVerV1Schema.nullable(),
+          })
+          .strict(),
+        browser: z
+          .object({
+            status: z.enum(["SUPPORTED", "UNSUPPORTED_BROWSER", "MAINTENANCE"]),
+          })
+          .strict(),
+      })
+      .strict(),
+    entitlements: BoundedEntitlementMapV1Schema,
+    features: BoundedFeatureMapV1Schema,
+    ai: z.object({ status: z.literal("UNCONFIGURED") }).strict(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    const issuedAt = Date.parse(value.issuedAt);
+    const expiresAt = Date.parse(value.expiresAt);
+    const offlineGraceUntil = Date.parse(value.offlineGraceUntil);
+    const serverTime = Date.parse(value.serverTime);
+    if (issuedAt > serverTime)
+      context.addIssue({
+        code: "custom",
+        path: ["serverTime"],
+        message: "issuedAt must be at or before serverTime",
+      });
+    if (issuedAt >= expiresAt)
+      context.addIssue({
+        code: "custom",
+        path: ["expiresAt"],
+        message: "expiresAt must be after issuedAt",
+      });
+    if (expiresAt >= offlineGraceUntil)
+      context.addIssue({
+        code: "custom",
+        path: ["offlineGraceUntil"],
+        message: "offlineGraceUntil must be after expiresAt",
+      });
+  });
+export type BootstrapSnapshotPayloadV1 = z.infer<
+  typeof BootstrapSnapshotPayloadV1Schema
+>;
+
+export const SignedBootstrapEnvelopeV1Schema = z
+  .object({
+    envelopeVersion: BootstrapEnvelopeVersionV1Schema,
+    algorithm: z.literal("Ed25519"),
+    keyId: StableMachineIdentifierV1Schema,
+    payload: z
+      .string()
+      .min(1)
+      .max(32_768)
+      .regex(/^[A-Za-z0-9_-]+$/),
+    signature: z
+      .string()
+      .min(1)
+      .max(256)
+      .regex(/^[A-Za-z0-9_-]+$/),
+  })
+  .strict();
+export type SignedBootstrapEnvelopeV1 = z.infer<
+  typeof SignedBootstrapEnvelopeV1Schema
+>;
