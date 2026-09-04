@@ -38,3 +38,53 @@ if old in gate_text:
 elif new not in gate_text:
     raise RuntimeError("DEFECT-015 gate FBS stock replacement assertion not found")
 gate.write_text(gate_text, encoding="utf-8", newline="\n")
+
+effect_gate = Path(__file__).with_name("run_effect_read_repair_gate.mjs")
+effect_text = effect_gate.read_text(encoding="utf-8")
+old_block = '''for (const alias of repairAliases) {
+  const meta = operations[alias];
+  assert.ok(meta); assert.equal(meta.effect, "READ"); assert.equal(meta.execution_enabled, true); assert.equal(providerOf(meta), "seller_api");
+  assert.ok(entitlementText.includes(`"${meta.entitlement_key}"`));
+  if (meta.template_runnable === false) {
+    assert.equal(meta.template, null, `${alias} non-runnable template must be null`);
+    assert.ok(Array.isArray(meta.required_parameters) && meta.required_parameters.length > 0, `${alias} must expose its dynamic/current dependency`);
+  } else {
+    assert.equal(meta.template?.operation, alias);
+    const normalized = contract.normalizeCommand(JSON.parse(JSON.stringify(meta.template)));
+    assert.equal(normalized.operation, alias);
+  }
+  if (meta.privacy_policy === "safe_projection") {
+    const request = contract.buildRequest(normalized, { "Client-Id": "client", "Api-Key": "key" });
+    assert.equal(request.method, "POST"); assert.equal(request.path, meta.path); assert.ok(!/[{}]/.test(request.path));
+  }
+}'''
+new_block = '''Date.now = () => Date.UTC(2026, 8, 4, 12, 0, 0);
+for (const alias of repairAliases) {
+  const meta = operations[alias];
+  assert.ok(meta); assert.equal(meta.effect, "READ"); assert.equal(meta.execution_enabled, true); assert.equal(providerOf(meta), "seller_api");
+  assert.ok(entitlementText.includes(`"${meta.entitlement_key}"`));
+  let normalized;
+  if (meta.template_runnable === false) {
+    assert.equal(meta.template, null, `${alias} non-runnable template must be null`);
+    assert.ok(Array.isArray(meta.required_parameters) && meta.required_parameters.length > 0, `${alias} must expose its dynamic/current dependency`);
+    const explicitCommand = alias === "report_returns_create_v2"
+      ? { operation: "report_returns_create_v2", params: { filter: { date_from: "2026-09-01T00:00:00Z", date_to: "2026-09-03T23:59:59Z", status: "DisputeOpened" } } }
+      : null;
+    assert.ok(explicitCommand, `${alias} non-runnable repair alias needs an explicit deterministic gate command`);
+    normalized = contract.normalizeCommand(explicitCommand);
+    assert.equal(normalized.operation, alias);
+  } else {
+    assert.equal(meta.template?.operation, alias);
+    normalized = contract.normalizeCommand(JSON.parse(JSON.stringify(meta.template)));
+    assert.equal(normalized.operation, alias);
+  }
+  if (meta.privacy_policy === "safe_projection") {
+    const request = contract.buildRequest(normalized, { "Client-Id": "client", "Api-Key": "key" });
+    assert.equal(request.method, "POST"); assert.equal(request.path, meta.path); assert.ok(!/[{}]/.test(request.path));
+  }
+}'''
+if old_block in effect_text:
+    effect_text = effect_text.replace(old_block, new_block, 1)
+elif new_block not in effect_text:
+    raise RuntimeError("patched effect-gate non-runnable block not found")
+effect_gate.write_text(effect_text, encoding="utf-8", newline="\n")
