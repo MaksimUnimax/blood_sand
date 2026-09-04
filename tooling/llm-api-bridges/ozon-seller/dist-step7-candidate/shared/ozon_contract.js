@@ -2583,9 +2583,11 @@
     if (!["json", "binary"].includes(responseStyle)) fail("RESPONSE_STYLE_NOT_READY", `${name}: неподдерживаемый response_style.`);
     if (responseStyle === "binary") {
       const contentTypes = Array.isArray(meta.response_content_types) ? meta.response_content_types : [];
-      const allowedBinaryContentType = provider === "seller_api"
-        ? /^(application\/pdf|image\/png)$/
-        : /^(text\/csv|application\/zip)$/;
+      let allowedBinaryContentType = null;
+      if (provider === "seller_api") allowedBinaryContentType = /^(application\/pdf|image\/png)$/;
+      else if (provider === "performance_api") allowedBinaryContentType = /^(text\/csv|application\/zip)$/;
+      else if (provider === "report_file") fail("RESPONSE_STYLE_NOT_READY", `${name}: report_file binary response_style должен обрабатываться через opaque report-file transport.`);
+      else fail("INVALID_REGISTRY_PROVIDER", `${name}: неизвестный provider ${provider}.`);
       if (!contentTypes.length || contentTypes.some((item) => !allowedBinaryContentType.test(String(item)))) {
         fail("RESPONSE_STYLE_NOT_READY", `${name}: binary response содержит неподдерживаемый fixed content type для provider ${provider}.`);
       }
@@ -3519,11 +3521,18 @@
     function planCommandForSellerCapability(command, profile, atMs = Date.now(), entitlementSnapshot = null) {
       const normalized = normalizeCommand(command);
       const meta = resolveOperation(normalized.operation).meta;
-      if (String(meta.provider || "seller_api") !== "seller_api") {
+      const provider = String(meta.provider || "seller_api");
+      if (provider === "performance_api") {
         return planningExecute(normalized, normalized, { status: "not_needed", subscription_type: "UNKNOWN", is_premium: null, probe_performed: false }, {
           status: "SUPPORTED_AND_ENTITLED", partial: false, capability_required: false, reason: "performance_provider_not_seller_subscription"
         });
       }
+      if (provider === "report_file") {
+        return planningExecute(normalized, normalized, { status: "not_needed", subscription_type: "UNKNOWN", is_premium: null, probe_performed: false }, {
+          status: "SUPPORTED_AND_ENTITLED", partial: false, capability_required: false, reason: "report_file_provider_not_seller_subscription"
+        });
+      }
+      if (provider !== "seller_api") fail("INVALID_REGISTRY_PROVIDER", `${normalized.operation}: неизвестный provider ${provider}.`);
 
       const requirement = globalThis.OzonEntitlements?.requirementFor
         ? globalThis.OzonEntitlements.requirementFor(normalized, entitlementSnapshot, atMs)
@@ -3709,7 +3718,8 @@
     function buildRequest(command, headers) {
       const preflight = preflightExecution(command);
       const { meta } = preflight;
-      if (String(meta.provider || "seller_api") !== "seller_api") fail("WRONG_REQUEST_BUILDER", "Performance operation нельзя отправить через Seller request builder.");
+      const provider = String(meta.provider || "seller_api");
+      if (provider !== "seller_api") fail("WRONG_REQUEST_BUILDER", `Provider ${provider} нельзя отправить через Seller request builder.`);
       if (!/^https:\/\/api-seller\.ozon\.ru$/.test(sellerApiBase)) fail("INVALID_FIXED_HOST", "Seller API host не прошёл fixed-host guard.");
       return deepFreeze({
         url: `${sellerApiBase}${meta.path}`,
@@ -3727,7 +3737,8 @@
     function buildPerformanceRequest(command, headers) {
       const preflight = preflightExecution(command);
       const { meta } = preflight;
-      if (String(meta.provider || "seller_api") !== "performance_api") fail("WRONG_REQUEST_BUILDER", "Seller operation нельзя отправить через Performance request builder.");
+      const provider = String(meta.provider || "seller_api");
+      if (provider !== "performance_api") fail("WRONG_REQUEST_BUILDER", `Provider ${provider} нельзя отправить через Performance request builder.`);
       if (!/^https:\/\/api-performance\.ozon\.ru$/.test(performanceApiBase)) fail("INVALID_FIXED_HOST", "Performance API host не прошёл fixed-host guard.");
       assertPerformanceMutationBlocked(meta.method, meta.path);
       assertPerformanceAsyncReportSideEffectBlocked(meta.method, meta.path);

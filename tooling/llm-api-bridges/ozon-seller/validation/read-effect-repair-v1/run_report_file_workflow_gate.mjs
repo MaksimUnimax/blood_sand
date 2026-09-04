@@ -18,6 +18,12 @@ assert.equal(helper.effect, "READ");
 assert.equal(helper.execution_enabled, true);
 assert.equal(helper.privacy_policy, "opaque_ref_provenance_gate");
 assert.equal(helper.default_allowed, undefined);
+const reportFilePlan = globalThis.OzonContract.planCommandForSellerCapability(
+  { operation: "report_file_get", params: { file_ref: "rpf_s_aaaaaaaaaaaa", offset: 0, limit: 200 } },
+  { status: "unknown", subscription_type: "UNKNOWN" }
+);
+assert.equal(reportFilePlan.planning.entitlement.reason, "report_file_provider_not_seller_subscription");
+assert.notEqual(reportFilePlan.planning.entitlement.reason, "performance_provider_not_seller_subscription");
 assert.equal(Object.keys(operations).length, 297);
 
 const manifestPath = path.join(repo, "tooling", "llm-api-bridges", "ozon-seller", "dist-step7-candidate", "manifest.json");
@@ -87,6 +93,7 @@ assert.ok(!file.report_text.includes(signedUrl), "signed URL leaked from file re
 assert.throws(() => globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl("http://cdn1.ozone.ru/report.csv"), /HTTPS/);
 assert.throws(() => globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl("https://evil.example/report.csv"), /host/i);
 
+console.log("OZON_REPORT_FILE_PROVIDER_PLANNING_METADATA_PASS");
 console.log("OZON_REPORT_FILE_MV3_HOST_PERMISSIONS_PASS");
 console.log("OZON_REPORT_FILE_INFO_URL_REDACTED_PASS");
 console.log("OZON_REPORT_FILE_OPAQUE_REF_PASS");
