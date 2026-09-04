@@ -50,24 +50,50 @@ The request builder serializes the normalized command params directly to JSON fo
 1. `finance_balance` real-provider request fails with HTTP 400/code 3 using the request shape accepted and required by the current Bridge.
 2. The Bridge enforces RFC3339 date-time for `finance_balance.date_from` / `date_to`.
 3. The current finance request is not transformed before provider execution.
+4. A current OzonAPI implementation for `/v1/finance/balance`, whose method documentation points directly to Ozon operation `GetFinanceBalanceV1`, documents `date_from` / `date_to` as `YYYY-MM-DD`, not RFC3339 date-time.
+5. The same implementation documents a maximum period of **3 months**. Earlier working notes that mentioned a 30-day limit are superseded and must not be used as a repair requirement.
 
-### Contract mismatch under verification
+### Strong contract mismatch evidence
 
-Current external Ozon contract evidence indicates `/v1/finance/balance` uses date-only values (`YYYY-MM-DD`) and a bounded date range. This is being verified against the best available current Ozon contract before repair is implemented.
+External implementation evidence:
 
-### Additional defect dimensions to verify
+- repository: `a-ulianov/OzonAPI`
+- method: `src/ozonapi/seller/methods/beta/finance_balance.py`
+- endpoint: `/v1/finance/balance`
+- direct documentation reference: `https://docs.ozon.ru/api/seller/#operation/GetFinanceBalanceV1`
+- documented request date format: `YYYY-MM-DD`
+- documented maximum period: `3 months`
+- example: `FinanceBalanceRequest(date_from="2026-05-01", date_to="2026-06-01")`
 
-- exact accepted wire format for `date_from` / `date_to`;
-- maximum allowed period and whether Bridge validates it;
-- ordering requirement `date_from <= date_to`;
+Its request schema (`src/ozonapi/seller/schemas/beta/v1__finance_balance.py`) also describes both fields as `YYYY-MM-DD` strings.
+
+This evidence plus the real-provider HTTP 400 on an exact RFC3339 request is sufficient to treat the **date-format mismatch as a confirmed repair target**, while remaining details below are still being verified against additional current contract evidence.
+
+### Additional contract dimensions still under verification
+
+- whether `date_from` and `date_to` are truly optional in the provider contract; the external schema models them as optional while the Bridge currently requires both;
+- exact boundary semantics of the 3-month maximum;
+- ordering requirement `date_from <= date_to` and whether Ozon rejects reversed periods;
 - future-date behavior;
-- whether templates/guidance encode the same wrong format;
+- whether an omitted period has provider-defined meaning;
+- whether templates/guidance encode the same wrong timestamp format;
 - whether generated/dist copies contain the same assumption;
-- permanent deterministic tests for correct date-only input, timestamp rejection/normalization, reversed range, and overlong range.
+- permanent deterministic tests for date-only input, timestamp rejection/normalization, reversed range, overlong range, and optionality once confirmed.
 
 ## Blast-radius audit
 
 The shared RFC3339 validator is reused by many operations, so no assumption is being made that `finance_balance` is the only affected method.
+
+Initial source enumeration found **50 call sites** of the strict `requireRfc3339DateTime()` helper in the authoritative `ozon_contract.js`. This count is a call-site inventory, not a defect count. Every call site must be resolved to an operation/endpoint and compared with the provider contract.
+
+The sweep also covers date-bearing operations that do **not** call this helper:
+
+- `requireDateYmd()` date-only validators;
+- `requireAnalyticsDate()` mixed date/date-time validators;
+- loose `Date.parse()` / `new Date(...)` validation paths;
+- schema-driven date/date-time fields in `EFFECT_REPAIR_PARAM_SCHEMAS`;
+- templates/defaults/guidance that construct dates;
+- generated/bundled/dist copies and deterministic tests.
 
 Every date-bearing operation will be classified as one of:
 
@@ -77,11 +103,11 @@ Every date-bearing operation will be classified as one of:
 - `NEEDS_LIVE` — static contract is insufficient and real-provider confirmation is required;
 - `NOT_DATE_RELATED` — operation contains no relevant date/time contract.
 
-The sweep must cover, at minimum, all producers/readers/normalizers/templates/request builders/generated copies/tests for each date-bearing operation.
+The sweep must cover all producers/readers/normalizers/templates/request builders/generated copies/tests for each date-bearing operation.
 
-## Initial suspect inventory (not defects until contract-verified)
+## Initial strict-RFC3339 suspect inventory
 
-The following current validators use the shared RFC3339 requirement and are explicitly in scope:
+The following current validators use the shared RFC3339 requirement and are explicitly in scope. They are **not** classified as defects merely because they share the helper:
 
 - `ozon_auto_add_action` / `auto_add_date`;
 - `product_queries` / `date_from`, `date_to`;
@@ -99,7 +125,7 @@ The following current validators use the shared RFC3339 requirement and are expl
 - ETGB date range;
 - rFBS return/posting date filters.
 
-This list is only the first static inventory. The complete inventory will be generated from the actual registry/contract code and checked operation by operation.
+The complete inventory is being generated from the actual registry/contract code and checked operation by operation.
 
 ## Commercial-test state
 
