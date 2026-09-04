@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  compareChromiumVersionV1,
   CompatibilityPolicyRevisionSchema,
   ExtensionReleaseSchema,
 } from "./index.js";
@@ -49,5 +50,14 @@ describe("P3.2 compatibility persistence validation", () => {
       CompatibilityPolicyRevisionSchema.safeParse({ ...policy, anything: {} })
         .success,
     ).toBe(false);
+  });
+});
+
+describe("P3.3 version comparison", () => {
+  it("pads Chromium versions and rejects malformed versions", () => {
+    expect(compareChromiumVersionV1("151", "151.0.0.0")).toBe(0);
+    expect(compareChromiumVersionV1("151.0.7922.34", "151.0.7922.35")).toBe(-1);
+    expect(compareChromiumVersionV1("01", "1")).toBeUndefined();
+    expect(compareChromiumVersionV1("1.2.3.4.5", "1")).toBeUndefined();
   });
 });

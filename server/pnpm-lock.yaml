@@ -298,6 +298,9 @@ importers:
 
   packages/remote-config:
     dependencies:
+      '@product/compatibility':
+        specifier: workspace:*
+        version: link:../compatibility
       '@product/contracts':
         specifier: workspace:*
         version: link:../contracts

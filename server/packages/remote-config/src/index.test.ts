@@ -8,10 +8,69 @@ import {
 import {
   BOOTSTRAP_SIGNATURE_DOMAIN,
   canonicalizeJson,
+  configReleaseHashes,
+  rolloutBucketV1,
+  selectRolloutCandidateV1,
   signBootstrapSnapshot,
   verifyBootstrapEnvelope,
   type TrustedConfigSigningKeyRing,
 } from "./index.js";
+
+describe("P3.3 manifests and cohorts", () => {
+  const ids = [
+    "11111111-1111-4111-8111-111111111111",
+    "22222222-2222-4222-8222-222222222222",
+  ];
+  it("normalizes manifest source ordering", () => {
+    const base = {
+      contractVersion: "control_plane_v1" as const,
+      snapshotVersion: "bootstrap_snapshot_v1" as const,
+      envelopeVersion: "bootstrap_envelope_v1" as const,
+      signingKeyId: "config-current",
+      compatibilityPolicyRevisionIds: ids,
+      featureRuleRevisionIds: [],
+      featureRolloutRevisionIds: [],
+    };
+    expect(configReleaseHashes(base)).toEqual(
+      configReleaseHashes({
+        ...base,
+        compatibilityPolicyRevisionIds: [...ids].reverse(),
+      }),
+    );
+    expect(configReleaseHashes(base).contentHashSha256).not.toBe(
+      configReleaseHashes({ ...base, signingKeyId: "config-next" })
+        .contentHashSha256,
+    );
+  });
+  it("uses a stable bounded rollout bucket", () => {
+    const value = {
+      rolloutKey: "feature.example",
+      cohortSeed: Buffer.alloc(32, 7),
+      subjectKind: "ACCOUNT" as const,
+      subjectId: "11111111-1111-4111-8111-111111111111",
+    };
+    expect(rolloutBucketV1(value)).toBe(rolloutBucketV1(value));
+    expect(rolloutBucketV1(value)).toBeGreaterThanOrEqual(0);
+    expect(rolloutBucketV1(value)).toBeLessThan(10000);
+    expect(
+      selectRolloutCandidateV1({ ...value, state: "ACTIVE", percentageBps: 0 }),
+    ).toBe(false);
+    expect(
+      selectRolloutCandidateV1({
+        ...value,
+        state: "ACTIVE",
+        percentageBps: 10000,
+      }),
+    ).toBe(true);
+    expect(
+      selectRolloutCandidateV1({
+        ...value,
+        state: "PAUSED",
+        percentageBps: 10000,
+      }),
+    ).toBe(false);
+  });
+});
 
 const payload: BootstrapSnapshotPayloadV1 = {
   snapshotVersion: "bootstrap_snapshot_v1",

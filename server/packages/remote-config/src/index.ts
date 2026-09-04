@@ -1,5 +1,15 @@
-import { sign, verify, type KeyObject } from "node:crypto";
-import { StableMachineIdentifierV1Schema } from "@product/shared";
+import { createHash, sign, verify, type KeyObject } from "node:crypto";
+import {
+  compareSemVerV1,
+  StableMachineIdentifierV1Schema,
+} from "@product/shared";
+import {
+  resolveCompatibility,
+  type CompatibilityCatalogRepository,
+  type CompatibilityPolicyRevision,
+  type CompatibilityResolution,
+  type P3MutationContext,
+} from "@product/compatibility";
 import { z } from "zod";
 import {
   BootstrapSnapshotPayloadV1Schema,
@@ -54,6 +64,192 @@ export type ConfigRelease = z.infer<typeof ConfigReleaseSchema>;
 export type ConfigReleaseCompatibilityPolicy = z.infer<
   typeof ConfigReleaseCompatibilityPolicySchema
 >;
+
+export const ConfigReleaseManifestV1Schema = z
+  .object({
+    contractVersion: z.literal("control_plane_v1"),
+    snapshotVersion: z.literal("bootstrap_snapshot_v1"),
+    envelopeVersion: z.literal("bootstrap_envelope_v1"),
+    signingKeyId: StableMachineIdentifierV1Schema,
+    compatibilityPolicyRevisionIds: z.array(z.uuid()),
+    featureRuleRevisionIds: z.array(z.uuid()),
+    featureRolloutRevisionIds: z.array(z.uuid()),
+  })
+  .strict();
+export type ConfigReleaseManifestV1 = z.infer<
+  typeof ConfigReleaseManifestV1Schema
+>;
+export function configReleaseHashes(manifest: ConfigReleaseManifestV1): {
+  sourceFingerprintSha256: string;
+  contentHashSha256: string;
+} {
+  const normalized = ConfigReleaseManifestV1Schema.parse({
+    contractVersion: manifest.contractVersion,
+    snapshotVersion: manifest.snapshotVersion,
+    envelopeVersion: manifest.envelopeVersion,
+    signingKeyId: manifest.signingKeyId,
+    compatibilityPolicyRevisionIds: [
+      ...manifest.compatibilityPolicyRevisionIds,
+    ].sort(),
+    featureRuleRevisionIds: [...manifest.featureRuleRevisionIds].sort(),
+    featureRolloutRevisionIds: [...manifest.featureRolloutRevisionIds].sort(),
+  });
+  const source = canonicalizeJson({
+    compatibilityPolicyRevisionIds: normalized.compatibilityPolicyRevisionIds,
+    featureRuleRevisionIds: normalized.featureRuleRevisionIds,
+    featureRolloutRevisionIds: normalized.featureRolloutRevisionIds,
+  });
+  return {
+    sourceFingerprintSha256: createHash("sha256").update(source).digest("hex"),
+    contentHashSha256: createHash("sha256")
+      .update(canonicalizeJson(normalized))
+      .digest("hex"),
+  };
+}
+
+export type RolloutSubjectKind = "ACCOUNT" | "DEVICE";
+export type RolloutState = "ACTIVE" | "PAUSED" | "RETIRED";
+const FeatureKeySchema = StableMachineIdentifierV1Schema;
+export const CreateFeatureDefinitionCommandSchema = z
+  .object({
+    featureKey: FeatureKeySchema,
+    description: z.string().min(1).max(256).optional(),
+  })
+  .strict();
+export const PublishFeatureRuleRevisionCommandSchema = z
+  .object({
+    featureKey: FeatureKeySchema,
+    contractVersion: z.literal("control_plane_v1"),
+    enabled: z.boolean(),
+    browserFamily: z.enum(["chrome", "yandex_chromium"]).nullable(),
+    minimumExtensionVersion: z.string().nullable(),
+    publishedAt: z.date(),
+  })
+  .strict()
+  .superRefine((v, c) => {
+    if (v.minimumExtensionVersion) {
+      try {
+        compareSemVerV1(v.minimumExtensionVersion, v.minimumExtensionVersion);
+      } catch {
+        c.addIssue({ code: "custom", message: "invalid SemVer" });
+      }
+    }
+  });
+export const CreateRolloutCommandSchema = z
+  .object({
+    rolloutKey: StableMachineIdentifierV1Schema,
+    targetKind: z.enum(["CONFIG_RELEASE", "FEATURE_RULE"]),
+    subjectKind: z.enum(["ACCOUNT", "DEVICE"]),
+  })
+  .strict()
+  .superRefine((v, c) => {
+    if (
+      v.targetKind === "CONFIG_RELEASE" &&
+      v.rolloutKey !== "bootstrap.config"
+    )
+      c.addIssue({ code: "custom", message: "reserved config rollout key" });
+  });
+export const PublishRolloutRevisionCommandSchema = z
+  .object({
+    rolloutKey: StableMachineIdentifierV1Schema,
+    state: z.enum(["ACTIVE", "PAUSED", "RETIRED"]),
+    percentageBps: z.number().int().min(0).max(10000),
+    baselineConfigVersion: z.number().int().positive().optional(),
+    candidateConfigVersion: z.number().int().positive().optional(),
+    baselineFeatureRuleRevisionId: z.uuid().optional(),
+    candidateFeatureRuleRevisionId: z.uuid().optional(),
+    publishedAt: z.date(),
+  })
+  .strict();
+export const PublishConfigReleaseCommandSchema =
+  ConfigReleaseManifestV1Schema.extend({ publishedAt: z.date() })
+    .strict()
+    .superRefine((v, c) => {
+      for (const [name, ids] of [
+        ["compatibility", v.compatibilityPolicyRevisionIds],
+        ["feature rule", v.featureRuleRevisionIds],
+        ["feature rollout", v.featureRolloutRevisionIds],
+      ] as const)
+        if (new Set(ids).size !== ids.length)
+          c.addIssue({ code: "custom", message: `duplicate ${name} source` });
+    });
+export type CreateFeatureDefinitionCommand = z.infer<
+  typeof CreateFeatureDefinitionCommandSchema
+>;
+export type PublishFeatureRuleRevisionCommand = z.infer<
+  typeof PublishFeatureRuleRevisionCommandSchema
+>;
+export type CreateRolloutCommand = z.infer<typeof CreateRolloutCommandSchema>;
+export type PublishRolloutRevisionCommand = z.infer<
+  typeof PublishRolloutRevisionCommandSchema
+>;
+export type PublishConfigReleaseCommand = z.infer<
+  typeof PublishConfigReleaseCommandSchema
+>;
+export interface P3PublicationPort {
+  createFeatureDefinition(
+    command: CreateFeatureDefinitionCommand,
+    context: P3MutationContext,
+  ): Promise<{ featureKey: string }>;
+  publishFeatureRuleRevision(
+    command: PublishFeatureRuleRevisionCommand,
+    context: P3MutationContext,
+  ): Promise<{ id: string; revision: number }>;
+  createRollout(
+    command: CreateRolloutCommand,
+    context: P3MutationContext,
+    testCohortSeed?: Buffer,
+  ): Promise<{ id: string; rolloutKey: string }>;
+  publishRolloutRevision(
+    command: PublishRolloutRevisionCommand,
+    context: P3MutationContext,
+  ): Promise<{ id: string; revision: number }>;
+  publishConfigRelease(
+    command: PublishConfigReleaseCommand,
+    context: P3MutationContext,
+  ): Promise<ConfigRelease>;
+}
+export function rolloutBucketV1(input: {
+  rolloutKey: string;
+  cohortSeed: Buffer;
+  subjectKind: RolloutSubjectKind;
+  subjectId: string;
+}): number {
+  StableMachineIdentifierV1Schema.parse(input.rolloutKey);
+  if (input.cohortSeed.length !== 32)
+    throw new TypeError("cohort seed must be 32 bytes");
+  const bytes = Buffer.concat([
+    Buffer.from("product-control-plane/rollout/v1\0", "utf8"),
+    Buffer.from(input.rolloutKey, "utf8"),
+    Buffer.from([0]),
+    input.cohortSeed,
+    Buffer.from([0]),
+    Buffer.from(input.subjectKind, "ascii"),
+    Buffer.from([0]),
+    Buffer.from(input.subjectId, "utf8"),
+  ]);
+  return Number(
+    createHash("sha256").update(bytes).digest().readBigUInt64BE(0) % 10000n,
+  );
+}
+export function selectRolloutCandidateV1(input: {
+  state: RolloutState;
+  percentageBps: number;
+  rolloutKey: string;
+  cohortSeed: Buffer;
+  subjectKind: RolloutSubjectKind;
+  subjectId: string;
+}): boolean {
+  if (
+    !Number.isInteger(input.percentageBps) ||
+    input.percentageBps < 0 ||
+    input.percentageBps > 10000
+  )
+    throw new TypeError("invalid rollout percentage");
+  return (
+    input.state === "ACTIVE" && rolloutBucketV1(input) < input.percentageBps
+  );
+}
 /** Read-only P3.2 persistence boundary; publication is deliberately deferred. */
 export interface RemoteConfigCatalogRepository {
   findSigningKey(keyId: string): Promise<SigningKeyMetadata | undefined>;
@@ -65,6 +261,307 @@ export interface RemoteConfigCatalogRepository {
   listConfigReleaseCompatibilityPolicies(
     configVersion: number,
   ): Promise<ConfigReleaseCompatibilityPolicy[]>;
+}
+
+export type P3FeatureRule = {
+  id: string;
+  featureKey: string;
+  revision: number;
+  contractVersion: "control_plane_v1";
+  enabled: boolean;
+  browserFamily: "chrome" | "yandex_chromium" | null;
+  minimumExtensionVersion: string | null;
+};
+export type P3Rollout = {
+  id: string;
+  rolloutKey: string;
+  targetKind: "CONFIG_RELEASE" | "FEATURE_RULE";
+  subjectKind: RolloutSubjectKind;
+  cohortSeed: Buffer;
+};
+export type P3RolloutRevision = {
+  id: string;
+  rolloutId: string;
+  targetKind: "CONFIG_RELEASE" | "FEATURE_RULE";
+  revision: number;
+  state: RolloutState;
+  percentageBps: number;
+  baselineConfigVersion: number | null;
+  candidateConfigVersion: number | null;
+  baselineFeatureRuleRevisionId: string | null;
+  candidateFeatureRuleRevisionId: string | null;
+};
+export const P3FeatureRuleSchema = z
+  .object({
+    id: z.uuid(),
+    featureKey: FeatureKeySchema,
+    revision: z.number().int().positive(),
+    contractVersion: z.literal("control_plane_v1"),
+    enabled: z.boolean(),
+    browserFamily: z.enum(["chrome", "yandex_chromium"]).nullable(),
+    minimumExtensionVersion: z.string().nullable(),
+  })
+  .strict()
+  .superRefine((v, c) => {
+    if (v.minimumExtensionVersion) {
+      try {
+        compareSemVerV1(v.minimumExtensionVersion, v.minimumExtensionVersion);
+      } catch {
+        c.addIssue({ code: "custom", message: "invalid SemVer" });
+      }
+    }
+  });
+export const P3RolloutSchema = z
+  .object({
+    id: z.uuid(),
+    rolloutKey: StableMachineIdentifierV1Schema,
+    targetKind: z.enum(["CONFIG_RELEASE", "FEATURE_RULE"]),
+    subjectKind: z.enum(["ACCOUNT", "DEVICE"]),
+    cohortSeed: z.instanceof(Buffer).refine((v) => v.length === 32),
+  })
+  .strict();
+export const P3RolloutRevisionSchema = z
+  .object({
+    id: z.uuid(),
+    rolloutId: z.uuid(),
+    targetKind: z.enum(["CONFIG_RELEASE", "FEATURE_RULE"]),
+    revision: z.number().int().positive(),
+    state: z.enum(["ACTIVE", "PAUSED", "RETIRED"]),
+    percentageBps: z.number().int().min(0).max(10000),
+    baselineConfigVersion: z.number().int().positive().nullable(),
+    candidateConfigVersion: z.number().int().positive().nullable(),
+    baselineFeatureRuleRevisionId: z.uuid().nullable(),
+    candidateFeatureRuleRevisionId: z.uuid().nullable(),
+  })
+  .strict()
+  .superRefine((v, c) => {
+    const config = v.targetKind === "CONFIG_RELEASE";
+    const configShape =
+      v.baselineConfigVersion !== null &&
+      v.candidateConfigVersion !== null &&
+      v.baselineFeatureRuleRevisionId === null &&
+      v.candidateFeatureRuleRevisionId === null;
+    const featureShape =
+      v.baselineConfigVersion === null &&
+      v.candidateConfigVersion === null &&
+      v.baselineFeatureRuleRevisionId !== null &&
+      v.candidateFeatureRuleRevisionId !== null;
+    if ((config && !configShape) || (!config && !featureShape))
+      c.addIssue({ code: "custom", message: "invalid target shape" });
+  });
+/** Exact-source catalog: deliberately no generic or latest-policy query exists. */
+export interface P3BootstrapPolicyCatalog
+  extends RemoteConfigCatalogRepository,
+    CompatibilityCatalogRepository {
+  findRolloutByKey(rolloutKey: string): Promise<P3Rollout | undefined>;
+  findFeatureDefinition(
+    featureKey: string,
+  ): Promise<{ featureKey: string } | undefined>;
+  findRolloutById(rolloutId: string): Promise<P3Rollout | undefined>;
+  findLatestRolloutRevision(
+    rolloutId: string,
+  ): Promise<P3RolloutRevision | undefined>;
+  findFeatureRuleRevision(id: string): Promise<P3FeatureRule | undefined>;
+  listConfigFeatureRules(configVersion: number): Promise<P3FeatureRule[]>;
+  listConfigFeatureRolloutRevisions(
+    configVersion: number,
+  ): Promise<P3RolloutRevision[]>;
+  listConfigCompatibilityPolicyRevisions(
+    configVersion: number,
+  ): Promise<CompatibilityPolicyRevision[]>;
+}
+export type ResolveP3BootstrapPolicyInput = {
+  contractVersion: "control_plane_v1";
+  extensionVersion: string;
+  browser: { family: "chrome" | "yandex_chromium"; version: string };
+  accountId: string;
+  deviceId: string;
+};
+export type ResolveP3BootstrapPolicyFailure =
+  | "NO_CONFIG_RELEASE"
+  | "CONFIG_SOURCE_INVALID"
+  | "COMPATIBILITY_SOURCE_INVALID"
+  | "ROLLOUT_SOURCE_INVALID"
+  | "FEATURE_SOURCE_INVALID";
+export type ResolveP3BootstrapPolicyResult = {
+  configVersion: number;
+  signingKeyId: string;
+  sourceFingerprintSha256: string;
+  compatibility: {
+    extension: {
+      status: CompatibilityResolution["extension"];
+      minimumVersion: string | null;
+    };
+    browser: { status: CompatibilityResolution["browser"] };
+  };
+  features: Record<string, boolean>;
+};
+export async function resolveP3BootstrapPolicy(
+  input: ResolveP3BootstrapPolicyInput,
+  catalog: P3BootstrapPolicyCatalog,
+): Promise<
+  ResolveP3BootstrapPolicyResult | { failure: ResolveP3BootstrapPolicyFailure }
+> {
+  let selected: ConfigRelease | undefined;
+  try {
+    const configRollout = await catalog.findRolloutByKey("bootstrap.config");
+    if (!configRollout)
+      selected = await catalog.findLatestConfigRelease("control_plane_v1");
+    else {
+      if (
+        configRollout.targetKind !== "CONFIG_RELEASE" ||
+        configRollout.rolloutKey !== "bootstrap.config" ||
+        configRollout.cohortSeed.length !== 32
+      )
+        return { failure: "ROLLOUT_SOURCE_INVALID" };
+      const revision = await catalog.findLatestRolloutRevision(
+        configRollout.id,
+      );
+      if (!revision) return { failure: "ROLLOUT_SOURCE_INVALID" };
+      if (
+        revision.targetKind !== "CONFIG_RELEASE" ||
+        revision.rolloutId !== configRollout.id
+      )
+        return { failure: "ROLLOUT_SOURCE_INVALID" };
+      if (revision.state === "RETIRED")
+        selected = await catalog.findLatestConfigRelease("control_plane_v1");
+      else {
+        const subjectId =
+          configRollout.subjectKind === "ACCOUNT"
+            ? input.accountId
+            : input.deviceId;
+        const candidate = selectRolloutCandidateV1({
+          state: revision.state,
+          percentageBps: revision.percentageBps,
+          rolloutKey: configRollout.rolloutKey,
+          cohortSeed: configRollout.cohortSeed,
+          subjectKind: configRollout.subjectKind,
+          subjectId,
+        });
+        selected = await catalog.findConfigRelease(
+          candidate
+            ? revision.candidateConfigVersion!
+            : revision.baselineConfigVersion!,
+        );
+      }
+    }
+    if (!selected) return { failure: "NO_CONFIG_RELEASE" };
+    if (
+      selected.contractVersion !== "control_plane_v1" ||
+      selected.snapshotVersion !== "bootstrap_snapshot_v1" ||
+      selected.envelopeVersion !== "bootstrap_envelope_v1"
+    )
+      return { failure: "CONFIG_SOURCE_INVALID" };
+    const [policies, rules, linkedRollouts] = await Promise.all([
+      catalog.listConfigCompatibilityPolicyRevisions(selected.configVersion),
+      catalog.listConfigFeatureRules(selected.configVersion),
+      catalog.listConfigFeatureRolloutRevisions(selected.configVersion),
+    ]);
+    const release = await catalog.findExtensionRelease(input.extensionVersion);
+    const [contracts, browsers] = release
+      ? await Promise.all([
+          catalog.listReleaseContracts(release.id),
+          catalog.listReleaseBrowsers(release.id),
+        ])
+      : [[], []];
+    const blocked = new Map<
+      string,
+      readonly import("@product/compatibility").BlockedExtensionVersion[]
+    >();
+    for (const policy of policies)
+      blocked.set(policy.id, await catalog.listBlockedVersions(policy.id));
+    const compatibility = resolveCompatibility({
+      contractVersion: input.contractVersion,
+      extensionVersion: input.extensionVersion,
+      browserFamily: input.browser.family,
+      browserVersion: input.browser.version,
+      release,
+      releaseContracts: contracts,
+      releaseBrowsers: browsers,
+      policies,
+      blockedVersions: blocked,
+    });
+    if (!compatibility) return { failure: "COMPATIBILITY_SOURCE_INVALID" };
+    const featureIds = new Set<string>();
+    const features: Record<string, boolean> = {};
+    for (const rule of rules) {
+      if (
+        featureIds.has(rule.featureKey) ||
+        rule.contractVersion !== "control_plane_v1"
+      )
+        return { failure: "FEATURE_SOURCE_INVALID" };
+      featureIds.add(rule.featureKey);
+      features[rule.featureKey] =
+        rule.enabled &&
+        (!rule.browserFamily || rule.browserFamily === input.browser.family) &&
+        (!rule.minimumExtensionVersion ||
+          compareSemVerV1(
+            input.extensionVersion,
+            rule.minimumExtensionVersion,
+          ) >= 0);
+    }
+    for (const revision of linkedRollouts) {
+      if (
+        revision.targetKind !== "FEATURE_RULE" ||
+        revision.baselineFeatureRuleRevisionId === null ||
+        revision.candidateFeatureRuleRevisionId === null
+      )
+        return { failure: "ROLLOUT_SOURCE_INVALID" };
+      const [rollout, baseline, candidate] = await Promise.all([
+        catalog.findRolloutById(revision.rolloutId),
+        catalog.findFeatureRuleRevision(revision.baselineFeatureRuleRevisionId),
+        catalog.findFeatureRuleRevision(
+          revision.candidateFeatureRuleRevisionId,
+        ),
+      ]);
+      if (
+        !rollout ||
+        rollout.targetKind !== "FEATURE_RULE" ||
+        rollout.cohortSeed.length !== 32 ||
+        !baseline ||
+        !candidate ||
+        baseline.featureKey !== candidate.featureKey ||
+        !rules.some((r) => r.id === baseline.id)
+      )
+        return { failure: "FEATURE_SOURCE_INVALID" };
+      const subjectId =
+        rollout.subjectKind === "ACCOUNT" ? input.accountId : input.deviceId;
+      const selectedRule = selectRolloutCandidateV1({
+        state: revision.state === "RETIRED" ? "PAUSED" : revision.state,
+        percentageBps: revision.percentageBps,
+        rolloutKey: rollout.rolloutKey,
+        cohortSeed: rollout.cohortSeed,
+        subjectKind: rollout.subjectKind,
+        subjectId,
+      })
+        ? candidate
+        : baseline;
+      features[selectedRule.featureKey] =
+        selectedRule.enabled &&
+        (!selectedRule.browserFamily ||
+          selectedRule.browserFamily === input.browser.family) &&
+        (!selectedRule.minimumExtensionVersion ||
+          compareSemVerV1(
+            input.extensionVersion,
+            selectedRule.minimumExtensionVersion,
+          ) >= 0);
+    }
+    return {
+      configVersion: selected.configVersion,
+      signingKeyId: selected.signingKeyId,
+      sourceFingerprintSha256: selected.sourceFingerprintSha256,
+      compatibility: {
+        extension: {
+          status: compatibility.extension,
+          minimumVersion: compatibility.minimumVersion,
+        },
+        browser: { status: compatibility.browser },
+      },
+      features,
+    };
+  } catch {
+    return { failure: "CONFIG_SOURCE_INVALID" };
+  }
 }
 
 export const BOOTSTRAP_SIGNATURE_DOMAIN = Buffer.from(

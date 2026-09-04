@@ -3,7 +3,7 @@
 Status: architecture authority for the parallel commercial/server track  
 Date: 2026-09-03  
 Repository: `MaksimUnimax/blood_sand`  
-Server branch: `feature/product-control-plane-server-2026-09-03`
+Server branch: `feature/product-control-plane-server-2026-09-04`
 
 ## 1. Purpose and split strategy
 

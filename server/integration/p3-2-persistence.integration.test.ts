@@ -28,7 +28,7 @@ const q = <T extends Record<string, unknown> = Record<string, unknown>>(
 ) => db.query<T>(text, values);
 async function clean() {
   await q(
-    "TRUNCATE config_release_compatibility_policies,config_releases,signing_key_events,signing_keys,compatibility_policy_blocked_versions,compatibility_policy_revisions,extension_release_browsers,extension_release_contracts,extension_releases",
+    "TRUNCATE config_release_rollout_revisions,config_release_feature_rules,rollout_revisions,rollouts,feature_rule_revisions,feature_definitions,config_release_compatibility_policies,config_releases,signing_key_events,signing_keys,compatibility_policy_blocked_versions,compatibility_policy_revisions,extension_release_browsers,extension_release_contracts,extension_releases",
   );
 }
 function key(id: string) {

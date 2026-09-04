@@ -7,6 +7,8 @@ export { createExtensionAuthRepository } from "./extension-auth-repository.js";
 export { createDeviceManagementRepository } from "./device-management-repository.js";
 export { createCompatibilityCatalogRepository } from "./compatibility-catalog-repository.js";
 export { createRemoteConfigCatalogRepository } from "./remote-config-catalog-repository.js";
+export { createP3PolicyPublicationRepository } from "./p3-policy-publication-repository.js";
+export { createP3BootstrapPolicyCatalogRepository } from "./p3-bootstrap-policy-catalog-repository.js";
 
 export interface DatabaseRuntime {
   db: NodePgDatabase<typeof schema>;
