@@ -105,6 +105,22 @@ Every date-bearing operation will be classified as one of:
 
 The sweep must cover all producers/readers/normalizers/templates/request builders/generated copies/tests for each date-bearing operation.
 
+## Verified control cases
+
+### MATCH — `finance_cash_flow_statement_list`
+
+Bridge behavior:
+
+- endpoint family: finance cash-flow statement list;
+- request date range: `date.from` / `date.to`;
+- Bridge validator: strict RFC3339 date-time via `requireRfc3339DateTime()`.
+
+Current external OzonAPI schema/tests for this operation use RFC3339 timestamps such as `2026-01-01T00:00:00Z`. Therefore this neighboring finance endpoint is classified **MATCH for date wire format**.
+
+Consequence: the shared RFC3339 helper is not globally wrong. DEFECT-015 must be repaired endpoint-specifically; a bulk conversion of all date/time fields to `YYYY-MM-DD` would create new defects.
+
+Period-length and any endpoint-specific range guards remain separate audit dimensions and are not implied PASS by the format match.
+
 ## Initial strict-RFC3339 suspect inventory
 
 The following current validators use the shared RFC3339 requirement and are explicitly in scope. They are **not** classified as defects merely because they share the helper:
