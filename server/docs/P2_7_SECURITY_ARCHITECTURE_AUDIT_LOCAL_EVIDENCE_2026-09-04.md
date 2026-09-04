@@ -1,6 +1,6 @@
 # P2.7 security architecture audit — local evidence
 
-Status: **LOCAL AUDIT ACCEPTED — P2.7 ACTIVE**
+Status: **ACCEPTED — P2.7 DONE**
 Date: 2026-09-04
 Base: `c6e96e571f434ecb87ac79a5d1402d7b2ad1c7a0` (direct SSH-over-443 remote matched; initial worktree clean).
 
@@ -75,3 +75,9 @@ Canonical CI configuration was inspected: immutable action pins, Node 24.20.0, c
 ## 7. Final local verdict
 
 Open CRITICAL: 0. Open HIGH: 0. Open MEDIUM: 0. The accepted P2 implementation is coherent across identity, portal session, device authorization/exchange, access/refresh authorization, device management, portal BFF, simulated client and database boundaries. Return to ChatGPT for independent P2.7 final remote acceptance and the final P2 checkpoint. Do not mark P2 DONE from this local packet.
+
+## 8. Remote acceptance finalization
+
+Implementation commit: `d526e6a2695c0460faedd6b53bc1aac9b0e2e972` (`fix(server): close P2 security audit findings`). Exact push-triggered Server CI run [33835925978](https://github.com/MaksimUnimax/blood_sand/actions/runs/33835925978) completed `success`. The job used immutable action pins, Node 24.20.0, canonical pnpm 10.34.5, PostgreSQL 18.0 and `product_control_plane_test`; every required step, including frozen install, integration, migration, build, Chromium install and 7-test T4, passed.
+
+Final P2.7 finding register: 4 total; AUD-P2-001 CLOSED, AUD-P2-002 CLOSED, AUD-P2-003 CLOSED and AUD-P2-004 CLOSED. Open critical: 0; high: 0; medium: 0.

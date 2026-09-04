@@ -90,7 +90,7 @@ Exit gate:
 
 P1 implementation status: P1.1 `[DONE]`; P1.2 `[DONE]`; P1.3 `[DONE]`; P1.4 `[DONE]`; P1.5 `[DONE]`; P1.6 `[DONE]`.
 
-## P2 — Accounts, OTP identity and device authorization `[ACTIVE]`
+## P2 — Accounts, OTP identity and device authorization `[DONE]`
 
 Goal: user can authenticate and authorize an extension installation.
 
@@ -109,7 +109,7 @@ Scope:
 
 Exit: complete simulated extension activation/refresh/revoke/device-limit flow with security tests.
 
-## P3 — Bootstrap, compatibility and signed remote configuration `[PLANNED]`
+## P3 — Bootstrap, compatibility and signed remote configuration `[NEXT]`
 
 Goal: authorized client receives a safe versioned policy/config snapshot.
 
@@ -351,7 +351,7 @@ Architecture remains:
 - P2.4 `[DONE]` Short-lived access-token auth plus opaque refresh rotation/reuse detection.
 - P2.5 `[DONE]` Device exchange/list/revoke/device limits and transactional audit.
 - P2.6 `[DONE]` Portal activation flow plus simulated extension client and E2E.
-- P2.7 `[NEXT]` P2 security/architecture audit and final P2 acceptance/checkpoint.
+- P2.7 `[DONE]` P2 security/architecture audit and final P2 acceptance/checkpoint.
 
 # Parallel Bridge rule
 
