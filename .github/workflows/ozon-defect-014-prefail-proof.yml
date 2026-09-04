@@ -1,0 +1,67 @@
+name: Ozon DEFECT-014 pre-fix failure proof
+
+on:
+  push:
+    branches:
+      - research/ozon-product-demand-2026-09-02
+    paths:
+      - .github/workflows/ozon-defect-014-prefail-proof.yml
+
+permissions:
+  contents: read
+
+jobs:
+  prove-old-failure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/ozon-product-demand-2026-09-02
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Preserve final regression test
+        shell: bash
+        run: cp tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_provider_taxonomy_gate.mjs "$RUNNER_TEMP/run_provider_taxonomy_gate_FINAL.mjs"
+      - uses: actions/checkout@v4
+        with:
+          ref: 51ab3fbeb97ac6a3fc693fd40a0a81d5d818ca0a
+          fetch-depth: 1
+          clean: true
+      - name: Prove final regression fails on old authority for DEFECT-014
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          node "$RUNNER_TEMP/run_provider_taxonomy_gate_FINAL.mjs" "$GITHUB_WORKSPACE" > "$RUNNER_TEMP/prefail.out" 2>&1
+          status=$?
+          set -e
+          cat "$RUNNER_TEMP/prefail.out"
+          if [ "$status" -eq 0 ]; then
+            echo "ERROR: final DEFECT-014 regression unexpectedly passes on old 51ab"
+            exit 1
+          fi
+          grep -Eq 'report_file_provider_not_seller_subscription|not_seller_or_missing|AssertionError' "$RUNNER_TEMP/prefail.out"
+          echo "OZON_DEFECT_014_FINAL_REGRESSION_FAILS_ON_51AB_PASS"
+      - name: Prove exact old wrong reason
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import vm from 'node:vm';
+          import path from 'node:path';
+          const shared = path.resolve('tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared');
+          const load = (name) => vm.runInThisContext(fs.readFileSync(path.join(shared,name),'utf8'),{filename:name});
+          globalThis.OzonRuntime={RUNTIME:{version:'0.1.19'}};
+          load('ozon_operation_registry.js');
+          load('ozon_entitlements.js');
+          load('ozon_contract.js');
+          const C=globalThis.OzonContract;
+          const command={operation:'report_file_get',params:{file_ref:'rpf_s_aaaaaaaaaaaa',offset:0,limit:200}};
+          const plan=C.planCommandForSellerCapability(command,{status:'unknown',subscription_type:'UNKNOWN'});
+          const reason=plan?.planning?.entitlement?.reason;
+          if(reason!=='performance_provider_not_seller_subscription') throw new Error(`unexpected old reason: ${reason}`);
+          console.log('OZON_DEFECT_014_OLD_WRONG_PERFORMANCE_REASON_REPRODUCED_PASS');
+          NODE
