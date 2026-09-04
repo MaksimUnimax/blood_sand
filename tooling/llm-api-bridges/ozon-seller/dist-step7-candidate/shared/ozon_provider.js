@@ -36,30 +36,141 @@
     return Object.keys(output).length > 1 ? Object.freeze(output) : null;
   }
 
+  const REPORT_FILE_REF_TTL_MS = 30 * 60 * 1000;
+  const REPORT_FILE_REF_MAX = 128;
+  const REPORT_CODE_POLICY_MAX = 256;
+  const REPORT_SESSION_SCHEMA_VERSION = 1;
+  const REPORT_SESSION_STATE_KEY = "ozmb_report_file_session_state_v1";
+  let fallbackReportSessionState = null;
+  let reportSessionWriteLock = Promise.resolve();
+
+  function cloneJson(value) {
+    if (value === null || value === undefined) return value;
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function defaultReportStateStore() {
+    const storage = globalThis.chrome?.storage?.session;
+    if (storage && typeof storage.get === "function" && typeof storage.set === "function") {
+      return Object.freeze({
+        async get() {
+          const data = await storage.get(REPORT_SESSION_STATE_KEY);
+          return data?.[REPORT_SESSION_STATE_KEY] ?? null;
+        },
+        async set(value) {
+          await storage.set({ [REPORT_SESSION_STATE_KEY]: value });
+        }
+      });
+    }
+    return Object.freeze({
+      async get() { return cloneJson(fallbackReportSessionState); },
+      async set(value) { fallbackReportSessionState = cloneJson(value); }
+    });
+  }
+
+  function withReportSessionWrite(fn) {
+    const next = reportSessionWriteLock.then(fn, fn);
+    reportSessionWriteLock = next.catch(() => null);
+    return next;
+  }
+
+  function emptyReportSessionState() {
+    return { schema_version: REPORT_SESSION_SCHEMA_VERSION, report_code_policies: {}, report_file_refs: {} };
+  }
+
+  function boundedNewestEntries(entries, max) {
+    const sorted = entries.sort((a, b) => Number(a[1]?.created_at_ms || 0) - Number(b[1]?.created_at_ms || 0));
+    return sorted.slice(Math.max(0, sorted.length - max));
+  }
+
+  function normalizeReportSessionState(raw, currentMs) {
+    const current = Number(currentMs);
+    if (!raw || typeof raw !== "object" || Array.isArray(raw) || Number(raw.schema_version) !== REPORT_SESSION_SCHEMA_VERSION) return emptyReportSessionState();
+    const codePolicies = [];
+    const rawCodePolicies = raw.report_code_policies && typeof raw.report_code_policies === "object" && !Array.isArray(raw.report_code_policies) ? raw.report_code_policies : {};
+    for (const [rawCode, rawRecord] of Object.entries(rawCodePolicies)) {
+      const code = String(rawCode || "").trim();
+      if (!/^REPORT_/i.test(code) || !rawRecord || typeof rawRecord !== "object" || Array.isArray(rawRecord)) continue;
+      const createdAt = Number(rawRecord.created_at_ms || 0);
+      if (!Number.isFinite(createdAt) || createdAt <= 0 || current - createdAt > REPORT_FILE_REF_TTL_MS) continue;
+      codePolicies.push([code, { personal_data_required: rawRecord.personal_data_required === true, created_at_ms: createdAt }]);
+    }
+
+    const fileRefs = [];
+    const rawFileRefs = raw.report_file_refs && typeof raw.report_file_refs === "object" && !Array.isArray(raw.report_file_refs) ? raw.report_file_refs : {};
+    for (const [rawRef, rawRecord] of Object.entries(rawFileRefs)) {
+      const ref = String(rawRef || "").trim();
+      if (!/^rpf_[sp]_[A-Za-z0-9_-]+$/.test(ref) || !rawRecord || typeof rawRecord !== "object" || Array.isArray(rawRecord)) continue;
+      const createdAt = Number(rawRecord.created_at_ms || 0);
+      if (!Number.isFinite(createdAt) || createdAt <= 0 || current - createdAt > REPORT_FILE_REF_TTL_MS) continue;
+      const personalDataRequired = rawRecord.personal_data_required === true;
+      const expectedMarker = personalDataRequired ? "p" : "s";
+      if (!ref.startsWith(`rpf_${expectedMarker}_`)) continue;
+      if (typeof rawRecord.url === "string" && rawRecord.url.trim()) {
+        try {
+          const trustedUrl = globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl(rawRecord.url.trim());
+          fileRefs.push([ref, { url: trustedUrl, personal_data_required: personalDataRequired, created_at_ms: createdAt }]);
+        } catch (_) {}
+        continue;
+      }
+      const inlineBase64 = typeof rawRecord.inline_base64 === "string" ? rawRecord.inline_base64 : "";
+      const contentType = String(rawRecord.content_type || "").toLowerCase();
+      if (inlineBase64 && contentType === "application/pdf") {
+        const byteLength = Math.max(0, Number(rawRecord.byte_length || 0));
+        if (!Number.isFinite(byteLength)) continue;
+        fileRefs.push([ref, { inline_base64: inlineBase64, content_type: contentType, byte_length: byteLength, personal_data_required: personalDataRequired, created_at_ms: createdAt }]);
+      }
+    }
+
+    return {
+      schema_version: REPORT_SESSION_SCHEMA_VERSION,
+      report_code_policies: Object.fromEntries(boundedNewestEntries(codePolicies, REPORT_CODE_POLICY_MAX)),
+      report_file_refs: Object.fromEntries(boundedNewestEntries(fileRefs, REPORT_FILE_REF_MAX))
+    };
+  }
+
+  function reportStateError(code, message, { externalRequestExecuted = false } = {}) {
+    const error = new Error(message);
+    error.code = code;
+    error.external_request_executed = externalRequestExecuted === true;
+    return error;
+  }
+
   function createOzonProvider({
     contract = globalThis.OzonContract,
     fetchImpl = globalThis.fetch,
     uuid = () => globalThis.crypto.randomUUID(),
-    now = () => Date.now()
+    now = () => Date.now(),
+    reportStateStore = defaultReportStateStore()
   } = {}) {
     let performanceToken = null;
 
-    const reportFileRefs = new Map();
-    const reportCodePolicies = new Map();
-    const REPORT_FILE_REF_TTL_MS = 30 * 60 * 1000;
-    const REPORT_FILE_REF_MAX = 128;
-    const REPORT_CODE_POLICY_MAX = 256;
+    async function readReportSessionState({ externalRequestExecuted = false } = {}) {
+      try {
+        const raw = await reportStateStore.get();
+        return normalizeReportSessionState(raw, Number(now()));
+      } catch (error) {
+        throw reportStateError("REPORT_FILE_SESSION_STATE_READ_FAILED", `Не удалось прочитать session-state отчётов: ${String(error?.message || error || "unknown error").slice(0, 240)}`, { externalRequestExecuted });
+      }
+    }
 
-    function pruneReportFileRefs() {
-      const current = Number(now());
-      for (const [ref, record] of reportFileRefs.entries()) {
-        if (!record || current - Number(record.created_at_ms || 0) > REPORT_FILE_REF_TTL_MS) reportFileRefs.delete(ref);
-      }
-      while (reportFileRefs.size > REPORT_FILE_REF_MAX) reportFileRefs.delete(reportFileRefs.keys().next().value);
-      for (const [code, record] of reportCodePolicies.entries()) {
-        if (!record || current - Number(record.created_at_ms || 0) > REPORT_FILE_REF_TTL_MS) reportCodePolicies.delete(code);
-      }
-      while (reportCodePolicies.size > REPORT_CODE_POLICY_MAX) reportCodePolicies.delete(reportCodePolicies.keys().next().value);
+    async function mutateReportSessionState(mutator, { externalRequestExecuted = true } = {}) {
+      return withReportSessionWrite(async () => {
+        const current = await readReportSessionState({ externalRequestExecuted });
+        const mutable = {
+          schema_version: REPORT_SESSION_SCHEMA_VERSION,
+          report_code_policies: { ...current.report_code_policies },
+          report_file_refs: { ...current.report_file_refs }
+        };
+        const output = await mutator(mutable);
+        const normalized = normalizeReportSessionState(mutable, Number(now()));
+        try {
+          await reportStateStore.set(normalized);
+        } catch (error) {
+          throw reportStateError("REPORT_FILE_SESSION_STATE_WRITE_FAILED", `Не удалось сохранить session-state отчётов: ${String(error?.message || error || "unknown error").slice(0, 240)}`, { externalRequestExecuted });
+        }
+        return output;
+      });
     }
 
     function operationRequiresPersonalData(operation) {
@@ -67,51 +178,55 @@
       return meta?.policy_group === "personal_data_read";
     }
 
-    function rememberReportCodePolicy(rawCode, operation) {
+    async function rememberReportCodePolicy(rawCode, operation) {
       const code = String(rawCode || "").trim();
       if (!/^REPORT_/i.test(code)) return;
-      pruneReportFileRefs();
-      reportCodePolicies.set(code, Object.freeze({ personal_data_required: operationRequiresPersonalData(operation), created_at_ms: Number(now()) }));
-      pruneReportFileRefs();
+      await mutateReportSessionState((state) => {
+        state.report_code_policies[code] = { personal_data_required: operationRequiresPersonalData(operation), created_at_ms: Number(now()) };
+      });
     }
 
-    function reportInfoPersonalDataRequired(command) {
+    async function reportInfoPersonalDataRequired(command) {
       const code = String(command?.params?.code || "").trim();
-      const remembered = reportCodePolicies.get(code);
+      const state = await readReportSessionState({ externalRequestExecuted: true });
+      const remembered = state.report_code_policies[code];
       return remembered ? remembered.personal_data_required === true : true;
     }
 
-    function registerReportFile(rawUrl, { personalDataRequired = true } = {}) {
-      const trustedUrl = globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl(rawUrl);
-      pruneReportFileRefs();
+    function createReportFileRef(personalDataRequired) {
       const token = String(uuid()).replace(/[^A-Za-z0-9_-]/g, "");
-      const ref = `rpf_${token}`;
-      reportFileRefs.set(ref, Object.freeze({ url: trustedUrl, personal_data_required: personalDataRequired === true, created_at_ms: Number(now()) }));
-      pruneReportFileRefs();
+      const marker = personalDataRequired === true ? "p" : "s";
+      return `rpf_${marker}_${token}`;
+    }
+
+    async function registerReportFile(rawUrl, { personalDataRequired = true } = {}) {
+      const trustedUrl = globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl(rawUrl);
+      const ref = createReportFileRef(personalDataRequired);
+      await mutateReportSessionState((state) => {
+        state.report_file_refs[ref] = { url: trustedUrl, personal_data_required: personalDataRequired === true, created_at_ms: Number(now()) };
+      });
       return ref;
     }
 
     function reportFileRefPolicy(ref) {
-      pruneReportFileRefs();
-      const record = reportFileRefs.get(String(ref || ""));
-      if (!record) return Object.freeze({ known: false, personal_data_required: false });
-      return Object.freeze({ known: true, personal_data_required: record.personal_data_required === true });
+      const value = String(ref || "").trim();
+      if (/^rpf_s_[A-Za-z0-9_-]+$/.test(value)) return Object.freeze({ known: true, personal_data_required: false });
+      if (/^rpf_p_[A-Za-z0-9_-]+$/.test(value)) return Object.freeze({ known: true, personal_data_required: true });
+      return Object.freeze({ known: false, personal_data_required: false });
     }
 
-    function resolveReportFileRef(ref) {
-      pruneReportFileRefs();
-      const record = reportFileRefs.get(String(ref || ""));
+    async function resolveReportFileRef(ref) {
+      const value = String(ref || "").trim();
+      const state = await readReportSessionState({ externalRequestExecuted: false });
+      const record = state.report_file_refs[value];
       if (!record) {
-        const error = new Error("Report file ref неизвестен или истёк. Повторите report_info отдельной командой.");
-        error.code = "REPORT_FILE_REF_NOT_FOUND";
-        error.external_request_executed = false;
-        throw error;
+        throw reportStateError("REPORT_FILE_REF_NOT_FOUND", "Report file ref неизвестен или истёк. Повторите report_info отдельной командой.", { externalRequestExecuted: false });
       }
       return record;
     }
 
     async function executeReportFileCommand(command) {
-      const record = resolveReportFileRef(command.params.file_ref);
+      const record = await resolveReportFileRef(command.params.file_ref);
       if (record.inline_base64) {
         const started = Number(now());
         const bytes = globalThis.ProviderTransportCore.reportBase64ToBytes(record.inline_base64);
@@ -125,8 +240,6 @@
       return { request, response, auth_request_performed: false };
     }
 
-
-
     const GENERATED_DOCUMENT_URL_FIELD_BY_OPERATION = Object.freeze({
       cargoes_label_get: "file_url",
       cargoes_label_transport_by_order_status: "file_url",
@@ -138,15 +251,14 @@
     });
     const DIRECT_PDF_OPERATIONS = new Set(["posting_fbs_act_container_labels", "posting_fbs_package_label"]);
 
-    function registerInlineGeneratedDocument(binaryPayload, { personalDataRequired = true } = {}) {
+    async function registerInlineGeneratedDocument(binaryPayload, { personalDataRequired = true } = {}) {
       const contentType = String(binaryPayload?.content_type || "application/octet-stream").toLowerCase();
       const base64 = String(binaryPayload?.file_content_base64 || "");
       if (!base64 || contentType !== "application/pdf") return null;
-      pruneReportFileRefs();
-      const token = String(uuid()).replace(/[^A-Za-z0-9_-]/g, "");
-      const ref = `rpf_${token}`;
-      reportFileRefs.set(ref, Object.freeze({ inline_base64: base64, content_type: contentType, byte_length: Number(binaryPayload?.byte_length || 0), personal_data_required: personalDataRequired === true, created_at_ms: Number(now()) }));
-      pruneReportFileRefs();
+      const ref = createReportFileRef(personalDataRequired);
+      await mutateReportSessionState((state) => {
+        state.report_file_refs[ref] = { inline_base64: base64, content_type: contentType, byte_length: Number(binaryPayload?.byte_length || 0), personal_data_required: personalDataRequired === true, created_at_ms: Number(now()) };
+      });
       return ref;
     }
 
@@ -297,12 +409,13 @@
         result = contract.sanitizeResult(command, response.parsed ?? response.rawText);
         if (command.operation !== "report_info") {
           const rawReportCode = findFirstField(response.parsed, "code");
-          if (typeof rawReportCode === "string") rememberReportCodePolicy(rawReportCode, command.operation);
+          if (typeof rawReportCode === "string") await rememberReportCodePolicy(rawReportCode, command.operation);
         }
         if (command.operation === "report_info") {
           const rawFile = findFirstField(response.parsed, "file");
           if (typeof rawFile === "string" && rawFile.trim()) {
-            const fileRef = registerReportFile(rawFile.trim(), { personalDataRequired: reportInfoPersonalDataRequired(command) });
+            const personalDataRequired = await reportInfoPersonalDataRequired(command);
+            const fileRef = await registerReportFile(rawFile.trim(), { personalDataRequired });
             result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), report_file_ref: fileRef });
           }
         }
@@ -311,12 +424,12 @@
         if (generatedUrlField) {
           const rawGeneratedUrl = findFirstField(response.parsed, generatedUrlField);
           if (typeof rawGeneratedUrl === "string" && rawGeneratedUrl.trim()) {
-            const generatedRef = registerReportFile(rawGeneratedUrl.trim(), { personalDataRequired: operationRequiresPersonalData(command.operation) });
+            const generatedRef = await registerReportFile(rawGeneratedUrl.trim(), { personalDataRequired: operationRequiresPersonalData(command.operation) });
             result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), generated_file_ref: generatedRef });
           }
         }
         if (DIRECT_PDF_OPERATIONS.has(command.operation)) {
-          const generatedRef = registerInlineGeneratedDocument(response.parsed, { personalDataRequired: operationRequiresPersonalData(command.operation) });
+          const generatedRef = await registerInlineGeneratedDocument(response.parsed, { personalDataRequired: operationRequiresPersonalData(command.operation) });
           if (generatedRef) {
             const safe = result && typeof result === "object" && !Array.isArray(result) ? { ...result } : { result };
             delete safe.file_content_base64;

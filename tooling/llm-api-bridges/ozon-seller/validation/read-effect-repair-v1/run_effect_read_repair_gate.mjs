@@ -65,3 +65,8 @@ if (corrective.stdout) process.stdout.write(corrective.stdout);
 if (corrective.stderr) process.stderr.write(corrective.stderr);
 assert.equal(corrective.status, 0, "live-gate corrective regression must pass inside package effect gate");
 console.log("OZON_EFFECT_READ_REPAIR_CORRECTIVE_REGRESSION_CHAIN_PASS");
+const lifecycle = spawnSync(process.execPath, [path.join(gateDir, "run_report_file_lifecycle_gate.mjs"), repo], { encoding: "utf8" });
+if (lifecycle.stdout) process.stdout.write(lifecycle.stdout);
+if (lifecycle.stderr) process.stderr.write(lifecycle.stderr);
+assert.equal(lifecycle.status, 0, "report-file MV3 lifecycle regression must pass inside package effect gate");
+console.log("OZON_EFFECT_READ_REPAIR_REPORT_FILE_LIFECYCLE_CHAIN_PASS");
