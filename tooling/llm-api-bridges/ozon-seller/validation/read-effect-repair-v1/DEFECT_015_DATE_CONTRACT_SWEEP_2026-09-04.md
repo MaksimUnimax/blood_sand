@@ -9,9 +9,9 @@ Authoritative executable baseline under test:
 - source commit: `249029b0ba8d9e6f9e26182bf678adf42868c6d6`
 - source tree: `2c565626982c1a9a1919add09824ce2c5e44ee29`
 - extension version: `0.1.19`
-- live test remains frozen at STD-06 until the finance failure is understood and repaired.
+- live test remains frozen at STD-06 until the finance failure and same-class dependency findings are closed.
 
-This document is intentionally maintained on audit branch `audit/ozon-date-contract-sweep-2026-09-04` so the validated artifact/source HEAD at `249029...` remains reproducible.
+This document is maintained on audit branch `audit/ozon-date-contract-sweep-2026-09-04` so the validated artifact/source HEAD at `249029...` remains reproducible.
 
 ## Live failure that triggered the sweep
 
@@ -35,165 +35,182 @@ Observed live result:
 
 Verdict: **LIVE FAIL**. STD-06 is frozen at this point.
 
-## Confirmed Bridge source behavior
+## Confirmed Bridge behavior
 
-Current `ozon_contract.js` contains a shared `requireRfc3339DateTime()` validator that rejects date-only values and requires a timezone-bearing RFC3339 date-time.
+`ozon_contract.js` contains a shared `requireRfc3339DateTime()` validator that rejects date-only values and requires a timezone-bearing RFC3339 date-time.
 
-`finance_balance` uses that validator for both `date_from` and `date_to`, so the Bridge contract itself requires full RFC3339 timestamps.
-
-The request builder serializes the normalized command params directly to JSON for `json_body` operations. Combined with live metadata (`exact_request_preserved=true`, `command_transformed=false`), this proves the timestamp values passed Bridge validation and reached Ozon unchanged.
+`finance_balance` uses that validator for both `date_from` and `date_to`. The request builder serializes normalized params directly for `json_body`; live metadata (`exact_request_preserved=true`, `command_transformed=false`) proves the timestamps reached Ozon unchanged.
 
 ## DEFECT-015 — confirmed repair target
 
-1. `finance_balance` real-provider request fails with HTTP 400/code 3 using the request shape accepted and required by the current Bridge.
-2. The Bridge enforces RFC3339 date-time for `finance_balance.date_from` / `date_to`.
-3. The current finance request is not transformed before provider execution.
-4. Current Swagger-derived/generated SDK evidence for `GetFinanceBalanceV1` documents `date_from` / `date_to` as `YYYY-MM-DD`, not RFC3339 date-time.
-5. The freshest contract-derived evidence found on 2026-09-04 (Go Ozon SDK build published 2026-09-02) documents the maximum interval between `date_from` and `date_to` as **30 days**.
+### Current Swagger-derived contract for `/v1/finance/balance`
 
-### Superseded range evidence
+The 463-operation OpenAPI snapshot generated from the official Ozon Seller Swagger resolves the request to `v1GetFinanceBalanceV1Request` and shows:
 
-An older/currently less-fresh Python OzonAPI wrapper documented a **3-month** maximum. This is now treated as stale relative to the 2026-09-02 Swagger-derived Go SDK and must **not** drive the repair.
+- request body: required;
+- `date_from`: required;
+- `date_to`: required;
+- schema `format`: `date-time` for both fields;
+- **description** for both fields: `YYYY-MM-DD`;
+- endpoint request example: date-only (`2019-08-24`, `2019-09-24`);
+- `date_to` description: maximum period between `date_from` and `date_to` is **30 days**.
 
-Current repair target for the range guard: **30 days**, subject to direct official/OpenAPI confirmation where obtainable.
+This is an internal OpenAPI inconsistency: the mechanical `format: date-time` conflicts with the human description and endpoint example.
 
-### Current external evidence
+The live request resolves the ambiguity: the Bridge followed the mechanical `date-time` side and sent RFC3339 timestamps; Ozon returned HTTP 400/code 3. Therefore the effective wire-format repair target is date-only `YYYY-MM-DD`.
 
-Fresh generated Go SDK:
+### Confirmed facts
 
-- package/repository family: `github.com/QuoVadis86/go-ozon-sdk`
-- generated type: `V1GetFinanceBalanceV1Request`
-- request fields:
-  - `date_from`: `YYYY-MM-DD`
-  - `date_to`: `YYYY-MM-DD`
-- documented maximum interval: `30 days`
-- package build observed: `v0.0.0-20260902014147-c73b356cfc49`
+1. Bridge requires RFC3339 for `finance_balance.date_from/date_to`.
+2. Current OpenAPI makes both fields **required**; earlier SDK optionality evidence is superseded for repair purposes.
+3. Current OpenAPI description/example require date-only values despite its contradictory `format: date-time` metadata.
+4. Current maximum period is **30 days**.
+5. Exact RFC3339 request failed live at the provider.
 
-Corroborating Python SDK:
+Classification: **BUG — LIVE CONFIRMED**.
 
-- repository: `a-ulianov/OzonAPI`
-- endpoint: `/v1/finance/balance`
-- direct documentation reference: `https://docs.ozon.ru/api/seller/#operation/GetFinanceBalanceV1`
-- request date format: `YYYY-MM-DD`
-- example: `FinanceBalanceRequest(date_from="2026-05-01", date_to="2026-06-01")`
+### Superseded evidence
 
-The Python wrapper's 3-month range statement is superseded by the fresher generated Go SDK's 30-day statement.
+- Older Python wrapper: 3-month maximum — superseded by the current OpenAPI/fresh generated SDK, which say 30 days.
+- Older/current SDK optional typing for the fields — superseded by OpenAPI `required: [date_from, date_to]`.
 
-### Additional contract dimensions still under verification
+### Remaining finance_balance dimensions to audit before repair closure
 
-- whether `date_from` and `date_to` are mandatory in the provider schema;
-- exact inclusive/exclusive semantics of the 30-day maximum;
-- ordering requirement `date_from <= date_to`;
-- future-date behavior;
-- omitted-period behavior if fields are optional;
-- whether templates/guidance encode the same wrong timestamp format;
-- all generated/dist copies containing the assumption;
-- permanent deterministic tests for date-only input, RFC3339 rejection/normalization policy, reversed range, overlong range, and requiredness once confirmed.
+- `date_from <= date_to` local guard;
+- exact 30-day boundary semantics;
+- future-date behavior if relevant;
+- templates/defaults/guidance containing RFC3339;
+- all source/dist/generated copies;
+- deterministic tests for valid YMD pair, timestamp rejection/normalization policy, reversed pair and >30-day pair.
 
 ## Blast-radius audit
 
-The shared RFC3339 validator is reused by many operations, so no assumption is being made that `finance_balance` is the only affected method.
+All 271 Seller-read commands are in scope for this defect class.
 
-Initial source enumeration found **50 call sites** of `requireRfc3339DateTime()` in the authoritative `ozon_contract.js`. This is a field/call-site count, not a defect count and not a unique-operation count.
+- Operations with date/time/period input fields receive field-by-field comparison.
+- Operations with no relevant date/time/period input are classified `NOT_DATE_RELATED`.
 
-The sweep also covers date-bearing operations that do **not** call this helper:
+Initial source enumeration found **50 call sites** of `requireRfc3339DateTime()` in authoritative `ozon_contract.js`. This is a field/call-site count, not a defect count or unique-operation count.
 
-- `requireDateYmd()` date-only validators;
-- Performance-specific `YYYY-MM-DD` validators;
+Additional validation families in scope:
+
+- `requireDateYmd()`;
+- Performance-specific YMD validators;
 - `requireAnalyticsDate()` mixed date/date-time validation;
-- loose `Date.parse()` / `new Date(...)` validation paths;
+- loose `Date.parse()` / `new Date(...)` paths;
 - schema-driven date/date-time fields in `EFFECT_REPAIR_PARAM_SCHEMAS`;
-- month/year period fields;
-- templates/defaults/guidance;
+- month/year period inputs;
+- command templates/defaults/guidance;
 - generated/bundled/dist copies;
 - deterministic tests.
 
-All 271 Seller-read commands are in scope for classification. Commands without input date/time/period fields are classified `NOT_DATE_RELATED` for this defect class; date-bearing commands receive field-by-field contract comparison.
-
 ### Classifications
 
-- `MATCH` — Bridge format/range assumptions match the provider contract.
-- `BUG` — confirmed Bridge/provider contract mismatch.
-- `MISSING_GUARD` — wire format matches but a provider restriction is not enforced locally.
-- `NEEDS_LIVE` — static evidence is insufficient and real-provider confirmation is required.
+- `MATCH` — Bridge contract matches provider contract for the audited dimension.
+- `BUG` — confirmed mismatch.
+- `MISSING_GUARD` — wire format matches but provider constraint is missing locally.
+- `NEEDS_LIVE` — static evidence cannot resolve effective provider behavior.
 - `NOT_DATE_RELATED` — no relevant input date/time/period contract.
 
 ## Verified comparison rows
 
-| Bridge operation | Provider endpoint | Date fields | Bridge behavior | Current contract evidence | Classification |
+| Bridge operation | Provider endpoint | Date fields | Bridge behavior | Current Swagger/OpenAPI evidence | Classification |
 |---|---|---|---|---|---|
-| `finance_balance` | `POST /v1/finance/balance` | `date_from`, `date_to` | requires RFC3339 date-time | fresh generated SDK: `YYYY-MM-DD`, max 30 days; live exact RFC3339 request returned HTTP 400/code 3 | **BUG — LIVE CONFIRMED** |
-| `finance_cash_flow_statement_list` | finance cash-flow statement list | `date.from`, `date.to` | requires RFC3339 date-time | current SDK schema/tests use RFC3339 timestamps | **MATCH — wire format** |
-| `product_queries` | `/v1/analytics/product/queries` | `date_from`, `date_to` | RFC3339; Bridge requires `date_from` | current SDK schema uses RFC3339 examples | **MATCH — wire format**; requiredness unresolved |
-| `product_queries_details` | `/v1/analytics/product/queries/details` | `date_from`, `date_to` | RFC3339; Bridge requires `date_from` | current SDK schema uses RFC3339 examples | **MATCH — wire format**; requiredness unresolved |
-| `seller_rating_history` | rating history endpoint | `date_from`, `date_to` | requires RFC3339 | current SDK test uses RFC3339 date-times | **MATCH — wire format** |
-| `seller_fbs_error_postings` | `POST /v1/rating/index/fbs/posting/list` | `filter.date_from`, `filter.date_to` | requires RFC3339 date-time | current SDK method maps to official `RatingAPI_ListFBSRatingIndexPostingsV1`; current SDK test sends `YYYY-MM-DD` date-only values | **STATIC BUG CANDIDATE — NEEDS OPENAPI + LIVE CONFIRMATION** |
+| `finance_balance` | `POST /v1/finance/balance` | `date_from`, `date_to` | required RFC3339 | fields required; contradictory `format: date-time` vs `YYYY-MM-DD` description/example; max 30 days; live RFC3339 failed | **BUG — LIVE CONFIRMED** |
+| `finance_cash_flow_statement_list` | `/v1/finance/cash-flow-statement/list` | `date.from`, `date.to` | RFC3339 | current contract/SDK uses RFC3339 timestamps | **MATCH — wire format** |
+| `product_queries` | analytics product queries endpoint | `date_from`, `date_to` | RFC3339; Bridge requires `date_from` | current contract-derived SDK uses RFC3339 | **MATCH — wire format**; requiredness audit pending direct OpenAPI row |
+| `product_queries_details` | analytics product queries details endpoint | `date_from`, `date_to` | RFC3339; Bridge requires `date_from` | current contract-derived SDK uses RFC3339 | **MATCH — wire format**; requiredness audit pending direct OpenAPI row |
+| `seller_rating_history` | `POST /v1/rating/history` | `date_from`, `date_to` | required RFC3339 | current contract-derived test uses RFC3339 | **MATCH — wire format** |
+| `seller_fbs_error_postings` | `POST /v1/rating/index/fbs/posting/list` | `filter.date_from`, `filter.date_to` | required RFC3339 | OpenAPI `ListFBSRatingIndexPostingsV1RequestFilter`: both required, both `format: date-time` | **MATCH — wire format + requiredness** |
 
-### Requiredness discrepancies tracked separately
+## Resolved false-positive: `seller_fbs_error_postings`
 
-Some SDK schemas model date fields as optional where the Bridge makes them mandatory. Requiredness is not promoted to `BUG` from SDK typing alone. It remains a contract discrepancy until verified against current Swagger/OpenAPI and, if needed, live behavior.
+An SDK test using date-only values initially made this endpoint look like a second DEFECT-015 candidate. Direct OpenAPI resolution shows otherwise:
 
-## Verified control: RFC3339 helper is not globally wrong
+- request body required;
+- request requires `filter` and `limit`;
+- filter requires `date_from` and `date_to`;
+- both date fields are `format: date-time`;
+- `limit` max 1000.
 
-`finance_cash_flow_statement_list` uses strict RFC3339 `date.from/date.to`, and current SDK schema/tests use RFC3339 timestamps such as `2026-01-01T00:00:00Z`.
+Therefore the Bridge's strict RFC3339 requirement for these fields matches the current OpenAPI. The SDK date-only example is not used as bug proof.
 
-Therefore DEFECT-015 must be repaired endpoint-specifically. A bulk conversion of all date/time fields to `YYYY-MM-DD` would create new defects.
+Classification changed from `STATIC BUG CANDIDATE` to **MATCH**.
 
-## Primary provider-contract verification strategy
+## Important process finding: mechanical OpenAPI format is not sufficient by itself
 
-A public repository `MissiaL/ozon-api` contains `references/ozon-seller-openapi.json`, described as generated from the official Ozon Seller Swagger (`https://docs.ozon.ru/api/seller/swagger.json`) and containing 463 operations.
+`finance_balance` proves that generated Swagger metadata can contain a contradictory `format: date-time` while the description/example and real provider require date-only input.
 
-The monolithic OpenAPI file is too large for the GitHub connector to return intact in this environment. The audit therefore uses the following evidence order:
+Therefore the remaining sweep must compare, for every date-bearing field:
 
-1. current official Ozon endpoint/documentation when directly retrievable;
-2. newest Swagger-derived generated SDK/types tied to the Ozon operation;
-3. the 463-operation OpenAPI snapshot through endpoint-specific/searchable access when possible;
-4. corroborating SDK schemas/tests;
-5. real-provider behavior for certification.
+1. OpenAPI type/format;
+2. OpenAPI description;
+3. request example, when present;
+4. requiredness and range constraints;
+5. fresh generated SDK behavior/examples;
+6. existing Bridge live evidence;
+7. new live proof only where static evidence remains contradictory and the method is safe/needed.
 
-Freshness matters: when generated contract sources conflict, the newer Swagger-derived source supersedes the older wrapper unless direct official evidence says otherwise.
+A simple automated rule `format=date-time => RFC3339` is explicitly **not sufficient**.
 
-Required process for every date-bearing Bridge operation:
+## Provider-contract sources
 
-1. resolve Bridge operation → method/path;
-2. resolve provider request schema;
-3. compare field presence, requiredness, type/format, oneOf/anyOf, enum and range metadata;
-4. compare Bridge normalizer/validator;
-5. compare template/default/guidance;
-6. compare generated/dist copies and deterministic tests;
-7. classify `MATCH / BUG / MISSING_GUARD / NEEDS_LIVE`;
-8. persist the result before moving on.
+Primary static source:
 
-## Initial strict-RFC3339 inventory
+- `MissiaL/ozon-api/references/ozon-seller-openapi.json`
+- 463 operations;
+- generated from official Ozon Seller Swagger (`docs.ozon.ru/api/seller/swagger.json`).
 
-The following validator families are explicitly in scope and are not defects merely because they share the helper:
+The monolithic file is accessible through web line lookup but is too large for the GitHub connector to materialize as one response in this environment. Endpoint-specific `$ref` resolution is therefore performed line-by-line/search-by-search.
 
-- Ozon auto-add action / `auto_add_date`;
-- `product_queries` / `date_from`, `date_to`;
-- `product_queries_details` / `date_from`, `date_to`;
-- FBO/FBP posting `since/to`, cutoff/delivery and last-changed ranges;
-- `finance_cash_flow_statement_list` / `date.from`, `date.to`;
-- finance transaction/list date filters;
-- `seller_rating_history` / `date_from`, `date_to`;
-- `seller_fbs_error_postings` / `filter.date_from`, `filter.date_to`;
-- review/question publication filters;
+Evidence priority:
+
+1. direct current official/OpenAPI contract;
+2. newest Swagger-derived generated SDK/types;
+3. corroborating SDK schemas/tests;
+4. live provider behavior for effective-wire ambiguity/certification.
+
+Freshness wins when contract-derived sources conflict.
+
+## Audit procedure for every date-bearing operation
+
+1. Bridge operation → method/path.
+2. Request schema `$ref` resolution.
+3. Field presence + requiredness.
+4. Type/format + description + example.
+5. Range/order/oneOf/anyOf/enums.
+6. Bridge normalizer/validator.
+7. Template/default/guidance.
+8. Generated/dist copies/tests.
+9. Classify and persist.
+
+## Date-bearing families still being swept
+
+Strict RFC3339 families:
+
+- auto-add action date;
+- product query date ranges;
+- FBO/FBP posting ranges;
+- finance transaction/list ranges;
+- review/question publication ranges;
 - supply-order timeslot ranges;
 - FBP direct-timeslot intervals;
-- FBS carriage departure date and assembly carriage cutoff ranges;
-- certificate `issue_date`;
-- ETGB date range;
-- rFBS return/posting `since/to` filters.
+- FBS carriage/assembly ranges;
+- certificate issue date;
+- ETGB ranges;
+- rFBS return/posting ranges.
 
-## Additional date-bearing families in scope
+Other date families:
 
-- generic `requireDateYmd()` call sites;
-- Performance date validators;
-- `requireAnalyticsDate()` (possibly over-permissive depending on endpoint);
-- loose JavaScript date parsing paths;
-- schema-driven effect-repair operations including `report_returns_create_v2`, `report_postings_create`, placement reports, marked-products sales reports, and month/year financial/report operations.
+- generic YMD validators;
+- Performance YMD validators;
+- mixed analytics date validator;
+- loose JavaScript date parsing;
+- schema-driven report date/date-time fields;
+- month/year finance/report inputs.
 
 ## Commercial-test state
 
 STD-06 is **IN PROGRESS / FROZEN ON LIVE FAIL**.
 
-Do not continue to later STD-06 evidence or STD-07 until DEFECT-015 and same-class dependency findings that affect this path are closed and the failed finance step is rerun on the repaired artifact.
+Do not continue later STD-06 evidence or STD-07 until DEFECT-015 and same-class dependency findings affecting this path are closed and the failed finance step is rerun on the repaired artifact.
