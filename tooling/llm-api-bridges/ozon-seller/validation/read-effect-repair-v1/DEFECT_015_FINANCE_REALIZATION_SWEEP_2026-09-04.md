@@ -80,9 +80,30 @@ Verdict:
 
 The provider schema itself does not publish numeric min/max for day/month, so do not fabricate independent day/month limits beyond enforcing a representable calendar date and the documented 32-day window.
 
+## 4. `report_realization_posting_create` — confirmed missing August-2023 business boundary
+
+Bridge:
+
+- endpoint: `POST /v1/report/realization/posting/create`;
+- schema-driven normalizer via `EFFECT_REPAIR_PARAM_SCHEMAS`;
+- local schema already enforces `month` minimum 1 / maximum 12 and `year` minimum 2023;
+- registry template `{month:8, year:2026}` is within the provider-supported period.
+
+Provider contract:
+
+- method description explicitly says the report is available from the present back through **August 2023 inclusive**;
+- this is the report-generation fallback recommended by `/v1/finance/realization/posting` when a direct report is too large.
+
+Verdict:
+
+- **MATCH — primitive month range [1,12] and year>=2023**;
+- **MISSING_GUARD — earliest effective report period 2023-08**.
+
+The shared schema would allow `{month:1, year:2023}` through `{month:7, year:2023}`, even though all are outside the documented availability window. This is another example where typed schema constraints are necessary but insufficient without endpoint prose.
+
 ## Shared-root-cause implication
 
-`normalizeFinanceRealizationMonthParams` was treated as sufficient because it mirrored the mechanically typed OpenAPI request shape (`int32`). The provider business constraints live partly in endpoint prose and error descriptions. This is the same process class exposed by `finance_balance`:
+`normalizeFinanceRealizationMonthParams` and the effect-repair schema were treated as sufficient because they mirrored mechanically typed OpenAPI request shapes. Provider business constraints live partly in endpoint prose and error descriptions. This is the same process class exposed by `finance_balance`:
 
 > schema primitive/type validation alone is not enough to certify an operation contract.
 
@@ -119,6 +140,13 @@ Required future repair closure must inspect:
 - impossible calendar date → local reject;
 - date older than 32 calendar days → local reject;
 - exact 32-day boundary → deterministic boundary test based on an injected/frozen reference date, not wall-clock flakiness.
+
+### `report_realization_posting_create`
+
+- `2023-08` → schema/business pass;
+- `2023-07` → local reject / zero provider requests;
+- month `0/13` → retain existing local rejection;
+- current supported month → pass.
 
 ## Commercial-test status
 
