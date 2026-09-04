@@ -1,6 +1,6 @@
 # P3.2 local acceptance evidence — 2026-09-04
 
-Status: **LOCAL ACCEPTED — P3.2 ACTIVE**
+Status: **ACCEPTED — P3.2 DONE**
 
 This is local acceptance for `PRODUCT-CONTROL-PLANE-P3.2-COMPATIBILITY-CONFIG-SIGNING-PERSISTENCE-LOCAL`, attempt 2. No commit, push, host runtime change, product deployment, or P3.3 work was performed.
 
@@ -67,3 +67,11 @@ This is local acceptance for `PRODUCT-CONTROL-PLANE-P3.2-COMPATIBILITY-CONFIG-SI
 - Host Node, pnpm, PostgreSQL, MySQL, protected services, and deployment state were unchanged. All containers, browser cache, validation copy, temporary pnpm material, and test outputs are disposable acceptance artifacts and are removed after acceptance.
 
 Next: return to ChatGPT for P3.2 final remote acceptance. Do not begin P3.3.
+
+## Remote acceptance
+
+- Implementation SHA: `d68b522aca38215ac5b45f1d457bbae5038f3624`.
+- Server CI: run `33845922701`, <https://github.com/MaksimUnimax/blood_sand/actions/runs/33845922701>, success.
+- Remote compare review found only the expected P3.2 ADR, catalog/domain, DB schema/readers, migration metadata, wiring, tests, roadmap, and evidence files.
+- The committed migration state is `0000` through `0006`, with `0006_p3_2_compatibility_config_signing.sql` latest; it has nine tables and nine dual-event immutability triggers (18 protections).
+- Final OpenAPI remains 14 routes, SHA-256 `3fd8ad9a61c8146c314d86912a47f1a154cf1eea6d73c3ad9dabfde52f2eeef0`, without `/v1/bootstrap`.
