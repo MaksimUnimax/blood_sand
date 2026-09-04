@@ -27,14 +27,16 @@ Current provider taxonomy is exactly:
 2. `performance_api`
 3. `report_file`
 
-The repair removes binary/catch-all assumptions from provider-sensitive contract paths:
+The repair removes binary/catch-all assumptions from all provider-sensitive paths found in the packaged runtime:
 
 - planning metadata;
 - Seller request-builder rejection;
 - Performance request-builder rejection;
-- binary response-style validation.
+- binary response-style validation;
+- direct entitlement classification;
+- provider execution dispatch.
 
-Seller capability probing and Seller quota bypass remain intentionally shared for all non-Seller providers because neither Performance nor report-file execution uses Seller subscription probing or Seller analytics quota state. Provider execution dispatch already distinguishes all three providers explicitly and is unchanged.
+Seller capability probing and Seller quota bypass remain intentionally shared for all non-Seller providers because neither Performance nor report-file execution uses Seller subscription probing or Seller analytics quota state. Unknown provider categories now fail honest/closed instead of falling into Seller execution.
 
 ## Acceptance
 
@@ -45,7 +47,9 @@ Pre-handoff requires:
 - Performance reason remains unchanged;
 - Seller planning remains unchanged;
 - wrong builder errors identify the actual provider;
-- unknown/future provider fails closed;
+- direct entitlement classification explicitly recognizes both non-Seller providers;
+- provider execution dispatch explicitly recognizes all three providers;
+- unknown/future provider fails closed before any network request;
 - report-file workflow gate checks planning metadata as part of the full output contract;
 - full existing repair/package gate remains green on the final artifact.
 

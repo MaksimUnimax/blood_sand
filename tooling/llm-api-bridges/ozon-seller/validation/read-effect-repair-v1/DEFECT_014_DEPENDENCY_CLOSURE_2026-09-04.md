@@ -20,30 +20,33 @@ The DEFECT-014 audit covered every provider-sensitive path found in the packaged
 4. Seller request-builder dispatch guard;
 5. Performance request-builder dispatch guard;
 6. binary response-style provider classification;
-7. provider execution dispatch in `ozon_provider.js`;
-8. Seller quota bypass for non-Seller providers in `service_worker.js`;
-9. credential selection / isolation;
-10. report-file provenance and personal-data policy;
-11. report-file trusted-host transport and parsing;
-12. user-visible planning/execution metadata;
-13. report-file workflow tests and the package effect-repair gate.
+7. direct entitlement classification in `ozon_entitlements.js`;
+8. provider execution dispatch in `ozon_provider.js`;
+9. Seller quota bypass for non-Seller providers in `service_worker.js`;
+10. credential selection / isolation;
+11. report-file provenance and personal-data policy;
+12. report-file trusted-host transport and parsing;
+13. user-visible planning/execution metadata;
+14. report-file workflow tests and the package effect-repair gate.
 
 ## Repair boundary
 
-Executable change is limited to `dist-step7-candidate/shared/ozon_contract.js`:
+Executable changes are limited to `dist-step7-candidate/shared/ozon_contract.js`, `shared/ozon_entitlements.js`, and `shared/ozon_provider.js`:
 
 - `performance_api` keeps the Performance-specific entitlement reason;
 - `report_file` receives a report-file-specific reason;
 - `seller_api` keeps Seller entitlement evaluation;
-- unknown provider categories fail closed;
+- direct entitlement lookup explicitly treats both `performance_api` and `report_file` as non-Seller;
+- provider execution dispatch explicitly handles all three categories;
+- unknown provider categories fail closed before network execution;
 - wrong request-builder errors identify the actual provider;
 - binary response-style validation no longer treats every non-Seller provider as Performance.
 
-`ozon_provider.js`, `service_worker.js`, credentials, transport, storage, manifest, report parser, personal-data policy, and Ozon request schemas are not changed by DEFECT-014.
+`service_worker.js`, credentials, transport, storage, manifest, report parser, personal-data policy, and Ozon request schemas are not changed by DEFECT-014.
 
 ## Permanent regression coverage
 
-`run_provider_taxonomy_gate.mjs` proves all three provider categories explicitly, checks report-file/Performance/Seller planning independently, checks builder isolation, and rejects an unknown future provider.
+`run_provider_taxonomy_gate.mjs` proves all three provider categories explicitly, checks direct entitlement lookup and report-file/Performance/Seller planning independently, checks builder isolation, proves explicit provider execution dispatch, proves unknown provider zero-network fail-closed behavior, and records the intentional non-Seller Seller-quota bypass.
 
 `run_report_file_workflow_gate.mjs` now checks report-file planning metadata in addition to transport, host permissions, redaction, credential isolation and parsing.
 

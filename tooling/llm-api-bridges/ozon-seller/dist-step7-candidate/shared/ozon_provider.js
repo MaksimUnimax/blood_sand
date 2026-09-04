@@ -377,11 +377,16 @@
       }
       const preflight = contract.preflightExecution(command);
       const provider = String(preflight.meta.provider || "seller_api");
-      const execution = provider === "report_file"
-        ? await executeReportFileCommand(command)
-        : (provider === "performance_api"
-          ? await executePerformanceCommand(command, rawPerformanceCredentials)
-          : await executeSellerCommand(command, rawCredentials));
+      let execution;
+      if (provider === "report_file") execution = await executeReportFileCommand(command);
+      else if (provider === "performance_api") execution = await executePerformanceCommand(command, rawPerformanceCredentials);
+      else if (provider === "seller_api") execution = await executeSellerCommand(command, rawCredentials);
+      else {
+        const error = new Error(`Неизвестный provider ${provider}; выполнение запрещено.`);
+        error.code = "INVALID_PROVIDER_DISPATCH";
+        error.external_request_executed = false;
+        throw error;
+      }
       const { request, response } = execution;
       let effectiveQuota = quota;
       if (typeof onProviderResponse === "function") {

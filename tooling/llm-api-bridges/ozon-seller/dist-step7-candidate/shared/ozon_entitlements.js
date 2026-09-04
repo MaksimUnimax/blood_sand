@@ -580,7 +580,10 @@
 
   function requirementFor(command, snapshot = null, atMs = Date.now()) {
     const registryMeta = globalThis.OzonOperationRegistry?.operation?.(command?.operation) || null;
-    if (!registryMeta || registryMeta.provider === "performance_api") return deepFreeze({ required: false, known: true, allowed_subscription_types: [], reasons: [], rule_source: "not_seller_or_missing" });
+    if (!registryMeta) return deepFreeze({ required: false, known: true, allowed_subscription_types: [], reasons: [], rule_source: "not_seller_or_missing" });
+    const provider = String(registryMeta.provider || "seller_api");
+    if (provider === "performance_api" || provider === "report_file") return deepFreeze({ required: false, known: true, allowed_subscription_types: [], reasons: [], rule_source: "not_seller_or_missing" });
+    if (provider !== "seller_api") return deepFreeze({ required: false, known: false, allowed_subscription_types: [], reasons: ["unknown_provider"], rule_source: "unknown_provider" });
     const active = normalizeSnapshot(snapshot);
     const key = String(registryMeta.entitlement_key || `${registryMeta.method} ${registryMeta.path}`);
     if (LIVE_PROVIDER_ACCOUNT_PERMISSION_UNKNOWN.has(key)) {
