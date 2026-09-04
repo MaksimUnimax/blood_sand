@@ -83,9 +83,10 @@ jobs:
           const assert=require('node:assert/strict');
           const fs=require('node:fs');
           const p='tooling/llm-api-bridges/ozon-seller';
-          const bundle=fs.readFileSync(`${p}/dist/ozon-seller-mcp-nodebundle.js`,'utf8');
+          const lf=(s)=>s.replace(/\r\n/g,'\n');
+          const bundle=lf(fs.readFileSync(`${p}/dist/ozon-seller-mcp-nodebundle.js`,'utf8'));
           for (const rel of ['shared/ozon_operation_registry.js','shared/ozon_contract.js']) {
-            const src=fs.readFileSync(`${p}/dist-step7-candidate/${rel}`,'utf8').replace(/\n$/,'');
+            const src=lf(fs.readFileSync(`${p}/dist-step7-candidate/${rel}`,'utf8')).replace(/\n$/,'');
             const begin=`/* BEGIN ${rel} */\n`;
             const end=`\n\n/* END ${rel} */`;
             const start=bundle.indexOf(begin);
@@ -122,7 +123,7 @@ jobs:
           const C=globalThis.OzonContract; const R=globalThis.OzonOperationRegistry;
           assert.doesNotThrow(()=>C.normalizeCommand({operation:'finance_balance',params:{date_from:'2026-08-28T00:00:00Z',date_to:'2026-09-03T23:59:59Z'}}));
           assert.throws(()=>C.normalizeCommand({operation:'finance_balance',params:{date_from:'2026-08-28',date_to:'2026-09-03'}}));
-          assert.doesNotThrow(()=>C.normalizeCommand({operation:'report_placement_by_products_create',params:{date_from:'2026-02-31',date_to:'2026-03-01'}}));
+          assert.doesNotThrow(()=>C.normalizeCommand({operation:'carriage_delivery_list_v2',params:{limit:1,filter:{departure_date:'2026-02-31'}}}));
           assert.notEqual(R.OPERATIONS.ozon_auto_add_products.template,null);
           assert.equal(R.OPERATIONS.fbs_stock_by_warehouse_v1.execution_enabled,true);
           console.log('DEFECT_015_OLD_BASELINE_BAD_BEHAVIOR_REPRO_PASS');
