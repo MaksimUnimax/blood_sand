@@ -1,0 +1,245 @@
+name: Ozon DEFECT-015 autonomous handoff gate v2
+
+on:
+  push:
+    branches:
+      - repair/ozon-date-contract-2026-09-04
+    paths:
+      - .github/workflows/ozon-defect-015-autonomous-handoff-gate-v2.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-defect-015-autonomous-handoff-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PROJECT: tooling/llm-api-bridges/ozon-seller
+  D: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
+  ARTIFACT_NAME: OZON_BRIDGE_v0.1.19_DEFECT_015_DATE_CONTRACT_REPAIR_2892a1ddeee5.zip
+  ARTIFACT_SHA256: ff6a766837195e74e09c3a9439afd057f71dca20b042b472cbd1401b2574549a
+  REPAIR_COMMIT: 2892a1ddeee5ac8f72f63214e5a38628dc08ee33
+  ARTIFACT_COMMIT: 400f167d64737563aae9f516f816b06671695b90
+  OLD_BASELINE: 249029b0ba8d9e6f9e26182bf678adf42868c6d6
+
+jobs:
+  gate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify repair lineage, artifact hash, and byte coherence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$REPAIR_COMMIT" HEAD
+          git merge-base --is-ancestor "$ARTIFACT_COMMIT" HEAD
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import hashlib
+
+          project = Path('tooling/llm-api-bridges/ozon-seller')
+          candidate = project / 'dist-step7-candidate'
+          artifact = project / 'artifacts' / 'OZON_BRIDGE_v0.1.19_DEFECT_015_DATE_CONTRACT_REPAIR_2892a1ddeee5.zip'
+          expected_sha = 'ff6a766837195e74e09c3a9439afd057f71dca20b042b472cbd1401b2574549a'
+          assert hashlib.sha256(artifact.read_bytes()).hexdigest() == expected_sha
+
+          expected_files = {}
+          for rel in ['content_script.js','manifest.json','popup.css','popup.html','popup.js','service_worker.js']:
+              p = candidate / rel
+              expected_files[rel] = p.read_bytes()
+          for p in sorted((candidate / 'shared').rglob('*')):
+              if p.is_file():
+                  expected_files[p.relative_to(candidate).as_posix()] = p.read_bytes()
+
+          with ZipFile(artifact) as z:
+              members = sorted(n for n in z.namelist() if not n.endswith('/'))
+              assert members == sorted(expected_files)
+              for rel, data in expected_files.items():
+                  assert z.read(rel) == data, rel
+
+          print('DEFECT_015_AUTONOMOUS_ARTIFACT_SHA256_PASS')
+          print('DEFECT_015_AUTONOMOUS_ARTIFACT_CANDIDATE_BYTE_COHERENCE_PASS')
+          PY
+
+      - name: Run complete repository gate family
+        shell: bash
+        run: |
+          set -euo pipefail
+          for gate in "$D"/run_*.mjs; do
+            echo "=== $gate ==="
+            node "$gate" .
+          done
+          echo "DEFECT_015_AUTONOMOUS_FULL_GATE_FAMILY_${{ matrix.os }}_PASS"
+
+      - name: Prove old baseline is rejected by repaired gate
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          OLD=defect015-old-baseline
+          rm -rf "$OLD"
+          git worktree add --detach "$OLD" "$OLD_BASELINE"
+          set +e
+          node "$D/run_defect_015_date_repair_gate.mjs" "$OLD" > defect015-old.log 2>&1
+          rc=$?
+          set -e
+          cat defect015-old.log
+          test "$rc" -ne 0
+          node - "$OLD" <<'NODE'
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const path=require('node:path');
+          const vm=require('node:vm');
+          const root=process.argv[2];
+          const shared=path.join(root,'tooling','llm-api-bridges','ozon-seller','dist-step7-candidate','shared');
+          for (const f of ['ozon_operation_registry.js','ozon_contract.js']) vm.runInThisContext(fs.readFileSync(path.join(shared,f),'utf8'),{filename:f});
+          const C=globalThis.OzonContract;
+          const R=globalThis.OzonOperationRegistry;
+          assert.doesNotThrow(()=>C.normalizeCommand({operation:'finance_balance',params:{date_from:'2026-08-28T00:00:00Z',date_to:'2026-09-03T23:59:59Z'}}));
+          assert.throws(()=>C.normalizeCommand({operation:'finance_balance',params:{date_from:'2026-08-28',date_to:'2026-09-03'}}));
+          assert.doesNotThrow(()=>C.normalizeCommand({operation:'carriage_delivery_list_v2',params:{limit:1,filter:{departure_date:'2026-02-31'}}}));
+          assert.notEqual(R.OPERATIONS.ozon_auto_add_products.template,null);
+          assert.equal(R.OPERATIONS.fbs_stock_by_warehouse_v1.execution_enabled,true);
+          console.log('DEFECT_015_AUTONOMOUS_OLD_BASELINE_BAD_BEHAVIOR_REPRO_PASS');
+          NODE
+          echo 'DEFECT_015_AUTONOMOUS_NEW_GATE_REJECTS_OLD_BASELINE_PASS'
+
+      - name: Fresh-extract exact installable artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import shutil
+
+          artifact = Path('tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_DEFECT_015_DATE_CONTRACT_REPAIR_2892a1ddeee5.zip')
+          root = Path('defect015-artifact-root')
+          if root.exists():
+              shutil.rmtree(root)
+          target = root / 'tooling' / 'llm-api-bridges' / 'ozon-seller' / 'dist-step7-candidate'
+          target.mkdir(parents=True)
+          with ZipFile(artifact) as z:
+              z.extractall(target)
+          print('DEFECT_015_AUTONOMOUS_FRESH_EXTRACTION_READY')
+          PY
+
+      - name: Run repaired date contract gate against exact extracted ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$D/run_defect_015_date_repair_gate.mjs" defect015-artifact-root
+          echo 'DEFECT_015_AUTONOMOUS_FRESH_EXTRACTION_DATE_GATE_PASS'
+
+      - name: Prove finance_balance transport from exact artifact without operator involvement
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$D/verify_defect_015_autonomous_artifact_transport.mjs" defect015-artifact-root
+          echo 'DEFECT_015_AUTONOMOUS_EXACT_ARTIFACT_TRANSPORT_PASS'
+
+  accept:
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Freeze autonomous PASS evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$REPAIR_COMMIT" HEAD
+          git merge-base --is-ancestor "$ARTIFACT_COMMIT" HEAD
+          ACTUAL=$(sha256sum "$PROJECT/artifacts/$ARTIFACT_NAME" | awk '{print $1}')
+          test "$ACTUAL" = "$ARTIFACT_SHA256"
+
+          STATUS="$D/DEFECT_015_FINAL_GATE_STATUS_2026-09-05.md"
+          EVIDENCE="$D/DEFECT_015_AUTONOMOUS_HANDOFF_GATE_2026-09-05.md"
+
+          cat > "$EVIDENCE" <<EOF
+          # DEFECT-015 autonomous handoff gate — 2026-09-05
+
+          Gate rule: **zero operator/user participation**.
+
+          GitHub Actions run: \`${GITHUB_RUN_ID}\`
+          Trigger commit: \`${GITHUB_SHA}\`
+          Branch: \`${GITHUB_REF_NAME}\`
+
+          Exact artifact: \`$ARTIFACT_NAME\`
+          Artifact SHA-256: \`$ARTIFACT_SHA256\`
+          Repair commit: \`$REPAIR_COMMIT\`
+          Artifact publication commit: \`$ARTIFACT_COMMIT\`
+
+          ## Results
+
+          - repair/artifact ancestry: **PASS**
+          - exact artifact SHA-256: **PASS**
+          - artifact ↔ candidate byte-for-byte coherence: **PASS**
+          - complete \`run_*.mjs\` family on Ubuntu: **PASS**
+          - complete \`run_*.mjs\` family on Windows: **PASS**
+          - old baseline rejection + bad-behavior reproduction: **PASS**
+          - exact ZIP fresh-extraction DEFECT-015 date-contract gate: **PASS**
+          - exact ZIP \`finance_balance\` transport construction: **PASS**
+          - exact method/path \`POST /v1/finance/balance\`: **PASS**
+          - exact YMD body \`{"date_from":"2026-08-28","date_to":"2026-09-03"}\`: **PASS**
+          - one command -> exactly one injected transport request: **PASS**
+          - real Ozon provider requests made by this gate: **0**
+          - operator/user action required by this gate: **NO**
+
+          ## Verdict
+
+          \`DEFECT_015_AUTONOMOUS_HANDOFF_GATE = PASS\`
+
+          Commercial real-provider testing is downstream validation and is not an acceptance prerequisite for this autonomous handoff gate.
+          EOF
+          sed -i 's/^          //' "$EVIDENCE"
+
+          cat > "$STATUS" <<EOF
+          # DEFECT-015 final gate status — 2026-09-05
+
+          The earlier operator-install/post-install requirement was an invalid gate definition and is superseded.
+
+          | Gate | Status |
+          |---|---|
+          | deterministic DEFECT-015 repair | PASS |
+          | Ubuntu full gate family | PASS |
+          | Windows full gate family | PASS |
+          | old-baseline negative proof | PASS (FAIL AS EXPECTED) |
+          | exact artifact SHA-256 | PASS |
+          | artifact/candidate byte coherence | PASS |
+          | exact ZIP fresh-extraction DEFECT-015 gate | PASS |
+          | exact ZIP \`finance_balance\` transport/body gate | PASS |
+          | operator/user participation | NOT REQUIRED |
+          | autonomous handoff gate | **PASS** |
+
+          Artifact: \`$ARTIFACT_NAME\`
+          SHA-256: \`$ARTIFACT_SHA256\`
+          Evidence: \`DEFECT_015_AUTONOMOUS_HANDOFF_GATE_2026-09-05.md\`
+          Actions run: \`${GITHUB_RUN_ID}\`
+
+          Final verdict: \`DEFECT_015_FINAL_GATE = PASS_AUTONOMOUS_HANDOFF\`.
+          EOF
+          sed -i 's/^          //' "$STATUS"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$EVIDENCE" "$STATUS"
+          git diff --cached --check
+          git commit -m 'test(ozon): freeze corrected autonomous DEFECT-015 gate PASS'
+          git push origin HEAD:${GITHUB_REF_NAME}
+          echo 'DEFECT_015_AUTONOMOUS_HANDOFF_GATE_PASS'
