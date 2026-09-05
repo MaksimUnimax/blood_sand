@@ -45,6 +45,9 @@ export async function resetE2eDatabase(): Promise<void> {
       compatibility_policy_revisions, extension_release_browsers,
       extension_release_contracts, extension_releases
       RESTART IDENTITY CASCADE`);
+    await database.query(
+      "INSERT INTO signing_key_events(key_id,event_type,occurred_at) VALUES ('e2e-config-k1','REGISTERED','2026-09-04T00:00:00.000Z'),('e2e-config-k1','ACTIVATED','2026-09-04T00:00:00.001Z'),('e2e-config-k2','REGISTERED','2026-09-04T00:00:00.002Z'),('e2e-config-k2','ACTIVATED','2026-09-04T00:00:00.003Z')",
+    );
   } finally {
     await database.close();
   }

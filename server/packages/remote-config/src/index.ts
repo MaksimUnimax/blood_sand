@@ -1,4 +1,10 @@
-import { createHash, sign, verify, type KeyObject } from "node:crypto";
+import {
+  createHash,
+  createPublicKey,
+  sign,
+  verify,
+  type KeyObject,
+} from "node:crypto";
 import {
   compareSemVerV1,
   StableMachineIdentifierV1Schema,
@@ -65,6 +71,98 @@ export type ConfigReleaseCompatibilityPolicy = z.infer<
   typeof ConfigReleaseCompatibilityPolicySchema
 >;
 
+export type SigningKeyLifecycleState =
+  | "UNREGISTERED"
+  | "REGISTERED"
+  | "ACTIVE"
+  | "RETIRED"
+  | "REVOKED";
+export type SigningKeyLifecycleResult =
+  | { state: SigningKeyLifecycleState }
+  | { state: "INVALID"; error: "INVALID_LIFECYCLE" };
+
+/** Strict append-only state-machine evaluation. Event order is occurred_at,id. */
+export function resolveSigningKeyLifecycle(
+  events: readonly SigningKeyEvent[],
+): SigningKeyLifecycleResult {
+  let state: SigningKeyLifecycleState = "UNREGISTERED";
+  let previous: Date | undefined;
+  let keyId: string | undefined;
+  for (const event of events) {
+    if (keyId && event.keyId !== keyId)
+      return { state: "INVALID", error: "INVALID_LIFECYCLE" };
+    keyId ??= event.keyId;
+    if (previous && event.occurredAt.getTime() <= previous.getTime())
+      return { state: "INVALID", error: "INVALID_LIFECYCLE" };
+    previous = event.occurredAt;
+    const valid =
+      (state === "UNREGISTERED" && event.eventType === "REGISTERED") ||
+      (state === "REGISTERED" && event.eventType === "ACTIVATED") ||
+      (state === "ACTIVE" && event.eventType === "RETIRED") ||
+      ((state === "REGISTERED" || state === "ACTIVE" || state === "RETIRED") &&
+        event.eventType === "REVOKED");
+    if (!valid) return { state: "INVALID", error: "INVALID_LIFECYCLE" };
+    state =
+      event.eventType === "ACTIVATED"
+        ? "ACTIVE"
+        : event.eventType === "RETIRED"
+          ? "RETIRED"
+          : event.eventType === "REVOKED"
+            ? "REVOKED"
+            : "REGISTERED";
+  }
+  return { state };
+}
+
+export const RegisterSigningKeyCommandSchema = z
+  .object({
+    keyId: StableMachineIdentifierV1Schema,
+    publicKeySpkiDer: z.instanceof(Buffer).refine((value) => value.length > 0),
+  })
+  .strict();
+export const SigningKeyReasonCommandSchema = z
+  .object({
+    keyId: StableMachineIdentifierV1Schema,
+    reasonCode: StableMachineIdentifierV1Schema,
+  })
+  .strict();
+export type RegisterSigningKeyCommand = z.infer<
+  typeof RegisterSigningKeyCommandSchema
+>;
+export type SigningKeyReasonCommand = z.infer<
+  typeof SigningKeyReasonCommandSchema
+>;
+
+export function validateSigningKeyRegistration(
+  command: RegisterSigningKeyCommand,
+): {
+  keyId: string;
+  algorithm: "Ed25519";
+  publicKeySpkiDer: Buffer;
+  publicKeySha256: string;
+} {
+  const value = RegisterSigningKeyCommandSchema.parse(command);
+  try {
+    const publicKey = createPublicKey({
+      key: value.publicKeySpkiDer,
+      format: "der",
+      type: "spki",
+    });
+    if (publicKey.asymmetricKeyType !== "ed25519")
+      throw new Error("not Ed25519");
+    return {
+      keyId: value.keyId,
+      algorithm: "Ed25519",
+      publicKeySpkiDer: Buffer.from(value.publicKeySpkiDer),
+      publicKeySha256: createHash("sha256")
+        .update(value.publicKeySpkiDer)
+        .digest("hex"),
+    };
+  } catch {
+    throw new Error("P3_SIGNING_KEY_INVALID");
+  }
+}
+
 export const ConfigReleaseManifestV1Schema = z
   .object({
     contractVersion: z.literal("control_plane_v1"),
@@ -109,6 +207,25 @@ export function configReleaseHashes(manifest: ConfigReleaseManifestV1): {
 
 export type RolloutSubjectKind = "ACCOUNT" | "DEVICE";
 export type RolloutState = "ACTIVE" | "PAUSED" | "RETIRED";
+export type ConfigRolloutSelectionMode =
+  | "COHORT"
+  | "BASELINE_ONLY"
+  | "ORDINARY_LATEST";
+
+/** The single source of truth for bootstrap.config rollout selection. */
+export function configRolloutSelectionModeV1(
+  state: RolloutState,
+): ConfigRolloutSelectionMode {
+  switch (state) {
+    case "ACTIVE":
+      return "COHORT";
+    case "PAUSED":
+      return "BASELINE_ONLY";
+    case "RETIRED":
+      return "ORDINARY_LATEST";
+  }
+}
+
 const FeatureKeySchema = StableMachineIdentifierV1Schema;
 export const CreateFeatureDefinitionCommandSchema = z
   .object({
@@ -187,6 +304,22 @@ export type PublishConfigReleaseCommand = z.infer<
   typeof PublishConfigReleaseCommandSchema
 >;
 export interface P3PublicationPort {
+  registerSigningKey(
+    command: RegisterSigningKeyCommand,
+    context: P3MutationContext,
+  ): Promise<SigningKeyMetadata>;
+  activateSigningKey(
+    keyId: string,
+    context: P3MutationContext,
+  ): Promise<SigningKeyEvent>;
+  retireSigningKey(
+    command: SigningKeyReasonCommand,
+    context: P3MutationContext,
+  ): Promise<SigningKeyEvent>;
+  revokeSigningKey(
+    command: SigningKeyReasonCommand,
+    context: P3MutationContext,
+  ): Promise<SigningKeyEvent>;
   createFeatureDefinition(
     command: CreateFeatureDefinitionCommand,
     context: P3MutationContext,
@@ -370,6 +503,51 @@ export interface P3BootstrapPolicyCatalog
     configVersion: number,
   ): Promise<CompatibilityPolicyRevision[]>;
 }
+
+/** The exact P3.3 bootstrap.config selectable set, shared by retirement safety. */
+export async function listP3SelectableConfigReleases(
+  catalog: Pick<
+    P3BootstrapPolicyCatalog,
+    | "findRolloutByKey"
+    | "findLatestRolloutRevision"
+    | "findConfigRelease"
+    | "findLatestConfigRelease"
+  >,
+): Promise<ConfigRelease[]> {
+  const rollout = await catalog.findRolloutByKey("bootstrap.config");
+  if (!rollout) {
+    const ordinary = await catalog.findLatestConfigRelease("control_plane_v1");
+    return ordinary ? [ordinary] : [];
+  }
+  if (
+    rollout.targetKind !== "CONFIG_RELEASE" ||
+    rollout.rolloutKey !== "bootstrap.config" ||
+    rollout.cohortSeed.length !== 32
+  )
+    throw new Error("P3_ROLLOUT_SOURCE_INVALID");
+  const revision = await catalog.findLatestRolloutRevision(rollout.id);
+  if (
+    !revision ||
+    revision.targetKind !== "CONFIG_RELEASE" ||
+    revision.rolloutId !== rollout.id
+  )
+    throw new Error("P3_ROLLOUT_SOURCE_INVALID");
+  const selectionMode = configRolloutSelectionModeV1(revision.state);
+  if (selectionMode === "ORDINARY_LATEST") {
+    const ordinary = await catalog.findLatestConfigRelease("control_plane_v1");
+    return ordinary ? [ordinary] : [];
+  }
+  const [baseline, candidate] = await Promise.all([
+    revision.baselineConfigVersion === null
+      ? undefined
+      : catalog.findConfigRelease(revision.baselineConfigVersion),
+    revision.candidateConfigVersion === null
+      ? undefined
+      : catalog.findConfigRelease(revision.candidateConfigVersion),
+  ]);
+  if (!baseline || !candidate) throw new Error("P3_ROLLOUT_SOURCE_INVALID");
+  return selectionMode === "BASELINE_ONLY" ? [baseline] : [baseline, candidate];
+}
 export type ResolveP3BootstrapPolicyInput = {
   contractVersion: "control_plane_v1";
   extensionVersion: string;
@@ -423,7 +601,8 @@ export async function resolveP3BootstrapPolicy(
         revision.rolloutId !== configRollout.id
       )
         return { failure: "ROLLOUT_SOURCE_INVALID" };
-      if (revision.state === "RETIRED")
+      const selectionMode = configRolloutSelectionModeV1(revision.state);
+      if (selectionMode === "ORDINARY_LATEST")
         selected = await catalog.findLatestConfigRelease("control_plane_v1");
       else {
         const subjectId =
@@ -439,9 +618,9 @@ export async function resolveP3BootstrapPolicy(
           subjectId,
         });
         selected = await catalog.findConfigRelease(
-          candidate
-            ? revision.candidateConfigVersion!
-            : revision.baselineConfigVersion!,
+          selectionMode === "BASELINE_ONLY" || !candidate
+            ? revision.baselineConfigVersion!
+            : revision.candidateConfigVersion!,
         );
       }
     }

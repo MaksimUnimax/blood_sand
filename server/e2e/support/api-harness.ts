@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   createAuthRepository,
   createDatabaseRuntime,
@@ -25,7 +26,8 @@ import { createInfrastructureReadiness } from "../../apps/api/src/infrastructure
 import { BootstrapService } from "../../packages/bootstrap/src/index.js";
 import { resolveP3BootstrapPolicy } from "../../packages/remote-config/src/index.js";
 import {
-  bindConfigSigningMaterial,
+  bindConfigSigningRing,
+  createConfigSigningService,
   loadConfigSigningMaterial,
 } from "../../apps/api/src/bootstrap-signing.js";
 import { assertE2eDatabase } from "./database.js";
@@ -68,20 +70,18 @@ async function main(): Promise<void> {
     // The guarded disposable database may contain metadata from a prior
     // Playwright process. Reset it before binding this run's new identity.
     await database.query("TRUNCATE signing_keys CASCADE");
-    await database.query(
-      "INSERT INTO signing_keys(key_id,algorithm,public_key_spki_der,public_key_sha256) VALUES($1,'Ed25519',$2,$3)",
-      [
-        bootstrapSigningMaterial.keyId,
-        bootstrapSigningMaterial.publicKeySpkiDer,
-        bootstrapSigningMaterial.publicKeySha256,
-      ],
+    for (const entry of bootstrapSigningMaterial.keys.values())
+      await database.query(
+        "INSERT INTO signing_keys(key_id,algorithm,public_key_spki_der,public_key_sha256) VALUES($1,'Ed25519',$2,$3)",
+        [
+          entry.keyId,
+          entry.publicKeySpkiDer,
+          createHash("sha256").update(entry.publicKeySpkiDer).digest("hex"),
+        ],
+      );
+    await bindConfigSigningRing(bootstrapSigningMaterial, (keyId) =>
+      p3Catalog.findSigningKey(keyId),
     );
-    const metadata = await p3Catalog.findSigningKey(
-      bootstrapSigningMaterial.keyId,
-    );
-    if (!metadata)
-      throw new Error("E2E bootstrap public signing metadata is absent");
-    bindConfigSigningMaterial(bootstrapSigningMaterial, metadata);
     app = createApiApp({
       config,
       isInfrastructureReady: createInfrastructureReadiness(database),
@@ -104,7 +104,7 @@ async function main(): Promise<void> {
       ),
       bootstrapService: new BootstrapService(
         { resolve: (input) => resolveP3BootstrapPolicy(input, p3Catalog) },
-        bootstrapSigningMaterial,
+        createConfigSigningService(bootstrapSigningMaterial, p3Catalog),
       ),
     });
     await app.listen({ host: "127.0.0.1", port: 3100 });

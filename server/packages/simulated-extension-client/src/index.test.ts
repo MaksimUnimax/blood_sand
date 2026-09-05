@@ -1,7 +1,174 @@
+import { generateKeyPairSync } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { signBootstrapSnapshot } from "@product/remote-config";
+import type { BootstrapSnapshotPayloadV1 } from "@product/contracts";
 import { SimulatedExtensionClient } from "./index.js";
 
 describe("SimulatedExtensionClient", () => {
+  const payload: BootstrapSnapshotPayloadV1 = {
+    snapshotVersion: "bootstrap_snapshot_v1",
+    contractVersion: "control_plane_v1",
+    configVersion: 1,
+    issuedAt: "2026-01-01T00:00:00.000Z",
+    expiresAt: "2026-01-01T00:05:00.000Z",
+    offlineGraceUntil: "2026-01-01T00:10:00.000Z",
+    serverTime: "2026-01-01T00:00:00.000Z",
+    account: { status: "ACTIVE" },
+    subscription: { state: "NONE", planRevision: null },
+    devicePolicy: { status: "ACTIVE" },
+    compatibility: {
+      extension: { status: "SUPPORTED", minimumVersion: null },
+      browser: { status: "SUPPORTED" },
+    },
+    entitlements: {},
+    features: {},
+    ai: { status: "UNCONFIGURED" },
+  };
+  function activatedClient(
+    ring: ReadonlyMap<
+      string,
+      ReturnType<typeof generateKeyPairSync>["publicKey"]
+    >,
+    fetch: typeof globalThis.fetch,
+  ) {
+    const client = new SimulatedExtensionClient({
+      controlPlaneApiOrigin: "https://api.test",
+      portalOrigin: "https://portal.test",
+      trustedConfigSigningKeys: ring,
+      fetch,
+    });
+    (client as unknown as { credentials: object }).credentials = {
+      deviceId: "123e4567-e89b-42d3-a456-426614174000",
+      sessionId: "123e4567-e89b-42d3-a456-426614174001",
+      accessToken: "access",
+      accessTokenExpiresAt: "2026-01-01T00:00:00.000Z",
+      refreshToken: "refresh",
+      refreshTokenExpiresAt: "2026-01-01T00:00:00.000Z",
+    };
+    return client;
+  }
+
+  it("defensively copies packaged trust and verifies without remote key discovery", async () => {
+    const k1 = generateKeyPairSync("ed25519");
+    const k2 = generateKeyPairSync("ed25519");
+    const supplied = new Map([["k1", k1.publicKey]]);
+    let requests = 0;
+    const client = activatedClient(supplied, async () => {
+      requests++;
+      return new Response(
+        JSON.stringify(signBootstrapSnapshot(payload, "k1", k1.privateKey)),
+        { status: 200 },
+      );
+    });
+    supplied.set("k2", k2.publicKey);
+    supplied.clear();
+    expect(
+      await client.bootstrap({
+        contractVersion: "control_plane_v1",
+        extensionVersion: "1.0.0",
+        browser: { family: "chrome", version: "123" },
+        lastConfigVersion: null,
+      }),
+    ).toMatchObject({ kind: "VERIFIED" });
+    expect(requests).toBe(1);
+  });
+
+  it("rejects unknown keys, tampering, and HTTP errors as non-verified results", async () => {
+    const k1 = generateKeyPairSync("ed25519");
+    const k2 = generateKeyPairSync("ed25519");
+    const envelope = signBootstrapSnapshot(payload, "k2", k2.privateKey);
+    const client = activatedClient(
+      new Map([["k1", k1.publicKey]]),
+      async () => new Response(JSON.stringify(envelope), { status: 200 }),
+    );
+    expect(
+      await client.bootstrap({
+        contractVersion: "control_plane_v1",
+        extensionVersion: "1.0.0",
+        browser: { family: "chrome", version: "123" },
+        lastConfigVersion: null,
+      }),
+    ).toEqual({ kind: "VERIFICATION_FAILURE", error: "UNKNOWN_SIGNING_KEY" });
+    const tampered = activatedClient(
+      new Map([["k1", k1.publicKey]]),
+      async () =>
+        new Response(
+          JSON.stringify({
+            ...signBootstrapSnapshot(payload, "k1", k1.privateKey),
+            signature: "A" + envelope.signature.slice(1),
+          }),
+          { status: 200 },
+        ),
+    );
+    expect(
+      (
+        await tampered.bootstrap({
+          contractVersion: "control_plane_v1",
+          extensionVersion: "1.0.0",
+          browser: { family: "chrome", version: "123" },
+          lastConfigVersion: null,
+        })
+      ).kind,
+    ).toBe("VERIFICATION_FAILURE");
+    const error = activatedClient(
+      new Map(),
+      async () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "BOOTSTRAP_UNAVAILABLE",
+              message: "not trusted",
+              correlationId: "corr",
+            },
+          }),
+          { status: 503 },
+        ),
+    );
+    expect(
+      await error.bootstrap({
+        contractVersion: "control_plane_v1",
+        extensionVersion: "1.0.0",
+        browser: { family: "chrome", version: "123" },
+        lastConfigVersion: null,
+      }),
+    ).toEqual({
+      kind: "HTTP_ERROR",
+      status: 503,
+      code: "BOOTSTRAP_UNAVAILABLE",
+    });
+  });
+
+  it("models old, overlap, and new packaged trust rings", async () => {
+    const k1 = generateKeyPairSync("ed25519");
+    const k2 = generateKeyPairSync("ed25519");
+    const envelope1 = signBootstrapSnapshot(payload, "k1", k1.privateKey);
+    const envelope2 = signBootstrapSnapshot(payload, "k2", k2.privateKey);
+    const request = {
+      contractVersion: "control_plane_v1" as const,
+      extensionVersion: "1.0.0",
+      browser: { family: "chrome" as const, version: "123" },
+      lastConfigVersion: null,
+    };
+    const old = activatedClient(
+      new Map([["k1", k1.publicKey]]),
+      async () => new Response(JSON.stringify(envelope1), { status: 200 }),
+    );
+    expect((await old.bootstrap(request)).kind).toBe("VERIFIED");
+    const overlap = activatedClient(
+      new Map([
+        ["k1", k1.publicKey],
+        ["k2", k2.publicKey],
+      ]),
+      async () => new Response(JSON.stringify(envelope2), { status: 200 }),
+    );
+    expect((await overlap.bootstrap(request)).kind).toBe("VERIFIED");
+    const next = activatedClient(
+      new Map([["k2", k2.publicKey]]),
+      async () => new Response(JSON.stringify(envelope2), { status: 200 }),
+    );
+    expect((await next.bootstrap(request)).kind).toBe("VERIFIED");
+  });
+
   it("rejects non-origin constructor inputs", () => {
     for (const input of [
       "/api",

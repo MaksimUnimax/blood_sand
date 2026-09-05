@@ -8,11 +8,13 @@ import {
 import {
   BOOTSTRAP_SIGNATURE_DOMAIN,
   canonicalizeJson,
+  configRolloutSelectionModeV1,
   configReleaseHashes,
   rolloutBucketV1,
   selectRolloutCandidateV1,
   signBootstrapSnapshot,
   verifyBootstrapEnvelope,
+  resolveSigningKeyLifecycle,
   type TrustedConfigSigningKeyRing,
 } from "./index.js";
 
@@ -69,6 +71,16 @@ describe("P3.3 manifests and cohorts", () => {
         percentageBps: 10000,
       }),
     ).toBe(false);
+  });
+});
+
+describe("bootstrap.config rollout selection semantics", () => {
+  it.each([
+    ["ACTIVE", "COHORT"],
+    ["PAUSED", "BASELINE_ONLY"],
+    ["RETIRED", "ORDINARY_LATEST"],
+  ] as const)("maps %s to %s", (state, mode) => {
+    expect(configRolloutSelectionModeV1(state)).toBe(mode);
   });
 });
 
@@ -131,6 +143,75 @@ describe("canonicalizeJson", () => {
     expect(() => canonicalizeJson(new Map())).toThrow();
     expect(() => canonicalizeJson(new Set())).toThrow();
     expect(() => canonicalizeJson(custom)).toThrow();
+  });
+});
+
+describe("P3.5 signing-key lifecycle", () => {
+  const id = "123e4567-e89b-42d3-a456-426614174000";
+  const event = (
+    eventType: "REGISTERED" | "ACTIVATED" | "RETIRED" | "REVOKED",
+    n: number,
+  ) => ({
+    id,
+    keyId: "config-key",
+    eventType,
+    occurredAt: new Date(1_700_000_000_000 + n),
+    reasonCode:
+      eventType === "RETIRED" || eventType === "REVOKED" ? "ops" : null,
+    createdAt: new Date(1_700_000_000_000 + n),
+  });
+  it.each([
+    [[], "UNREGISTERED"],
+    [["REGISTERED"], "REGISTERED"],
+    [["REGISTERED", "ACTIVATED"], "ACTIVE"],
+    [["REGISTERED", "ACTIVATED", "RETIRED"], "RETIRED"],
+    [["REGISTERED", "REVOKED"], "REVOKED"],
+    [["REGISTERED", "ACTIVATED", "REVOKED"], "REVOKED"],
+    [["REGISTERED", "ACTIVATED", "RETIRED", "REVOKED"], "REVOKED"],
+  ] as const)("resolves %j as %s", (sequence, state) => {
+    expect(
+      resolveSigningKeyLifecycle(
+        sequence.map((type, n) =>
+          event(
+            type as "REGISTERED" | "ACTIVATED" | "RETIRED" | "REVOKED",
+            n + 1,
+          ),
+        ),
+      ),
+    ).toEqual({ state });
+  });
+  it.each([
+    ["ACTIVATED"],
+    ["RETIRED"],
+    ["REGISTERED", "REGISTERED"],
+    ["REGISTERED", "ACTIVATED", "ACTIVATED"],
+    ["REGISTERED", "ACTIVATED", "RETIRED", "ACTIVATED"],
+    ["REGISTERED", "REVOKED", "ACTIVATED"],
+    ["REGISTERED", "ACTIVATED", "REVOKED", "RETIRED"],
+    ["REGISTERED", "ACTIVATED", "RETIRED", "RETIRED"],
+    ["REGISTERED", "REVOKED", "REVOKED"],
+  ] as readonly string[][])(
+    "rejects invalid sequence %j",
+    (...sequence: string[]) => {
+      expect(
+        resolveSigningKeyLifecycle(
+          sequence.map((type, n) =>
+            event(
+              type as "REGISTERED" | "ACTIVATED" | "RETIRED" | "REVOKED",
+              n + 1,
+            ),
+          ),
+        ),
+      ).toEqual({ state: "INVALID", error: "INVALID_LIFECYCLE" });
+    },
+  );
+  it("rejects non-monotonic event ordering", () => {
+    expect(
+      resolveSigningKeyLifecycle([
+        event("REGISTERED", 2),
+        event("ACTIVATED", 1),
+      ]),
+    ).toEqual({ state: "INVALID", error: "INVALID_LIFECYCLE" });
   });
 });
 

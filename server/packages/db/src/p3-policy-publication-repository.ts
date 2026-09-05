@@ -2,13 +2,17 @@ import { createHash, createPublicKey, randomBytes } from "node:crypto";
 import {
   PublishCompatibilityPolicyRevisionCommandSchema,
   PublishExtensionReleaseCommandSchema,
+  P3MutationContextSchema,
   type CompatibilityPublicationPort,
   type CompatibilityPolicyRevision,
   CompatibilityPolicyRevisionSchema,
   type ExtensionRelease,
   type P3MutationContext,
 } from "@product/compatibility";
-import { compareSemVerV1 } from "@product/shared";
+import {
+  compareSemVerV1,
+  StableMachineIdentifierV1Schema,
+} from "@product/shared";
 import {
   configReleaseHashes,
   ConfigReleaseSchema,
@@ -20,14 +24,21 @@ import {
   type PublishConfigReleaseCommand,
   P3FeatureRuleSchema,
   P3RolloutRevisionSchema,
+  RegisterSigningKeyCommandSchema,
+  SigningKeyEventSchema,
   SigningKeyMetadataSchema,
+  type SigningKeyMetadata,
+  SigningKeyReasonCommandSchema,
+  configRolloutSelectionModeV1,
+  resolveSigningKeyLifecycle,
+  validateSigningKeyRegistration,
   type P3PublicationPort,
 } from "@product/remote-config";
-import type { DatabaseRuntime } from "./index.js";
+import type { DatabaseQuery, DatabaseRuntime } from "./index.js";
 
 type Context = P3MutationContext;
 async function audit(
-  q: { query: DatabaseRuntime["query"] },
+  q: { query: DatabaseQuery["query"] },
   context: Context,
   action: string,
   targetType: string,
@@ -47,6 +58,112 @@ async function audit(
       safeMetadata ? JSON.stringify(safeMetadata) : null,
     ],
   );
+}
+
+async function signingKeyEvents(
+  q: { query: DatabaseQuery["query"] },
+  keyId: string,
+) {
+  const result = await q.query(
+    'SELECT id,key_id AS "keyId",event_type AS "eventType",occurred_at AS "occurredAt",reason_code AS "reasonCode",created_at AS "createdAt" FROM signing_key_events WHERE key_id=$1 ORDER BY occurred_at,id',
+    [keyId],
+  );
+  return result.rows.map((row) => SigningKeyEventSchema.parse(row));
+}
+
+function nextOccurredAt(latest: Date | undefined, clock: () => Date): Date {
+  const candidate = clock();
+  if (!latest || candidate.getTime() > latest.getTime()) return candidate;
+  return new Date(latest.getTime() + 1);
+}
+
+async function appendSigningEvent(
+  q: { query: DatabaseQuery["query"] },
+  keyId: string,
+  eventType: "REGISTERED" | "ACTIVATED" | "RETIRED" | "REVOKED",
+  reasonCode: string | null,
+  clock: () => Date,
+) {
+  const latest = await q.query<{ occurredAt: Date }>(
+    'SELECT occurred_at AS "occurredAt" FROM signing_key_events WHERE key_id=$1 ORDER BY occurred_at DESC,id DESC LIMIT 1',
+    [keyId],
+  );
+  const occurredAt = nextOccurredAt(latest.rows[0]?.occurredAt, clock);
+  const inserted = await q.query(
+    'INSERT INTO signing_key_events(key_id,event_type,occurred_at,reason_code) VALUES($1,$2,$3,$4) RETURNING id,key_id AS "keyId",event_type AS "eventType",occurred_at AS "occurredAt",reason_code AS "reasonCode",created_at AS "createdAt"',
+    [keyId, eventType, occurredAt, reasonCode],
+  );
+  return SigningKeyEventSchema.parse(inserted.rows[0]);
+}
+
+async function lockSigningKey(
+  q: { query: DatabaseQuery["query"] },
+  keyId: string,
+) {
+  await q.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
+    `p3-signing-key:${keyId}`,
+  ]);
+}
+
+async function currentSigningKeyState(
+  q: { query: DatabaseQuery["query"] },
+  keyId: string,
+) {
+  const events = await signingKeyEvents(q, keyId);
+  return { events, lifecycle: resolveSigningKeyLifecycle(events) };
+}
+
+async function requireCurrentSelectableConfigKeys(q: {
+  query: DatabaseQuery["query"];
+}): Promise<Set<string>> {
+  const ordinary = await q.query<{ signingKeyId: string }>(
+    'SELECT signing_key_id AS "signingKeyId" FROM config_releases WHERE contract_version=$1 ORDER BY config_version DESC LIMIT 1',
+    ["control_plane_v1"],
+  );
+  const rollout = await q.query<{
+    id: string;
+    targetKind: string;
+    rolloutKey: string;
+  }>(
+    'SELECT id,target_kind AS "targetKind",rollout_key AS "rolloutKey" FROM rollouts WHERE rollout_key=$1',
+    ["bootstrap.config"],
+  );
+  if (!rollout.rows[0])
+    return new Set(ordinary.rows.map((row) => row.signingKeyId));
+  if (
+    rollout.rows[0].targetKind !== "CONFIG_RELEASE" ||
+    rollout.rows[0].rolloutKey !== "bootstrap.config"
+  )
+    throw new Error("P3_ROLLOUT_SOURCE_INVALID");
+  const revision = await q.query<{
+    state: "ACTIVE" | "PAUSED" | "RETIRED";
+    baselineConfigVersion: number | null;
+    candidateConfigVersion: number | null;
+  }>(
+    'SELECT state,baseline_config_version AS "baselineConfigVersion",candidate_config_version AS "candidateConfigVersion" FROM rollout_revisions WHERE rollout_id=$1 ORDER BY revision DESC LIMIT 1',
+    [rollout.rows[0].id],
+  );
+  const selected = revision.rows[0];
+  if (!selected) return new Set(ordinary.rows.map((row) => row.signingKeyId));
+  const selectionMode = configRolloutSelectionModeV1(selected.state);
+  if (selectionMode === "ORDINARY_LATEST")
+    return new Set(ordinary.rows.map((row) => row.signingKeyId));
+  if (
+    selected.baselineConfigVersion === null ||
+    selected.candidateConfigVersion === null
+  )
+    throw new Error("P3_ROLLOUT_SOURCE_INVALID");
+  const configVersions =
+    selectionMode === "BASELINE_ONLY"
+      ? [selected.baselineConfigVersion]
+      : [selected.baselineConfigVersion, selected.candidateConfigVersion];
+  const releases = await q.query<{ signingKeyId: string }>(
+    'SELECT signing_key_id AS "signingKeyId" FROM config_releases WHERE config_version=ANY($1::int[])',
+    [configVersions],
+  );
+  if (releases.rows.length !== configVersions.length)
+    throw new Error("P3_ROLLOUT_SOURCE_INVALID");
+  return new Set(releases.rows.map((row) => row.signingKeyId));
 }
 async function validateConfigSources(
   q: { query: DatabaseRuntime["query"] },
@@ -68,6 +185,13 @@ async function validateConfigSources(
     }).asymmetricKeyType !== "ed25519"
   )
     throw new Error("P3_SIGNING_KEY_INVALID");
+  const lifecycle = resolveSigningKeyLifecycle(
+    await signingKeyEvents(q, value.signingKeyId),
+  );
+  if (lifecycle.state === "INVALID")
+    throw new Error("P3_SIGNING_KEY_INVALID_LIFECYCLE");
+  if (lifecycle.state !== "ACTIVE")
+    throw new Error("P3_SIGNING_KEY_NOT_ACTIVE");
   const policies = await q.query<Record<string, unknown>>(
     'SELECT id,policy_key AS "policyKey",revision,contract_version AS "contractVersion",browser_family AS "browserFamily",minimum_extension_version AS "minimumExtensionVersion",recommended_extension_version AS "recommendedExtensionVersion",minimum_browser_version AS "minimumBrowserVersion",maintenance_mode AS "maintenanceMode",maintenance_code AS "maintenanceCode",published_at AS "publishedAt",created_at AS "createdAt" FROM compatibility_policy_revisions WHERE id=ANY($1::uuid[])',
     [value.compatibilityPolicyRevisionIds],
@@ -173,8 +297,138 @@ function rowPolicy(row: Record<string, unknown>): CompatibilityPolicyRevision {
 /** The sole P3.3 mutating adapter. Every mutation and audit write share a PG transaction. */
 export function createP3PolicyPublicationRepository(
   runtime: DatabaseRuntime,
+  options: { clock?: () => Date } = {},
 ): CompatibilityPublicationPort & P3PublicationPort {
+  const clock = options.clock ?? (() => new Date());
   return {
+    async registerSigningKey(command, context) {
+      const value = RegisterSigningKeyCommandSchema.parse(command);
+      const validated = validateSigningKeyRegistration(value);
+      P3MutationContextSchema.parse(context);
+      return runtime.transaction(async (q) => {
+        await lockSigningKey(q, validated.keyId);
+        const existing = await q.query<Record<string, unknown>>(
+          'SELECT key_id AS "keyId",algorithm,public_key_spki_der AS "publicKeySpkiDer",public_key_sha256 AS "publicKeySha256",created_at AS "createdAt" FROM signing_keys WHERE key_id=$1',
+          [validated.keyId],
+        );
+        let metadata: SigningKeyMetadata;
+        if (!existing.rows[0]) {
+          const inserted = await q.query<Record<string, unknown>>(
+            'INSERT INTO signing_keys(key_id,algorithm,public_key_spki_der,public_key_sha256) VALUES($1,$2,$3,$4) RETURNING key_id AS "keyId",algorithm,public_key_spki_der AS "publicKeySpkiDer",public_key_sha256 AS "publicKeySha256",created_at AS "createdAt"',
+            [
+              validated.keyId,
+              validated.algorithm,
+              validated.publicKeySpkiDer,
+              validated.publicKeySha256,
+            ],
+          );
+          metadata = SigningKeyMetadataSchema.parse(inserted.rows[0]);
+        } else {
+          metadata = SigningKeyMetadataSchema.parse(existing.rows[0]);
+          const exact =
+            metadata.keyId === validated.keyId &&
+            metadata.algorithm === validated.algorithm &&
+            Buffer.from(metadata.publicKeySpkiDer).equals(
+              validated.publicKeySpkiDer,
+            ) &&
+            metadata.publicKeySha256 === validated.publicKeySha256;
+          const prior = await signingKeyEvents(q, validated.keyId);
+          if (!exact || prior.length !== 0)
+            throw new Error("P3_SIGNING_KEY_REGISTRATION_CONFLICT");
+        }
+        await appendSigningEvent(q, validated.keyId, "REGISTERED", null, clock);
+        await audit(q, context, "SIGNING_KEY_REGISTERED", "SIGNING_KEY", null, {
+          keyId: validated.keyId,
+          publicKeySha256: validated.publicKeySha256,
+          eventType: "REGISTERED",
+        });
+        return metadata;
+      });
+    },
+    async activateSigningKey(keyId, context) {
+      const value = StableMachineIdentifierV1Schema.parse(keyId);
+      P3MutationContextSchema.parse(context);
+      return runtime.transaction(async (q) => {
+        await lockSigningKey(q, value);
+        const current = await currentSigningKeyState(q, value);
+        if (current.lifecycle.state !== "REGISTERED")
+          throw new Error(
+            current.lifecycle.state === "INVALID"
+              ? "P3_SIGNING_KEY_INVALID_LIFECYCLE"
+              : "P3_SIGNING_KEY_ACTIVATION_INVALID",
+          );
+        const event = await appendSigningEvent(
+          q,
+          value,
+          "ACTIVATED",
+          null,
+          clock,
+        );
+        await audit(q, context, "SIGNING_KEY_ACTIVATED", "SIGNING_KEY", null, {
+          keyId: value,
+          eventType: "ACTIVATED",
+        });
+        return event;
+      });
+    },
+    async retireSigningKey(command, context) {
+      const value = SigningKeyReasonCommandSchema.parse(command);
+      P3MutationContextSchema.parse(context);
+      return runtime.transaction(async (q) => {
+        await lockSigningKey(q, value.keyId);
+        const current = await currentSigningKeyState(q, value.keyId);
+        if (current.lifecycle.state === "INVALID")
+          throw new Error("P3_SIGNING_KEY_INVALID_LIFECYCLE");
+        if (current.lifecycle.state !== "ACTIVE")
+          throw new Error("P3_SIGNING_KEY_RETIRE_INVALID");
+        if ((await requireCurrentSelectableConfigKeys(q)).has(value.keyId))
+          throw new Error("SIGNING_KEY_IN_USE");
+        const event = await appendSigningEvent(
+          q,
+          value.keyId,
+          "RETIRED",
+          value.reasonCode,
+          clock,
+        );
+        await audit(q, context, "SIGNING_KEY_RETIRED", "SIGNING_KEY", null, {
+          keyId: value.keyId,
+          eventType: "RETIRED",
+          reasonCode: value.reasonCode,
+        });
+        return event;
+      });
+    },
+    async revokeSigningKey(command, context) {
+      const value = SigningKeyReasonCommandSchema.parse(command);
+      P3MutationContextSchema.parse(context);
+      return runtime.transaction(async (q) => {
+        await lockSigningKey(q, value.keyId);
+        const current = await currentSigningKeyState(q, value.keyId);
+        if (
+          current.lifecycle.state !== "REGISTERED" &&
+          current.lifecycle.state !== "ACTIVE" &&
+          current.lifecycle.state !== "RETIRED"
+        )
+          throw new Error(
+            current.lifecycle.state === "INVALID"
+              ? "P3_SIGNING_KEY_INVALID_LIFECYCLE"
+              : "P3_SIGNING_KEY_REVOKE_INVALID",
+          );
+        const event = await appendSigningEvent(
+          q,
+          value.keyId,
+          "REVOKED",
+          value.reasonCode,
+          clock,
+        );
+        await audit(q, context, "SIGNING_KEY_REVOKED", "SIGNING_KEY", null, {
+          keyId: value.keyId,
+          eventType: "REVOKED",
+          reasonCode: value.reasonCode,
+        });
+        return event;
+      });
+    },
     async publishExtensionRelease(command, context) {
       const value = PublishExtensionReleaseCommandSchema.parse(command);
       return runtime.transaction(async (q) => {

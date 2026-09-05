@@ -119,8 +119,7 @@ export async function generateOpenApiRepresentation(): Promise<string> {
         }),
       },
       {
-        keyId: "openapi-key",
-        sign: () => ({
+        sign: async () => ({
           envelopeVersion: "bootstrap_envelope_v1",
           algorithm: "Ed25519",
           keyId: "openapi-key",

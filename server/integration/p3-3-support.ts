@@ -37,6 +37,10 @@ export async function addKey(db: DatabaseRuntime, id = "p3-config-key") {
     "INSERT INTO signing_keys(key_id,algorithm,public_key_spki_der,public_key_sha256) VALUES($1,'Ed25519',$2,$3)",
     [id, publicKey, createHash("sha256").update(publicKey).digest("hex")],
   );
+  await db.query(
+    "INSERT INTO signing_key_events(key_id,event_type,occurred_at) VALUES($1,'REGISTERED',$2),($1,'ACTIVATED',$3)",
+    [id, now(), new Date(now().getTime() + 1)],
+  );
   return id;
 }
 export async function policy(

@@ -1,3 +1,4 @@
+import { createPublicKey, type KeyObject } from "node:crypto";
 import { expect, type Page } from "@playwright/test";
 import { SimulatedExtensionClient } from "../../packages/simulated-extension-client/src/index.js";
 import {
@@ -23,10 +24,76 @@ export async function login(page: Page, returnTo = "/"): Promise<void> {
   await expect(page).toHaveURL(new RegExp(`${returnTo.replace("?", "\\?")}$`));
 }
 
-export function client(): SimulatedExtensionClient {
+function packagedKeys(ids: string[]): ReadonlyMap<string, KeyObject> {
+  const raw = JSON.parse(
+    process.env.CONFIG_SIGNING_PUBLIC_KEY_RING_JSON ?? "[]",
+  ) as Array<{
+    keyId: string;
+    publicKeySpkiDerB64: string;
+  }>;
+  return new Map(
+    raw
+      .filter((entry) => ids.includes(entry.keyId))
+      .map((entry) => [
+        entry.keyId,
+        createPublicKey({
+          key: Buffer.from(entry.publicKeySpkiDerB64, "base64"),
+          format: "der",
+          type: "spki",
+        }),
+      ]),
+  );
+}
+
+/** Test setup supplies public package data; the client never discovers it. */
+async function packagedKeysFromDisposableDb(
+  ids: string[],
+): Promise<ReadonlyMap<string, KeyObject>> {
+  const rows = await sql<{ key_id: string; public_key_spki_der: Buffer }>(
+    "SELECT key_id,public_key_spki_der FROM signing_keys WHERE key_id=ANY($1::text[])",
+    [ids],
+  );
+  return new Map(
+    rows.map((entry) => [
+      entry.key_id,
+      createPublicKey({
+        key: entry.public_key_spki_der,
+        format: "der",
+        type: "spki",
+      }),
+    ]),
+  );
+}
+
+async function packagedClient(
+  trust: "old" | "overlap" | "new",
+): Promise<SimulatedExtensionClient> {
+  const ids =
+    trust === "old"
+      ? ["e2e-config-k1"]
+      : trust === "new"
+        ? ["e2e-config-k2"]
+        : ["e2e-config-k1", "e2e-config-k2"];
   return new SimulatedExtensionClient({
     controlPlaneApiOrigin: apiOrigin,
     portalOrigin,
+    trustedConfigSigningKeys: await packagedKeysFromDisposableDb(ids),
+  });
+}
+
+export function client(
+  trust: "old" | "overlap" | "new" = "overlap",
+): SimulatedExtensionClient {
+  const ids =
+    trust === "old"
+      ? ["e2e-config-k1"]
+      : trust === "new"
+        ? ["e2e-config-k2"]
+        : ["e2e-config-k1", "e2e-config-k2"];
+  return new SimulatedExtensionClient({
+    controlPlaneApiOrigin: apiOrigin,
+    portalOrigin,
+    trustedConfigSigningKeys: packagedKeys(ids),
   });
 }
 
@@ -81,9 +148,12 @@ export async function accountId(): Promise<string> {
   return rows[0].id;
 }
 
-export async function activateExtension(page: Page) {
+export async function activateExtensionClient(
+  page: Page,
+  trust: "old" | "overlap" | "new" = "overlap",
+) {
   await login(page);
-  const extension = client();
+  const extension = await packagedClient(trust);
   const authorization = await start(extension);
   await approve(page, authorization);
   if (
@@ -95,12 +165,16 @@ export async function activateExtension(page: Page) {
     ).kind !== "ACTIVATED"
   )
     throw new Error("E2E extension activation failed");
-  return credentials(extension);
+  return extension;
+}
+
+export async function activateExtension(page: Page) {
+  return credentials(await activateExtensionClient(page));
 }
 
 /** Uses the accepted publication path; only its public signer metadata exists in DB. */
 export async function seedBootstrapConfig(
-  options: { minimumExtensionVersion?: string } = {},
+  options: { minimumExtensionVersion?: string; signingKeyId?: string } = {},
 ) {
   const database = createDatabaseRuntime(process.env.DATABASE_URL!);
   const publication = createP3PolicyPublicationRepository(database);
@@ -146,7 +220,7 @@ export async function seedBootstrapConfig(
         contractVersion: "control_plane_v1",
         snapshotVersion: "bootstrap_snapshot_v1",
         envelopeVersion: "bootstrap_envelope_v1",
-        signingKeyId: "e2e-config-signing-key",
+        signingKeyId: options.signingKeyId ?? "e2e-config-k1",
         compatibilityPolicyRevisionIds: [compatibility.id],
         featureRuleRevisionIds: [feature.id],
         featureRolloutRevisionIds: [],

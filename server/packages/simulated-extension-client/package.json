@@ -8,6 +8,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@product/contracts": "workspace:*"
+    "@product/contracts": "workspace:*",
+    "@product/remote-config": "workspace:*"
   }
 }

@@ -15,9 +15,11 @@ export type BootstrapPolicyResolver = {
     input: ResolveP3BootstrapPolicyInput,
   ): Promise<ResolveP3BootstrapPolicyResult | { failure: string }>;
 };
-export type BootstrapSnapshotSigner = {
-  readonly keyId: string;
-  sign(payload: BootstrapSnapshotPayloadV1): SignedBootstrapEnvelopeV1;
+export type BootstrapSnapshotSigningService = {
+  sign(
+    keyId: string,
+    payload: BootstrapSnapshotPayloadV1,
+  ): Promise<SignedBootstrapEnvelopeV1>;
 };
 export type BootstrapClock = { now(): Date };
 export class BootstrapError extends Error {
@@ -28,7 +30,7 @@ export class BootstrapError extends Error {
 export class BootstrapService {
   constructor(
     private readonly policy: BootstrapPolicyResolver,
-    private readonly signer: BootstrapSnapshotSigner,
+    private readonly signer: BootstrapSnapshotSigningService,
     private readonly clock: BootstrapClock = { now: () => new Date() },
   ) {}
   async issue(
@@ -44,8 +46,7 @@ export class BootstrapService {
       accountId: subject.accountId,
       deviceId: subject.deviceId,
     });
-    if ("failure" in result || result.signingKeyId !== this.signer.keyId)
-      throw new BootstrapError("UNAVAILABLE");
+    if ("failure" in result) throw new BootstrapError("UNAVAILABLE");
     const now = this.clock.now();
     const issuedAt = now.toISOString();
     const expiresAt = new Date(now.getTime() + 15 * 60_000);
@@ -67,6 +68,13 @@ export class BootstrapService {
       features: result.features,
       ai: { status: "UNCONFIGURED" },
     });
-    return this.signer.sign(payload);
+    try {
+      const envelope = await this.signer.sign(result.signingKeyId, payload);
+      if (envelope.keyId !== result.signingKeyId)
+        throw new Error("signing key mismatch");
+      return envelope;
+    } catch {
+      throw new BootstrapError("UNAVAILABLE");
+    }
   }
 }

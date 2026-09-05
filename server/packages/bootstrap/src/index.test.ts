@@ -38,8 +38,7 @@ describe("BootstrapService", () => {
     const service = new BootstrapService(
       policy,
       {
-        keyId: "config-key",
-        sign: (payload) =>
+        sign: async (_keyId, payload) =>
           signBootstrapSnapshot(payload, "config-key", pair.privateKey),
       },
       {
@@ -81,8 +80,8 @@ describe("BootstrapService", () => {
         },
       },
       {
-        keyId: "config-key",
-        sign: (p) => signBootstrapSnapshot(p, "config-key", pair.privateKey),
+        sign: async (_keyId, p) =>
+          signBootstrapSnapshot(p, "config-key", pair.privateKey),
       },
     );
     await expect(
@@ -101,8 +100,8 @@ describe("BootstrapService", () => {
     const service = new BootstrapService(
       { resolve: async (input) => (inputs.push(input), policy.resolve({})) },
       {
-        keyId: "config-key",
-        sign: (p) => signBootstrapSnapshot(p, "config-key", pair.privateKey),
+        sign: async (_keyId, p) =>
+          signBootstrapSnapshot(p, "config-key", pair.privateKey),
       },
       { now: () => new Date("2026-01-01T00:00:00.000Z") },
     );
@@ -149,8 +148,8 @@ describe("BootstrapService", () => {
         }),
       },
       {
-        keyId: "config-key",
-        sign: (p) => signBootstrapSnapshot(p, "config-key", pair.privateKey),
+        sign: async (_keyId, p) =>
+          signBootstrapSnapshot(p, "config-key", pair.privateKey),
       },
     );
     await expect(service.issue(subject, request)).rejects.toMatchObject({

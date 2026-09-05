@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createApiApp } from "../apps/api/src/app.js";
 import {
   bindConfigSigningMaterial,
+  createConfigSigningService,
   loadConfigSigningMaterial,
 } from "../apps/api/src/bootstrap-signing.js";
 import { BootstrapService } from "../packages/bootstrap/src/index.js";
@@ -112,6 +113,11 @@ async function graph(
     "INSERT INTO signing_keys(key_id,algorithm,public_key_spki_der,public_key_sha256) VALUES($1,'Ed25519',$2,$3) ON CONFLICT (key_id) DO NOTHING",
     [keyId, keyMetadata.spki, keyMetadata.sha256],
   );
+  if (keyId !== material.keyId)
+    await db.query(
+      "INSERT INTO signing_key_events(key_id,event_type,occurred_at) VALUES($1,'REGISTERED',$2),($1,'ACTIVATED',$3)",
+      [keyId, now, new Date(now.getTime() + 1)],
+    );
   const compatibility = await p.publishCompatibilityPolicyRevision(
     {
       policyKey: "p34-policy",
@@ -183,6 +189,14 @@ describe.sequential("P3.4 real PostgreSQL authenticated bootstrap", () => {
       "INSERT INTO signing_keys(key_id,algorithm,public_key_spki_der,public_key_sha256) VALUES($1,'Ed25519',$2,$3)",
       [material.keyId, material.publicKeySpkiDer, material.publicKeySha256],
     );
+    await db.query(
+      "INSERT INTO signing_key_events(key_id,event_type,occurred_at) VALUES($1,'REGISTERED',$2),($1,'ACTIVATED',$3)",
+      [
+        material.keyId,
+        new Date("2026-09-04T00:00:00.000Z"),
+        new Date("2026-09-04T00:00:00.001Z"),
+      ],
+    );
     bindConfigSigningMaterial(
       material,
       await catalog.findSigningKey(material.keyId),
@@ -193,7 +207,7 @@ describe.sequential("P3.4 real PostgreSQL authenticated bootstrap", () => {
       extensionAuthService: access,
       bootstrapService: new BootstrapService(
         { resolve: (input) => resolveP3BootstrapPolicy(input, catalog) },
-        material,
+        createConfigSigningService(material, catalog),
         { now: () => new Date("2026-09-04T00:00:00.000Z") },
       ),
     });

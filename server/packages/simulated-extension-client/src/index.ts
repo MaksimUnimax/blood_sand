@@ -2,7 +2,17 @@ import {
   DeviceAuthorizationExchangeResponseV1Schema,
   DeviceAuthorizationStartResponseV1Schema,
   RefreshResponseV1Schema,
+  ApiErrorEnvelopeV1Schema,
+  BootstrapRequestV1Schema,
+  SignedBootstrapEnvelopeV1Schema,
+  type BootstrapRequestV1,
+  type BootstrapSnapshotPayloadV1,
 } from "@product/contracts";
+import {
+  verifyBootstrapEnvelope,
+  type BootstrapVerificationFailure,
+} from "@product/remote-config";
+import type { KeyObject } from "node:crypto";
 export type ExchangeResult =
   | { kind: "ACTIVATED" }
   | { kind: "PENDING"; retryAfterSeconds: number }
@@ -15,6 +25,10 @@ type Credentials = {
   refreshToken: string;
   refreshTokenExpiresAt: string;
 };
+export type BootstrapResult =
+  | { kind: "VERIFIED"; payload: BootstrapSnapshotPayloadV1 }
+  | { kind: "HTTP_ERROR"; status: number; code: string }
+  | { kind: "VERIFICATION_FAILURE"; error: BootstrapVerificationFailure };
 function validOrigin(raw: string): string {
   try {
     const url = new URL(raw);
@@ -39,13 +53,18 @@ export class SimulatedExtensionClient {
   constructor(input: {
     controlPlaneApiOrigin: string;
     portalOrigin: string;
+    trustedConfigSigningKeys?: ReadonlyMap<string, KeyObject>;
     fetch?: typeof fetch;
   }) {
     this.controlPlaneApiOrigin = validOrigin(input.controlPlaneApiOrigin);
     this.portalOrigin = validOrigin(input.portalOrigin);
+    this.trustedConfigSigningKeys = new Map(
+      input.trustedConfigSigningKeys ?? [],
+    );
     this.fetcher = input.fetch ?? fetch;
   }
   private readonly fetcher: typeof fetch;
+  private readonly trustedConfigSigningKeys: ReadonlyMap<string, KeyObject>;
   async startAuthorization(
     metadata: {
       clientType: "browser_extension";
@@ -155,5 +174,55 @@ export class SimulatedExtensionClient {
     const value = RefreshResponseV1Schema.parse(await response.json());
     this.credentials = { ...this.credentials, ...value };
     return true;
+  }
+
+  async bootstrap(
+    input: Omit<BootstrapRequestV1, "deviceId">,
+  ): Promise<BootstrapResult> {
+    if (!this.credentials)
+      return { kind: "HTTP_ERROR", status: 401, code: "UNAUTHORIZED" };
+    const request = BootstrapRequestV1Schema.parse({
+      ...input,
+      deviceId: this.credentials.deviceId,
+    });
+    const response = await this.fetcher(
+      `${this.controlPlaneApiOrigin}/v1/bootstrap`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${this.credentials.accessToken}`,
+        },
+        body: JSON.stringify(request),
+      },
+    );
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      return {
+        kind: "HTTP_ERROR",
+        status: response.status,
+        code: "HTTP_ERROR",
+      };
+    }
+    if (!response.ok) {
+      const error = ApiErrorEnvelopeV1Schema.safeParse(body);
+      return {
+        kind: "HTTP_ERROR",
+        status: response.status,
+        code: error.success ? error.data.error.code : "HTTP_ERROR",
+      };
+    }
+    const envelope = SignedBootstrapEnvelopeV1Schema.safeParse(body);
+    if (!envelope.success)
+      return { kind: "VERIFICATION_FAILURE", error: "INVALID_ENVELOPE" };
+    const verified = verifyBootstrapEnvelope(
+      envelope.data,
+      this.trustedConfigSigningKeys,
+    );
+    return verified.ok
+      ? { kind: "VERIFIED", payload: verified.payload }
+      : { kind: "VERIFICATION_FAILURE", error: verified.error };
   }
 }

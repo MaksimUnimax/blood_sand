@@ -3,15 +3,29 @@ import { generateKeyPairSync } from "node:crypto";
 
 // Per-run only: the private half is passed to the disposable API process via
 // its environment and is never persisted or exposed by the test API.
-const e2eConfigSigningPair = generateKeyPairSync("ed25519");
-const e2eConfigSigningPrivateKeyPemB64 = Buffer.from(
-  e2eConfigSigningPair.privateKey.export({ format: "pem", type: "pkcs8" }),
-).toString("base64");
-// Playwright workers inherit this ephemeral process environment for public-key
-// verification; the private value is not written to disk or the database.
-process.env.CONFIG_SIGNING_KEY_ID = "e2e-config-signing-key";
-process.env.CONFIG_SIGNING_PRIVATE_KEY_PEM_B64 =
-  e2eConfigSigningPrivateKeyPemB64;
+const e2eConfigSigningPairs = [
+  { keyId: "e2e-config-k1", pair: generateKeyPairSync("ed25519") },
+  { keyId: "e2e-config-k2", pair: generateKeyPairSync("ed25519") },
+];
+const e2eConfigSigningRingJson = JSON.stringify({
+  version: 1,
+  keys: e2eConfigSigningPairs.map(({ keyId, pair }) => ({
+    keyId,
+    privateKeyPemB64: Buffer.from(
+      pair.privateKey.export({ format: "pem", type: "pkcs8" }),
+    ).toString("base64"),
+  })),
+});
+// Workers receive only public verification material; the private ring exists
+// solely in the disposable API web-server process environment.
+process.env.CONFIG_SIGNING_PUBLIC_KEY_RING_JSON = JSON.stringify(
+  e2eConfigSigningPairs.map(({ keyId, pair }) => ({
+    keyId,
+    publicKeySpkiDerB64: pair.publicKey
+      .export({ format: "der", type: "spki" })
+      .toString("base64"),
+  })),
+);
 
 export default defineConfig({
   testDir: ".",
@@ -35,8 +49,7 @@ export default defineConfig({
         DATABASE_URL: process.env.DATABASE_URL ?? "",
         API_PORT: "3100",
         LOG_LEVEL: "warn",
-        CONFIG_SIGNING_KEY_ID: "e2e-config-signing-key",
-        CONFIG_SIGNING_PRIVATE_KEY_PEM_B64: e2eConfigSigningPrivateKeyPemB64,
+        CONFIG_SIGNING_KEY_RING_JSON: e2eConfigSigningRingJson,
       },
     },
     {

@@ -23,8 +23,115 @@ function ed25519Pem(): string {
     type: "pkcs8",
   }) as string;
 }
+function ringEnvironment(
+  entries: Array<{ keyId: string; pem?: string }>,
+): NodeJS.ProcessEnv {
+  return {
+    CONFIG_SIGNING_KEY_RING_JSON: JSON.stringify({
+      version: 1,
+      keys: entries.map(({ keyId, pem = ed25519Pem() }) => ({
+        keyId,
+        privateKeyPemB64: Buffer.from(pem).toString("base64"),
+      })),
+    }),
+  };
+}
 
 describe("API config-signing material", () => {
+  it.each([1, 2, 8])("loads a canonical ring with %i key(s)", (count) => {
+    const material = loadConfigSigningMaterial(
+      ringEnvironment(
+        Array.from({ length: count }, (_, index) => ({
+          keyId: `config-key-${index}`,
+        })),
+      ),
+    );
+    expect(material.keys.size).toBe(count);
+  });
+
+  it("rejects nine keys, duplicate IDs, duplicate fingerprints, unknown fields, and invalid JSON", () => {
+    expect(() =>
+      loadConfigSigningMaterial(
+        ringEnvironment(
+          Array.from({ length: 9 }, (_, index) => ({
+            keyId: `config-key-${index}`,
+          })),
+        ),
+      ),
+    ).toThrow();
+    const pem = ed25519Pem();
+    expect(() =>
+      loadConfigSigningMaterial(
+        ringEnvironment([{ keyId: "same", pem }, { keyId: "same" }]),
+      ),
+    ).toThrow();
+    expect(() =>
+      loadConfigSigningMaterial(
+        ringEnvironment([
+          { keyId: "one", pem },
+          { keyId: "two", pem },
+        ]),
+      ),
+    ).toThrow();
+    expect(() =>
+      loadConfigSigningMaterial({
+        CONFIG_SIGNING_KEY_RING_JSON: JSON.stringify({
+          version: 1,
+          keys: [
+            {
+              keyId: "one",
+              privateKeyPemB64: Buffer.from(pem).toString("base64"),
+              extra: true,
+            },
+          ],
+        }),
+      }),
+    ).toThrow();
+    expect(() =>
+      loadConfigSigningMaterial({ CONFIG_SIGNING_KEY_RING_JSON: "{" }),
+    ).toThrow();
+  });
+
+  it("rejects invalid and non-canonical ring material and preserves singleton fallback rules", () => {
+    expect(() =>
+      loadConfigSigningMaterial({
+        CONFIG_SIGNING_KEY_RING_JSON: JSON.stringify({
+          version: 1,
+          keys: [{ keyId: "one", privateKeyPemB64: "YQ===" }],
+        }),
+      }),
+    ).toThrow();
+    const publicPem = generateKeyPairSync("ed25519").publicKey.export({
+      format: "pem",
+      type: "spki",
+    }) as string;
+    expect(() =>
+      loadConfigSigningMaterial(
+        ringEnvironment([{ keyId: "one", pem: publicPem }]),
+      ),
+    ).toThrow();
+    const rsaPem = generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+    }).privateKey.export({ format: "pem", type: "pkcs8" }) as string;
+    expect(() =>
+      loadConfigSigningMaterial(
+        ringEnvironment([{ keyId: "one", pem: rsaPem }]),
+      ),
+    ).toThrow();
+    const legacy = loadConfigSigningMaterial(environment(ed25519Pem()));
+    expect(legacy.keys.size).toBe(1);
+    expect(() =>
+      loadConfigSigningMaterial({ CONFIG_SIGNING_KEY_ID: "one" }),
+    ).toThrow();
+    expect(() =>
+      loadConfigSigningMaterial({
+        CONFIG_SIGNING_KEY_RING_JSON: JSON.stringify({ version: 1, keys: [] }),
+        CONFIG_SIGNING_KEY_ID: "one",
+        CONFIG_SIGNING_PRIVATE_KEY_PEM_B64:
+          Buffer.from(ed25519Pem()).toString("base64"),
+      }),
+    ).toThrow();
+  });
   it("loads a runtime-generated Ed25519 private PEM and derives public metadata", () => {
     const material = loadConfigSigningMaterial(environment(ed25519Pem()));
     expect(material.keyId).toBe("config-key");

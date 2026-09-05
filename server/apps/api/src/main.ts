@@ -23,7 +23,8 @@ import {
 import { BootstrapService } from "@product/bootstrap";
 import { resolveP3BootstrapPolicy } from "@product/remote-config";
 import {
-  bindConfigSigningMaterial,
+  bindConfigSigningRing,
+  createConfigSigningService,
   loadConfigSigningMaterial,
 } from "./bootstrap-signing.js";
 import { loadConfig } from "@product/shared";
@@ -35,9 +36,8 @@ const database = createDatabaseRuntime(config.databaseUrl);
 const rootSecret = loadAuthRootSecret(process.env);
 const bootstrapSigningMaterial = loadConfigSigningMaterial(process.env);
 const p3Catalog = createP3BootstrapPolicyCatalogRepository(database);
-bindConfigSigningMaterial(
-  bootstrapSigningMaterial,
-  await p3Catalog.findSigningKey(bootstrapSigningMaterial.keyId),
+await bindConfigSigningRing(bootstrapSigningMaterial, (keyId) =>
+  p3Catalog.findSigningKey(keyId),
 );
 const app = createApiApp({
   config,
@@ -64,7 +64,7 @@ const app = createApiApp({
   ),
   bootstrapService: new BootstrapService(
     { resolve: (input) => resolveP3BootstrapPolicy(input, p3Catalog) },
-    bootstrapSigningMaterial,
+    createConfigSigningService(bootstrapSigningMaterial, p3Catalog),
   ),
 });
 let closing = false;
