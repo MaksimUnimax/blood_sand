@@ -1,15 +1,20 @@
 # P3.5 Simulated Client Key Rotation — Local Evidence
 
-Status: LOCAL ACCEPTED — P3.5 ACTIVE
+Status: ACCEPTED — P3.5 DONE
 
 ## Base
 
 - Branch: `feature/product-control-plane-server-2026-09-04`
-- Base/local HEAD: `4955962b6c0e651a6f72bee68cb033e98571ef20`
-- Initial worktree: dirty with the invalidated P3.5 candidate.
+- Base HEAD: `4955962b6c0e651a6f72bee68cb033e98571ef20`
+- Implementation HEAD: `77456f2c2e492fdd521dcafdad9e0bfe26ab6af6`
 - Remote start check 1: `4955962b6c0e651a6f72bee68cb033e98571ef20`
 - Remote start check 2: `4955962b6c0e651a6f72bee68cb033e98571ef20` (4 seconds apart).
-- No commit or push was performed.
+- Implementation commit: `77456f2c2e492fdd521dcafdad9e0bfe26ab6af6`
+- Implementation commit message: `feat(server): add config signing key rotation`.
+- Canonical branch: `feature/product-control-plane-server-2026-09-04`.
+- Implementation push: normal fast-forward; remote after push matched the implementation SHA.
+- Code CI: Server CI run `33944080418` — [successful run](https://github.com/MaksimUnimax/blood_sand/actions/runs/33944080418), exact implementation head, push event.
+- Remote implementation review: PASS; expected P3.5 scope only.
 
 ## ADR
 
@@ -88,6 +93,22 @@ Status: LOCAL ACCEPTED — P3.5 ACTIVE
 - The next K1 bootstrap failed closed with HTTP 503 / `BOOTSTRAP_UNAVAILABLE`.
 - The client-side packaged-trust limitation is explicitly documented above and in ADR-0013.
 
+## Remote acceptance
+
+- Corrected PAUSED baseline-only semantics were verified in the committed remote
+  implementation: baseline retirement is blocked and the non-selectable
+  candidate retires successfully.
+- ACTIVE protects both baseline and candidate; RETIRED and no-rollout protect
+  ordinary latest only. The shared rollout-state semantic helper is used by
+  both P3.3 resolution and P3.5 retirement safety.
+- Unit total: **173 passed**; integration total: **93 passed**; Playwright E2E
+  total: **17 passed**.
+- OpenAPI: **15 routes**, SHA-256
+  `1d4869210b66d48c7f51978f85ebf21869d61a29d9a47d7fa2ffae0a9f9a8cff`.
+- Migrations: `0000..0007` only; no `0008`.
+- All canonical Server CI steps passed, including real PostgreSQL integration,
+  migration, build, Chromium installation, and E2E with no skipped E2E.
+
 ## Tests
 
 - Unit total: **173 passed**, 0 failed, 0 skipped/todo.
@@ -145,6 +166,6 @@ Status: LOCAL ACCEPTED — P3.5 ACTIVE
 ## Host and final state
 
 - Host/workspace: `/opt/product-control-plane-src/blood_sand`, unchanged.
-- Roadmap: P0/P1/P2 done; P3 active; P3.1/P3.2/P3.3/P3.4 done; P3.5 active; P3.6/P3.7 and P4–P15 planned.
-- Worktree is dirty by design with uncommitted P3.5 implementation, tests, documentation, and roadmap state.
+- Roadmap: P0/P1/P2 done; P3 active; P3.1/P3.2/P3.3/P3.4/P3.5 done; P3.6 next; P3.7 and P4–P15 planned.
+- The implementation was committed and pushed; this evidence finalization is the docs-only acceptance commit.
 - P3.6 was not started.
