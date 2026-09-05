@@ -39,39 +39,40 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Verify repair lineage, artifact hash, and byte coherence
+      - name: Verify repair lineage, artifact hash, and canonical byte coherence
         shell: bash
         run: |
           set -euo pipefail
           git merge-base --is-ancestor "$REPAIR_COMMIT" HEAD
           git merge-base --is-ancestor "$ARTIFACT_COMMIT" HEAD
+          git diff --exit-code "$REPAIR_COMMIT" -- "$PROJECT/dist-step7-candidate"
           python - <<'PY'
           from pathlib import Path
           from zipfile import ZipFile
-          import hashlib
+          import hashlib, os, subprocess
 
           project = Path('tooling/llm-api-bridges/ozon-seller')
-          candidate = project / 'dist-step7-candidate'
           artifact = project / 'artifacts' / 'OZON_BRIDGE_v0.1.19_DEFECT_015_DATE_CONTRACT_REPAIR_2892a1ddeee5.zip'
           expected_sha = 'ff6a766837195e74e09c3a9439afd057f71dca20b042b472cbd1401b2574549a'
+          repair = os.environ['REPAIR_COMMIT']
+          prefix = 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/'
+
           assert hashlib.sha256(artifact.read_bytes()).hexdigest() == expected_sha
 
-          expected_files = {}
-          for rel in ['content_script.js','manifest.json','popup.css','popup.html','popup.js','service_worker.js']:
-              p = candidate / rel
-              expected_files[rel] = p.read_bytes()
-          for p in sorted((candidate / 'shared').rglob('*')):
-              if p.is_file():
-                  expected_files[p.relative_to(candidate).as_posix()] = p.read_bytes()
+          tree = subprocess.check_output(
+              ['git','ls-tree','-r','--name-only',repair,'--',prefix]
+          ).decode('utf-8').splitlines()
+          expected_members = sorted(p[len(prefix):] for p in tree if p.startswith(prefix))
 
           with ZipFile(artifact) as z:
               members = sorted(n for n in z.namelist() if not n.endswith('/'))
-              assert members == sorted(expected_files)
-              for rel, data in expected_files.items():
-                  assert z.read(rel) == data, rel
+              assert members == expected_members, (members, expected_members)
+              for rel in expected_members:
+                  canonical = subprocess.check_output(['git','show',f'{repair}:{prefix}{rel}'])
+                  assert z.read(rel) == canonical, rel
 
           print('DEFECT_015_AUTONOMOUS_ARTIFACT_SHA256_PASS')
-          print('DEFECT_015_AUTONOMOUS_ARTIFACT_CANDIDATE_BYTE_COHERENCE_PASS')
+          print('DEFECT_015_AUTONOMOUS_ARTIFACT_CANONICAL_GIT_BYTE_COHERENCE_PASS')
           PY
 
       - name: Run complete repository gate family
@@ -189,7 +190,7 @@ jobs:
 
           - repair/artifact ancestry: **PASS**
           - exact artifact SHA-256: **PASS**
-          - artifact ↔ candidate byte-for-byte coherence: **PASS**
+          - artifact ↔ canonical repair-tree byte-for-byte coherence: **PASS**
           - complete \`run_*.mjs\` family on Ubuntu: **PASS**
           - complete \`run_*.mjs\` family on Windows: **PASS**
           - old baseline rejection + bad-behavior reproduction: **PASS**
@@ -221,7 +222,7 @@ jobs:
           | Windows full gate family | PASS |
           | old-baseline negative proof | PASS (FAIL AS EXPECTED) |
           | exact artifact SHA-256 | PASS |
-          | artifact/candidate byte coherence | PASS |
+          | artifact/canonical repair-tree byte coherence | PASS |
           | exact ZIP fresh-extraction DEFECT-015 gate | PASS |
           | exact ZIP \`finance_balance\` transport/body gate | PASS |
           | operator/user participation | NOT REQUIRED |
