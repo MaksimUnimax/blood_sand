@@ -361,7 +361,7 @@ Architecture remains:
 - P3.4 `[DONE]` Authenticated `/v1/bootstrap` and coherent signed snapshot service.
 - P3.5 `[DONE]` Simulated-client signature verification and signing-key rotation.
 - P3.6 `[DONE]` Offline grace, cached snapshot and unsupported-client/browser flows.
-- P3.7 `[NEXT]` P3 security/architecture audit, E2E and final P3 acceptance.
+- P3.7 `[ACTIVE]` P3 security/architecture audit, E2E and final P3 acceptance.
 
 # Parallel Bridge rule
 
