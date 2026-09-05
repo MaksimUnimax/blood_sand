@@ -1,6 +1,6 @@
 # P3.6 Offline Grace, Cache, and Compatibility — Local Evidence
 
-Status EXACT: **LOCAL ACCEPTED — P3.6 ACTIVE**
+Status EXACT: **ACCEPTED — P3.6 DONE**
 
 ## BASE
 
@@ -159,7 +159,7 @@ Status EXACT: **LOCAL ACCEPTED — P3.6 ACTIVE**
 - Bridge runtime: unchanged/not touched
 - PostgreSQL and browser resources: disposable local validation resources only
 
-## ROADMAP FINAL LOCAL STATE
+## HISTORICAL LOCAL ROADMAP STATE (before remote acceptance)
 
 - P0: DONE
 - P1: DONE
@@ -174,4 +174,28 @@ Status EXACT: **LOCAL ACCEPTED — P3.6 ACTIVE**
 - P3.7: PLANNED
 - P4-P15: PLANNED
 
-No commit was created and no push was performed. Return to ChatGPT for P3.6 remote acceptance. Do not start P3.7.
+At the historical local checkpoint, no commit was created and no push was
+performed. The following remote acceptance finalized that checkpoint. Do not
+start P3.7 as part of this acceptance.
+
+## REMOTE ACCEPTANCE
+
+- Implementation commit: `b796240518af2fe0c61f2d43f9f5d2bee0cc3d87`
+- Canonical branch: `feature/product-control-plane-server-2026-09-04`
+- Code-bearing Server CI: run `33947150898`
+- Code CI URL: `https://github.com/MaksimUnimax/blood_sand/actions/runs/33947150898`
+- Code CI head: `b796240518af2fe0c61f2d43f9f5d2bee0cc3d87`
+- Code CI conclusion: SUCCESS
+- Code CI canonical steps: all PASS; E2E completed and was not skipped
+- Remote implementation content review: PASS
+- Remote implementation history: exactly one commit from the required base
+- Unit: 201 passed; P3.1 crypto 12/12 PASS
+- Integration: 93 passed
+- E2E: 24 passed, 0 skipped; P3.5 baseline 17 plus 7 physical P3.6 cases
+- OpenAPI: 15 routes; SHA-256 `1d4869210b66d48c7f51978f85ebf21869d61a29d9a47d7fa2ffae0a9f9a8cff`
+- Migrations: `0000..0007` only; no `0008`; historical SQL unchanged
+- Cache review: `bootstrap_cache_v1`, exact signed envelope authority, strict context binding, fail-closed parsing, and packaged-key re-verification PASS
+- Clock/freshness review: server-time and wall-time high-watermarks, monotonic anchor/rollback handling, restart limitation, and exact freshness boundaries PASS
+- Online policy review: live-first, transport-only fallback, no HTTP same-attempt fallback, 401/403 invalidation, 503/verification/time-rollback fail-closed behavior PASS
+- Compatibility review: shared precedence and blocked-policy cache preservation PASS
+- Security review: no unsigned cache authority, cached auth/provider/seller secrets, dynamic trust expansion, remote key fetch, executable remote config, Bridge import, or tracked private keys
