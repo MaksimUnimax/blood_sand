@@ -1,0 +1,35 @@
+{
+  "schema": "OZON_DEFECT_015_FINANCE_BALANCE_LIVE_RERUN_V1",
+  "bridge": "ozon-llm-api-bridge",
+  "bridge_version": "0.1.19",
+  "operation": "finance_balance",
+  "requested_params": {
+    "date_from": "2026-08-28",
+    "date_to": "2026-09-03"
+  },
+  "request_id": "9daa5629-bd39-452a-a0c0-10667d96399a",
+  "command_fingerprint": "6e3ad7d4",
+  "request_meta": {
+    "provider": "ozon",
+    "host_alias": "seller_api",
+    "http_method": "POST",
+    "path_alias": "finance_balance",
+    "entitlement_key": "POST /v1/finance/balance"
+  },
+  "external_request_executed": true,
+  "capability_probe_executed": false,
+  "exact_request_preserved": true,
+  "command_transformed": false,
+  "logical_business_result_count": 1,
+  "physical_business_request_count": 1,
+  "http_status": 200,
+  "provider_success": true,
+  "elapsed_ms": 343,
+  "result_payload_redacted": true,
+  "artifact_expected": {
+    "name": "OZON_BRIDGE_v0.1.19_DEFECT_015_DATE_CONTRACT_REPAIR_2892a1ddeee5.zip",
+    "sha256": "ff6a766837195e74e09c3a9439afd057f71dca20b042b472cbd1401b2574549a"
+  },
+  "evidence_source": "owner_browser_bridge_live_result",
+  "notes": "The live Bridge result proved the repaired YMD finance_balance request succeeded at the provider with one physical business request, no capability probe, exact request preservation, no command transformation, and HTTP 200. Monetary response values are intentionally not persisted. The Bridge envelope reports version 0.1.19 but does not itself cryptographically attest installed ZIP bytes; exact-artifact integrity is covered separately by the autonomous handoff gate."
+}
