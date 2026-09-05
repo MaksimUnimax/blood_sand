@@ -1,6 +1,10 @@
 import { createPublicKey, type KeyObject } from "node:crypto";
 import { expect, type Page } from "@playwright/test";
-import { SimulatedExtensionClient } from "../../packages/simulated-extension-client/src/index.js";
+import {
+  SimulatedExtensionClient,
+  type BootstrapSnapshotStore,
+  type ClientClock,
+} from "../../packages/simulated-extension-client/src/index.js";
 import {
   createDatabaseRuntime,
   createP3PolicyPublicationRepository,
@@ -67,6 +71,11 @@ async function packagedKeysFromDisposableDb(
 
 async function packagedClient(
   trust: "old" | "overlap" | "new",
+  options: {
+    clock?: ClientClock;
+    snapshotStore?: BootstrapSnapshotStore;
+    fetch?: typeof fetch;
+  } = {},
 ): Promise<SimulatedExtensionClient> {
   const ids =
     trust === "old"
@@ -78,6 +87,7 @@ async function packagedClient(
     controlPlaneApiOrigin: apiOrigin,
     portalOrigin,
     trustedConfigSigningKeys: await packagedKeysFromDisposableDb(ids),
+    ...options,
   });
 }
 
@@ -151,9 +161,14 @@ export async function accountId(): Promise<string> {
 export async function activateExtensionClient(
   page: Page,
   trust: "old" | "overlap" | "new" = "overlap",
+  options: {
+    clock?: ClientClock;
+    snapshotStore?: BootstrapSnapshotStore;
+    fetch?: typeof fetch;
+  } = {},
 ) {
   await login(page);
-  const extension = await packagedClient(trust);
+  const extension = await packagedClient(trust, options);
   const authorization = await start(extension);
   await approve(page, authorization);
   if (
@@ -174,7 +189,11 @@ export async function activateExtension(page: Page) {
 
 /** Uses the accepted publication path; only its public signer metadata exists in DB. */
 export async function seedBootstrapConfig(
-  options: { minimumExtensionVersion?: string; signingKeyId?: string } = {},
+  options: {
+    minimumExtensionVersion?: string;
+    signingKeyId?: string;
+    unsupportedChrome?: boolean;
+  } = {},
 ) {
   const database = createDatabaseRuntime(process.env.DATABASE_URL!);
   const publication = createP3PolicyPublicationRepository(database);
@@ -184,6 +203,18 @@ export async function seedBootstrapConfig(
   };
   const publishedAt = new Date("2026-09-04T00:00:00.000Z");
   try {
+    await publication.publishExtensionRelease(
+      {
+        version: "1.2.3",
+        releaseChannel: "stable",
+        releasedAt: publishedAt,
+        supportedContracts: ["control_plane_v1"],
+        supportedBrowsers: options.unsupportedChrome
+          ? ["yandex_chromium"]
+          : ["chrome"],
+      },
+      context,
+    );
     const compatibility = await publication.publishCompatibilityPolicyRevision(
       {
         policyKey: "e2e-bootstrap-policy",

@@ -343,6 +343,9 @@ importers:
       '@product/remote-config':
         specifier: workspace:*
         version: link:../remote-config
+      zod:
+        specifier: 4.1.5
+        version: 4.1.5
 
 packages:
 

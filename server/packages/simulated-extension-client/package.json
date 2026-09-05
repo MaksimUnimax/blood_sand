@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@product/contracts": "workspace:*",
-    "@product/remote-config": "workspace:*"
+    "@product/remote-config": "workspace:*",
+    "zod": "4.1.5"
   }
 }
