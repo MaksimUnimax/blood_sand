@@ -1,11 +1,11 @@
 # P3 Final Acceptance — Local Evidence — 2026-09-05
 
-Status: **LOCAL ACCEPTED — P3.7 ACTIVE; P3 FINALIZATION PENDING REMOTE ACCEPTANCE**
+Status: **ACCEPTED — P3 DONE**
 
 Technical ID: `PRODUCT-CONTROL-PLANE-P3.7-SECURITY-ARCHITECTURE-FINAL-AUDIT-LOCAL`
 Attempt: `1`
 
-## Base and state
+## Historical local acceptance state (before remote acceptance)
 
 - Branch: `feature/product-control-plane-server-2026-09-04`.
 - HEAD: `d955278fcaefc2fcd116fa64427108cb7735193c`.
@@ -42,7 +42,7 @@ Attempt: `1`
 - Bridge runtime import and seller-data-plane ownership/storage: NONE.
 - Host safety: host installations and protected legacy services untouched; disposable PostgreSQL/browser resources only.
 
-## Recovery and roadmap
+## Historical recovery and roadmap state (before remote acceptance)
 
 - Local recovery patch: `/var/backups/product-control-plane/git/blood_sand-p3.7-local-accepted-uncommitted.patch`.
 - Local recovery untracked archive: `/var/backups/product-control-plane/git/blood_sand-p3.7-local-accepted-untracked.tar.gz`.
@@ -56,3 +56,15 @@ Attempt: `1`
 - Browser persistent storage adapter is deferred to P11.
 - Subscription, entitlements, and AI remain staged until future roadmap stages.
 - No live Bridge integration occurs before P11.
+
+## Final remote acceptance evidence
+
+- Audit commit SHA: `0038de1861098264453479bc54d3ad53832c8771`; message: `docs(server): add P3 final security audit`.
+- Audit-head Server CI: run `33950272536`; https://github.com/MaksimUnimax/blood_sand/actions/runs/33950272536; exact audit SHA; SUCCESS; all canonical steps passed.
+- Remote content/security/traceability review: PASS.
+- Regression evidence: `201` unit, `93` integration, `24` E2E, P3.1 crypto `12/12` PASS.
+- OpenAPI: `15` routes, `POST /v1/bootstrap` exactly once, SHA-256 `1d4869210b66d48c7f51978f85ebf21869d61a29d9a47d7fa2ffae0a9f9a8cff`.
+- Migrations: `0000..0007` only; no `0008`.
+- Dependency audit: all critical/high `0/0`, production critical/high `0/0`; moderate `4` all / `3` production; low `0`.
+- Secret scan: PASS; `REAL_SECRET_FOUND: NO`.
+- Canonical branch: `feature/product-control-plane-server-2026-09-04`.

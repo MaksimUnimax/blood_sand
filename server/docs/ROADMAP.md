@@ -109,7 +109,7 @@ Scope:
 
 Exit: complete simulated extension activation/refresh/revoke/device-limit flow with security tests.
 
-## P3 — Bootstrap, compatibility and signed remote configuration `[ACTIVE]`
+## P3 — Bootstrap, compatibility and signed remote configuration `[DONE]`
 
 Goal: authorized client receives a safe versioned policy/config snapshot.
 
@@ -127,7 +127,7 @@ Scope:
 
 Exit: valid/tampered/expired/offline/unsupported-client tests pass; remote payload cannot expand packaged capability.
 
-## P4 — Plans, price revisions and entitlement engine `[PLANNED]`
+## P4 — Plans, price revisions and entitlement engine `[NEXT]`
 
 Goal: admin can change sellable capabilities/pricing structure without extension releases.
 
@@ -361,7 +361,7 @@ Architecture remains:
 - P3.4 `[DONE]` Authenticated `/v1/bootstrap` and coherent signed snapshot service.
 - P3.5 `[DONE]` Simulated-client signature verification and signing-key rotation.
 - P3.6 `[DONE]` Offline grace, cached snapshot and unsupported-client/browser flows.
-- P3.7 `[ACTIVE]` P3 security/architecture audit, E2E and final P3 acceptance.
+- P3.7 `[DONE]` P3 security/architecture audit, E2E and final P3 acceptance.
 
 # Parallel Bridge rule
 

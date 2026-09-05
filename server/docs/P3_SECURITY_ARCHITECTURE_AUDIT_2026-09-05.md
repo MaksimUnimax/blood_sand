@@ -126,3 +126,12 @@ ROADMAP P3 exit mapping is explicit: valid -> signed snapshot E2E and crypto tes
 - There is no live Bridge integration before P11.
 
 No P3 correction finding exists. No product semantic, executable, test, schema, package, lockfile, migration, workflow, or Bridge file was changed during this audit.
+
+## REMOTE FINAL P3 ACCEPTANCE
+
+- P3_7_AUDIT_SHA: `0038de1861098264453479bc54d3ad53832c8771`.
+- Audit-head Server CI: run `33950272536`; https://github.com/MaksimUnimax/blood_sand/actions/runs/33950272536; exact head SHA matched; all canonical steps passed, including full E2E.
+- Remote content/security/traceability review: PASS. The exact base-to-audit diff is docs-only, the committed audit and local-evidence documents retain the accepted findings and limitations, and P2-final ancestry remains linear with no merge publication.
+- Remote-clean dependency audit: PASS. Node `24.20.0`, pnpm `10.34.5`, frozen install; all dependencies critical `0`, high `0`, moderate `4`, low `0`; production critical `0`, high `0`, moderate `3`, low `0`.
+- Remote-clean secret scan: PASS. `REAL_SECRET_FOUND: NO`; no private config key, deploy private key, Ozon credential, access token material, or real signing-ring value was found in the exact tree or P2-final through audit history.
+- Final checkpoint: the accepted P3.7 audit is published at the exact audit SHA after successful audit-head CI and remote-clean security validation; P3 final documentation and roadmap closure proceed in the following docs-only checkpoint.
