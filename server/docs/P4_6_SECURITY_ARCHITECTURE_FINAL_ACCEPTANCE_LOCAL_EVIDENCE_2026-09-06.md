@@ -4,7 +4,7 @@ Technical ID: `PRODUCT-CONTROL-PLANE-P4.6-COMMERCIAL-SECURITY-ARCHITECTURE-FINAL
 
 Attempt: `1`
 
-Status: **LOCAL ACCEPTED — P4.6 ACTIVE / P4 FINAL REMOTE ACCEPTANCE PENDING**
+Status: **ACCEPTED — P4.6 DONE / P4 FINAL ACCEPTED**
 
 This is a local acceptance record for the complete P4 commercial foundation. It is not a production launch security gate and does not start P5.
 
@@ -180,7 +180,7 @@ No P4 implementation defect was found and no product source correction was made.
 
 ## Roadmap and freeze
 
-The roadmap remains P4 ACTIVE, with P4.1–P4.5 DONE, P4.6 ACTIVE, and P5–P15 PLANNED. P4 is not marked DONE and P5 is not started.
+The roadmap is finalized as P4 DONE, with P4.1–P4.6 DONE and P5 NEXT. P5 is not started and no P5 implementation was executed.
 
 Initial root disk was approximately 80% used with 12 GiB free; final validation remains below the 85% safety threshold. Only the exact disposable P4.6 PostgreSQL container, temporary extraction directory and temporary E2E result output are to be removed after freeze verification. Protected host services remain active.
 
@@ -192,4 +192,18 @@ Recovery artifacts are recorded outside the repository in the final manifest:
 
 `/var/backups/product-control-plane/git/blood_sand-p4.6-local-accepted.manifest.txt`
 
-The candidate is frozen only after tracked-diff byte comparison and exact untracked member/content comparison pass. No commit or push is performed.
+The candidate is frozen only after tracked-diff byte comparison and exact untracked member/content comparison pass. No commit or push was performed before the audit commit.
+
+## Remote finalization
+
+- `P4_6_AUDIT_SHA=7c934f1a597add7508d9fb35c89ba4a250cce661`.
+- Audit-head Server CI: run `34024595887`, [workflow run](https://github.com/MaksimUnimax/blood_sand/actions/runs/34024595887), `SUCCESS`.
+- `REMOTE_P4_FINAL_REVIEW=PASS`.
+- Regression results: unit `253/253`; integration `334`; P4.6 `38`; P4.5 `52`; P4.4 `48`; P4.3 `52`; P4.2 `21`; P4.1 `30`; crypto `12/12`; E2E `24/24`.
+- OpenAPI: `16` route/method tuples; SHA `038fe97ae7bf1d44563f768dbe6335c087e3430f255986325fad65de422b308f`.
+- Migrations: `0000..0008`; migration `0008` SHA `d661f98db6b18a2181fe2094f0715b11eb56eec7e96270d9634f4cd2fc8dc9f1`.
+- Open findings: Critical `0`; High `0`; material Medium `0`; Low `0`; Informational `1` existing Next.js ESLint-plugin warning.
+- Product defects found in P4.6: `NONE`; product defects corrected: `NONE`.
+- `P4_SECURITY_ARCHITECTURE_AUDIT=PASS`.
+- `PRODUCTION_LAUNCH_SECURITY_GATE=DEFERRED`.
+- P5 execution: `NOT EXECUTED`.
