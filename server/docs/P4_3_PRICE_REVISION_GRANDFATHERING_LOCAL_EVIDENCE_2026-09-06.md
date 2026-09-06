@@ -12,9 +12,9 @@ Reason: only 2 distinct P4.3 real-PostgreSQL cases existed while acceptance
 required at least 22 independent physical cases. The Attempt-1 patch and
 untracked archive remain preserved as invalidated candidate artifacts.
 
-Attempt 2: `TEST-HARDENING / RE-ACCEPTANCE`.
+Attempt 2: `52-CASE CORRECTIVE TEST HARDENING`.
 
-Current status: `LOCAL ACCEPTED — P4.3 ACTIVE`.
+Current status: `ACCEPTED — P4.3 DONE`.
 
 ## Implementation
 
@@ -52,9 +52,23 @@ published row and verifies its UUID and terms are unchanged.
 
 ## Required status
 
-After all final gates pass this document will be updated to:
+Final status:
 
-`LOCAL ACCEPTED — P4.3 ACTIVE`
+`ACCEPTED — P4.3 DONE`
+
+## Remote acceptance
+
+- Implementation commit: `c6bb2cda0643c1032842f7f79a8a23ae2c4d1107`, parent
+  `20cf3adbef703ad4cb5a478dbab8a81e731b8609`, message
+  `feat(server): add price revision sale selection services`.
+- Code CI: GitHub Actions `Server CI`, run `34014838177`, head
+  `c6bb2cda0643c1032842f7f79a8a23ae2c4d1107`, succeeded. Results: 221 unit,
+  196 integration, 52 P4.3, 21 P4.2, 30 P4.1, 12/12 P3.1 crypto, and 24/24
+  E2E; OpenAPI remained the exact accepted artifact and migrations remained
+  `0000..0008`.
+- Remote committed review: `PASS`. Parent-plan archival enforcement and exact
+  duplicate sale-assignment no-op are present remotely. Grandfathering,
+  expiry-fail-closed, no-fallback, audit rollback, and P4.3 boundaries pass.
 
 ## Final acceptance gates
 
@@ -91,5 +105,5 @@ After all final gates pass this document will be updated to:
   `ed213ff55677e26a34ed03836f2023188f1c34ab3e8176beaea977125205aedc`.
   Untracked count: 8.
 
-P4.1 remains DONE, P4.2 remains DONE, P4.4/P4.5/P4.6 remain PLANNED, and
-P5–P15 remain PLANNED. P4.3 is ACTIVE, not DONE.
+P4.1 remains DONE, P4.2 remains DONE, P4.3 is DONE, P4.4 is NEXT, and
+P4.5/P4.6 remain PLANNED. P5–P15 remain PLANNED. P4.4 was not executed.
