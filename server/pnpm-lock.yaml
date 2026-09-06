@@ -242,6 +242,9 @@ importers:
       '@product/extension-auth':
         specifier: workspace:*
         version: link:../extension-auth
+      '@product/plans':
+        specifier: workspace:*
+        version: link:../plans
       '@product/remote-config':
         specifier: workspace:*
         version: link:../remote-config
@@ -313,6 +316,15 @@ importers:
       pino:
         specifier: 9.9.4
         version: 9.9.4
+
+  packages/plans:
+    dependencies:
+      '@product/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: 4.1.5
+        version: 4.1.5
 
   packages/remote-config:
     dependencies:

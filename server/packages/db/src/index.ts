@@ -9,6 +9,7 @@ export { createCompatibilityCatalogRepository } from "./compatibility-catalog-re
 export { createRemoteConfigCatalogRepository } from "./remote-config-catalog-repository.js";
 export { createP3PolicyPublicationRepository } from "./p3-policy-publication-repository.js";
 export { createP3BootstrapPolicyCatalogRepository } from "./p3-bootstrap-policy-catalog-repository.js";
+export { createP4PlanCommandRepository } from "./p4-plan-command-repository.js";
 
 export interface DatabaseRuntime {
   db: NodePgDatabase<typeof schema>;
