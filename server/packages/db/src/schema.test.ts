@@ -4,6 +4,8 @@ import {
   accountRole,
   accountStatus,
   billingIntervalUnit,
+  billingEventProcessingState,
+  billingEventSource,
   browserFamily,
   deviceAuthorizationStatus,
   deviceStatus,
@@ -11,6 +13,7 @@ import {
   entitlementSecurityClassification,
   entitlementValueType,
   identityProvider,
+  paymentState,
   planRevisionState,
   planStatus,
   priceRevisionState,
@@ -19,6 +22,8 @@ import {
   sessionStatus,
   signingKeyEventType,
   userStatus,
+  subscriptionState,
+  subscriptionTransitionSource,
 } from "./schema.js";
 
 it("exports the exact P2.1 lifecycle states", () => {
@@ -80,4 +85,42 @@ it("exports only the typed P4.1 entitlement vocabulary", () => {
     "LIMIT",
   ]);
   expect(entitlementOverrideOperation.enumValues).toEqual(["SET", "CLEAR"]);
+});
+
+it("exports the exact P5.1 subscription and payment state vocabulary", () => {
+  expect(subscriptionState.enumValues).toEqual([
+    "TRIAL",
+    "ACTIVE",
+    "GRACE",
+    "PAST_DUE",
+    "CANCELED",
+    "EXPIRED",
+    "SUSPENDED",
+  ]);
+  expect(subscriptionTransitionSource.enumValues).toEqual([
+    "CHECKOUT",
+    "WEBHOOK",
+    "RECONCILIATION",
+    "JOB",
+    "ADMIN",
+    "SYSTEM",
+  ]);
+  expect(paymentState.enumValues).toEqual([
+    "PENDING",
+    "SUCCEEDED",
+    "FAILED",
+    "CANCELED",
+    "REFUNDED",
+    "CHARGEBACK",
+  ]);
+});
+
+it("exports the exact P5.1 billing-event vocabulary", () => {
+  expect(billingEventSource.enumValues).toEqual(["WEBHOOK", "RECONCILIATION"]);
+  expect(billingEventProcessingState.enumValues).toEqual([
+    "VERIFIED",
+    "APPLIED",
+    "IGNORED",
+    "FAILED",
+  ]);
 });

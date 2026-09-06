@@ -143,7 +143,7 @@ Scope:
 
 Exit: price history/grandfathering/revision immutability and deterministic entitlement tests pass.
 
-## P5 — Billing and subscription state machine `[NEXT]`
+## P5 — Billing and subscription state machine `[ACTIVE]`
 
 Goal: paid access works idempotently.
 
@@ -159,6 +159,19 @@ Scope:
 - portal billing.
 
 Exit: duplicate/forged/delayed webhook, reconciliation and admin audit scenarios pass.
+
+P5 execution decomposition (frozen by ADR-0020):
+
+- P5.1 `[ACTIVE]` subscription/billing persistence foundation: four core tables, physical integrity/immutability/idempotency constraints, migration/schema tests, local evidence, and recovery freeze.
+- P5.2 `[PLANNED]` subscription FSM, internal manual grant/extend/suspend/restore commands, exact revision bindings, eligibility/read contracts, and audit.
+- P5.3 `[PLANNED]` provider-neutral `BillingProviderPort`, deterministic fake/stub provider, simulated checkout orchestration, and server checkout idempotency.
+- P5.4 `[PLANNED]` simulated verified billing-event/webhook application through the deterministic fake provider; no real provider HTTP webhook.
+- P5.5 `[PLANNED]` simulated reconciliation and durable subscription period/grace/expiry/cancel jobs through the deterministic fake provider.
+- P5.6 `[PLANNED]` subscription eligibility/bootstrap integration, P4.4 account-plan binding, atomic commercial device limits, portal reads, and non-real-money billing UX.
+- P5.7 `[PLANNED]` P5 security/architecture/full-regression/final acceptance in simulated billing mode.
+
+Real payment go-live: `[DEFERRED UNTIL AFTER REMAINING PRODUCT ROADMAP]`.
+YooKassa and Tinkoff/T-Bank: candidates only; no production provider is selected.
 
 ## P6 — Admin and operations core `[PLANNED]`
 

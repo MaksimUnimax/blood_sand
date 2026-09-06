@@ -77,6 +77,7 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
       "accounts",
       "audit_events",
       "auth_rate_limit_buckets",
+      "billing_events",
       "compatibility_policy_blocked_versions",
       "compatibility_policy_revisions",
       "config_release_compatibility_policies",
@@ -93,6 +94,7 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
       "feature_rule_revisions",
       "otp_challenges",
       "otp_email_jobs",
+      "payments",
       "plan_entitlements",
       "plan_revisions",
       "plans",
@@ -106,13 +108,15 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
       "sessions",
       "signing_key_events",
       "signing_keys",
+      "subscription_transitions",
+      "subscriptions",
       "user_identities",
       "users",
     ]);
     const count = await runtime.db.execute<{ count: string }>(sql`
       SELECT count(*)::text AS "count" FROM drizzle."__drizzle_migrations"
     `);
-    expect(count.rows[0]?.count).toBe("9");
+    expect(count.rows[0]?.count).toBe("10");
     const probe = await runtime.db.execute<{ probe: string | null }>(sql`
       SELECT to_regclass('__p1_migration_probe') AS "probe"
     `);

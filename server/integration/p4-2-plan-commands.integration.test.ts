@@ -49,7 +49,7 @@ async function auditCount(): Promise<number> {
 
 async function resetCommercial(): Promise<void> {
   await q(
-    "TRUNCATE price_sale_assignments,account_entitlement_overrides,price_revisions,plan_entitlements,prices,plan_revisions,entitlement_definitions,plans,audit_events",
+    "TRUNCATE billing_events,subscription_transitions,payments,subscriptions,price_sale_assignments,account_entitlement_overrides,price_revisions,plan_entitlements,prices,plan_revisions,entitlement_definitions,plans,audit_events",
   );
 }
 
