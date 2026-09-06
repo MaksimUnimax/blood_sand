@@ -1,0 +1,13 @@
+month	sign	attributed_orders	attributed_sum_price_rub	order_nm_ids	bridge_version	request_id	note
+2025-09	Овен	1	1264	262669816	0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	current campaign nm
+2025-09	Телец	1	1264	459997114	0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	attributed cross-sell nm; current campaign Taurus nm 262629137 had 0 orders
+2025-09	Близнецы	2	2528	446294516	0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	attributed cross-sell nm
+2025-09	Рак	0	0		0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	observed nm 262678024
+2025-09	Лев	0	0		0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	current campaign nm 262669815
+2025-09	Дева	0	0		0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	current campaign nm 262669814
+2025-09	Весы	1	1264	262661039	0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	current campaign nm
+2025-09	Скорпион	1	1264	462723607	0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	current campaign nm
+2025-09	Стрелец	0	0		0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	observed nms 262678027 and 459976156
+2025-09	Козерог	2	2516	262622381	0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	current campaign nm; order sums 1252 + 1264
+2025-09	Водолей	0	0		0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	current campaign nm 262669813
+2025-09	Рыбы	0	0		0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	observed nm 262678025

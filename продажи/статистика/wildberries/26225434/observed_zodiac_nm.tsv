@@ -1,0 +1,15 @@
+sign	nm_id	observed_context	current_campaign_snapshot_2026_09_06	note
+Овен	262669816	promo_fullstats 2025-09	true	
+Телец	262629137	promo_fullstats 2025-09	true	
+Телец	459997114	promo_fullstats 2025-09	false	attributed order with zero ad views in observed row
+Близнецы	446294516	promo_fullstats 2025-09	false	attributed orders with zero ad views in observed row
+Рак	262678024	promo_fullstats 2025-09	false	observed historically in campaign statistics
+Лев	262669815	promo_fullstats 2025-09	true	observed as attributed basket row with zero views
+Дева	262669814	promo_fullstats 2025-09	true	
+Весы	262661039	promo_fullstats 2025-09	true	
+Скорпион	462723607	promo_fullstats 2025-09	true	
+Стрелец	262678027	promo_fullstats 2025-09	true	
+Стрелец	459976156	promo_fullstats 2025-09	false	observed attributed basket row with zero ad views
+Козерог	262622381	promo_fullstats 2025-09	true	
+Водолей	262669813	promo_fullstats 2025-09	true	
+Рыбы	262678025	promo_fullstats 2025-09	false	observed historically in campaign statistics
