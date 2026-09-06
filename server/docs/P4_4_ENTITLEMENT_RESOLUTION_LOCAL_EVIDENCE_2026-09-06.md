@@ -1,6 +1,6 @@
 # P4.4 Commercial Entitlement Overrides / Resolution — Local Evidence — 2026-09-06
 
-Status: LOCAL ACCEPTED — P4.4 ACTIVE
+Status: ACCEPTED — P4.4 DONE
 
 Technical ID: `PRODUCT-CONTROL-PLANE-P4.4-COMMERCIAL-ENTITLEMENT-OVERRIDES-RESOLUTION-LOCAL`  
 Attempt: `1`
@@ -119,3 +119,18 @@ Attempt: `1`
 - P4: ACTIVE; P4.1 DONE; P4.2 DONE; P4.3 DONE; P4.4 ACTIVE; P4.5 PLANNED; P4.6 PLANNED.
 - P5–P15: PLANNED.
 - Recovery patch/archive/manifest are created only after this candidate and document are final under the fixed external recovery-freeze protocol. The detached manifest is authoritative for their byte counts and hashes; this evidence document will not be edited afterward.
+
+## Remote acceptance
+
+- Implementation SHA: `7dcb28d38d1894045740eaadf96fe2cb49036286`.
+- Implementation parent: `885353a4e51bc54e13d874b4e236b90c4761cc33`.
+- Code CI: Server CI run `34018396177`, [GitHub run](https://github.com/MaksimUnimax/blood_sand/actions/runs/34018396177), `SUCCESS` for the implementation SHA.
+- Code CI counts: `231` unit; `244` integration; `48` P4.4; `52` P4.3; `21` P4.2; `30` P4.1; `12/12` crypto; `24/24` E2E; `15` OpenAPI.
+- OpenAPI SHA: `1d4869210b66d48c7f51978f85ebf21869d61a29d9a47d7fa2ffae0a9f9a8cff`.
+- Remote committed review: PASS. The remote diff is exactly one implementation commit and the committed real-PostgreSQL P4.4 suite contains 48 distinct meaningful cases.
+- Migrations unchanged: `0000..0008`; no `0009`, schema, or migration change.
+
+## Process notes
+
+1. The ignored Vitest `node_modules` cache was correctly excluded by Git-aware candidate inventory.
+2. The staged Markdown `git --check` findings were exact two-space intentional hard breaks and did not alter frozen candidate semantics.
