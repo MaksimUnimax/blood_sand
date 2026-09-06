@@ -24,3 +24,6 @@ sign	nm_id	observed_context	current_campaign_snapshot_2026_09_06	note
 Рак	459997110	promo_fullstats 2026-07	false	observed historical zodiac nm; basket/attribution rows in July
 Близнецы	459976158	promo_fullstats 2026-07	false	observed historical zodiac nm; basket/attribution rows in July
 Рыбы	459997111	promo_fullstats 2026-07	false	attributed zodiac order with zero ad views in July
+Козерог	459997107	promo_fullstats 2026-08	false	attributed zodiac order with zero ad views in August; sum_price 1354 RUB
+Стрелец	459997113	promo_fullstats 2026-08	false	observed attributed basket row with zero ad views; no attributed order
+Дева	459949763	promo_fullstats 2026-08	false	observed attributed basket row with zero ad views; no attributed order
