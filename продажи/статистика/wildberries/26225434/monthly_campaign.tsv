@@ -1,3 +1,4 @@
 month	begin_date	end_date	campaign_id	views	clicks	ctr_pct	atbs	attributed_orders	canceled	shks	spend_rub	attributed_sum_price_rub	cpc_rub	cr_pct	currency	bridge_version	request_id
 2025-09	2025-09-01	2025-09-30	26225434	9404	189	2.01	35	9	0	9	656.40	11364	3.47	4.76	RUB	0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4
 2025-10	2025-10-01	2025-10-31	26225434	13073	208	1.59	28	5	0	5	888.80	6542	4.27	2.40	RUB	0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c
+2025-11	2025-11-01	2025-11-30	26225434	25842	501	1.94	64	11	1	11	2001.40	15950	3.99	2.20	RUB	0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5
