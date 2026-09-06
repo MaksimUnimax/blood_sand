@@ -1,0 +1,2 @@
+month	begin_date	end_date	campaign_id	request_id	bridge_version	views	clicks	ctr_pct	atbs	orders	canceled	spend_rub	revenue_rub	cpc_rub	cr_pct	capture_status	normalization_target
+2025-12	2025-12-01	2025-12-31	26225434	1192523c-e557-406a-9e8f-377e395fb6e4	0.1.2	63067	1038	1.65	127	21	0	6196.73	29363	5.97	2.02	RAW_FULLSTATS_RECEIVED__SIGN_FUNNEL_NORMALIZATION_IN_PROGRESS	monthly_zodiac_funnel.tsv
