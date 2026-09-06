@@ -366,8 +366,8 @@ Architecture remains:
 ## P4 substeps
 
 - P4.1 `[DONE]` Commercial catalog persistence foundation.
-- P4.2 `[ACTIVE]` Plan / entitlement definition / plan-revision command services, publication, hide/archive, transactionally audited mutations and concurrency.
-- P4.3 `[PLANNED]` Price revision commands, explicit new-sales selection/closure, effective windows, price history and catalog-level grandfathering.
+- P4.2 `[DONE]` Plan / entitlement definition / plan-revision command services, publication, hide/archive, transactionally audited mutations and concurrency.
+- P4.3 `[NEXT]` Price revision commands, explicit new-sales selection/closure, effective windows, price history and catalog-level grandfathering.
 - P4.4 `[PLANNED]` Deterministic commercial entitlement resolver, account override resolution, explanation objects and `device.max_active` adapter contract.
 - P4.5 `[PLANNED]` Public commercial catalog read model/API plus stable P5/P6 consumer interfaces, without implementing subscriptions/admin mutation transport.
 - P4.6 `[PLANNED]` P4 security/architecture audit, full regression and final P4 acceptance.

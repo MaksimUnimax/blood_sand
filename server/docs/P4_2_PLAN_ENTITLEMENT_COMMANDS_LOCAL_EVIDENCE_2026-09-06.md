@@ -1,6 +1,6 @@
 # P4.2 Plan / Entitlement Commands — Local Evidence — 2026-09-06
 
-Status: LOCAL ACCEPTED — P4.2 ACTIVE
+Status: ACCEPTED — P4.2 DONE
 
 Technical ID: `PRODUCT-CONTROL-PLANE-P4.2-PLAN-ENTITLEMENT-COMMANDS-LOCAL`  
 Attempt: `1`
@@ -107,9 +107,9 @@ Prices and price revisions remain P4.3. Account overrides and resolution remain 
 ## ROADMAP
 
 - P0 DONE; P1 DONE; P2 DONE; P3 DONE; P4 ACTIVE.
-- P4.1 DONE; P4.2 ACTIVE; P4.3 PLANNED; P4.4 PLANNED; P4.5 PLANNED; P4.6 PLANNED.
+- P4.1 DONE; P4.2 DONE; P4.3 NEXT; P4.4 PLANNED; P4.5 PLANNED; P4.6 PLANNED.
 - P5-P15 PLANNED.
-- P4.2 is not marked DONE and P4.3 is not NEXT.
+- P4.2 is marked DONE and P4.3 is NEXT.
 
 ## HOST AND RECOVERY
 
@@ -126,8 +126,19 @@ Prices and price revisions remain P4.3. Account overrides and resolution remain 
 
 ## FINAL STATE
 
-- Local worktree: dirty by design with the uncommitted P4.2 candidate.
-- Commit created: NO.
-- Push performed: NO.
+- Local worktree: clean after the committed P4.2 implementation and docs acceptance commits.
+- Implementation commit: `edb32694f6bfe2b8433147ab85f84936f5735d28`.
+- Code CI: `34008726667` — https://github.com/MaksimUnimax/blood_sand/actions/runs/34008726667 — SUCCESS.
 - Final remote check 1: `5bd0b857c27f477c1f31d5849ffe5e4ef5cb7a93`.
 - Final remote check 2: `5bd0b857c27f477c1f31d5849ffe5e4ef5cb7a93`.
+
+## REMOTE ACCEPTANCE
+
+- Remote committed review: PASS.
+- Unit: `218 PASS`.
+- Integration: `144 PASS`, including `21` P4.2 tests and `30/30` P4.1 persistence regression.
+- E2E: `24/24 PASS`.
+- P3.1 crypto: `12/12 PASS`.
+- OpenAPI: `15` routes; SHA-256 `1d4869210b66d48c7f51978f85ebf21869d61a29d9a47d7fa2ffae0a9f9a8cff`.
+- Migrations: `0000..0008` unchanged; no `0009`.
+- Audit, concurrency, deprecation serialization, and publication review: PASS.
