@@ -2,7 +2,7 @@
 
 Technical ID: `PRODUCT-CONTROL-PLANE-P5.1-SUBSCRIPTION-BILLING-PERSISTENCE-FOUNDATION-LOCAL-V2`  
 Attempt: `1`  
-Status: LOCAL ACCEPTED — P5.1 ACTIVE
+Status: ACCEPTED — P5.1 DONE
 
 ## Base, remote, and safety
 
@@ -26,8 +26,8 @@ a separate final payment go-live architecture/acceptance gate.
 
 The frozen P5 decomposition is:
 
-- P5.1 ACTIVE: persistence foundation and local acceptance.
-- P5.2 PLANNED: subscription FSM, internal manual commands, exact bindings, eligibility/read contracts, audit.
+- P5.1 DONE: persistence foundation and remote acceptance.
+- P5.2 NEXT: subscription FSM, internal manual commands, exact bindings, eligibility/read contracts, audit.
 - P5.3 PLANNED: provider-neutral port, deterministic fake provider, simulated checkout and checkout idempotency.
 - P5.4 PLANNED: simulated verified billing-event application; no real HTTP webhook.
 - P5.5 PLANNED: simulated reconciliation and durable period/grace/expiry/cancel jobs.
@@ -135,6 +135,18 @@ payment instruments/credentials, provider secrets, webhook secrets, or raw
 provider bodies/headers.
 
 Roadmap is P0 DONE, P1 DONE, P2 DONE, P3 DONE, P4 DONE, P5 ACTIVE, P5.1
-ACTIVE, P5.2–P5.7 PLANNED, and P6–P15 PLANNED. P5.1 is intentionally not
-marked DONE locally. Real payment go-live is explicitly deferred until after
-the remaining product roadmap.
+DONE, P5.2 NEXT, P5.3–P5.7 PLANNED, and P6–P15 PLANNED. Real payment go-live
+is explicitly deferred until after the remaining product roadmap.
+
+## Remote acceptance
+
+- Implementation commit: `7eb6dc3e098b81f0bf2a517fa6eadb236b4bea26`.
+- Implementation-head Server CI: run `34029335936`, [workflow run](https://github.com/MaksimUnimax/blood_sand/actions/runs/34029335936), `SUCCESS`.
+- `REMOTE_P5_1_REVIEW=PASS`.
+- Unit: `255`; integration: `428`; P5.1 real PostgreSQL: `94`.
+- P4.6: `38`; P4.5: `52`; P4.4: `48`; P4.3: `52`; P4.2: `21`; P4.1: `30`.
+- Crypto: `12/12`; E2E: `24/24`.
+- OpenAPI: `16` route/method tuples; SHA `038fe97ae7bf1d44563f768dbe6335c087e3430f255986325fad65de422b308f`.
+- Migrations: `0000..0009`; 0009 SHA `d073221a237bdc867672b5e1e8223a0f62eacbb4670c1c19cfc346b64406e4ec`.
+- Real provider selected: `NO`; provider SDK: `NO`; external payment calls: `NONE`.
+- Real payment go-live: `DEFERRED` until a dedicated final payment integration stage.
