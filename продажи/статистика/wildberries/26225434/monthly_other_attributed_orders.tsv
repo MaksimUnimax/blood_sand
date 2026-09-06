@@ -9,5 +9,7 @@ month	date	name	nm_id	attributed_orders	attributed_sum_price_rub	bridge_version	
 2026-01	2026-01-05	Амулет в машину "Шлем ужаса - Эгисхьяльм".	249560898	1	1233	0.1.2	ffb5182e-6ee8-42f3-a212-d8184da66969	non-zodiac cross-sell attribution; excluded from zodiac matrix
 2026-01	2026-01-24	Амулет в машину "Вегвизир - Рунический компас".	249560501	1	1233	0.1.2	ffb5182e-6ee8-42f3-a212-d8184da66969	non-zodiac cross-sell attribution; excluded from zodiac matrix
 2026-01	2026-01-29	Славянский оберег в машину "Печать Велеса"	267696739	1	1362	0.1.2	ffb5182e-6ee8-42f3-a212-d8184da66969	non-zodiac cross-sell attribution; excluded from zodiac matrix
+2026-02	2026-02-02	Чётки - Славянский оберег в машину "Печать Велеса"	249497931	1	1417	0.1.2	c68c2035-6567-4dfd-a8b2-c49502210264	non-zodiac cross-sell attribution; excluded from zodiac matrix
+2026-02	2026-02-24	Славянский оберег в машину "Триглав"	267829273	1	1362	0.1.2	c68c2035-6567-4dfd-a8b2-c49502210264	non-zodiac cross-sell attribution; excluded from zodiac matrix
 2026-07	2026-07-03	Подвеска на зеркало в машину. "Герб России".	481155639	1	1281	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	non-zodiac cross-sell attribution; excluded from zodiac matrix
 2026-07	2026-07-28	Амулет в машину "Вегвизир - Рунический компас".	249560501	1	1362	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	non-zodiac cross-sell attribution; excluded from zodiac matrix
