@@ -1,8 +1,9 @@
 # Ozon AI Worker — Capability Awareness / Product Logic Layer (baseline 20, expandable)
 
 Date: 2026-09-02
-Branch: `research/ozon-product-demand-2026-09-02`
-Status: PLANNED — START ONLY AFTER STD-20
+Updated: 2026-09-06
+Branch: `repair/ozon-date-contract-2026-09-04`
+Status: ACTIVE — CAP-15 CURRENT / PRIMARY GATE EXPANDED TO CAP-24
 Scope: authenticated Ozon seller without Premium.
 
 ## Why this layer exists
@@ -33,9 +34,9 @@ Gate-size principle:
 
 Do not add cosmetic variants merely to increase coverage count. Every added primary-gate row must justify a new data surface, a materially new orchestration path, a new entitlement/coverage boundary, or a clearly distinct commercial job.
 
-Existing `STD-21` … `STD-28` remain preserved as reserve/extended commercial cases unless specifically promoted later.
+Existing `STD-21` … `STD-28` remain preserved as reserve/extended commercial cases unless specifically promoted later. `STD-23 Unit economics` remains preserved as historical reserve wording, but its commercial job is now represented in the primary gate by the capability-aware `CAP-24` row rather than duplicated as a second live row.
 
-As of 2026-09-02, primary-gate capability rows `CAP-21` … `CAP-23` are promoted for SEO/semantic-core, competitor-card benchmarking, and category/search-position coverage. The current primary gate is therefore **43 baseline rows (20 STD + 23 CAP), expandable if further distinct capabilities are discovered**.
+As of 2026-09-02, primary-gate capability rows `CAP-21` … `CAP-23` were promoted for SEO/semantic-core, competitor-card benchmarking, and category/search-position coverage. On 2026-09-06, `CAP-24` was promoted for SKU-level monthly Ozon-side unit economics. The current primary gate is therefore **44 baseline rows (20 STD + 24 CAP), expandable if further distinct capabilities are discovered**.
 
 ## What Layer B must measure
 
@@ -89,9 +90,13 @@ Exact natural-language wording for each row is frozen when the row becomes activ
 | CAP-21 | Own-card SEO / semantic core | AI combines product title/info, description, attributes, Ozon content rating and real product-query evidence to identify semantic gaps and SEO/content recommendations. |
 | CAP-22 | Competitor SEO / positioning benchmark | AI discovers relevant competitors where evidence exists, keeps private seller evidence separate from public competitor-card evidence, and compares semantics/content/price without inventing competitor private metrics. |
 | CAP-23 | Category/search position & coverage boundary | AI determines what own search-position evidence is available, handles Premium-only `position_category` honestly, and surfaces the current Bridge coverage gap for `/v1/analytics/category/comparison` if still absent. |
+| CAP-24 | SKU monthly unit economics | AI selects one actually sold SKU and reconciles period sales × SKU/posting finance deductions × advertising × placement/returns into defensible Ozon-side contribution per unit, while refusing unsupported allocation of account/campaign-level costs. |
 
 Authority for CAP-21…CAP-23:
 `OZON_AI_WORKER_SEO_COMPETITIVE_POSITION_CAPABILITY_REQUIREMENT_2026-09-02.md`.
+
+Authority for CAP-24:
+`OZON_AI_WORKER_UNIT_ECONOMICS_CAPABILITY_REQUIREMENT_2026-09-06.md`.
 
 ## Diversity rule
 
@@ -111,6 +116,8 @@ A valid CAP row must either:
 - exercise a materially new multi-surface orchestration path whose value is the correlation itself; or
 - exercise a commercially important entitlement/coverage boundary that changes what the AI worker can truthfully answer.
 
+CAP-24 qualifies because SKU-level monthly unit economics requires attribution-safe reconciliation across sales, finance and Performance/placement evidence; the business value is the joined result and its attribution discipline, not another read of any one endpoint.
+
 ## Scoring
 
 Each CAP test receives at least these fields:
@@ -125,6 +132,7 @@ Each CAP test receives at least these fields:
 - `notes`
 
 SEO/competitive-position rows additionally record the fields defined in the SEO competitive-position authority document.
+CAP-24 additionally records the attribution and double-counting fields defined in the unit-economics authority document.
 
 ## Product implication
 
@@ -146,4 +154,4 @@ If Layer B shows that models repeatedly fail because they do not know which data
 
 ## Current checkpoint
 
-`PRIMARY_GATE_BASELINE_40_EXPANDED_TO_43_WITH_CAP_21_TO_CAP_23_AND_REMAINS_EVIDENCE_DRIVEN_EXPANDABLE`
+`PRIMARY_GATE_BASELINE_40_EXPANDED_TO_44_WITH_CAP_21_TO_CAP_24_AND_REMAINS_EVIDENCE_DRIVEN_EXPANDABLE`
