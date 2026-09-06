@@ -1,0 +1,9 @@
+month	sign	nm_id	observations	avg_position	min_position	max_position	bridge_version	request_id	note
+2026-02	Овен	262669816	10	27.50	16	38	0.1.2	c68c2035-6567-4dfd-a8b2-c49502210264	statistics across boosterStats observations returned by WB; not assumed to cover every calendar day
+2026-02	Телец	262629137	12	24.00	9	29	0.1.2	c68c2035-6567-4dfd-a8b2-c49502210264	statistics across boosterStats observations returned by WB; not assumed to cover every calendar day
+2026-02	Дева	262669814	12	20.25	13	42	0.1.2	c68c2035-6567-4dfd-a8b2-c49502210264	statistics across boosterStats observations returned by WB; not assumed to cover every calendar day
+2026-02	Весы	262661039	12	11.25	6	24	0.1.2	c68c2035-6567-4dfd-a8b2-c49502210264	statistics across boosterStats observations returned by WB; not assumed to cover every calendar day
+2026-02	Скорпион	462723607	12	22.67	12	39	0.1.2	c68c2035-6567-4dfd-a8b2-c49502210264	statistics across boosterStats observations returned by WB; not assumed to cover every calendar day
+2026-02	Стрелец	262678027	13	12.62	6	20	0.1.2	c68c2035-6567-4dfd-a8b2-c49502210264	statistics across boosterStats observations returned by WB; not assumed to cover every calendar day
+2026-02	Козерог	262622381	12	18.08	10	46	0.1.2	c68c2035-6567-4dfd-a8b2-c49502210264	statistics across boosterStats observations returned by WB; not assumed to cover every calendar day
+2026-02	Водолей	262669813	10	34.60	25	56	0.1.2	c68c2035-6567-4dfd-a8b2-c49502210264	statistics across boosterStats observations returned by WB; not assumed to cover every calendar day
