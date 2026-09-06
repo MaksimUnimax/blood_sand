@@ -9,3 +9,6 @@ month	sign	nm_id	observations	avg_position	min_position	max_position	bridge_vers
 2026-02	Водолей	262669813	10	34.60	25	56	0.1.2	c68c2035-6567-4dfd-a8b2-c49502210264	statistics across boosterStats observations returned by WB; not assumed to cover every calendar day
 2026-03	Овен	262669816	1	17.00	17	17	0.1.2	726f81f4-4729-45f2-9c32-5845dc477d05	only one boosterStats observation returned by WB for March; date 2026-03-05
 2026-03	Водолей	262669813	1	20.00	20	20	0.1.2	726f81f4-4729-45f2-9c32-5845dc477d05	only one boosterStats observation returned by WB for March; date 2026-03-05
+2026-04	Козерог	262622381	11	32.45	17	54	0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	statistics across boosterStats observations returned by WB; dates 2026-04-20 through 2026-04-30
+2026-04	Водолей	262669813	11	22.36	13	32	0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	statistics across boosterStats observations returned by WB; dates 2026-04-20 through 2026-04-30
+2026-04	Скорпион	462723607	11	56.55	26	82	0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	statistics across boosterStats observations returned by WB; dates 2026-04-20 through 2026-04-30
