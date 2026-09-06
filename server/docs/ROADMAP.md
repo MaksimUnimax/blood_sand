@@ -127,7 +127,7 @@ Scope:
 
 Exit: valid/tampered/expired/offline/unsupported-client tests pass; remote payload cannot expand packaged capability.
 
-## P4 — Plans, price revisions and entitlement engine `[NEXT]`
+## P4 — Plans, price revisions and entitlement engine `[ACTIVE]`
 
 Goal: admin can change sellable capabilities/pricing structure without extension releases.
 
@@ -362,6 +362,15 @@ Architecture remains:
 - P3.5 `[DONE]` Simulated-client signature verification and signing-key rotation.
 - P3.6 `[DONE]` Offline grace, cached snapshot and unsupported-client/browser flows.
 - P3.7 `[DONE]` P3 security/architecture audit, E2E and final P3 acceptance.
+
+## P4 substeps
+
+- P4.1 `[ACTIVE]` Commercial catalog persistence foundation.
+- P4.2 `[PLANNED]` Plan / entitlement definition / plan-revision command services, publication, hide/archive, transactionally audited mutations and concurrency.
+- P4.3 `[PLANNED]` Price revision commands, explicit new-sales selection/closure, effective windows, price history and catalog-level grandfathering.
+- P4.4 `[PLANNED]` Deterministic commercial entitlement resolver, account override resolution, explanation objects and `device.max_active` adapter contract.
+- P4.5 `[PLANNED]` Public commercial catalog read model/API plus stable P5/P6 consumer interfaces, without implementing subscriptions/admin mutation transport.
+- P4.6 `[PLANNED]` P4 security/architecture audit, full regression and final P4 acceptance.
 
 # Parallel Bridge rule
 

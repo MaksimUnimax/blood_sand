@@ -72,6 +72,7 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
     await runMigrations({ connectionString });
     await runMigrations({ connectionString });
     expect(await tables()).toEqual([
+      "account_entitlement_overrides",
       "account_memberships",
       "accounts",
       "audit_events",
@@ -84,6 +85,7 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
       "config_releases",
       "device_authorizations",
       "devices",
+      "entitlement_definitions",
       "extension_release_browsers",
       "extension_release_contracts",
       "extension_releases",
@@ -91,7 +93,13 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
       "feature_rule_revisions",
       "otp_challenges",
       "otp_email_jobs",
+      "plan_entitlements",
+      "plan_revisions",
+      "plans",
       "portal_sessions",
+      "price_revisions",
+      "price_sale_assignments",
+      "prices",
       "refresh_tokens",
       "rollout_revisions",
       "rollouts",
@@ -104,7 +112,7 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
     const count = await runtime.db.execute<{ count: string }>(sql`
       SELECT count(*)::text AS "count" FROM drizzle."__drizzle_migrations"
     `);
-    expect(count.rows[0]?.count).toBe("8");
+    expect(count.rows[0]?.count).toBe("9");
     const probe = await runtime.db.execute<{ probe: string | null }>(sql`
       SELECT to_regclass('__p1_migration_probe') AS "probe"
     `);

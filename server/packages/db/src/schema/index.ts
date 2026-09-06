@@ -5,3 +5,4 @@ export * from "./identity";
 export * from "./otp-delivery";
 export * from "./compatibility";
 export * from "./remote-config";
+export * from "./commercial";
