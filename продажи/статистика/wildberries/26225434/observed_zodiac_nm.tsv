@@ -30,3 +30,6 @@ sign	nm_id	observed_context	current_campaign_snapshot_2026_09_06	note
 Овен	459997109	promo_fullstats 2026-01	false	observed attributed basket row with zero ad views; no attributed order
 Телец	459976157	promo_fullstats 2026-01	false	observed attributed basket row with zero ad views; no attributed order
 Козерог	459976149	promo_fullstats 2026-02	false	observed attributed basket row with zero ad views; no attributed order
+Рак	459976152	promo_fullstats 2026-03	false	observed attributed basket row with zero ad views; no attributed order
+Дева	459949764	promo_fullstats 2026-03	false	attributed zodiac order with zero ad views in March; sum_price 1336 RUB
+Весы	459997104	promo_fullstats 2026-03	false	observed attributed basket row with zero ad views; no attributed order
