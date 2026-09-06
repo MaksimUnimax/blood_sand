@@ -59,3 +59,15 @@ month	sign	attributed_orders	attributed_sum_price_rub	order_nm_ids	bridge_versio
 2026-06	Козерог	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm 262622381; 0 attributed orders
 2026-06	Водолей	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm 262669813; 0 attributed orders
 2026-06	Рыбы	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	historical nm 262678025 observed in basket rows; 0 attributed orders
+2026-07	Овен	3	4086	262669816	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	resolved from nested order-bearing nm rows; July reconciliation still has 1 unresolved campaign order / 1362 RUB on 2026-07-27
+2026-07	Телец	1	1362	262629137	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	resolved zodiac order
+2026-07	Близнецы	1	1362	446294516	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	attributed cross-sell zodiac nm
+2026-07	Рак	3	4086	262678024	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	historical campaign nm; three resolved zodiac orders
+2026-07	Лев	3	4042	262669815,459997108	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	three resolved zodiac orders; includes one historical nm order at 1318 RUB
+2026-07	Дева	0	0		0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	no resolved attributed zodiac order
+2026-07	Весы	0	0		0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	no resolved attributed zodiac order
+2026-07	Скорпион	2	2724	462723607	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	two resolved zodiac orders
+2026-07	Стрелец	2	2724	262678027	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	two resolved zodiac orders
+2026-07	Козерог	3	4086	262622381	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	three resolved zodiac orders
+2026-07	Водолей	2	2724	262669813,459997105	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	one current campaign nm order plus one attributed historical nm order
+2026-07	Рыбы	1	1354	459997111	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	attributed historical zodiac nm; zero ad views in order row
