@@ -1,1 +1,13 @@
 month	sign	views	clicks	ctr_pct_recomputed	atbs	orders	attributed_sum_price_rub	spend_rub	cpc_rub_recomputed	cr_pct_recomputed	canceled	shks	nm_ids	bridge_version	request_id	note
+2025-09	Овен	1123	29	2.5824	2	1	1264	72.09	2.4859	3.4483	0	1	262669816	0.1.2	7af58e89-13aa-4d4c-994c-c11d478c2768	aggregated_from_days_apps_nms_all_appTypes_zero_view_attribution_included
+2025-09	Телец	1574	32	2.0330	5	1	1264	108.64	3.3950	3.1250	0	1	262629137;459997114	0.1.2	7af58e89-13aa-4d4c-994c-c11d478c2768	aggregated_from_days_apps_nms_all_appTypes_zero_view_attribution_included
+2025-09	Близнецы	0	0	0.0000	3	2	2528	0.00	0.0000	0.0000	0	2	446294516	0.1.2	7af58e89-13aa-4d4c-994c-c11d478c2768	aggregated_from_days_apps_nms_all_appTypes_zero_view_attribution_included
+2025-09	Рак	1107	12	1.0840	2	0	0	75.55	6.2958	0.0000	0	0	262678024	0.1.2	7af58e89-13aa-4d4c-994c-c11d478c2768	aggregated_from_days_apps_nms_all_appTypes_zero_view_attribution_included
+2025-09	Лев	0	0	0.0000	1	0	0	0.00	0.0000	0.0000	0	0	262669815	0.1.2	7af58e89-13aa-4d4c-994c-c11d478c2768	aggregated_from_days_apps_nms_all_appTypes_zero_view_attribution_included
+2025-09	Дева	1420	31	2.1831	4	0	0	102.09	3.2932	0.0000	0	0	262669814	0.1.2	7af58e89-13aa-4d4c-994c-c11d478c2768	aggregated_from_days_apps_nms_all_appTypes_zero_view_attribution_included
+2025-09	Весы	798	16	2.0050	2	1	1264	59.38	3.7113	6.2500	0	1	262661039	0.1.2	7af58e89-13aa-4d4c-994c-c11d478c2768	aggregated_from_days_apps_nms_all_appTypes_zero_view_attribution_included
+2025-09	Скорпион	0	0	0.0000	2	1	1264	0.00	0.0000	0.0000	0	1	462723607	0.1.2	7af58e89-13aa-4d4c-994c-c11d478c2768	aggregated_from_days_apps_nms_all_appTypes_zero_view_attribution_included
+2025-09	Стрелец	1215	25	2.0576	5	0	0	84.27	3.3708	0.0000	0	0	262678027;459976156	0.1.2	7af58e89-13aa-4d4c-994c-c11d478c2768	aggregated_from_days_apps_nms_all_appTypes_zero_view_attribution_included
+2025-09	Козерог	936	25	2.6709	4	2	2516	68.23	2.7292	8.0000	0	2	262622381	0.1.2	7af58e89-13aa-4d4c-994c-c11d478c2768	aggregated_from_days_apps_nms_all_appTypes_zero_view_attribution_included
+2025-09	Водолей	635	8	1.2598	0	0	0	44.21	5.5263	0.0000	0	0	262669813	0.1.2	7af58e89-13aa-4d4c-994c-c11d478c2768	aggregated_from_days_apps_nms_all_appTypes_zero_view_attribution_included
+2025-09	Рыбы	596	11	1.8456	2	0	0	41.94	3.8127	0.0000	0	0	262678025	0.1.2	7af58e89-13aa-4d4c-994c-c11d478c2768	aggregated_from_days_apps_nms_all_appTypes_zero_view_attribution_included
