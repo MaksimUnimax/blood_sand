@@ -1,7 +1,7 @@
 # Ozon AI Worker — Explicit Batch Orchestration Defect and Mandatory Rule
 
 Date: 2026-09-06
-Status: `CONFIRMED_PROCESS_DEFECT__AUTHORITY_CORRECTION_REQUIRED`
+Status: `CONFIRMED_PROCESS_DEFECT__AUTHORITY_CORRECTED`
 Scope: AI/benchmark orchestration methodology; not an executable Bridge transport defect
 Runtime observed: `ozon-llm-api-bridge v0.1.19`
 
@@ -46,7 +46,9 @@ The active commercial-validation roadmap contained the mandatory rule:
 
 `Exactly one OZON_API_V1 command is sent at a time.`
 
-That rule predates / conflicts with the current explicit sequential batch capability and is now operationally harmful.
+That rule predates / conflicts with the current explicit sequential batch capability and was operationally harmful.
+
+It has now been replaced in the active roadmap by `EXPLICIT_BATCH_FIRST_FOR_INDEPENDENT_READS`.
 
 ### AI reasoning error
 
@@ -169,6 +171,15 @@ If an individual day returns non-empty `last_id`, that continuation is dependent
 
 Completed first-page dates do not need to be repeated.
 
+## Applied authority repair
+
+The following persistent project authorities were corrected on 2026-09-06:
+
+- `OZON_AI_WORKER_COMMERCIAL_VALIDATION_ROADMAP_2026-09-02.md` — obsolete one-command-at-a-time mandatory rule replaced by explicit batch-first / dependent-stepwise rules;
+- `CAP_24_SETUP_2026-09-06.md` — current CAP-24 finance collection explicitly requires batching independent known-upfront date reads.
+
+This makes the correction recoverable in future chats from repository authority rather than conversational memory.
+
 ## Classification
 
 `DEFECT_CLASS = AI_ORCHESTRATION_AND_OUTDATED_AUTHORITY_RULE`
@@ -177,4 +188,4 @@ Completed first-page dates do not need to be repeated.
 
 `EXECUTABLE_BRIDGE_PATCH_REQUIRED = NO`
 
-`DOCUMENTATION_METHODOLOGY_REPAIR_REQUIRED = YES`
+`DOCUMENTATION_METHODOLOGY_REPAIR_REQUIRED = DONE`
