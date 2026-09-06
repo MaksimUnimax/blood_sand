@@ -413,6 +413,29 @@
     return parts.join("/");
   }
 
+  function reportResolveWorkbookRelationshipTarget(rawTarget, rawTargetMode = "") {
+    let target = String(rawTarget || "").trim();
+    const targetMode = String(rawTargetMode || "").trim().toLowerCase();
+    if (!target) fail("REPORT_XLSX_INVALID", "XLSX relationship target пуст.");
+    if (targetMode === "external") fail("REPORT_XLSX_INVALID", "XLSX external relationship target запрещён.");
+    if (target.includes("\\")) fail("REPORT_XLSX_INVALID", "XLSX relationship target содержит недопустимый separator.");
+    if (/^[A-Za-z][A-Za-z0-9+.-]*:/.test(target) || target.startsWith("//")) fail("REPORT_XLSX_INVALID", "XLSX external relationship target запрещён.");
+    while (target.startsWith("./")) target = target.slice(2);
+    const packageRooted = target.startsWith("/") || target.startsWith("xl/");
+    target = target.replace(/^\/+/, "");
+    const parts = packageRooted ? [] : ["xl"];
+    for (const piece of target.split("/")) {
+      if (!piece || piece === ".") continue;
+      if (piece === "..") {
+        if (!parts.length) fail("REPORT_XLSX_INVALID", "XLSX relationship target выходит за package root.");
+        parts.pop();
+      } else parts.push(piece);
+    }
+    const resolved = parts.join("/");
+    if (!resolved) fail("REPORT_XLSX_INVALID", "XLSX relationship target пуст после нормализации.");
+    return resolved;
+  }
+
   function reportParseSharedStrings(xml) {
     const values = [];
     for (const match of String(xml || "").matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/gi)) {
@@ -474,8 +497,8 @@
     const relsXml = decoder.decode(relsBytes);
     const relationships = new Map();
     for (const match of relsXml.matchAll(/<Relationship\b([^>]*)\/?\s*>/gi)) {
-      const id = reportXmlAttr(match[1], "Id"), target = reportXmlAttr(match[1], "Target");
-      if (id && target) relationships.set(id, reportJoinZipPath("xl", target));
+      const id = reportXmlAttr(match[1], "Id"), target = reportXmlAttr(match[1], "Target"), targetMode = reportXmlAttr(match[1], "TargetMode");
+      if (id && target) relationships.set(id, reportResolveWorkbookRelationshipTarget(target, targetMode));
     }
     const sheets = [];
     for (const match of workbookXml.matchAll(/<sheet\b([^>]*)\/?\s*>/gi)) {
@@ -522,6 +545,15 @@
     fail("REPORT_FILE_FORMAT_UNSUPPORTED", `Неподдерживаемый формат отчёта: ${ct || lower || "unknown"}.`);
   }
 
+  function annotateReportFilePostFetchError(error, response) {
+    const wrapped = new Error(String(error?.message || error || "Report file processing failed"));
+    wrapped.code = String(error?.code || "REPORT_FILE_PROCESSING_FAILED");
+    wrapped.http_status = Number(response?.status || 0);
+    wrapped.external_request_executed = true;
+    wrapped.request_attempted = true;
+    return wrapped;
+  }
+
   async function executeTrustedReportFileOnce({ fetchImpl, url, now = () => Date.now(), maxBytes = 16 * 1024 * 1024, parseOptions = {} }) {
     if (typeof fetchImpl !== "function") fail("FETCH_IMPL_MISSING", "fetchImpl обязателен.");
     const trustedUrl = normalizeTrustedReportFileUrl(url);
@@ -541,12 +573,18 @@
       wrapped.request_attempted = true;
       throw wrapped;
     }
-    const received = await readResponse(response, { preserveBytes: Boolean(response.ok) });
+    let received;
+    try {
+      received = await readResponse(response, { preserveBytes: Boolean(response.ok) });
+    } catch (error) {
+      throw annotateReportFilePostFetchError(error, response);
+    }
     if (received.byteLength > maxBytes) {
       const error = new Error(`Report file превышает лимит bridge ${maxBytes} bytes.`);
       error.code = "REPORT_FILE_TOO_LARGE";
       error.http_status = Number(response.status || 0);
       error.external_request_executed = true;
+      error.request_attempted = true;
       throw error;
     }
     const contentType = normalizedContentType(headerValue(response?.headers, "content-type"));
@@ -554,9 +592,14 @@
     let rawText = received.rawText || "";
     if (response.ok) {
       const pathname = (() => { try { return new URL(trustedUrl).pathname.toLowerCase(); } catch (_) { return ""; } })();
-      const report = await parseAiReadableReportBytes(received.bytes || new Uint8Array(), {
-        contentType, pathname, sheet: parseOptions.sheet ?? null, offset: Number(parseOptions.offset || 0), limit: Number(parseOptions.limit || 200)
-      });
+      let report;
+      try {
+        report = await parseAiReadableReportBytes(received.bytes || new Uint8Array(), {
+          contentType, pathname, sheet: parseOptions.sheet ?? null, offset: Number(parseOptions.offset || 0), limit: Number(parseOptions.limit || 200)
+        });
+      } catch (error) {
+        throw annotateReportFilePostFetchError(error, response);
+      }
       parsed = Object.freeze({ content_type: contentType || "application/octet-stream", byte_length: received.byteLength, ...report });
     } else if (rawText.trim()) {
       try { parsed = JSON.parse(rawText); } catch (_) { parsed = null; }
