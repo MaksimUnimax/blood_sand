@@ -1,0 +1,5 @@
+month	product_name	nm_id	attributed_orders	attributed_sum_price_rub	bridge_version	request_id	note
+2025-10	Славянский оберег в машину "Молвинец"	267829270	1	1296	0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	attributed cross-sell order
+2025-10	Чётки - Славянский оберег в машину "Печать Велеса"	249497931	1	1383	0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	attributed cross-sell order
+2025-11	Чётки - Славянский оберег в машину "Велес"	249505803	1	1414	0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	attributed cross-sell order
+2025-11	Славянский оберег в машину "Печать Велеса"	267696739	1	1490	0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	attributed cross-sell order
