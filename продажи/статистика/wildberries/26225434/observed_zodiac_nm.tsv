@@ -20,3 +20,7 @@ sign	nm_id	observed_context	current_campaign_snapshot_2026_09_06	note
 Дева	459997106	promo_fullstats 2026-06	false	observed attributed basket row with zero ad views; no attributed order
 Весы	459941251	promo_fullstats 2026-06	false	observed attributed basket row with zero ad views; no attributed order
 Скорпион	459997112	promo_fullstats 2026-06	false	observed attributed basket row with zero ad views; no attributed order
+Лев	459976150	promo_fullstats 2026-07	false	observed historical zodiac nm; basket/attribution rows in July
+Рак	459997110	promo_fullstats 2026-07	false	observed historical zodiac nm; basket/attribution rows in July
+Близнецы	459976158	promo_fullstats 2026-07	false	observed historical zodiac nm; basket/attribution rows in July
+Рыбы	459997111	promo_fullstats 2026-07	false	attributed zodiac order with zero ad views in July
