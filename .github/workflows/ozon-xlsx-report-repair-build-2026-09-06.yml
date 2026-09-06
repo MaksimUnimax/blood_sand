@@ -1,0 +1,189 @@
+name: Ozon XLSX report repair build 2026-09-06
+
+on:
+  push:
+    branches:
+      - repair/ozon-date-contract-2026-09-04
+    paths:
+      - .github/workflows/ozon-xlsx-report-repair-build-2026-09-06.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-xlsx-report-repair-build-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PROJECT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  VALIDATION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
+  RUNTIME_PATCH_COMMIT: 92773026e479671160aab42c0f7590da155e1184
+  RUNTIME_PATCH_BLOB: 5255fa0bfe76e0b5add2bafb942acabf092bac68
+  ARTIFACT_NAME: OZON_BRIDGE_v0.1.19_XLSX_REPORT_REPAIR_92773026.zip
+  BUILDINFO_NAME: OZON_BRIDGE_v0.1.19_XLSX_REPORT_REPAIR_92773026_BUILDINFO.txt
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prove current dist equals runtime patch tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$RUNTIME_PATCH_COMMIT" HEAD
+          git diff --exit-code "$RUNTIME_PATCH_COMMIT" -- "$DIST"
+          ACTUAL_BLOB=$(git rev-parse "HEAD:$DIST/shared/provider_transport_core.js")
+          test "$ACTUAL_BLOB" = "$RUNTIME_PATCH_BLOB"
+          echo 'OZON_XLSX_REPAIR_RUNTIME_TREE_IDENTITY_PASS'
+
+      - name: JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r f; do
+            node --check "$f" >/dev/null
+          done < <(find "$DIST" -type f -name '*.js' | sort)
+          echo 'OZON_XLSX_REPAIR_JS_SYNTAX_PASS'
+
+      - name: Dedicated XLSX relationship regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$VALIDATION/run_report_xlsx_relationship_target_regression_2026-09-06.mjs" .
+          echo 'OZON_XLSX_REPAIR_DEDICATED_REGRESSION_PASS'
+
+      - name: Existing report parser and lifecycle gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$VALIDATION/run_ai_readable_report_parser_gate.mjs" .
+          node "$VALIDATION/run_report_file_lifecycle_gate.mjs" .
+          node "$VALIDATION/run_report_file_session_fail_closed_gate.mjs" .
+          node "$VALIDATION/run_report_file_workflow_gate.mjs" .
+          echo 'OZON_XLSX_REPAIR_EXISTING_REPORT_GATE_FAMILY_PASS'
+
+      - name: Full current run gate family
+        shell: bash
+        run: |
+          set -euo pipefail
+          for gate in "$VALIDATION"/run_*.mjs; do
+            echo "=== $gate ==="
+            node "$gate" .
+          done
+          echo 'OZON_XLSX_REPAIR_FULL_RUN_GATE_FAMILY_PASS'
+
+  package:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build exact current installable ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$RUNTIME_PATCH_COMMIT" HEAD
+          git diff --exit-code "$RUNTIME_PATCH_COMMIT" -- "$DIST"
+          ACTUAL_BLOB=$(git rev-parse "HEAD:$DIST/shared/provider_transport_core.js")
+          test "$ACTUAL_BLOB" = "$RUNTIME_PATCH_BLOB"
+
+          ARTIFACT_DIR="$GITHUB_WORKSPACE/$PROJECT/artifacts"
+          ARTIFACT="$ARTIFACT_DIR/$ARTIFACT_NAME"
+          BUILDINFO="$ARTIFACT_DIR/$BUILDINFO_NAME"
+          HASHFILE="$ARTIFACT.sha256.txt"
+          mkdir -p "$ARTIFACT_DIR"
+          rm -f "$ARTIFACT" "$HASHFILE" "$BUILDINFO"
+
+          PREFIX="$DIST/"
+          git ls-tree -r --name-only HEAD -- "$DIST" | sed "s#^$PREFIX##" | sort > /tmp/ozon-xlsx-build-members.txt
+          test -s /tmp/ozon-xlsx-build-members.txt
+
+          cd "$GITHUB_WORKSPACE/$DIST"
+          zip -X -q "$ARTIFACT" -@ < /tmp/ozon-xlsx-build-members.txt
+          cd "$GITHUB_WORKSPACE"
+
+          ART_SHA=$(sha256sum "$ARTIFACT" | awk '{print $1}')
+          printf '%s  %s\n' "$ART_SHA" "$ARTIFACT_NAME" > "$HASHFILE"
+          FILE_COUNT=$(wc -l < /tmp/ozon-xlsx-build-members.txt | tr -d ' ')
+
+          cat > "$BUILDINFO" <<EOF
+          build_kind=xlsx_report_relationship_root_cause_repair
+          source_branch=${GITHUB_REF_NAME}
+          source_trigger_commit=${GITHUB_SHA}
+          runtime_patch_commit=$RUNTIME_PATCH_COMMIT
+          runtime_patch_blob=$RUNTIME_PATCH_BLOB
+          dist_tree=$(git rev-parse "HEAD:$DIST")
+          production_files=$FILE_COUNT
+          artifact_name=$ARTIFACT_NAME
+          artifact_sha256=$ART_SHA
+          validation=ubuntu_and_windows_full_run_gate_family_pass
+          dedicated_xlsx_relationship_regression=pass
+          existing_report_parser_lifecycle_gates=pass
+          provider_requests=0
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import os, subprocess
+
+          project = Path(os.environ['PROJECT'])
+          dist = os.environ['DIST']
+          artifact = project / 'artifacts' / os.environ['ARTIFACT_NAME']
+          prefix = dist + '/'
+          expected = subprocess.check_output(['git','ls-tree','-r','--name-only','HEAD','--',dist]).decode().splitlines()
+          expected = sorted(p[len(prefix):] for p in expected if p.startswith(prefix))
+          with ZipFile(artifact) as z:
+              actual = sorted(n for n in z.namelist() if not n.endswith('/'))
+              assert actual == expected, (actual, expected)
+              for rel in expected:
+                  canonical = subprocess.check_output(['git','show',f'HEAD:{prefix}{rel}'])
+                  assert z.read(rel) == canonical, rel
+          print('OZON_XLSX_REPAIR_ARTIFACT_MEMBER_SET_PASS')
+          print('OZON_XLSX_REPAIR_ARTIFACT_CANONICAL_BYTE_COHERENCE_PASS')
+          PY
+
+          rm -rf /tmp/ozon-xlsx-fresh
+          mkdir -p /tmp/ozon-xlsx-fresh/$DIST
+          unzip -q "$ARTIFACT" -d /tmp/ozon-xlsx-fresh/$DIST
+          node "$VALIDATION/run_report_xlsx_relationship_target_regression_2026-09-06.mjs" /tmp/ozon-xlsx-fresh
+          node "$VALIDATION/run_ai_readable_report_parser_gate.mjs" /tmp/ozon-xlsx-fresh
+          echo "ARTIFACT_SHA256=$ART_SHA"
+          echo 'OZON_XLSX_REPAIR_FRESH_EXTRACT_PASS'
+
+      - name: Upload XLSX repair build
+        uses: actions/upload-artifact@v4
+        with:
+          name: OZON_BRIDGE_v0.1.19_XLSX_REPORT_REPAIR_92773026
+          path: |
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_XLSX_REPORT_REPAIR_92773026.zip
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_XLSX_REPORT_REPAIR_92773026.zip.sha256.txt
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_XLSX_REPORT_REPAIR_92773026_BUILDINFO.txt
+
+      - name: Publish build to branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$PROJECT/artifacts/$ARTIFACT_NAME" \
+                  "$PROJECT/artifacts/$ARTIFACT_NAME.sha256.txt" \
+                  "$PROJECT/artifacts/$BUILDINFO_NAME"
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'artifact already committed identically'
+          else
+            git commit -m 'artifact(ozon): publish XLSX report repair build'
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
