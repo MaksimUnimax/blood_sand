@@ -14,6 +14,7 @@ Instant-BI/correlation evidence: `OZON_AI_WORKER_INSTANT_BI_CORRELATION_RESEARCH
 Free-AI output matrix: `OZON_AI_WORKER_FREE_AI_OUTPUT_CAPABILITY_MATRIX_2026-09-02.md`
 Competitive landscape: `OZON_AI_WORKER_COMPETITIVE_LANDSCAPE_2026-09-02.md`
 Synthesis: `OZON_AI_WORKER_COMMERCIAL_RESEARCH_SYNTHESIS_2026-09-02.md`
+Explicit batch orchestration rule: `OZON_AI_WORKER_EXPLICIT_BATCH_ORCHESTRATION_DEFECT_AND_RULE_2026-09-06.md`
 
 ## Goal
 
@@ -31,14 +32,16 @@ Coverage is measured at the level of a solved business job, not an API endpoint.
 ## Mandatory benchmark rules
 
 1. `NO_SKIP_ON_FAILURE` — failed/blocked rows are diagnosed before moving on.
-2. One user business question may require multiple explicit Bridge runs.
-3. Exactly one `OZON_API_V1` command is sent at a time.
-4. Premium endpoints/metrics are excluded from the current Standard pass.
-5. Business answer correctness and operational reliability are scored separately.
-6. Any failure that required operator intervention because the AI/Bridge contract did not make the next action deterministic is recorded as a weak-model portability gap.
-7. `DO_NOT_REQUIRE_MODEL_INTELLIGENCE_FOR_KNOWN_RECOVERY_MECHANICS` — known provider/transport recovery behavior should ultimately be normalized by Bridge guidance rather than inferred independently by each AI.
-8. `DO_NOT_CONFUSE_REPHRASING_WITH_CAPABILITY_COVERAGE` — changing dates, top-N, sorting or interpretation while using the same underlying data source does not prove the worker knows the Bridge capability surface.
-9. A Layer B test is valid only if it exercises a materially different data surface or a materially new multi-surface orchestration path.
+2. One user business question may require multiple explicit Bridge commands/runs.
+3. `EXPLICIT_BATCH_FIRST_FOR_INDEPENDENT_READS` — when several read commands are independent and all parameters are known before execution, prefer multiple explicit `OZON_API_V1` commands in one assistant response so the Bridge can execute them as an explicit sequential batch. Do not force one operator round trip per command merely because an endpoint accepts one date/item per command.
+4. Use one-command-at-a-time conversation execution only when the next command depends on the previous result (for example cursor/`last_id`, discovered IDs, causal diagnosis, write/safety/privacy branching, or a stop condition). Explain the dependency when using stepwise execution.
+5. Preserve `ONE EXPLICIT AI COMMAND = AT MOST ONE PHYSICAL BUSINESS API REQUEST`. For `N` explicit commands in one batch, at most `N` sequential physical business requests are permitted. No hidden retry, hidden pagination, hidden fanout, polling or implicit chaining.
+6. Premium endpoints/metrics are excluded from the current Standard pass.
+7. Business answer correctness and operational reliability are scored separately.
+8. Any failure that required operator intervention because the AI/Bridge contract did not make the next action deterministic is recorded as a weak-model portability gap.
+9. `DO_NOT_REQUIRE_MODEL_INTELLIGENCE_FOR_KNOWN_RECOVERY_MECHANICS` — known provider/transport recovery behavior should ultimately be normalized by Bridge guidance rather than inferred independently by each AI.
+10. `DO_NOT_CONFUSE_REPHRASING_WITH_CAPABILITY_COVERAGE` — changing dates, top-N, sorting or interpretation while using the same underlying data source does not prove the worker knows the Bridge capability surface.
+11. A Layer B test is valid only if it exercises a materially different data surface or a materially new multi-surface orchestration path.
 
 ## Phase 0 — Product framing and preservation
 
@@ -91,6 +94,7 @@ For every row record:
 - user-level intent understanding;
 - operation/request selection;
 - multi-run investigation where needed;
+- explicit batch use for independent known-upfront reads where appropriate;
 - external-source use where needed;
 - joins/calculation/sorting;
 - uncertainty discipline;
@@ -124,6 +128,7 @@ Do not patch the Bridge separately after every row. Continue Layer A and collect
 - empty-result vs error distinction;
 - exact retry-command preservation;
 - diagnostics after repeated identical provider failure;
+- failure to use explicit batching for independent known-upfront reads;
 - any place where Sol needed operator intervention or non-obvious API-specific inference.
 
 Authority requirement document:
@@ -151,7 +156,7 @@ Specifically test whether the AI:
 - uses bounded command discovery/help when uncertain instead of inventing operations;
 - does not default to `analytics_data` for unrelated tasks;
 - understands distinct surfaces such as catalog, visibility, card diagnostics, stocks, turnover, warehouses/clusters, supply orders, postings, prices, promotions, returns, finance, ratings/FBS errors, reviews/questions and Performance advertising;
-- performs sequential multi-run orchestration across different surfaces when the business job requires it;
+- performs multi-run/multi-command orchestration across different surfaces when the business job requires it, batching independent commands where appropriate and preserving stepwise dependencies where required;
 - combines Bridge data with external/public context when appropriate;
 - distinguishes unavailable data, entitlement/privacy gates and provider errors from real business zeros;
 - finishes without operator teaching the model the API inventory.
@@ -168,13 +173,13 @@ Status: BLOCKED ON COMPLETION OF BOTH SOL LAYERS
 
 After STD-20 + CAP-20:
 
-1. group all observed recovery, discovery and capability-awareness gaps;
+1. group all observed recovery, discovery, capability-awareness and orchestration gaps;
 2. design one coherent Bridge contract hardening package rather than provider-specific prompt hacks;
-3. preserve `ONE EXPLICIT AI COMMAND = AT MOST ONE PHYSICAL BUSINESS API REQUEST`;
-4. preserve no hidden retry/fanout;
+3. preserve `ONE EXPLICIT AI COMMAND = AT MOST ONE PHYSICAL BUSINESS API REQUEST`, while allowing multiple independent explicit commands in one sequential batch;
+4. preserve no hidden retry/fanout/pagination/polling/chaining;
 5. add deterministic machine-readable recovery metadata for evidence-backed failure classes;
 6. add bounded capability discovery/awareness where evidence shows weak models need it;
-7. ensure the AI can learn available semantic data families without receiving credentials/transport control or a giant fragile operation manual;
+7. ensure the AI can learn available semantic data families and batching/dependency rules without receiving credentials/transport control or a giant fragile operation manual;
 8. rerun every affected Sol row;
 9. require affected Sol rows to pass without operator rescue before freezing the Alice candidate.
 
@@ -182,7 +187,7 @@ After STD-20 + CAP-20:
 
 Status: BLOCKED ON PHASE 6
 
-Rerun all affected STD/CAP rows plus a short regression suite. Record both answer correctness and whether the model followed Bridge recovery/capability guidance without operator intervention.
+Rerun all affected STD/CAP rows plus a short regression suite. Record both answer correctness and whether the model followed Bridge recovery/capability/orchestration guidance without operator intervention.
 
 Gate to proceed:
 
@@ -226,7 +231,7 @@ Answer:
 4. How much manual report/Excel work is eliminated?
 5. Which correlations create strongest willingness-to-pay value?
 6. Which failures are data/Bridge/model/output related?
-7. Can weak consumer AIs recover and discover capabilities deterministically using Bridge guidance?
+7. Can weak consumer AIs recover, discover capabilities and orchestrate explicit batches deterministically using Bridge guidance?
 8. What can marketing truthfully promise?
 9. Does preferred-AI portability remain credible?
 10. Which gaps must be fixed before commercial release?
@@ -258,11 +263,12 @@ Only after the commercial decision checkpoint. Each provider uses the same harde
 Next work:
 
 1. continue Layer A from STD-02;
-2. record every operational/recovery issue without skipping;
-3. finish STD-01 through STD-20;
-4. freeze exact natural-language wording for CAP-01 through CAP-20 using the already frozen capability surfaces plus Layer A evidence;
-5. run all 20 Layer B capability/product-logic tests on Sol;
-6. consolidate recovery + capability-awareness gaps into one Bridge hardening package;
-7. rerun affected Sol rows;
-8. only then run Alice Free against the same 40-test gate;
-9. make commercial decision before resuming multi-AI expansion.
+2. record every operational/recovery/orchestration issue without skipping;
+3. use explicit sequential batching for independent known-upfront reads; use stepwise execution only for real dependencies;
+4. finish STD-01 through STD-20;
+5. freeze exact natural-language wording for CAP-01 through CAP-20 using the already frozen capability surfaces plus Layer A evidence;
+6. run all 20 Layer B capability/product-logic tests on Sol;
+7. consolidate recovery + capability-awareness + orchestration gaps into one Bridge hardening package;
+8. rerun affected Sol rows;
+9. only then run Alice Free against the same 40-test gate;
+10. make commercial decision before resuming multi-AI expansion.
