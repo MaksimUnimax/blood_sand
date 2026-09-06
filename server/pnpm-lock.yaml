@@ -245,6 +245,9 @@ importers:
       '@product/plans':
         specifier: workspace:*
         version: link:../plans
+      '@product/pricing':
+        specifier: workspace:*
+        version: link:../pricing
       '@product/remote-config':
         specifier: workspace:*
         version: link:../remote-config
@@ -319,6 +322,18 @@ importers:
 
   packages/plans:
     dependencies:
+      '@product/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: 4.1.5
+        version: 4.1.5
+
+  packages/pricing:
+    dependencies:
+      '@product/plans':
+        specifier: workspace:*
+        version: link:../plans
       '@product/shared':
         specifier: workspace:*
         version: link:../shared

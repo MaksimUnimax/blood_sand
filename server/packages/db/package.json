@@ -26,6 +26,7 @@
     "@product/device-management": "workspace:*",
     "@product/extension-auth": "workspace:*",
     "@product/plans": "workspace:*",
+    "@product/pricing": "workspace:*",
     "@product/shared": "workspace:*",
     "@product/remote-config": "workspace:*",
     "drizzle-orm": "0.45.2",
