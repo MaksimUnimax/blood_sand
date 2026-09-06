@@ -1,9 +1,9 @@
-# CAP-24 current checkpoint after Run 26 post-patch report info
+# CAP-24 current checkpoint after Run 27 post-patch XLSX materialization
 
 Date: 2026-09-06
-Status: `AUTHORITATIVE_LATEST_CHECKPOINT__PATCHED_BUILD_VALIDATED__RUN_26_REPORT_INFO_PASS__NEXT_REPORT_FILE_GET`
+Status: `AUTHORITATIVE_LATEST_CHECKPOINT__XLSX_ROOT_CAUSE_LIVE_FIXED__PLACEMENT_CONTENT_EMPTY_OR_UNPARSED_DIAGNOSTIC_NEXT`
 
-This file is the latest CAP-24 continuation checkpoint and supersedes older pre-patch, reload, report-create and report-info pending states.
+This file is the latest CAP-24 continuation checkpoint and supersedes all older `NEXT_REPORT_FILE_GET`, pre-patch blocker, reload, report-create and report-info pending states.
 
 ## Completed business evidence
 
@@ -38,30 +38,35 @@ Advertising:
 - historical SKU membership interval is not exposed by current Performance surfaces
 - strict classification remains advertising attribution coverage boundary; do not silently fold `35785.11 RUB` into unconditional exact SKU costs.
 
-## Pre-patch XLSX failure and repair
+## XLSX root cause and repair
 
-Run 24 exposed:
+Pre-patch Run 24 failure:
 
 `REPORT_XLSX_INVALID: XLSX sheet entry отсутствует: xl/xl/worksheets/sheet1.xml`
 
-Root cause: workbook relationship targets already rooted under `xl/` were unconditionally joined to base `xl`.
+Root cause:
 
-Secondary defect: post-fetch parser failures lost truthful `external_request_executed` and HTTP status metadata.
+- workbook relationship targets already rooted under `xl/` were unconditionally joined to base `xl`;
+- provider targets became `xl/xl/...`.
+
+Secondary defect:
+
+- post-fetch parser failures lost truthful `external_request_executed` and HTTP status metadata.
 
 Executable repair:
 
 - runtime patch commit: `92773026e479671160aab42c0f7590da155e1184`
 - runtime blob: `5255fa0bfe76e0b5add2bafb942acabf092bac68`
-- regression commit: `cb353190c3e13a644601198c6a854b99356f20d6`
+- dedicated regression commit: `cb353190c3e13a644601198c6a854b99356f20d6`
 - installable artifact: `tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_XLSX_REPORT_REPAIR_92773026.zip`
 - artifact SHA-256: `10517e5afc608ff2f05f7039afad6f7dcc6c53dd25d9fe0e49230673058a0d1f`
 - artifact publication commit: `bd4dd96bd5649f00f8b48861855ee1a2957e1bd5`
 - GitHub Actions run: `34037677653`
 
-Validation before publication:
+Validation before artifact publication:
 
-- Ubuntu: PASS
-- Windows: PASS
+- Ubuntu full validation: PASS
+- Windows full validation: PASS
 - JS syntax: PASS
 - dedicated XLSX relationship regression: PASS
 - existing report parser/lifecycle gates: PASS
@@ -101,43 +106,68 @@ Evidence: `CAP_24_RUN_25_POST_PATCH_PLACEMENT_REPORT_CREATE_2026-09-06.md`.
 
 Evidence: `CAP_24_RUN_26_POST_PATCH_PLACEMENT_REPORT_INFO_SUCCESS_2026-09-06.md`.
 
-Interpretation:
+## Run 27 — decisive live XLSX materialization
 
-- fresh post-patch report workflow is ready;
-- report creation and report-info handoff are live PASS;
-- XLSX parser fix itself is not live accepted until `report_file_get` materializes this fresh report successfully.
+- operation: `report_file_get`
+- request_id: `aa240a26-6370-43cb-9079-350f6f5fa55b`
+- logical_business_result_count: `1`
+- physical_business_request_count: `1`
+- external_request_executed: `true`
+- HTTP `200`
+- elapsed_ms: `1113`
+- logical command fingerprint: `6a7a0deb`
+- physical command fingerprint: `cd385e7d`
+- command_transformed: `true`
+- exact_request_preserved: `false`
+- content_type: `application/octet-stream`
+- byte_length: `142845`
+- format: `xlsx`
+- available_sheets: `["Страница #1"]`
+- sheet name: `Страница #1`
+- columns: `[]`
+- row_count: `0`
+- rows: `[]`
+- has_more: `false`
 
-## Exact next operational action
+Evidence: `CAP_24_RUN_27_POST_PATCH_PLACEMENT_XLSX_MATERIALIZATION_SUCCESS_EMPTY_SHEET_2026-09-06.md`.
 
-Perform exactly one dependent `report_file_get` using:
+### Live patch verdict
 
-`rpf_s_4f3147b9-c3d3-4722-8f32-7a8585276b3e`
+The original `xl/xl/worksheets/...` root cause is **live-fixed**:
 
-Do not create another report and do not reuse old pre-patch refs.
+- file GET executed;
+- HTTP 200 received;
+- XLSX recognized;
+- workbook opened;
+- sheet relationship resolved;
+- sheet discovered;
+- no `REPORT_XLSX_INVALID` relationship-path failure.
 
-Live patch acceptance criterion:
+Classification:
 
-- external file GET/materialization succeeds;
-- no former `xl/xl/worksheets/...` path error;
-- XLSX columns/rows are returned;
-- target SKU `1636048691` can be located from explicit report columns.
+`XLSX_WORKBOOK_RELATIONSHIP_TARGET_DOUBLE_XL_PREFIX = LIVE_FIXED`
 
-After successful materialization:
+### Remaining placement-content boundary
 
-1. inspect report schema and all available sheets;
-2. isolate target SKU `1636048691`;
-3. calculate exact August placement/storage amount from explicit report columns;
-4. reconcile against finance before changing CAP-24 totals.
+The materialized XLSX currently exposes an empty logical table (`columns=[]`, `row_count=0`). This must not yet be interpreted as `placement cost = 0` because two explanations remain:
 
-## NO_SKIP_ON_FAILURE state
+1. the Ozon report genuinely contains no business rows for this period; or
+2. the workbook contains populated content in an OOXML cell representation not extracted by the current parser.
 
-Until live `report_file_get` succeeds:
+## Exact next diagnostic action
+
+Do **not** repeat the same `report_file_get` without a new purpose.
+
+Next objective is to verify the authoritative output semantics/schema of `seller_placement_by_products` and determine whether the empty parsed sheet is a legitimate no-data result or a second parser-coverage defect.
+
+Until that is proven:
 
 - do not mark placement cost as zero;
-- do not allocate account-level NON_ITEM placement charges;
+- do not allocate account-level NON_ITEM placement charges to the SKU;
 - do not fold placement into exact CAP-24 arithmetic;
+- do not reopen the already-fixed `xl/xl` relationship defect;
 - do not close CAP-24 as fully resolved.
 
 Current checkpoint:
 
-`CAP_24_RUN_26_REPORT_INFO_PASS__NEXT_REPORT_FILE_GET__DECISIVE_LIVE_XLSX_PATCH_TEST`
+`CAP_24_RUN_27_XLSX_LIVE_FIX_PASS__PLACEMENT_EMPTY_OR_UNPARSED_DIAGNOSTIC_NEXT`
