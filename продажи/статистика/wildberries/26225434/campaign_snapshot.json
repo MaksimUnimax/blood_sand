@@ -4,7 +4,8 @@
     "bridge": "wildberries-llm-api-bridge",
     "bridge_version": "0.1.2",
     "operation": "promo_campaigns",
-    "request_id": "ebd2e2be-88e2-4e27-937e-cf8e85eb7ef2"
+    "request_id": "da313100-3932-4738-ab60-c3ebfb3474c8",
+    "captured_on": "2026-09-06"
   },
   "campaign": {
     "id": 26225434,
@@ -27,15 +28,78 @@
       "deleted": "2100-01-01T00:00:00+03:00"
     },
     "nm_settings": [
-      {"nm_id": 262669814, "sign": "Дева", "subject_id": 1784, "subject_name": "четки", "bid_search_kopecks": 7000, "bid_recommendations_kopecks": 7000},
-      {"nm_id": 262669815, "sign": "Лев", "subject_id": 1784, "subject_name": "четки", "bid_search_kopecks": 7000, "bid_recommendations_kopecks": 7000},
-      {"nm_id": 262669816, "sign": "Овен", "subject_id": 1784, "subject_name": "четки", "bid_search_kopecks": 7000, "bid_recommendations_kopecks": 7000},
-      {"nm_id": 262629137, "sign": "Телец", "subject_id": 1784, "subject_name": "четки", "bid_search_kopecks": 7000, "bid_recommendations_kopecks": 7000},
-      {"nm_id": 262661039, "sign": "Весы", "subject_id": 1784, "subject_name": "четки", "bid_search_kopecks": 7000, "bid_recommendations_kopecks": 7000},
-      {"nm_id": 262678027, "sign": "Стрелец", "subject_id": 1784, "subject_name": "четки", "bid_search_kopecks": 7000, "bid_recommendations_kopecks": 7000},
-      {"nm_id": 462723607, "sign": "Скорпион", "subject_id": 1784, "subject_name": "четки", "bid_search_kopecks": 7000, "bid_recommendations_kopecks": 7000},
-      {"nm_id": 262622381, "sign": "Козерог", "subject_id": 1784, "subject_name": "четки", "bid_search_kopecks": 7000, "bid_recommendations_kopecks": 7000},
-      {"nm_id": 262669813, "sign": "Водолей", "subject_id": 1784, "subject_name": "четки", "bid_search_kopecks": 7000, "bid_recommendations_kopecks": 7000}
+      {
+        "nm_id": 262669814,
+        "sign": "Дева",
+        "subject_id": 1784,
+        "subject_name": "четки",
+        "bid_search_kopecks": 7000,
+        "bid_recommendations_kopecks": 7000
+      },
+      {
+        "nm_id": 262669815,
+        "sign": "Лев",
+        "subject_id": 1784,
+        "subject_name": "четки",
+        "bid_search_kopecks": 7000,
+        "bid_recommendations_kopecks": 7000
+      },
+      {
+        "nm_id": 262669816,
+        "sign": "Овен",
+        "subject_id": 1784,
+        "subject_name": "четки",
+        "bid_search_kopecks": 7000,
+        "bid_recommendations_kopecks": 7000
+      },
+      {
+        "nm_id": 262629137,
+        "sign": "Телец",
+        "subject_id": 1784,
+        "subject_name": "четки",
+        "bid_search_kopecks": 7000,
+        "bid_recommendations_kopecks": 7000
+      },
+      {
+        "nm_id": 262661039,
+        "sign": "Весы",
+        "subject_id": 1784,
+        "subject_name": "четки",
+        "bid_search_kopecks": 7000,
+        "bid_recommendations_kopecks": 7000
+      },
+      {
+        "nm_id": 262678027,
+        "sign": "Стрелец",
+        "subject_id": 1784,
+        "subject_name": "четки",
+        "bid_search_kopecks": 7000,
+        "bid_recommendations_kopecks": 7000
+      },
+      {
+        "nm_id": 462723607,
+        "sign": "Скорпион",
+        "subject_id": 1784,
+        "subject_name": "четки",
+        "bid_search_kopecks": 7000,
+        "bid_recommendations_kopecks": 7000
+      },
+      {
+        "nm_id": 262622381,
+        "sign": "Козерог",
+        "subject_id": 1784,
+        "subject_name": "четки",
+        "bid_search_kopecks": 7000,
+        "bid_recommendations_kopecks": 7000
+      },
+      {
+        "nm_id": 262669813,
+        "sign": "Водолей",
+        "subject_id": 1784,
+        "subject_name": "четки",
+        "bid_search_kopecks": 7000,
+        "bid_recommendations_kopecks": 7000
+      }
     ]
   }
 }
