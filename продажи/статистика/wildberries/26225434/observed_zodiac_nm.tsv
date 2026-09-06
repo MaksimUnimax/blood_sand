@@ -1,16 +1,18 @@
 sign	nm_id	observed_context	current_campaign_snapshot_2026_09_06	note
-Овен	262669816	promo_fullstats 2025-09	true	
-Телец	262629137	promo_fullstats 2025-09	true	
+Овен	262669816	promo_fullstats 2025-09..2025-11	true	
+Телец	262629137	promo_fullstats 2025-09..2025-11	true	
 Телец	459997114	promo_fullstats 2025-09	false	attributed order with zero ad views in observed row
-Близнецы	446294516	promo_fullstats 2025-09	false	attributed orders with zero ad views in observed row
-Рак	262678024	promo_fullstats 2025-09	false	observed historically in campaign statistics
-Лев	262669815	promo_fullstats 2025-09	true	observed as attributed basket row with zero views
-Дева	262669814	promo_fullstats 2025-09	true	
-Весы	262661039	promo_fullstats 2025-09	true	
-Скорпион	462723607	promo_fullstats 2025-09	true	
-Стрелец	262678027	promo_fullstats 2025-09	true	
+Близнецы	446294516	promo_fullstats 2025-09,2025-11	false	attributed zodiac orders with zero ad views in observed rows
+Рак	262678024	promo_fullstats 2025-09..2025-11	false	observed historically in campaign statistics; attributed orders in 2025-10 and 2025-11
+Рак	441052624	promo_fullstats 2025-11	false	attributed zodiac order with zero ad views in observed row
+Лев	262669815	promo_fullstats 2025-09..2025-11	true	observed as attributed basket/click rows including zero-view rows
+Лев	459997108	promo_fullstats 2025-11	false	attributed basket row with zero ad views
+Дева	262669814	promo_fullstats 2025-09..2025-11	true	
+Весы	262661039	promo_fullstats 2025-09..2025-11	true	
+Скорпион	462723607	promo_fullstats 2025-09..2025-11	true	
+Стрелец	262678027	promo_fullstats 2025-09..2025-11	true	
 Стрелец	459976156	promo_fullstats 2025-09	false	observed attributed basket row with zero ad views
-Козерог	262622381	promo_fullstats 2025-09	true	
-Водолей	262669813	promo_fullstats 2025-09	true	
-Рыбы	262678025	promo_fullstats 2025-09	false	observed historically in campaign statistics
-Водолей	459997105	promo_fullstats 2025-10	false	observed attributed basket row with zero ad views; no attributed order
+Козерог	262622381	promo_fullstats 2025-09..2025-11	true	
+Водолей	262669813	promo_fullstats 2025-09..2025-11	true	
+Водолей	459997105	promo_fullstats 2025-10	false	observed attributed basket row with zero ad views
+Рыбы	262678025	promo_fullstats 2025-09..2025-11	false	observed historically in campaign statistics
