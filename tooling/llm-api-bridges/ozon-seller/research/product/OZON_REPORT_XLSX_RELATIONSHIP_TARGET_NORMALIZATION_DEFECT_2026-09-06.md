@@ -1,7 +1,7 @@
 # Ozon Bridge — XLSX workbook relationship target normalization defect
 
 Date: 2026-09-06
-Status: `CONFIRMED_ROOT_CAUSE__EXECUTABLE_FIX_PENDING_OWNER_AUTHORIZATION`
+Status: `ROOT_CAUSE_PATCH_IMPLEMENTED__TARGETED_EXACT_BLOB_REGRESSION_PASS__LIVE_RETEST_REQUIRED`
 
 ## Scope
 
@@ -11,11 +11,11 @@ Affected flow:
 
 `report_placement_by_products_create -> report_info -> report_file_get -> XLSX parser`
 
-The first two provider steps succeed. The blocker is inside Bridge XLSX materialization.
+Run 22 report creation and Run 23 report readiness succeeded. Run 24 failed inside Bridge XLSX materialization.
 
 ## Reproduction evidence
 
-CAP-24 report creation:
+CAP-24 report:
 
 - report type: `seller_placement_by_products`
 - frozen period: `2026-08-01..2026-08-31`
@@ -26,7 +26,7 @@ CAP-24 report creation:
 - status: `success`
 - opaque ref: `rpf_s_4103b32b-f042-44d9-a542-7eab43c94848`
 
-`report_file_get` then returned:
+`report_file_get` returned:
 
 - error code: `REPORT_XLSX_INVALID`
 - message: `XLSX sheet entry отсутствует: xl/xl/worksheets/sheet1.xml`
@@ -38,102 +38,164 @@ Evidence file:
 
 ## Confirmed root cause
 
-Current executable source:
+Current runtime authority:
 
 `dist-step7-candidate/shared/provider_transport_core.js`
 
-`parseXlsxReportBytes(...)` reads workbook relationships and stores each relationship target using:
+Before the patch, `parseXlsxReportBytes(...)` normalized every workbook relationship target through:
 
 ```js
-relationships.set(id, reportJoinZipPath("xl", target));
+reportJoinZipPath("xl", target)
 ```
 
-`reportJoinZipPath(...)` initializes path components from `base`, then appends target components unless they are `.` or `..`.
-
-For the failing provider workbook relationship, the resulting requested worksheet path was:
+For a provider target already rooted under `xl/`, this produced:
 
 ```text
-xl/xl/worksheets/sheet1.xml
+xl/ + xl/worksheets/sheet1.xml
+= xl/xl/worksheets/sheet1.xml
 ```
-
-That result is only possible when the relationship target already contains an `xl/...` package-root component (possibly preceded by `./`). The parser then adds a second `xl/` prefix.
 
 Root-cause classification:
 
 `XLSX_WORKBOOK_RELATIONSHIP_TARGET_DOUBLE_PREFIX`
 
-The defect is generic to report XLSX files whose workbook relationship target is already rooted under `xl/`; it is not specific to one report code, one seller, one SKU or placement reports.
+This was generic to XLSX reports with an already package-rooted workbook relationship target; it was not specific to the seller, SKU, report code, or placement report.
 
-## Required root-cause behavior
+## Secondary confirmed observability defect
 
-Workbook relationship resolution must correctly support at least:
+`executeTrustedReportFileOnce(...)` performs the real report-file GET and reads response bytes before XLSX parsing.
 
-```text
-worksheets/sheet1.xml      -> xl/worksheets/sheet1.xml
-xl/worksheets/sheet1.xml   -> xl/worksheets/sheet1.xml
-/xl/worksheets/sheet1.xml  -> xl/worksheets/sheet1.xml
-```
-
-Do not implement a report-code or seller-specific workaround.
-
-Candidate implementation principle:
-
-- distinguish already package-rooted `xl/...` targets from targets relative to `xl/workbook.xml`;
-- retain safe normalization of `.` and `..` segments;
-- optionally use ZIP-entry existence as a deterministic fallback only between semantically valid normalized candidates;
-- remain fail-closed for traversal/invalid entries.
-
-## Secondary observability defect
-
-`executeTrustedReportFileOnce(...)` performs a real `fetch(trustedUrl)`, reads bytes, and then invokes `parseAiReadableReportBytes(...)`.
-
-A parser error such as `REPORT_XLSX_INVALID` is thrown after the external file request has already happened. The generic parser `fail(...)` error does not carry the post-fetch metadata.
-
-Observed CAP-24 result therefore reported:
+A parser error therefore occurs after an external request has already happened, but the previous parser error object carried no post-fetch metadata. The upper error serializer consequently reported:
 
 ```text
 external_request_executed = false
 http_status = 0
 ```
 
-although the XLSX parser could only have received bytes after the report-file GET.
-
 Classification:
 
 `REPORT_FILE_POST_FETCH_PARSE_ERROR_OBSERVABILITY_LOSS`
 
-Required behavior on post-fetch parse failure:
+## Authorized root-cause patch
 
-- preserve `external_request_executed = true`;
-- preserve actual HTTP status when known;
-- preserve original parse error code/message;
-- preserve `automatic_retry = false`;
-- do not perform a hidden retry.
+Owner authorization was explicitly granted on 2026-09-06.
 
-## Regression requirements
+Runtime patch commit:
 
-Required tests for any authorized patch:
+`92773026e479671160aab42c0f7590da155e1184`
 
-1. relative workbook target `worksheets/sheet1.xml` parses;
-2. `xl/worksheets/sheet1.xml` parses without double-prefixing;
-3. `/xl/worksheets/sheet1.xml` parses safely;
-4. target using legal `.` / `..` normalization remains correct;
-5. invalid/missing worksheet remains fail-closed;
-6. successful external GET + parser failure reports external request truthfully;
-7. no hidden retry;
-8. report-file opaque-ref provenance gate remains intact;
-9. existing CSV/PDF/XLSX parser regressions remain PASS.
+Patched runtime blob:
 
-## Commercial impact
+`5255fa0bfe76e0b5add2bafb942acabf092bac68`
 
-CAP-24 can create and complete a product-level placement report, but cannot consume this valid XLSX through the Bridge. This blocks exact product-level placement/storage attribution and degrades the seller-facing unit-economics capability.
+Regression-test commit:
 
-This is therefore a Level-3 technical defect justified by a Level-2 business capability failure and Level-0 commercial validation.
+`cb353190c3e13a644601198c6a854b99356f20d6`
 
-## Authorization boundary
+Patch/dependency-closure authority:
 
-No executable Bridge patch has been made.
+`OZON_REPORT_XLSX_RELATIONSHIP_TARGET_PATCH_AND_DEPENDENCY_CLOSURE_2026-09-06.md`
 
-Current state:
+## Implemented behavior
 
-`ROOT_CAUSE_CONFIRMED__PATCH_REQUIRED_FOR_CAP24_PLACEMENT_MATERIALIZATION__OWNER_AUTHORIZATION_REQUIRED`
+The runtime now has a dedicated workbook relationship resolver with these semantics:
+
+```text
+worksheets/sheet1.xml       -> xl/worksheets/sheet1.xml
+./worksheets/sheet1.xml     -> xl/worksheets/sheet1.xml
+xl/worksheets/sheet1.xml    -> xl/worksheets/sheet1.xml
+/xl/worksheets/sheet1.xml   -> xl/worksheets/sheet1.xml
+../xl/worksheets/sheet1.xml -> xl/worksheets/sheet1.xml
+```
+
+It fails closed on:
+
+- traversal above package root;
+- backslash path separators;
+- scheme/network external targets;
+- `TargetMode="External"`.
+
+`parseXlsxReportBytes` now reads optional `TargetMode` and uses this dedicated resolver instead of blindly prepending `xl/`.
+
+No ZIP reader, sheet parser, CSV parser, PDF parser, Seller transport, Performance transport, opaque-ref policy, command contract, registry, service worker, batching, retry, or credentials code was modified.
+
+## Observability repair
+
+Post-fetch report-file errors are now rethrown with:
+
+- original error code/message;
+- `external_request_executed=true`;
+- `request_attempted=true`;
+- actual response HTTP status.
+
+The report-size error also truthfully records `request_attempted=true`.
+
+No automatic retry was added.
+
+## Targeted exact-blob validation
+
+The locally executed runtime file was hashed with Git blob semantics and matched the GitHub blob exactly:
+
+`5255fa0bfe76e0b5add2bafb942acabf092bac68`
+
+The regression script also matched its GitHub blob exactly:
+
+`4e8c3f7749fc444174be7321a4dc315f6421f39b`
+
+`node --check` for the exact patched runtime: PASS.
+
+Dedicated regression markers all PASS:
+
+```text
+OZON_REPORT_XLSX_RELATIVE_TARGET_PASS
+OZON_REPORT_XLSX_DOT_RELATIVE_TARGET_PASS
+OZON_REPORT_XLSX_ROOTED_XL_TARGET_PASS
+OZON_REPORT_XLSX_ABSOLUTE_XL_TARGET_PASS
+OZON_REPORT_XLSX_LEGAL_PARENT_NORMALIZATION_PASS
+OZON_REPORT_XLSX_MISSING_ENTRY_FAIL_CLOSED_PASS
+OZON_REPORT_XLSX_TRAVERSAL_FAIL_CLOSED_PASS
+OZON_REPORT_XLSX_EXTERNAL_URI_FAIL_CLOSED_PASS
+OZON_REPORT_XLSX_TARGET_MODE_EXTERNAL_FAIL_CLOSED_PASS
+OZON_REPORT_FILE_POST_FETCH_PARSE_TELEMETRY_PASS
+OZON_REPORT_FILE_POST_FETCH_PARSE_NO_RETRY_PASS
+OZON_REPORT_XLSX_RELATIONSHIP_TARGET_REGRESSION_PASS
+```
+
+Collateral exact-blob smoke markers all PASS:
+
+```text
+OZON_REPORT_CSV_UNCHANGED_PASS
+OZON_REPORT_PDF_UNCHANGED_PASS
+OZON_REPORT_FORMAT_FAIL_CLOSED_UNCHANGED_PASS
+OZON_REPORT_URL_TRUST_GATE_UNCHANGED_PASS
+OZON_REPORT_FILE_SUCCESS_PATH_UNCHANGED_PASS
+OZON_SELLER_JSON_TRANSPORT_UNCHANGED_PASS
+OZON_PERFORMANCE_JSON_TRANSPORT_UNCHANGED_PASS
+```
+
+## Full-suite honesty boundary
+
+No GitHub Actions run was automatically created for the patch/test head, the connected GitHub tool does not expose workflow dispatch, and the local execution environment cannot network-clone the repository.
+
+Therefore this authority does not claim a fresh post-patch PASS for every broad repository gate. Full-suite/release regression remains required in an environment with the complete repository checkout.
+
+This limitation does not invalidate the exact-blob targeted regression above; it only prevents a false claim about unrelated broad suites.
+
+## Live extension retest still required
+
+A Git commit does not hot-reload the already running browser extension.
+
+Before CAP-24 placement attribution can be promoted from blocked to resolved:
+
+1. reload/build the patched `dist-step7-candidate` through the existing operator validation procedure;
+2. create a fresh August placement-by-products report if the old report/ref has expired;
+3. perform one explicit `report_info`;
+4. perform one explicit `report_file_get` using the returned opaque ref;
+5. verify live parsing succeeds without `xl/xl/...`;
+6. identify target SKU `1636048691` from report columns;
+7. calculate exact placement/storage amount only from provider-backed target rows;
+8. reconcile against finance evidence before CAP-24 final arithmetic.
+
+## Current state
+
+`PATCH_IMPLEMENTED__TARGETED_REGRESSION_PASS__FULL_REPO_AND_LIVE_RETEST_PENDING`
