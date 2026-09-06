@@ -13,3 +13,4 @@ sign	nm_id	observed_context	current_campaign_snapshot_2026_09_06	note
 Козерог	262622381	promo_fullstats 2025-09	true	
 Водолей	262669813	promo_fullstats 2025-09	true	
 Рыбы	262678025	promo_fullstats 2025-09	false	observed historically in campaign statistics
+Водолей	459997105	promo_fullstats 2025-10	false	observed attributed basket row with zero ad views; no attributed order
