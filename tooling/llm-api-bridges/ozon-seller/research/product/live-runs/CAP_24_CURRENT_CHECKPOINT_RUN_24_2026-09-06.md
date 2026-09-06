@@ -1,9 +1,9 @@
-# CAP-24 current checkpoint after Run 24 and XLSX parser repair
+# CAP-24 current checkpoint after Run 25 post-patch live report create
 
 Date: 2026-09-06
-Status: `AUTHORITATIVE_LATEST_CHECKPOINT__XLSX_ROOT_CAUSE_PATCHED__TARGETED_REGRESSION_PASS__LIVE_EXTENSION_RELOAD_RETEST_REQUIRED`
+Status: `AUTHORITATIVE_LATEST_CHECKPOINT__PATCHED_BUILD_VALIDATED__RUN_25_REPORT_CREATE_PASS__NEXT_REPORT_INFO`
 
-This file is the latest CAP-24 continuation checkpoint and supersedes older `NEXT_REPORT_FILE_GET` / `WAITING_FOR_EXECUTABLE_PATCH_AUTHORIZATION` states.
+This file is the latest CAP-24 continuation checkpoint and supersedes older `NEXT_REPORT_FILE_GET`, `WAITING_FOR_EXECUTABLE_PATCH_AUTHORIZATION`, and `NEXT_RELOAD_PATCHED_EXTENSION_AND_LIVE_PLACEMENT_RETEST` states.
 
 ## Completed business evidence
 
@@ -38,135 +38,123 @@ Advertising:
 - historical SKU membership interval is not exposed by current Performance surfaces
 - strict classification remains advertising attribution coverage boundary; do not silently fold `35785.11 RUB` into unconditional exact SKU costs.
 
-## Placement/storage evidence before repair
+## Pre-patch placement/storage failure
 
-Run 22:
+Run 22 created the August product-level placement report successfully.
 
-- `report_placement_by_products_create` for `2026-08-01..2026-08-31`
-- HTTP 200
-- report creation PASS
-- report code: `REPORT_seller_placement_by_products_2093109_1788697286_01a076aa-9779-798b-94a6-b859c6661312`
+Run 23 reported status `success` and returned an opaque report file ref.
 
-Run 23:
+Run 24 attempted `report_file_get` and exposed the Bridge XLSX parser defect:
 
-- `report_info`
-- HTTP 200
-- report status: `success`
-- report type: `seller_placement_by_products`
-- opaque file ref: `rpf_s_4103b32b-f042-44d9-a542-7eab43c94848`
-
-Run 24:
-
-- `report_file_get`
-- Bridge XLSX parser failure:
-  `REPORT_XLSX_INVALID: XLSX sheet entry отсутствует: xl/xl/worksheets/sheet1.xml`
-- automatic retry: false
+`REPORT_XLSX_INVALID: XLSX sheet entry отсутствует: xl/xl/worksheets/sheet1.xml`
 
 Confirmed root cause:
 
 - workbook relationship targets were unconditionally joined to base `xl`;
-- a provider target already rooted under `xl/` therefore became `xl/xl/...`.
+- provider targets already rooted under `xl/` became `xl/xl/...`.
 
-Secondary confirmed defect:
+Secondary defect:
 
-- report-file GET occurs before XLSX parse;
-- post-fetch parser errors previously lost `external_request_executed` and HTTP status metadata.
+- report-file GET occurred before XLSX parse;
+- post-fetch parser errors lost truthful `external_request_executed` and HTTP status metadata.
 
-## Executable repair now implemented
+## Executable repair and build
 
-Owner explicitly authorized patching.
+Owner explicitly authorized the executable patch.
 
 Runtime patch commit:
 
 `92773026e479671160aab42c0f7590da155e1184`
 
-Patched runtime blob:
+Runtime blob:
 
 `5255fa0bfe76e0b5add2bafb942acabf092bac68`
 
-Regression-test commit:
+Dedicated regression commit:
 
 `cb353190c3e13a644601198c6a854b99356f20d6`
 
-Dependency-closure report commit:
+Installable artifact:
 
-`4ba47cb6d516d16d9dea437ef13f95510380908a`
+`tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_XLSX_REPORT_REPAIR_92773026.zip`
 
-Defect authority update commit:
+Artifact SHA-256:
 
-`2cc499ca679391fa4a780cf23f28e9471b501abc`
+`10517e5afc608ff2f05f7039afad6f7dcc6c53dd25d9fe0e49230673058a0d1f`
 
-Patch authority:
+Artifact publication commit:
 
-`../OZON_REPORT_XLSX_RELATIONSHIP_TARGET_NORMALIZATION_DEFECT_2026-09-06.md`
+`bd4dd96bd5649f00f8b48861855ee1a2957e1bd5`
 
-Detailed dependency closure:
+GitHub Actions run:
 
-`../OZON_REPORT_XLSX_RELATIONSHIP_TARGET_PATCH_AND_DEPENDENCY_CLOSURE_2026-09-06.md`
+`34037677653`
 
-## Patch behavior
+Validation completed before artifact publication:
 
-Workbook relationship targets now normalize safely:
+- Ubuntu validation: PASS
+- Windows validation: PASS
+- JS syntax: PASS
+- dedicated XLSX relationship regression: PASS
+- existing report parser/lifecycle gates: PASS
+- full current `run_*.mjs` family: PASS on both OS runners
+- ZIP build: PASS
+- ZIP member list and byte-for-byte coherence with current `dist-step7-candidate`: PASS
+- fresh extraction + XLSX regression against extracted ZIP: PASS
 
-```text
-worksheets/sheet1.xml       -> xl/worksheets/sheet1.xml
-./worksheets/sheet1.xml     -> xl/worksheets/sheet1.xml
-xl/worksheets/sheet1.xml    -> xl/worksheets/sheet1.xml
-/xl/worksheets/sheet1.xml   -> xl/worksheets/sheet1.xml
-../xl/worksheets/sheet1.xml -> xl/worksheets/sheet1.xml
-```
+## Run 25 — first live post-patch workflow step
 
-Traversal above package root and external relationships remain fail-closed.
+Fresh command after installing/reloading the patched build:
 
-Post-fetch report-file parser failures now preserve:
+`report_placement_by_products_create` for `2026-08-01..2026-08-31`.
 
-- `external_request_executed=true`;
-- `request_attempted=true`;
-- actual HTTP status;
-- original parser code/message.
+Observed:
 
-No retry was added.
+- request_id: `38920ed0-ad4f-4651-b419-0beed50f210a`
+- logical_business_result_count: `1`
+- physical_business_request_count: `1`
+- external_request_executed: `true`
+- capability probe: not performed / not needed
+- HTTP status: `200`
+- exact request preserved: `true`
+- command transformed: `false`
+- fresh report code:
+  `REPORT_seller_placement_by_products_2093109_1788703325_01a07706-bb67-750b-80c5-0f71645e6000`
 
-## Validation completed
+Run 25 evidence:
 
-Exact patched runtime Git blob matched locally before execution:
+`CAP_24_RUN_25_POST_PATCH_PLACEMENT_REPORT_CREATE_2026-09-06.md`
 
-`5255fa0bfe76e0b5add2bafb942acabf092bac68`
+Interpretation:
 
-Exact regression-script Git blob matched locally:
-
-`4e8c3f7749fc444174be7321a4dc315f6421f39b`
-
-`node --check` PASS.
-
-Dedicated XLSX/telemetry regression: all PASS, including relative/rooted/absolute targets, legal parent normalization, missing-entry fail-closed, traversal fail-closed, external relationship fail-closed, truthful post-fetch telemetry and one-fetch/no-retry.
-
-Collateral exact-blob smoke: CSV, PDF, unsupported-format fail-closed, report URL trust gate, report-file success path, Seller JSON transport, Performance JSON transport — PASS.
-
-No automatic GitHub Actions run existed for the patch/test head, and the current local environment cannot network-clone the full repository. Do not claim a fresh broad-suite PASS that was not executed.
-
-## Current operational boundary
-
-The GitHub branch is patched, but an already loaded browser extension is not hot-reloaded by a Git commit.
-
-The prior report/file ref also has finite lifetime and may expire before retest.
-
-Therefore do not reuse the old Run-24 failure as a post-patch result and do not claim CAP-24 placement resolved yet.
+- the patched live workflow can create the fresh placement report;
+- this does not yet prove XLSX materialization;
+- do not reuse the old pre-patch report code or file ref;
+- do not infer placement cost from report creation alone.
 
 ## Exact next operational action
 
-1. reload/build the patched `dist-step7-candidate` extension using the existing operator/Codex validation procedure;
-2. after reload, create a **fresh** placement-by-products report for `2026-08-01..2026-08-31` if the old report/ref is expired;
-3. perform one explicit `report_info` using the returned code;
-4. perform one explicit `report_file_get` using the returned opaque ref;
-5. verify live XLSX materialization;
-6. isolate target SKU `1636048691` from explicit report columns;
-7. calculate exact placement/storage amount;
-8. reconcile it against finance before changing CAP-24 totals.
+Perform exactly one dependent `report_info` command using:
+
+`REPORT_seller_placement_by_products_2093109_1788703325_01a07706-bb67-750b-80c5-0f71645e6000`
+
+If status is `success` and a fresh opaque `report_file_ref` is returned, perform one explicit `report_file_get` using that ref.
+
+Live patch acceptance criterion:
+
+- XLSX is materialized successfully;
+- no `xl/xl/worksheets/...` path is produced;
+- target SKU `1636048691` can be located from explicit report columns.
+
+After successful materialization:
+
+1. isolate target SKU `1636048691`;
+2. calculate exact August placement/storage amount from report columns;
+3. reconcile against finance before changing CAP-24 totals.
 
 ## NO_SKIP_ON_FAILURE state
 
-Until live patched extension retest succeeds:
+Until live `report_file_get` succeeds:
 
 - do not mark placement cost as zero;
 - do not allocate account-level NON_ITEM placement charges;
@@ -175,4 +163,4 @@ Until live patched extension retest succeeds:
 
 Current checkpoint:
 
-`CAP_24_XLSX_PATCH_IMPLEMENTED__TARGETED_REGRESSION_PASS__NEXT_RELOAD_PATCHED_EXTENSION_AND_LIVE_PLACEMENT_RETEST`
+`CAP_24_RUN_25_REPORT_CREATE_PASS__NEXT_REPORT_INFO__LIVE_XLSX_MATERIALIZATION_PENDING`
