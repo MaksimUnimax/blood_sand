@@ -11,15 +11,27 @@ month	sign	attributed_orders	attributed_sum_price_rub	order_nm_ids	bridge_versio
 2025-09	Козерог	2	2516	262622381	0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	current campaign nm; order sums 1252 + 1264
 2025-09	Водолей	0	0		0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	current campaign nm 262669813
 2025-09	Рыбы	0	0		0.1.2	dbf5f541-e9c6-4c6c-b4ce-7eb15d798be4	observed nm 262678025
-2025-10	Овен	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	current campaign nm 262669816
-2025-10	Телец	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	current campaign nm 262629137
-2025-10	Близнецы	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	no zodiac order row observed in October
-2025-10	Рак	1	1335	262678024	0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	historical campaign nm; zodiac order
-2025-10	Лев	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	observed nm 262669815 with attributed basket row, 0 orders
-2025-10	Дева	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	current campaign nm 262669814
-2025-10	Весы	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	current campaign nm 262661039
-2025-10	Скорпион	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	current campaign nm 462723607; advertising activity begins late October
-2025-10	Стрелец	1	1264	262678027	0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	current campaign nm; zodiac order
-2025-10	Козерог	1	1264	262622381	0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	current campaign nm; zodiac order
-2025-10	Водолей	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	observed nms 262669813 and 459997105; 0 orders
-2025-10	Рыбы	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	historical campaign nm 262678025; 0 orders
+2025-10	Овен	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	observed nm 262669816
+2025-10	Телец	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	observed nm 262629137
+2025-10	Близнецы	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	no attributed zodiac order observed
+2025-10	Рак	1	1335	262678024	0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	current/historical campaign nm
+2025-10	Лев	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	observed attributed basket rows only
+2025-10	Дева	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	observed nm 262669814
+2025-10	Весы	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	observed nm 262661039
+2025-10	Скорпион	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	observed nm 462723607
+2025-10	Стрелец	1	1264	262678027	0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	current campaign nm
+2025-10	Козерог	1	1264	262622381	0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	current campaign nm
+2025-10	Водолей	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	observed nm 262669813 and basket-only 459997105
+2025-10	Рыбы	0	0		0.1.2	642c7a41-4e19-4a53-ae65-3cf955bd885c	observed nm 262678025
+2025-11	Овен	1	1454	262669816	0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	current campaign nm
+2025-11	Телец	0	0		0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	observed nm 262629137
+2025-11	Близнецы	1	1454	446294516	0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	attributed zodiac cross-sell nm with zero ad views in order row
+2025-11	Рак	2	2868	262678024,441052624	0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	one current/historical campaign nm order plus one attributed cross-sell zodiac nm
+2025-11	Лев	0	0		0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	observed basket/click rows only
+2025-11	Дева	0	0		0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	observed nm 262669814
+2025-11	Весы	0	0		0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	observed nm 262661039
+2025-11	Скорпион	5	7270	462723607	0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	five attributed orders; one row carries canceled=1
+2025-11	Стрелец	0	0		0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	observed nm 262678027
+2025-11	Козерог	0	0		0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	observed nm 262622381
+2025-11	Водолей	0	0		0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	observed nm 262669813
+2025-11	Рыбы	0	0		0.1.2	fb75041d-cebd-44fb-b150-5928a48dbbc5	observed nm 262678025
