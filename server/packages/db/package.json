@@ -24,6 +24,7 @@
     "@product/compatibility": "workspace:*",
     "@product/device-auth": "workspace:*",
     "@product/device-management": "workspace:*",
+    "@product/entitlements": "workspace:*",
     "@product/extension-auth": "workspace:*",
     "@product/plans": "workspace:*",
     "@product/pricing": "workspace:*",

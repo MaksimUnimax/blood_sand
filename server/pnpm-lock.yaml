@@ -239,6 +239,9 @@ importers:
       '@product/device-management':
         specifier: workspace:*
         version: link:../device-management
+      '@product/entitlements':
+        specifier: workspace:*
+        version: link:../entitlements
       '@product/extension-auth':
         specifier: workspace:*
         version: link:../extension-auth
@@ -307,6 +310,18 @@ importers:
       '@types/nodemailer':
         specifier: 6.4.19
         version: 6.4.19
+
+  packages/entitlements:
+    dependencies:
+      '@product/plans':
+        specifier: workspace:*
+        version: link:../plans
+      '@product/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: 4.1.5
+        version: 4.1.5
 
   packages/extension-auth:
     dependencies:
