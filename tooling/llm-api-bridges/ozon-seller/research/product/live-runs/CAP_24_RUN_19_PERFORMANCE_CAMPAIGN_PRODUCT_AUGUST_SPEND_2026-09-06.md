@@ -159,16 +159,39 @@ Campaign titles are only a discovery hint. They cannot serve as the attribution 
 
 ## Required attribution gate
 
-For each of the four candidate campaign IDs, retrieve the campaign's promoted objects using `performance_campaign_objects`.
+For each of the four candidate campaign IDs, retrieve the campaign's promoted products using the current Bridge operation `performance_campaign_products` with required parameter `campaignId`.
 
-Provider contract for `GET /api/client/campaign/{campaignId}/objects` uses required path parameter `campaignId`. For product advertising campaigns, returned object `id` represents the advertised SKU.
+This operation has already passed a live Bridge test on the current Performance surface: `performance_campaign_products` with `campaignId = 37130644` executed one physical request and returned product rows. Therefore this is the current executable alias for the attribution check; `performance_campaign_objects` must not be used.
 
 Decision rule per campaign:
 
-1. If returned object list contains only SKU `1636048691`, the campaign-level August `moneySpent` can be directly associated with the target SKU, subject to duplicate reconciliation.
+1. If returned product/object evidence identifies only SKU `1636048691`, the campaign-level August `moneySpent` can be directly associated with the target SKU, subject to duplicate reconciliation.
 2. If the campaign contains multiple SKUs, the full campaign spend cannot be assigned to the target SKU without a provider-supported historical SKU split.
 3. If the target SKU is absent, the campaign is not attributed to the target even if its title contains `Печать`.
-4. If object proof is unavailable or ambiguous, mark that campaign `ADVERTISING_ATTRIBUTION_NOT_PROVEN` rather than allocate heuristically.
+4. If product/object proof is unavailable or ambiguous, mark that campaign `ADVERTISING_ATTRIBUTION_NOT_PROVEN` rather than allocate heuristically.
+
+## Invalid command-construction attempt — no provider request
+
+The first attribution attempt after Run 19 was malformed on the assistant side and therefore did **not** test Ozon or the Performance operation.
+
+Observed Bridge result:
+
+- result type: `OZON_GUIDANCE_RESULT_V2`
+- status: `cluster_required`
+- error: `MISSING_JSON`
+- query_planner.status: `pending`
+- logical_business_result_count: `0`
+- physical_business_request_count: `0`
+- external_request_executed: `false`
+
+Cause:
+
+1. one `OZON_API_V1` marker was followed by a JSON array instead of one JSON object;
+2. the attempted alias was `performance_campaign_objects`, while the current executable alias is `performance_campaign_products`.
+
+The Bridge multi-command contract is marker-based: each command must be expressed as its own `OZON_API_V1` marker followed by one valid JSON object. This malformed attempt is therefore classified as `ASSISTANT_COMMAND_CONSTRUCTION_ERROR__NO_PROVIDER_REQUEST`, not as an Ozon/Bridge business-operation failure.
+
+Correct retry shape: four separate `OZON_API_V1` commands, one per campaign ID, using `performance_campaign_products` and `campaignId`.
 
 ## Duplicate-cost boundary
 
@@ -180,6 +203,6 @@ If Performance advertising spend becomes directly attributable, it must still be
 
 - direct August finance ledger: complete, `113264.00 RUB`
 - historical August campaign spend visibility: PASS
-- target-SKU advertising attribution: PENDING campaign-object proof
+- target-SKU advertising attribution: PENDING campaign-product proof
 - placement/storage attribution: still pending after advertising gate
 - executable Bridge change: none
