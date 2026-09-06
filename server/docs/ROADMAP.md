@@ -163,8 +163,8 @@ Exit: duplicate/forged/delayed webhook, reconciliation and admin audit scenarios
 P5 execution decomposition (frozen by ADR-0020):
 
 - P5.1 `[DONE]` subscription/billing persistence foundation: four core tables, physical integrity/immutability/idempotency constraints, migration/schema tests, local evidence, recovery freeze, and remote acceptance.
-- P5.2 `[ACTIVE]` subscription FSM, internal manual grant/extend/suspend/restore commands, exact revision bindings, eligibility/read contracts, and audit.
-- P5.3 `[PLANNED]` provider-neutral `BillingProviderPort`, deterministic fake/stub provider, simulated checkout orchestration, and server checkout idempotency.
+- P5.2 `[DONE]` subscription FSM, internal manual grant/extend/suspend/restore commands, exact revision bindings, eligibility/read contracts, and audit.
+- P5.3 `[NEXT]` provider-neutral `BillingProviderPort`, deterministic fake/stub provider, simulated checkout orchestration, and server checkout idempotency.
 - P5.4 `[PLANNED]` simulated verified billing-event/webhook application through the deterministic fake provider; no real provider HTTP webhook.
 - P5.5 `[PLANNED]` simulated reconciliation and durable subscription period/grace/expiry/cancel jobs through the deterministic fake provider.
 - P5.6 `[PLANNED]` subscription eligibility/bootstrap integration, P4.4 account-plan binding, atomic commercial device limits, portal reads, and non-real-money billing UX.

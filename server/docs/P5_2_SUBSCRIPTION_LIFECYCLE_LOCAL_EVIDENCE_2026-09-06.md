@@ -2,7 +2,7 @@
 
 Technical ID: `PRODUCT-CONTROL-PLANE-P5.2-SUBSCRIPTION-FSM-MANUAL-COMMANDS-BINDING-LOCAL`  
 Attempt: `1`  
-Status: `LOCAL ACCEPTED — P5.2 ACTIVE`
+Status: `ACCEPTED — P5.2 DONE`
 
 ## Base and safety
 
@@ -76,5 +76,21 @@ bootstrap wiring, commercial device-limit production wiring, Bridge changes,
 and P5.3 are absent. YooKassa and Tinkoff/T-Bank remain future candidates
 only; real payment go-live remains deferred.
 
-Roadmap state is P0–P4 DONE, P5 ACTIVE, P5.1 DONE, P5.2 ACTIVE, P5.3–P5.7
-PLANNED, P6–P15 PLANNED. P5.2 is not marked DONE.
+Roadmap state is P0–P4 DONE, P5 ACTIVE, P5.1 DONE, P5.2 DONE, P5.3 NEXT,
+P5.4–P5.7 PLANNED, and P6–P15 PLANNED.
+
+## Remote acceptance finalization
+
+- P5.2 implementation SHA: `6398a7e78fd386500c96b63560a1f0d1e8aa134a`
+- Server CI: run `34033692912` — https://github.com/MaksimUnimax/blood_sand/actions/runs/34033692912
+- `REMOTE_P5_2_REVIEW=PASS`
+- Unit: `294`; integration: `518`; P5.2 real PostgreSQL: `90`
+- P5.1: `94`; P4.6: `38`; P4.5: `52`; P4.4: `48`; P4.3: `52`; P4.2: `21`; P4.1: `30`
+- Crypto: `12/12`; E2E: `24/24`
+- OpenAPI: `16` route/method tuples; SHA-256:
+  `038fe97ae7bf1d44563f768dbe6335c087e3430f255986325fad65de422b308f`
+- Migrations: `0000..0009`; 0009 SHA-256:
+  `d073221a237bdc867672b5e1e8223a0f62eacbb4670c1c19cfc346b64406e4ec`; no `0010`
+- Production device-limit baseline: `1`
+- P5.3 was not executed; no real provider or fake provider is implemented.
+- Real payment go-live remains deferred until after the remaining product roadmap.
