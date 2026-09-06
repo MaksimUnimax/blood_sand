@@ -47,6 +47,85 @@ export const ApiErrorEnvelopeV1Schema = z.object({
 });
 export type ApiErrorEnvelopeV1 = z.infer<typeof ApiErrorEnvelopeV1Schema>;
 
+/** P4.5 public commercial catalog wire contract. */
+export const PublicCommercialCatalogVersionV1Schema = z.literal(
+  "public_commercial_catalog_v1",
+);
+export const PublicCommercialIdentifierV1Schema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/);
+export const PublicCommercialCatalogQueryV1Schema = z
+  .object({
+    marketKey: PublicCommercialIdentifierV1Schema,
+    channelKey: PublicCommercialIdentifierV1Schema,
+  })
+  .strict();
+export type PublicCommercialCatalogQueryV1 = z.infer<
+  typeof PublicCommercialCatalogQueryV1Schema
+>;
+
+export const PublicCommercialMoneyV1Schema = z
+  .object({
+    amountMinor: z.number().int().safe().nonnegative(),
+    currency: z.string().regex(/^[A-Z]{3}$/),
+  })
+  .strict();
+export const PublicCommercialBillingIntervalV1Schema = z
+  .object({
+    unit: z.enum(["DAY", "MONTH", "YEAR"]),
+    count: z.number().int().min(1).max(1200),
+  })
+  .strict();
+export const PublicCommercialOfferV1Schema = z
+  .object({
+    plan: z
+      .object({
+        planId: z.uuid(),
+        planCode: z.string().min(1),
+        planRevisionId: z.uuid(),
+        planRevision: z.number().int().positive(),
+        displayName: z.string(),
+        description: z.string(),
+      })
+      .strict(),
+    price: z
+      .object({
+        priceId: z.uuid(),
+        priceCode: z.string().min(1),
+        priceRevisionId: z.uuid(),
+        priceRevision: z.number().int().positive(),
+        amount: PublicCommercialMoneyV1Schema,
+        billingInterval: PublicCommercialBillingIntervalV1Schema,
+        effectiveFrom: z.string().datetime({ offset: true }),
+        effectiveTo: z.string().datetime({ offset: true }).nullable(),
+      })
+      .strict(),
+  })
+  .strict();
+export const PublicCommercialCatalogResponseV1Schema = z
+  .object({
+    catalogVersion: PublicCommercialCatalogVersionV1Schema,
+    generatedAt: z.string().datetime({ offset: true }),
+    marketKey: PublicCommercialIdentifierV1Schema,
+    channelKey: PublicCommercialIdentifierV1Schema,
+    offers: z.array(PublicCommercialOfferV1Schema),
+  })
+  .strict();
+export type PublicCommercialMoneyV1 = z.infer<
+  typeof PublicCommercialMoneyV1Schema
+>;
+export type PublicCommercialBillingIntervalV1 = z.infer<
+  typeof PublicCommercialBillingIntervalV1Schema
+>;
+export type PublicCommercialOfferV1 = z.infer<
+  typeof PublicCommercialOfferV1Schema
+>;
+export type PublicCommercialCatalogResponseV1 = z.infer<
+  typeof PublicCommercialCatalogResponseV1Schema
+>;
+
 /** Public health responses exposed by the P1 API foundation. */
 export const HealthLiveResponseV1Schema = z.object({
   status: z.literal("live"),

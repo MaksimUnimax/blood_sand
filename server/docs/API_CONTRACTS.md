@@ -125,7 +125,25 @@ Current subscription/plan/price revision and period state.
 
 ### `GET /v1/plans/public`
 
-Public/eligible plan and current price revisions for purchase UI.
+Public unauthenticated new-sales catalog for an explicit `marketKey` and
+`channelKey`. Both query parameters are mandatory stable lowercase machine
+identifiers; the server does not infer either value from IP, locale, currency,
+account, browser, or host. There is no public arbitrary-time query parameter.
+
+The server captures one evaluation time for the request. The response lists
+only sellable offers whose plan is `ACTIVE`, whose price is `ACTIVE`, and whose
+highest `assignment_revision` with `effective_from <=` that server time selects
+an immutable published price revision currently inside its half-open
+`[effectiveFrom, effectiveTo)` window. A NULL selection closes new sales and
+an expired selected revision is not replaced by an older assignment. Each offer
+exposes the exact bound plan and price revision identities and plan commercial
+copy; it does not expose entitlements, account eligibility, subscriptions,
+account overrides, assignment internals, payment/provider data, or internal
+reasons.
+
+Successful empty catalogs return `200` with `offers: []`. Successful responses
+include `Cache-Control: no-store`. Repository or invariant failures return the
+safe `503 SERVICE_UNAVAILABLE` envelope.
 
 ### `POST /v1/billing/checkouts`
 

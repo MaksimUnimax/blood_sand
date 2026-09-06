@@ -45,6 +45,8 @@ import { registerDeviceManagementRoutes } from "./device-management-routes.js";
 import { registerPortalSupportRoutes } from "./portal-support-routes.js";
 import type { BootstrapService } from "@product/bootstrap";
 import { registerBootstrapRoutes } from "./bootstrap-routes.js";
+import type { PublicCommercialCatalogReader } from "@product/commercial-catalog";
+import { registerPublicCatalogRoutes } from "./public-catalog-routes.js";
 
 export class ControlledError extends Error {
   public constructor(
@@ -64,6 +66,8 @@ export interface ApiDependencies {
   readonly extensionAuthService?: ExtensionAuthService;
   readonly deviceManagementService?: DeviceManagementService;
   readonly bootstrapService?: BootstrapService;
+  readonly publicCommercialCatalogReader?: PublicCommercialCatalogReader;
+  readonly catalogClock?: () => Date;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -235,6 +239,11 @@ export function createApiApp(
         dependencies.bootstrapService,
         dependencies.extensionAuthService,
       );
+    registerPublicCatalogRoutes(
+      app,
+      dependencies.publicCommercialCatalogReader,
+      dependencies.catalogClock ?? (() => new Date()),
+    );
   });
   return app;
 }

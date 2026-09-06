@@ -12,6 +12,7 @@ export { createP3BootstrapPolicyCatalogRepository } from "./p3-bootstrap-policy-
 export { createP4PlanCommandRepository } from "./p4-plan-command-repository.js";
 export { createP4PriceCommandRepository } from "./p4-price-command-repository.js";
 export { createP4EntitlementRepository } from "./p4-entitlement-repository.js";
+export { createP4CommercialCatalogRepository } from "./p4-commercial-catalog-repository.js";
 
 export interface DatabaseRuntime {
   db: NodePgDatabase<typeof schema>;

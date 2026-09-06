@@ -88,6 +88,9 @@ importers:
       '@product/bootstrap':
         specifier: workspace:*
         version: link:../../packages/bootstrap
+      '@product/commercial-catalog':
+        specifier: workspace:*
+        version: link:../../packages/commercial-catalog
       '@product/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -207,6 +210,21 @@ importers:
         specifier: workspace:*
         version: link:../remote-config
 
+  packages/commercial-catalog:
+    dependencies:
+      '@product/plans':
+        specifier: workspace:*
+        version: link:../plans
+      '@product/pricing':
+        specifier: workspace:*
+        version: link:../pricing
+      '@product/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: 4.1.5
+        version: 4.1.5
+
   packages/compatibility:
     dependencies:
       '@product/shared':
@@ -230,6 +248,9 @@ importers:
       '@product/auth':
         specifier: workspace:*
         version: link:../auth
+      '@product/commercial-catalog':
+        specifier: workspace:*
+        version: link:../commercial-catalog
       '@product/compatibility':
         specifier: workspace:*
         version: link:../compatibility

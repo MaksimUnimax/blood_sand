@@ -5,6 +5,7 @@ import {
   createExtensionAuthRepository,
   createDeviceManagementRepository,
   createP3BootstrapPolicyCatalogRepository,
+  createP4CommercialCatalogRepository,
 } from "@product/db";
 import { AuthService, deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
 import {
@@ -66,6 +67,7 @@ const app = createApiApp({
     { resolve: (input) => resolveP3BootstrapPolicy(input, p3Catalog) },
     createConfigSigningService(bootstrapSigningMaterial, p3Catalog),
   ),
+  publicCommercialCatalogReader: createP4CommercialCatalogRepository(database),
 });
 let closing = false;
 async function shutdown(signal: string): Promise<void> {

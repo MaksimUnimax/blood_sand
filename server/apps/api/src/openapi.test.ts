@@ -36,6 +36,7 @@ describe("OpenAPI foundation", () => {
       "/v1/device-authorizations/{id}/deny",
       "/v1/devices",
       "/v1/devices/{device_id}/revoke",
+      "/v1/plans/public",
     ]);
     expect(document.paths).toHaveProperty("/v1/bootstrap");
     expect(document.paths).not.toHaveProperty("/v1/billing/checkouts");

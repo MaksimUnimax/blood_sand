@@ -1,0 +1,22 @@
+{
+  "name": "@product/commercial-catalog",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@product/plans": "workspace:*",
+    "@product/pricing": "workspace:*",
+    "@product/shared": "workspace:*",
+    "zod": "4.1.5"
+  }
+}

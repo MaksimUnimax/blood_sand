@@ -369,7 +369,7 @@ Architecture remains:
 - P4.2 `[DONE]` Plan / entitlement definition / plan-revision command services, publication, hide/archive, transactionally audited mutations and concurrency.
 - P4.3 `[DONE]` Price revision commands, explicit new-sales selection/closure, effective windows, price history and catalog-level grandfathering.
 - P4.4 `[DONE]` Deterministic commercial entitlement resolver, account override resolution, explanation objects and `device.max_active` adapter contract.
-- P4.5 `[NEXT]` Public commercial catalog read model/API plus stable P5/P6 consumer interfaces, without implementing subscriptions/admin mutation transport.
+- P4.5 `[ACTIVE]` Public commercial catalog read model/API plus stable P5/P6 consumer interfaces, without implementing subscriptions/admin mutation transport.
 - P4.6 `[PLANNED]` P4 security/architecture audit, full regression and final P4 acceptance.
 
 # Parallel Bridge rule

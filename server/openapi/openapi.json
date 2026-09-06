@@ -4212,6 +4212,358 @@
           }
         }
       }
+    },
+    "/v1/plans/public": {
+      "get": {
+        "description": "Lists currently sellable immutable plan and price offers for an explicit market and channel using one server evaluation time.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "marketKey",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "channelKey",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "catalogVersion": {
+                      "enum": [
+                        "public_commercial_catalog_v1"
+                      ],
+                      "type": "string"
+                    },
+                    "channelKey": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                      "type": "string"
+                    },
+                    "generatedAt": {
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                      "type": "string"
+                    },
+                    "marketKey": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                      "type": "string"
+                    },
+                    "offers": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "plan": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "description": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "planCode": {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "planId": {
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                "type": "string"
+                              },
+                              "planRevision": {
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991,
+                                "type": "integer"
+                              },
+                              "planRevisionId": {
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "planId",
+                              "planCode",
+                              "planRevisionId",
+                              "planRevision",
+                              "displayName",
+                              "description"
+                            ],
+                            "type": "object"
+                          },
+                          "price": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "amount": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "amountMinor": {
+                                    "maximum": 9007199254740991,
+                                    "minimum": 0,
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "pattern": "^[A-Z]{3}$",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ],
+                                "type": "object"
+                              },
+                              "billingInterval": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "count": {
+                                    "maximum": 1200,
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "unit": {
+                                    "enum": [
+                                      "DAY",
+                                      "MONTH",
+                                      "YEAR"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "unit",
+                                  "count"
+                                ],
+                                "type": "object"
+                              },
+                              "effectiveFrom": {
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                                "type": "string"
+                              },
+                              "effectiveTo": {
+                                "anyOf": [
+                                  {
+                                    "format": "date-time",
+                                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "priceCode": {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "priceId": {
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                "type": "string"
+                              },
+                              "priceRevision": {
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991,
+                                "type": "integer"
+                              },
+                              "priceRevisionId": {
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "priceId",
+                              "priceCode",
+                              "priceRevisionId",
+                              "priceRevision",
+                              "amount",
+                              "billingInterval",
+                              "effectiveFrom",
+                              "effectiveTo"
+                            ],
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "plan",
+                          "price"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "catalogVersion",
+                    "generatedAt",
+                    "marketKey",
+                    "channelKey",
+                    "offers"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "List public commercial offers",
+        "tags": [
+          "catalog"
+        ]
+      }
     }
   },
   "servers": []
