@@ -71,3 +71,15 @@ month	sign	attributed_orders	attributed_sum_price_rub	order_nm_ids	bridge_versio
 2026-07	Козерог	3	4086	262622381	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	three resolved zodiac orders
 2026-07	Водолей	2	2724	262669813,459997105	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	one current campaign nm order plus one attributed historical nm order
 2026-07	Рыбы	1	1354	459997111	0.1.2	ac718f5d-edfd-4433-9f1c-bcb947f31252	attributed historical zodiac nm; zero ad views in order row
+2026-08	Овен	2	2724	262669816	0.1.2	9ed55fcd-e084-4c99-a255-b522c416655f	two current campaign nm orders
+2026-08	Телец	8	10870	262629137,459997114	0.1.2	9ed55fcd-e084-4c99-a255-b522c416655f	seven current campaign nm orders plus one historical nm order at 1336 RUB; one current order carries canceled=1
+2026-08	Близнецы	0	0		0.1.2	9ed55fcd-e084-4c99-a255-b522c416655f	observed historical nm 446294516 in basket rows; 0 attributed orders
+2026-08	Рак	2	2716	262678024,459997110	0.1.2	9ed55fcd-e084-4c99-a255-b522c416655f	one historical campaign nm order at 1362 RUB plus one historical nm order at 1354 RUB
+2026-08	Лев	2	2724	262669815	0.1.2	9ed55fcd-e084-4c99-a255-b522c416655f	two current campaign nm orders
+2026-08	Дева	3	4086	262669814	0.1.2	9ed55fcd-e084-4c99-a255-b522c416655f	three current campaign nm orders; one order carries canceled=1
+2026-08	Весы	2	2724	262661039	0.1.2	9ed55fcd-e084-4c99-a255-b522c416655f	two current campaign nm orders
+2026-08	Скорпион	2	2724	462723607	0.1.2	9ed55fcd-e084-4c99-a255-b522c416655f	two current campaign nm orders; one of the two orders carries canceled=1
+2026-08	Стрелец	1	1362	262678027	0.1.2	9ed55fcd-e084-4c99-a255-b522c416655f	one current campaign nm order
+2026-08	Козерог	3	4078	262622381,459997107	0.1.2	9ed55fcd-e084-4c99-a255-b522c416655f	two current campaign nm orders plus one historical nm order at 1354 RUB; one current order carries canceled=1
+2026-08	Водолей	1	1362	262669813	0.1.2	9ed55fcd-e084-4c99-a255-b522c416655f	one current campaign nm order
+2026-08	Рыбы	0	0		0.1.2	9ed55fcd-e084-4c99-a255-b522c416655f	observed historical nm 262678025 in basket rows; 0 attributed orders
