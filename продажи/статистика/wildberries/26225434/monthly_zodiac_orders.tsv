@@ -47,3 +47,15 @@ month	sign	attributed_orders	attributed_sum_price_rub	order_nm_ids	bridge_versio
 2025-12	Козерог	1	1398	262622381	0.1.2	faa5699a-4be2-40b5-9c37-9734e8ee837f	current campaign nm; zodiac order
 2025-12	Водолей	2	2685	262669813,459997105	0.1.2	faa5699a-4be2-40b5-9c37-9734e8ee837f	one current campaign nm order plus one attributed cross-sell zodiac nm order
 2025-12	Рыбы	2	2650	262678025	0.1.2	faa5699a-4be2-40b5-9c37-9734e8ee837f	historical campaign nm; two zodiac orders; also observed nm 459976154 with basket row and 0 orders
+2026-06	Овен	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm 262669816; 0 attributed orders
+2026-06	Телец	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm 262629137; 0 attributed orders
+2026-06	Близнецы	2	2724	446294516	0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	attributed cross-sell zodiac nm; two orders with zero/near-zero direct ad exposure rows
+2026-06	Рак	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	historical nm 262678024 observed in basket rows; 0 attributed orders
+2026-06	Лев	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm 262669815 observed in basket rows; 0 attributed orders
+2026-06	Дева	1	1362	262669814	0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm; one attributed order
+2026-06	Весы	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm 262661039; 0 attributed orders
+2026-06	Скорпион	4	5448	462723607	0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm; four attributed orders
+2026-06	Стрелец	3	4085	262678027	0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm; three attributed orders; order sums reconcile as 1362 + 1362 + 1361
+2026-06	Козерог	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm 262622381; 0 attributed orders
+2026-06	Водолей	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm 262669813; 0 attributed orders
+2026-06	Рыбы	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	historical nm 262678025 observed in basket rows; 0 attributed orders
