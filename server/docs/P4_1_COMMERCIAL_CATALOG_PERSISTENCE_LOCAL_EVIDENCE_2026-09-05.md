@@ -1,6 +1,6 @@
 # P4.1 Commercial Catalog Persistence — Local Evidence — 2026-09-05
 
-Status: LOCAL ACCEPTED — P4.1 ACTIVE
+Status: ACCEPTED — P4.1 DONE
 
 Technical ID: `PRODUCT-CONTROL-PLANE-P4.1-COMMERCIAL-MUTATION-INTEGRITY-CORRECTION-LOCAL`  
 Attempt: `2`
@@ -229,3 +229,15 @@ All eight P4.1 tables were reviewed. No remaining post-insert direct-SQL integri
 - Worktree: dirty by design.
 - This is local acceptance only; return to ChatGPT for P4.1 remote acceptance.
 - Do not start P4.2.
+
+## REMOTE ACCEPTANCE FINALIZATION
+
+- Implementation commit: `b06d9311bafad7e107d4902dd8eb83dda8c59132` (`feat(server): add commercial catalog persistence foundation`).
+- Code-bearing Server CI: run `34003469855`, [workflow run](https://github.com/MaksimUnimax/blood_sand/actions/runs/34003469855), head `b06d9311bafad7e107d4902dd8eb83dda8c59132`, `SUCCESS`.
+- Canonical CI matrix: checkout/toolchain, frozen install, lint, format, typecheck, unit (`203`), integration (`123`), migration, OpenAPI, Bridge guard, build, Chromium install, and E2E (`24`) all passed; P3.1 crypto remained `12/12`.
+- Remote committed review: PASS. The pushed implementation contains one expected commit and P4.1 persistence scope only.
+- Corrected defect: PASS. Committed PostgreSQL `plan_entitlements` UPDATE protection checks both OLD and NEW parent revision state; the committed physical test executes and rejects published -> draft and draft -> published reparenting while preserving composition.
+- Mutation-integrity matrix: PASS for all eight tables; plan/revision/price identities are database-protected, legal draft workflows remain available, and `POST_INSERT_INTEGRITY_HOLES_REMAINING: NONE`.
+- OpenAPI remains `15` routes with SHA-256 `1d4869210b66d48c7f51978f85ebf21869d61a29d9a47d7fa2ffae0a9f9a8cff`.
+- Migrations remain exactly `0000..0008`; no `0009`; historical `0000..0007` hashes are unchanged.
+- Security review: PASS. No seller credentials/data, payment or billing data, generic entitlement JSON, floating money, executable remote configuration, Bridge runtime import, or tracked SSH private key was introduced.
