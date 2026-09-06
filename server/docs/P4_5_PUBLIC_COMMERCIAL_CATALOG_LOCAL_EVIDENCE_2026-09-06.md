@@ -1,6 +1,6 @@
 # P4.5 Public Commercial Catalog Local Evidence
 
-Status: LOCAL ACCEPTED — P4.5 ACTIVE
+Status: ACCEPTED — P4.5 DONE
 
 ## Base and scope
 
@@ -80,3 +80,15 @@ checkout, payment, webhooks, admin mutation HTTP, public entitlement
 overrides, bootstrap changes, production device-limit wiring, or Bridge
 changes were added. Root disk remained within the required safety threshold.
 
+## Remote acceptance finalization
+
+- Implementation commit: `324a6546bd7d1b8be8dc1219e0dc924e15fb339e`.
+- Code CI: Server CI run `34021468978`,
+  [run URL](https://github.com/MaksimUnimax/blood_sand/actions/runs/34021468978),
+  `SUCCESS`; the exact pushed head passed all canonical steps.
+- Remote committed review: `PASS`.
+- Counts: `253` unit, `296` integration, `52` P4.5, `48` P4.4,
+  `52` P4.3, `21` P4.2, `30` P4.1, `12/12` crypto, and `24/24` E2E.
+- OpenAPI: `16` routes; SHA
+  `038fe97ae7bf1d44563f768dbe6335c087e3430f255986325fad65de422b308f`.
+- Migrations remained unchanged: `0000..0008`; no `0009`.
