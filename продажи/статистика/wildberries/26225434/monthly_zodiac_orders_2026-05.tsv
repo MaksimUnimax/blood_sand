@@ -1,0 +1,13 @@
+month	sign	attributed_orders	attributed_sum_price_rub	order_nm_ids	bridge_version	request_id	note
+2026-05	Овен	1	1362	262669816	0.1.2	e18156fb-bab0-4e05-9b0b-d0f94fbfc072	current campaign nm; attributed order on 2026-05-01
+2026-05	Телец	3	4077	262629137,459976157	0.1.2	e18156fb-bab0-4e05-9b0b-d0f94fbfc072	two current campaign nm orders plus one historical zero-view attributed order at 1354 RUB
+2026-05	Близнецы	1	1362	446294516	0.1.2	e18156fb-bab0-4e05-9b0b-d0f94fbfc072	attributed historical zodiac nm; zero ad views in order row on 2026-05-25
+2026-05	Рак	0	0		0.1.2	e18156fb-bab0-4e05-9b0b-d0f94fbfc072	no attributed zodiac order
+2026-05	Лев	2	2724	262669815	0.1.2	e18156fb-bab0-4e05-9b0b-d0f94fbfc072	two attributed zodiac orders on 2026-05-09 and 2026-05-31
+2026-05	Дева	0	0		0.1.2	e18156fb-bab0-4e05-9b0b-d0f94fbfc072	no attributed zodiac order
+2026-05	Весы	0	0		0.1.2	e18156fb-bab0-4e05-9b0b-d0f94fbfc072	no attributed zodiac order
+2026-05	Скорпион	1	1362	462723607	0.1.2	e18156fb-bab0-4e05-9b0b-d0f94fbfc072	current campaign nm; attributed order on 2026-05-27
+2026-05	Стрелец	0	0		0.1.2	e18156fb-bab0-4e05-9b0b-d0f94fbfc072	no attributed zodiac order
+2026-05	Козерог	1	1362	262622381	0.1.2	e18156fb-bab0-4e05-9b0b-d0f94fbfc072	current campaign nm; attributed order on 2026-05-16
+2026-05	Водолей	2	2724	262669813	0.1.2	e18156fb-bab0-4e05-9b0b-d0f94fbfc072	two current campaign nm orders on 2026-05-04 and 2026-05-29
+2026-05	Рыбы	0	0		0.1.2	e18156fb-bab0-4e05-9b0b-d0f94fbfc072	no attributed zodiac order
