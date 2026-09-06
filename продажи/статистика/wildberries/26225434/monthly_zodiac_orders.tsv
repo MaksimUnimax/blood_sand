@@ -83,6 +83,18 @@ month	sign	attributed_orders	attributed_sum_price_rub	order_nm_ids	bridge_versio
 2026-03	Козерог	2	2466	262622381	0.1.2	726f81f4-4729-45f2-9c32-5845dc477d05	current campaign nm; attributed orders on 2026-03-03 and 2026-03-26
 2026-03	Водолей	0	0		0.1.2	726f81f4-4729-45f2-9c32-5845dc477d05	current campaign nm; 0 attributed orders
 2026-03	Рыбы	1	1233	262678025	0.1.2	726f81f4-4729-45f2-9c32-5845dc477d05	historical campaign nm; attributed zodiac order with zero ad views on 2026-03-14
+2026-04	Овен	6	8172	262669816	0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	six current campaign nm orders
+2026-04	Телец	4	5422	262629137,459997114	0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	three current campaign nm orders plus one historical zero-view attributed order at 1336 RUB
+2026-04	Близнецы	1	1354	459976158	0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	attributed historical zodiac nm; zero ad views in order row
+2026-04	Рак	1	1362	262678024	0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	historical campaign nm; attributed zodiac order with zero ad views
+2026-04	Лев	4	5404	262669815,459997108	0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	three current campaign nm orders plus one historical zero-view order at 1318 RUB
+2026-04	Дева	0	0		0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	no attributed zodiac order
+2026-04	Весы	1	1196	262661039	0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	one current campaign nm order
+2026-04	Скорпион	1	1362	462723607	0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	one current campaign nm order; order row carries canceled=1
+2026-04	Стрелец	0	0		0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	no attributed zodiac order
+2026-04	Козерог	0	0		0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	no attributed zodiac order
+2026-04	Водолей	0	0		0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	no attributed zodiac order
+2026-04	Рыбы	1	1354	459997111	0.1.2	2e746dfa-4819-499a-b885-3de22d60099f	attributed historical zodiac nm; zero ad views in order row
 2026-06	Овен	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm 262669816; 0 attributed orders
 2026-06	Телец	0	0		0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	current campaign nm 262629137; 0 attributed orders
 2026-06	Близнецы	2	2724	446294516	0.1.2	b96e241b-0777-48bc-9896-1ab3c69b6e79	attributed cross-sell zodiac nm; two orders with zero/near-zero direct ad exposure rows
