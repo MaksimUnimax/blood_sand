@@ -23,12 +23,12 @@ This run was intentionally executed as an isolated `finance_accrual_types` reque
 
 The request succeeded with provider HTTP 200 and returned the current accrual-type dictionary (IDs 1..124 in this response).
 
-Therefore the following is now proven:
+Therefore the following is proven:
 
-1. `POST /v1/finance/accrual/types` is currently callable for this seller/account through Bridge.
+1. `POST /v1/finance/accrual/types` is callable for this seller/account through Bridge.
 2. The earlier HTTP 429 on the same operation was not a persistent entitlement failure or permanent endpoint-level block.
-3. The earlier 429 was state-dependent: transient, timing-dependent, sequence-dependent, shared-quota-related, or otherwise provider-side conditional.
-4. The Bridge-side finance Retry-After/local-quota orchestration gap remains a separate secondary control defect, but it does not explain why the first provider 429 occurred.
+3. The earlier 429 was provider-side and state-dependent.
+4. This run does **not** prove any Bridge rate-limit-control defect. The earlier wording that treated missing finance-local `next_allowed_at` as a secondary defect is withdrawn and superseded by the final CAP-24 root-cause record.
 
 ## What this run does NOT prove
 
@@ -44,23 +44,20 @@ It also does not prove:
 
 ## Root-cause state after Run 02
 
-`PERSISTENT_ENDPOINT_OR_ENTITLEMENT_BLOCK_REJECTED__SEQUENCE_OR_TRANSIENT_PROVIDER_STATE_REMAINS`
+At the time of Run 02:
 
-The provider-side first-429 root cause is still not established.
+`PERSISTENT_ENDPOINT_OR_ENTITLEMENT_BLOCK_REJECTED__PROVIDER_STATE_REMAINS`
 
-## Next causal experiment
+Later Runs 03–07 and external authority checks supersede the provisional Run-02 hypotheses. Current authority:
 
-After another clean quiet period, run a controlled pair:
+`CAP_24_FINANCE_ACCRUAL_TYPES_ROOT_CAUSE_AND_OPERATING_SOLUTION_2026-09-06.md`
 
-1. one `finance_accrual_postings` request;
-2. then, as the next explicit Bridge command, one `finance_accrual_types` request with no unrelated Ozon request in between.
+Final class recorded there:
 
-Record exact timestamps, request IDs, HTTP statuses, elapsed times, and any `Retry-After` metadata for both calls.
+`METHOD_SPECIFIC_ANTI_REPEAT_CIRCUIT_OR_DYNAMIC_METHOD_QUOTA__FINANCE_ACCRUAL_TYPES`
 
-Interpretation:
+## Historical next-test note
 
-- `/postings` 200 -> immediate `/types` 429`: strong evidence that the preceding finance request creates or participates in the provider throttle state; repeat once after a fresh quiet period before declaring a shared-quota relationship.
-- `/postings` 200 -> immediate `/types` 200`: the earlier 429 is not deterministically reproduced by this pair; investigate other transient/concurrent/provider conditions rather than inventing a shared finance bucket.
-- `/postings` itself 429`: the throttle is broader than a simple `/postings` -> `/types` sequence and needs separate provider-state investigation.
+The original Run-02 record proposed a `/postings -> /types` causal pair. Later evidence made that unnecessary as the primary discriminator: `/types` reproduced 429 without `/postings`, non-finance `/product/list` stayed 200, and neighboring `/finance/accrual/by-day` stayed 200 immediately before another `/types` 429.
 
-No executable Bridge patch is authorized by this run.
+No executable Bridge patch is authorized by this evidence file.
