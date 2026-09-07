@@ -4,63 +4,53 @@ Date: 2026-09-07
 Branch: `repair/ozon-disabled-alias-admission-2026-09-07`
 Base authority: `bf7168998d64b7b8007e7a02791856c73d70b34b`
 Runtime repair commit: `d97ec75c5a11acd3d0816bf5a5109b23a573fe2f`
-Status: `EXACT_TRIGGER_PROVEN__REPLACEMENT_PATCH_PREHANDOFF_CERTIFICATION_IN_PROGRESS`
+Status: `EXACT_TRIGGER_PROVEN__REPLACEMENT_PATCH_PREHANDOFF_PASS__LIVE_PENDING`
 
-## 1. Exact live reproducer
+## Exact reproducer
 
 ```text
 OZON_API_V1
 {"operation":"finance_transaction_list_v3","params":{"filter":{"date":{"from":"2026-08-01T00:00:00Z","to":"2026-08-31T23:59:59Z"}},"page":1,"page_size":1000}}
 ```
 
-This alias is intentionally not executable in the current registry:
+The alias is intentionally non-executable in the current registry:
 
-- `execution_enabled: false`
-- `currentness: sunset_2026_09_08`
-- `guidance_visibility: hidden`
-- `template_runnable: false`
+- `execution_enabled:false`
+- `currentness:sunset_2026_09_08`
+- `guidance_visibility:hidden`
+- `template_runnable:false`
 
-The correct installed result for this command is therefore a **local terminal `OPERATION_BLOCKED` result with zero provider requests**, not a successful Ozon provider call.
+Therefore the correct installed outcome is a **local terminal `OPERATION_BLOCKED` result with zero provider requests**, not a successful provider call.
 
-## 2. Proven root cause
+## Proven root cause
 
-The failure chain was:
+The exact failure chain was:
 
 ```text
 execution-disabled READ alias
 -> parseCommand / normalizeCommand PASS
 -> discoverCommands emitted ok:true
 -> batchEntryFromDiscovery emitted kind=command,status=pending
--> manual/autorun executable batch admission
+-> executable manual/autorun batch admission
 -> capability/query planning
 -> prepareProviderQuotaForCommand
 -> preflightExecution
 -> OPERATION_BLOCKED
--> detached processManualBatch/processAutoBatch rejection
+-> detached batch promise rejection
 -> owner could remain non-terminal/BUSY
 ```
 
-The exact `OPERATION_BLOCKED` producer is `OzonContract.preflightExecution()` when `meta.execution_enabled !== true`.
+`OzonContract.preflightExecution()` is the exact producer of `OPERATION_BLOCKED` when `meta.execution_enabled !== true`.
 
-The existing DEFECT-015 gate correctly asserted direct `preflightExecution()` rejection, but did not cover the integrated product path `discoverCommands -> batchEntryFromDiscovery -> processBatchQueue`.
+DEFECT-015 correctly tested direct preflight rejection but did not cover the integrated `discoverCommands -> batchEntryFromDiscovery -> processBatchQueue` path.
 
-## 3. Pre-fix deterministic reproduction
+Pre-fix workflow run `34113164571` reproduced the defect deterministically: `finance_transaction_list_v3` was discovered as `ok:true` although disabled.
 
-Workflow run: `34113164571`.
+## Replacement repair
 
-The pre-fix candidate failed exactly at:
+### `shared/ozon_contract.js`
 
-`finance_transaction_list_v3: disabled alias must not be admitted as executable command`
-
-Actual discovery state was `ok:true`; required state was `ok:false`.
-
-This is the deterministic pre-fix reproduction for the live defect class.
-
-## 4. Replacement repair
-
-### Runtime file 1 — `shared/ozon_contract.js`
-
-`discoverCommands()` now performs execution preflight after parse/normalize and before emitting `ok:true`:
+`discoverCommands()` now executes policy preflight after parse/normalize and before emitting executable discovery:
 
 ```js
 const command = parseCommand(commandText);
@@ -68,12 +58,7 @@ preflightExecution(command);
 discovered.push(...);
 ```
 
-Consequences:
-
-- `normalizeCommand()` remains available for metadata/currentness/parameter validation;
-- all registered READ aliases with `execution_enabled:false` fail discovery as `ok:false` / `OPERATION_BLOCKED`;
-- `batchEntryFromDiscovery()` routes them into the existing `pre_execution_error` path rather than executable `kind:"command"` state;
-- no provider layer is reached.
+`normalizeCommand()` remains available for metadata/currentness/parameter validation. Disabled aliases instead produce `ok:false`, `code=OPERATION_BLOCKED` and are routed into the existing local pre-execution path.
 
 Current disabled READ closed set is exactly:
 
@@ -81,9 +66,9 @@ Current disabled READ closed set is exactly:
 2. `fbs_stock_by_warehouse_v1`
 3. `finance_transaction_list_v3`
 
-No alias-specific special case was added.
+No finance-only special case was added.
 
-### Runtime file 2 — `service_worker.js`
+### `service_worker.js`
 
 All six detached manual/autorun batch launch sites use one `launchBatchProcessor()` wrapper:
 
@@ -94,37 +79,35 @@ All six detached manual/autorun batch launch sites use one `launchBatchProcessor
 - autorun quota wake;
 - autorun recovery.
 
-The wrapper preserves the existing processor logic. It adds only a terminal catch:
+Uncaught failures reuse existing terminal writers:
 
-- manual uncaught failure -> existing `failManualBatch()`;
-- autorun uncaught failure -> existing `markRunError()`;
-- diagnostic -> `BATCH_PROCESSOR_UNCAUGHT`;
-- no retry, replay, pagination, polling, provider fanout or new state class.
+- manual -> `failManualBatch()`;
+- autorun -> `markRunError()`.
 
-The previous failed candidate's provider transport timeout changes were **not restored** in this replacement patch.
+The wrapper adds no retry, replay, pagination, polling, fanout, provider call or new durable state type.
 
-## 5. Deterministic regression coverage
+The failed previous candidate's provider transport-timeout changes were **not restored**.
+
+## Deterministic regression authority
 
 Permanent gate:
 
 `validation/disabled-alias-admission-v1/run_disabled_alias_admission_gate.mjs`
 
-It proves on the candidate itself:
+The gate executes candidate code and proves:
 
-- exact three-alias disabled READ closed set;
-- normalization remains available;
-- preflight remains fail-closed;
-- discovery returns `ok:false`, `OPERATION_BLOCKED` for every disabled alias;
-- actual `batchEntryFromDiscovery` maps each disabled discovery to `pre_execution_error`;
+- all 3/3 disabled READ aliases reject in discovery as `OPERATION_BLOCKED`;
+- normalization remains available and execution preflight remains fail-closed;
+- actual `batchEntryFromDiscovery()` maps disabled discovery to `pre_execution_error`;
 - `external_request_executed=false`;
-- enabled `seller_product_list` remains an executable positive control;
-- actual `processBatchQueue()` consumes the disabled finance entry, stores the local result, increments `next_index`, returns to `request_state=idle`, calls finalization exactly once and performs **zero provider calls**;
-- no `BATCH_REQUEST_STARTED` diagnostic appears on the disabled-alias path;
+- actual `processBatchQueue()` consumes the disabled finance entry, stores the local result, advances `next_index`, returns `request_state=idle`, finalizes exactly once and performs **zero provider calls**;
+- no `BATCH_REQUEST_STARTED` occurs on that path;
+- enabled `seller_product_list` remains executable as positive control;
 - actual `launchBatchProcessor()` terminalizes manual uncaught failure through `failManualBatch()`;
 - actual `launchBatchProcessor()` terminalizes autorun uncaught failure through `markRunError()`;
-- positive processor control returns normally without false failure.
+- normal processor success remains normal.
 
-Required markers:
+Required PASS markers:
 
 - `REG_DISABLED_ALIAS_REGISTRY_CLOSED_SET_PASS`
 - `REG_DISABLED_ALIAS_NORMALIZATION_METADATA_PASS`
@@ -139,69 +122,62 @@ Required markers:
 - `REG_BATCH_PROCESSOR_POSITIVE_CONTROL_PASS`
 - `REG_DISABLED_ALIAS_ADMISSION_GATE_PASS`
 
-## 6. Dependency audit
+Full certification run `34115028073` passed Linux full regression, Windows full regression and exact package verification after the common-pool documentation update. This status-sync commit is documentation-only; the permanent workflow is required to pass again on the final handoff HEAD, and that final run is the handoff authority.
+
+## Dependency audit
 
 Root changed behavior:
-
 `execution-disabled READ command discovery/admission + generic uncaught batch terminalization`.
 
-Complete affected dependency inventory:
+Affected dependency inventory:
 
-1. registry `execution_enabled` producer — module-static operation metadata;
-2. registry `currentness` producer — module-static operation metadata;
-3. registry `guidance_visibility` producer — module-static operation metadata;
-4. `normalizeCommand()` — parser/introspection consumer, intentionally unchanged semantically;
-5. `preflightExecution()` — execution-policy authority, intentionally unchanged;
-6. `discoverCommands()` — execution discovery boundary, repaired;
-7. `batchEntryFromDiscovery()` — discovery-to-durable-entry conversion;
-8. `batchErrorEntry()` — local pre-execution error materialization;
-9. `localGuidanceResult()` — sanitized local result generation;
-10. manual admission — durable manual owner in `chrome.storage.local`;
-11. autorun admission — durable autorun owner in `chrome.storage.local`;
-12. `processBatchQueue()` pre-execution branch — local result store/finalization;
-13. manual quota wake — worker-local launch of durable owner;
-14. autorun quota wake — worker-local launch of durable owner;
-15. manual recovery — worker-local relaunch of durable owner;
-16. autorun recovery — worker-local relaunch of durable owner;
-17. `failManualBatch()` — existing manual terminal state path;
-18. `markRunError()` — existing autorun terminal state path;
-19. provider/request accounting — disabled path remains zero-request / external false;
-20. guidance/currentness visibility — disabled aliases remain hidden and not re-enabled;
-21. downstream execution/error builders that call `preflightExecution()` — unreachable for newly rejected disabled aliases;
-22. provider transport — not modified by this replacement repair;
-23. privacy/redaction/SSRF/credentials — no new data surface or destination;
-24. permanent deterministic tests and cross-platform CI;
-25. exact packaged `dist-step7-candidate` copy.
+1. registry `execution_enabled` producer;
+2. registry `currentness` producer;
+3. registry `guidance_visibility` producer;
+4. `normalizeCommand()` parser/introspection consumer;
+5. `preflightExecution()` policy authority;
+6. `discoverCommands()` execution-discovery boundary;
+7. `batchEntryFromDiscovery()` discovery-to-entry conversion;
+8. `batchErrorEntry()` local error materialization;
+9. `localGuidanceResult()` sanitized local result;
+10. manual admission durable owner;
+11. autorun admission durable owner;
+12. `processBatchQueue()` local pre-execution store/finalization;
+13. manual quota wake;
+14. autorun quota wake;
+15. manual recovery;
+16. autorun recovery;
+17. `failManualBatch()` terminal path;
+18. `markRunError()` terminal path;
+19. provider/request accounting;
+20. guidance/currentness visibility;
+21. late execution/error builders using preflight;
+22. provider transport non-dependency for this replacement patch;
+23. privacy/redaction/SSRF/credential boundaries;
+24. permanent deterministic/cross-platform tests;
+25. exact packaged production copy.
 
 Lifetime classification:
 
-- operation registry/contract functions: packaged module-static runtime;
-- manual/autorun owner state: durable `chrome.storage.local`;
-- batch `singleFlight`: service-worker memory only and not relied on as durable truth;
-- command/result entry: durable inside owner batch;
-- provider execution for disabled path: absent by construction;
-- diagnostics: observational only, not execution authority.
+- registry/contract code: packaged module-static runtime;
+- manual/autorun owner and batch entries: durable `chrome.storage.local`;
+- batch `singleFlight`: service-worker memory only, not durable truth;
+- disabled-path provider execution: absent by construction;
+- diagnostics: observational only.
 
-Boundary invariants:
+Secondary sweep results:
 
-- no disabled alias becomes `kind:"command"`;
-- no disabled alias reaches capability/query/provider execution;
-- no hidden provider request or retry;
-- manual and autorun use their existing terminal state writers;
-- no new host permission, credential path or signed URL handling;
-- no provider state mutation in pre-handoff tests.
-
-Secondary defect sweep:
-
-- checked all current `execution_enabled:false` READ aliases: 3/3 covered;
-- checked direct preflight authority remains unchanged;
-- checked hidden/currentness policy remains unchanged;
-- checked late error builders that call preflight: disabled alias no longer reaches them;
-- checked all six detached batch launch consumers: managed by one terminal wrapper;
-- checked manual and autorun terminal writers: existing `failManualBatch` / `markRunError` reused;
-- checked positive enabled alias discovery is preserved;
-- checked provider request cardinality on disabled path: zero;
-- checked previous read-effect/DEFECT-015/report/session/XLSX regression family through final CI.
+- current disabled READ aliases: 3/3 covered;
+- preflight authority unchanged;
+- hidden/currentness policy unchanged;
+- late error builders are unreachable for newly rejected disabled aliases;
+- six detached processor consumers covered by one terminal wrapper;
+- existing manual/autorun terminal writers reused;
+- enabled positive discovery preserved;
+- disabled-path provider request cardinality = 0;
+- intersecting DEFECT-015/read-effect/provider/report/session/XLSX regressions included in the permanent CI family;
+- runtime delta from base is limited to `service_worker.js` and `shared/ozon_contract.js`;
+- temporary patch-driver and mutating apply workflow removed before final certification.
 
 Dependency closure:
 
@@ -213,60 +189,55 @@ Stale assumptions: 0
 Available-but-unverified dependencies: 0
 ```
 
-Live-only dependencies:
+Live-only dependencies remain `PENDING POST-INSTALL`:
 
-- actual installed ChatGPT content-script delivery of the local `OPERATION_BLOCKED` result;
-- actual UI transition back from BUSY to READY on the installed candidate;
-- an independent enabled-operation live positive control proving one explicit command still produces at most one physical provider request.
+- actual installed ChatGPT delivery of local `OPERATION_BLOCKED`;
+- actual BUSY -> READY UI restoration;
+- separate execution-enabled read positive control with truthful physical-request accounting.
 
-These remain `PENDING POST-INSTALL` and cannot be converted to LIVE PASS by CI.
+## Pre-handoff certification contract
 
-## 7. Pre-handoff CI state before final documentation commit
+Permanent workflow:
+`.github/workflows/ozon-disabled-alias-admission-regression-2026-09-07.yml`
 
-Certification run `34114776017`:
-
-- Linux full regression: PASS;
-- Windows full regression: PASS;
-- exact 21-file package job: PASS.
-
-The permanent CI runs:
+It requires:
 
 - syntax checks;
 - exact disabled-alias E2E gate;
 - full available `read-effect-repair-v1/run_*.mjs` family;
-- dependency/runtime diff boundary assertions;
-- Linux and Windows certification;
-- exact deterministic 21-file ZIP build;
+- dependency/runtime boundary assertions;
+- Linux full PASS;
+- Windows full PASS;
+- exact deterministic 21-file package;
 - fresh extraction tree equality;
-- byte-for-byte source/extraction equality;
-- SHA-256 recording.
+- byte-for-byte equality;
+- recorded SHA-256.
 
-Because this document and the common regression pool are updated after that run, a new final `GATE-35` run on the final HEAD is still mandatory before handoff.
+No real provider request is executed by pre-handoff certification.
 
-## 8. Installed LIVE acceptance — still pending
+## Installed LIVE acceptance — pending
 
 After installing the exact final package, rerun the exact disabled finance command.
 
 PASS requires:
 
-1. command is not admitted as executable business command;
-2. local result contains `OPERATION_BLOCKED`;
+1. local `OPERATION_BLOCKED` result;
+2. command is not admitted as executable business command;
 3. `external_request_executed=false`;
 4. physical business request count `0`;
-5. no hidden retry/pagination/fanout/polling;
-6. batch reaches terminal delivery/result state;
-7. Bridge returns to READY;
-8. no indefinite BUSY;
-9. no `BATCH_REQUEST_STARTED` for the disabled command.
+5. no `BATCH_REQUEST_STARTED` for the disabled alias;
+6. no hidden retry/pagination/fanout/polling;
+7. batch completes terminal result/delivery handling;
+8. Bridge returns to READY;
+9. no indefinite BUSY.
 
-Then run one separate **execution-enabled** read positive control and require at most one physical business request with truthful accounting.
+Then run a separate execution-enabled read positive control and require at most one physical business request with truthful accounting.
 
-Required live marker after both sides pass:
-
+Required final live marker after both sides pass:
 `REG_P0_PROVIDER_LIFECYCLE_01_LIVE_TERMINALIZATION_PASS`
 
-## 9. CAP-24 relationship
+## CAP-24 relationship
 
-CAP-24 remains frozen at its preserved placement cursor `2200/9519` while this shared P0 regression is open.
+CAP-24 remains frozen at placement cursor `2200/9519` while this shared regression is open.
 
-After shared regression LIVE PASS, resume CAP-24 from that cursor. Do not restart it from zero.
+After shared regression LIVE PASS, resume CAP-24 from `2200/9519`. Do not restart from zero.
