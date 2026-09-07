@@ -47,11 +47,12 @@ function extractFunction(source, functionName) {
 const repo = path.resolve(process.argv[2] || '.');
 const base = path.join(repo, 'tooling', 'llm-api-bridges', 'ozon-seller', 'dist-step7-candidate');
 const shared = path.join(base, 'shared');
-for (const file of ['runtime_names.js', 'ozon_operation_registry.js', 'ozon_contract.js']) loadClassic(path.join(shared, file));
+for (const file of ['runtime_names.js', 'ozon_operation_registry.js', 'ozon_contract.js', 'ozon_guidance.js']) loadClassic(path.join(shared, file));
 
 const registry = globalThis.OzonOperationRegistry;
 const contract = globalThis.OzonContract;
-assert.ok(registry && contract);
+const guidanceApi = globalThis.OzonGuidance;
+assert.ok(registry && contract && guidanceApi);
 
 const disabled = Object.entries(registry.OPERATIONS)
   .filter(([, meta]) => meta?.effect === 'READ' && meta?.execution_enabled !== true)
@@ -106,13 +107,79 @@ assert.doesNotMatch(sw, /\bvoid\s+process(?:Manual|Auto)Batch\s*\(/);
 const entryContext = vm.createContext({ OzonContract: contract, Object, String, Number, Error });
 vm.runInContext(`${extractFunction(sw, 'batchErrorEntry')}; this.batchErrorEntry = batchErrorEntry;`, entryContext);
 vm.runInContext(`${extractFunction(sw, 'batchEntryFromDiscovery')}; this.batchEntryFromDiscovery = batchEntryFromDiscovery;`, entryContext);
+const mappedDisabled = [];
 for (const discovery of disabledDiscoveries) {
   const mapped = entryContext.batchEntryFromDiscovery(discovery);
   assert.equal(mapped.kind, 'pre_execution_error');
   assert.equal(mapped.status, 'pending');
   assert.equal(mapped.error?.code, 'OPERATION_BLOCKED');
   assert.equal(mapped.external_request_executed, false);
+  mappedDisabled.push(JSON.parse(JSON.stringify(mapped)));
 }
+
+// Full product-queue proof for the same disabled-finance class: execute the actual
+// processBatchQueue/localGuidanceResult functions from the candidate. No command
+// entry exists, so policy/capability/query/provider branches must remain unreachable.
+let queueOwner = {
+  operation_id: 'manual-disabled-e2e',
+  status: 'requesting',
+  batch: {
+    phase: 'collecting',
+    entries: [mappedDisabled[0]],
+    next_index: 0,
+    request_state: 'idle',
+    request_worker_session_id: null
+  }
+};
+const queueDiagnostics = [];
+let queueFinalizeCount = 0;
+let queueFailCount = 0;
+let providerCallCount = 0;
+const queueContext = vm.createContext({
+  Promise, Object, Array, String, Number, Boolean, Math, Date, Error, Map, Set,
+  crypto: globalThis.crypto,
+  OzonContract: contract,
+  OzonGuidance: guidanceApi,
+  batchCollectionRequests: new Map(),
+  normalizeConversationKey(value) { return String(value); },
+  singleFlight(map, key, fn) {
+    if (map.has(key)) return map.get(key);
+    const request = Promise.resolve().then(fn).finally(() => { if (map.get(key) === request) map.delete(key); });
+    map.set(key, request);
+    return request;
+  },
+  async diagnostic(event, details, options) { queueDiagnostics.push({ event, details, options }); },
+  async executeOzonCore() { providerCallCount += 1; throw new Error('provider path must be unreachable for disabled alias'); }
+});
+vm.runInContext(`${extractFunction(sw, 'localGuidanceResult')}; this.localGuidanceResult = localGuidanceResult;`, queueContext);
+vm.runInContext(`${extractFunction(sw, 'processBatchQueue')}; this.processBatchQueue = processBatchQueue;`, queueContext);
+
+const queueResult = await queueContext.processBatchQueue({
+  conversationKey: 'conv-disabled-e2e',
+  ownerKind: 'manual',
+  ownerId: queueOwner.operation_id,
+  getOwner: async () => queueOwner,
+  mutateOwner: async (mutator) => { queueOwner = mutator(queueOwner); return queueOwner; },
+  ownerMatches: (current) => current?.operation_id === 'manual-disabled-e2e',
+  isCollecting: (current) => current?.status === 'requesting' && current?.batch?.phase === 'collecting',
+  failOwner: async () => { queueFailCount += 1; },
+  finalizeOwner: async (_owner, entries) => {
+    queueFinalizeCount += 1;
+    return { ok: true, collected: true, result_count: entries.length };
+  }
+});
+assert.deepEqual(JSON.parse(JSON.stringify(queueResult)), { ok: true, collected: true, result_count: 1 });
+assert.equal(queueFinalizeCount, 1);
+assert.equal(queueFailCount, 0);
+assert.equal(providerCallCount, 0);
+assert.equal(queueOwner.batch.next_index, 1);
+assert.equal(queueOwner.batch.request_state, 'idle');
+assert.equal(queueOwner.batch.entries[0].status, 'complete');
+assert.equal(queueOwner.batch.entries[0].external_request_executed, false);
+assert.ok(String(queueOwner.batch.entries[0].report_text || '').length > 0);
+assert.ok(queueDiagnostics.some((row) => row.event === 'GUIDANCE_ATTEMPT_CLASSIFIED'));
+assert.ok(queueDiagnostics.some((row) => row.event === 'BATCH_PREEXEC_RESULT_STORED'));
+assert.ok(!queueDiagnostics.some((row) => row.event === 'BATCH_REQUEST_STARTED'));
 
 const lifecycleState = {
   manualThrow: true,
@@ -172,6 +239,8 @@ console.log('REG_DISABLED_ALIAS_REGISTRY_CLOSED_SET_PASS');
 console.log('REG_DISABLED_ALIAS_NORMALIZATION_METADATA_PASS');
 console.log('REG_DISABLED_ALIAS_DISCOVERY_PRE_EXECUTION_REJECT_PASS');
 console.log('REG_DISABLED_ALIAS_TO_PRE_EXECUTION_ERROR_MAPPING_PASS');
+console.log('REG_DISABLED_ALIAS_BATCH_LOCAL_FINALIZATION_PASS');
+console.log('REG_DISABLED_ALIAS_ZERO_PROVIDER_REQUEST_E2E_PASS');
 console.log('REG_DISABLED_ALIAS_ZERO_PROVIDER_PATH_STATIC_PASS');
 console.log('REG_ENABLED_ALIAS_POSITIVE_CONTROL_PASS');
 console.log('REG_BATCH_UNCAUGHT_MANUAL_TERMINALIZATION_PASS');
