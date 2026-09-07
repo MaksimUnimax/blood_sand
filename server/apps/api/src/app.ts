@@ -47,6 +47,8 @@ import type { BootstrapService } from "@product/bootstrap";
 import { registerBootstrapRoutes } from "./bootstrap-routes.js";
 import type { PublicCommercialCatalogReader } from "@product/commercial-catalog";
 import { registerPublicCatalogRoutes } from "./public-catalog-routes.js";
+import type { CommercialPortalService } from "@product/commercial-access";
+import { registerCommercialRoutes } from "./commercial-routes.js";
 
 export class ControlledError extends Error {
   public constructor(
@@ -68,6 +70,7 @@ export interface ApiDependencies {
   readonly bootstrapService?: BootstrapService;
   readonly publicCommercialCatalogReader?: PublicCommercialCatalogReader;
   readonly catalogClock?: () => Date;
+  readonly commercialPortalService?: CommercialPortalService;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -244,6 +247,13 @@ export function createApiApp(
       dependencies.publicCommercialCatalogReader,
       dependencies.catalogClock ?? (() => new Date()),
     );
+    if (dependencies.commercialPortalService)
+      registerCommercialRoutes(
+        app,
+        dependencies.authService ??
+          new AuthService(unavailable, deriveAuthKeys(Buffer.alloc(32))),
+        dependencies.commercialPortalService,
+      );
   });
   return app;
 }

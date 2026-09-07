@@ -35,6 +35,8 @@ export const ApiErrorCodeV1Schema = z.enum([
   "UNAUTHORIZED",
   "DEVICE_MISMATCH",
   "BOOTSTRAP_UNAVAILABLE",
+  "SUBSCRIPTION_REQUIRED",
+  "ACCOUNT_FORBIDDEN",
 ]);
 export type ApiErrorCodeV1 = z.infer<typeof ApiErrorCodeV1Schema>;
 
@@ -292,6 +294,125 @@ export const DeviceRevokeResponseV1Schema = z.object({
   status: z.literal("revoked"),
   deviceId: z.uuid(),
 });
+
+/** P5.6 read-only commercial portal contracts. */
+export const SubscriptionAccessReasonV1Schema = z.enum([
+  "ACCOUNT_SUSPENDED",
+  "NO_CURRENT_SUBSCRIPTION",
+  "PERIOD_ENDED",
+  "GRACE_ENDED",
+  "PAST_DUE",
+  "CANCELED",
+  "SUBSCRIPTION_SUSPENDED",
+  "SUBSCRIPTION_EXPIRED",
+  "SUBSCRIPTION_CORRUPTED",
+]);
+export const SubscriptionQueryV1Schema = z
+  .object({ accountId: z.uuid() })
+  .strict();
+export const SubscriptionResponseV1Schema = z
+  .object({
+    accountId: z.uuid(),
+    access: z
+      .object({
+        status: z.enum(["ELIGIBLE", "INELIGIBLE"]),
+        reason: SubscriptionAccessReasonV1Schema.nullable(),
+      })
+      .strict(),
+    subscription: z
+      .object({
+        id: z.uuid(),
+        state: z.enum([
+          "TRIAL",
+          "ACTIVE",
+          "GRACE",
+          "PAST_DUE",
+          "CANCELED",
+          "EXPIRED",
+          "SUSPENDED",
+        ]),
+        stateRevision: z.number().int().positive().safe(),
+        plan: z
+          .object({
+            planRevisionId: z.uuid(),
+            planCode: z.string().min(1),
+            planRevision: z.number().int().positive().safe(),
+            displayName: z.string(),
+          })
+          .strict(),
+        price: z
+          .object({
+            priceRevisionId: z.uuid(),
+            amountMinor: z.number().int().nonnegative().safe(),
+            currency: z.string().regex(/^[A-Z]{3}$/),
+            billingInterval: PublicCommercialBillingIntervalV1Schema,
+          })
+          .strict()
+          .nullable(),
+        currentPeriodStart: z.string().datetime({ offset: true }),
+        currentPeriodEnd: z.string().datetime({ offset: true }),
+        graceUntil: z.string().datetime({ offset: true }).nullable(),
+        cancelAtPeriodEnd: z.boolean(),
+      })
+      .strict()
+      .nullable(),
+    deviceAllowance: z
+      .object({
+        maxActive: z.number().int().nonnegative().safe().nullable(),
+        activeCount: z.number().int().nonnegative().safe(),
+        remaining: z.number().int().nonnegative().safe().nullable(),
+        overLimit: z.boolean(),
+      })
+      .strict(),
+    billing: z
+      .object({
+        purchaseStatus: z.literal("UNAVAILABLE"),
+        reason: z.literal("PAYMENT_GO_LIVE_DEFERRED"),
+      })
+      .strict(),
+  })
+  .strict();
+export const PaymentHistoryQueryV1Schema = z
+  .object({
+    accountId: z.uuid(),
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+    cursor: z.uuid().optional(),
+  })
+  .strict();
+export const PaymentHistoryItemV1Schema = z
+  .object({
+    id: z.uuid(),
+    state: z.enum([
+      "PENDING",
+      "SUCCEEDED",
+      "FAILED",
+      "CANCELED",
+      "REFUNDED",
+      "CHARGEBACK",
+    ]),
+    amountMinor: z.number().int().nonnegative().safe(),
+    currency: z.string().regex(/^[A-Z]{3}$/),
+    priceRevisionId: z.uuid(),
+    plan: z
+      .object({
+        planCode: z.string().min(1),
+        planRevision: z.number().int().positive().safe(),
+        displayName: z.string(),
+      })
+      .strict()
+      .nullable(),
+    billingInterval: PublicCommercialBillingIntervalV1Schema.nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+    confirmedAt: z.string().datetime({ offset: true }).nullable(),
+    subscriptionLinked: z.boolean(),
+  })
+  .strict();
+export const PaymentHistoryResponseV1Schema = z
+  .object({
+    payments: z.array(PaymentHistoryItemV1Schema),
+    nextCursor: z.uuid().nullable(),
+  })
+  .strict();
 
 /** Frozen P3.1 control-plane bootstrap wire-contract identifiers. */
 export const ControlPlaneContractVersionV1Schema =

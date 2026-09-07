@@ -6,16 +6,21 @@ import {
   createDeviceManagementRepository,
   createExtensionAuthRepository,
   createP3BootstrapPolicyCatalogRepository,
+  createP4EntitlementRepository,
+  createP5CommercialPortalRepository,
+  createP5SubscriptionAccessResolver,
+  createP5SubscriptionRepository,
 } from "@product/db";
 import { AuthService, deriveAuthKeys } from "@product/auth";
 import {
   DeviceAuthorizationService,
   deriveDeviceAuthKeys,
 } from "@product/device-auth";
+import { DeviceManagementService } from "@product/device-management";
 import {
-  DeviceManagementService,
-  PreEntitlementDeviceLimitResolver,
-} from "@product/device-management";
+  CommercialAccessService,
+  CommercialPortalService,
+} from "../../packages/commercial-access/src/index.js";
 import {
   ExtensionAuthService,
   deriveExtensionAuthKeys,
@@ -82,6 +87,14 @@ async function main(): Promise<void> {
     await bindConfigSigningRing(bootstrapSigningMaterial, (keyId) =>
       p3Catalog.findSigningKey(keyId),
     );
+    const subscriptionRepository = createP5SubscriptionRepository(database);
+    const commercialAccess = new CommercialAccessService({
+      accessResolver: createP5SubscriptionAccessResolver(
+        subscriptionRepository,
+      ),
+      currentSubscriptionReader: subscriptionRepository,
+      entitlementResolver: createP4EntitlementRepository(database),
+    });
     app = createApiApp({
       config,
       isInfrastructureReady: createInfrastructureReadiness(database),
@@ -100,11 +113,23 @@ async function main(): Promise<void> {
         createDeviceManagementRepository(database),
         root,
         signingKey,
-        new PreEntitlementDeviceLimitResolver(),
+        {
+          resolve: (accountId, at) =>
+            commercialAccess.resolveDeviceAdmission(
+              accountId,
+              at ?? new Date(),
+            ),
+        },
       ),
       bootstrapService: new BootstrapService(
         { resolve: (input) => resolveP3BootstrapPolicy(input, p3Catalog) },
         createConfigSigningService(bootstrapSigningMaterial, p3Catalog),
+        undefined,
+        commercialAccess,
+      ),
+      commercialPortalService: new CommercialPortalService(
+        createP5CommercialPortalRepository(database),
+        commercialAccess,
       ),
     });
     await app.listen({ host: "127.0.0.1", port: 3100 });

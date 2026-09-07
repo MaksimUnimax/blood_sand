@@ -94,19 +94,30 @@ export function createDeviceManagementRepository(
           );
           return { kind: "closed" as const };
         }
+        await tx.query(
+          "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+          [`p5-subscription-account:${a.approved_account_id}`],
+        );
         const eligible = await tx.query<{ id: string }>(
-          `SELECT a.id FROM accounts a JOIN users u ON u.id=$2 JOIN account_memberships m ON m.account_id=a.id AND m.user_id=u.id AND m.role='OWNER' WHERE a.id=$1 AND a.status='ACTIVE' AND u.status='ACTIVE'`,
+          `SELECT a.id FROM accounts a
+             JOIN users u ON u.id=$2
+             JOIN account_memberships m ON m.account_id=a.id AND m.user_id=u.id AND m.role='OWNER'
+            WHERE a.id=$1 AND a.status='ACTIVE' AND u.status='ACTIVE'
+            FOR UPDATE OF a`,
           [a.approved_account_id, a.approved_user_id],
         );
         if (!eligible.rows[0]) return { kind: "closed" as const };
-        await tx.query(
-          "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
-          [a.approved_account_id],
-        );
         let limit;
         try {
-          limit = await input.resolveLimit(String(a.approved_account_id));
+          limit = await input.resolveLimit(String(a.approved_account_id), now);
         } catch {
+          return { kind: "invalid-limit" as const };
+        }
+        if ("kind" in limit) {
+          if (limit.kind === "INELIGIBLE")
+            return { kind: "subscription-required" as const };
+          if (limit.kind === "ACCOUNT_NOT_FOUND")
+            return { kind: "closed" as const };
           return { kind: "invalid-limit" as const };
         }
         const count = await tx.query<{ count: string }>(

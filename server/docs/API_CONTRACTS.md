@@ -121,7 +121,10 @@ Current account/product status.
 
 ### `GET /v1/subscription`
 
-Current subscription/plan/price revision and period state.
+Portal session auth; the caller must be the account owner and supplies
+`accountId` as a UUID query parameter. Returns safe timestamp-authoritative
+subscription eligibility, exact plan/price revision terms, and the commercial
+device allowance. Responses are `Cache-Control: no-store`.
 
 ### `GET /v1/plans/public`
 
@@ -145,25 +148,32 @@ Successful empty catalogs return `200` with `offers: []`. Successful responses
 include `Cache-Control: no-store`. Repository or invariant failures return the
 safe `503 SERVICE_UNAVAILABLE` envelope.
 
-### `POST /v1/billing/checkouts`
+### `GET /v1/billing/payments`
 
-Auth: account owner.
+Portal session auth; the caller must be the account owner and supplies
+`accountId`. Returns safe, account-scoped payment history with bounded cursor
+pagination and no provider, event, reconciliation, or idempotency internals.
+Responses are `Cache-Control: no-store`.
+
+### `POST /v1/billing/checkouts` (deferred)
+
+The checkout mutation is not publicly exposed during simulator-only P5. It is
+deferred until payment go-live architecture selects and integrates a real
+provider.
 
 Input references exact available price revision.
 
 Uses idempotency key.
 
-Returns provider checkout URL/reference.
-
-### `GET /v1/billing/payments`
-
-Portal safe payment history.
+No ordinary portal/public HTTP route may mint a paid subscription through the
+deterministic simulator.
 
 ## 7. Billing provider webhooks
 
 ### `/v1/webhooks/billing/{provider}`
 
-Provider-specific HTTP details handled by adapter.
+Provider-specific HTTP details are deferred; this route is not exposed during
+simulator-only P5.
 
 Rules:
 

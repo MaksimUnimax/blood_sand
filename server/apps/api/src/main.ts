@@ -6,6 +6,10 @@ import {
   createDeviceManagementRepository,
   createP3BootstrapPolicyCatalogRepository,
   createP4CommercialCatalogRepository,
+  createP4EntitlementRepository,
+  createP5SubscriptionAccessResolver,
+  createP5SubscriptionRepository,
+  createP5CommercialPortalRepository,
 } from "@product/db";
 import { AuthService, deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
 import {
@@ -17,11 +21,12 @@ import {
   deriveExtensionAuthKeys,
   loadAccessTokenSigningKey,
 } from "@product/extension-auth";
-import {
-  DeviceManagementService,
-  PreEntitlementDeviceLimitResolver,
-} from "@product/device-management";
+import { DeviceManagementService } from "@product/device-management";
 import { BootstrapService } from "@product/bootstrap";
+import {
+  CommercialAccessService,
+  CommercialPortalService,
+} from "@product/commercial-access";
 import { resolveP3BootstrapPolicy } from "@product/remote-config";
 import {
   bindConfigSigningRing,
@@ -34,6 +39,14 @@ import { createInfrastructureReadiness } from "./infrastructure.js";
 
 const config = loadConfig(process.env);
 const database = createDatabaseRuntime(config.databaseUrl);
+const subscriptions = createP5SubscriptionRepository(database);
+const subscriptionAccess = createP5SubscriptionAccessResolver(subscriptions);
+const entitlements = createP4EntitlementRepository(database);
+const commercialAccess = new CommercialAccessService({
+  accessResolver: subscriptionAccess,
+  currentSubscriptionReader: subscriptions,
+  entitlementResolver: entitlements,
+});
 const rootSecret = loadAuthRootSecret(process.env);
 const bootstrapSigningMaterial = loadConfigSigningMaterial(process.env);
 const p3Catalog = createP3BootstrapPolicyCatalogRepository(database);
@@ -61,13 +74,22 @@ const app = createApiApp({
     createDeviceManagementRepository(database),
     rootSecret,
     loadAccessTokenSigningKey(process.env),
-    new PreEntitlementDeviceLimitResolver(),
+    {
+      resolve: (accountId, at) =>
+        commercialAccess.resolveDeviceAdmission(accountId, at ?? new Date()),
+    },
   ),
   bootstrapService: new BootstrapService(
     { resolve: (input) => resolveP3BootstrapPolicy(input, p3Catalog) },
     createConfigSigningService(bootstrapSigningMaterial, p3Catalog),
+    undefined,
+    commercialAccess,
   ),
   publicCommercialCatalogReader: createP4CommercialCatalogRepository(database),
+  commercialPortalService: new CommercialPortalService(
+    createP5CommercialPortalRepository(database),
+    commercialAccess,
+  ),
 });
 let closing = false;
 async function shutdown(signal: string): Promise<void> {

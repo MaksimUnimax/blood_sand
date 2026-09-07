@@ -24,6 +24,11 @@ import {
   type DeviceManagementRepository,
 } from "@product/device-management";
 import { BootstrapService } from "@product/bootstrap";
+import {
+  CommercialAccessService,
+  CommercialPortalService,
+} from "@product/commercial-access";
+import type { CommercialPortalRepository } from "@product/commercial-access";
 
 type JsonPrimitive = boolean | null | number | string;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -69,6 +74,26 @@ export async function generateOpenApiRepresentation(): Promise<string> {
     authenticate: async () => undefined,
     revoke: async () => "missing",
   };
+  const portalRepository: CommercialPortalRepository = {
+    isOwner: async () => false,
+    readSubscription: async () => null,
+    countActiveDevices: async () => 0,
+    listPayments: async () => ({ kind: "OK", payments: [] }),
+  };
+  const commercialAccess = new CommercialAccessService({
+    accessResolver: { resolve: async () => ({ kind: "ACCOUNT_NOT_FOUND" }) },
+    currentSubscriptionReader: { getCurrentSubscription: async () => null },
+    entitlementResolver: {
+      resolveCommercialEntitlement: async () => ({
+        kind: "REJECTED",
+        code: "ACCOUNT_NOT_FOUND",
+      }),
+      resolveCommercialEntitlements: async () => ({
+        kind: "REJECTED",
+        code: "ACCOUNT_NOT_FOUND",
+      }),
+    },
+  });
   const app = createApiApp({
     config: generatorConfig,
     isInfrastructureReady: async () => true,
@@ -127,6 +152,10 @@ export async function generateOpenApiRepresentation(): Promise<string> {
           signature: "AA",
         }),
       },
+    ),
+    commercialPortalService: new CommercialPortalService(
+      portalRepository,
+      commercialAccess,
     ),
   });
   try {

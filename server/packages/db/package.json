@@ -23,6 +23,7 @@
     "@product/auth": "workspace:*",
     "@product/billing": "workspace:*",
     "@product/commercial-catalog": "workspace:*",
+    "@product/commercial-access": "workspace:*",
     "@product/compatibility": "workspace:*",
     "@product/device-auth": "workspace:*",
     "@product/device-management": "workspace:*",

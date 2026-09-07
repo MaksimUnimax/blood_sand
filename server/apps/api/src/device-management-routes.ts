@@ -114,6 +114,12 @@ export function registerDeviceManagementRoutes(
           "Device limit reached",
           409,
         );
+      if (result.kind === "SUBSCRIPTION_REQUIRED")
+        throw new ControlledError(
+          "SUBSCRIPTION_REQUIRED",
+          "An eligible subscription is required",
+          403,
+        );
       if (result.kind === "CLOSED")
         throw new ControlledError(
           "DEVICE_AUTH_CLOSED",

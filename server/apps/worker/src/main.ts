@@ -1,6 +1,7 @@
 import {
   createDatabaseRuntime,
   createDeviceAuthorizationRepository,
+  createP5SubscriptionLifecycleRepository,
 } from "@product/db";
 import { createLogger } from "@product/observability";
 import { loadConfig } from "@product/shared";
@@ -10,6 +11,7 @@ import { startWorker, type JobRunner } from "./lifecycle.js";
 import { OtpEmailRunner } from "./otp-runner.js";
 import { DeviceAuthorizationExpiryRunner } from "./device-authorization-expiry-runner.js";
 import { CompositeJobRunner } from "./composite-runner.js";
+import { SubscriptionLifecycleRunner } from "./subscription-lifecycle-runner.js";
 
 export class NoopJobRunner implements JobRunner {
   async start(): Promise<void> {}
@@ -29,6 +31,9 @@ const runtime = await startWorker(
     ),
     new DeviceAuthorizationExpiryRunner(
       createDeviceAuthorizationRepository(database),
+    ),
+    new SubscriptionLifecycleRunner(
+      createP5SubscriptionLifecycleRepository(database),
     ),
   ]),
   logger,

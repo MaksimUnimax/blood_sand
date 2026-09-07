@@ -17,6 +17,8 @@ describe("portal control-plane BFF boundary", () => {
     ["POST", `/v1/device-authorizations/${id}/deny`],
     ["GET", "/v1/devices"],
     ["POST", `/v1/devices/${id}/revoke`],
+    ["GET", "/v1/subscription"],
+    ["GET", "/v1/billing/payments"],
   ])("allows %s %s", (method, path) =>
     expect(allowedRoute(method, path)).toBeTruthy(),
   );
@@ -28,6 +30,8 @@ describe("portal control-plane BFF boundary", () => {
     ["DELETE", "/v1/accounts"],
     ["GET", "/v1/anything"],
     ["GET", "/v1/devices/else"],
+    ["POST", "/v1/billing/checkouts"],
+    ["POST", "/v1/billing/events"],
   ])("rejects %s %s", (method, path) =>
     expect(allowedRoute(method, path)).toBeUndefined(),
   );

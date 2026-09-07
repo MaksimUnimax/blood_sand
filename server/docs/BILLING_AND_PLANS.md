@@ -193,7 +193,9 @@ cancelOrRefund()   # only if later product flow requires it
 
 Domain code consumes normalized provider events, not provider-specific payload fields directly.
 
-The first concrete payment provider is selected during P5 using current target-market/legal requirements.
+P5 uses provider-neutral deterministic simulation for internal domain and test
+flows. Real provider selection and integration are deferred to payment
+go-live; no concrete provider is selected during P5.
 
 ## 11. Checkout flow
 

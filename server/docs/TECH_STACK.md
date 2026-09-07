@@ -250,7 +250,9 @@ Support provider replacement without user/session migration.
 
 Define internal `BillingProvider` interface first.
 
-Concrete initial provider is selected during P5 based on target market/legal/payment requirements at implementation time.
+P5 uses provider-neutral simulation. Concrete provider selection and
+integration are deferred to payment go-live based on target-market, legal, and
+payment requirements.
 
 Domain objects (`payment`, `billing_event`, `subscription`, `price_revision`) MUST NOT expose concrete provider semantics as their primary identity.
 

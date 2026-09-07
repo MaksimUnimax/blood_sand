@@ -8,6 +8,8 @@ const allowed = new Set([
   "POST /v1/device-authorizations/:id/deny",
   "GET /v1/devices",
   "POST /v1/devices/:id/revoke",
+  "GET /v1/subscription",
+  "GET /v1/billing/payments",
 ]);
 
 export function allowedRoute(method: string, path: string): string | undefined {

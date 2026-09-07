@@ -99,7 +99,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -225,7 +227,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -358,7 +362,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -422,7 +428,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -545,7 +553,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -609,7 +619,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -673,7 +685,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -807,7 +821,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -871,7 +887,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -935,7 +953,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -999,7 +1019,471 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/v1/billing/payments": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "nextCursor": {
+                      "anyOf": [
+                        {
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "payments": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "amountMinor": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "billingInterval": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "count": {
+                                    "maximum": 1200,
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "unit": {
+                                    "enum": [
+                                      "DAY",
+                                      "MONTH",
+                                      "YEAR"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "unit",
+                                  "count"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "confirmedAt": {
+                            "anyOf": [
+                              {
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "createdAt": {
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                            "type": "string"
+                          },
+                          "currency": {
+                            "pattern": "^[A-Z]{3}$",
+                            "type": "string"
+                          },
+                          "id": {
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                            "type": "string"
+                          },
+                          "plan": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "displayName": {
+                                    "type": "string"
+                                  },
+                                  "planCode": {
+                                    "minLength": 1,
+                                    "type": "string"
+                                  },
+                                  "planRevision": {
+                                    "exclusiveMinimum": 0,
+                                    "maximum": 9007199254740991,
+                                    "type": "integer"
+                                  }
+                                },
+                                "required": [
+                                  "planCode",
+                                  "planRevision",
+                                  "displayName"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "priceRevisionId": {
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                            "type": "string"
+                          },
+                          "state": {
+                            "enum": [
+                              "PENDING",
+                              "SUCCEEDED",
+                              "FAILED",
+                              "CANCELED",
+                              "REFUNDED",
+                              "CHARGEBACK"
+                            ],
+                            "type": "string"
+                          },
+                          "subscriptionLinked": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "state",
+                          "amountMinor",
+                          "currency",
+                          "priceRevisionId",
+                          "plan",
+                          "billingInterval",
+                          "createdAt",
+                          "confirmedAt",
+                          "subscriptionLinked"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "payments",
+                    "nextCursor"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -1225,7 +1709,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -1289,7 +1775,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -1353,7 +1841,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -1417,7 +1907,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -1580,7 +2072,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -1644,7 +2138,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -1708,7 +2204,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -1772,7 +2270,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -1925,7 +2425,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -1989,7 +2491,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -2053,7 +2557,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -2117,7 +2623,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -2181,7 +2689,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -2338,7 +2848,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -2402,7 +2914,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -2466,7 +2980,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -2608,7 +3124,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -2672,7 +3190,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -2736,7 +3256,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -2800,7 +3322,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -2864,7 +3388,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -2928,7 +3454,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -3058,7 +3586,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -3122,7 +3652,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -3186,7 +3718,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -3250,7 +3784,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -3314,7 +3850,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -3378,7 +3916,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -3620,7 +4160,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -3684,7 +4226,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -3748,7 +4292,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -3812,7 +4358,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -3922,7 +4470,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -3986,7 +4536,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -4050,7 +4602,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -4114,7 +4668,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -4178,7 +4734,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -4462,7 +5020,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -4526,7 +5086,9 @@
                             "DEVICE_NOT_FOUND",
                             "UNAUTHORIZED",
                             "DEVICE_MISMATCH",
-                            "BOOTSTRAP_UNAVAILABLE"
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
                           ],
                           "type": "string"
                         },
@@ -4563,6 +5125,573 @@
         "tags": [
           "catalog"
         ]
+      }
+    },
+    "/v1/subscription": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "access": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "reason": {
+                          "anyOf": [
+                            {
+                              "enum": [
+                                "ACCOUNT_SUSPENDED",
+                                "NO_CURRENT_SUBSCRIPTION",
+                                "PERIOD_ENDED",
+                                "GRACE_ENDED",
+                                "PAST_DUE",
+                                "CANCELED",
+                                "SUBSCRIPTION_SUSPENDED",
+                                "SUBSCRIPTION_EXPIRED",
+                                "SUBSCRIPTION_CORRUPTED"
+                              ],
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "status": {
+                          "enum": [
+                            "ELIGIBLE",
+                            "INELIGIBLE"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "reason"
+                      ],
+                      "type": "object"
+                    },
+                    "accountId": {
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                      "type": "string"
+                    },
+                    "billing": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "purchaseStatus": {
+                          "enum": [
+                            "UNAVAILABLE"
+                          ],
+                          "type": "string"
+                        },
+                        "reason": {
+                          "enum": [
+                            "PAYMENT_GO_LIVE_DEFERRED"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "purchaseStatus",
+                        "reason"
+                      ],
+                      "type": "object"
+                    },
+                    "deviceAllowance": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "activeCount": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "maxActive": {
+                          "anyOf": [
+                            {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "overLimit": {
+                          "type": "boolean"
+                        },
+                        "remaining": {
+                          "anyOf": [
+                            {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "maxActive",
+                        "activeCount",
+                        "remaining",
+                        "overLimit"
+                      ],
+                      "type": "object"
+                    },
+                    "subscription": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "cancelAtPeriodEnd": {
+                              "type": "boolean"
+                            },
+                            "currentPeriodEnd": {
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                              "type": "string"
+                            },
+                            "currentPeriodStart": {
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                              "type": "string"
+                            },
+                            "graceUntil": {
+                              "anyOf": [
+                                {
+                                  "format": "date-time",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "id": {
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                              "type": "string"
+                            },
+                            "plan": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "displayName": {
+                                  "type": "string"
+                                },
+                                "planCode": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "planRevision": {
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 9007199254740991,
+                                  "type": "integer"
+                                },
+                                "planRevisionId": {
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "planRevisionId",
+                                "planCode",
+                                "planRevision",
+                                "displayName"
+                              ],
+                              "type": "object"
+                            },
+                            "price": {
+                              "anyOf": [
+                                {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "amountMinor": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": -9007199254740991,
+                                      "type": "integer"
+                                    },
+                                    "billingInterval": {
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "count": {
+                                          "maximum": 1200,
+                                          "minimum": 1,
+                                          "type": "integer"
+                                        },
+                                        "unit": {
+                                          "enum": [
+                                            "DAY",
+                                            "MONTH",
+                                            "YEAR"
+                                          ],
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "count"
+                                      ],
+                                      "type": "object"
+                                    },
+                                    "currency": {
+                                      "pattern": "^[A-Z]{3}$",
+                                      "type": "string"
+                                    },
+                                    "priceRevisionId": {
+                                      "format": "uuid",
+                                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "priceRevisionId",
+                                    "amountMinor",
+                                    "currency",
+                                    "billingInterval"
+                                  ],
+                                  "type": "object"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "state": {
+                              "enum": [
+                                "TRIAL",
+                                "ACTIVE",
+                                "GRACE",
+                                "PAST_DUE",
+                                "CANCELED",
+                                "EXPIRED",
+                                "SUSPENDED"
+                              ],
+                              "type": "string"
+                            },
+                            "stateRevision": {
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "state",
+                            "stateRevision",
+                            "plan",
+                            "price",
+                            "currentPeriodStart",
+                            "currentPeriodEnd",
+                            "graceUntil",
+                            "cancelAtPeriodEnd"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "accountId",
+                    "access",
+                    "subscription",
+                    "deviceAllowance",
+                    "billing"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        }
       }
     }
   },

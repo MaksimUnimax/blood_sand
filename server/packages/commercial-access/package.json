@@ -1,5 +1,5 @@
 {
-  "name": "@product/bootstrap",
+  "name": "@product/commercial-access",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -11,11 +11,10 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@product/commercial-access": "workspace:*",
-    "@product/contracts": "workspace:*",
-    "@product/remote-config": "workspace:*"
+    "@product/entitlements": "workspace:*",
+    "@product/subscriptions": "workspace:*"
   }
 }

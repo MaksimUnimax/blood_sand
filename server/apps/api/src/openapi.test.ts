@@ -28,6 +28,7 @@ describe("OpenAPI foundation", () => {
       "/v1/auth/otp/request",
       "/v1/auth/otp/verify",
       "/v1/auth/refresh",
+      "/v1/billing/payments",
       "/v1/bootstrap",
       "/v1/device-authorizations",
       "/v1/device-authorizations/token",
@@ -37,6 +38,7 @@ describe("OpenAPI foundation", () => {
       "/v1/devices",
       "/v1/devices/{device_id}/revoke",
       "/v1/plans/public",
+      "/v1/subscription",
     ]);
     expect(document.paths).toHaveProperty("/v1/bootstrap");
     expect(document.paths).not.toHaveProperty("/v1/billing/checkouts");

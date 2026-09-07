@@ -14,6 +14,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@product/commercial-access": "workspace:*",
     "@product/device-auth": "workspace:*",
     "@product/extension-auth": "workspace:*",
     "@product/shared": "workspace:*"

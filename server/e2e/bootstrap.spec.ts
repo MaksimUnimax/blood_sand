@@ -166,9 +166,9 @@ test("bootstrap returns a cryptographically verified strict snapshot", async ({
     expect(verified.payload).toMatchObject({
       configVersion,
       account: { status: "ACTIVE" },
-      subscription: { state: "NONE", planRevision: null },
+      subscription: { state: "ACTIVE" },
       devicePolicy: { status: "ACTIVE" },
-      entitlements: {},
+      entitlements: { "device.max_active": 1 },
       features: { "feature-e2e": true },
       ai: { status: "UNCONFIGURED" },
     });

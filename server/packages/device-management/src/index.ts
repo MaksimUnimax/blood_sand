@@ -7,6 +7,7 @@ import {
   refreshTokenHash,
   type AccessTokenSigningKey,
 } from "@product/extension-auth";
+import type { CommercialDeviceAdmission } from "@product/commercial-access";
 
 export const PRE_ENTITLEMENT_ACTIVE_DEVICE_LIMIT = 1;
 export const EXCHANGE_REPLAY_WINDOW_MS = 120_000;
@@ -23,7 +24,10 @@ const labels = {
   rate: "product-control-plane/device-management/exchange-rate-limit/v1",
 } as const;
 export interface DeviceLimitResolver {
-  resolve(accountId: string): Promise<{ maxActive: number; source: string }>;
+  resolve(
+    accountId: string,
+    at?: Date,
+  ): Promise<{ maxActive: number; source: string } | CommercialDeviceAdmission>;
 }
 export class PreEntitlementDeviceLimitResolver implements DeviceLimitResolver {
   async resolve() {
@@ -71,6 +75,7 @@ export type ExchangeResult =
   | { kind: "PENDING"; retryAfterSeconds: number }
   | { kind: "CLOSED" }
   | { kind: "DEVICE_LIMIT_REACHED" }
+  | { kind: "SUBSCRIPTION_REQUIRED" }
   | { kind: "RATE_LIMITED"; retryAfterSeconds?: number }
   | { kind: "INVALID" }
   | { kind: "SERVICE_UNAVAILABLE" };
@@ -90,7 +95,10 @@ export interface DeviceManagementRepository {
     correlationId: string;
     resolveLimit: (
       accountId: string,
-    ) => Promise<{ maxActive: number; source: string }>;
+      at: Date,
+    ) => Promise<
+      { maxActive: number; source: string } | CommercialDeviceAdmission
+    >;
   }): Promise<
     | {
         kind: "activated";
@@ -99,7 +107,14 @@ export interface DeviceManagementRepository {
         accountId: string;
       }
     | { kind: "replay"; deviceId: string; sessionId: string; accountId: string }
-    | { kind: "pending" | "closed" | "limit" | "invalid-limit" }
+    | {
+        kind:
+          | "pending"
+          | "closed"
+          | "limit"
+          | "invalid-limit"
+          | "subscription-required";
+      }
   >;
   list(input: {
     portalUserId: string;
@@ -176,8 +191,11 @@ export class DeviceManagementService {
       now,
       replayUntil: new Date(now.getTime() + EXCHANGE_REPLAY_WINDOW_MS),
       correlationId,
-      resolveLimit: async (accountId) => {
-        const value = await this.limits.resolve(accountId);
+      resolveLimit: async (accountId, at) => {
+        const value = await this.limits.resolve(accountId, at);
+        if ("kind" in value && value.kind === "ELIGIBLE")
+          return { maxActive: value.maxActive, source: value.source };
+        if ("kind" in value) return value;
         if (
           !Number.isInteger(value.maxActive) ||
           value.maxActive < 0 ||
@@ -193,6 +211,8 @@ export class DeviceManagementService {
         retryAfterSeconds: PENDING_RETRY_AFTER_SECONDS,
       };
     if (result.kind === "closed") return { kind: "CLOSED" };
+    if (result.kind === "subscription-required")
+      return { kind: "SUBSCRIPTION_REQUIRED" };
     if (result.kind === "limit") return { kind: "DEVICE_LIMIT_REACHED" };
     if (result.kind === "invalid-limit") return { kind: "SERVICE_UNAVAILABLE" };
     if (result.kind !== "activated" && result.kind !== "replay")

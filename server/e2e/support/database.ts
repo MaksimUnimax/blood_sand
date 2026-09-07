@@ -33,9 +33,13 @@ export async function resetE2eDatabase(): Promise<void> {
   const database = createDatabaseRuntime(assertE2eDatabase());
   try {
     await database.query(`TRUNCATE TABLE
-      refresh_tokens, portal_sessions, otp_email_jobs, otp_challenges,
+    refresh_tokens, portal_sessions, otp_email_jobs, otp_challenges,
       device_authorizations, sessions, devices, account_memberships,
-      user_identities, accounts, users, audit_events, auth_rate_limit_buckets
+      user_identities, accounts, users, audit_events, auth_rate_limit_buckets,
+      billing_reconciliation_jobs, checkout_intents, billing_events,
+      subscription_transitions, payments, subscriptions,
+      price_sale_assignments, account_entitlement_overrides, price_revisions,
+      plan_entitlements, prices, plan_revisions, entitlement_definitions, plans
       RESTART IDENTITY CASCADE`);
     await database.query(`TRUNCATE TABLE
       config_release_rollout_revisions, config_release_feature_rules, rollouts,

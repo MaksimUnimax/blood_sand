@@ -1,4 +1,4 @@
-import { createPublicKey, type KeyObject } from "node:crypto";
+import { createPublicKey, randomUUID, type KeyObject } from "node:crypto";
 import { expect, type Page } from "@playwright/test";
 import {
   SimulatedExtensionClient,
@@ -26,6 +26,50 @@ export async function login(page: Page, returnTo = "/"): Promise<void> {
   await page.getByLabel("Code").fill("424242");
   await page.getByRole("button", { name: "Verify" }).click();
   await expect(page).toHaveURL(new RegExp(`${returnTo.replace("?", "\\?")}$`));
+  await ensureDefaultCommercialSubscription();
+}
+
+async function ensureDefaultCommercialSubscription(): Promise<void> {
+  const accounts = await sql<{ id: string }>(
+    "SELECT id FROM accounts ORDER BY id LIMIT 1",
+  );
+  const account = accounts[0];
+  if (!account) return;
+  const existing = await sql<{ id: string }>(
+    "SELECT id FROM subscriptions WHERE account_id=$1 AND state <> 'EXPIRED'",
+    [account.id],
+  );
+  if (existing[0]) return;
+  const plan = randomUUID();
+  const revision = randomUUID();
+  await sql("INSERT INTO plans(id,code,status) VALUES($1,$2,'ACTIVE')", [
+    plan,
+    `e2e-default-${plan.replaceAll("-", "")}`,
+  ]);
+  await sql(
+    "INSERT INTO plan_revisions(id,plan_id,revision,state,display_name,description) VALUES($1,$2,1,'DRAFT','E2E Default','E2E default plan')",
+    [revision, plan],
+  );
+  await sql(
+    "INSERT INTO entitlement_definitions(entitlement_key,value_type,security_classification,description) VALUES('device.max_active','INTEGER','LIMIT','Device limit')",
+  );
+  await sql(
+    "INSERT INTO plan_entitlements(plan_revision_id,entitlement_key,integer_value) VALUES($1,'device.max_active',1)",
+    [revision],
+  );
+  await sql(
+    "UPDATE plan_revisions SET state='PUBLISHED',published_at=$2 WHERE id=$1",
+    [revision, new Date("2026-09-01T00:00:00.000Z")],
+  );
+  await sql(
+    "INSERT INTO subscriptions(account_id,state,state_revision,current_plan_revision_id,started_at,current_period_start,current_period_end,state_reason) VALUES($1,'ACTIVE',1,$2,$3,$3,$4,'e2e default')",
+    [
+      account.id,
+      revision,
+      new Date("2026-09-01T00:00:00.000Z"),
+      new Date("2026-10-01T00:00:00.000Z"),
+    ],
+  );
 }
 
 function packagedKeys(ids: string[]): ReadonlyMap<string, KeyObject> {
@@ -121,6 +165,7 @@ export async function approve(
   page: Page,
   authorization: Awaited<ReturnType<typeof start>>,
 ): Promise<void> {
+  await ensureDefaultCommercialSubscription();
   await page.goto(authorization.verificationUrl);
   await expect(page.getByText("E2E Chrome")).toBeVisible();
   await expect(page.getByText("chrome 123.0")).toBeVisible();

@@ -88,6 +88,9 @@ importers:
       '@product/bootstrap':
         specifier: workspace:*
         version: link:../../packages/bootstrap
+      '@product/commercial-access':
+        specifier: workspace:*
+        version: link:../../packages/commercial-access
       '@product/commercial-catalog':
         specifier: workspace:*
         version: link:../../packages/commercial-catalog
@@ -221,12 +224,24 @@ importers:
 
   packages/bootstrap:
     dependencies:
+      '@product/commercial-access':
+        specifier: workspace:*
+        version: link:../commercial-access
       '@product/contracts':
         specifier: workspace:*
         version: link:../contracts
       '@product/remote-config':
         specifier: workspace:*
         version: link:../remote-config
+
+  packages/commercial-access:
+    dependencies:
+      '@product/entitlements':
+        specifier: workspace:*
+        version: link:../entitlements
+      '@product/subscriptions':
+        specifier: workspace:*
+        version: link:../subscriptions
 
   packages/commercial-catalog:
     dependencies:
@@ -269,6 +284,9 @@ importers:
       '@product/billing':
         specifier: workspace:*
         version: link:../billing
+      '@product/commercial-access':
+        specifier: workspace:*
+        version: link:../commercial-access
       '@product/commercial-catalog':
         specifier: workspace:*
         version: link:../commercial-catalog
@@ -327,6 +345,9 @@ importers:
 
   packages/device-management:
     dependencies:
+      '@product/commercial-access':
+        specifier: workspace:*
+        version: link:../commercial-access
       '@product/device-auth':
         specifier: workspace:*
         version: link:../device-auth

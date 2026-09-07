@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { verifyBootstrapEnvelope } from "@product/remote-config";
 import { signBootstrapSnapshot } from "@product/remote-config";
 import { BootstrapError, BootstrapService } from "./index.js";
+import type { CommercialAccessResolution } from "@product/commercial-access";
 
 const subject = {
   accountId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
@@ -32,6 +33,161 @@ const policy = {
   }),
 };
 describe("BootstrapService", () => {
+  function signedService(
+    commercial: CommercialAccessResolution,
+    now = "2026-01-01T00:00:00.000Z",
+  ) {
+    const pair = generateKeyPairSync("ed25519");
+    return {
+      pair,
+      service: new BootstrapService(
+        policy,
+        {
+          sign: async (_keyId, payload) =>
+            signBootstrapSnapshot(payload, "config-key", pair.privateKey),
+        },
+        { now: () => new Date(now) },
+        { resolve: async () => commercial },
+      ),
+    };
+  }
+  const commercialSubscription = {
+    id: subject.accountId,
+    accountId: subject.accountId,
+    state: "ACTIVE" as const,
+    stateRevision: 2,
+    currentPlanRevisionId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    boundPriceRevisionId: null,
+    startedAt: new Date("2025-12-01T00:00:00.000Z"),
+    currentPeriodStart: new Date("2026-01-01T00:00:00.000Z"),
+    currentPeriodEnd: new Date("2026-01-01T01:00:00.000Z"),
+    graceUntil: null,
+    cancelAtPeriodEnd: false,
+    canceledAt: null,
+    suspendedAt: null,
+    createdAt: new Date("2025-12-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+  };
+  function eligibleCommercial(
+    accessUntil = commercialSubscription.currentPeriodEnd,
+  ): CommercialAccessResolution {
+    return {
+      kind: "OK",
+      value: {
+        accountId: subject.accountId,
+        currentSubscription: commercialSubscription,
+        access: {
+          kind: "ELIGIBLE",
+          subscriptionId: commercialSubscription.id,
+          state: "ACTIVE",
+          stateRevision: 2,
+          planRevisionId: commercialSubscription.currentPlanRevisionId,
+          boundPriceRevisionId: null,
+          currentPeriodEnd: commercialSubscription.currentPeriodEnd,
+          graceUntil: null,
+        },
+        planRevisionId: commercialSubscription.currentPlanRevisionId,
+        entitlements: { "source.ozon": true, "device.max_active": 0 },
+        accessUntil,
+      },
+    };
+  }
+
+  it("projects the actual subscription and exact UUID into a signed snapshot", async () => {
+    const f = signedService(eligibleCommercial());
+    const envelope = await f.service.issue(subject, request);
+    const verified = verifyBootstrapEnvelope(
+      envelope,
+      new Map([["config-key", f.pair.publicKey]]),
+    );
+    expect(verified).toMatchObject({ ok: true });
+    if (verified.ok) {
+      expect(verified.payload.subscription).toEqual({
+        state: "ACTIVE",
+        planRevision: commercialSubscription.currentPlanRevisionId,
+      });
+      expect(verified.payload.entitlements).toEqual({
+        "source.ozon": true,
+        "device.max_active": 0,
+      });
+    }
+  });
+  it("caps offline grace at the subscription access deadline", async () => {
+    const f = signedService(eligibleCommercial());
+    const envelope = await f.service.issue(subject, request);
+    const verified = verifyBootstrapEnvelope(
+      envelope,
+      new Map([["config-key", f.pair.publicKey]]),
+    );
+    if (verified.ok) {
+      expect(verified.payload.expiresAt).toBe("2026-01-01T00:15:00.000Z");
+      expect(verified.payload.offlineGraceUntil).toBe(
+        "2026-01-01T01:00:00.000Z",
+      );
+    }
+  });
+  it("caps grace-state snapshots at graceUntil", async () => {
+    const deadline = new Date("2026-01-01T00:20:00.000Z");
+    const value = eligibleCommercial(deadline);
+    if (value.kind === "OK") {
+      value.value.currentSubscription = {
+        ...commercialSubscription,
+        state: "GRACE",
+        graceUntil: deadline,
+      };
+      value.value.access = {
+        kind: "ELIGIBLE",
+        subscriptionId: commercialSubscription.id,
+        state: "GRACE",
+        stateRevision: 2,
+        planRevisionId: commercialSubscription.currentPlanRevisionId,
+        boundPriceRevisionId: null,
+        currentPeriodEnd: commercialSubscription.currentPeriodEnd,
+        graceUntil: deadline,
+      };
+    }
+    const f = signedService(value);
+    const verified = verifyBootstrapEnvelope(
+      await f.service.issue(subject, request),
+      new Map([["config-key", f.pair.publicKey]]),
+    );
+    if (verified.ok)
+      expect(verified.payload.offlineGraceUntil).toBe(deadline.toISOString());
+  });
+  it("fails closed when only one millisecond remains for the signed interval", async () => {
+    const deadline = new Date("2026-01-01T00:00:00.001Z");
+    await expect(
+      signedService(eligibleCommercial(deadline)).service.issue(
+        subject,
+        request,
+      ),
+    ).rejects.toMatchObject({ code: "UNAVAILABLE" });
+  });
+  it("reports stored ineligible state but never projects its entitlements", async () => {
+    const ineligible: CommercialAccessResolution = {
+      kind: "OK",
+      value: {
+        accountId: subject.accountId,
+        currentSubscription: { ...commercialSubscription, state: "PAST_DUE" },
+        access: { kind: "INELIGIBLE", reason: "PAST_DUE" },
+        planRevisionId: null,
+        entitlements: { should: true },
+        accessUntil: null,
+      },
+    };
+    const f = signedService(ineligible);
+    const verified = verifyBootstrapEnvelope(
+      await f.service.issue(subject, request),
+      new Map([["config-key", f.pair.publicKey]]),
+    );
+    if (verified.ok) {
+      expect(verified.payload.subscription).toEqual({
+        state: "PAST_DUE",
+        planRevision: commercialSubscription.currentPlanRevisionId,
+      });
+      expect(verified.payload.entitlements).toEqual({});
+    }
+  });
   it("composes and signs a complete fixed-time snapshot", async () => {
     const pair = generateKeyPairSync("ed25519");
     let reads = 0;
