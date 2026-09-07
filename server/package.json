@@ -27,10 +27,12 @@
     "bridge:guard": "node scripts/check-bridge-boundary.mjs",
     "openapi:generate": "pnpm --filter @product/api openapi:generate",
     "openapi:check": "pnpm --filter @product/api openapi:check",
+    "admin:bootstrap-owner": "tsx scripts/admin-bootstrap-owner.ts",
     "format:check": "prettier --check \"{apps,packages,scripts,infra,integration}/**/*.{ts,tsx,js,mjs,cjs,json,css,scss,yml,yaml}\" package.json pnpm-workspace.yaml tsconfig.base.json eslint.config.mjs vitest.integration.config.ts ../.github/workflows/server-ci.yml"
   },
   "devDependencies": {
     "@product/auth": "workspace:*",
+    "@product/admin-auth": "workspace:*",
     "@product/db": "workspace:*",
     "@product/device-auth": "workspace:*",
     "@product/device-management": "workspace:*",

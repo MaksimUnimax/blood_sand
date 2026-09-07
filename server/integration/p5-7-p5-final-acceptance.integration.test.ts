@@ -251,11 +251,11 @@ describe.sequential(
     beforeEach(clean);
     afterAll(() => db.close());
 
-    it("DB-01 exposes only migrations 0000 through 0011", async () => {
+    it("DB-01 exposes migrations 0000 through 0012", async () => {
       const rows = await q<{ count: string }>(
         "SELECT count(*)::text AS count FROM drizzle.__drizzle_migrations",
       );
-      expect(rows.rows[0]?.count).toBe("12");
+      expect(rows.rows[0]?.count).toBe("13");
     });
     it("DB-02 enforces one current non-expired subscription", async () => {
       const f = await fixture();
@@ -1466,7 +1466,7 @@ describe.sequential(
       expect(source).not.toContain("/v1/billing/checkouts");
       expect(source).not.toContain("/v1/webhooks");
     });
-    it("STATIC-71 OpenAPI has exactly 18 tuples and the frozen hash", async () => {
+    it("STATIC-71 OpenAPI has exactly 21 tuples and the frozen hash", async () => {
       const artifact = JSON.parse(await text("openapi/openapi.json")) as {
         paths: Record<string, Record<string, unknown>>;
       };
@@ -1478,7 +1478,7 @@ describe.sequential(
           ).length,
         0,
       );
-      expect(count).toBe(18);
+      expect(count).toBe(21);
       expect(
         createHash("sha256")
           .update(
@@ -1488,7 +1488,7 @@ describe.sequential(
           )
           .digest("hex"),
       ).toBe(
-        "117746551488dacf3f95090764a7a9df072b3468d6a4ffa6f68a44adf0ffe924",
+        "587d67234a22b1529cad3ce447ca10f0dcc1eddd18646fae2310c28f99861a09",
       );
     });
     it("STATIC-72 OpenAPI has no checkout, webhook, or fake completion route", async () => {
@@ -1547,11 +1547,11 @@ describe.sequential(
       expect(routes).toContain('"/v1/billing/payments"');
       expect(routes).not.toContain("/v1/billing/checkouts");
     });
-    it("STATIC-79 migration 0012 is absent and all frozen hashes remain exact", async () => {
+    it("STATIC-79 migration 0012 is present and all historical hashes remain exact", async () => {
       const migrations = await import("node:fs/promises").then(({ readdir }) =>
         readdir(resolve(serverRoot, "packages/db/drizzle")),
       );
-      expect(migrations.some((name) => name.startsWith("0012_"))).toBe(false);
+      expect(migrations.some((name) => name.startsWith("0012_"))).toBe(true);
       const expected: Record<string, string> = {
         "0000_p1_migration_probe.sql":
           "9a7cde34d8b38667ccedd630cd2dc40697b2ee5c922927bb08f93f242bc5af56",
@@ -1588,9 +1588,9 @@ describe.sequential(
             .digest("hex"),
         ).toBe(hash);
     });
-    it("STATIC-80 accepted P5 history remains linear and P5.7 introduces no ADR", async () => {
+    it("STATIC-80 accepted P5 history remains linear and P6.1 decomposition is recorded", async () => {
       const roadmap = await text("docs/ROADMAP.md");
-      expect(roadmap).not.toContain("ADR-0026");
+      expect(roadmap).toContain("P6.1");
       expect(
         await import("node:fs/promises")
           .then(({ access }) =>
@@ -1598,6 +1598,16 @@ describe.sequential(
           )
           .catch(() => "missing"),
       ).toBe("missing");
+      await expect(
+        import("node:fs/promises").then(({ access }) =>
+          access(
+            resolve(
+              serverRoot,
+              "docs/ADR/0026-p6-admin-security-foundation-and-decomposition.md",
+            ),
+          ),
+        ),
+      ).resolves.toBeUndefined();
     });
   },
 );

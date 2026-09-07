@@ -37,6 +37,10 @@ export const ApiErrorCodeV1Schema = z.enum([
   "BOOTSTRAP_UNAVAILABLE",
   "SUBSCRIPTION_REQUIRED",
   "ACCOUNT_FORBIDDEN",
+  "ADMIN_UNAUTHORIZED",
+  "ADMIN_FORBIDDEN",
+  "ADMIN_REAUTH_REQUIRED",
+  "ADMIN_CSRF_INVALID",
 ]);
 export type ApiErrorCodeV1 = z.infer<typeof ApiErrorCodeV1Schema>;
 
@@ -48,6 +52,27 @@ export const ApiErrorEnvelopeV1Schema = z.object({
   }),
 });
 export type ApiErrorEnvelopeV1 = z.infer<typeof ApiErrorEnvelopeV1Schema>;
+
+export const AdminSessionResponseV1Schema = z.object({
+  status: z.literal("authenticated"),
+  expiresAt: z.string().datetime({ offset: true }),
+});
+export const AdminMeResponseV1Schema = z
+  .object({
+    status: z.literal("authenticated"),
+    principalId: z.uuid(),
+    roles: z.array(
+      z.enum([
+        "ADMIN_OWNER",
+        "ADMIN_OPS",
+        "ADMIN_SUPPORT",
+        "ADMIN_BILLING_READONLY",
+      ]),
+    ),
+    permissions: z.array(z.string().regex(/^[a-z][a-z0-9]*(?:\.[a-z0-9]+)+$/)),
+    expiresAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
 
 /** P4.5 public commercial catalog wire contract. */
 export const PublicCommercialCatalogVersionV1Schema = z.literal(

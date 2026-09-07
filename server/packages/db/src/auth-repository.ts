@@ -199,12 +199,20 @@ export function createAuthRepository(runtime: DatabaseRuntime): AuthRepository {
       });
     },
     async authenticate(hash) {
-      const r = await runtime.query<{ id: string; user_id: string }>(
-        `SELECT s.id,s.user_id FROM portal_sessions s JOIN users u ON u.id=s.user_id WHERE s.session_token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>now() AND u.status='ACTIVE'`,
+      const r = await runtime.query<{
+        id: string;
+        user_id: string;
+        created_at: Date;
+      }>(
+        `SELECT s.id,s.user_id,s.created_at FROM portal_sessions s JOIN users u ON u.id=s.user_id WHERE s.session_token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>now() AND u.status='ACTIVE'`,
         [hash],
       );
       return r.rows[0]
-        ? { sessionId: r.rows[0].id, userId: r.rows[0].user_id }
+        ? {
+            sessionId: r.rows[0].id,
+            userId: r.rows[0].user_id,
+            createdAt: new Date(r.rows[0].created_at),
+          }
         : undefined;
     },
     async revoke(hash, correlationId) {

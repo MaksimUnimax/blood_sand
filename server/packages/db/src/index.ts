@@ -2,6 +2,7 @@ import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema.js";
 export { createAuthRepository } from "./auth-repository.js";
+export { createAdminAuthRepository } from "./p6-admin-auth-repository.js";
 export { createDeviceAuthorizationRepository } from "./device-authorization-repository.js";
 export { createExtensionAuthRepository } from "./extension-auth-repository.js";
 export { createDeviceManagementRepository } from "./device-management-repository.js";

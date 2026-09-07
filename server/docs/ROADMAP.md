@@ -173,7 +173,7 @@ P5 execution decomposition (frozen by ADR-0020):
 Real payment go-live: `[DEFERRED UNTIL AFTER REMAINING PRODUCT ROADMAP]`.
 YooKassa and Tinkoff/T-Bank: candidates only; no production provider is selected.
 
-## P6 — Admin and operations core `[NEXT]`
+## P6 — Admin and operations core `[ACTIVE]`
 
 Goal: first-line operation without direct SQL.
 
@@ -194,6 +194,19 @@ Admin capabilities:
 - audit log.
 
 Exit: required mutations RBAC-protected and audited.
+
+P6 execution decomposition (frozen by ADR-0026):
+
+- P6.1 `[ACTIVE]` admin identity/session/RBAC foundation, CSRF and one-time owner bootstrap.
+- P6.2 `[PLANNED]` admin read plane, safe account/subscription/device views, audit reads, support device revoke, and principal/role management.
+- P6.3 `[PLANNED]` subscription/billing operations through accepted P5 commands and safe billing reads.
+- P6.4 `[PLANNED]` existing plan, price, entitlement and compatibility policy operations.
+- P6.5 `[PLANNED]` admin portal shell and operations UX.
+- P6.6 `[PLANNED]` P6 security, architecture, regression and final acceptance.
+
+P6.1 does not implement admin UI, account search, subscription/plan/price/
+entitlement endpoints, or AI/health/diagnostic admin domains. P7, P8 and P9
+own those later domain modules respectively; they reuse this admin framework.
 
 ## P7 — AI adapter registry and auto-selection contract `[PLANNED]`
 

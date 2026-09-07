@@ -10,8 +10,10 @@ import {
   createP5SubscriptionAccessResolver,
   createP5SubscriptionRepository,
   createP5CommercialPortalRepository,
+  createAdminAuthRepository,
 } from "@product/db";
 import { AuthService, deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
+import { AdminAuthService, deriveAdminAuthKeys } from "@product/admin-auth";
 import {
   DeviceAuthorizationService,
   deriveDeviceAuthKeys,
@@ -48,6 +50,10 @@ const commercialAccess = new CommercialAccessService({
   entitlementResolver: entitlements,
 });
 const rootSecret = loadAuthRootSecret(process.env);
+const adminAuth = new AdminAuthService(
+  createAdminAuthRepository(database),
+  deriveAdminAuthKeys(rootSecret),
+);
 const bootstrapSigningMaterial = loadConfigSigningMaterial(process.env);
 const p3Catalog = createP3BootstrapPolicyCatalogRepository(database);
 await bindConfigSigningRing(bootstrapSigningMaterial, (keyId) =>
@@ -90,6 +96,7 @@ const app = createApiApp({
     createP5CommercialPortalRepository(database),
     commercialAccess,
   ),
+  adminAuthService: adminAuth,
 });
 let closing = false;
 async function shutdown(signal: string): Promise<void> {

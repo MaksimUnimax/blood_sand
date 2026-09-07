@@ -49,6 +49,11 @@ import type { PublicCommercialCatalogReader } from "@product/commercial-catalog"
 import { registerPublicCatalogRoutes } from "./public-catalog-routes.js";
 import type { CommercialPortalService } from "@product/commercial-access";
 import { registerCommercialRoutes } from "./commercial-routes.js";
+import {
+  AdminAuthService,
+  type AdminAuthService as AdminAuthServiceType,
+} from "@product/admin-auth";
+import { registerAdminAuthRoutes } from "./admin-auth-routes.js";
 
 export class ControlledError extends Error {
   public constructor(
@@ -71,6 +76,7 @@ export interface ApiDependencies {
   readonly publicCommercialCatalogReader?: PublicCommercialCatalogReader;
   readonly catalogClock?: () => Date;
   readonly commercialPortalService?: CommercialPortalService;
+  readonly adminAuthService?: AdminAuthServiceType;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -254,6 +260,25 @@ export function createApiApp(
           new AuthService(unavailable, deriveAuthKeys(Buffer.alloc(32))),
         dependencies.commercialPortalService,
       );
+    const unavailableAdmin = new AdminAuthService(
+      {
+        createAdminSession: async () => ({ kind: "forbidden" }),
+        authenticateAdminSession: async () => ({ kind: "unauthorized" }),
+        revokeAdminSession: async () => "missing",
+        bootstrapOwner: async () => ({ kind: "closed" }),
+      },
+      {
+        session: Buffer.alloc(32),
+        csrf: Buffer.alloc(32),
+      },
+    );
+    registerAdminAuthRoutes(
+      app,
+      dependencies.authService ??
+        new AuthService(unavailable, deriveAuthKeys(Buffer.alloc(32))),
+      dependencies.adminAuthService ?? unavailableAdmin,
+      dependencies.config.environment === "production",
+    );
   });
   return app;
 }

@@ -24,6 +24,8 @@ describe("OpenAPI foundation", () => {
       "/health/live",
       "/health/ready",
       "/v1/accounts",
+      "/v1/admin/me",
+      "/v1/admin/session",
       "/v1/auth/logout",
       "/v1/auth/otp/request",
       "/v1/auth/otp/verify",

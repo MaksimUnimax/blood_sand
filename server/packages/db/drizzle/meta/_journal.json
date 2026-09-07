@@ -85,6 +85,13 @@
       "when": 1788703000000,
       "tag": "0011_p5_5_billing_reconciliation_jobs",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788704000000,
+      "tag": "0012_p6_1_admin_security_foundation",
+      "breakpoints": true
     }
   ]
 }

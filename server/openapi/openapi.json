@@ -101,7 +101,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -229,7 +233,463 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/v1/admin/me": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "expiresAt": {
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                      "type": "string"
+                    },
+                    "permissions": {
+                      "items": {
+                        "pattern": "^[a-z][a-z0-9]*(?:\\.[a-z0-9]+)+$",
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "principalId": {
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                      "type": "string"
+                    },
+                    "roles": {
+                      "items": {
+                        "enum": [
+                          "ADMIN_OWNER",
+                          "ADMIN_OPS",
+                          "ADMIN_SUPPORT",
+                          "ADMIN_BILLING_READONLY"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "status": {
+                      "enum": [
+                        "authenticated"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "principalId",
+                    "roles",
+                    "permissions",
+                    "expiresAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/v1/admin/session": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "expiresAt": {
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "authenticated"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "expiresAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
+                          ],
+                          "type": "string"
+                        },
+                        "correlationId": {
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "correlationId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR",
+                            "INVALID_REQUEST",
+                            "SERVICE_UNAVAILABLE",
+                            "AUTH_RATE_LIMITED",
+                            "AUTH_OTP_INVALID",
+                            "AUTH_LOGIN_DENIED",
+                            "AUTH_SESSION_INVALID",
+                            "AUTH_CSRF_INVALID",
+                            "AUTH_REFRESH_INVALID",
+                            "DEVICE_AUTH_RATE_LIMITED",
+                            "DEVICE_AUTH_INVALID",
+                            "DEVICE_AUTH_FORBIDDEN",
+                            "DEVICE_AUTH_STATE_CONFLICT",
+                            "DEVICE_AUTH_IDEMPOTENCY_CONFLICT",
+                            "DEVICE_AUTH_CLOSED",
+                            "DEVICE_AUTH_PENDING",
+                            "DEVICE_LIMIT_REACHED",
+                            "DEVICE_FORBIDDEN",
+                            "DEVICE_NOT_FOUND",
+                            "UNAUTHORIZED",
+                            "DEVICE_MISMATCH",
+                            "BOOTSTRAP_UNAVAILABLE",
+                            "SUBSCRIPTION_REQUIRED",
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -364,7 +824,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -430,7 +894,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -555,7 +1023,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -621,7 +1093,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -687,7 +1163,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -823,7 +1303,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -889,7 +1373,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -955,7 +1443,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -1021,7 +1513,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -1285,7 +1781,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -1351,7 +1851,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -1417,7 +1921,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -1483,7 +1991,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -1711,7 +2223,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -1777,7 +2293,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -1843,7 +2363,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -1909,7 +2433,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -2074,7 +2602,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -2140,7 +2672,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -2206,7 +2742,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -2272,7 +2812,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -2427,7 +2971,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -2493,7 +3041,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -2559,7 +3111,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -2625,7 +3181,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -2691,7 +3251,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -2850,7 +3414,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -2916,7 +3484,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -2982,7 +3554,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -3126,7 +3702,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -3192,7 +3772,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -3258,7 +3842,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -3324,7 +3912,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -3390,7 +3982,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -3456,7 +4052,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -3588,7 +4188,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -3654,7 +4258,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -3720,7 +4328,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -3786,7 +4398,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -3852,7 +4468,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -3918,7 +4538,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -4162,7 +4786,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -4228,7 +4856,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -4294,7 +4926,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -4360,7 +4996,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -4472,7 +5112,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -4538,7 +5182,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -4604,7 +5252,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -4670,7 +5322,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -4736,7 +5392,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -5022,7 +5682,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -5088,7 +5752,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -5461,7 +6129,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -5527,7 +6199,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -5593,7 +6269,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },
@@ -5659,7 +6339,11 @@
                             "DEVICE_MISMATCH",
                             "BOOTSTRAP_UNAVAILABLE",
                             "SUBSCRIPTION_REQUIRED",
-                            "ACCOUNT_FORBIDDEN"
+                            "ACCOUNT_FORBIDDEN",
+                            "ADMIN_UNAUTHORIZED",
+                            "ADMIN_FORBIDDEN",
+                            "ADMIN_REAUTH_REQUIRED",
+                            "ADMIN_CSRF_INVALID"
                           ],
                           "type": "string"
                         },

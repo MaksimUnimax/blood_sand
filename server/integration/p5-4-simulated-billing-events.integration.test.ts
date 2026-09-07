@@ -25,21 +25,21 @@ if (!connectionString)
   throw new Error("DATABASE_URL is required for P5.4 PostgreSQL tests");
 
 let db: DatabaseRuntime;
-let clock = new Date("2026-09-07T12:10:00.000Z");
+let clock = new Date("2030-09-07T12:10:00.000Z");
 const q = <T extends Record<string, unknown> = Record<string, unknown>>(
   text: string,
   values?: unknown[],
 ) => db.query<T>(text, values);
 const id = () => randomUUID();
 const hash = (value: string) => sha256(value);
-const createdAt = new Date("2026-09-06T12:00:00.000Z");
-const occurredAt = new Date("2026-09-07T12:05:00.000Z");
+const createdAt = new Date("2030-09-06T12:00:00.000Z");
+const occurredAt = new Date("2030-09-07T12:05:00.000Z");
 
 async function clean() {
   await q(
     "TRUNCATE billing_reconciliation_jobs,checkout_intents,billing_events,subscription_transitions,payments,subscriptions,price_sale_assignments,account_entitlement_overrides,price_revisions,plan_entitlements,prices,plan_revisions,entitlement_definitions,plans,audit_events,account_memberships,accounts,users CASCADE",
   );
-  clock = new Date("2026-09-07T12:10:00.000Z");
+  clock = new Date("2030-09-07T12:10:00.000Z");
 }
 
 async function fixture(
@@ -585,7 +585,7 @@ describe.sequential(
           f.accountId,
           f.planRevisionId,
           occurredAt,
-          new Date("2026-10-01T00:00:00Z"),
+          new Date("2030-10-01T00:00:00Z"),
         ],
       );
       const result = await deliver(f);

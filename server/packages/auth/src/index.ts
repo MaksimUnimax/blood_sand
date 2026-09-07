@@ -210,7 +210,9 @@ export interface AuthRepository {
   }): Promise<AuthResult<{ sessionToken: string; expiresAt: Date }>>;
   authenticate(
     sessionHash: string,
-  ): Promise<{ sessionId: string; userId: string } | undefined>;
+  ): Promise<
+    { sessionId: string; userId: string; createdAt?: Date } | undefined
+  >;
   revoke(
     sessionHash: string,
     correlationId: string,
