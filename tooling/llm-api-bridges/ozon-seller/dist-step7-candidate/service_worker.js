@@ -31,6 +31,8 @@ let providerResultCacheWriteLock = Promise.resolve();
 
 const PROVIDER_QUOTA_SCHEMA_VERSION = 1;
 const PROVIDER_QUOTA_ALARM = "ozon-provider-quota-wake-v1";
+const BATCH_RECOVERY_ALARM = "ozon-batch-recovery-wake-v1";
+const REG_P0_PROVIDER_LIFECYCLE_PATCH_V1 = true;
 const WORK_SESSION_REFRESH_WAKE_ALARM = "ozon-work-session-refresh-wake-v1";
 const ANALYTICS_QUOTA_FAMILY = "seller.analytics_data.v1";
 const STOCK_TURNOVER_QUOTA_FAMILY = "seller.analytics_turnover_stocks.v1";
@@ -423,13 +425,13 @@ async function resumeProviderQuotaWaits() {
   for (const [conversationKey, operation] of Object.entries(manual)) {
     const wait = operation?.batch?.request_state === "quota_waiting" ? Number(operation.batch?.quota_wait?.next_allowed_at || 0) : 0;
     if (!wait) continue;
-    if (wait <= now) setTimeout(() => { void processManualBatch(conversationKey, operation.operation_id); }, 0);
+    if (wait <= now) setTimeout(() => { launchBatchProcessor("manual", conversationKey, operation.operation_id, "quota_wake"); }, 0);
     else earliest = earliest === null ? wait : Math.min(earliest, wait);
   }
   for (const [conversationKey, run] of Object.entries(runs)) {
     const wait = run?.batch?.request_state === "quota_waiting" ? Number(run.batch?.quota_wait?.next_allowed_at || 0) : 0;
     if (!wait) continue;
-    if (wait <= now) setTimeout(() => { void processAutoBatch(conversationKey, run.run_id); }, 0);
+    if (wait <= now) setTimeout(() => { launchBatchProcessor("autorun", conversationKey, run.run_id, "quota_wake"); }, 0);
     else earliest = earliest === null ? wait : Math.min(earliest, wait);
   }
   if (earliest !== null) scheduleProviderQuotaWake(earliest);
@@ -2085,7 +2087,8 @@ async function executeManualCommand(commandText, conversationKey, sender, manual
     pre_execution_error_count: entries.filter((entry) => entry.kind !== "command").length,
     source_stage: sourceStage
   });
-  void processManualBatch(key, operationId);
+  scheduleBatchRecoveryWake();
+  launchBatchProcessor("manual", key, operationId, "manual_admission");
   return {
     ok: true,
     accepted: true,
@@ -2156,7 +2159,7 @@ async function manualRecoveryForContent(operation, candidateTabId) {
       await diagnostic("REQUEST_RECOVERY_BLOCKED_NO_RETRY", { owner_kind: "manual", owner_id: current?.operation_id || operation.operation_id, previous_worker_session_id: requestWorker, worker_session_id: WORKER_SESSION_ID }, { level: "error" });
       return { owner: true, rebound: owner.rebound === true, operation: current, recovery: null };
     }
-    setTimeout(() => { void processManualBatch(current.conversation_key, current.operation_id); }, 0);
+    setTimeout(() => { launchBatchProcessor("manual", current.conversation_key, current.operation_id, "content_recovery"); }, 0);
     return { owner: true, rebound: owner.rebound === true, operation: current, recovery: null };
   }
   if (current.status !== MANUAL_OPERATION_STATUSES.DELIVERING || current.delivery?.mode !== "batch_watch_v1") return { owner: true, rebound: owner.rebound === true, operation: current, recovery: null };
@@ -2404,7 +2407,7 @@ async function recoveryPayloadForRun(run) {
     };
   }
   if (decision.type === "resume_collection") {
-    setTimeout(() => { void processAutoBatch(run.conversation_key, run.run_id); }, 0);
+    setTimeout(() => { launchBatchProcessor("autorun", run.conversation_key, run.run_id, "content_recovery"); }, 0);
     return { type: "collection_resuming", run_id: run.run_id };
   }
   if (decision.type === "deliver_claimed") return deliveryRecoveryPayload(run, "deliver_claimed");
@@ -3432,14 +3435,18 @@ function processBatchQueue({
       }
       if (entry.status === "requesting") {
         const worker = String(owner.batch.request_worker_session_id || "");
-        if (worker && worker !== WORKER_SESSION_ID) {
-          await failOwner("REQUEST_OUTCOME_UNKNOWN_NO_RETRY", "Service worker перезапустился во время Ozon API request. Исход запроса неизвестен; автоматический повтор запрещён.");
+        if (!worker || worker !== WORKER_SESSION_ID) {
+          const reason = worker
+            ? "Service worker перезапустился во время Ozon API request. Исход запроса неизвестен; автоматический повтор запрещён."
+            : "Ozon API request помечен requesting без durable worker owner. Исход запроса неизвестен; автоматический повтор запрещён.";
+          await failOwner("REQUEST_OUTCOME_UNKNOWN_NO_RETRY", reason);
           await diagnostic("REQUEST_RECOVERY_BLOCKED_NO_RETRY", {
             owner_kind: ownerKind,
             owner_id: ownerId,
             queue_index: nextIndex,
-            previous_worker_session_id: worker,
-            worker_session_id: WORKER_SESSION_ID
+            previous_worker_session_id: worker || null,
+            worker_session_id: WORKER_SESSION_ID,
+            missing_worker_owner: !worker
           }, { level: "error" });
           return { ok: false, code: "REQUEST_OUTCOME_UNKNOWN_NO_RETRY" };
         }
@@ -4047,6 +4054,66 @@ function processManualBatch(conversationKey, operationId) {
   });
 }
 
+function batchProcessorFailureCode(error) {
+  const code = String(error?.code || error?.name || "BATCH_PROCESSOR_UNCAUGHT").trim();
+  return code && code !== "Error" ? code.slice(0, 160) : "BATCH_PROCESSOR_UNCAUGHT";
+}
+
+function scheduleBatchRecoveryWake(whenMs = Date.now() + 2000) {
+  const when = Math.max(Date.now() + 1, Number(whenMs || 0));
+  if (chrome.alarms?.create) {
+    try { chrome.alarms.create(BATCH_RECOVERY_ALARM, { when }); return true; } catch (_) {}
+  }
+  setTimeout(() => { void resumeActiveBatchOperations().catch(() => null); }, Math.max(1, when - Date.now()));
+  return false;
+}
+
+function launchBatchProcessor(ownerKind, conversationKey, ownerId, source = "unspecified") {
+  const key = normalizeConversationKey(conversationKey);
+  const kind = String(ownerKind || "");
+  const id = String(ownerId || "");
+  const promise = kind === "manual" ? processManualBatch(key, id) : processAutoBatch(key, id);
+  void Promise.resolve(promise).catch(async (error) => {
+    const code = batchProcessorFailureCode(error);
+    const message = String(error?.message || error || "Batch processor failed before terminalization.").slice(0, 800);
+    await diagnostic("BATCH_PROCESSOR_UNCAUGHT", {
+      owner_kind: kind,
+      owner_id: id,
+      source: String(source || "unspecified").slice(0, 120),
+      code
+    }, { level: "error" });
+    if (kind === "manual") await failManualBatch(key, id, code, message);
+    else await markRunError(key, code, message);
+  }).catch(() => null);
+  return promise;
+}
+
+async function resumeActiveBatchOperations() {
+  const data = await storageGet([KEYS.MANUAL_OPERATIONS, KEYS.AUTO_RUNS]);
+  const manual = data[KEYS.MANUAL_OPERATIONS] && typeof data[KEYS.MANUAL_OPERATIONS] === "object" ? data[KEYS.MANUAL_OPERATIONS] : {};
+  const runs = data[KEYS.AUTO_RUNS] && typeof data[KEYS.AUTO_RUNS] === "object" ? data[KEYS.AUTO_RUNS] : {};
+  let resumedManual = 0;
+  let resumedAuto = 0;
+  for (const [conversationKey, operation] of Object.entries(manual)) {
+    if (!operation || operation.status !== MANUAL_OPERATION_STATUSES.REQUESTING || !operation.batch) continue;
+    launchBatchProcessor("manual", conversationKey, operation.operation_id, "worker_recovery");
+    resumedManual += 1;
+  }
+  for (const [conversationKey, run] of Object.entries(runs)) {
+    if (!run || run.status !== BridgeAutorunModel.RUN_STATUSES.COLLECTING || !run.batch) continue;
+    launchBatchProcessor("autorun", conversationKey, run.run_id, "worker_recovery");
+    resumedAuto += 1;
+  }
+  if (resumedManual || resumedAuto) {
+    await diagnostic("ACTIVE_BATCH_RECOVERY_SCHEDULED", {
+      manual_count: resumedManual,
+      autorun_count: resumedAuto,
+      worker_session_id: WORKER_SESSION_ID
+    });
+  }
+  return { manual_count: resumedManual, autorun_count: resumedAuto };
+}
+
 async function handleAutoMessage(message, sender) {
   const key = normalizeConversationKey(message.conversation_key);
   const runId = String(message.run_id || "");
@@ -4128,7 +4195,8 @@ async function handleAutoMessage(message, sender) {
     message_fingerprint: messageFingerprint
   });
   if (guidanceLimitReached) await diagnostic("GUIDANCE_ROUND_LIMIT", { run_id: runId, guidance_rounds: nextGuidanceRound, external_request_executed: false }, { level: "warning" });
-  void processAutoBatch(key, runId);
+  scheduleBatchRecoveryWake();
+  launchBatchProcessor("autorun", key, runId, "autorun_admission");
   return {
     ok: true,
     accepted: true,
@@ -4768,10 +4836,11 @@ if (chrome.alarms?.onAlarm?.addListener) {
   chrome.alarms.onAlarm.addListener((alarm) => {
     const name = String(alarm?.name || "");
     if (name === WORK_SESSION_REFRESH_WAKE_ALARM) { void resumeWorkSessionRecoveries(); return; }
+    if (name === BATCH_RECOVERY_ALARM) { void resumeActiveBatchOperations().catch(() => null); return; }
     if (name === PROVIDER_QUOTA_ALARM) void resumeProviderQuotaWaits();
   });
 }
-setTimeout(() => { void resumeProviderQuotaWaits(); void resumeWorkSessionRecoveries(); }, 0);
+setTimeout(() => { void resumeProviderQuotaWaits(); void resumeWorkSessionRecoveries(); void resumeActiveBatchOperations().catch(() => null); }, 0);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
