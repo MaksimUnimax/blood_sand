@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - docs/ozon-command-envelope-authority-2026-09-07
+      - repair/ozon-disabled-alias-admission-2026-09-07
   workflow_dispatch:
 
 permissions:
