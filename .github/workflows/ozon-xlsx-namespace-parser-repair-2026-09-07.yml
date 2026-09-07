@@ -1,0 +1,468 @@
+name: Ozon XLSX namespace parser repair 2026-09-07
+
+on:
+  push:
+    branches:
+      - repair/ozon-xlsx-worksheet-namespace-parser-2026-09-07
+    paths:
+      - .github/workflows/ozon-xlsx-namespace-parser-repair-2026-09-07.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-xlsx-namespace-parser-repair-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BASELINE: 1341b167b830e922f95febc75c3f462f94844b59
+  PROJECT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  VALIDATION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
+  PATCHER: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_report_xlsx_namespace_parser_patch_2026-09-07.py
+  REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_xlsx_namespace_parser_regression_2026-09-07.mjs
+  OLD_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_xlsx_relationship_target_regression_2026-09-06.mjs
+  CORE: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/provider_transport_core.js
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prove baseline ancestry and clean runtime delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$BASELINE" HEAD
+          git diff --exit-code "$BASELINE" -- "$DIST"
+          echo 'OZON_XLSX_NAMESPACE_BASELINE_RUNTIME_IDENTITY_PASS'
+
+      - name: Prove new regression fails before patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          node "$REGRESSION" . > pre_fix_regression.log 2>&1
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          echo 'OZON_XLSX_NAMESPACE_PRE_FIX_REPRODUCTION_PASS'
+
+      - name: Apply deterministic production patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$PATCHER" .
+          test "$(git diff --name-only "$BASELINE" -- "$DIST")" = "$CORE"
+          echo 'OZON_XLSX_NAMESPACE_SINGLE_RUNTIME_FILE_DELTA_PASS'
+
+      - name: Dependency and package invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$BASELINE" -- \
+            "$DIST/shared/ozon_provider.js" \
+            "$DIST/shared/ozon_contract.js" \
+            "$DIST/shared/ozon_operation_registry.js" \
+            "$DIST/service_worker.js" \
+            "$DIST/manifest.json"
+          if git diff --name-only "$BASELINE" -- "$PROJECT" | grep -E '(^|/)(package(-lock)?\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml)$'; then
+            echo 'Unexpected dependency manifest change' >&2
+            exit 1
+          fi
+          echo 'OZON_XLSX_NAMESPACE_CALLER_CONTRACT_REGISTRY_WORKER_UNCHANGED_PASS'
+          echo 'OZON_XLSX_NAMESPACE_NO_NEW_PACKAGE_DEPENDENCIES_PASS'
+
+      - name: JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$CORE"
+          echo 'OZON_XLSX_NAMESPACE_JS_SYNTAX_PASS'
+
+      - name: Dedicated namespace and prior relationship regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$REGRESSION" .
+          node "$OLD_REGRESSION" .
+          echo 'OZON_XLSX_NAMESPACE_DEDICATED_REGRESSION_PASS'
+          echo 'OZON_XLSX_RELATIONSHIP_PREVIOUS_REPAIR_REGRESSION_PASS'
+
+      - name: Existing report parser and lifecycle gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$VALIDATION/run_ai_readable_report_parser_gate.mjs" .
+          node "$VALIDATION/run_report_file_lifecycle_gate.mjs" .
+          node "$VALIDATION/run_report_file_session_fail_closed_gate.mjs" .
+          node "$VALIDATION/run_report_file_workflow_gate.mjs" .
+          echo 'OZON_XLSX_NAMESPACE_EXISTING_REPORT_GATE_FAMILY_PASS'
+
+      - name: Full current run gate family
+        shell: bash
+        run: |
+          set -euo pipefail
+          for gate in "$VALIDATION"/run_*.mjs; do
+            echo "=== $gate ==="
+            node "$gate" .
+          done
+          echo 'OZON_XLSX_NAMESPACE_FULL_RUN_GATE_FAMILY_PASS'
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply exact validated patch and commit runtime
+        id: patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$BASELINE" HEAD
+          git diff --exit-code "$BASELINE" -- "$DIST"
+          python "$PATCHER" .
+          test "$(git diff --name-only "$BASELINE" -- "$DIST")" = "$CORE"
+          node --check "$CORE"
+          node "$REGRESSION" .
+          node "$OLD_REGRESSION" .
+          for gate in "$VALIDATION"/run_*.mjs; do node "$gate" . >/dev/null; done
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$CORE"
+          git diff --cached --check
+          git commit -m 'fix(ozon): parse namespaced XLSX worksheet XML safely'
+          PATCH_COMMIT=$(git rev-parse HEAD)
+          PATCH_BLOB=$(git rev-parse "HEAD:$CORE")
+          git push origin HEAD:${GITHUB_REF_NAME}
+          echo "patch_commit=$PATCH_COMMIT" >> "$GITHUB_OUTPUT"
+          echo "patch_blob=$PATCH_BLOB" >> "$GITHUB_OUTPUT"
+          echo 'OZON_XLSX_NAMESPACE_RUNTIME_PATCH_COMMIT_PASS'
+
+      - name: Build, fresh-extract, byte-verify and write closure report
+        id: build
+        shell: bash
+        env:
+          PATCH_COMMIT: ${{ steps.patch.outputs.patch_commit }}
+          PATCH_BLOB: ${{ steps.patch.outputs.patch_blob }}
+        run: |
+          set -euo pipefail
+          SHORT=$(printf '%s' "$PATCH_COMMIT" | cut -c1-8)
+          ARTIFACT_NAME="OZON_BRIDGE_v0.1.19_XLSX_NAMESPACE_PARSER_REPAIR_${SHORT}.zip"
+          BUILDINFO_NAME="OZON_BRIDGE_v0.1.19_XLSX_NAMESPACE_PARSER_REPAIR_${SHORT}_BUILDINFO.txt"
+          REPORT="$PROJECT/research/product/OZON_REPORT_XLSX_NAMESPACE_PARSER_PATCH_AND_DEPENDENCY_CLOSURE_2026-09-07.md"
+          ARTIFACT_DIR="$PROJECT/artifacts"
+          ARTIFACT="$ARTIFACT_DIR/$ARTIFACT_NAME"
+          HASHFILE="$ARTIFACT.sha256.txt"
+          BUILDINFO="$ARTIFACT_DIR/$BUILDINFO_NAME"
+          mkdir -p "$ARTIFACT_DIR"
+          rm -f "$ARTIFACT" "$HASHFILE" "$BUILDINFO"
+
+          git diff --exit-code "$PATCH_COMMIT" -- "$DIST"
+          test "$(git diff --name-only "$BASELINE" "$PATCH_COMMIT" -- "$DIST")" = "$CORE"
+          git diff --exit-code "$BASELINE" "$PATCH_COMMIT" -- \
+            "$DIST/shared/ozon_provider.js" \
+            "$DIST/shared/ozon_contract.js" \
+            "$DIST/shared/ozon_operation_registry.js" \
+            "$DIST/service_worker.js" \
+            "$DIST/manifest.json"
+
+          PREFIX="$DIST/"
+          git ls-tree -r --name-only "$PATCH_COMMIT" -- "$DIST" | sed "s#^$PREFIX##" | sort > /tmp/ozon-xlsx-namespace-members.txt
+          FILE_COUNT=$(wc -l < /tmp/ozon-xlsx-namespace-members.txt | tr -d ' ')
+          test "$FILE_COUNT" -gt 0
+          cd "$GITHUB_WORKSPACE/$DIST"
+          zip -X -q "$GITHUB_WORKSPACE/$ARTIFACT" -@ < /tmp/ozon-xlsx-namespace-members.txt
+          cd "$GITHUB_WORKSPACE"
+
+          ART_SHA=$(sha256sum "$ARTIFACT" | awk '{print $1}')
+          printf '%s  %s\n' "$ART_SHA" "$ARTIFACT_NAME" > "$HASHFILE"
+          DIST_TREE=$(git rev-parse "$PATCH_COMMIT:$DIST")
+
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import os, subprocess
+          dist = os.environ['DIST']
+          patch = os.environ['PATCH_COMMIT']
+          artifact = Path(os.environ['ARTIFACT'])
+          prefix = dist + '/'
+          expected_full = subprocess.check_output(['git','ls-tree','-r','--name-only',patch,'--',dist]).decode().splitlines()
+          expected = sorted(p[len(prefix):] for p in expected_full if p.startswith(prefix))
+          with ZipFile(artifact) as z:
+              actual = sorted(n for n in z.namelist() if not n.endswith('/'))
+              assert actual == expected, (actual, expected)
+              for rel in expected:
+                  canonical = subprocess.check_output(['git','show',f'{patch}:{prefix}{rel}'])
+                  assert z.read(rel) == canonical, rel
+          print('OZON_XLSX_NAMESPACE_ARTIFACT_MEMBER_SET_PASS')
+          print('OZON_XLSX_NAMESPACE_ARTIFACT_CANONICAL_BYTE_COHERENCE_PASS')
+          PY
+
+          rm -rf /tmp/ozon-xlsx-namespace-fresh
+          mkdir -p /tmp/ozon-xlsx-namespace-fresh/$DIST
+          unzip -q "$ARTIFACT" -d /tmp/ozon-xlsx-namespace-fresh/$DIST
+          node "$REGRESSION" /tmp/ozon-xlsx-namespace-fresh
+          node "$OLD_REGRESSION" /tmp/ozon-xlsx-namespace-fresh
+          node "$VALIDATION/run_ai_readable_report_parser_gate.mjs" /tmp/ozon-xlsx-namespace-fresh
+          echo 'OZON_XLSX_NAMESPACE_FRESH_EXTRACT_PASS'
+
+          cat > "$BUILDINFO" <<EOF
+          build_kind=xlsx_namespace_safe_worksheet_parser_root_cause_repair
+          source_branch=${GITHUB_REF_NAME}
+          baseline_commit=$BASELINE
+          runtime_patch_commit=$PATCH_COMMIT
+          runtime_patch_blob=$PATCH_BLOB
+          dist_tree=$DIST_TREE
+          production_files=$FILE_COUNT
+          artifact_name=$ARTIFACT_NAME
+          artifact_sha256=$ART_SHA
+          validation=ubuntu_and_windows_full_run_gate_family_pass
+          pre_fix_regression=reproduced_failure
+          dedicated_namespace_regression=pass
+          prior_xlsx_relationship_regression=pass
+          existing_report_parser_lifecycle_gates=pass
+          fresh_extract_byte_coherence=pass
+          package_dependency_changes=0
+          production_runtime_files_changed=1
+          provider_requests=0
+          live_ozon_acceptance=pending_post_install
+          EOF
+
+          cat > "$REPORT" <<EOF
+          # Ozon Bridge — XLSX namespace-safe worksheet parser patch and dependency closure
+
+          Date: 2026-09-07
+          Status: \`PATCH_IMPLEMENTED__UBUNTU_WINDOWS_FULL_GATES_PASS__FRESH_EXTRACT_PASS__LIVE_OZON_RETEST_PENDING\`
+
+          ## Business purpose
+
+          CAP-24 must include storage/placement in full Ozon cost per sold unit for SKU \`1636048691\`. Two official placement XLSX reports were successfully created, reached ready/success state, downloaded as non-trivial workbooks and exposed worksheet \`Страница #1\`, but Bridge emitted \`columns=[]\`, \`row_count=0\`, \`rows=[]\`. This patch repairs the parser boundary; it does not change CAP-24 arithmetic or invent storage values.
+
+          ## Baseline and exact patch identity
+
+          - branch: \`${GITHUB_REF_NAME}\`
+          - baseline: \`$BASELINE\`
+          - runtime patch commit: \`$PATCH_COMMIT\`
+          - runtime patch blob: \`$PATCH_BLOB\`
+          - changed production runtime files: \`1\`
+          - changed runtime file: \`$CORE\`
+          - new package/runtime dependencies: \`0\`
+          - provider requests during patch validation/build: \`0\`
+
+          ## Root cause
+
+          The worksheet/shared-string parser recognized SpreadsheetML by literal namespace-less element spellings such as \`<row>\`, \`<c>\`, \`<v>\`, \`<t>\`, \`<si>\`, while valid OOXML may serialize the same elements with arbitrary namespace prefixes such as \`<x:row>\` or \`<main:row>\`. Workbook sheet and package Relationship discovery had the same closed-set assumption, including hard-coded \`r:id\` for the worksheet relationship attribute.
+
+          The prior relationship-target repair remains valid and unchanged; it fixed workbook relationship path resolution. This repair fixes the lower XML materialization layer reached after the worksheet entry is successfully found.
+
+          ## Exact production change
+
+          Added two private dependency-free XML helpers:
+
+          - \`reportXmlQualifiedElementPattern(localName, flags)\` — recognizes an element by local name with either no prefix or any legal XML-like prefix and requires closing tags to use the same qualified name; supports paired and self-closing elements.
+          - \`reportXmlAttrLocalName(tag, localName)\` — resolves an attribute by local name regardless of namespace prefix where prefix identity is not semantically fixed.
+
+          Updated only the existing XLSX parser orchestration to use those helpers for:
+
+          - workbook \`sheet\` elements;
+          - package \`Relationship\` elements;
+          - worksheet \`row\` and \`c\` elements;
+          - \`v\` values;
+          - inline/shared \`t\` values;
+          - shared-string \`si\` elements;
+          - arbitrary relationship-attribute prefix for worksheet id;
+          - self-closing cells.
+
+          No retry, network request, credential path, public operation, public export, manifest permission, pagination default or output schema was added.
+
+          # Dependency audit
+
+          ## Internal parser dependencies
+
+          | Dependency | Status | Verification |
+          |---|---|---|
+          | \`reportXmlDecode\` | UNCHANGED / PASS | same entity-decoding contract consumed by new helpers |
+          | \`reportXmlAttr\` | UNCHANGED / PASS | row/cell scalar attributes and Relationship attributes remain exact |
+          | \`reportColumnIndex\` | UNCHANGED / PASS | namespaced regression preserves A/B column reconstruction |
+          | \`reportHeaders\` | UNCHANGED / PASS | existing and new parser gates preserve header materialization |
+          | \`createReportZipReader\` | UNCHANGED / PASS | same ZIP entry lookup/decompression path |
+          | \`reportResolveWorkbookRelationshipTarget\` | UNCHANGED / PASS | prior relationship regression passes in full |
+          | \`reportParseSharedStrings\` | CHANGED / PASS | arbitrary prefixes and shared strings covered |
+          | \`reportParseSheet\` | CHANGED / PASS | rows/cells/inlineStr/numeric/boolean/self-closing cells covered |
+          | \`parseXlsxReportBytes\` | CHANGED / PASS | namespaced workbook sheet + package Relationship + arbitrary relation prefix covered |
+          | \`parseAiReadableReportBytes\` | UNCHANGED / PASS | existing CSV/PDF/XLSX dispatch gates pass |
+          | \`executeTrustedReportFileOnce\` | UNCHANGED / PASS | prior no-retry/post-fetch telemetry regression passes |
+          | public \`ProviderTransportCore\` exports | UNCHANGED / PASS | no public method added/removed/renamed |
+
+          ## Cross-module dependencies
+
+          | Dependency | Status | Verification |
+          |---|---|---|
+          | \`shared/ozon_provider.js\` / opaque \`rpf_*\` refs / TTL / provenance | UNCHANGED / PASS | Git diff identity + report lifecycle/session gates |
+          | \`shared/ozon_contract.js\` | UNCHANGED / PASS | Git diff identity + full run gate family |
+          | \`shared/ozon_operation_registry.js\` | UNCHANGED / PASS | operation/effect/provider definitions untouched |
+          | \`service_worker.js\` | UNCHANGED / PASS | batching/error serialization/request accounting untouched |
+          | query planner / sequential batch delivery | UNCHANGED / PASS | full run gate family |
+          | Seller credentials/headers | UNCHANGED / PASS | report-file transport remains credential-free; prior regression passes |
+          | Performance token/cache/headers | UNCHANGED / PASS | no Performance transport delta; full run gates pass |
+          | personal-data policy | UNCHANGED / PASS | parser change operates only on already-downloaded report bytes |
+          | sheet/offset/limit pagination | UNCHANGED / PASS | existing parser gates and dedicated regression |
+          | content-type/format dispatch | UNCHANGED / PASS | existing parser gates |
+          | report size guard | UNCHANGED / PASS | no size limit change |
+          | manifest/host permissions/CSP | UNCHANGED / PASS | Git diff identity |
+          | npm/package/lock dependencies | UNCHANGED / PASS | package dependency changes = 0 |
+          | extension version | UNCHANGED / PASS | parser-only repair; v0.1.19 packaging retained |
+          | placement create/info operations | UNCHANGED / PASS | repair starts only at XLSX parsing |
+          | finance/analytics/CAP-24 arithmetic | UNCHANGED / PASS | no business number changed before live extraction |
+
+          ## Closed-set / secondary-defect audit
+
+          The audit did not stop at \`row\`. All parser sites that assumed literal XML tag spelling were traced and corrected together: workbook \`sheet\`, package \`Relationship\`, shared \`si/t\`, worksheet \`row/c/v/t\`, arbitrary worksheet relationship attribute prefix, and self-closing cells.
+
+          - unaccounted dependencies: \`0\`
+          - stale literal-prefix assumptions in the XLSX path found by this audit: \`0\` after patch
+          - available-but-unverified dependencies: \`0\`
+          - package dependency changes: \`0\`
+          - live-only dependency: re-reading a fresh real Ozon placement XLSX after installing/reloading this build
+
+          # Validation evidence
+
+          Pre-fix proof:
+
+          - \`OZON_XLSX_NAMESPACE_PRE_FIX_REPRODUCTION_PASS\` — the new regression fails against the unpatched baseline before modification.
+
+          Dedicated post-fix markers:
+
+          - \`OZON_REPORT_XLSX_NAMESPACE_PREFIX_X_PASS\`
+          - \`OZON_REPORT_XLSX_NAMESPACE_PREFIX_ARBITRARY_PASS\`
+          - \`OZON_REPORT_XLSX_WORKBOOK_RELATIONSHIP_PREFIX_ARBITRARY_PASS\`
+          - \`OZON_REPORT_XLSX_SHARED_STRINGS_NAMESPACED_PASS\`
+          - \`OZON_REPORT_XLSX_INLINE_STRING_NAMESPACED_PASS\`
+          - \`OZON_REPORT_XLSX_NUMERIC_VALUE_NAMESPACED_PASS\`
+          - \`OZON_REPORT_XLSX_BOOLEAN_VALUE_NAMESPACED_PASS\`
+          - \`OZON_REPORT_XLSX_SELF_CLOSING_CELL_PASS\`
+          - \`OZON_REPORT_XLSX_NAMESPACE_PARSER_REGRESSION_PASS\`
+
+          Prior repair protection:
+
+          - \`OZON_XLSX_RELATIONSHIP_PREVIOUS_REPAIR_REGRESSION_PASS\`
+
+          Repository gates:
+
+          - Ubuntu full current \`run_*.mjs\` family: PASS
+          - Windows full current \`run_*.mjs\` family: PASS
+          - existing report parser/lifecycle/session/workflow gate family: PASS
+          - JavaScript syntax: PASS
+
+          Artifact gates:
+
+          - \`OZON_XLSX_NAMESPACE_ARTIFACT_MEMBER_SET_PASS\`
+          - \`OZON_XLSX_NAMESPACE_ARTIFACT_CANONICAL_BYTE_COHERENCE_PASS\`
+          - \`OZON_XLSX_NAMESPACE_FRESH_EXTRACT_PASS\`
+
+          ## Build
+
+          - artifact: \`$ARTIFACT_NAME\`
+          - SHA-256: \`$ART_SHA\`
+          - dist tree: \`$DIST_TREE\`
+          - production files: \`$FILE_COUNT\`
+
+          ## Not falsely claimed / live acceptance boundary
+
+          This workflow performs zero Ozon provider/business requests. Therefore it does not claim that the exact live product/supply placement workbooks have already materialized rows after installation.
+
+          Required post-install acceptance remains:
+
+          1. install/reload this exact artifact;
+          2. obtain a fresh valid placement report/ref if the previous opaque ref expired;
+          3. perform one explicit \`report_file_get\` per required report with no hidden retry/fanout;
+          4. require non-empty worksheet materialization where the provider workbook contains rows;
+          5. locate SKU \`1636048691\` and extract the actual storage/placement amount;
+          6. reconcile product-vs-supply report meaning and Finance evidence;
+          7. only then add storage to full Ozon cost per sold unit and close CAP-24.
+
+          Final pre-handoff verdict:
+
+          \`PATCH_AND_DEPENDENCY_GATE_PASS__LIVE_OZON_ACCEPTANCE_PENDING_POST_INSTALL\`
+          EOF
+
+          cat > "$BUILDINFO" <<EOF
+          build_kind=xlsx_namespace_safe_worksheet_parser_root_cause_repair
+          source_branch=${GITHUB_REF_NAME}
+          baseline_commit=$BASELINE
+          runtime_patch_commit=$PATCH_COMMIT
+          runtime_patch_blob=$PATCH_BLOB
+          dist_tree=$DIST_TREE
+          production_files=$FILE_COUNT
+          artifact_name=$ARTIFACT_NAME
+          artifact_sha256=$ART_SHA
+          validation=ubuntu_and_windows_full_run_gate_family_pass
+          pre_fix_regression=reproduced_failure
+          dedicated_namespace_regression=pass
+          prior_xlsx_relationship_regression=pass
+          existing_report_parser_lifecycle_gates=pass
+          fresh_extract_byte_coherence=pass
+          package_dependency_changes=0
+          production_runtime_files_changed=1
+          provider_requests=0
+          live_ozon_acceptance=pending_post_install
+          EOF
+
+          echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+          echo "artifact_sha=$ART_SHA" >> "$GITHUB_OUTPUT"
+          echo "buildinfo_name=$BUILDINFO_NAME" >> "$GITHUB_OUTPUT"
+          echo "report=$REPORT" >> "$GITHUB_OUTPUT"
+        env:
+          ARTIFACT: ${{ github.workspace }}/tooling/llm-api-bridges/ozon-seller/artifacts/placeholder
+
+      - name: Recompute byte verification with actual artifact path
+        shell: bash
+        env:
+          ARTIFACT_NAME: ${{ steps.build.outputs.artifact_name }}
+          PATCH_COMMIT: ${{ steps.patch.outputs.patch_commit }}
+        run: |
+          set -euo pipefail
+          export ARTIFACT="$GITHUB_WORKSPACE/$PROJECT/artifacts/$ARTIFACT_NAME"
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import os, subprocess
+          dist=os.environ['DIST']; patch=os.environ['PATCH_COMMIT']; artifact=Path(os.environ['ARTIFACT']); prefix=dist+'/'
+          full=subprocess.check_output(['git','ls-tree','-r','--name-only',patch,'--',dist]).decode().splitlines()
+          expected=sorted(p[len(prefix):] for p in full if p.startswith(prefix))
+          with ZipFile(artifact) as z:
+              actual=sorted(n for n in z.namelist() if not n.endswith('/'))
+              assert actual == expected
+              for rel in expected:
+                  assert z.read(rel) == subprocess.check_output(['git','show',f'{patch}:{prefix}{rel}']), rel
+          print('OZON_XLSX_NAMESPACE_FINAL_BYTE_VERIFICATION_PASS')
+          PY
+
+      - name: Publish artifact, buildinfo and dependency report together
+        shell: bash
+        env:
+          ARTIFACT_NAME: ${{ steps.build.outputs.artifact_name }}
+          BUILDINFO_NAME: ${{ steps.build.outputs.buildinfo_name }}
+          REPORT: ${{ steps.build.outputs.report }}
+        run: |
+          set -euo pipefail
+          git add "$PROJECT/artifacts/$ARTIFACT_NAME" \
+                  "$PROJECT/artifacts/$ARTIFACT_NAME.sha256.txt" \
+                  "$PROJECT/artifacts/$BUILDINFO_NAME" \
+                  "$REPORT"
+          git diff --cached --check
+          git commit -m 'artifact(ozon): publish XLSX namespace parser repair build'
+          git push origin HEAD:${GITHUB_REF_NAME}
+          echo "PUBLICATION_COMMIT=$(git rev-parse HEAD)"
+          echo 'OZON_XLSX_NAMESPACE_PUBLICATION_PASS'
