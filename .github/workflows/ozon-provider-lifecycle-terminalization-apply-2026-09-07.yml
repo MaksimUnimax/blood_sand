@@ -23,6 +23,12 @@ jobs:
         with:
           ref: ${{ env.BRANCH }}
           fetch-depth: 0
+      - name: Inventory all detached batch processor calls
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -nE 'void[[:space:]]+process(Manual|Auto)Batch' "$DIST/service_worker.js" || true
+          echo DETACHED_BATCH_CALL_INVENTORY_COMPLETE
       - name: Apply deterministic root-cause patch
         shell: bash
         run: |
