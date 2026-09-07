@@ -84,8 +84,10 @@ assert.match(readme, /OZON_COMMAND_ENVELOPE_CONTRACT\.md/);
 assert.match(readme, /Markdown code fences.*not.*command/i);
 assert.match(batch, /OZON_COMMAND_ENVELOPE_CONTRACT\.md/);
 assert.match(batch, /command envelopes/i);
-assert.match(roadmap, /OZON_COMMAND_ENVELOPE_CONTRACT\.md/);
-assert.match(guidance, /OZON_COMMAND_ENVELOPE_CONTRACT\.md/);
+assert.match(roadmap, /EXPLICIT_BATCH_FIRST_FOR_INDEPENDENT_READS/);
+assert.match(roadmap, /multiple separate explicit `OZON_API_V1` objects in one assistant response/i);
+assert.match(guidance, /discoverCommands\(\).*scans for `OZON_API_V1`/i);
+assert.match(guidance, /worker normally receives only the selected code-block text/i);
 
 const forbiddenActiveRules = [
   /one command\s*=\s*one code block/i,
