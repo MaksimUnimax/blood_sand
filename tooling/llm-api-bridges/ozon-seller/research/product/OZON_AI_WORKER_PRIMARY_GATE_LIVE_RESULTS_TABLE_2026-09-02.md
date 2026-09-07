@@ -1,70 +1,106 @@
 # Ozon AI Worker — Primary Gate Live Results Table
 
-Date: 2026-09-02
-Branch: `research/ozon-product-demand-2026-09-02`
-Status: AUTHORITATIVE LIVE RESULT TABLE — PRODUCT GATE FROZEN
-Scope: Ozon Standard / no Premium for current baseline; entitlement/coverage boundaries are recorded explicitly.
-Rule: `NO_SKIP_ON_FAILURE`
+Updated: 2026-09-06
+Branch: `repair/ozon-date-contract-2026-09-04`
+Status: `AUTHORITATIVE_TERMINAL_SOL_RESULTS__44_OF_44_ROWS_COMPLETE`
+Scope: Ozon Standard / no Premium baseline, with entitlement/coverage boundaries recorded explicitly.
+Rule: `NO_SKIP_ON_FAILURE`.
 Gate policy: expandable only for materially distinct commercial capabilities.
 
-| # | ID | Business / capability question | Result | Reliability | Operator steering | Runs | Key finding / next state |
-|---:|---|---|---|---|---|---:|---|
-| 1 | STD-01 | Дай продажи за вчера: общая выручка и количество заказанных единиц. | PASS — 27,200 RUB / 16 units | TRANSIENT_429_THEN_RECOVERED | YES | 4 incl. roles diagnostic | Recovery-guidance gap; same analytics command later 200. |
-| 2 | STD-02 | Продажи за 14 дней по дням; 3 лучших и 3 худших дня. | PASS — 574,564 RUB / 341 units | FIRST_ATTEMPT_429_THEN_RECOVERED | NO | 2 | Same 14-day payload succeeded; range-too-heavy hypothesis rejected. |
-| 3 | STD-03 | Топ-20 товаров за 7 дней по выручке. | PASS | PASS_FIRST_ATTEMPT | NO | 1 | Top SKU `1636048691` Печать Велеса = 45,288 RUB / 27 units. |
-| 4 | STD-04 | Сравни вчера и позавчера: выручка, штуки, %. | PASS | PASS_FIRST_ATTEMPT | NO | 1 | Revenue −45.2%; units −48.4%. |
-| 5 | STD-05 | Почему вчера продажи резко просели? | PASS_WITH_LIMITS | MIXED_ROOT_CAUSED | NO | 11 | Strongest explanation: normal demand/day-of-week variance; broad ads/listing/stock failure rejected; search target dates blocked by freshness window. Multiple Bridge hardening gaps recorded. |
-| 6 | STD-06 | Что сегодня в кабинете требует внимания в первую очередь? | PASS | PASS_ALL_PROVIDER_READS | NO | 6 | #1 stale `IN_TRANSIT` supply `122149074` with 54 units; #2 critical slow-turnover inventory; #3 four fresh DATA_FILLING orders due 2026-09-05. Ratings healthy. |
-| 7 | STD-07 | Какие товары скоро закончатся, какие лежат слишком долго, что пополнять? | PASS | PASS_ALL_STD07_PROVIDER_READS | NO | 3 | Total-stock procurement emergency rejected: selected low-FBO candidates retain ~39–55 FBO+FBS units. Main action is FBO allocation. Fresh 2026-09-05 supplies already cover most top candidates. Highest uncovered next-FBO candidates: Водолей, Овен, Стрелец, Лев (Античность), Близнецы (Символы). |
-| 8 | STD-08 | Текущие остатки по складам, склады от большего к меньшему. | PASS | PASS_PROVIDER_READS_WITH_REPRODUCED_PAGINATION_GUIDANCE_GAP | NO | 3 | 247 rows / 33 Ozon warehouses. Free-to-sell 628, reserved14, promised54. Pagination guidance gap reproduced. |
-| 9 | STD-09 | Продажи за вчера по складам. | PASS — exact FBO+FBS warehouse reconstruction = 16 units / 27,200 RUB | PASS_WITH_EXPECTED_LOCAL_PRIVACY_GATE_AND_EXPLICIT_OPERATOR_RETRY | YES_PRIVACY_SETTING_TOGGLE | 3 | FBO12/20,400 + FBS4/6,800 = exact STD-01 total. Ordered metrics include postings that are currently cancelled. |
-| 10 | STD-10 | Авария/пожар на складе Ozon: был ли там мой товар и что контролировать? | REOPENED_FROZEN_AFTER_RUN11 | PASS_FIRST_12_LIVE_PROVIDER_READS_PLUS_271_READ_26_OF_26_E2E_BROWSER_REPAIR_CERTIFIED | YES_OPERATOR_FREEZE_BEFORE_REPORT_INFO | 12 live + repair certification | Run11 successfully created the August placement report and returned code `REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`. **Operator froze STD-10 before `report_info`.** The code is preserved and must not be touched until the separate `OZON_AI_WORKER_REPAIRED_26_READS_LIVE_GATE_2026-09-03.md` is fully closed. On later resume, first command remains one explicit `report_info` for the preserved code. |
-| 11 | STD-11 | Исчез товар с FBO без продаж: куда мог деться? | PASS — free-FBO disappearance explained by exact active-order reservation | PASS_FIRST_PROVIDER_READ | NO | 1 | SKU `1720141903`: free FBO 1→0 while present stayed1 and reserved0→1; exact active posting explains reservation rather than physical loss. |
-| 12 | STD-12 | Какие поставки сейчас активны и что с каждой происходит? | FROZEN | PENDING | OPERATOR_FREEZE | 0 | Do not execute while repaired-26 live gate is active. |
-| 13 | STD-13 | Товар привезён, но не принят/не появился в продаже: где застрял? | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 14 | STD-14 | Товар и остаток есть, но покупателю не показывается/доставка недоступна. | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 15 | STD-15 | Какие товары/склады имеют ограничения доставки? | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 16 | STD-16 | Рекламные расходы 7 дней и самые затратные кампании. | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 17 | STD-17 | Какие кампании/товары съедают бюджет и где слабый результат? | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 18 | STD-18 | Какие рекламируемые товары заканчиваются/нет на нужных складах? | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 19 | STD-19 | На какие рекламируемые товары трачу деньги при плохой/невидимой карточке? | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 20 | STD-20 | Почему вырос ДРР? Реклама × продажи. | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 21 | CAP-01 | Catalog / product inventory awareness | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 22 | CAP-02 | Product visibility awareness | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 23 | CAP-03 | Content/card quality awareness | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 24 | CAP-04 | Current stock by warehouse awareness | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 25 | CAP-05 | Stock turnover / stock analytics awareness | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 26 | CAP-06 | Warehouses / clusters / logistics geography | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 27 | CAP-07 | Supply-order list/status | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 28 | CAP-08 | Supply details / acceptance drill-down | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 29 | CAP-09 | FBO postings/orders | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 30 | CAP-10 | Prices / price details | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 31 | CAP-11 | Promotions/actions | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 32 | CAP-12 | Returns/cancellations | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 33 | CAP-13 | Finance balance/accruals | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 34 | CAP-14 | Finance transactions/reconciliation | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 35 | CAP-15 | Ratings / FBS error index | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 36 | CAP-16 | Reviews/questions aggregate | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 37 | CAP-17 | Advertising campaigns | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 38 | CAP-18 | Advertising statistics | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 39 | CAP-19 | Cross-surface orchestration | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 40 | CAP-20 | Bridge + external-world investigation | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 41 | CAP-21 | SEO / semantic core of own card | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 42 | CAP-22 | Competitor SEO / positioning benchmark | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
-| 43 | CAP-23 | Category/search position & coverage boundary | FROZEN | PENDING | OPERATOR_FREEZE | 0 | — |
+This is the current terminal Sol result ledger. It supersedes the historical state in which STD-10 was frozen and later rows were marked `FROZEN` / `PENDING`.
 
-## Active priority gate
+Detailed run evidence and row-level final materializations remain under:
+`research/product/live-runs/`
 
-`OZON_AI_WORKER_REPAIRED_26_READS_LIVE_GATE_2026-09-03.md`
+**Important:** `COMPLETE` does not mean first-attempt clean. Final classifications below deliberately preserve provider limits, entitlement boundaries, recovery incidents, Bridge guidance/capability gaps, operator interventions, and AI-orchestration mistakes where they were observed.
 
-Current repaired-READ live progress: **0 / 26 fully closed**.
+## Terminal 44-row primary gate
 
-`NEW-06 report_placement_by_products_create` has partial external evidence from STD-10 Run11, but that forensic report code is frozen and cannot be consumed by the new-command gate. A separate generic end-to-end test is required before NEW-06 can be marked PASS.
+| # | ID | Business / capability question | Final Sol classification | Reliability / boundary summary | Final evidence authority |
+|---:|---|---|---|---|---|
+| 1 | STD-01 | Daily sales: revenue + ordered units | `PASS` | transient analytics 429 then recovered; operator diagnostic steering occurred | preserved STD-01 live evidence in `live-runs/` |
+| 2 | STD-02 | Sales by day; 3 best and 3 worst days | `PASS` | first attempt 429 then exact repeat recovered | preserved STD-02 live evidence in `live-runs/` |
+| 3 | STD-03 | Top 20 products by revenue | `PASS` | first-attempt provider success | preserved STD-03 live evidence in `live-runs/` |
+| 4 | STD-04 | Compare two periods: revenue, units, % | `PASS` | first-attempt provider success | preserved STD-04 live evidence in `live-runs/` |
+| 5 | STD-05 | Explain a sharp sales drop | `PASS_WITH_LIMITS` | multi-factor diagnosis; search freshness/queryability limit and multiple guidance/semantic lessons preserved | `live-runs/STD_05_*` evidence |
+| 6 | STD-06 | What needs attention first today? | `PASS` | multi-surface manager audit completed; repaired finance dependency closed | `live-runs/STD_06_*` evidence |
+| 7 | STD-07 | What will run out, what is slow, what to replenish? | `PASS` | safe three-surface replenishment logic; no one-stock-surface shortcut | `live-runs/STD_07_POST_REPAIR_FINAL_2026-09-05.md` |
+| 8 | STD-08 | Current stock by warehouse | `PASS` | provider reads completed; pagination-guidance issue preserved | `live-runs/STD_08_POST_REPAIR_FINAL_2026-09-05.md` |
+| 9 | STD-09 | Yesterday's sales by warehouse | `PASS` | FBO+FBS reconciliation complete; explicit operator privacy-setting intervention recorded | `live-runs/STD_09_POST_REPAIR_FBO_FBS_WAREHOUSE_SALES_2026-09-05.md` |
+| 10 | STD-10 | Warehouse incident/fire: was seller stock there? | `PASS_WITH_EXPLICIT_INCIDENT_CAUSALITY_AND_HISTORICAL_SNAPSHOT_LIMITS` | empty warehouse-filter provider 400 contract-drift signal preserved; exact incident exposure proven without claiming causality | `live-runs/STD_10_POST_REPAIR_FINAL_2026-09-05.md` |
+| 11 | STD-11 | FBO item disappeared without sales | `PASS` | exact reservation evidence explained the disappearance | `live-runs/STD_11_POST_REPAIR_FINAL_2026-09-05.md` |
+| 12 | STD-12 | Which supplies are active and what is happening with each? | `PASS` | three explicit provider reads; complete active set with terminal `last_id` | `live-runs/STD_12_POST_REPAIR_FINAL_2026-09-05.md` |
+| 13 | STD-13 | Supply arrived but was not accepted / not sellable | `PASS_WITH_EXPLICIT_PROVENANCE_LIMIT` | one transient FBO 429 recovered explicitly; current stock not falsely attributed to a specific supply | `live-runs/STD_13_POST_REPAIR_FINAL_2026-09-05.md` |
+| 14 | STD-14 | Item has stock but is invisible / delivery unavailable | `PASS_NO_CURRENT_CASE_FOUND` | no current account case; `product_visibility_info {}` local/provider contract gap recorded | `live-runs/STD_14_POST_REPAIR_FINAL_2026-09-05.md` |
+| 15 | STD-15 | Products/warehouses with delivery restrictions | `PASS_CURRENT_ZERO` | fresh dedicated diagnostic returned no affected warehouses; duplicate provider call avoided | `live-runs/STD_15_POST_REPAIR_FINAL_2026-09-05.md` |
+| 16 | STD-16 | Ad spend for 7 days; most expensive campaigns | `PASS` | first-attempt Performance success; exact spend aggregation | `live-runs/STD_16_POST_REPAIR_FINAL_AD_SPEND_2026-09-05.md` |
+| 17 | STD-17 | Campaigns/products wasting budget | `PASS` | CPC waste identified; CPO spend not falsely split per SKU | `live-runs/STD_17_POST_REPAIR_FINAL_2026-09-05.md` |
+| 18 | STD-18 | Paid ads on items running out / missing on needed warehouses | `PASS` | zero/low FBO separated from total cross-channel stockout | `live-runs/STD_18_POST_REPAIR_FINAL_2026-09-05.md` |
+| 19 | STD-19 | Paid ads on weak/invisible cards | `PASS_WITH_TWO_ADVERTISED_FAILED_UPDATE_WARNINGS_AND_UNIFORM_RICH_CONTENT_GAP` | current invisibility/delivery restriction was not fabricated; content-rating gap retained | `live-runs/STD_19_POST_REPAIR_FINAL_2026-09-05.md` |
+| 20 | STD-20 | Why did DRR rise? Ads × sales | `PASS_WITH_RECORDED_TRANSIENT_ANALYTICS_429_RECOVERY` | claimed DRR increase rejected by evidence; identical analytics request recovered after provider 429 | `live-runs/STD_20_POST_REPAIR_FINAL_2026-09-05.md` |
+| 21 | CAP-01 | Catalog / product inventory awareness | `PASS` | current catalog discovered without operator enumeration | `live-runs/CAP_01_POST_REPAIR_FINAL_2026-09-05.md` |
+| 22 | CAP-02 | Product visibility awareness | `PASS` | dedicated visibility surface used for full current catalog | `live-runs/CAP_02_POST_REPAIR_FINAL_2026-09-05.md` |
+| 23 | CAP-03 | Content/card quality awareness | `PASS` | dedicated content-rating surface; deterministic worst-card findings | `live-runs/CAP_03_POST_REPAIR_FINAL_2026-09-05.md` |
+| 24 | CAP-04 | Current stock by warehouse awareness | `PASS` | FBO/FBS ID and stock-surface semantics preserved; known transport normalization retained | `live-runs/CAP_04_POST_REPAIR_FINAL_2026-09-05.md` |
+| 25 | CAP-05 | Stock turnover / stock analytics awareness | `PASS_WITH_PROVIDER_OMISSION_LIMIT` | dedicated turnover surface omitted four SKUs; omission not interpreted as zero | `live-runs/CAP_05_POST_REPAIR_FINAL_2026-09-05.md` |
+| 26 | CAP-06 | Warehouses / clusters / logistics geography | `PASS` | FBO fulfillment warehouse IDs kept distinct from seller warehouse IDs | `live-runs/CAP_06_POST_REPAIR_FINAL_2026-09-05.md` |
+| 27 | CAP-07 | Supply-order list/status | `PASS` | current active supply set discovered and lifecycle progression preserved | `live-runs/CAP_07_POST_REPAIR_FINAL_2026-09-05.md` |
+| 28 | CAP-08 | Supply details / acceptance drill-down | `PASS` | nested supply state distinguished from broader parent-order state | `live-runs/CAP_08_POST_REPAIR_FINAL_2026-09-05.md` |
+| 29 | CAP-09 | FBO postings/orders | `PASS` | dedicated posting evidence; explicit analytics_data enrichment when warehouse fields were required | `live-runs/CAP_09_POST_REPAIR_FINAL_2026-09-05.md` |
+| 30 | CAP-10 | Prices / price details | `PASS_WITH_ENTITLEMENT_BOUNDARY` | Premium-Pro details blocked before business request; all-account price surface used instead | `live-runs/CAP_10_POST_REPAIR_FINAL_2026-09-05.md` |
+| 31 | CAP-11 | Promotions/actions | `PASS` | dedicated action + product participation surfaces, not embedded price metadata alone | `live-runs/CAP_11_POST_REPAIR_FINAL_2026-09-05.md` |
+| 32 | CAP-12 | Returns/cancellations | `PASS` | explicit two-page continuation; actual cancellation rows kept separate from reason dictionary | `live-runs/CAP_12_POST_REPAIR_FINAL_2026-09-05.md` |
+| 33 | CAP-13 | Finance balance/accruals | `PASS` | balance identity reconciled; sales flow not mislabeled as payout/balance | `live-runs/CAP_13_POST_REPAIR_FINAL_2026-09-05.md` |
+| 34 | CAP-14 | Finance transactions/reconciliation | `PASS_WITH_TRANSIENT_PROVIDER_RATE_LIMIT_RECOVERY` | finance type dictionary returned two 429s before explicit recovery; no hidden retry | `live-runs/CAP_14_POST_REPAIR_FINAL_2026-09-06.md` |
+| 35 | CAP-15 | Ratings / FBS error index | `PASS` | aggregate/current index and historical affected postings separated correctly | `live-runs/CAP_15_POST_REPAIR_FINAL_2026-09-06.md` |
+| 36 | CAP-16 | Reviews/questions aggregate | `PASS_WITH_ENTITLEMENT_BOUNDARIES_AND_REVIEW_ENTITLEMENT_GUIDANCE_GAP` | review 403 not interpreted as zero; roles/entitlement evidence retained | `live-runs/CAP_16_POST_REPAIR_FINAL_2026-09-06.md` |
+| 37 | CAP-17 | Advertising campaigns | `PASS` | 1128 campaign inventory completed with explicit pagination; no hidden autopagination | `live-runs/CAP_17_POST_REPAIR_FINAL_2026-09-06.md` |
+| 38 | CAP-18 | Advertising statistics | `PASS_WITH_PRODUCT_LEVEL_COVERAGE_AND_GUIDANCE_GAP` | Performance metrics completed; product-level/guidance boundary retained | `live-runs/CAP_18_POST_REPAIR_FINAL_2026-09-06.md` |
+| 39 | CAP-19 | Cross-surface orchestration | `PASS_WITH_STOCK_PROVIDER_OMISSION_LIMIT` | ad-to-stock join completed; absent stock row not converted to zero | `live-runs/CAP_19_POST_REPAIR_FINAL_2026-09-06.md` |
+| 40 | CAP-20 | Bridge + external-world investigation | `PASS_WITH_TRANSIENT_PROVIDER_RATE_LIMIT_RECOVERY` | seller/private evidence separated from public context; one transient analytics 429 recovered | `live-runs/CAP_20_POST_REPAIR_FINAL_2026-09-06.md` |
+| 41 | CAP-21 | SEO / semantic core of own card | `PASS_WITH_RECOVERY_AND_DATA_READINESS_GUIDANCE_GAP` | factual own-card/query evidence; no invented market queries/rank | `live-runs/CAP_21_POST_REPAIR_FINAL_2026-09-06.md` |
+| 42 | CAP-22 | Competitor SEO / positioning benchmark | `PARTIAL_WITH_COMPETITOR_DISCOVERY_COVERAGE_BOUNDARY` | no defensibly linked target-specific competitor card set; partial kept partial | `live-runs/CAP_22_POST_REPAIR_FINAL_2026-09-06.md` |
+| 43 | CAP-23 | Category/search position & coverage boundary | `PASS_WITH_SEARCH_POSITION_AND_CATEGORY_COVERAGE_BOUNDARIES` | `position=null` not converted to zero; Premium/Bridge category-position limits explicit | `live-runs/CAP_23_POST_REPAIR_FINAL_2026-09-06.md` |
+| 44 | CAP-24 | SKU monthly unit economics | `PASS_WITH_ATTRIBUTION_COVERAGE_BOUNDARY` | exact finance core complete; historical ad membership and placement amount remain explicit coverage boundaries | `live-runs/CAP_24_POST_REPAIR_FINAL_2026-09-06.md` |
+
+## Gate completion
+
+Terminal business/capability classification coverage:
+
+- STD rows complete: **20 / 20**
+- CAP rows complete: **24 / 24**
+- total primary gate complete: **44 / 44**
+- remaining `PENDING` primary-gate rows: **0**
+- remaining `FROZEN` primary-gate rows: **0**
+
+This is a **Sol evidence-completion gate**, not a declaration that Bridge hardening is complete.
+
+## Cross-row reliability state
+
+Observed outcomes that require consolidated treatment before Alice include, without limitation:
+
+- transient provider rate-limit behavior and deterministic recovery guidance;
+- parameter/type repair guidance and local/provider contract drift;
+- pagination and explicit continuation semantics;
+- entitlement vs permission vs data-readiness/queryability distinctions;
+- privacy-safe aggregation / opaque file provenance;
+- stock-surface semantic boundaries and provider omissions;
+- explicit batching for independent known-upfront reads vs dependent stepwise orchestration;
+- provider-role endpoint vs Bridge-registry capability gaps;
+- Performance historical SKU attribution limits;
+- report/XLSX parser reliability and worksheet observability;
+- AI-orchestration mistakes observed during CAP-24, which must be separated from Bridge/provider failures.
+
+## Historical freeze supersession
+
+The prior checkpoint:
+
+`PRIMARY_GATE_43_FROZEN_AFTER_STD10_RUN11_REPAIRED_26_READS_LIVE_GATE_ACTIVE...`
+
+is historical and superseded.
+
+The current restart point is not STD-10, STD-12, CAP-01, CAP-21, CAP-24, or another business test.
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_FROZEN_AFTER_STD10_RUN11_REPAIRED_26_READS_LIVE_GATE_ACTIVE_0_OF_26_NEW01_NEXT`
-
-## Detailed evidence
-
-Detailed live-run evidence is stored under `research/product/live-runs/`. Product-demand testing resumes only after the repaired-26 live gate is fully closed.
+`PRIMARY_GATE_44_SOL_TERMINAL_RESULTS_COMPLETE__NEXT_CONSOLIDATED_GAP_LEDGER_AND_HARDENING_DESIGN`
