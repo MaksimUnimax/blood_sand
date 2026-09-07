@@ -130,7 +130,7 @@ Tier A enrichment completion: **PASS**.
 
 ## 06.4 — Buyer/customer evidence + seller performance linkage
 
-Status: **[~] ACTIVE**
+Status: **[~] ACTIVE — REVIEWS BLOCKED; QUESTIONS NEXT**
 
 Sequence:
 1. collect current direct Ozon buyer evidence for the priority SKU set through accepted read-only review/question operations when access permits;
@@ -166,6 +166,35 @@ Privacy/access boundary:
 
 No hidden pagination/fanout is allowed.
 
+### Direct review access attempt — 2026-09-07
+
+One exact `review_list` request was executed for all five Tier A SKUs:
+- request `5649ec00-ecdb-437c-951d-f9edaddf9244`;
+- external request executed: `true`;
+- HTTP `403`;
+- provider category `auth_or_permission`;
+- automatic retry: `false`;
+- buyer review text returned: **0 because the request was denied**, not because review count was proven zero.
+
+Classification:
+
+`CURRENT_DIRECT_OZON_REVIEW_READ = BLOCKED_BY_PROVIDER_PERMISSION`
+
+This does not prove which exact entitlement/permission is absent. Do not relabel it as a proven missing Premium Pro subscription.
+
+Artifacts:
+- `marketing/data/raw/marketplace/ozon/20260907__ozon__review-list__tier-a5__provider-403.md`
+- `marketing/research/R4_STAGE06_BUYER_CHANNEL_ACCESS_RESULT_2026-09-07.md`
+
+The same `review_list` request must not be retried without a permission-state change.
+
+Existing analog/category customer evidence remains valid as a separate evidence class:
+- `marketing/research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`
+
+Preserved historical seller performance is already sufficient for its current Stage-06 role and must not be rerun merely to reconstruct the same 90-day baseline.
+
+Next direct buyer-text check: `question_list`. Its request contract has no SKU filter, so any returned question→product linkage must come only from identifiers/fields actually returned by Ozon.
+
 ---
 
 ## 06.5 — Cross-platform / WB status
@@ -184,4 +213,4 @@ Close only when current Ozon baseline, opportunity mapping, technical-fact gaps,
 
 # Current continuation point
 
-**06.4 ACTIVE. Run one direct `review_list` request for the five Tier A SKUs, newest first, up to 100 reviews. Save and normalize that result before any review-info, questions, Tier B/C or new performance calls.**
+**06.4 ACTIVE. `review_list` is blocked by the provider for the current credentials. Run exactly one newest-first `question_list` request with `limit=100`; save the direct result before any additional buyer-text, Tier B/C or performance expansion.**
