@@ -1,0 +1,29 @@
+name: Ozon disabled alias admission regression 2026-09-07
+
+on:
+  push:
+    branches:
+      - repair/ozon-disabled-alias-admission-2026-09-07
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Disabled alias admission gate
+        run: |
+          set -euo pipefail
+          node tooling/llm-api-bridges/ozon-seller/validation/disabled-alias-admission-v1/run_disabled_alias_admission_gate.mjs .
+
+  windows-regression:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Disabled alias admission gate
+        shell: pwsh
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/disabled-alias-admission-v1/run_disabled_alias_admission_gate.mjs .
