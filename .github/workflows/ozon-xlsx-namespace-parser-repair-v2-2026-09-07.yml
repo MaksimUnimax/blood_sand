@@ -1,0 +1,80 @@
+name: Ozon XLSX namespace parser repair v2 2026-09-07
+
+on:
+  push:
+    branches:
+      - repair/ozon-xlsx-worksheet-namespace-parser-2026-09-07
+    paths:
+      - .github/workflows/ozon-xlsx-namespace-parser-repair-v2-2026-09-07.yml
+
+permissions:
+  contents: write
+
+env:
+  BASELINE: 1341b167b830e922f95febc75c3f462f94844b59
+  PROJECT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  VALIDATION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
+  CORE: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/provider_transport_core.js
+  PATCHER: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_report_xlsx_namespace_parser_patch_2026-09-07.py
+  REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_xlsx_namespace_parser_regression_2026-09-07.mjs
+  OLD_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_xlsx_relationship_target_regression_2026-09-06.mjs
+  PUBLISHER: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/publish_report_xlsx_namespace_parser_repair_2026-09-07.py
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Pre-fix proof, patch, dependency gate and full regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$BASELINE" HEAD
+          cp "$CORE" current_core.js
+          git show "$BASELINE:$CORE" > "$CORE"
+          set +e
+          node "$REGRESSION" . > pre_fix.log 2>&1
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          echo 'OZON_XLSX_NAMESPACE_PRE_FIX_REPRODUCTION_PASS'
+          mv current_core.js "$CORE"
+          python "$PATCHER" .
+          test "$(git diff --name-only "$BASELINE" -- "$DIST")" = "$CORE"
+          git diff --exit-code "$BASELINE" -- \
+            "$DIST/shared/ozon_provider.js" \
+            "$DIST/shared/ozon_contract.js" \
+            "$DIST/shared/ozon_operation_registry.js" \
+            "$DIST/service_worker.js" \
+            "$DIST/manifest.json"
+          if git diff --name-only "$BASELINE" -- "$PROJECT" | grep -E '(^|/)(package(-lock)?\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml)$'; then exit 1; fi
+          node --check "$CORE"
+          node "$REGRESSION" .
+          node "$OLD_REGRESSION" .
+          node "$VALIDATION/run_ai_readable_report_parser_gate.mjs" .
+          node "$VALIDATION/run_report_file_lifecycle_gate.mjs" .
+          node "$VALIDATION/run_report_file_session_fail_closed_gate.mjs" .
+          node "$VALIDATION/run_report_file_workflow_gate.mjs" .
+          for gate in "$VALIDATION"/run_*.mjs; do node "$gate" .; done
+          echo 'OZON_XLSX_NAMESPACE_NO_NEW_PACKAGE_DEPENDENCIES_PASS'
+          echo 'OZON_XLSX_NAMESPACE_FULL_RUN_GATE_FAMILY_PASS'
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish exact patch, build, byte verification and dependency report
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$PUBLISHER" .
