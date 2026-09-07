@@ -1,6 +1,6 @@
 # 06 — Buyer evidence + полный паспорт SKU
 
-Статус: **[~] IN PROGRESS — 06.1/06.2/06.3 COMPLETE; Tier A COMPLETE; 06.4 CONTRAST ENRICHMENT ACTIVE**  
+Статус: **[~] IN PROGRESS — 06.1/06.2/06.3/06.4 COMPLETE; 06.5 ACTIVE**  
 Дата старта: **2026-08-26**  
 Последнее продолжение: **2026-09-07**
 
@@ -119,7 +119,7 @@ Canonical artifacts:
 
 ## 06.4 — Buyer/customer evidence + seller performance linkage
 
-Status: **[~] ACTIVE — BUYER/PERFORMANCE LINKAGE COMPLETE; TARGETED CONTRAST ENRICHMENT NEXT**
+Status: **[x] COMPLETE**
 
 ### Direct Ozon buyer text
 
@@ -143,68 +143,74 @@ Combined:
 
 Do not infer zero reviews/questions.
 
-Canonical access artifacts:
-- `marketing/data/raw/marketplace/ozon/20260907__ozon__review-list__tier-a5__provider-403.md`
-- `marketing/data/raw/marketplace/ozon/20260907__ozon__question-list__subscription-block.md`
-- `marketing/research/R4_STAGE06_BUYER_CHANNEL_ACCESS_RESULT_2026-09-07.md`
+Customer evidence:
+- analog/category evidence preserved in `marketing/research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`;
+- normalized in `marketing/data/normalized/customer/customer_evidence.csv`;
+- remains category/analog evidence and is not silently assigned to owned SKUs.
 
-### Customer evidence
+Seller performance linkage:
+- canonical normalized file: `marketing/data/normalized/products/product_marketplace_metrics.csv`;
+- Tier A five products: **623 ordered units / 1,057,274 RUB revenue** over preserved 2026-05-13..2026-08-10 90d window;
+- approximately **41.0%** of the 1519-unit current-identity baseline;
+- sales/revenue do not prove buyer motive or margin.
 
-Existing analog/category evidence remains separate from owned SKU evidence and is now normalized:
-- source: `marketing/research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`;
-- normalized: `marketing/data/normalized/customer/customer_evidence.csv`.
+### Targeted contrast enrichment
 
-Retained topics include appearance in car, size/scale, material/finish, cord/attachment, heat/sun resistance, packaging, gift motive and review trust.
+Completed contrast set:
+- `1602715556` — Бусидо / Путь Воина;
+- `1720148880` — zodiac classic Овен;
+- `2186857668` — zodiac antique Лев;
+- `2271210394` — zodiac symbols Близнецы.
 
-### Seller performance linkage
+Product info:
+- request `2f3c8b11-1539-4cc1-96fc-8a3647d67ea6`;
+- HTTP 200;
+- 4/4 returned.
 
-Preserved 90d seller performance (2026-05-13..2026-08-10) is normalized in:
-- `marketing/data/normalized/products/product_marketplace_metrics.csv`.
+Attributes:
+- request `b6da99cf-491d-4570-ae30-a5d282ee3345`;
+- HTTP 200;
+- total 4;
+- `last_id=""` terminal.
 
-Tier A five products:
-- **623 ordered units**;
-- **1,057,274 RUB revenue**;
-- approximately **41.0%** of the preserved 1519-unit current-identity baseline.
+Contrast result:
+- all four are active automotive rear-view-mirror pendant listings under the same Ozon description category/type as Tier A;
+- all four share the same core seller-declared physical pattern: wooden 45 mm medallion/talisman, 12 mm acrylic beads, total length 36 cm;
+- Busido top-level Ozon observation: 200 g;
+- sampled zodiac rows: 300 g;
+- all sampled zodiac rows are real current automotive product lines; this strengthens the assortment-side OU09 reopen condition without overturning the R3 broad-Search contamination decision.
 
-These facts prove historical commercial activity, not buyer motivation or margin.
+Canonical contrast artifacts:
+- `marketing/data/raw/marketplace/ozon/20260907__ozon__seller-product-attributes__contrast4.md`
+- `marketing/data/normalized/products/20260907__ozon__contrast4__physical-content-passport.csv`
+- `marketing/research/R4_STAGE06_CONTRAST_ENRICHMENT_FINAL_2026-09-07.md`
 
-Canonical synthesis:
-- `marketing/research/R4_STAGE06_BUYER_PERFORMANCE_LINKAGE_2026-09-07.md`.
-
-### Targeted contrast enrichment decision
-
-Authorized because concrete decision gaps remain:
-
-Tier B automotive contrast:
-- `1602715556` — Бусидо / Путь Воина — 19 historical 90d units.
-
-Tier C zodiac cross-family representatives:
-- `1720148880` — classic Овен — 32 units;
-- `2186857668` — antique Лев — 26 units;
-- `2271210394` — symbols Близнецы — 30 units.
-
-Purpose:
-- test whether Tier A physical/listing construction is generic across the automotive chassis or symbol-family specific;
-- test whether the 37-current-SKU zodiac assortment is physically/content-wise one coherent family across three seller research variants.
-
-Exact next call: one `seller_product_info_list` for these four SKUs. Attributes only after inspecting that result.
+06.4 completion: **PASS**. No further Ozon Tier B/C enrichment is justified by current Stage-06 decision gaps.
 
 ---
 
-## 06.5 — Cross-platform / WB status
+## 06.5 — Cross-platform / Wildberries status
 
-Status: **[ ] WAIT**
+Status: **[~] ACTIVE**
 
-WB seller-side evidence must be measured through an accepted channel or explicitly marked `BLOCKED/NOT_AVAILABLE`. Public snippets do not substitute.
+Required decision:
+- determine whether a current accepted Wildberries seller-side read channel exists in the repository/runtime;
+- if yes, measure only the seller-side facts needed to relate current WB assortment/performance to the Stage-06 passport;
+- if no, classify WB as `BLOCKED/NOT_AVAILABLE` with exact evidence;
+- public Search snippets do not substitute for seller-side WB evidence.
+
+Do not start bridge engineering as Stage-06 research work.
+
+---
 
 ## 06.6 — Final passports + Stage 07 handoff
 
 Status: **[ ] WAIT**
 
-Close only when current Ozon baseline, opportunity mapping, technical-fact gaps, buyer evidence and WB coverage status are explicit and provenance-safe.
+Close only when WB coverage status is explicit and all current Stage-06 evidence is consolidated into decision-grade passports/handoff.
 
 ---
 
 # Current continuation point
 
-**06.4 TARGETED CONTRAST ENRICHMENT. Run one current `seller_product_info_list` for SKUs `1602715556`, `1720148880`, `2186857668`, `2271210394`; save/analyze before any attributes call.**
+**06.5 ACTIVE — inspect the repository/current runtime for an accepted Wildberries seller-side read channel. If one exists, issue only the minimum decision-grade WB commands; otherwise close WB as blocked/not available and proceed to 06.6.**
