@@ -1,8 +1,8 @@
 # Ozon AI Worker — Primary Gate Index
 
-Updated: 2026-09-03
-Branch: `research/ozon-product-demand-2026-09-02`
-Status: AUTHORITATIVE GATE-SIZE / LEDGER INDEX — PRODUCT GATE FROZEN
+Updated: 2026-09-06
+Branch: `repair/ozon-date-contract-2026-09-04`
+Status: `AUTHORITATIVE_GATE_SIZE_44__SOL_PRIMARY_GATE_COMPLETE__HARDENING_NEXT`
 
 ## Gate policy
 
@@ -16,84 +16,82 @@ Every promoted test must preserve `NO_SKIP_ON_FAILURE`, persist meaningful runs/
 
 ## Current primary gate
 
-Current baseline size: **43 rows**.
+Current authoritative size: **44 rows**.
 
 - Rows 1–20: `STD-01` … `STD-20`.
-- Rows 21–43: `CAP-01` … `CAP-23`.
+- Rows 21–44: `CAP-01` … `CAP-24`.
 
-Authoritative live-result master:
+CAP-21..CAP-23 were previously promoted for SEO/competitor/category-position capabilities.
+CAP-24 was subsequently promoted for SKU monthly unit economics and expanded the gate from 43 to 44 rows.
+
+CAP-24 promotion authority:
+`OZON_AI_WORKER_UNIT_ECONOMICS_CAPABILITY_REQUIREMENT_2026-09-06.md`
+
+Primary live-result master:
 `OZON_AI_WORKER_PRIMARY_GATE_LIVE_RESULTS_TABLE_2026-09-02.md`
 
-Detailed run evidence:
+Extension ledger:
+`OZON_AI_WORKER_PRIMARY_GATE_EXTENSION_RESULTS_2026-09-02.md`
+
+Detailed run/final evidence:
 `research/product/live-runs/`
 
-## Operator freeze after STD-10 Run11
+## Current execution state
 
-The entire product-demand primary gate is frozen after STD-10 Run11.
+The Sol primary gate is now **complete for all 44 rows**.
 
-Frozen point:
+This completion statement means every primary-gate business/capability row has reached a terminal evidence-backed business classification. It does **not** mean every row was first-attempt clean or that all Bridge/product gaps are closed.
 
-- `report_placement_by_products_create` live request succeeded;
-- Ozon returned HTTP200;
-- preserved report code:
-  `REPORT_seller_placement_by_products_2093109_1788402580_01a06519-bba3-7a6b-84b6-6ac5e04697cb`;
-- `report_info` was **not** executed after the operator freeze.
+Important examples deliberately preserved as non-clean outcomes include:
 
-Freeze authority:
-`live-runs/STD_10_FROZEN_AFTER_RUN11_PENDING_26_NEW_READS_LIVE_GATE_2026-09-03.md`
+- transient provider 429 recovery cases;
+- guidance/parameter-repair gaps;
+- privacy/entitlement and data-readiness boundaries;
+- explicit batching/orchestration lessons;
+- competitor/category/search coverage limits;
+- CAP-24 advertising and placement attribution coverage boundaries;
+- the real XLSX relationship-target parser defect discovered during CAP-24, repaired at root cause and live-retested.
 
-Forensic authority:
-`live-runs/STD_10_REOPENED_HISTORICAL_STOCK_DAMAGE_RECONSTRUCTION_2026-09-02.md`
+These findings are inputs to hardening, not reasons to reopen already completed business rows blindly.
 
-## Layer-A state while frozen
+## Historical freeze — no longer current
 
-| Row | ID | State |
+An earlier checkpoint froze the product-demand gate after STD-10 Run11 while the repaired-26 READ live gate was executed. Documents created at that time may still mention:
+
+`PRIMARY_GATE_43_FROZEN_AFTER_STD10_RUN11...`
+
+That state is **historical only** and must not be used as the current restart position.
+
+The repaired-26 dependency was later closed, the Standard rows were resumed and completed through STD-20, CAP-01..CAP-23 were completed, and CAP-24 was promoted and completed.
+
+Likewise, any older statement that rows STD-12 onward or CAP rows are `FROZEN` / `PENDING` is superseded by the current final evidence and reconciled primary-gate master.
+
+## Completed extension rows
+
+| Row | ID | Final classification |
 |---:|---|---|
-| 1 | STD-01 | PASS |
-| 2 | STD-02 | PASS |
-| 3 | STD-03 | PASS |
-| 4 | STD-04 | PASS |
-| 5 | STD-05 | PASS_WITH_LIMITS |
-| 6 | STD-06 | PASS |
-| 7 | STD-07 | PASS |
-| 8 | STD-08 | PASS |
-| 9 | STD-09 | PASS |
-| 10 | STD-10 | REOPENED_FROZEN_AFTER_RUN11 |
-| 11 | STD-11 | PASS |
-| 12 | STD-12 | FROZEN |
-| 13 | STD-13 | FROZEN |
-| 14 | STD-14 | FROZEN |
-| 15 | STD-15 | FROZEN |
-| 16 | STD-16 | FROZEN |
-| 17 | STD-17 | FROZEN |
-| 18 | STD-18 | FROZEN |
-| 19 | STD-19 | FROZEN |
-| 20 | STD-20 | FROZEN |
+| 41 | CAP-21 | `PASS_WITH_RECOVERY_AND_DATA_READINESS_GUIDANCE_GAP` |
+| 42 | CAP-22 | `PARTIAL_WITH_COMPETITOR_DISCOVERY_COVERAGE_BOUNDARY` |
+| 43 | CAP-23 | `PASS_WITH_SEARCH_POSITION_AND_CATEGORY_COVERAGE_BOUNDARIES` |
+| 44 | CAP-24 | `PASS_WITH_ATTRIBUTION_COVERAGE_BOUNDARY` |
 
-`CAP-01` … `CAP-23`: **FROZEN/PENDING** until the repaired-26 live gate closes.
+Authority:
+`OZON_AI_WORKER_PRIMARY_GATE_EXTENSION_RESULTS_2026-09-02.md`
 
-## Active priority gate
+## Next phase
 
-`OZON_AI_WORKER_REPAIRED_26_READS_LIVE_GATE_2026-09-03.md`
+Do **not** start a new primary-gate business row: there is no `CAP-25` in the current gate.
 
-Purpose: fully live-test all 26 repaired Seller READ commands/workflows before returning to STD-10 or any other primary-gate row.
+The next work is the consolidated hardening phase:
 
-Current live progress:
-
-- fully closed: **0 / 26**;
-- `NEW-06 report_placement_by_products_create`: partial external evidence exists from STD-10 Run11, but the forensic report code is frozen and cannot be consumed by this gate;
-- next gate item: `NEW-01 report_products_create`.
-
-For reports and async generated documents, a create acknowledgement alone is not enough. The workflow must be taken to its strongest GPT-usable result through explicit reads, without hidden polling.
-
-## Resume rule
-
-Do not resume STD-10 until the repaired-26 live gate is fully complete.
-
-When it is complete, the first resumed STD-10 command remains exactly one `report_info` request for the preserved Run11 code.
-
-Do not resume STD-12, later STD rows, capability rows, or the multi-AI workstream before that point.
+1. reconcile all observed Sol failures/recovery/guidance/capability-awareness/orchestration gaps across the 44 rows;
+2. distinguish provider/account/entitlement/data-readiness limitations from actual Bridge defects and AI-orchestration errors;
+3. design one coherent Bridge guidance/hardening package rather than per-test prompt hacks;
+4. preserve one explicit command -> at most one physical business request and explicit-batch semantics for independent known-upfront reads;
+5. make executable Bridge changes only with explicit operator authorization;
+6. rerun every affected Sol row after the hardening package;
+7. require hardened Sol regression before moving to Alice Free.
 
 ## Current checkpoint
 
-`PRIMARY_GATE_43_FROZEN_AFTER_STD10_RUN11_REPAIRED_26_READS_LIVE_GATE_ACTIVE_0_OF_26_NEW01_NEXT`
+`PRIMARY_GATE_44_SOL_COMPLETE__NEXT_CONSOLIDATED_GAP_LEDGER_AND_HARDENING_PACKAGE`
