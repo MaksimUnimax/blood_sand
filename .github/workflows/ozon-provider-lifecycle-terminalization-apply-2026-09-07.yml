@@ -14,6 +14,7 @@ env:
   VALIDATION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
   REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/provider-lifecycle-terminalization-v1/run_provider_lifecycle_terminalization_gate.mjs
   PATCHER: .github/ozon-provider-lifecycle-terminalization-apply.py
+  PREPATCH: .github/ozon-provider-lifecycle-terminalization-prepatch.py
 
 jobs:
   apply-and-linux:
@@ -33,7 +34,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python "$PREPATCH"
           python "$PATCHER"
+          test -z "$(grep -nE 'void[[:space:]]+process(Manual|Auto)Batch' "$DIST/service_worker.js" || true)"
           node --check "$DIST/service_worker.js"
           node --check "$DIST/shared/provider_transport_core.js"
       - name: Targeted lifecycle and transport regression
