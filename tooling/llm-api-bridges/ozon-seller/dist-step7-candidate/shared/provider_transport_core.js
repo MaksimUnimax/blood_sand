@@ -29,50 +29,6 @@
     return String(value || "").split(";", 1)[0].trim().toLowerCase();
   }
 
-  const DEFAULT_PROVIDER_REQUEST_TIMEOUT_MS = 60_000;
-  const REG_P0_PROVIDER_LIFECYCLE_PATCH_V1 = true;
-
-  function normalizeProviderTimeoutMs(value) {
-    const raw = value === undefined || value === null ? DEFAULT_PROVIDER_REQUEST_TIMEOUT_MS : Number(value);
-    if (!Number.isFinite(raw) || raw <= 0) fail("INVALID_PROVIDER_TIMEOUT", "Provider timeout должен быть положительным числом миллисекунд.");
-    return Math.max(1, Math.min(300_000, Math.floor(raw)));
-  }
-
-  function providerTimeoutError(timeoutMs) {
-    const error = new Error(`Ozon provider request превысил deadline ${timeoutMs} ms.`);
-    error.code = "PROVIDER_REQUEST_TIMEOUT";
-    error.external_request_executed = true;
-    error.request_attempted = true;
-    error.timeout_ms = timeoutMs;
-    return error;
-  }
-
-  async function withProviderDeadline(task, timeoutMs = DEFAULT_PROVIDER_REQUEST_TIMEOUT_MS) {
-    const ms = normalizeProviderTimeoutMs(timeoutMs);
-    const controller = typeof AbortController === "function" ? new AbortController() : null;
-    let timer = null;
-    let timedOut = false;
-    const timeout = new Promise((_, reject) => {
-      timer = setTimeout(() => {
-        timedOut = true;
-        const error = providerTimeoutError(ms);
-        reject(error);
-        try { controller?.abort(); } catch (_) {}
-      }, ms);
-    });
-    try {
-      return await Promise.race([
-        Promise.resolve().then(() => task(controller?.signal || null)),
-        timeout
-      ]);
-    } catch (error) {
-      if (timedOut && String(error?.code || "") !== "PROVIDER_REQUEST_TIMEOUT") throw providerTimeoutError(ms);
-      throw error;
-    } finally {
-      if (timer !== null) clearTimeout(timer);
-    }
-  }
-
   function bytesToBase64(bytes) {
     const source = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -125,7 +81,7 @@
       : Object.freeze({ rawText, byteLength: encoded.byteLength });
   }
 
-  async function executeJsonOnce({ fetchImpl, request, now = () => Date.now(), timeoutMs = DEFAULT_PROVIDER_REQUEST_TIMEOUT_MS }) {
+  async function executeJsonOnce({ fetchImpl, request, now = () => Date.now() }) {
     if (typeof fetchImpl !== "function") fail("FETCH_IMPL_MISSING", "fetchImpl обязателен.");
     if (!request || typeof request !== "object") fail("INVALID_REQUEST", "Trusted request object обязателен.");
     if (!/^https:\/\/api-seller\.ozon\.ru\//.test(String(request.url || ""))) fail("UNTRUSTED_REQUEST_HOST", "Разрешён только fixed Ozon Seller API host.");
@@ -133,21 +89,13 @@
 
     const started = now();
     let response;
-    let received;
     try {
-      received = await withProviderDeadline(async (signal) => {
-        response = await fetchImpl(request.url, {
-          method: request.method,
-          headers: request.headers,
-          body: request.method === "GET" ? undefined : request.body,
-          ...(signal ? { signal } : {})
-        });
-        const binary = Boolean(response.ok) && String(request.response_style || "json") === "binary";
-        return await readResponse(response, { preserveBytes: binary });
-      }, timeoutMs);
+      response = await fetchImpl(request.url, {
+        method: request.method,
+        headers: request.headers,
+        body: request.method === "GET" ? undefined : request.body
+      });
     } catch (error) {
-      if (String(error?.code || "") === "PROVIDER_REQUEST_TIMEOUT") throw error;
-      if (response) throw error;
       const wrapped = new Error(String(error?.message || error || "Provider fetch failed"));
       wrapped.code = "PROVIDER_FETCH_FAILED";
       wrapped.external_request_executed = true;
@@ -156,6 +104,7 @@
     }
 
     const binarySuccess = Boolean(response.ok) && String(request.response_style || "json") === "binary";
+    const received = await readResponse(response, { preserveBytes: binarySuccess });
     let parsed = null;
     let rawText = received.rawText || "";
     if (binarySuccess) {
@@ -645,31 +594,30 @@
     return wrapped;
   }
 
-  async function executeTrustedReportFileOnce({ fetchImpl, url, now = () => Date.now(), maxBytes = 16 * 1024 * 1024, parseOptions = {}, timeoutMs = DEFAULT_PROVIDER_REQUEST_TIMEOUT_MS }) {
+  async function executeTrustedReportFileOnce({ fetchImpl, url, now = () => Date.now(), maxBytes = 16 * 1024 * 1024, parseOptions = {} }) {
     if (typeof fetchImpl !== "function") fail("FETCH_IMPL_MISSING", "fetchImpl обязателен.");
     const trustedUrl = normalizeTrustedReportFileUrl(url);
     const started = now();
     let response;
-    let received;
     try {
-      received = await withProviderDeadline(async (signal) => {
-        response = await fetchImpl(trustedUrl, {
-          method: "GET",
-          headers: { Accept: "text/csv,text/plain,application/csv,application/octet-stream,application/zip,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
-          redirect: "error",
-          credentials: "omit",
-          ...(signal ? { signal } : {})
-        });
-        return await readResponse(response, { preserveBytes: Boolean(response.ok) });
-      }, timeoutMs);
+      response = await fetchImpl(trustedUrl, {
+        method: "GET",
+        headers: { Accept: "text/csv,text/plain,application/csv,application/octet-stream,application/zip,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+        redirect: "error",
+        credentials: "omit"
+      });
     } catch (error) {
-      if (String(error?.code || "") === "PROVIDER_REQUEST_TIMEOUT") throw error;
-      if (response) throw annotateReportFilePostFetchError(error, response);
       const wrapped = new Error(String(error?.message || error || "Report file fetch failed"));
       wrapped.code = "REPORT_FILE_FETCH_FAILED";
       wrapped.external_request_executed = true;
       wrapped.request_attempted = true;
       throw wrapped;
+    }
+    let received;
+    try {
+      received = await readResponse(response, { preserveBytes: Boolean(response.ok) });
+    } catch (error) {
+      throw annotateReportFilePostFetchError(error, response);
     }
     if (received.byteLength > maxBytes) {
       const error = new Error(`Report file превышает лимит bridge ${maxBytes} bytes.`);
@@ -702,7 +650,7 @@
     });
   }
 
-  async function executePerformanceJsonOnce({ fetchImpl, request, now = () => Date.now(), timeoutMs = DEFAULT_PROVIDER_REQUEST_TIMEOUT_MS }) {
+  async function executePerformanceJsonOnce({ fetchImpl, request, now = () => Date.now() }) {
     if (typeof fetchImpl !== "function") fail("FETCH_IMPL_MISSING", "fetchImpl обязателен.");
     if (!request || typeof request !== "object") fail("INVALID_REQUEST", "Trusted request object обязателен.");
     if (!/^https:\/\/api-performance\.ozon\.ru\//.test(String(request.url || ""))) fail("UNTRUSTED_REQUEST_HOST", "Разрешён только fixed Ozon Performance API host.");
@@ -710,21 +658,13 @@
 
     const started = now();
     let response;
-    let received;
     try {
-      received = await withProviderDeadline(async (signal) => {
-        response = await fetchImpl(request.url, {
-          method: request.method,
-          headers: request.headers,
-          body: request.method === "GET" ? undefined : request.body,
-          ...(signal ? { signal } : {})
-        });
-        const binary = Boolean(response.ok) && String(request.response_style || "json") === "binary";
-        return await readResponse(response, { preserveBytes: binary });
-      }, timeoutMs);
+      response = await fetchImpl(request.url, {
+        method: request.method,
+        headers: request.headers,
+        body: request.method === "GET" ? undefined : request.body
+      });
     } catch (error) {
-      if (String(error?.code || "") === "PROVIDER_REQUEST_TIMEOUT") throw error;
-      if (response) throw error;
       const wrapped = new Error(String(error?.message || error || "Provider fetch failed"));
       wrapped.code = "PROVIDER_FETCH_FAILED";
       wrapped.external_request_executed = true;
@@ -733,6 +673,7 @@
     }
 
     const binarySuccess = Boolean(response.ok) && String(request.response_style || "json") === "binary";
+    const received = await readResponse(response, { preserveBytes: binarySuccess });
     let parsed = null;
     let rawText = received.rawText || "";
     if (binarySuccess) {
