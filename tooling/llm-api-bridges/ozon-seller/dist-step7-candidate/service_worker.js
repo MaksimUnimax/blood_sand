@@ -423,13 +423,13 @@ async function resumeProviderQuotaWaits() {
   for (const [conversationKey, operation] of Object.entries(manual)) {
     const wait = operation?.batch?.request_state === "quota_waiting" ? Number(operation.batch?.quota_wait?.next_allowed_at || 0) : 0;
     if (!wait) continue;
-    if (wait <= now) setTimeout(() => { void processManualBatch(conversationKey, operation.operation_id); }, 0);
+    if (wait <= now) setTimeout(() => { launchBatchProcessor("manual", conversationKey, operation.operation_id, "quota_wake"); }, 0);
     else earliest = earliest === null ? wait : Math.min(earliest, wait);
   }
   for (const [conversationKey, run] of Object.entries(runs)) {
     const wait = run?.batch?.request_state === "quota_waiting" ? Number(run.batch?.quota_wait?.next_allowed_at || 0) : 0;
     if (!wait) continue;
-    if (wait <= now) setTimeout(() => { void processAutoBatch(conversationKey, run.run_id); }, 0);
+    if (wait <= now) setTimeout(() => { launchBatchProcessor("autorun", conversationKey, run.run_id, "quota_wake"); }, 0);
     else earliest = earliest === null ? wait : Math.min(earliest, wait);
   }
   if (earliest !== null) scheduleProviderQuotaWake(earliest);
@@ -2085,7 +2085,7 @@ async function executeManualCommand(commandText, conversationKey, sender, manual
     pre_execution_error_count: entries.filter((entry) => entry.kind !== "command").length,
     source_stage: sourceStage
   });
-  void processManualBatch(key, operationId);
+  launchBatchProcessor("manual", key, operationId, "manual_admission");
   return {
     ok: true,
     accepted: true,
@@ -2156,7 +2156,7 @@ async function manualRecoveryForContent(operation, candidateTabId) {
       await diagnostic("REQUEST_RECOVERY_BLOCKED_NO_RETRY", { owner_kind: "manual", owner_id: current?.operation_id || operation.operation_id, previous_worker_session_id: requestWorker, worker_session_id: WORKER_SESSION_ID }, { level: "error" });
       return { owner: true, rebound: owner.rebound === true, operation: current, recovery: null };
     }
-    setTimeout(() => { void processManualBatch(current.conversation_key, current.operation_id); }, 0);
+    setTimeout(() => { launchBatchProcessor("manual", current.conversation_key, current.operation_id, "manual_recovery"); }, 0);
     return { owner: true, rebound: owner.rebound === true, operation: current, recovery: null };
   }
   if (current.status !== MANUAL_OPERATION_STATUSES.DELIVERING || current.delivery?.mode !== "batch_watch_v1") return { owner: true, rebound: owner.rebound === true, operation: current, recovery: null };
@@ -2404,7 +2404,7 @@ async function recoveryPayloadForRun(run) {
     };
   }
   if (decision.type === "resume_collection") {
-    setTimeout(() => { void processAutoBatch(run.conversation_key, run.run_id); }, 0);
+    setTimeout(() => { launchBatchProcessor("autorun", run.conversation_key, run.run_id, "autorun_recovery"); }, 0);
     return { type: "collection_resuming", run_id: run.run_id };
   }
   if (decision.type === "deliver_claimed") return deliveryRecoveryPayload(run, "deliver_claimed");
@@ -4017,6 +4017,30 @@ async function finalizeManualBatch(conversationKey, operationId, entries, batchS
   return { ok: true, collected: true, result_count: entries.length, delivery_id: deliveryId, operation };
 }
 
+function launchBatchProcessor(ownerKind, conversationKey, ownerId, source = "batch_launch") {
+  const kind = String(ownerKind || "");
+  return Promise.resolve().then(() => {
+    if (kind === "manual") return processManualBatch(conversationKey, ownerId);
+    if (kind === "autorun") return processAutoBatch(conversationKey, ownerId);
+    throw Object.assign(new Error("Неизвестный тип batch owner."), { code: "BATCH_OWNER_KIND_INVALID" });
+  }).catch(async (error) => {
+    const safe = OzonContract.safeBridgeErrorPayload(error, Number(error?.http_status || 0));
+    const code = String(safe?.code || "BATCH_PROCESSOR_FAILED");
+    const message = String(safe?.message || "Batch processor failed.");
+    await diagnostic("BATCH_PROCESSOR_UNCAUGHT", {
+      owner_kind: kind || null,
+      owner_id: String(ownerId || ""),
+      code,
+      source: String(source || "batch_launch")
+    }, { level: "error" }).catch(() => null);
+    try {
+      if (kind === "manual") await failManualBatch(conversationKey, ownerId, code, message);
+      else if (kind === "autorun") await markRunError(normalizeConversationKey(conversationKey), code, message);
+    } catch (_) {}
+    return { ok: false, code, owner_kind: kind || null, owner_id: String(ownerId || "") };
+  });
+}
+
 function processAutoBatch(conversationKey, runId) {
   const key = normalizeConversationKey(conversationKey);
   return processBatchQueue({
@@ -4128,7 +4152,7 @@ async function handleAutoMessage(message, sender) {
     message_fingerprint: messageFingerprint
   });
   if (guidanceLimitReached) await diagnostic("GUIDANCE_ROUND_LIMIT", { run_id: runId, guidance_rounds: nextGuidanceRound, external_request_executed: false }, { level: "warning" });
-  void processAutoBatch(key, runId);
+  launchBatchProcessor("autorun", key, runId, "autorun_admission");
   return {
     ok: true,
     accepted: true,

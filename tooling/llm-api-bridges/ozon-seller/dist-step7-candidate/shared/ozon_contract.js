@@ -3895,6 +3895,7 @@
         try { rawAttempt = JSON.parse(extracted.json_text); } catch (_) { /* parseCommand returns the exact existing JSON error */ }
         try {
           const command = parseCommand(commandText);
+          preflightExecution(command);
           discovered.push(Object.freeze({
             ok: true,
             marker_index: markerIndex,
