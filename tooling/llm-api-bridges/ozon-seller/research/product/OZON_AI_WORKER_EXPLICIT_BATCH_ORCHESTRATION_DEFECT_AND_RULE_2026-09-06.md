@@ -1,9 +1,12 @@
 # Ozon AI Worker — Explicit Batch Orchestration Defect and Mandatory Rule
 
 Date: 2026-09-06
-Status: `CONFIRMED_PROCESS_DEFECT__AUTHORITY_CORRECTED`
+Status: `CONFIRMED_PROCESS_DEFECT__AUTHORITY_CORRECTED__ENVELOPE_CONTRACT_LOCKED`
 Scope: AI/benchmark orchestration methodology; not an executable Bridge transport defect
 Runtime observed: `ozon-llm-api-bridge v0.1.19`
+Command syntax/cardinality authority: `../../OZON_COMMAND_ENVELOPE_CONTRACT.md`
+
+The terms **command envelope**, **assistant response**, **Manual code-block capture**, and **physical provider request** are distinct. Markdown code fences are presentation/UI containers and never define Bridge command cardinality.
 
 ## Defect summary
 
@@ -11,18 +14,18 @@ During CAP-24 monthly SKU unit-economics collection, the AI repeatedly asked the
 
 That workflow was unnecessarily serialized at the conversation/operator level.
 
-`finance_accrual_by_day` accepts one `date` per explicit command, but the Bridge supports discovering and queueing multiple explicit `OZON_API_V1` commands from one assistant response and executes them as `sequential_batch_single_delivery`.
+`finance_accrual_by_day` accepts one `date` per explicit command, but the Bridge supports discovering and queueing multiple explicit `OZON_API_V1` command envelopes from one assistant response and executes them as `sequential_batch_single_delivery`.
 
 The defect was therefore not endpoint cardinality. The defect was failure to use the Bridge's explicit batch capability for independent commands whose parameters were already known.
 
 ## Direct Bridge evidence
 
-Current `dist-step7-candidate/service_worker.js`:
+Current `dist-step7-candidate/shared/ozon_contract.js` and `service_worker.js` establish the complete chain:
 
-- counts multiple occurrences of the `OZON_API_V1` command prefix in one assistant response;
-- calls `discoverBatchEntries(commandText)`;
-- records `${entries.length} queued OZON_API_V1 item(s)`;
-- produces one batch report with `delivery_mode: "sequential_batch_single_delivery"` and `result_count = reports.length`.
+- `discoverCommands()` scans source text for every `OZON_API_V1` marker, extracts one balanced JSON object after each marker, then continues scanning from the end of that object;
+- Markdown fences are not parsed as command boundaries;
+- the worker queues the discovered entries in source order;
+- one batch report uses `delivery_mode: "sequential_batch_single_delivery"` and `result_count = reports.length`.
 
 Therefore these two invariants are compatible:
 
@@ -42,32 +45,33 @@ There is still no hidden retry, hidden pagination, hidden fanout, polling or cha
 
 ### Primary authority defect
 
-The active commercial-validation roadmap contained the mandatory rule:
+The active commercial-validation roadmap contained the obsolete mandatory rule:
 
 `Exactly one OZON_API_V1 command is sent at a time.`
 
-That rule predates / conflicts with the current explicit sequential batch capability and was operationally harmful.
+That historical rule predates / conflicts with the current explicit sequential batch capability and was operationally harmful. It is quoted here only as defect evidence and is **not an active rule**.
 
-It has now been replaced in the active roadmap by `EXPLICIT_BATCH_FIRST_FOR_INDEPENDENT_READS`.
+It has been replaced in the active roadmap by `EXPLICIT_BATCH_FIRST_FOR_INDEPENDENT_READS`, and command syntax/cardinality is now governed by `OZON_COMMAND_ENVELOPE_CONTRACT.md`.
 
 ### AI reasoning error
 
-The AI also conflated two different cardinalities:
+The AI also conflated three different concepts:
 
 1. provider-call cardinality per explicit command;
-2. explicit-command cardinality per assistant turn.
+2. explicit-command cardinality per assistant turn;
+3. Markdown/code-block presentation or Manual UI capture scope.
 
-The safety invariant constrains (1), not (2).
+The safety invariant constrains (1), not (2) or (3).
 
 The AI incorrectly transformed:
 
 `one explicit command => at most one physical request`
 
-into:
+into the obsolete inference:
 
 `one assistant turn => exactly one explicit command`.
 
-That inference is invalid.
+That inference is invalid. It is equally invalid to derive any command-cardinality rule from how Markdown code fences are arranged.
 
 ## CAP-24 impact
 
@@ -101,9 +105,11 @@ Examples:
 - independent control reads where each command can be interpreted separately;
 - a fixed set of business reads whose parameters are frozen before execution.
 
-The assistant response may therefore contain multiple complete `OZON_API_V1` blocks.
+The assistant response may therefore contain multiple complete `OZON_API_V1` **command envelopes**.
 
-Each block remains an explicit business command. The Bridge may execute them sequentially and return one batch delivery.
+Each envelope remains one explicit business command. The Bridge may execute them sequentially and return one batch delivery.
+
+Markdown presentation is not prescribed by this rule: several command envelopes may be presented in one code fence, separate code fences, or other source text that the active capture mode passes to the common parser. The parser semantics, not Markdown layout, determine command discovery.
 
 ### B. Dependent stepwise reads
 
@@ -150,7 +156,11 @@ A batch does not authorize hidden retry or skipping a failed command. After batc
 
 This rule must be loaded from persistent project authority, not trusted to conversational memory.
 
-When restoring Ozon commercial-validation work in a new chat, the AI must read the active commercial roadmap and this rule before constructing multi-call execution plans.
+When restoring Ozon commercial-validation work in a new chat, the AI must read, before constructing multi-call execution plans:
+
+1. `OZON_COMMAND_ENVELOPE_CONTRACT.md` for syntax/cardinality/presentation semantics;
+2. the active commercial roadmap;
+3. this explicit-batch rule.
 
 Mandatory mental check before emitting repeated API commands:
 
@@ -159,7 +169,7 @@ Mandatory mental check before emitting repeated API commands:
 - YES -> batch them explicitly where practical.
 - NO -> execute stepwise and explain the dependency.
 
-The AI must never again infer `one endpoint item/date per command` to mean `one command per assistant turn`.
+The AI must never again infer `one endpoint item/date per command` to mean `one command per assistant turn`, and must never derive command cardinality from Markdown code-block layout.
 
 ## CAP-24 correction
 
@@ -173,10 +183,12 @@ Completed first-page dates do not need to be repeated.
 
 ## Applied authority repair
 
-The following persistent project authorities were corrected on 2026-09-06:
+Persistent project authorities now include:
 
+- `OZON_COMMAND_ENVELOPE_CONTRACT.md` — mandatory single source of truth for `OZON_API_V1` syntax/cardinality and Markdown non-semantics;
 - `OZON_AI_WORKER_COMMERCIAL_VALIDATION_ROADMAP_2026-09-02.md` — obsolete one-command-at-a-time mandatory rule replaced by explicit batch-first / dependent-stepwise rules;
-- `CAP_24_SETUP_2026-09-06.md` — current CAP-24 finance collection explicitly requires batching independent known-upfront date reads.
+- `CAP_24_SETUP_2026-09-06.md` — CAP-24 finance collection explicitly requires batching independent known-upfront date reads;
+- permanent `command-envelope-contract-v1` regression — executes the actual candidate parser and checks active authority wording.
 
 This makes the correction recoverable in future chats from repository authority rather than conversational memory.
 
@@ -189,3 +201,5 @@ This makes the correction recoverable in future chats from repository authority 
 `EXECUTABLE_BRIDGE_PATCH_REQUIRED = NO`
 
 `DOCUMENTATION_METHODOLOGY_REPAIR_REQUIRED = DONE`
+
+`COMMAND_ENVELOPE_AMBIGUITY_REGRESSION_REQUIRED = PERMANENT`
