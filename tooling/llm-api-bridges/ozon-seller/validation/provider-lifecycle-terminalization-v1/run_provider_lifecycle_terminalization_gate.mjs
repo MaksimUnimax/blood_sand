@@ -35,8 +35,9 @@ function extractFunction(source, functionName) {
   const syncStart = source.indexOf(syncMarker);
   const start = asyncStart >= 0 ? asyncStart : syncStart;
   assert.notEqual(start, -1, `${functionName}: source function missing`);
-  const braceStart = source.indexOf('{', start);
-  assert.notEqual(braceStart, -1, `${functionName}: opening brace missing`);
+  const signatureEnd = source.indexOf(') {', start);
+  assert.notEqual(signatureEnd, -1, `${functionName}: signature terminator missing`);
+  const braceStart = signatureEnd + 2;
   let depth = 0, quote = null, escaped = false, lineComment = false, blockComment = false;
   for (let i = braceStart; i < source.length; i += 1) {
     const ch = source[i], next = source[i + 1] || '';
