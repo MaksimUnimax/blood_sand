@@ -15,163 +15,123 @@ Rules:
 - do not renumber `STD-01..STD-20` or `CAP-01..CAP-24` because of a shared regression;
 - a shared regression may interrupt an active business test when it exposes a production reliability defect;
 - the interrupted business test remains frozen at its evidence-backed cursor and resumes only after the blocking shared regression is closed;
-- no executable Bridge change is authorized by this document;
 - root cause must be proven before implementation;
 - implementation requires explicit operator authorization;
-- after implementation the exact live reproducer below must be rerun;
 - one explicit command must remain at most one physical business request;
-- no hidden retry, pagination, fanout, polling or chaining may be introduced to make a regression green.
+- no hidden retry, pagination, fanout, polling or chaining may be introduced to make a regression green;
+- PRE-HANDOFF PASS never substitutes for installed LIVE PASS;
+- a candidate that fails the exact live reproducer must be marked failed and rolled back before another repair attempt.
 
 ## Shared regression ledger
 
 | ID | Priority | Class | Status | Production symptom | Required closure |
 |---|---|---|---|---|---|
-| `REG-P0-PROVIDER-LIFECYCLE-01` | P0 | `BRIDGE_EXECUTION_LIFECYCLE_HANG` | `ROOT_CAUSE_PROVEN__PREHANDOFF_REPAIR_PASS__LIVE_ACCEPTANCE_PENDING` | Accepted manual command reached capability planning and query planning, then no terminal progress and Bridge remained busy | Install exact pre-handoff-certified candidate; rerun exact live command below; require bounded success/error, truthful request accounting and READY restoration |
+| `REG-P0-PROVIDER-LIFECYCLE-01` | P0 | `BRIDGE_EXECUTION_LIFECYCLE_HANG` | `LIVE_FAIL__ROLLED_BACK__EXACT_TRIGGER_UNDER_INVESTIGATION` | Original runtime accepted a valid finance command, completed capability/query planning, then showed no terminal progress. The first repair candidate instead exposed `OPERATION_BLOCKED` immediately after query planning and still did not execute the command. | Investigate and prove the exact `OPERATION_BLOCKED` trigger and its relationship to the original hang before any new executable repair. Re-run the same live command only after a separately authorized replacement patch. |
 
-## REG-P0-PROVIDER-LIFECYCLE-01 — live reproducer
-
-### Purpose
-
-Prove that a valid large finance read cannot leave the production Bridge in an indefinite busy state after query planning.
-
-This regression is shared infrastructure/reliability coverage. It is **not CAP-25**, **not CAP-26**, and does not replace or renumber any business/capability test.
-
-### Exact command that exposed the defect
+## Exact live reproducer
 
 ```text
 OZON_API_V1
 {"operation":"finance_transaction_list_v3","params":{"filter":{"date":{"from":"2026-08-01T00:00:00Z","to":"2026-08-31T23:59:59Z"}},"page":1,"page_size":1000}}
 ```
 
-### Live incident evidence
+## Original live incident
 
-Observed on runtime `0.1.19` on 2026-09-07:
+Observed on runtime `0.1.19` before the failed lifecycle patch:
 
 1. `MANUAL_BRIDGE_BUSY`
-   - sequence `1009`
-   - reason `manual_batch_admission`
 2. `MANUAL_BATCH_ACCEPTED`
-   - sequence `1010`
-   - `command_count=1`
-   - `item_count=1`
-   - `pre_execution_error_count=0`
-   - `operation_id=ozmanual-97761c01-3b99-4f00-85e8-814f11e4e2ee`
 3. `BATCH_CAPABILITY_PLANNING_COMPLETED`
-   - sequence `1011`
-   - `capability_probe_performed=false`
-   - `capability_status=not_needed`
-   - `planned_command_count=1`
-   - `planning_error_count=0`
 4. `BATCH_QUERY_PLANNING_COMPLETED`
-   - sequence `1012`
-   - `coalesced_group_count=0`
-   - `coalesced_logical_count=0`
+5. no subsequent observed provider/result/terminal collection evidence in the captured log
 
-After sequence `1012`, the captured live log contains no subsequent terminal evidence for this operation. The captured boundary was:
+Observed boundary:
 
 `manual admission -> capability planning COMPLETE -> query planning COMPLETE -> NO OBSERVED TERMINAL PROGRESS`
 
-### Root cause — proven
+The exact immediate trigger of that original incident was not directly observed.
 
-The repair investigation found two independent product defects capable of producing indefinite BUSY:
+## Failed repair attempt
 
-1. **Detached batch processor lifecycle.** Manual and autorun admission/recovery paths launched `processManualBatch()` / `processAutoBatch()` as detached promises. The incoming MV3 message event returned after admission, the detached processor had no managed terminal catch, and ordinary active `pending/idle` batches were not enumerated by worker-start recovery. A service-worker interruption or uncaught processor failure could therefore leave durable active state without a guaranteed terminal path.
-2. **Unbounded provider transport.** Seller, Performance and report-file transport used unbounded `fetch` / response-body reads. A stalled fetch or stalled body stream could keep a durably claimed `requesting` entry indefinitely active.
+Authorized candidate:
+`OZON_BRIDGE_v0.1.19_PROVIDER_LIFECYCLE_TERMINALIZATION_a81d4fba.zip`
 
-The finance command itself was valid and was not an analytics-coalescing or quota-specific case. The repair therefore targets shared lifecycle and transport rather than the finance operation contract.
+Candidate HEAD:
+`a81d4fbab7a58fb387c00a930b4376fea82fe950`
 
-### Authorized repair
+The repair addressed two real hardening gaps found during investigation:
 
-Direct operator authorization was given in this repair cycle (`Делай патч` / `Делай`).
+1. detached manual/autorun batch processor lifecycle without guaranteed catch/recovery terminalization;
+2. unbounded Seller/Performance/report-file transport without a deadline.
 
-Runtime repair:
+These are valid product hardening findings, but the installed live test proved they were **not sufficient to restore the failing command path** and therefore they cannot be treated as the complete causal root fix for this regression.
 
-- all six detached manual/autorun batch launch/recovery call sites now use one managed launcher;
-- managed launcher converts uncaught processor failure into durable terminal owner failure;
-- startup/alarm recovery enumerates durable active manual/autorun batches;
-- `requesting` state with a previous or missing worker owner fails closed as `REQUEST_OUTCOME_UNKNOWN_NO_RETRY` and never automatically retries;
-- same-worker duplicate recovery is protected by existing owner-keyed `singleFlight`;
-- Seller, Performance and report-file network+body transport has one bounded 60-second end-to-end deadline with AbortController where available;
-- timeout is reported as `PROVIDER_REQUEST_TIMEOUT` with request-attempt accounting;
-- no hidden retry, pagination, fanout, polling or implicit business chaining was added;
-- no new network destination or permission was added.
+### Installed live result — FAIL
 
-Production runtime patch commit:
+Observed after installing the candidate and rerunning the exact command:
 
-`2608c268be989511961bf58449c8b0713a9b7ac7`
+- sequence 12: `MANUAL_BRIDGE_BUSY`, reason `manual_batch_admission`
+- sequence 13: `MANUAL_BATCH_ACCEPTED`, one command, zero pre-execution errors
+- sequence 14: `BATCH_CAPABILITY_PLANNING_COMPLETED`
+- sequence 15: `BATCH_QUERY_PLANNING_COMPLETED`
+- sequence 16: `BATCH_PROCESSOR_UNCAUGHT`, `code=OPERATION_BLOCKED`, `source=manual_admission`
+- sequence 17: `MANUAL_BATCH_FAILED`, `code=OPERATION_BLOCKED`
 
-Production runtime delta is limited to:
+Verdict:
 
-- `dist-step7-candidate/service_worker.js`
-- `dist-step7-candidate/shared/provider_transport_core.js`
+`REG_P0_PROVIDER_LIFECYCLE_01_LIVE_TERMINALIZATION_PASS` was **not obtained**.
 
-Permanent regression:
+The patch converted the previous silent/indefinite state into a visible terminal failure, but the business command still did not execute. Therefore the patch failed live acceptance.
 
-`validation/provider-lifecycle-terminalization-v1/run_provider_lifecycle_terminalization_gate.mjs`
+Detailed evidence:
+`REG_P0_PROVIDER_LIFECYCLE_01_LIVE_FAIL_2026-09-07.md`
 
-### Pre-handoff evidence
+## Rollback
 
-Deterministic final-candidate gates prove:
+Operator explicitly ordered rollback after the live failure.
 
-- fresh worker discovers durable manual + autorun `pending/idle` batches;
-- previous-worker `requesting` fails closed without provider retry;
-- missing worker owner in `requesting` fails closed;
-- same-worker in-flight state is not claimed again;
-- Seller fetch stall times out;
-- Seller body stall times out;
-- Performance fetch stall times out;
-- report-file fetch stall times out;
-- positive transport control executes exactly one fetch;
-- complete read-effect, provider taxonomy, report lifecycle/session, redaction/SSRF and XLSX regression families remain green on Linux;
-- exact lifecycle gate and intersecting regressions pass on Windows;
-- exact 21-file package is freshly extracted and byte-for-byte verified.
+Rollback authority/runtime target:
+`74e0589b5034581664c17727b8efba18ed0711d0`
 
-Representative required markers:
+Exact restored production blobs:
 
-- `REG_P0_PROVIDER_FRESH_WORKER_PENDING_RESUME_PASS`
-- `REG_P0_PROVIDER_FRESH_WORKER_REQUESTING_FAIL_CLOSED_PASS`
-- `REG_P0_PROVIDER_MISSING_WORKER_OWNER_FAIL_CLOSED_PASS`
-- `REG_P0_PROVIDER_SAME_WORKER_NO_DUPLICATE_CLAIM_PASS`
-- `REG_P0_PROVIDER_SELLER_FETCH_TIMEOUT_PASS`
-- `REG_P0_PROVIDER_SELLER_BODY_TIMEOUT_PASS`
-- `REG_P0_PROVIDER_PERFORMANCE_TIMEOUT_PASS`
-- `REG_P0_PROVIDER_REPORT_TIMEOUT_PASS`
-- `REG_P0_PROVIDER_SINGLE_REQUEST_POSITIVE_CONTROL_PASS`
-- `REG_P0_PROVIDER_LIFECYCLE_PREHANDOFF_GATE_PASS`
+- `dist-step7-candidate/service_worker.js` -> `6beac3005cbac2f1913e1fe8c77acfc25f29c946`
+- `dist-step7-candidate/shared/provider_transport_core.js` -> `346332d6e298c461e225487ba75faf41b0d51288`
 
-**This is PRE-HANDOFF evidence only. It is not LIVE PASS.**
+Rollback commit on the failed repair branch:
+`eeadd2c10f39eff578a42e321f2ef831f2744101`
 
-### Post-fix live acceptance test
+A separate rollback branch was also created directly from the pre-patch authority:
+`rollback/ozon-provider-lifecycle-terminalization-2026-09-07`
 
-Rerun the **exact same command** above after installing the exact certified package.
+No failed lifecycle/timeout runtime code is part of the rollback artifact.
 
-PASS requires all of the following:
+## Current investigation requirement
 
-1. `MANUAL_BATCH_ACCEPTED` with one valid command and zero pre-execution errors.
-2. Capability and query planning complete.
-3. The operation then reaches a bounded terminal state:
-   - successful provider result and batch collection/delivery; **or**
-   - explicit sanitized provider/transport timeout/failure result followed by normal batch collection/delivery.
-4. No indefinite `MANUAL_BRIDGE_BUSY` state.
-5. No silent disappearance after `BATCH_QUERY_PLANNING_COMPLETED`.
-6. No hidden automatic retry.
-7. One explicit command -> at most one physical business request.
-8. If the provider request is never executed, result/accounting must explicitly show `external_request_executed=false` and physical request count `0`.
-9. If the provider request is executed, request accounting must explicitly prove the physical count and terminal outcome.
-10. Fresh-state regression must confirm the Bridge returns to READY after terminal delivery/error handling.
+Before any new patch, prove the first exact cause of `OPERATION_BLOCKED` in the live path:
 
-Required LIVE PASS marker:
+`query planning -> owner/state read -> local policy / entitlement / privacy / capability state -> cache/acquisition profile -> request claim -> provider dispatch`
 
-`REG_P0_PROVIDER_LIFECYCLE_01_LIVE_TERMINALIZATION_PASS`
+Required questions:
+
+- which exact statement throws or returns `OPERATION_BLOCKED` after `BATCH_QUERY_PLANNING_COMPLETED`;
+- whether `OPERATION_BLOCKED` existed in the pre-patch runtime but was previously swallowed/stranded;
+- what durable owner/entry/request state existed when it happened;
+- whether the command was blocked locally before any physical provider request;
+- which branch constructs `OPERATION_BLOCKED` and why this valid finance command enters it;
+- whether any stale work-session/manual-operation state from the prior run contributes;
+- whether the problem reproduces on a fresh conversation/fresh worker with the restored runtime;
+- all dependent consumers and state boundaries before a replacement fix is authorized.
+
+Do **not** patch again until the exact trigger is proven and the operator explicitly authorizes another executable change.
 
 ## Active-work relationship
 
-At discovery time, the SKU monthly unit-economics / placement work for `CAP-24` was manually frozen by the operator while evaluating file/large-output delivery behavior.
+`CAP-24` remains separately frozen at its preserved business cursor. This regression does not renumber or rewrite CAP-24.
 
-This shared regression does not modify CAP-24 evidence, arithmetic or numbering.
+Current order:
 
-Execution discipline:
-
-1. install the exact pre-handoff-certified lifecycle repair;
-2. run the exact live regression command and obtain the required LIVE PASS marker;
-3. only then resume CAP-24 from its preserved cursor rather than restart from zero.
+1. rollback failed lifecycle candidate;
+2. investigate exact `OPERATION_BLOCKED` trigger;
+3. obtain explicit authorization before any replacement patch;
+4. after a future successful live regression, resume CAP-24 from its preserved cursor rather than restarting it.
