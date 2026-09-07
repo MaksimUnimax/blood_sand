@@ -1,12 +1,15 @@
 # Ozon AI Worker — Commercial Validation Roadmap
 
-Date: 2026-09-02
-Status: ACTIVE
-Product gate: `FORTY_TEST_STANDARD_GATE_ACTIVE_LAYER_A_THEN_CAPABILITY_AWARENESS_LAYER_B`
+Updated: 2026-09-06
+Status: `SOL_PRIMARY_GATE_44_COMPLETE__PHASE_6_HARDENING_ACTIVE`
+Product gate: `44_ROWS__STD_01_TO_STD_20__CAP_01_TO_CAP_24__SOL_COMPLETE`
 Authority TZ: `OZON_AI_WORKER_COMMERCIAL_VALIDATION_TZ_2026-09-02.md`
 Current core: `OZON_AI_WORKER_COMMERCIAL_QUERY_CORE_V2_2026-09-02.md`
 Standard live benchmark: `OZON_AI_WORKER_STANDARD_LIVE_BENCHMARK_V2_2026-09-02.md`
 Capability-awareness layer: `OZON_AI_WORKER_CAPABILITY_AWARENESS_LAYER_20_TESTS_2026-09-02.md`
+Primary gate index: `OZON_AI_WORKER_PRIMARY_GATE_INDEX_2026-09-02.md`
+Primary terminal Sol ledger: `OZON_AI_WORKER_PRIMARY_GATE_LIVE_RESULTS_TABLE_2026-09-02.md`
+Extension results: `OZON_AI_WORKER_PRIMARY_GATE_EXTENSION_RESULTS_2026-09-02.md`
 Weak-model recovery requirement: `OZON_AI_WORKER_WEAK_MODEL_RECOVERY_CONTRACT_REQUIREMENT_2026-09-02.md`
 Failure diagnostics: `OZON_AI_WORKER_LIVE_FAILURE_DIAGNOSTICS_2026-09-02.md`
 Demand evidence: `OZON_AI_WORKER_REAL_DEMAND_SOURCE_LEDGER_2026-09-02.md`
@@ -15,15 +18,18 @@ Free-AI output matrix: `OZON_AI_WORKER_FREE_AI_OUTPUT_CAPABILITY_MATRIX_2026-09-
 Competitive landscape: `OZON_AI_WORKER_COMPETITIVE_LANDSCAPE_2026-09-02.md`
 Synthesis: `OZON_AI_WORKER_COMMERCIAL_RESEARCH_SYNTHESIS_2026-09-02.md`
 Explicit batch orchestration rule: `OZON_AI_WORKER_EXPLICIT_BATCH_ORCHESTRATION_DEFECT_AND_RULE_2026-09-06.md`
+CAP-24 unit-economics authority: `OZON_AI_WORKER_UNIT_ECONOMICS_CAPABILITY_REQUIREMENT_2026-09-06.md`
 
 ## Goal
 
-Build an evidence-backed commercial query core that proves whether the Ozon AI worker is actually sellable. The live Standard product gate is now exactly **40 tests** split into two layers:
+Build an evidence-backed commercial query core that proves whether the Ozon AI worker is actually sellable and whether its business jobs can be executed through a model-independent Bridge contract without requiring the operator to teach API mechanics.
 
-- **Layer A: STD-01..STD-20** — real sellable business questions using the current Bridge contract.
-- **Layer B: CAP-01..CAP-20** — capability-awareness/product-logic tests that prove whether the AI understands the breadth of Bridge data and can select materially different data surfaces and correlations without the operator teaching it API operations.
+The live Standard Sol primary gate has expanded, by the existing promotion rule, to **44 rows**:
 
-After both Sol layers are complete, harden model-independent Bridge guidance based on observed failures, rerun affected Sol rows, and only then benchmark Alice Free + Bridge and later providers.
+- **Layer A: STD-01..STD-20** — real seller business questions;
+- **Layer B / capability rows: CAP-01..CAP-24** — distinct capability-awareness, multi-surface orchestration and coverage-boundary jobs.
+
+The original 40-row gate remains historical baseline context, not the current gate size.
 
 Product = preferred AI + Ozon Bridge + Ozon cabinet data + external/public context + AI reasoning + requested deliverable.
 
@@ -33,15 +39,19 @@ Coverage is measured at the level of a solved business job, not an API endpoint.
 
 1. `NO_SKIP_ON_FAILURE` — failed/blocked rows are diagnosed before moving on.
 2. One user business question may require multiple explicit Bridge commands/runs.
-3. `EXPLICIT_BATCH_FIRST_FOR_INDEPENDENT_READS` — when several read commands are independent and all parameters are known before execution, prefer multiple explicit `OZON_API_V1` commands in one assistant response so the Bridge can execute them as an explicit sequential batch. Do not force one operator round trip per command merely because an endpoint accepts one date/item per command.
-4. Use one-command-at-a-time conversation execution only when the next command depends on the previous result (for example cursor/`last_id`, discovered IDs, causal diagnosis, write/safety/privacy branching, or a stop condition). Explain the dependency when using stepwise execution.
-5. Preserve `ONE EXPLICIT AI COMMAND = AT MOST ONE PHYSICAL BUSINESS API REQUEST`. For `N` explicit commands in one batch, at most `N` sequential physical business requests are permitted. No hidden retry, hidden pagination, hidden fanout, polling or implicit chaining.
-6. Premium endpoints/metrics are excluded from the current Standard pass.
-7. Business answer correctness and operational reliability are scored separately.
-8. Any failure that required operator intervention because the AI/Bridge contract did not make the next action deterministic is recorded as a weak-model portability gap.
-9. `DO_NOT_REQUIRE_MODEL_INTELLIGENCE_FOR_KNOWN_RECOVERY_MECHANICS` — known provider/transport recovery behavior should ultimately be normalized by Bridge guidance rather than inferred independently by each AI.
-10. `DO_NOT_CONFUSE_REPHRASING_WITH_CAPABILITY_COVERAGE` — changing dates, top-N, sorting or interpretation while using the same underlying data source does not prove the worker knows the Bridge capability surface.
-11. A Layer B test is valid only if it exercises a materially different data surface or a materially new multi-surface orchestration path.
+3. `EXPLICIT_BATCH_FIRST_FOR_INDEPENDENT_READS` — when several read commands are independent and all parameters are known before execution, prefer multiple separate explicit `OZON_API_V1` objects in one assistant response so the Bridge executes them as an explicit sequential batch.
+4. Use conversation-stepwise execution only when the next command depends on previous output: cursor/`last_id`, discovered IDs, report code/file ref, causal diagnosis, privacy/entitlement branch or another real dependency.
+5. Preserve `ONE EXPLICIT AI COMMAND = AT MOST ONE PHYSICAL BUSINESS API REQUEST`. For `N` explicit commands, at most `N` sequential physical business requests are permitted.
+6. No hidden retry, hidden pagination, hidden fanout, polling, implicit chaining or hidden capability probes.
+7. Premium endpoints/metrics remain outside the Standard baseline; entitlement boundaries are valid evidence and must not be represented as business zeros.
+8. Business-answer correctness and operational reliability are scored separately.
+9. Any failure requiring operator intervention because the AI/Bridge contract did not make the next action deterministic is a weak-model portability gap.
+10. `DO_NOT_REQUIRE_MODEL_INTELLIGENCE_FOR_KNOWN_RECOVERY_MECHANICS` — known recovery behavior should ultimately be normalized by Bridge guidance rather than rediscovered by each model.
+11. `DO_NOT_CONFUSE_REPHRASING_WITH_CAPABILITY_COVERAGE` — changing dates/top-N/sort while using the same source does not prove a new capability.
+12. A promoted CAP row is valid only when it exercises a materially distinct business capability, materially new multi-surface path or meaningful coverage/entitlement boundary.
+13. Do not infer a missing row, `null`, unavailable attribution or empty parser output as numeric zero without evidence.
+14. Executable Bridge changes require explicit operator authorization.
+15. Meaningful live evidence must be persisted and read back before the next test or phase transition.
 
 ## Phase 0 — Product framing and preservation
 
@@ -50,76 +60,70 @@ Status: COMPLETE
 - [x] Freeze AI-worker product model.
 - [x] Freeze target segments.
 - [x] Freeze demand-first research rule.
-- [x] Freeze provider order: Sol → Alice → additional providers.
+- [x] Freeze provider order: Sol -> Alice -> additional providers.
 - [x] Freeze authenticated zero-cost AI tier as default baseline.
-- [x] Preserve work on dedicated research branch.
+- [x] Preserve work in Git with live-run evidence.
 
 ## Phase 1 — Current capability inventory
 
-Status: COMPLETE FOR PRE-TEST MAPPING
+Status: COMPLETE FOR CURRENT SOL GATE
 
 - [x] Broad Seller API + Performance API read registry confirmed.
-- [x] Standard/Premium entitlement logic confirmed.
-- [x] Seller and Performance data can be requested independently and correlated by AI.
+- [x] Standard/Premium entitlement behavior exercised.
+- [x] Seller and Performance data correlated by AI across multiple jobs.
+- [x] Report generation + opaque file materialization exercised.
 - [x] Known gaps preserved rather than marketed as covered.
 
 ## Phase 2 — External real-demand corpus
 
 Status: COMPLETE FOR CURRENT CORE
 
-Demand evidence collected from seller forums, official Ozon materials, agencies/freelancers, analytics products, AI competitors, public incidents, report-reconciliation pain and manual Excel workflows.
+Demand evidence was collected from seller forums, official Ozon materials, agencies/freelancers, analytics products, AI competitors, public incidents, report-reconciliation pain and manual Excel workflows.
 
-## Phase 3 — Commercial core
+## Phase 3 — Commercial core / primary-gate definition
 
-Status: COMPLETE / STANDARD LIVE GATE DEFINED
+Status: COMPLETE / EXPANDED TO 44 ROWS
 
-Full V2 research core: 57 business rows + 9 output tests.
+The original V2 research core and 40-row Standard gate were expanded only when materially distinct commercial jobs were proven necessary.
 
-Primary live Standard gate: **40 tests = 20 + 20**.
+Current gate:
 
-- Layer A uses STD-01 through STD-20.
-- Layer B uses CAP-01 through CAP-20.
-- Existing STD-21 through STD-28 are preserved as reserve/extended commercial cases outside the primary 40-test gate; they are not deleted.
+- `STD-01..STD-20` — 20 rows;
+- `CAP-01..CAP-20` — original 20 capability-awareness rows;
+- `CAP-21` — own-card SEO / semantic core;
+- `CAP-22` — competitor SEO / positioning discovery;
+- `CAP-23` — category/search-position and coverage boundary;
+- `CAP-24` — SKU monthly unit economics across Seller Analytics, Finance, Performance and placement-report workflow.
 
-Premium testing is deferred; results will later be extrapolated cautiously from Standard where architecture is equivalent and separately marked where entitlement/data semantics prevent safe extrapolation.
+Total: **44 rows**.
+
+Existing reserve `STD-21..STD-28` remains outside the primary gate.
 
 ## Phase 4 — Layer A: GPT-5.6 Sol + Bridge business-job benchmark
 
-Status: ACTIVE
+Status: COMPLETE — `STD-01..STD-20 = 20/20 TERMINAL`
 
-Run `STD-01` through `STD-20`.
+All twenty seller-business rows reached terminal evidence-backed classifications.
 
-For every row record:
+The Layer-A pass established both business value and portability/recovery lessons, including:
 
-- user-level intent understanding;
-- operation/request selection;
-- multi-run investigation where needed;
-- explicit batch use for independent known-upfront reads where appropriate;
-- external-source use where needed;
-- joins/calculation/sorting;
-- uncertainty discipline;
-- final business usefulness;
-- first-attempt success vs recovery path;
-- any model/operator intervention needed to recover;
-- PASS / PARTIAL / FAIL / BLOCKED plus reliability flags.
+- sales/period/ranking calculations;
+- diagnosis rather than raw reporting;
+- stock-surface reconciliation;
+- supply/warehouse/incident forensics;
+- visibility and delivery diagnostics;
+- Performance spend, waste and DRR analysis;
+- transient provider 429 recovery;
+- privacy and local/provider contract boundaries;
+- explicit refusal to invent causes or stock states when evidence was absent.
 
-### STD-01 finding
+Detailed final truth belongs to the primary terminal Sol ledger and row evidence.
 
-`STD-01` eventually produced the correct answer (27,200 RUB revenue, 16 ordered units for 2026-09-01), but the first two identical `/v1/analytics/data` calls returned provider HTTP 429 before the third identical call succeeded after a longer quiet period.
+## Phase 4A — Weak-model/recovery gap collection during Layer A
 
-Important product finding: GPT-5.6 Sol initially attempted to move on rather than immediately preserve the same business job and recover it; the operator had to enforce `NO_SKIP_ON_FAILURE`.
+Status: COMPLETE FOR DISCOVERY / INPUT TO PHASE 6
 
-Therefore STD-01 is:
-
-`PASS_WITH_RECORDED_TRANSIENT_429_INCIDENT_AND_RECOVERY_GUIDANCE_GAP`
-
-This proves raw provider-error recovery cannot safely be delegated to weaker models.
-
-## Phase 4A — Collect weak-model contract gaps during Layer A
-
-Status: ACTIVE
-
-Do not patch the Bridge separately after every row. Continue Layer A and collect evidence-backed contract/guidance failures such as:
+Observed evidence includes:
 
 - 429/rate-limit recovery;
 - malformed/unsupported refinement recovery;
@@ -128,84 +132,160 @@ Do not patch the Bridge separately after every row. Continue Layer A and collect
 - empty-result vs error distinction;
 - exact retry-command preservation;
 - diagnostics after repeated identical provider failure;
-- failure to use explicit batching for independent known-upfront reads;
-- any place where Sol needed operator intervention or non-obvious API-specific inference.
+- local/provider contract drift;
+- stock-surface semantic boundaries;
+- explicit batching vs dependency-stepwise orchestration.
 
-Authority requirement document:
+These findings are not yet considered fully hardened merely because the Sol business rows completed.
 
-`OZON_AI_WORKER_WEAK_MODEL_RECOVERY_CONTRACT_REQUIREMENT_2026-09-02.md`
+## Phase 5 — GPT-5.6 Sol capability-awareness / product-logic benchmark
 
-## Phase 5 — Layer B: GPT-5.6 Sol capability-awareness / product-logic benchmark
+Status: COMPLETE — `CAP-01..CAP-24 = 24/24 TERMINAL`
 
-Status: BLOCKED UNTIL STD-20 COMPLETE
+The original Layer-B design began as CAP-01..CAP-20 and was expanded through the gate-promotion rule to CAP-24.
 
-Start immediately after `STD-20`.
+The completed capability rows proved or bounded:
 
-Run exactly 20 additional tests `CAP-01` through `CAP-20` according to:
+- catalog and visibility;
+- content/card quality;
+- FBO/FBS stock and turnover;
+- warehouses/clusters and supply orders;
+- postings;
+- prices and entitlement fallback;
+- promotions;
+- returns/cancellations;
+- finance balance/accrual/reconciliation;
+- seller ratings/FBS error index;
+- reviews/questions and entitlement guidance;
+- Performance campaign inventory/statistics;
+- cross-surface advertising-to-stock logic;
+- Bridge + external-world investigation;
+- own-card SEO/search-query semantics;
+- competitor discovery boundary;
+- category/search-position boundary;
+- full monthly SKU unit economics with attribution discipline.
 
-`OZON_AI_WORKER_CAPABILITY_AWARENESS_LAYER_20_TESTS_2026-09-02.md`
+Terminal extension classifications:
 
-### Purpose of Layer B
+- CAP-21: `PASS_WITH_RECOVERY_AND_DATA_READINESS_GUIDANCE_GAP`
+- CAP-22: `PARTIAL_WITH_COMPETITOR_DISCOVERY_COVERAGE_BOUNDARY`
+- CAP-23: `PASS_WITH_SEARCH_POSITION_AND_CATEGORY_COVERAGE_BOUNDARIES`
+- CAP-24: `PASS_WITH_ATTRIBUTION_COVERAGE_BOUNDARY`
 
-Layer A proves whether the worker can answer selected commercial questions. Layer B proves whether the AI actually understands what the Bridge can do.
+Authority:
+`OZON_AI_WORKER_PRIMARY_GATE_EXTENSION_RESULTS_2026-09-02.md`
 
-Specifically test whether the AI:
+## CAP-24 commercial evidence checkpoint
 
-- recognizes that requested Ozon information can be obtained through Bridge;
-- selects the correct semantic data family without being told an operation name;
-- uses bounded command discovery/help when uncertain instead of inventing operations;
-- does not default to `analytics_data` for unrelated tasks;
-- understands distinct surfaces such as catalog, visibility, card diagnostics, stocks, turnover, warehouses/clusters, supply orders, postings, prices, promotions, returns, finance, ratings/FBS errors, reviews/questions and Performance advertising;
-- performs multi-run/multi-command orchestration across different surfaces when the business job requires it, batching independent commands where appropriate and preserving stepwise dependencies where required;
-- combines Bridge data with external/public context when appropriate;
-- distinguishes unavailable data, entitlement/privacy gates and provider errors from real business zeros;
-- finishes without operator teaching the model the API inventory.
+CAP-24 selected real sold SKU `1636048691` for August 2026 and proved:
 
-### Existing guided-discovery context
+- Seller Analytics revenue: `259136.00 RUB`;
+- `ordered_units = 155`;
+- exact directly attributable Ozon finance costs: `113264.00 RUB`;
+- known-attributable Ozon-side contribution: `145872.00 RUB`;
+- known-attributable contribution / ordered unit: `941.11 RUB`.
 
-The repository already contains `OZON_GUIDED_COMMAND_DISCOVERY_SPEC_2026-08-21.md`, created because Alice previously invented unsupported commands when it did not understand the Bridge contract.
+Strongly target-linked historical advertising spend `35785.11 RUB` is kept outside the strict exact core because the arbitrary August historical SKU membership interval is not exposed.
 
-That design mainly handles invalid attempts after they happen. Layer B will determine whether commercial weak-model portability also requires stronger proactive/bounded capability-awareness guidance so the model knows what kinds of information the Bridge can obtain before it guesses.
+Product-level placement/storage amount is `PLACEMENT_ATTRIBUTION_NOT_AVAILABLE`, not proven zero. The report generation/file path was exercised end-to-end, a real XLSX relationship-target parser defect was fixed at root cause and live-retested, but the final empty logical worksheet cannot be certified as a true zero from preserved evidence.
 
-## Phase 6 — Consolidated Bridge guidance hardening package
+This is a commercially useful but truthfully bounded result, hence:
 
-Status: BLOCKED ON COMPLETION OF BOTH SOL LAYERS
+`PASS_WITH_ATTRIBUTION_COVERAGE_BOUNDARY`
 
-After STD-20 + CAP-20:
+## Phase 6 — Consolidated Bridge guidance / capability hardening package
 
-1. group all observed recovery, discovery, capability-awareness and orchestration gaps;
-2. design one coherent Bridge contract hardening package rather than provider-specific prompt hacks;
-3. preserve `ONE EXPLICIT AI COMMAND = AT MOST ONE PHYSICAL BUSINESS API REQUEST`, while allowing multiple independent explicit commands in one sequential batch;
-4. preserve no hidden retry/fanout/pagination/polling/chaining;
-5. add deterministic machine-readable recovery metadata for evidence-backed failure classes;
-6. add bounded capability discovery/awareness where evidence shows weak models need it;
-7. ensure the AI can learn available semantic data families and batching/dependency rules without receiving credentials/transport control or a giant fragile operation manual;
-8. rerun every affected Sol row;
-9. require affected Sol rows to pass without operator rescue before freezing the Alice candidate.
+Status: **ACTIVE**
+
+Entry gate is satisfied because the complete **44-row Sol evidence pass is finished**.
+
+### H1 — consolidated root-cause gap ledger
+
+Group all observed findings by root cause, not by test number. At minimum classify findings as:
+
+- `BRIDGE_EXECUTION_DEFECT`
+- `BRIDGE_GUIDANCE_OR_RECOVERY_GAP`
+- `BRIDGE_CAPABILITY_COVERAGE_GAP`
+- `PROVIDER_ACCOUNT_ENTITLEMENT_OR_DATA_BOUNDARY`
+- `AI_ORCHESTRATION_ERROR`
+- `OUTPUT_OR_ARTIFACT_GAP`
+- `NO_ACTION_REQUIRED / DOCUMENTED_LIMIT`
+
+For every finding record:
+
+- affected rows;
+- exact evidence authority;
+- whether the business job still completed;
+- whether operator rescue was required;
+- whether the issue is current after later repairs;
+- whether a Bridge change is justified;
+- regression needed if changed.
+
+### H2 — coherent hardening design
+
+Design one machine-readable Bridge contract/guidance package rather than provider-specific prompt hacks or per-test exceptions.
+
+Preserve:
+
+- physical request cardinality;
+- no hidden behavior;
+- privacy/opaque-reference guarantees;
+- bounded capability discovery;
+- explicit batching semantics;
+- deterministic stepwise dependencies;
+- entitlement/data-readiness distinctions;
+- source semantics and no fabricated zeros/attribution.
+
+### H3 — affected-row regression matrix
+
+Map each proposed hardening item to all affected Sol rows and shared regressions.
+
+### H4 — executable implementation
+
+**BLOCKED ON EXPLICIT OPERATOR AUTHORIZATION.**
+
+Documentation/diagnostic design may proceed; executable Bridge patching may not.
+
+### H5 — hardened Sol rerun
+
+After authorized implementation, rerun every affected Sol row plus shared regressions.
+
+Gate:
+
+`SOL_44_TEST_GATE_HARDENED_REGRESSION_PASS`
 
 ## Phase 7 — GPT-5.6 Sol hardened regression
 
-Status: BLOCKED ON PHASE 6
+Status: BLOCKED ON PHASE 6 DESIGN + AUTHORIZED IMPLEMENTATION
 
-Rerun all affected STD/CAP rows plus a short regression suite. Record both answer correctness and whether the model followed Bridge recovery/capability/orchestration guidance without operator intervention.
+Do not rerun all 44 blindly. Use the affected-row regression matrix plus shared safety/cardinality/capability-awareness tests.
+
+Required outcome:
+
+- business answer still correct;
+- known recovery/capability mechanics deterministic without operator rescue;
+- no hidden requests introduced;
+- prior provider/data/entitlement boundaries remain boundaries rather than being falsely converted into Bridge “fixes”.
 
 Gate to proceed:
 
-`SOL_40_TEST_GATE_HARDENED_REGRESSION_PASS`
+`SOL_44_TEST_GATE_HARDENED_REGRESSION_PASS`
 
-## Phase 8 — Alice Free + Bridge 40-test benchmark
+## Phase 8 — Alice Free + Bridge 44-row benchmark
 
-Status: BLOCKED ON SOL 40-TEST GATE + HARDENING REGRESSION
+Status: BLOCKED ON HARDENED SOL GATE
 
-Alice must receive the same 40-test Standard gate against the same hardened Bridge contract. Do not simplify queries to make Alice pass.
+Alice must receive the **same 44-row Standard business/capability gate** against the same hardened Bridge contract.
 
-This prevents Alice testing from measuring whether Alice can reverse-engineer raw API/provider semantics that should have been normalized by Bridge.
+Do not simplify questions or reduce coverage to make Alice pass.
+
+The purpose is to measure preferred-AI portability after Bridge mechanics are normalized, not Alice's ability to reverse-engineer raw provider semantics.
 
 ## Phase 9 — Output/deliverable benchmark
 
 Status: PENDING
 
-Representative queries will also test:
+Representative business queries will separately test:
 
 - sorted table;
 - graph/chart;
@@ -221,7 +301,7 @@ Artifact capability is scored separately from business-answer correctness.
 
 ## Phase 10 — Commercial decision checkpoint
 
-Status: BLOCKED ON SOL + HARDENED SOL + ALICE RESULTS
+Status: BLOCKED ON HARDENED SOL + ALICE RESULTS
 
 Answer:
 
@@ -230,12 +310,13 @@ Answer:
 3. Does the AI understand enough of the Bridge capability surface to behave like a worker rather than an endpoint-specific chatbot?
 4. How much manual report/Excel work is eliminated?
 5. Which correlations create strongest willingness-to-pay value?
-6. Which failures are data/Bridge/model/output related?
+6. Which failures are provider/data/entitlement/Bridge/model/output related?
 7. Can weak consumer AIs recover, discover capabilities and orchestrate explicit batches deterministically using Bridge guidance?
 8. What can marketing truthfully promise?
 9. Does preferred-AI portability remain credible?
 10. Which gaps must be fixed before commercial release?
 11. Is further multi-AI expansion commercially justified?
+12. What price is justified by the set of reliably solved seller jobs and time/risk eliminated?
 
 Decision statuses:
 
@@ -248,27 +329,25 @@ Decision statuses:
 
 Status: DEFERRED
 
-Current live benchmark is Standard-only. Premium results may be extrapolated only where the business logic and Bridge orchestration are materially identical except for entitlement/data availability. Any Premium-specific API semantics remain unproven until a later direct test.
+Premium results may be extrapolated only where business logic and Bridge orchestration are materially identical except for entitlement/data availability. Premium-specific semantics remain unproven until direct validation.
 
 ## Phase 12 — Additional AI providers
 
 Status: PAUSED
 
-Only after the commercial decision checkpoint. Each provider uses the same hardened Bridge contract and same frozen 40-test gate.
+Only after the commercial decision checkpoint. Each provider uses the same hardened Bridge contract and same frozen 44-row gate unless a later gate-promotion authority explicitly adds a distinct capability.
 
 ## Current exact checkpoint
 
-`FORTY_TEST_GATE_LAYER_A_ACTIVE_STD_01_DONE_STD_02_NEXT_LAYER_B_AFTER_STD_20`
+`SOL_PRIMARY_GATE_44_COMPLETE__PHASE_6_H1_CONSOLIDATED_GAP_LEDGER_ACTIVE__NO_NEW_PRIMARY_BUSINESS_ROW`
 
 Next work:
 
-1. continue Layer A from STD-02;
-2. record every operational/recovery/orchestration issue without skipping;
-3. use explicit sequential batching for independent known-upfront reads; use stepwise execution only for real dependencies;
-4. finish STD-01 through STD-20;
-5. freeze exact natural-language wording for CAP-01 through CAP-20 using the already frozen capability surfaces plus Layer A evidence;
-6. run all 20 Layer B capability/product-logic tests on Sol;
-7. consolidate recovery + capability-awareness + orchestration gaps into one Bridge hardening package;
-8. rerun affected Sol rows;
-9. only then run Alice Free against the same 40-test gate;
-10. make commercial decision before resuming multi-AI expansion.
+1. build the consolidated 44-row Sol root-cause gap ledger from final evidence;
+2. deduplicate repeated incidents so one root cause is not counted as many product defects;
+3. separate Bridge-fixable issues from provider/account/entitlement/data boundaries and AI-orchestration mistakes;
+4. design the coherent hardening package and affected-row regression matrix;
+5. do **not** implement executable Bridge changes without explicit operator authorization;
+6. after authorization and implementation, pass hardened Sol regression;
+7. only then run Alice Free on the same 44-row gate;
+8. run output-artifact benchmark and make the commercial/pricing decision from evidence.
