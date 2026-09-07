@@ -191,13 +191,32 @@ Canonical contrast artifacts:
 
 ## 06.5 — Cross-platform / Wildberries status
 
-Status: **[~] ACTIVE**
+Status: **[~] ACTIVE — DIRECT SELLER READ CHANNEL FOUND; FRESH COMPLETE CATALOG PASS NEXT**
 
-Required decision:
-- determine whether a current accepted Wildberries seller-side read channel exists in the repository/runtime;
-- if yes, measure only the seller-side facts needed to relate current WB assortment/performance to the Stage-06 passport;
-- if no, classify WB as `BLOCKED/NOT_AVAILABLE` with exact evidence;
-- public Search snippets do not substitute for seller-side WB evidence.
+Channel discovery:
+- retained runtime artifact proves `wildberries-llm-api-bridge` v0.1.2;
+- command/result protocol: `WB_API_V1` → `WB_RESULT_V1`;
+- accepted seller-content operation: `cards_list`;
+- provider host: `content`;
+- HTTP: `POST /content/v2/get/cards/list`;
+- operation is read-only, current and execution-enabled in the inspected runtime registry;
+- parser accepts top-level `body` for this POST operation.
+
+Canonical discovery checkpoint:
+- `marketing/research/R4_STAGE06_WB_CHANNEL_DISCOVERY_2026-09-07.md`.
+
+Preserved historical seller-side page:
+- request `2dbd77b1-df36-459c-b677-a13524475438`;
+- HTTP 200;
+- exactly 100 cards;
+- returned cursor `updatedAt=2025-08-11T02:44:38.675204Z`, `nmID=481155639`, `total=100`;
+- therefore useful but **not terminal and not a proven complete catalog**.
+
+Current classification:
+- `WB_SELLER_SIDE_CHANNEL = AVAILABLE_AND_DIRECT`;
+- `WB_CURRENT_CATALOG_COMPLETENESS = NOT_YET_PROVEN`.
+
+Next measurement is a **fresh page 1**, not continuation of the historical cursor. Use `limit=100`, `withPhoto=-1`, newest-first sort; save before issuing any explicit continuation request.
 
 Do not start bridge engineering as Stage-06 research work.
 
@@ -213,4 +232,4 @@ Close only when WB coverage status is explicit and all current Stage-06 evidence
 
 # Current continuation point
 
-**06.5 ACTIVE — inspect the repository/current runtime for an accepted Wildberries seller-side read channel. If one exists, issue only the minimum decision-grade WB commands; otherwise close WB as blocked/not available and proceed to 06.6.**
+**06.5 ACTIVE — run one fresh WB `cards_list` page 1 through the accepted v0.1.2 channel. Save/analyze that page first. If its returned cursor proves continuation is required, issue exactly one next-page request using only that fresh returned `updatedAt + nmID`.**
