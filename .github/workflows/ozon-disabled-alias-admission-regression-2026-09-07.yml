@@ -9,21 +9,125 @@ on:
 permissions:
   contents: read
 
+env:
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  VALIDATION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
+  TARGET: tooling/llm-api-bridges/ozon-seller/validation/disabled-alias-admission-v1/run_disabled_alias_admission_gate.mjs
+  BASE_AUTHORITY: bf7168998d64b7b8007e7a02791856c73d70b34b
+
 jobs:
-  linux-regression:
+  linux-full-regression:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Disabled alias admission gate
+        with:
+          fetch-depth: 0
+      - name: Syntax and exact disabled-alias workflow
+        shell: bash
         run: |
           set -euo pipefail
-          node tooling/llm-api-bridges/ozon-seller/validation/disabled-alias-admission-v1/run_disabled_alias_admission_gate.mjs .
+          node --check "$DIST/service_worker.js"
+          node --check "$DIST/shared/ozon_contract.js"
+          node "$TARGET" .
+          echo REG_DISABLED_ALIAS_FINAL_TARGETED_LINUX_PASS
+      - name: Complete intersecting read-effect regression family
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$VALIDATION/run_defect_015_date_repair_gate.mjs" .
+          node "$VALIDATION/run_effect_read_repair_gate.mjs" .
+          for gate in "$VALIDATION"/run_*.mjs; do node "$gate" .; done
+          echo REG_DISABLED_ALIAS_FINAL_LINUX_FULL_REGRESSION_PASS
+      - name: Dependency and runtime boundary assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(grep -nE 'void[[:space:]]+process(Manual|Auto)Batch' "$DIST/service_worker.js" || true)"
+          grep -q 'preflightExecution(command);' "$DIST/shared/ozon_contract.js"
+          test ! -e tooling/llm-api-bridges/ozon-seller/validation/disabled-alias-admission-v1/apply_disabled_alias_admission_patch.py
+          test ! -e .github/workflows/ozon-disabled-alias-admission-apply-2026-09-07.yml
+          RUNTIME_DIFF="$(git diff --name-only "$BASE_AUTHORITY" HEAD -- "$DIST" | sort)"
+          EXPECTED=$'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/service_worker.js\ntooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_contract.js'
+          test "$RUNTIME_DIFF" = "$EXPECTED"
+          echo REG_DISABLED_ALIAS_DEPENDENCY_BOUNDARY_PASS
 
-  windows-regression:
+  windows-full-regression:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Disabled alias admission gate
+      - name: Windows exact disabled-alias workflow
         shell: pwsh
         run: |
-          node tooling/llm-api-bridges/ozon-seller/validation/disabled-alias-admission-v1/run_disabled_alias_admission_gate.mjs .
+          node --check "$env:DIST/service_worker.js"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --check "$env:DIST/shared/ozon_contract.js"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node "$env:TARGET" .
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node "$env:VALIDATION/run_defect_015_date_repair_gate.mjs" .
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node "$env:VALIDATION/run_effect_read_repair_gate.mjs" .
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem "$env:VALIDATION/run_*.mjs" | Sort-Object Name | ForEach-Object {
+            node $_.FullName .
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          Write-Output 'REG_DISABLED_ALIAS_FINAL_WINDOWS_FULL_REGRESSION_PASS'
+
+  package-exact-candidate:
+    needs: [linux-full-regression, windows-full-regression]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build deterministic exact candidate archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHORT="${GITHUB_SHA:0:8}"
+          NAME="OZON_BRIDGE_v0.1.19_DISABLED_ALIAS_ADMISSION_${SHORT}.zip"
+          export NAME
+          python - <<'PY'
+          import os, pathlib, zipfile, hashlib, shutil
+          root = pathlib.Path('tooling/llm-api-bridges/ozon-seller/dist-step7-candidate')
+          files = sorted(p for p in root.rglob('*') if p.is_file())
+          if len(files) != 21:
+              raise SystemExit(f'expected 21 production files, got {len(files)}')
+          out = pathlib.Path(os.environ['NAME'])
+          with zipfile.ZipFile(out, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+              for p in files:
+                  rel = p.relative_to(root).as_posix()
+                  info = zipfile.ZipInfo(rel, date_time=(1980,1,1,0,0,0))
+                  info.compress_type = zipfile.ZIP_DEFLATED
+                  info.external_attr = 0o100644 << 16
+                  z.writestr(info, p.read_bytes())
+          extract = pathlib.Path('fresh-extract')
+          if extract.exists(): shutil.rmtree(extract)
+          extract.mkdir()
+          with zipfile.ZipFile(out) as z: z.extractall(extract)
+          extracted = sorted(p for p in extract.rglob('*') if p.is_file())
+          source_names = [p.relative_to(root).as_posix() for p in files]
+          extract_names = [p.relative_to(extract).as_posix() for p in extracted]
+          if extract_names != source_names:
+              raise SystemExit('fresh extraction tree mismatch')
+          for src, dst in zip(files, extracted):
+              if src.read_bytes() != dst.read_bytes():
+                  raise SystemExit(f'byte mismatch: {src}')
+          digest = hashlib.sha256(out.read_bytes()).hexdigest()
+          pathlib.Path('PACKAGE_VERIFICATION.txt').write_text(
+              f'commit={os.environ["GITHUB_SHA"]}\nfile_count={len(files)}\nbytes={out.stat().st_size}\nsha256={digest}\n'
+              'fresh_extract=PASS\nbyte_for_byte=PASS\n', encoding='utf-8')
+          print('REG_DISABLED_ALIAS_EXACT_PACKAGE_TREE_PASS')
+          print('REG_DISABLED_ALIAS_FRESH_EXTRACTION_PASS')
+          print('REG_DISABLED_ALIAS_BYTE_FOR_BYTE_PACKAGE_PASS')
+          print(f'ARTIFACT={out}')
+          print(f'BYTES={out.stat().st_size}')
+          print(f'SHA256={digest}')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-disabled-alias-admission-${{ github.sha }}
+          path: |
+            OZON_BRIDGE_v0.1.19_DISABLED_ALIAS_ADMISSION_*.zip
+            PACKAGE_VERIFICATION.txt
+          if-no-files-found: error
+          retention-days: 30
