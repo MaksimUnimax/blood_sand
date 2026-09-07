@@ -6,7 +6,8 @@ Status as of 2026-08-29: active read-only Ozon LLM↔API Bridge repair and compl
 
 For current work, use these documents in this order:
 
-1. `OZON_BRIDGE_FULL_READ_COMPLETION_ROADMAP_2026-08-29.md` — **active implementation roadmap and current step; this is the first document for all further full-read work.**
+0. `OZON_COMMAND_ENVELOPE_CONTRACT.md` — **mandatory single source of truth for `OZON_API_V1` syntax, command-envelope cardinality, Markdown-fence semantics, Manual/Autorun capture scope and explicit batching.**
+1. `OZON_BRIDGE_FULL_READ_COMPLETION_ROADMAP_2026-08-29.md` — **active implementation roadmap and current step; this is the first document for all further full-read endpoint work.**
 2. `OZON_BRIDGE_FULL_READ_DYNAMIC_ENTITLEMENTS_AND_CLUSTERS_SPEC_2026-08-25.md` — authoritative full Seller API design and fixed implementation rules.
 3. `OZON_BRIDGE_CURRENT_HANDOFF_2026-08-17.md` — continuation state and milestone handoff pattern.
 4. `OZON_BRIDGE_ROADMAP_2026-08-17.md` — target architecture, provider/planner roadmap and accepted milestone evidence.
@@ -22,6 +23,28 @@ Repository: `MaksimUnimax/blood_sand`.
 Canonical release/evidence snapshots remain under `reference-*`. Development versions and operator candidates do not become canonical merely because they exist or were tested.
 
 Current full-read repair/completion work follows the active roadmap above. New endpoint work must not be selected ad hoc outside that roadmap.
+
+For command syntax/cardinality, `OZON_COMMAND_ENVELOPE_CONTRACT.md` overrides conversational examples and older documentation wording. Actual packaged runtime remains the final executable authority.
+
+## Command-envelope rule
+
+A Bridge command is defined by the protocol envelope, not by Markdown presentation:
+
+```text
+OZON_API_V1
+{"operation":"allowed_alias","params":{}}
+```
+
+- top-level JSON keys are only `operation` and `params`;
+- newline/whitespace after `OZON_API_V1` is valid;
+- one assistant source text may contain multiple complete `OZON_API_V1` command envelopes;
+- commands are discovered in source order and may form one explicit sequential batch;
+- Markdown code fences are presentation/UI containers, **not command boundaries and not command-cardinality rules**;
+- Manual mode normally submits the raw text of the selected UI code block, while Autorun submits the admitted completed assistant message; both use the same command-envelope parser;
+- one explicit command still produces at most one physical business provider request;
+- multiple explicit commands do not authorize hidden retry, pagination, fan-out, polling or chaining.
+
+Never infer a one-command-per-code-block or one-command-per-assistant-response restriction from UI layout.
 
 ## Active full-read completion rule
 
@@ -89,7 +112,7 @@ Synthetic QA does not prove facts that require the operator's real logged-in bro
 
 Unless explicitly changed by a reviewed feature:
 
-- native Copy structurally anchors the correct code block;
+- native Copy structurally anchors the correct UI code block; this is a Manual capture/UI invariant, not a command-cardinality rule;
 - one extension-owned top-level Shadow DOM overlay;
 - fail-closed conversation/binding ownership;
 - independent tabs/conversations and ChatGPT/Alice ownership isolation;
@@ -98,6 +121,7 @@ Unless explicitly changed by a reviewed feature:
 - credentials isolated from page/content output;
 - read-only Ozon operation surface unless mutations are explicitly designed later;
 - one explicit Bridge command produces at most one physical business provider request;
+- one assistant response may contain multiple explicit Bridge command envelopes where batching is appropriate;
 - no hidden provider retry/pagination/fan-out/report polling;
 - provider quota/cache state is not reset by unrelated UI/delivery cleanup;
 - delivery recovery does not replay provider work.
