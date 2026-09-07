@@ -1,0 +1,65 @@
+name: Ozon command envelope contract 2026-09-07
+
+on:
+  push:
+    branches:
+      - docs/ozon-command-envelope-authority-2026-09-07
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  COMMAND_GATE: tooling/llm-api-bridges/ozon-seller/validation/command-envelope-contract-v1/run_command_envelope_contract_gate.mjs
+  DISABLED_GATE: tooling/llm-api-bridges/ozon-seller/validation/disabled-alias-admission-v1/run_disabled_alias_admission_gate.mjs
+  BASE_AUTHORITY: 34fd8c12fb35d918c2d7c38bcccb4375cef38d79
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+
+jobs:
+  linux-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Exact command-envelope runtime and authority gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$COMMAND_GATE"
+          node "$COMMAND_GATE" .
+          node "$DISABLED_GATE" .
+          echo REG_COMMAND_ENVELOPE_LINUX_PASS
+      - name: Runtime immutability and dependency closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only "$BASE_AUTHORITY" HEAD -- "$DIST")"
+          git diff --name-only "$BASE_AUTHORITY" HEAD | sort
+          test -f tooling/llm-api-bridges/ozon-seller/OZON_COMMAND_ENVELOPE_CONTRACT.md
+          test -f tooling/llm-api-bridges/ozon-seller/research/product/OZON_AI_WORKER_EXPLICIT_BATCH_ORCHESTRATION_DEFECT_AND_RULE_2026-09-06.md
+          echo REG_COMMAND_ENVELOPE_RUNTIME_UNCHANGED_PASS
+          echo REG_COMMAND_ENVELOPE_DEPENDENCY_CLOSURE_PASS
+
+  windows-contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Windows command-envelope regression
+        shell: pwsh
+        run: |
+          node --check "$env:COMMAND_GATE"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node "$env:COMMAND_GATE" .
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node "$env:DISABLED_GATE" .
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $runtimeDiff = git diff --name-only $env:BASE_AUTHORITY HEAD -- $env:DIST
+          if ($runtimeDiff) {
+            Write-Error "Runtime changed in documentation-only command-envelope repair: $runtimeDiff"
+            exit 1
+          }
+          Write-Output 'REG_COMMAND_ENVELOPE_WINDOWS_PASS'
+          Write-Output 'REG_COMMAND_ENVELOPE_RUNTIME_UNCHANGED_WINDOWS_PASS'
