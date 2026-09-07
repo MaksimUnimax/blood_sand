@@ -462,14 +462,37 @@
 
   function reportParseSheet(xml, sharedStrings, name, { offset = 0, limit = 200 } = {}) {
     const physicalRows = [];
+    let nextImplicitRow = 1;
     for (const rowMatch of String(xml || "").matchAll(reportXmlQualifiedElementPattern("row", "gi"))) {
-      const rowNumber = Number(reportXmlAttr(rowMatch[2], "r")) || physicalRows.length + 1;
+      const rawRowRef = reportXmlAttr(rowMatch[2], "r");
+      let rowNumber = nextImplicitRow;
+      if (rawRowRef !== null && String(rawRowRef).trim() !== "") {
+        const normalizedRowRef = String(rawRowRef).trim();
+        if (!/^[1-9][0-9]*$/.test(normalizedRowRef)) fail("REPORT_XLSX_INVALID", `XLSX row reference некорректен: ${normalizedRowRef.slice(0, 40)}`);
+        rowNumber = Number(normalizedRowRef);
+        if (!Number.isSafeInteger(rowNumber) || rowNumber < 1 || rowNumber > 1048576) fail("REPORT_XLSX_INVALID", `XLSX row reference вне допустимого диапазона: ${normalizedRowRef.slice(0, 40)}`);
+      }
+      nextImplicitRow = Math.max(nextImplicitRow, rowNumber + 1);
+
       const values = [];
       const rowBody = rowMatch[3] || "";
+      let nextImplicitColumn = 0;
       for (const cellMatch of rowBody.matchAll(reportXmlQualifiedElementPattern("c", "gi"))) {
         const attrs = cellMatch[2], body = cellMatch[3] || "";
-        const index = reportColumnIndex(reportXmlAttr(attrs, "r"));
-        if (index === null) continue;
+        const rawCellRef = reportXmlAttr(attrs, "r");
+        let index = nextImplicitColumn;
+        if (rawCellRef !== null && String(rawCellRef).trim() !== "") {
+          const normalizedCellRef = String(rawCellRef).trim();
+          const cellRefMatch = normalizedCellRef.match(/^([A-Za-z]{1,3})([1-9][0-9]*)$/);
+          if (!cellRefMatch) fail("REPORT_XLSX_INVALID", `XLSX cell reference некорректен: ${normalizedCellRef.slice(0, 40)}`);
+          index = reportColumnIndex(normalizedCellRef);
+          const cellRow = Number(cellRefMatch[2]);
+          if (index === null || index < 0 || index >= 16384 || !Number.isSafeInteger(cellRow) || cellRow < 1 || cellRow > 1048576) {
+            fail("REPORT_XLSX_INVALID", `XLSX cell reference вне допустимого диапазона: ${normalizedCellRef.slice(0, 40)}`);
+          }
+        }
+        nextImplicitColumn = Math.max(nextImplicitColumn, index + 1);
+
         const type = reportXmlAttr(attrs, "t") || "n";
         let raw = "";
         if (type === "inlineStr") {
