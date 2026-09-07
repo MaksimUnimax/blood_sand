@@ -1,0 +1,87 @@
+name: Ozon XLSX implicit cell-ref repair 2026-09-07
+
+on:
+  push:
+    branches:
+      - repair/ozon-xlsx-implicit-cell-ref-2026-09-07
+    paths:
+      - .github/workflows/ozon-xlsx-implicit-cell-ref-repair-2026-09-07.yml
+
+permissions:
+  contents: write
+
+env:
+  BASELINE: 6544806ae170832829671dbcdd461fcb750933e2
+  PROJECT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  VALIDATION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
+  CORE: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/provider_transport_core.js
+  PATCHER: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_report_xlsx_implicit_cell_ref_patch_2026-09-07.py
+  REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_xlsx_implicit_cell_ref_regression_2026-09-07.mjs
+  NS_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_xlsx_namespace_parser_regression_2026-09-07.mjs
+  REL_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_xlsx_relationship_target_regression_2026-09-06.mjs
+  PUBLISHER: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/publish_report_xlsx_implicit_cell_ref_repair_2026-09-07.py
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Pre-fix proof, root-cause repair, dependency gate and full regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$BASELINE" HEAD
+          cp "$CORE" current_core.js
+          git show "$BASELINE:$CORE" > "$CORE"
+          set +e
+          node "$REGRESSION" . > pre_fix.log 2>&1
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          grep -q 'Expected values to be strictly deep-equal\|Expected values to be strictly equal' pre_fix.log || { cat pre_fix.log; exit 1; }
+          echo 'OZON_XLSX_IMPLICIT_CELL_REF_PRE_FIX_ZERO_ROW_REPRODUCTION_PASS'
+          mv current_core.js "$CORE"
+
+          python "$PATCHER" .
+          test "$(git diff --name-only "$BASELINE" -- "$DIST")" = "$CORE"
+          git diff --exit-code "$BASELINE" -- \
+            "$DIST/shared/ozon_provider.js" \
+            "$DIST/shared/ozon_contract.js" \
+            "$DIST/shared/ozon_operation_registry.js" \
+            "$DIST/service_worker.js" \
+            "$DIST/manifest.json"
+          if git diff --name-only "$BASELINE" -- "$PROJECT" | grep -E '(^|/)(package(-lock)?\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml)$'; then exit 1; fi
+
+          node --check "$CORE"
+          node "$REGRESSION" .
+          node "$NS_REGRESSION" .
+          node "$REL_REGRESSION" .
+          node "$VALIDATION/run_ai_readable_report_parser_gate.mjs" .
+          node "$VALIDATION/run_report_file_lifecycle_gate.mjs" .
+          node "$VALIDATION/run_report_file_session_fail_closed_gate.mjs" .
+          node "$VALIDATION/run_report_file_workflow_gate.mjs" .
+          for gate in "$VALIDATION"/run_*.mjs; do node "$gate" .; done
+
+          echo 'OZON_XLSX_IMPLICIT_CELL_REF_ONLY_CORE_RUNTIME_DELTA_PASS'
+          echo 'OZON_XLSX_IMPLICIT_CELL_REF_NO_PACKAGE_DEPENDENCY_CHANGE_PASS'
+          echo 'OZON_XLSX_IMPLICIT_CELL_REF_FULL_RUN_GATE_FAMILY_PASS'
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish exact repair, artifact, fresh extraction and closure report
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$PUBLISHER" .
