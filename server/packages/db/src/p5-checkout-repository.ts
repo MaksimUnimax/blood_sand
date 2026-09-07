@@ -33,6 +33,14 @@ type Row = {
   providerPaymentId: string | null;
   checkoutReference: string | null;
   paymentId: string | null;
+  paymentState:
+    | "PENDING"
+    | "SUCCEEDED"
+    | "FAILED"
+    | "CANCELED"
+    | "REFUNDED"
+    | "CHARGEBACK"
+    | null;
   failureCode: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -71,6 +79,7 @@ function snapshot(row: Row): CheckoutIntent {
     providerPaymentId: row.providerPaymentId,
     checkoutReference: row.checkoutReference,
     paymentId: row.paymentId,
+    paymentState: row.paymentState ?? null,
     failureCode: failure(row.failureCode),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -78,14 +87,25 @@ function snapshot(row: Row): CheckoutIntent {
   };
 }
 
-const intentColumns = `id,account_id AS "accountId",price_revision_id AS "priceRevisionId",
+const intentColumns = `i.id,i.account_id AS "accountId",i.price_revision_id AS "priceRevisionId",
+  i.plan_revision_id AS "planRevisionId",i.provider,i.state,i.idempotency_key_hash AS "idempotencyKeyHash",
+  i.request_fingerprint_sha256 AS "requestFingerprintSha256",i.admitted_at AS "admittedAt",
+  i.amount_minor AS "amountMinor",i.currency,i.billing_interval_unit AS "billingIntervalUnit",
+  i.billing_interval_count AS "billingIntervalCount",i.provider_checkout_id AS "providerCheckoutId",
+  i.provider_payment_id AS "providerPaymentId",i.checkout_reference AS "checkoutReference",
+  i.payment_id AS "paymentId",p.state AS "paymentState",i.failure_code AS "failureCode",i.created_at AS "createdAt",
+  i.updated_at AS "updatedAt",i.completed_at AS "completedAt"`;
+
+const intentReturningColumns = `id,account_id AS "accountId",price_revision_id AS "priceRevisionId",
   plan_revision_id AS "planRevisionId",provider,state,idempotency_key_hash AS "idempotencyKeyHash",
   request_fingerprint_sha256 AS "requestFingerprintSha256",admitted_at AS "admittedAt",
   amount_minor AS "amountMinor",currency,billing_interval_unit AS "billingIntervalUnit",
   billing_interval_count AS "billingIntervalCount",provider_checkout_id AS "providerCheckoutId",
   provider_payment_id AS "providerPaymentId",checkout_reference AS "checkoutReference",
-  payment_id AS "paymentId",failure_code AS "failureCode",created_at AS "createdAt",
+  payment_id AS "paymentId",NULL::payment_state AS "paymentState",failure_code AS "failureCode",created_at AS "createdAt",
   updated_at AS "updatedAt",completed_at AS "completedAt"`;
+
+const intentFrom = `checkout_intents i LEFT JOIN payments p ON p.id=i.payment_id`;
 
 async function lockAccount(q: Query, accountId: string): Promise<boolean> {
   await q.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
@@ -137,7 +157,7 @@ async function loadIntent(
   lock = false,
 ): Promise<CheckoutIntent | null> {
   const result = await q.query<Row>(
-    `SELECT ${intentColumns} FROM checkout_intents WHERE account_id=$1 AND idempotency_key_hash=$2${lock ? " FOR UPDATE" : ""}`,
+    `SELECT ${intentColumns} FROM ${intentFrom} WHERE i.account_id=$1 AND i.idempotency_key_hash=$2${lock ? " FOR UPDATE OF i" : ""}`,
     [accountId, hash],
   );
   return result.rows[0] ? snapshot(result.rows[0]) : null;
@@ -170,6 +190,8 @@ async function otherActionableIntent(
     if (row.state === "CREATING") return "CHECKOUT_IN_PROGRESS";
     if (!row.paymentId || !row.paymentState) return "CHECKOUT_CORRUPTED";
     if (row.paymentState === "PENDING") return "CHECKOUT_IN_PROGRESS";
+    if (row.paymentState === "FAILED" || row.paymentState === "CANCELED")
+      continue;
     return "CHECKOUT_CORRUPTED";
   }
   return null;
@@ -220,7 +242,7 @@ async function terminalFailure(
         };
   }
   const updated = await q.query<Row>(
-    `UPDATE checkout_intents SET state='FAILED',failure_code=$1,updated_at=GREATEST(CURRENT_TIMESTAMP,$2),completed_at=GREATEST(CURRENT_TIMESTAMP,$2) WHERE id=$3 RETURNING ${intentColumns}`,
+    `UPDATE checkout_intents SET state='FAILED',failure_code=$1,updated_at=GREATEST(CURRENT_TIMESTAMP,$2),completed_at=GREATEST(CURRENT_TIMESTAMP,$2) WHERE id=$3 RETURNING ${intentReturningColumns}`,
     [code, completedAt, intent.id],
   );
   const next = snapshot(updated.rows[0]!);
@@ -321,7 +343,7 @@ export function createP5CheckoutRepository(
              (account_id,price_revision_id,plan_revision_id,provider,state,idempotency_key_hash,request_fingerprint_sha256,
               admitted_at,amount_minor,currency,billing_interval_unit,billing_interval_count)
            VALUES($1,$2,$3,$4,'CREATING',$5,$6,$7,$8,$9,$10,$11)
-           RETURNING ${intentColumns}`,
+           RETURNING ${intentReturningColumns}`,
           [
             input.accountId,
             input.offer.priceRevisionId,
@@ -365,7 +387,7 @@ export function createP5CheckoutRepository(
         if (!accountId || !(await lockAccount(q, accountId)))
           return { kind: "REJECTED", code: "CHECKOUT_CORRUPTED" };
         const lockedResult = await q.query<Row>(
-          `SELECT ${intentColumns} FROM checkout_intents WHERE id=$1 FOR UPDATE`,
+          `SELECT ${intentColumns} FROM ${intentFrom} WHERE i.id=$1 FOR UPDATE OF i`,
           [intentId],
         );
         const locked = snapshot(lockedResult.rows[0]!);
@@ -422,7 +444,7 @@ export function createP5CheckoutRepository(
             ],
           );
           const updated = await q.query<Row>(
-            `UPDATE checkout_intents SET state='READY',provider_checkout_id=$1,provider_payment_id=$2,checkout_reference=$3,payment_id=$4,updated_at=GREATEST(CURRENT_TIMESTAMP,$5),completed_at=GREATEST(CURRENT_TIMESTAMP,$5) WHERE id=$6 RETURNING ${intentColumns}`,
+            `UPDATE checkout_intents SET state='READY',provider_checkout_id=$1,provider_payment_id=$2,checkout_reference=$3,payment_id=$4,updated_at=GREATEST(CURRENT_TIMESTAMP,$5),completed_at=GREATEST(CURRENT_TIMESTAMP,$5) WHERE id=$6 RETURNING ${intentReturningColumns}`,
             [
               result.providerCheckoutId,
               result.providerPaymentId,
@@ -470,7 +492,7 @@ export function createP5CheckoutRepository(
         if (!accountId || !(await lockAccount(q, accountId)))
           return { kind: "REJECTED", code: "CHECKOUT_CORRUPTED" };
         const lockedRow = await q.query<Row>(
-          `SELECT ${intentColumns} FROM checkout_intents WHERE id=$1 FOR UPDATE`,
+          `SELECT ${intentColumns} FROM ${intentFrom} WHERE i.id=$1 FOR UPDATE OF i`,
           [intentId],
         );
         const locked = snapshot(lockedRow.rows[0]!);

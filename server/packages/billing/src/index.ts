@@ -59,6 +59,8 @@ export const CheckoutFailureCodeSchema = z.enum([
   "PROVIDER_REJECTED",
   "PROVIDER_UNAVAILABLE",
   "CHECKOUT_CORRUPTED",
+  "PAYMENT_FAILED",
+  "PAYMENT_CANCELED",
   "SERVICE_UNAVAILABLE",
   ...PurchasableOfferFailureCodeSchema.options,
 ]);
@@ -107,6 +109,193 @@ export interface BillingProviderPort {
   ): Promise<ProviderCheckoutResult>;
 }
 
+export const BillingEventTypeSchema = z.enum([
+  "payment.succeeded",
+  "payment.failed",
+  "payment.canceled",
+]);
+export type BillingEventType = z.infer<typeof BillingEventTypeSchema>;
+
+const BillingEventIdentitySchema = OpaqueReferenceSchema;
+
+export const VerifiedBillingEventSchema = z
+  .object({
+    provider: MachineKeySchema,
+    eventIdentity: BillingEventIdentitySchema,
+    eventType: BillingEventTypeSchema,
+    providerPaymentId: BillingEventIdentitySchema,
+    amountMinor: AmountMinorSchema,
+    currency: CurrencySchema,
+    occurredAt: z.date(),
+    payloadSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  })
+  .strict();
+export type VerifiedBillingEvent = z.infer<typeof VerifiedBillingEventSchema>;
+
+export const BillingEventContextSchema = z
+  .object({ correlationId: z.string().min(1).max(128) })
+  .strict();
+export type BillingEventContext = z.infer<typeof BillingEventContextSchema>;
+
+export const BillingEventVerificationCodeSchema = z.enum([
+  "MALFORMED_EVENT",
+  "INVALID_EVENT_PROOF",
+]);
+export type BillingEventVerificationCode = z.infer<
+  typeof BillingEventVerificationCodeSchema
+>;
+
+export type BillingEventVerificationResult =
+  | { kind: "VERIFIED"; event: VerifiedBillingEvent }
+  | { kind: "REJECTED"; code: BillingEventVerificationCode };
+
+export interface BillingEventVerificationPort {
+  readonly providerKey: string;
+  verifyEvent(
+    raw: unknown,
+  ): Promise<BillingEventVerificationResult> | BillingEventVerificationResult;
+}
+
+export const BillingEventFailureCodeSchema = z.enum([
+  "MALFORMED_EVENT",
+  "INVALID_EVENT_PROOF",
+  "EVENT_IDENTITY_CONFLICT",
+  "PAYMENT_NOT_FOUND",
+  "PAYMENT_TERMS_MISMATCH",
+  "PAYMENT_STATE_CONFLICT",
+  "CHECKOUT_NOT_FOUND",
+  "CHECKOUT_CORRUPTED",
+  "EVENT_TIME_INVALID",
+  "CURRENT_SUBSCRIPTION_CONFLICT",
+  "PAYMENT_SUBSCRIPTION_CORRUPTED",
+  "SERVICE_UNAVAILABLE",
+]);
+export type BillingEventFailureCode = z.infer<
+  typeof BillingEventFailureCodeSchema
+>;
+
+export type BillingEventProcessingResult =
+  | {
+      kind: "APPLIED";
+      replay: boolean;
+      billingEventId: string;
+      paymentId: string | null;
+      subscriptionId: string | null;
+      subscriptionTransitionId: string | null;
+    }
+  | {
+      kind: "IGNORED";
+      replay: boolean;
+      billingEventId: string;
+      paymentId: string | null;
+      subscriptionId: string | null;
+    }
+  | {
+      kind: "FAILED";
+      replay: boolean;
+      billingEventId: string;
+      code: BillingEventFailureCode;
+      paymentId: string | null;
+      subscriptionId: string | null;
+    }
+  | { kind: "REJECTED"; code: BillingEventFailureCode; replay: false }
+  | {
+      kind: "RETRYABLE";
+      code: "SERVICE_UNAVAILABLE";
+      billingEventId?: string;
+    };
+
+export interface BillingEventApplicationRepository {
+  applyVerifiedBillingEvent(input: {
+    event: VerifiedBillingEvent;
+    context: BillingEventContext;
+    receivedAt: Date;
+    verifiedAt: Date;
+  }): Promise<BillingEventProcessingResult>;
+}
+
+export type BillingEventServiceOptions = {
+  repository: BillingEventApplicationRepository;
+  verifier: BillingEventVerificationPort;
+  now?: () => Date;
+};
+
+export function createBillingEventService(options: BillingEventServiceOptions) {
+  const now = options.now ?? (() => new Date());
+  const providerKey = MachineKeySchema.parse(options.verifier.providerKey);
+
+  async function processBillingEvent(
+    rawEvent: unknown,
+    rawContext: unknown,
+  ): Promise<BillingEventProcessingResult> {
+    const context = BillingEventContextSchema.safeParse(rawContext);
+    if (!context.success)
+      return { kind: "REJECTED", code: "MALFORMED_EVENT", replay: false };
+    const capturedAt = new Date(now().getTime());
+    let verification: BillingEventVerificationResult;
+    try {
+      verification = await options.verifier.verifyEvent(rawEvent);
+    } catch {
+      return { kind: "RETRYABLE", code: "SERVICE_UNAVAILABLE" };
+    }
+    if (verification.kind === "REJECTED")
+      return { kind: "REJECTED", code: verification.code, replay: false };
+    const parsed = VerifiedBillingEventSchema.safeParse(verification.event);
+    if (!parsed.success || parsed.data.provider !== providerKey)
+      return { kind: "REJECTED", code: "MALFORMED_EVENT", replay: false };
+    try {
+      return await options.repository.applyVerifiedBillingEvent({
+        event: parsed.data,
+        context: context.data,
+        receivedAt: capturedAt,
+        verifiedAt: capturedAt,
+      });
+    } catch {
+      return { kind: "RETRYABLE", code: "SERVICE_UNAVAILABLE" };
+    }
+  }
+
+  return { processBillingEvent, applyBillingEvent: processBillingEvent };
+}
+
+export const createBillingEventProcessor = createBillingEventService;
+
+export function addUtcCalendarInterval(
+  start: Date,
+  unit: BillingIntervalUnit,
+  count: number,
+): Date {
+  if (!Number.isSafeInteger(count) || count < 1)
+    throw new Error("INVALID_INTERVAL");
+  const value = new Date(start.getTime());
+  if (Number.isNaN(value.getTime())) throw new Error("INVALID_DATE");
+  const year = value.getUTCFullYear();
+  const month = value.getUTCMonth();
+  const day = value.getUTCDate();
+  if (unit === "DAY") {
+    value.setUTCDate(day + count);
+    return value;
+  }
+  const monthOffset = unit === "MONTH" ? count : count * 12;
+  const destinationMonth = month + monthOffset;
+  const destinationYear = year + Math.floor(destinationMonth / 12);
+  const normalizedMonth = ((destinationMonth % 12) + 12) % 12;
+  const lastDay = new Date(
+    Date.UTC(destinationYear, normalizedMonth + 1, 0),
+  ).getUTCDate();
+  return new Date(
+    Date.UTC(
+      destinationYear,
+      normalizedMonth,
+      Math.min(day, lastDay),
+      value.getUTCHours(),
+      value.getUTCMinutes(),
+      value.getUTCSeconds(),
+      value.getUTCMilliseconds(),
+    ),
+  );
+}
+
 export type CheckoutIntentState = "CREATING" | "READY" | "FAILED";
 export type CheckoutIntent = {
   id: string;
@@ -126,6 +315,14 @@ export type CheckoutIntent = {
   providerPaymentId: string | null;
   checkoutReference: string | null;
   paymentId: string | null;
+  paymentState?:
+    | "PENDING"
+    | "SUCCEEDED"
+    | "FAILED"
+    | "CANCELED"
+    | "REFUNDED"
+    | "CHARGEBACK"
+    | null;
   failureCode: CheckoutFailureCode | null;
   createdAt: Date;
   updatedAt: Date;
@@ -247,6 +444,21 @@ function actionabilityFailure(
   return null;
 }
 
+function terminalReadyFailure(
+  intent: CheckoutIntent,
+  observation: CheckoutAccountObservation,
+): CheckoutFailureCode | null {
+  if (intent.paymentState === undefined || intent.paymentState === "PENDING")
+    return null;
+  if (intent.paymentState === "FAILED") return "PAYMENT_FAILED";
+  if (intent.paymentState === "CANCELED") return "PAYMENT_CANCELED";
+  if (intent.paymentState === "SUCCEEDED")
+    return observation.hasCurrentSubscription
+      ? "CURRENT_SUBSCRIPTION_EXISTS"
+      : "CHECKOUT_CORRUPTED";
+  return "CHECKOUT_CORRUPTED";
+}
+
 function readyResult(intent: CheckoutIntent, replay: boolean): CheckoutResult {
   if (
     intent.state !== "READY" ||
@@ -303,6 +515,9 @@ export function createCheckoutService(options: CheckoutServiceOptions) {
         replay: true,
       };
     if (intent.state === "READY") {
+      const terminalFailure = terminalReadyFailure(intent, observation);
+      if (terminalFailure)
+        return { kind: "REJECTED", code: terminalFailure, replay: true };
       const blocked = actionabilityFailure(observation);
       return blocked
         ? { kind: "REJECTED", code: blocked, replay: true }
