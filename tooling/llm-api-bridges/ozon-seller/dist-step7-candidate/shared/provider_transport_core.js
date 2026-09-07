@@ -283,6 +283,19 @@
     return match ? reportXmlDecode(match[1] ?? match[2] ?? "") : null;
   }
 
+
+  function reportXmlQualifiedElementPattern(localName, flags = "gi") {
+    const escaped = String(localName).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const qname = `(?:[A-Za-z_][A-Za-z0-9_.-]*:)?${escaped}`;
+    return new RegExp(`<(${qname})\\b([^>]*?)(?:\\/\\s*>|>([\\s\\S]*?)<\\/\\1\\s*>)`, flags);
+  }
+
+  function reportXmlAttrLocalName(tag, localName) {
+    const escaped = String(localName).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const match = String(tag || "").match(new RegExp(`(?:\\s|^)(?:[A-Za-z_][A-Za-z0-9_.-]*:)?${escaped}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, "i"));
+    return match ? reportXmlDecode(match[1] ?? match[2] ?? "") : null;
+  }
+
   function reportColumnIndex(cellRef) {
     const letters = String(cellRef || "").match(/^[A-Za-z]+/);
     if (!letters) return null;
@@ -438,9 +451,10 @@
 
   function reportParseSharedStrings(xml) {
     const values = [];
-    for (const match of String(xml || "").matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/gi)) {
+    for (const match of String(xml || "").matchAll(reportXmlQualifiedElementPattern("si", "gi"))) {
       let value = "";
-      for (const text of match[1].matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/gi)) value += reportXmlDecode(text[1]);
+      const body = match[3] || "";
+      for (const text of body.matchAll(reportXmlQualifiedElementPattern("t", "gi"))) value += reportXmlDecode(text[3] || "");
       values.push(value);
     }
     return values;
@@ -448,20 +462,21 @@
 
   function reportParseSheet(xml, sharedStrings, name, { offset = 0, limit = 200 } = {}) {
     const physicalRows = [];
-    for (const rowMatch of String(xml || "").matchAll(/<row\b([^>]*)>([\s\S]*?)<\/row>/gi)) {
-      const rowNumber = Number(reportXmlAttr(rowMatch[1], "r")) || physicalRows.length + 1;
+    for (const rowMatch of String(xml || "").matchAll(reportXmlQualifiedElementPattern("row", "gi"))) {
+      const rowNumber = Number(reportXmlAttr(rowMatch[2], "r")) || physicalRows.length + 1;
       const values = [];
-      for (const cellMatch of rowMatch[2].matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/gi)) {
-        const attrs = cellMatch[1], body = cellMatch[2];
+      const rowBody = rowMatch[3] || "";
+      for (const cellMatch of rowBody.matchAll(reportXmlQualifiedElementPattern("c", "gi"))) {
+        const attrs = cellMatch[2], body = cellMatch[3] || "";
         const index = reportColumnIndex(reportXmlAttr(attrs, "r"));
         if (index === null) continue;
         const type = reportXmlAttr(attrs, "t") || "n";
         let raw = "";
         if (type === "inlineStr") {
-          for (const text of body.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/gi)) raw += reportXmlDecode(text[1]);
+          for (const text of body.matchAll(reportXmlQualifiedElementPattern("t", "gi"))) raw += reportXmlDecode(text[3] || "");
         } else {
-          const valueMatch = body.match(/<v\b[^>]*>([\s\S]*?)<\/v>/i);
-          raw = valueMatch ? reportXmlDecode(valueMatch[1]) : "";
+          const valueMatch = body.match(reportXmlQualifiedElementPattern("v", "i"));
+          raw = valueMatch ? reportXmlDecode(valueMatch[3] || "") : "";
         }
         let value = raw;
         if (type === "s") value = sharedStrings[Number(raw)] ?? raw;
@@ -496,14 +511,16 @@
     const workbookXml = decoder.decode(workbookBytes);
     const relsXml = decoder.decode(relsBytes);
     const relationships = new Map();
-    for (const match of relsXml.matchAll(/<Relationship\b([^>]*)\/?\s*>/gi)) {
-      const id = reportXmlAttr(match[1], "Id"), target = reportXmlAttr(match[1], "Target"), targetMode = reportXmlAttr(match[1], "TargetMode");
+    for (const match of relsXml.matchAll(reportXmlQualifiedElementPattern("Relationship", "gi"))) {
+      const attrs = match[2];
+      const id = reportXmlAttr(attrs, "Id"), target = reportXmlAttr(attrs, "Target"), targetMode = reportXmlAttr(attrs, "TargetMode");
       if (id && target) relationships.set(id, reportResolveWorkbookRelationshipTarget(target, targetMode));
     }
     const sheets = [];
-    for (const match of workbookXml.matchAll(/<sheet\b([^>]*)\/?\s*>/gi)) {
-      const name = reportXmlAttr(match[1], "name") || `Sheet${sheets.length + 1}`;
-      const rid = reportXmlAttr(match[1], "r:id");
+    for (const match of workbookXml.matchAll(reportXmlQualifiedElementPattern("sheet", "gi"))) {
+      const attrs = match[2];
+      const name = reportXmlAttr(attrs, "name") || `Sheet${sheets.length + 1}`;
+      const rid = reportXmlAttrLocalName(attrs, "id");
       const target = rid ? relationships.get(rid) : null;
       if (target) sheets.push({ name, target });
     }
