@@ -2,7 +2,7 @@
 
 ## Status
 
-LOCAL ACCEPTED — P5.5 ACTIVE
+ACCEPTED — P5.5 DONE
 
 This is local implementation evidence only. No commit or push was performed.
 
@@ -57,3 +57,15 @@ materialization. No automatic renewal or grace creation exists.
 Final full-gate counts and recovery-freeze hashes are recorded in the local
 handoff report after the final verification commands. P5.6 is not started;
 payment go-live remains DEFERRED.
+
+## Remote acceptance finalization
+
+- Implementation commit: `dc14ae9a1742e9e1733f0b0b7c2c77b9a637061c` (`feat(server): add billing reconciliation and subscription jobs`), direct parent `f46cd652f8581c28e1848f2ebad5fde477ada409`.
+- Implementation Server CI: run `34091265631`, <https://github.com/MaksimUnimax/blood_sand/actions/runs/34091265631>, exact head, `SUCCESS`.
+- `REMOTE_P5_5_REVIEW=PASS`; critical `0`, high `0`, material medium `0`.
+- Unit: `507`; integration: `856`; P5.5: `120`; P5.4: `116`; P5.3: `102`; P5.2: `90`; P5.1: `94`.
+- P4.6/P4.5/P4.4/P4.3/P4.2/P4.1: `38/52/48/52/21/30`; crypto: `12/12`; E2E: `24/24`.
+- OpenAPI: `16`, SHA-256 `038fe97ae7bf1d44563f768dbe6335c087e3430f255986325fad65de422b308f`.
+- Migrations: `0000..0011`; 0011 SHA-256 `5f55a0e69bdc49769cdb5e8796c0e8f4290372aeeaaca7a93792cab48bebef12`; 0012 absent.
+- Payment mode is simulator-only; no real provider, provider SDK, credentials, external payment calls, or real money are integrated.
+- P5.6 was not executed. Real payment go-live remains deferred; YooKassa and Tinkoff/T-Bank remain future candidates only.
