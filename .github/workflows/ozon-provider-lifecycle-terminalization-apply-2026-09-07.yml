@@ -1,0 +1,92 @@
+name: Ozon provider lifecycle terminalization apply 2026-09-07
+
+on:
+  push:
+    branches:
+      - repair/ozon-provider-lifecycle-terminalization-2026-09-07
+
+permissions:
+  contents: write
+
+env:
+  BRANCH: repair/ozon-provider-lifecycle-terminalization-2026-09-07
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  VALIDATION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
+  REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/provider-lifecycle-terminalization-v1/run_provider_lifecycle_terminalization_gate.mjs
+  PATCHER: .github/ozon-provider-lifecycle-terminalization-apply.py
+
+jobs:
+  apply-and-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 0
+      - name: Apply deterministic root-cause patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$PATCHER"
+          node --check "$DIST/service_worker.js"
+          node --check "$DIST/shared/provider_transport_core.js"
+      - name: Targeted lifecycle and transport regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$REGRESSION"
+      - name: Mandatory read-effect and report regression family
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$VALIDATION/run_defect_015_date_repair_gate.mjs" .
+          node "$VALIDATION/run_effect_read_repair_gate.mjs" .
+          node "$VALIDATION/run_report_xlsx_implicit_cell_ref_regression_2026-09-07.mjs" .
+          node "$VALIDATION/run_report_xlsx_namespace_parser_regression_2026-09-07.mjs" .
+          node "$VALIDATION/run_report_xlsx_relationship_target_regression_2026-09-06.mjs" .
+          node "$VALIDATION/run_ai_readable_report_parser_gate.mjs" .
+          node "$VALIDATION/run_report_file_lifecycle_gate.mjs" .
+          node "$VALIDATION/run_report_file_session_fail_closed_gate.mjs" .
+          node "$VALIDATION/run_report_file_workflow_gate.mjs" .
+          for gate in "$VALIDATION"/run_*.mjs; do node "$gate" .; done
+          echo REG_P0_PROVIDER_LIFECYCLE_LINUX_FULL_REGRESSION_PASS
+      - name: Commit runtime repair if needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo PATCH_TREE_ALREADY_COMMITTED
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$DIST/service_worker.js" "$DIST/shared/provider_transport_core.js"
+          git diff --cached --name-only
+          test "$(git diff --cached --name-only | wc -l | tr -d ' ')" = "2"
+          git commit -m 'fix(ozon): terminalize provider lifecycle hangs'
+          git push origin HEAD:"$BRANCH"
+
+  windows-regression:
+    needs: apply-and-linux
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 0
+      - name: Exact repaired branch regression on Windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$DIST/service_worker.js"
+          node --check "$DIST/shared/provider_transport_core.js"
+          node "$REGRESSION"
+          node "$VALIDATION/run_defect_015_date_repair_gate.mjs" .
+          node "$VALIDATION/run_effect_read_repair_gate.mjs" .
+          node "$VALIDATION/run_report_xlsx_implicit_cell_ref_regression_2026-09-07.mjs" .
+          node "$VALIDATION/run_report_xlsx_namespace_parser_regression_2026-09-07.mjs" .
+          node "$VALIDATION/run_report_xlsx_relationship_target_regression_2026-09-06.mjs" .
+          node "$VALIDATION/run_report_file_lifecycle_gate.mjs" .
+          node "$VALIDATION/run_report_file_session_fail_closed_gate.mjs" .
+          node "$VALIDATION/run_report_file_workflow_gate.mjs" .
+          echo REG_P0_PROVIDER_LIFECYCLE_WINDOWS_REGRESSION_PASS
