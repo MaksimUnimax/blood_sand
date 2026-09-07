@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import { pathToFileURL } from 'node:url';
 
 const repo = process.cwd();
@@ -28,6 +29,155 @@ assert.match(transportSource, /DEFAULT_PROVIDER_REQUEST_TIMEOUT_MS = 60_000/);
 assert.match(transportSource, /PROVIDER_REQUEST_TIMEOUT/);
 assert.match(transportSource, /withProviderDeadline/);
 assert.match(transportSource, /\.\.\.\(signal \? \{ signal \} : \{\}\)/);
+
+function extractFunction(source, functionName) {
+  const marker = `function ${functionName}(`;
+  const start = source.indexOf(marker);
+  assert.notEqual(start, -1, `${functionName}: source function missing`);
+  const braceStart = source.indexOf('{', start);
+  assert.notEqual(braceStart, -1, `${functionName}: opening brace missing`);
+  let depth = 0;
+  let quote = null;
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
+  for (let i = braceStart; i < source.length; i += 1) {
+    const ch = source[i];
+    const next = source[i + 1] || '';
+    if (lineComment) { if (ch === '\n') lineComment = false; continue; }
+    if (blockComment) { if (ch === '*' && next === '/') { blockComment = false; i += 1; } continue; }
+    if (quote) {
+      if (escaped) { escaped = false; continue; }
+      if (ch === '\\') { escaped = true; continue; }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '/' && next === '/') { lineComment = true; i += 1; continue; }
+    if (ch === '/' && next === '*') { blockComment = true; i += 1; continue; }
+    if (ch === '"' || ch === "'" || ch === '`') { quote = ch; continue; }
+    if (ch === '{') depth += 1;
+    else if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) return source.slice(start, i + 1);
+    }
+  }
+  assert.fail(`${functionName}: unterminated source function`);
+}
+
+function makeLifecycleRuntime(workerId, durableState) {
+  const launches = [];
+  const diagnostics = [];
+  const failures = [];
+  const context = vm.createContext({
+    console,
+    Object, Array, Number, String, Boolean, Math, Date, Promise, Set, Map,
+    WORKER_SESSION_ID: workerId,
+    KEYS: { MANUAL_OPERATIONS: 'manual', AUTO_RUNS: 'auto' },
+    MANUAL_OPERATION_STATUSES: { REQUESTING: 'requesting' },
+    BridgeAutorunModel: { RUN_STATUSES: { COLLECTING: 'collecting' } },
+    batchCollectionRequests: new Map(),
+    normalizeConversationKey(value) { return String(value); },
+    singleFlight(map, key, fn) {
+      if (map.has(key)) return map.get(key);
+      const request = Promise.resolve().then(fn).finally(() => { if (map.get(key) === request) map.delete(key); });
+      map.set(key, request);
+      return request;
+    },
+    async storageGet() { return JSON.parse(JSON.stringify(durableState)); },
+    launchBatchProcessor(kind, conversationKey, ownerId, source) {
+      launches.push({ kind, conversationKey, ownerId, source });
+      return Promise.resolve({ ok: true });
+    },
+    async diagnostic(event, details) { diagnostics.push({ event, details }); },
+    ensureBatchLocalPolicy: async () => ({ ok: true }),
+    ensureBatchCapabilityAndPlanning: async () => ({ ok: true }),
+    ensureBatchQueryPlanning: async () => ({ ok: true }),
+    localGuidanceResult() { throw new Error('not reached'); },
+    buildPersonalDataPolicyErrorResult() { throw new Error('not reached'); },
+    buildCapabilityPlanningErrorResult() { throw new Error('not reached'); },
+    findBatchQueryGroup() { return null; },
+    readAnalyticsResultCacheForCurrentSettings: async () => ({ hit: false }),
+    OzonContract: {
+      reviewedAnalyticsAcquisitionProfile(command) { return { applicable: false, command }; }
+    },
+    acquisitionPlanning(value) { return value || null; },
+    prepareProviderQuotaForCommand: async () => ({ required: false, allowed: true, quota: null }),
+    safeQuotaMetadata() { return null; },
+    buildExecutionErrorResult() { throw new Error('not reached'); },
+    executeOzonCore() { throw new Error('provider must not execute in stale requesting recovery control'); },
+    storeAnalyticsResultCacheForCurrentSettings: async () => false,
+    projectPrefetchedSingleResult(value) { return value; },
+    persistBatchQuotaWait: async () => false,
+    buildCachedSingleResult() { throw new Error('not reached'); }
+  });
+  vm.runInContext(`${extractFunction(sw, 'resumeActiveBatchOperations')}; this.resumeActiveBatchOperations = resumeActiveBatchOperations;`, context);
+  vm.runInContext(`${extractFunction(sw, 'processBatchQueue')}; this.processBatchQueue = processBatchQueue;`, context);
+  return { context, launches, diagnostics, failures };
+}
+
+// GATE-12: a fresh runtime must discover durable pending/idle work from a prior runtime.
+const durablePending = {
+  manual: {
+    'conv-manual': { operation_id: 'manual-op-1', status: 'requesting', batch: { request_state: 'idle', entries: [{ kind: 'command', status: 'pending' }] } }
+  },
+  auto: {
+    'conv-auto': { run_id: 'auto-run-1', status: 'collecting', batch: { request_state: 'idle', entries: [{ kind: 'command', status: 'pending' }] } }
+  }
+};
+const freshRuntime = makeLifecycleRuntime('worker-B', durablePending);
+const resumed = await freshRuntime.context.resumeActiveBatchOperations();
+assert.deepEqual(JSON.parse(JSON.stringify(resumed)), { manual_count: 1, autorun_count: 1 });
+assert.deepEqual(freshRuntime.launches, [
+  { kind: 'manual', conversationKey: 'conv-manual', ownerId: 'manual-op-1', source: 'worker_recovery' },
+  { kind: 'autorun', conversationKey: 'conv-auto', ownerId: 'auto-run-1', source: 'worker_recovery' }
+]);
+
+async function runRequestingRecovery(workerOwner) {
+  const runtime = makeLifecycleRuntime('worker-B', { manual: {}, auto: {} });
+  const owner = {
+    operation_id: 'manual-op-recovery',
+    status: 'requesting',
+    batch: {
+      next_index: 0,
+      request_state: 'requesting',
+      request_worker_session_id: workerOwner,
+      entries: [{ kind: 'recovery_control', status: 'requesting' }]
+    }
+  };
+  let failCount = 0;
+  let failCode = null;
+  const result = await runtime.context.processBatchQueue({
+    conversationKey: 'conv-recovery',
+    ownerKind: 'manual',
+    ownerId: owner.operation_id,
+    getOwner: async () => owner,
+    mutateOwner: async () => owner,
+    ownerMatches: (value) => value === owner,
+    isCollecting: () => true,
+    failOwner: async (code) => { failCount += 1; failCode = code; },
+    finalizeOwner: async () => ({ ok: true })
+  });
+  return { result: JSON.parse(JSON.stringify(result)), failCount, failCode, diagnostics: runtime.diagnostics };
+}
+
+// Fresh worker after a request claim must never retry a possibly executed provider request.
+const oldWorker = await runRequestingRecovery('worker-A');
+assert.equal(oldWorker.result.code, 'REQUEST_OUTCOME_UNKNOWN_NO_RETRY');
+assert.equal(oldWorker.failCount, 1);
+assert.equal(oldWorker.failCode, 'REQUEST_OUTCOME_UNKNOWN_NO_RETRY');
+assert.equal(oldWorker.diagnostics.at(-1)?.event, 'REQUEST_RECOVERY_BLOCKED_NO_RETRY');
+assert.equal(oldWorker.diagnostics.at(-1)?.details?.missing_worker_owner, false);
+
+// Corrupt/missing request owner is also outcome-unknown and fail-closed.
+const missingWorker = await runRequestingRecovery('');
+assert.equal(missingWorker.result.code, 'REQUEST_OUTCOME_UNKNOWN_NO_RETRY');
+assert.equal(missingWorker.failCount, 1);
+assert.equal(missingWorker.diagnostics.at(-1)?.details?.missing_worker_owner, true);
+
+// Same worker recognizes an already in-flight request and never claims it again.
+const sameWorker = await runRequestingRecovery('worker-B');
+assert.equal(sameWorker.result.code, 'REQUEST_IN_PROGRESS');
+assert.equal(sameWorker.failCount, 0);
 
 await import(pathToFileURL(transportPath).href + `?gate=${Date.now()}`);
 const core = globalThis.ProviderTransportCore;
@@ -109,6 +259,10 @@ assert.equal(ok.httpStatus, 200);
 assert.equal(calls, 1, 'positive control: one explicit transport execution -> one fetch');
 
 console.log('REG_P0_PROVIDER_LIFECYCLE_STATIC_DEPENDENCY_PASS');
+console.log('REG_P0_PROVIDER_FRESH_WORKER_PENDING_RESUME_PASS');
+console.log('REG_P0_PROVIDER_FRESH_WORKER_REQUESTING_FAIL_CLOSED_PASS');
+console.log('REG_P0_PROVIDER_MISSING_WORKER_OWNER_FAIL_CLOSED_PASS');
+console.log('REG_P0_PROVIDER_SAME_WORKER_NO_DUPLICATE_CLAIM_PASS');
 console.log('REG_P0_PROVIDER_SELLER_FETCH_TIMEOUT_PASS');
 console.log('REG_P0_PROVIDER_SELLER_BODY_TIMEOUT_PASS');
 console.log('REG_P0_PROVIDER_PERFORMANCE_TIMEOUT_PASS');
