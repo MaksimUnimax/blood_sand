@@ -1,6 +1,6 @@
 # 06 — Buyer evidence + полный паспорт SKU
 
-Статус: **[~] IN PROGRESS — 06.1 COMPLETE; 06.2 COMPLETE; 06.3 COMPLETE; Tier A product-info 5/5 COMPLETE; NEXT ATTRIBUTES**  
+Статус: **[~] IN PROGRESS — 06.1/06.2/06.3 COMPLETE; Tier A enrichment COMPLETE; 06.4 ACTIVE**  
 Дата старта: **2026-08-26**  
 Последнее продолжение: **2026-09-07**
 
@@ -8,24 +8,13 @@
 
 Связать R3 opportunity map с реальным ассортиментом Blood & Sand, seller-side marketplace facts и buyer/customer evidence. Stage 06 не назначает финальную IA/Page Jobs и не считает финальную экономику.
 
-## Canonical inputs
-
-- `marketing/research/R3_OPPORTUNITY_MAP_FINAL_2026-08-26.md`
-- `marketing/research/R4_STAGE06_EVIDENCE_INVENTORY_2026-08-26.md`
-- `marketing/data/PRODUCT_SKU_PASSPORT_SCHEMA.md`
-- `marketing/data/ledger/query_evidence_ledger.csv`
-- `marketing/data/registry/marketplace_measurements.csv`
-- `marketing/data/raw/marketplace/ozon/`
-- `marketing/data/normalized/marketplace/ozon/`
-- `marketing/research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`
-
 ## Evidence rules
 
 - Product / listing / SKU / seller offer identities remain separate.
 - Dynamic marketplace facts are dated/period-scoped.
-- Revenue is not margin/profit.
-- Sales do not prove buyer motivation.
-- Missing product facts remain explicit missing statuses.
+- Revenue/sales do not prove buyer motive.
+- Seller claims do not become objective product facts.
+- Missing physical/customer fields remain explicit missing statuses.
 - Ozon evidence does not imply WB evidence.
 - Extension engineering is not Stage 06 work.
 - Every completed pass is committed before proceeding.
@@ -37,55 +26,39 @@
 
 Status: **[x] COMPLETE**
 
-Artifacts:
+Canonical artifacts:
 - `marketing/research/R4_STAGE06_EVIDENCE_INVENTORY_2026-08-26.md`
 - `marketing/data/PRODUCT_SKU_PASSPORT_SCHEMA.md`
-- `marketing/data/normalized/products/20260826__provisional_priority_sku_opportunity_map.csv`
-- `marketing/data/raw/marketplace/ozon/20260812T0148Z__ozon__stocks-current__terminal.json`
-- `marketing/data/normalized/marketplace/ozon/20260812__ozon__product-master__current76.csv`
-- `marketing/data/normalized/marketplace/ozon/OZON_PRODUCT_FAMILY_BASELINE_2026-08-12.md`
 
 Historical baseline:
-- product-level snapshot completeness: **76/76 PROVEN**;
-- 90d ordered units across current-snapshot identities: **1519**;
-- Slavic symbols: 25 / 928 ordered units;
-- zodiac families: 37 / 356;
+- Ozon snapshot completeness: **76/76 PROVEN**;
+- 90d ordered units: **1519**;
+- Slavic: 25 / 928;
+- zodiac: 37 / 356;
 - Norse/runic: 4 / 128;
 - remaining: 10 / 107.
 
-R3 priority identities present:
-- Печать Велеса;
-- Велес;
-- Алатырь;
-- Vegvisir;
-- Шлем Ужаса.
-
-06.1 completion: **PASS**.
-
 ---
 
-## 06.2 — Fresh Ozon assortment/listing baseline
+## 06.2 — Fresh Ozon assortment baseline
 
 Status: **[x] COMPLETE**
 
 Fresh sequence:
-1. page 1 — request `7c5e5bc9-4208-44e4-8651-296eb4ce6a7f`, HTTP 200, 76 items, `total=76`, non-empty cursor;
-2. explicit continuation — request `91bbb10d-3ad3-4f39-bda7-b838637e05ac`, HTTP 200, `items=[]`, `total=76`, empty cursor;
-3. terminal status: **TERMINAL_76_OF_76_PROVEN**;
-4. fresh-vs-historical `product_id + SKU`: **76/76 exact matches**;
-5. additions/removals/unresolved: **0 / 0 / 0**.
+- page 1 request `7c5e5bc9-4208-44e4-8651-296eb4ce6a7f`: 76 items / total 76 / non-empty cursor;
+- terminal request `91bbb10d-3ad3-4f39-bda7-b838637e05ac`: items empty / total 76 / cursor empty;
+- identity comparison vs historical: **76/76 exact product_id + SKU matches**;
+- additions/removals/unresolved: **0/0/0**.
 
-Artifacts:
+Canonical artifacts:
 - `marketing/data/raw/marketplace/ozon/20260826T1102Z__ozon__stocks-current__fresh-page1.md`
 - `marketing/data/raw/marketplace/ozon/20260826__ozon__stocks-current__fresh-terminal.md`
 - `marketing/data/normalized/marketplace/ozon/20260826__ozon__product-master__fresh-current76.csv`
 - `marketing/research/R4_OZON_FRESH_BASELINE_RESULT_2026-08-26.md`
 
-06.2 completion: **PASS**.
-
 ---
 
-## 06.3 — Map current assortment to opportunities / product families
+## 06.3 — Current assortment → opportunities
 
 Status: **[x] COMPLETE**
 
@@ -94,90 +67,106 @@ Canonical artifacts:
 - `marketing/research/R4_STAGE06_ASSORTMENT_OPPORTUNITY_MAPPING_2026-08-26.md`
 
 Coverage:
-- current identities represented: **76/76**;
-- relation/unmapped rows: **93**;
-- identities with accepted/reopen relation: **67**;
-- identities with no accepted R3 relation: **9**;
+- current identities: **76/76**;
+- accepted/reopen-linked identities: **67**;
+- intentionally unmapped identities: **9**;
 - unresolved joins: **0**.
 
-Resolved boundaries:
-- OU02 `Печать Велеса` and OU06 broader `Велес` remain separate current seller identities;
-- OU03 is use-case/function; OU04 is mirror-pendant form factor;
-- all 37 zodiac identities remain current, satisfying the assortment-side OU09 reopen trigger but not overriding the R3 broad-search rejection;
-- 9 current products remain intentionally unmapped.
-
-Targeted enrichment queue:
-- Tier A: Печать Велеса, Велес, Алатырь, Vegvisir, Шлем Ужаса;
-- Tier B contrast: Бусидо / current `Талисман в машину` offer;
-- Tier C zodiac representatives: classic Овен, antique Лев, symbols Близнецы.
-
-06.3 completion: **PASS**.
+Key boundaries retained:
+- OU02 Печать Велеса and OU06 broader Велес are separate seller identities;
+- OU03 automotive function/use-case and OU04 mirror-pendant form factor remain separate jobs;
+- 37 current zodiac identities satisfy the assortment-side OU09 reopen trigger but do not override the R3 broad-query rejection.
 
 ---
 
 ## Tier A product-passport enrichment
 
-Status: **[~] PRODUCT INFO 5/5 COMPLETE; ATTRIBUTES NEXT**
+Status: **[x] COMPLETE — PRODUCT INFO 5/5 + ATTRIBUTES 5/5**
 
-Contract authority:
-- `marketing/research/R4_STAGE06_OZON_TIER_A_ENRICHMENT_CONTRACT_2026-08-26.md`
+Tier A:
+1. Печать Велеса — SKU `1636048691`;
+2. Велес — `1636041142`;
+3. Алатырь — `1640251697`;
+4. Вегвизир — `1602722942`;
+5. Шлем Ужаса / Эгисхьяльм — `1602717077`.
 
-Historical runtime-mismatch evidence retained:
-- `marketing/research/R4_OZON_RUNTIME_B8_MISMATCH_2026-08-26.md`
-- `marketing/data/raw/marketplace/ozon/20260826T1139Z__ozon__seller-product-info-list__runtime-unsupported.md`
+### Product info
 
-### Runtime blocker resolution — 2026-09-07
-
-Current operator runtime successfully accepted and executed `seller_product_info_list`:
+- operation: `seller_product_info_list`;
 - request `4a6a224d-43ae-4c7a-a99f-c9842273e43e`;
 - HTTP 200;
-- `external_request_executed=true`;
-- one physical Seller request;
-- result: **5/5 Tier A SKUs returned**.
+- 5/5 returned.
 
-Artifacts:
-- `marketing/data/raw/marketplace/ozon/20260907T1221Z__ozon__seller-product-info-list__tier-a5.md`
-- `marketing/data/normalized/products/20260907__ozon__tier-a5__product-info.csv`
-- `marketing/research/R4_STAGE06_TIER_A_PRODUCT_INFO_RESULT_2026-09-07.md`
+Fresh direct seller titles prove all five are automotive rear-view-mirror pendants. Three Slavic items are directly framed as `Славянский оберег - Подвеска на зеркало в машину`; Vegvisir and Шлем Ужаса as `Амулет - Подвеска на зеркало в машину`.
 
-### Product-info conclusions
+All five product-info rows were current selling listings (`Продается`, moderation approved, validation success) with returned price 1700 RUB / min 1450 / old 2200 in that snapshot.
 
-Fresh direct seller listing titles now prove the automotive mirror-pendant framing for all five Tier A identities:
-- Шлем Ужаса: `Амулет - Подвеска на зеркало в машину ...`;
-- Vegvisir: `Амулет - Подвеска на зеркало в машину ...`;
-- Велес: `Славянский оберег - Подвеска на зеркало в машину ...`;
-- Печать Велеса: `Славянский оберег - Подвеска на зеркало в машину ...`;
-- Алатырь: `Славянский оберег - Подвеска на зеркало в машину ...`.
+### Attributes
 
-Thus OU04 `FORM_FACTOR_FIT` no longer relies only on historical listing-title evidence for Tier A; it has fresh direct seller evidence. OU03 automotive symbolic/use-case framing is also directly supported by `оберег/амулет + в машину` wording.
+- operation: `seller_product_attributes`;
+- request `877ef57d-d048-4d8d-98f0-d17ce5d71a0d`;
+- HTTP 200;
+- total **5**;
+- `last_id=""` — terminal.
 
-All five are currently:
-- `Продается`;
-- moderation `approved`;
-- validation `success`;
-- not archived;
-- price `1700 RUB`, min price `1450`, old price `2200` in this snapshot.
+Direct seller-declared common physical facts:
+- wooden medallion/obereg;
+- diameter 45 mm;
+- acrylic beads 12 mm;
+- total talisman length 36 cm.
 
-Current passport completeness after product-info: **IDENTITY_COMMERCE**.
+Top-level Ozon 40×130/140×130 mm and 200 g fields are retained as marketplace dimension/weight observations and are not relabeled as medallion dimensions/weight.
 
-Still missing decision-grade physical/content facts such as material, dimensions, cord/bead/hanging construction and package/content attributes. Therefore a targeted attributes request for exactly the same five SKUs is authorized.
+Seller protection/luck/energy claims remain `SELLER_CLAIM_UNVERIFIED`.
 
-Exact next command:
+Canonical artifacts:
+- `marketing/data/raw/marketplace/ozon/20260907T1721+0500__ozon__seller-product-attributes__tier-a5.md`
+- `marketing/data/normalized/products/20260907__ozon__tier-a5__physical-content-passport.csv`
+- `marketing/research/R4_STAGE06_TIER_A_ENRICHMENT_FINAL_2026-09-07.md`
 
-```text
-OZON_API_V1
-{"operation":"seller_product_attributes","params":{"filter":{"sku":["1636048691","1636041142","1640251697","1602722942","1602717077"]},"last_id":"","limit":1000,"sort_by":"sku","sort_dir":"ASC"}}
-```
-
-No broad 76-SKU attributes pull yet.
+Tier A enrichment completion: **PASS**.
 
 ---
 
 ## 06.4 — Buyer/customer evidence + seller performance linkage
 
-Status: **[ ] NEXT, after Tier A attributes normalization**
+Status: **[~] ACTIVE**
 
-Normalize customer themes and seller performance while keeping motivation separate from sales. Expand Tier B/C enrichment only when Tier A results show a concrete decision need.
+Sequence:
+1. collect current direct Ozon buyer evidence for the priority SKU set through accepted read-only review/question operations when access permits;
+2. normalize buyer text by topic while preserving source/product linkage;
+3. link existing/current seller performance facts separately;
+4. never infer buyer motive from sales;
+5. decide whether Tier B automotive contrast and Tier C zodiac representatives are needed from actual decision gaps rather than automatic broad pulls.
+
+Buyer topic vocabulary:
+- appearance_in_car
+- size_scale
+- material_finish
+- darkening_aging
+- cord_quality
+- attachment_hanging
+- heat_sun_resistance
+- packaging
+- gift_motive
+- review_trust
+- symbol_meaning
+- design_visual_choice
+- price_value
+
+Accepted B9 buyer-read surface verified:
+- `review_list` → `POST /v2/review/list`;
+- `review_info` → `POST /v2/review/info`;
+- `question_list` → `POST /v1/question/list`.
+
+Privacy/access boundary:
+- these operations are `PERSONAL_DATA_READ_GATED`, default OFF unless the operator personal-data gate is enabled;
+- `review_list` / `review_info` entitlement may remain `ENTITLEMENT_UNKNOWN` because access can come from either review-management subscription or Premium Pro;
+- `question_list` is Premium Plus gated.
+
+No hidden pagination/fanout is allowed.
+
+---
 
 ## 06.5 — Cross-platform / WB status
 
@@ -195,4 +184,4 @@ Close only when current Ozon baseline, opportunity mapping, technical-fact gaps,
 
 # Current continuation point
 
-**Run exactly one Tier A `seller_product_attributes` request for SKUs `1636048691`, `1636041142`, `1640251697`, `1602722942`, `1602717077`; save and normalize the direct result before any Tier B/C or buyer/performance expansion.**
+**06.4 ACTIVE. Run one direct `review_list` request for the five Tier A SKUs, newest first, up to 100 reviews. Save and normalize that result before any review-info, questions, Tier B/C or new performance calls.**
