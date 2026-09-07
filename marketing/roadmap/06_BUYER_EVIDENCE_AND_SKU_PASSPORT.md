@@ -1,6 +1,6 @@
 # 06 — Buyer evidence + полный паспорт SKU
 
-Статус: **[~] IN PROGRESS — 06.1/06.2/06.3 COMPLETE; Tier A enrichment COMPLETE; 06.4 ACTIVE**  
+Статус: **[~] IN PROGRESS — 06.1/06.2/06.3 COMPLETE; Tier A COMPLETE; 06.4 CONTRAST ENRICHMENT ACTIVE**  
 Дата старта: **2026-08-26**  
 Последнее продолжение: **2026-09-07**
 
@@ -90,110 +90,104 @@ Tier A:
 4. Вегвизир — `1602722942`;
 5. Шлем Ужаса / Эгисхьяльм — `1602717077`.
 
-### Product info
-
-- operation: `seller_product_info_list`;
+Product info:
 - request `4a6a224d-43ae-4c7a-a99f-c9842273e43e`;
 - HTTP 200;
-- 5/5 returned.
+- 5/5 returned;
+- current listing titles directly prove automotive rear-view-mirror pendant framing for all five.
 
-Fresh direct seller titles prove all five are automotive rear-view-mirror pendants. Three Slavic items are directly framed as `Славянский оберег - Подвеска на зеркало в машину`; Vegvisir and Шлем Ужаса as `Амулет - Подвеска на зеркало в машину`.
-
-All five product-info rows were current selling listings (`Продается`, moderation approved, validation success) with returned price 1700 RUB / min 1450 / old 2200 in that snapshot.
-
-### Attributes
-
-- operation: `seller_product_attributes`;
+Attributes:
 - request `877ef57d-d048-4d8d-98f0-d17ce5d71a0d`;
 - HTTP 200;
-- total **5**;
-- `last_id=""` — terminal.
+- total 5;
+- `last_id=""` terminal.
 
-Direct seller-declared common physical facts:
+Common direct seller-declared physical facts:
 - wooden medallion/obereg;
 - diameter 45 mm;
 - acrylic beads 12 mm;
 - total talisman length 36 cm.
 
-Top-level Ozon 40×130/140×130 mm and 200 g fields are retained as marketplace dimension/weight observations and are not relabeled as medallion dimensions/weight.
-
-Seller protection/luck/energy claims remain `SELLER_CLAIM_UNVERIFIED`.
+Top-level Ozon package/dimension fields remain separate observations. Protection/luck/energy claims remain `SELLER_CLAIM_UNVERIFIED`.
 
 Canonical artifacts:
 - `marketing/data/raw/marketplace/ozon/20260907T1721+0500__ozon__seller-product-attributes__tier-a5.md`
 - `marketing/data/normalized/products/20260907__ozon__tier-a5__physical-content-passport.csv`
 - `marketing/research/R4_STAGE06_TIER_A_ENRICHMENT_FINAL_2026-09-07.md`
 
-Tier A enrichment completion: **PASS**.
-
 ---
 
 ## 06.4 — Buyer/customer evidence + seller performance linkage
 
-Status: **[~] ACTIVE — REVIEWS BLOCKED; QUESTIONS NEXT**
+Status: **[~] ACTIVE — BUYER/PERFORMANCE LINKAGE COMPLETE; TARGETED CONTRAST ENRICHMENT NEXT**
 
-Sequence:
-1. collect current direct Ozon buyer evidence for the priority SKU set through accepted read-only review/question operations when access permits;
-2. normalize buyer text by topic while preserving source/product linkage;
-3. link existing/current seller performance facts separately;
-4. never infer buyer motive from sales;
-5. decide whether Tier B automotive contrast and Tier C zodiac representatives are needed from actual decision gaps rather than automatic broad pulls.
+### Direct Ozon buyer text
 
-Buyer topic vocabulary:
-- appearance_in_car
-- size_scale
-- material_finish
-- darkening_aging
-- cord_quality
-- attachment_hanging
-- heat_sun_resistance
-- packaging
-- gift_motive
-- review_trust
-- symbol_meaning
-- design_visual_choice
-- price_value
-
-Accepted B9 buyer-read surface verified:
-- `review_list` → `POST /v2/review/list`;
-- `review_info` → `POST /v2/review/info`;
-- `question_list` → `POST /v1/question/list`.
-
-Privacy/access boundary:
-- these operations are `PERSONAL_DATA_READ_GATED`, default OFF unless the operator personal-data gate is enabled;
-- `review_list` / `review_info` entitlement may remain `ENTITLEMENT_UNKNOWN` because access can come from either review-management subscription or Premium Pro;
-- `question_list` is Premium Plus gated.
-
-No hidden pagination/fanout is allowed.
-
-### Direct review access attempt — 2026-09-07
-
-One exact `review_list` request was executed for all five Tier A SKUs:
+Reviews:
 - request `5649ec00-ecdb-437c-951d-f9edaddf9244`;
-- external request executed: `true`;
-- HTTP `403`;
-- provider category `auth_or_permission`;
-- automatic retry: `false`;
-- buyer review text returned: **0 because the request was denied**, not because review count was proven zero.
+- real provider request executed;
+- HTTP 403 `auth_or_permission`;
+- classification: `BLOCKED_BY_PROVIDER_PERMISSION`.
 
-Classification:
+Questions:
+- request `capability-967db1fe-1c3c-4d84-af6d-cdc6c92ce091`;
+- capability probe HTTP 200;
+- subscription `UNSPECIFIED`;
+- endpoint requires `PREMIUM_PLUS`;
+- business request not executed;
+- classification: `BLOCKED_BY_SUBSCRIPTION`.
 
-`CURRENT_DIRECT_OZON_REVIEW_READ = BLOCKED_BY_PROVIDER_PERMISSION`
+Combined:
 
-This does not prove which exact entitlement/permission is absent. Do not relabel it as a proven missing Premium Pro subscription.
+`CURRENT_DIRECT_OZON_BUYER_TEXT = BLOCKED`
 
-Artifacts:
+Do not infer zero reviews/questions.
+
+Canonical access artifacts:
 - `marketing/data/raw/marketplace/ozon/20260907__ozon__review-list__tier-a5__provider-403.md`
+- `marketing/data/raw/marketplace/ozon/20260907__ozon__question-list__subscription-block.md`
 - `marketing/research/R4_STAGE06_BUYER_CHANNEL_ACCESS_RESULT_2026-09-07.md`
 
-The same `review_list` request must not be retried without a permission-state change.
+### Customer evidence
 
-Existing analog/category customer evidence remains valid as a separate evidence class:
-- `marketing/research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`
+Existing analog/category evidence remains separate from owned SKU evidence and is now normalized:
+- source: `marketing/research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`;
+- normalized: `marketing/data/normalized/customer/customer_evidence.csv`.
 
-Preserved historical seller performance is already sufficient for its current Stage-06 role and must not be rerun merely to reconstruct the same 90-day baseline.
+Retained topics include appearance in car, size/scale, material/finish, cord/attachment, heat/sun resistance, packaging, gift motive and review trust.
 
-Next direct buyer-text check: `question_list`. Its request contract has no SKU filter, so any returned question→product linkage must come only from identifiers/fields actually returned by Ozon.
+### Seller performance linkage
+
+Preserved 90d seller performance (2026-05-13..2026-08-10) is normalized in:
+- `marketing/data/normalized/products/product_marketplace_metrics.csv`.
+
+Tier A five products:
+- **623 ordered units**;
+- **1,057,274 RUB revenue**;
+- approximately **41.0%** of the preserved 1519-unit current-identity baseline.
+
+These facts prove historical commercial activity, not buyer motivation or margin.
+
+Canonical synthesis:
+- `marketing/research/R4_STAGE06_BUYER_PERFORMANCE_LINKAGE_2026-09-07.md`.
+
+### Targeted contrast enrichment decision
+
+Authorized because concrete decision gaps remain:
+
+Tier B automotive contrast:
+- `1602715556` — Бусидо / Путь Воина — 19 historical 90d units.
+
+Tier C zodiac cross-family representatives:
+- `1720148880` — classic Овен — 32 units;
+- `2186857668` — antique Лев — 26 units;
+- `2271210394` — symbols Близнецы — 30 units.
+
+Purpose:
+- test whether Tier A physical/listing construction is generic across the automotive chassis or symbol-family specific;
+- test whether the 37-current-SKU zodiac assortment is physically/content-wise one coherent family across three seller research variants.
+
+Exact next call: one `seller_product_info_list` for these four SKUs. Attributes only after inspecting that result.
 
 ---
 
@@ -213,4 +207,4 @@ Close only when current Ozon baseline, opportunity mapping, technical-fact gaps,
 
 # Current continuation point
 
-**06.4 ACTIVE. `review_list` is blocked by the provider for the current credentials. Run exactly one newest-first `question_list` request with `limit=100`; save the direct result before any additional buyer-text, Tier B/C or performance expansion.**
+**06.4 TARGETED CONTRAST ENRICHMENT. Run one current `seller_product_info_list` for SKUs `1602715556`, `1720148880`, `2186857668`, `2271210394`; save/analyze before any attributes call.**
