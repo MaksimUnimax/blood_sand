@@ -143,7 +143,7 @@ Scope:
 
 Exit: price history/grandfathering/revision immutability and deterministic entitlement tests pass.
 
-## P5 — Billing and subscription state machine `[ACTIVE]`
+## P5 — Billing and subscription state machine `[DONE / FINAL ACCEPTED]`
 
 Goal: paid access works idempotently.
 
@@ -168,12 +168,12 @@ P5 execution decomposition (frozen by ADR-0020):
 - P5.4 `[DONE]` simulated verified billing-event/webhook application through the deterministic fake provider; no real provider HTTP webhook.
 - P5.5 `[DONE]` simulated reconciliation and durable subscription period/grace/expiry/cancel jobs through the deterministic fake provider.
 - P5.6 `[DONE]` subscription eligibility/bootstrap integration, P4.4 account-plan binding, atomic commercial device limits, portal reads, and non-real-money billing UX.
-- P5.7 `[ACTIVE]` P5 security/architecture/full-regression/final acceptance in simulated billing mode.
+- P5.7 `[DONE]` P5 security/architecture/full-regression/final acceptance in simulated billing mode.
 
 Real payment go-live: `[DEFERRED UNTIL AFTER REMAINING PRODUCT ROADMAP]`.
 YooKassa and Tinkoff/T-Bank: candidates only; no production provider is selected.
 
-## P6 — Admin and operations core `[PLANNED]`
+## P6 — Admin and operations core `[NEXT]`
 
 Goal: first-line operation without direct SQL.
 

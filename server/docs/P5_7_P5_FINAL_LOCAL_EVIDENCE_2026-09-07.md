@@ -1,8 +1,35 @@
 # P5.7 final local acceptance — 2026-09-07
 
-Status: LOCAL ACCEPTED — P5.7 ACTIVE
+Status: ACCEPTED — P5.7 DONE / P5 FINAL ACCEPTED
 
 `P5_FINAL_LOCAL_ACCEPTANCE=PASS`
+`P5_FINAL_REMOTE_ACCEPTANCE=PASS`
+
+`P5_7_AUDIT_SHA=f962e4a058f4081bd5436d1daf4118783a14429e`
+
+Audit Server CI: run `34113097215` —
+https://github.com/MaksimUnimax/blood_sand/actions/runs/34113097215
+
+`REMOTE_P5_FINAL_REVIEW=PASS`
+`CRITICAL=0 HIGH=0 MATERIAL_MEDIUM=0`
+
+Remote acceptance markers: `REMOTE_P5_HISTORY_PASS`,
+`REMOTE_P5_MIGRATION_IMMUTABILITY_PASS`, `REMOTE_P5_PERSISTENCE_REVIEW_PASS`,
+`REMOTE_P5_COMMERCIAL_LOCK_GRAPH_PASS`,
+`REMOTE_NO_PROVIDER_CALL_UNDER_DB_TRANSACTION_PASS`, `REMOTE_P5_2_PASS`,
+`REMOTE_P5_3_PASS`, `REMOTE_P5_4_PASS`, `REMOTE_P5_5_PASS`, `REMOTE_P5_6_PASS`,
+`REMOTE_P5_7_80_TEST_REVIEW_PASS`, `REMOTE_P5_DATA_MINIMIZATION_PASS`,
+`REMOTE_REAL_PROVIDER_ABSENT_PASS`, `REMOTE_P5_AUDIT_PRIVACY_PASS`,
+`REMOTE_P5_PORTAL_PRIVACY_PASS`, `REMOTE_OPENAPI_18_PASS`,
+`REMOTE_FAKE_PAYMENT_HTTP_ABSENT_PASS`, `REMOTE_BRIDGE_BOUNDARY_PASS`,
+`REMOTE_P6_NOT_STARTED_PASS`.
+
+P5 FINAL ACCEPTED IN SIMULATED BILLING MODE.
+
+Not accepted and explicitly deferred: real provider selection, real-provider
+webhook authenticity, real checkout/acquiring, real money, payment-provider
+credentials, and provider-specific reconciliation behavior. Real payment
+go-live remains deferred.
 
 ## Scope and conclusion
 
@@ -174,8 +201,10 @@ are candidate changes. Product source, migration files, package manifests,
 lockfile, API contracts/OpenAPI, portal product code, worker product code,
 and Bridge are unchanged. No P6 work started. No ADR-0026 was created.
 
-ROADMAP remains P5 ACTIVE, P5.1–P5.6 DONE, P5.7 ACTIVE, and P6–P15 PLANNED.
+ROADMAP records P0–P4 DONE, P5 DONE / FINAL ACCEPTED, P5.1–P5.7 DONE,
+P6 NEXT, and P7–P15 PLANNED. Real payment go-live remains deferred until
+after the remaining product roadmap.
 
-Final local state is intentionally uncommitted and awaits ChatGPT remote final
-acceptance. The candidate is frozen in the accompanying recovery artifacts;
-no commit or push is performed here.
+The audit candidate was accepted remotely before this documentation-only
+finalization. No product source, test, migration, API, or Bridge change is
+included in the finalization.
