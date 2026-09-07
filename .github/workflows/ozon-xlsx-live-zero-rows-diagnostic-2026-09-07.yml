@@ -1,0 +1,74 @@
+name: Ozon XLSX live zero-row diagnostic 2026-09-07
+
+on:
+  push:
+    branches:
+      - diag/ozon-xlsx-live-zero-rows-2026-09-07
+    paths:
+      - .github/workflows/ozon-xlsx-live-zero-rows-diagnostic-2026-09-07.yml
+
+permissions:
+  contents: write
+
+env:
+  BASELINE: 6544806ae170832829671dbcdd461fcb750933e2
+  PROJECT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  VALIDATION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
+  CORE: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/provider_transport_core.js
+  PATCHER: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/apply_report_xlsx_live_structure_diagnostics_2026-09-07.py
+  REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_xlsx_live_structure_diagnostics_regression_2026-09-07.mjs
+  NS_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_xlsx_namespace_parser_regression_2026-09-07.mjs
+  REL_REGRESSION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/run_report_xlsx_relationship_target_regression_2026-09-06.mjs
+  PUBLISHER: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1/publish_report_xlsx_live_structure_diagnostics_2026-09-07.py
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply diagnostic instrumentation and run complete gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$BASELINE" HEAD
+          python "$PATCHER" .
+          test "$(git diff --name-only "$BASELINE" -- "$DIST")" = "$CORE"
+          git diff --exit-code "$BASELINE" -- \
+            "$DIST/shared/ozon_provider.js" \
+            "$DIST/shared/ozon_contract.js" \
+            "$DIST/shared/ozon_operation_registry.js" \
+            "$DIST/service_worker.js" \
+            "$DIST/manifest.json"
+          if git diff --name-only "$BASELINE" -- "$PROJECT" | grep -E '(^|/)(package(-lock)?\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml)$'; then exit 1; fi
+          node --check "$CORE"
+          node "$REGRESSION" .
+          node "$NS_REGRESSION" .
+          node "$REL_REGRESSION" .
+          node "$VALIDATION/run_ai_readable_report_parser_gate.mjs" .
+          node "$VALIDATION/run_report_file_lifecycle_gate.mjs" .
+          node "$VALIDATION/run_report_file_session_fail_closed_gate.mjs" .
+          node "$VALIDATION/run_report_file_workflow_gate.mjs" .
+          for gate in "$VALIDATION"/run_*.mjs; do node "$gate" .; done
+          echo 'OZON_XLSX_LIVE_DIAGNOSTIC_ONLY_CORE_RUNTIME_DELTA_PASS'
+          echo 'OZON_XLSX_LIVE_DIAGNOSTIC_NO_PACKAGE_DEPENDENCY_CHANGE_PASS'
+          echo 'OZON_XLSX_LIVE_DIAGNOSTIC_FULL_RUN_GATE_FAMILY_PASS'
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish exact diagnostic runtime, verified artifact and dependency report
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$PUBLISHER" .
