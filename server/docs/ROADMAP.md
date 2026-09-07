@@ -168,7 +168,7 @@ P5 execution decomposition (frozen by ADR-0020):
 - P5.4 `[DONE]` simulated verified billing-event/webhook application through the deterministic fake provider; no real provider HTTP webhook.
 - P5.5 `[DONE]` simulated reconciliation and durable subscription period/grace/expiry/cancel jobs through the deterministic fake provider.
 - P5.6 `[DONE]` subscription eligibility/bootstrap integration, P4.4 account-plan binding, atomic commercial device limits, portal reads, and non-real-money billing UX.
-- P5.7 `[NEXT]` P5 security/architecture/full-regression/final acceptance in simulated billing mode.
+- P5.7 `[ACTIVE]` P5 security/architecture/full-regression/final acceptance in simulated billing mode.
 
 Real payment go-live: `[DEFERRED UNTIL AFTER REMAINING PRODUCT ROADMAP]`.
 YooKassa and Tinkoff/T-Bank: candidates only; no production provider is selected.
