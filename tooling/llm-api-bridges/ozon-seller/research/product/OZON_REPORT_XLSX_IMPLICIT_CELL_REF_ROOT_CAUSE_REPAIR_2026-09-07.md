@@ -1,13 +1,15 @@
 # Ozon Bridge — XLSX optional cell-reference root-cause repair
 
 Date: 2026-09-07
-Status: `CODE_ROOT_CAUSE_PROVEN__FULL_PREHANDOFF_GATES_PASS__LIVE_CAUSAL_ACCEPTANCE_PENDING_POST_INSTALL`
+Status: `CODE_ROOT_CAUSE_PROVEN__FULL_PREHANDOFF_GATES_PASS__LIVE_CAUSAL_ACCEPTANCE_PASS`
 
 ## Business boundary
 
 CAP-24 remains OPEN. The business target is still the actual storage/placement cost for SKU `1636048691`, then reconciliation with finance and inclusion in full Ozon cost per sold unit. Parser success is not business completion.
 
 ## Live evidence
+
+### Prior namespace build — FAIL
 
 Fresh product placement report after the prior namespace build was installed:
 
@@ -22,6 +24,33 @@ Fresh product placement report after the prior namespace build was installed:
 - rows: `[]`
 
 Therefore the prior namespace build is `LIVE_ACCEPTANCE_FAIL`.
+
+### Functional implicit-cell-ref repair — PASS
+
+After installing exact artifact `OZON_BRIDGE_v0.1.19_XLSX_IMPLICIT_CELL_REF_REPAIR_1a64a726.zip`, a fresh product placement report was created and read through a fresh report code/ref chain.
+
+Live chain:
+
+- create request id: `1cd2d7f1-19e7-4910-9db9-ba5cc78c6f6f`
+- fresh report code: `REPORT_seller_placement_by_products_2093109_1788763800_01a07aa1-852d-79f9-8608-5a1327cccaf5`
+- info request id: `23152f31-85fc-4362-a5f5-1be3d649e56e`
+- report status: `success`
+- fresh report file ref: `rpf_s_fd3afa89-b91d-4813-a3ce-1bcd759233c8`
+- file read request id: `65c2b33b-205d-479a-8203-3245d860ffc8`
+- HTTP: `200`
+- physical provider requests for file read: `1`
+- content type: `application/octet-stream`
+- XLSX bytes: `142845`
+- available sheet: `Страница #1`
+- columns materialized: `12`
+- row_count: `9519`
+- first page rows returned: `200`
+- has_more: `true`
+- next_offset: `200`
+
+The target SKU `1636048691` is present in the first live page, including rows for multiple warehouses. On Excel serial date `46235` (`2026-08-01`), the visible target-SKU rows have zero charged placement cost, so this first page is not sufficient for monthly storage economics; the remaining report rows must still be paged and aggregated for CAP-24.
+
+This closes the causal live parser gate: the exact functional repair build turns the previously empty live XLSX materialization boundary into real columns and real rows. `LIVE_CAUSAL_ACCEPTANCE_PASS`.
 
 ## Exact code root cause
 
@@ -60,32 +89,32 @@ No alias, request params, retry, fan-out, pagination, provider dispatch, credent
 | workbook/sheet relationship resolution | PASS / unchanged | relationship regression |
 | arbitrary namespace prefixes | PASS / unchanged | namespace regression |
 | `CT_Cell/@r` present | PASS | existing fixtures + new mixed-ref fixture |
-| `CT_Cell/@r` absent | REPAIRED / PASS | pre-fix reproduction + post-fix regression |
+| `CT_Cell/@r` absent | REPAIRED / PASS | pre-fix reproduction + post-fix regression + live causal acceptance |
 | mixed explicit/implicit cells | REPAIRED / PASS | dedicated regression |
 | explicit sparse cell gaps | PASS | dedicated regression |
 | malformed explicit cell ref | FAIL-CLOSED / PASS | dedicated regression |
 | `CT_Row/@r` absent | REPAIRED / PASS | dedicated regression |
 | explicit sparse row then implicit row | REPAIRED / PASS | dedicated regression |
 | malformed explicit row ref | FAIL-CLOSED / PASS | dedicated regression |
-| shared strings / inline strings / numeric / boolean | PASS | namespace + parser gates |
-| offset/limit pagination | PASS / unchanged | parser gate |
-| `ozon_provider.js` opaque refs/TTL/provenance | PASS / unchanged | identity + lifecycle/session gates |
+| shared strings / inline strings / numeric / boolean | PASS | namespace + parser gates + live rows |
+| offset/limit pagination | PASS / unchanged | parser gate + live `has_more=true`, `next_offset=200` |
+| `ozon_provider.js` opaque refs/TTL/provenance | PASS / unchanged | identity + lifecycle/session gates + fresh live ref chain |
 | `ozon_contract.js` / sanitization | PASS / unchanged | identity + full run family |
 | operation registry / provider dispatch | PASS / unchanged | identity + full run family |
 | service worker / accounting | PASS / unchanged | identity + full run family |
 | Seller credentials / report-file credential isolation | PASS / unchanged | report-file gates |
 | personal-data policy | PASS / unchanged | no provider/result-policy change |
 | trusted report host / SSRF | PASS / unchanged | report-file gates |
-| retry/fan-out/pagination request behavior | PASS / unchanged | report-file gates |
+| retry/fan-out/pagination request behavior | PASS / unchanged | report-file gates + one explicit live file GET |
 | manifest/CSP/permissions | PASS / unchanged | Git identity |
 | package manifests/lockfiles | PASS | additions = 0 |
 | packaged production tree | PASS | member-set + byte-for-byte + fresh extraction |
-| real Ozon causal acceptance | PENDING_POST_INSTALL | exact live bytes were not preserved; requires one fresh read with this exact build |
+| real Ozon causal acceptance | PASS | fresh create → info → file_get returned 12 columns and 9519 rows |
 
 - unaccounted code dependencies: `0`
 - stale parser assumptions found by this sweep after repair: `0`
 - available-but-unverified pre-handoff dependencies: `0`
-- live-only dependency: `1` — causal real-Ozon materialization after installing this exact artifact
+- remaining live-only parser dependencies: `0`
 
 ## Validation
 
@@ -101,7 +130,11 @@ Post-fix dedicated markers include:
 - `OZON_XLSX_MALFORMED_EXPLICIT_ROW_REF_FAIL_CLOSED_PASS`
 - `OZON_XLSX_IMPLICIT_CELL_REF_ROOT_CAUSE_REGRESSION_PASS`
 
-Also required: namespace regression PASS, relationship regression PASS, existing parser/lifecycle/session/workflow gates PASS, full `run_*.mjs` family PASS on Ubuntu and Windows, JS syntax PASS, package-dependency identity PASS, exact artifact member/byte coherence PASS and fresh-extract PASS.
+Also passed: namespace regression, relationship regression, existing parser/lifecycle/session/workflow gates, full `run_*.mjs` family on Ubuntu and Windows, JS syntax, package-dependency identity, exact artifact member/byte coherence and fresh-extract verification.
+
+Live marker:
+
+- `OZON_XLSX_IMPLICIT_CELL_REF_LIVE_CAUSAL_ACCEPTANCE_PASS`
 
 ## Artifact
 
@@ -114,8 +147,10 @@ Also required: namespace regression PASS, relationship regression PASS, existing
 - production runtime files changed: `1`
 - provider requests during build: `0`
 
-## Epistemic boundary
+## Epistemic boundary after live acceptance
 
-The code root cause is proven by source, standard-conformant regression and pre-fix reproduction. What is not honestly claimable before the next live read is that the private Ozon worksheet definitely omitted `@r`, because its raw `sheet1.xml` was not preserved by the previous test process. No public indexed copy of this exact placement workbook was found. The causal live test is therefore intentionally one functional change, not another diagnostic build: install this artifact, obtain a fresh report/ref, call one explicit `report_file_get`, and require real columns/rows. If rows materialize, that closes the final causal link. If they do not, this build must not be accepted and the remaining worksheet boundary must be investigated from new evidence.
+Before the live rerun it was not honest to claim that the private Ozon worksheet definitely omitted `@r`, because raw `sheet1.xml` had not been preserved. The fresh live rerun now closes the functional causal boundary: the exact repair build materializes the same class of Ozon placement report into 12 columns and 9519 rows, whereas the previous build materialized zero rows. The precise private XML serialization remains unexposed, but it is no longer an unresolved acceptance dependency for the parser repair.
 
-Final verdict: `FUNCTIONAL_REPAIR_PREHANDOFF_PASS__LIVE_CAUSAL_ACCEPTANCE_PENDING_POST_INSTALL`.
+Parser verdict: `FUNCTIONAL_REPAIR_LIVE_CAUSAL_ACCEPTANCE_PASS`.
+
+Business verdict: `CAP24_OPEN__PLACEMENT_REPORT_MATERIALIZED__MONTHLY_SKU_AGGREGATION_PENDING`.
