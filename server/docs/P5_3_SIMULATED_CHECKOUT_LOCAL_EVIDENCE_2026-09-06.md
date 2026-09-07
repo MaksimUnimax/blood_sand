@@ -2,7 +2,7 @@
 
 Technical ID: `PRODUCT-CONTROL-PLANE-P5.3-V2-FULL-ACCEPTANCE-CONTINUATION`  
 Attempt: `1`  
-Status: `LOCAL ACCEPTED — P5.3 ACTIVE`
+Status: `ACCEPTED — P5.3 DONE`
 
 ## V2 recovery continuation
 
@@ -176,3 +176,17 @@ The V2 migration first and second runs passed against a fresh disposable
 PostgreSQL 18 database. Full DB-up and DB-down acceptance passed under the
 retained Node 24 runtime; E2E passed `24/24`. The final recovery freeze was
 recreated and byte-for-byte verified after these results.
+
+## Remote acceptance finalization
+
+- Implementation commit: `9b496f61a6310a7513ae8a8d2a5ed01deefa5894`.
+- Implementation Server CI: run `34075645828`, [workflow run](https://github.com/MaksimUnimax/blood_sand/actions/runs/34075645828), exact-head conclusion `SUCCESS`.
+- `REMOTE_P5_3_V2_REVIEW=PASS` with zero Critical, High, or material Medium findings.
+- Unit: `356`; billing domain: `51/51`; billing simulator: `11/11`.
+- Integration: `620`; P5.3: `102`; P5.2: `90`; P5.1: `94`.
+- P4.6: `38`; P4.5: `52`; P4.4: `48`; P4.3: `52`; P4.2: `21`; P4.1: `30`.
+- Crypto: `12/12`; E2E: `24/24`.
+- OpenAPI: `16` route/method tuples; SHA-256 `038fe97ae7bf1d44563f768dbe6335c087e3430f255986325fad65de422b308f`.
+- Migrations: `0000..0010`; corrected `0010` SHA-256 `28ec7583b9ad7497246580ce19a22ba82d72cc6ab223c6f9503f4b88ad1eef18`; `0011` absent.
+- `REAL_PROVIDER_SELECTED=NO`; `REAL_PROVIDER_SDK=NO`; `PAYMENT_CREDENTIALS=NONE`; `EXTERNAL_PAYMENT_CALLS=NONE`; `REAL_MONEY=NO`.
+- P5.4 was not executed. Real payment go-live remains deferred to the dedicated future architecture and acceptance.
