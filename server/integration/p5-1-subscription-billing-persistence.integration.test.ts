@@ -24,7 +24,7 @@ async function rejects(text: string, values?: unknown[]) {
 
 async function cleanP5Rows() {
   await q(
-    "TRUNCATE billing_events,subscription_transitions,payments,subscriptions,price_sale_assignments,account_entitlement_overrides,price_revisions,plan_entitlements,prices,plan_revisions,entitlement_definitions,plans",
+    "TRUNCATE checkout_intents,billing_events,subscription_transitions,payments,subscriptions,price_sale_assignments,account_entitlement_overrides,price_revisions,plan_entitlements,prices,plan_revisions,entitlement_definitions,plans",
   );
 }
 
@@ -1266,7 +1266,7 @@ describe.sequential("P5.1 subscription/billing persistence", () => {
 
   it("90 exposes exactly four P5 tables and required physical protections", async () => {
     const tables = await q<{ table_name: string }>(
-      "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('subscriptions','subscription_transitions','payments','billing_events','checkout_intents','billing_customers','reconciliation_jobs') ORDER BY table_name",
+      "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('subscriptions','subscription_transitions','payments','billing_events','billing_customers','reconciliation_jobs') ORDER BY table_name",
     );
     expect(tables.rows.map((row) => row.table_name)).toEqual([
       "billing_events",

@@ -18,6 +18,7 @@ export {
   createP5SubscriptionRepository,
   type P5SubscriptionRepository,
 } from "./p5-subscription-repository.js";
+export { createP5CheckoutRepository } from "./p5-checkout-repository.js";
 
 export interface DatabaseRuntime {
   db: NodePgDatabase<typeof schema>;

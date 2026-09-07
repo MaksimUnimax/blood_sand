@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@product/auth": "workspace:*",
+    "@product/billing": "workspace:*",
     "@product/commercial-catalog": "workspace:*",
     "@product/compatibility": "workspace:*",
     "@product/device-auth": "workspace:*",

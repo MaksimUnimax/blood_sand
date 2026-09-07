@@ -55,7 +55,7 @@ function value<T>(result: SubscriptionCommandResult): T {
 
 async function clean() {
   await q(
-    "TRUNCATE billing_events,subscription_transitions,payments,subscriptions,price_sale_assignments,account_entitlement_overrides,price_revisions,plan_entitlements,prices,plan_revisions,entitlement_definitions,plans,audit_events",
+    "TRUNCATE checkout_intents,billing_events,subscription_transitions,payments,subscriptions,price_sale_assignments,account_entitlement_overrides,price_revisions,plan_entitlements,prices,plan_revisions,entitlement_definitions,plans,audit_events",
   );
   clock = date("2026-09-06T12:00:00.000Z");
 }

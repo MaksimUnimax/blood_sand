@@ -1,0 +1,505 @@
+import { createHash } from "node:crypto";
+import {
+  PurchasableOfferFailureCodeSchema,
+  type PurchasableOffer,
+  type PurchasableOfferResolver,
+} from "@product/commercial-catalog";
+import { z } from "zod";
+
+const UuidSchema = z.uuid();
+const MachineKeySchema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/);
+const OpaqueReferenceSchema = z
+  .string()
+  .min(1)
+  .max(256)
+  .regex(/^[A-Za-z0-9._:-]+$/)
+  .refine((value) => !/^https?:/i.test(value));
+const AmountMinorSchema = z.number().int().safe().min(0);
+const CurrencySchema = z.string().regex(/^[A-Z]{3}$/);
+const IntervalUnitSchema = z.enum(["DAY", "MONTH", "YEAR"]);
+const IntervalCountSchema = z.number().int().min(1).max(1200);
+export type BillingIntervalUnit = z.infer<typeof IntervalUnitSchema>;
+
+export const CheckoutIdempotencyKeySchema = z
+  .string()
+  .min(16)
+  .max(128)
+  .regex(/^[A-Za-z0-9._:-]+$/);
+
+export const CreateCheckoutCommandSchema = z
+  .object({
+    accountId: UuidSchema,
+    priceRevisionId: UuidSchema,
+    idempotencyKey: CheckoutIdempotencyKeySchema,
+  })
+  .strict();
+export type CreateCheckoutCommand = z.infer<typeof CreateCheckoutCommandSchema>;
+
+export const CheckoutContextSchema = z
+  .object({
+    actorType: z.literal("ACCOUNT_USER"),
+    actorId: UuidSchema,
+    correlationId: z.string().min(1).max(128),
+  })
+  .strict();
+export type CheckoutContext = z.infer<typeof CheckoutContextSchema>;
+
+export const CheckoutFailureCodeSchema = z.enum([
+  "ACCOUNT_NOT_FOUND",
+  "FORBIDDEN",
+  "ACCOUNT_SUSPENDED",
+  "CURRENT_SUBSCRIPTION_EXISTS",
+  "CHECKOUT_IN_PROGRESS",
+  "IDEMPOTENCY_KEY_REUSED",
+  "CHECKOUT_PROVIDER_MISMATCH",
+  "PROVIDER_REJECTED",
+  "PROVIDER_UNAVAILABLE",
+  "CHECKOUT_CORRUPTED",
+  "SERVICE_UNAVAILABLE",
+  ...PurchasableOfferFailureCodeSchema.options,
+]);
+export type CheckoutFailureCode = z.infer<typeof CheckoutFailureCodeSchema>;
+
+export const BillingProviderCheckoutInputSchema = z
+  .object({
+    providerRequestId: UuidSchema,
+    amountMinor: AmountMinorSchema,
+    currency: CurrencySchema,
+    billingIntervalUnit: IntervalUnitSchema,
+    billingIntervalCount: IntervalCountSchema,
+  })
+  .strict();
+export type BillingProviderCheckoutInput = z.infer<
+  typeof BillingProviderCheckoutInputSchema
+>;
+
+const ProviderCreatedSchema = z
+  .object({
+    kind: z.literal("CREATED"),
+    providerCheckoutId: OpaqueReferenceSchema,
+    providerPaymentId: OpaqueReferenceSchema,
+    checkoutReference: OpaqueReferenceSchema,
+  })
+  .strict();
+const ProviderRejectedSchema = z
+  .object({ kind: z.literal("REJECTED"), code: z.literal("REJECTED") })
+  .strict();
+const ProviderUnavailableSchema = z
+  .object({ kind: z.literal("UNAVAILABLE") })
+  .strict();
+export const ProviderCheckoutResultSchema = z.discriminatedUnion("kind", [
+  ProviderCreatedSchema,
+  ProviderRejectedSchema,
+  ProviderUnavailableSchema,
+]);
+export type ProviderCheckoutResult = z.infer<
+  typeof ProviderCheckoutResultSchema
+>;
+
+export interface BillingProviderPort {
+  readonly providerKey: string;
+  createCheckout(
+    input: BillingProviderCheckoutInput,
+  ): Promise<ProviderCheckoutResult>;
+}
+
+export type CheckoutIntentState = "CREATING" | "READY" | "FAILED";
+export type CheckoutIntent = {
+  id: string;
+  accountId: string;
+  priceRevisionId: string;
+  planRevisionId: string;
+  provider: string;
+  state: CheckoutIntentState;
+  idempotencyKeyHash: string;
+  requestFingerprintSha256: string;
+  admittedAt: Date;
+  amountMinor: number;
+  currency: string;
+  billingIntervalUnit: BillingIntervalUnit;
+  billingIntervalCount: number;
+  providerCheckoutId: string | null;
+  providerPaymentId: string | null;
+  checkoutReference: string | null;
+  paymentId: string | null;
+  failureCode: CheckoutFailureCode | null;
+  createdAt: Date;
+  updatedAt: Date;
+  completedAt: Date | null;
+};
+
+export type CheckoutAccountObservation = {
+  accountExists: boolean;
+  owner: boolean;
+  accountStatus: "ACTIVE" | "SUSPENDED" | null;
+  hasCurrentSubscription: boolean;
+};
+
+export type CheckoutInspection = {
+  account: CheckoutAccountObservation;
+  intent: CheckoutIntent | null;
+};
+
+export type CheckoutPrepareInput = {
+  accountId: string;
+  actorId: string;
+  provider: string;
+  idempotencyKeyHash: string;
+  requestFingerprintSha256: string;
+  admittedAt: Date;
+  offer: Pick<
+    PurchasableOffer,
+    | "priceRevisionId"
+    | "planRevisionId"
+    | "amountMinor"
+    | "currency"
+    | "billingIntervalUnit"
+    | "billingIntervalCount"
+  >;
+  context: CheckoutContext;
+};
+
+export type CheckoutPrepareResult =
+  | { kind: "CREATED"; intent: CheckoutIntent }
+  | { kind: "EXISTING"; intent: CheckoutIntent }
+  | { kind: "REJECTED"; code: CheckoutFailureCode };
+
+export type CheckoutFinalizeResult =
+  | { kind: "READY"; intent: CheckoutIntent }
+  | { kind: "FAILED"; intent: CheckoutIntent; code: CheckoutFailureCode }
+  | { kind: "REJECTED"; code: CheckoutFailureCode }
+  | { kind: "SERVICE_UNAVAILABLE" };
+
+export interface CheckoutRepository {
+  inspectCheckout(input: {
+    accountId: string;
+    actorId: string;
+    idempotencyKeyHash: string;
+  }): Promise<CheckoutInspection>;
+  prepareCheckout(input: CheckoutPrepareInput): Promise<CheckoutPrepareResult>;
+  finalizeCheckout(input: {
+    intentId: string;
+    provider: string;
+    context: CheckoutContext;
+    result: Exclude<ProviderCheckoutResult, { kind: "UNAVAILABLE" }>;
+  }): Promise<CheckoutFinalizeResult>;
+  failCheckout(input: {
+    intentId: string;
+    code: CheckoutFailureCode;
+    provider: string;
+    context: CheckoutContext;
+  }): Promise<CheckoutFinalizeResult>;
+}
+
+export type CheckoutResult =
+  | {
+      kind: "READY";
+      replay: boolean;
+      checkoutIntentId: string;
+      paymentId: string;
+      planRevisionId: string;
+      priceRevisionId: string;
+      amountMinor: number;
+      currency: string;
+      billingIntervalUnit: BillingIntervalUnit;
+      billingIntervalCount: number;
+      provider: string;
+      checkoutReference: string;
+    }
+  | { kind: "REJECTED"; code: CheckoutFailureCode; replay: boolean }
+  | {
+      kind: "RETRYABLE";
+      code: "PROVIDER_UNAVAILABLE" | "SERVICE_UNAVAILABLE";
+      checkoutIntentId: string;
+    };
+
+export function sha256(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+const IDEMPOTENCY_DOMAIN = "product-control-plane/checkout-idempotency/v1";
+const FINGERPRINT_DOMAIN = "product-control-plane/checkout-request/v1";
+
+export function hashCheckoutIdempotencyKey(idempotencyKey: string): string {
+  return sha256(`${IDEMPOTENCY_DOMAIN}\n${idempotencyKey}`);
+}
+
+export function fingerprintCheckoutRequest(input: {
+  accountId: string;
+  priceRevisionId: string;
+}): string {
+  return sha256(
+    `${FINGERPRINT_DOMAIN}\naccountId=${input.accountId}\npriceRevisionId=${input.priceRevisionId}`,
+  );
+}
+
+function actionabilityFailure(
+  observation: CheckoutAccountObservation,
+): CheckoutFailureCode | null {
+  if (!observation.accountExists) return "ACCOUNT_NOT_FOUND";
+  if (!observation.owner) return "FORBIDDEN";
+  if (observation.accountStatus === "SUSPENDED") return "ACCOUNT_SUSPENDED";
+  if (observation.hasCurrentSubscription) return "CURRENT_SUBSCRIPTION_EXISTS";
+  return null;
+}
+
+function readyResult(intent: CheckoutIntent, replay: boolean): CheckoutResult {
+  if (
+    intent.state !== "READY" ||
+    !intent.paymentId ||
+    !intent.checkoutReference ||
+    !intent.providerCheckoutId ||
+    !intent.providerPaymentId
+  )
+    return { kind: "REJECTED", code: "CHECKOUT_CORRUPTED", replay };
+  return {
+    kind: "READY",
+    replay,
+    checkoutIntentId: intent.id,
+    paymentId: intent.paymentId,
+    planRevisionId: intent.planRevisionId,
+    priceRevisionId: intent.priceRevisionId,
+    amountMinor: intent.amountMinor,
+    currency: intent.currency,
+    billingIntervalUnit: intent.billingIntervalUnit,
+    billingIntervalCount: intent.billingIntervalCount,
+    provider: intent.provider,
+    checkoutReference: intent.checkoutReference,
+  };
+}
+
+export type CheckoutServiceOptions = {
+  repository: CheckoutRepository;
+  offerResolver: PurchasableOfferResolver;
+  provider: BillingProviderPort;
+  now?: () => Date;
+};
+
+export function createCheckoutService(options: CheckoutServiceOptions) {
+  const now = options.now ?? (() => new Date());
+  const providerKey = MachineKeySchema.parse(options.provider.providerKey);
+
+  async function finishExisting(
+    intent: CheckoutIntent,
+    observation: CheckoutAccountObservation,
+    requestFingerprint: string,
+    context: CheckoutContext,
+  ): Promise<CheckoutResult | null> {
+    if (intent.requestFingerprintSha256 !== requestFingerprint) return null;
+    if (intent.provider !== providerKey)
+      return {
+        kind: "REJECTED",
+        code: "CHECKOUT_PROVIDER_MISMATCH",
+        replay: true,
+      };
+    if (intent.state === "FAILED")
+      return {
+        kind: "REJECTED",
+        code: intent.failureCode ?? "CHECKOUT_CORRUPTED",
+        replay: true,
+      };
+    if (intent.state === "READY") {
+      const blocked = actionabilityFailure(observation);
+      return blocked
+        ? { kind: "REJECTED", code: blocked, replay: true }
+        : readyResult(intent, true);
+    }
+    const blocked = actionabilityFailure(observation);
+    if (blocked) {
+      try {
+        const failed = await options.repository.failCheckout({
+          intentId: intent.id,
+          code: blocked,
+          provider: providerKey,
+          context,
+        });
+        return finalizeToResult(failed, true, intent.id);
+      } catch {
+        return {
+          kind: "RETRYABLE",
+          code: "SERVICE_UNAVAILABLE",
+          checkoutIntentId: intent.id,
+        };
+      }
+    }
+    return null;
+  }
+
+  function finalizeToResult(
+    result: CheckoutFinalizeResult,
+    replay: boolean,
+    fallbackIntentId = "",
+  ): CheckoutResult {
+    if (result.kind === "READY") return readyResult(result.intent, replay);
+    if (result.kind === "FAILED")
+      return { kind: "REJECTED", code: result.code, replay };
+    if (result.kind === "REJECTED")
+      return { kind: "REJECTED", code: result.code, replay };
+    return {
+      kind: "RETRYABLE",
+      code: "SERVICE_UNAVAILABLE",
+      checkoutIntentId: fallbackIntentId,
+    };
+  }
+
+  async function createCheckout(
+    rawCommand: unknown,
+    rawContext: unknown,
+  ): Promise<CheckoutResult> {
+    const command = CreateCheckoutCommandSchema.parse(rawCommand);
+    const context = CheckoutContextSchema.parse(rawContext);
+    const idempotencyKeyHash = hashCheckoutIdempotencyKey(
+      command.idempotencyKey,
+    );
+    const requestFingerprint = fingerprintCheckoutRequest(command);
+    let observation: CheckoutInspection;
+    try {
+      observation = await options.repository.inspectCheckout({
+        accountId: command.accountId,
+        actorId: context.actorId,
+        idempotencyKeyHash,
+      });
+    } catch {
+      return {
+        kind: "RETRYABLE",
+        code: "SERVICE_UNAVAILABLE",
+        checkoutIntentId: "",
+      };
+    }
+    const intent = observation.intent;
+    if (intent) {
+      if (intent.requestFingerprintSha256 !== requestFingerprint)
+        return {
+          kind: "REJECTED",
+          code: "IDEMPOTENCY_KEY_REUSED",
+          replay: true,
+        };
+      const existing = await finishExisting(
+        intent,
+        observation.account,
+        requestFingerprint,
+        context,
+      );
+      if (existing) return existing;
+    }
+    const blocked = actionabilityFailure(observation.account);
+    if (blocked)
+      return { kind: "REJECTED", code: blocked, replay: Boolean(intent) };
+
+    let offer: PurchasableOffer;
+    let admittedAt: Date | undefined;
+    if (intent) {
+      offer = {
+        planRevisionId: intent.planRevisionId,
+        priceRevisionId: intent.priceRevisionId,
+        amountMinor: intent.amountMinor,
+        currency: intent.currency,
+        billingIntervalUnit: intent.billingIntervalUnit,
+        billingIntervalCount: intent.billingIntervalCount,
+      } as PurchasableOffer;
+    } else {
+      admittedAt = new Date(now().getTime());
+      let resolution;
+      try {
+        resolution = await options.offerResolver.resolvePurchasableOffer({
+          priceRevisionId: command.priceRevisionId,
+          at: admittedAt,
+        });
+      } catch {
+        return { kind: "REJECTED", code: "SERVICE_UNAVAILABLE", replay: false };
+      }
+      if (resolution.kind === "REJECTED")
+        return { kind: "REJECTED", code: resolution.code, replay: false };
+      offer = resolution.value;
+    }
+
+    let prepared: CheckoutPrepareResult;
+    try {
+      prepared = await options.repository.prepareCheckout({
+        accountId: command.accountId,
+        actorId: context.actorId,
+        provider: providerKey,
+        idempotencyKeyHash,
+        requestFingerprintSha256: requestFingerprint,
+        admittedAt: intent?.admittedAt ?? admittedAt!,
+        offer,
+        context,
+      });
+    } catch {
+      return {
+        kind: "RETRYABLE",
+        code: "SERVICE_UNAVAILABLE",
+        checkoutIntentId: intent?.id ?? "",
+      };
+    }
+    if (prepared.kind === "REJECTED")
+      return { kind: "REJECTED", code: prepared.code, replay: Boolean(intent) };
+    if (prepared.kind === "EXISTING") {
+      const resumed = await finishExisting(
+        prepared.intent,
+        observation.account,
+        requestFingerprint,
+        context,
+      );
+      if (resumed) return resumed;
+    }
+    const activeIntent = prepared.intent;
+    let providerResult: ProviderCheckoutResult;
+    try {
+      providerResult = ProviderCheckoutResultSchema.parse(
+        await options.provider.createCheckout({
+          providerRequestId: activeIntent.id,
+          amountMinor: activeIntent.amountMinor,
+          currency: activeIntent.currency,
+          billingIntervalUnit: activeIntent.billingIntervalUnit,
+          billingIntervalCount: activeIntent.billingIntervalCount,
+        }),
+      );
+    } catch {
+      return {
+        kind: "RETRYABLE",
+        code: "PROVIDER_UNAVAILABLE",
+        checkoutIntentId: activeIntent.id,
+      };
+    }
+    if (providerResult.kind === "UNAVAILABLE")
+      return {
+        kind: "RETRYABLE",
+        code: "PROVIDER_UNAVAILABLE",
+        checkoutIntentId: activeIntent.id,
+      };
+    try {
+      const finalized = await options.repository.finalizeCheckout({
+        intentId: activeIntent.id,
+        provider: providerKey,
+        context,
+        result: providerResult,
+      });
+      return finalizeToResult(
+        finalized,
+        prepared.kind === "EXISTING",
+        activeIntent.id,
+      );
+    } catch {
+      return {
+        kind: "RETRYABLE",
+        code: "SERVICE_UNAVAILABLE",
+        checkoutIntentId: activeIntent.id,
+      };
+    }
+  }
+
+  return { createCheckout };
+}
+
+export const createCheckout = createCheckoutService;
+
+export function validateProviderCheckoutResult(
+  value: unknown,
+): ProviderCheckoutResult {
+  return ProviderCheckoutResultSchema.parse(value);
+}
