@@ -1,0 +1,101 @@
+name: Ozon provider lifecycle rollback verify 2026-09-07
+
+on:
+  push:
+    branches:
+      - rollback/ozon-provider-lifecycle-terminalization-2026-09-07
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  VALIDATION: tooling/llm-api-bridges/ozon-seller/validation/read-effect-repair-v1
+
+jobs:
+  linux-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exact prepatch runtime assertions and regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$DIST/service_worker.js"
+          node --check "$DIST/shared/provider_transport_core.js"
+          ! grep -q 'REG_P0_PROVIDER_LIFECYCLE_PATCH_V1' "$DIST/service_worker.js"
+          ! grep -q 'DEFAULT_PROVIDER_REQUEST_TIMEOUT_MS = 60_000' "$DIST/shared/provider_transport_core.js"
+          test "$(git hash-object "$DIST/service_worker.js")" = "6beac3005cbac2f1913e1fe8c77acfc25f29c946"
+          test "$(git hash-object "$DIST/shared/provider_transport_core.js")" = "346332d6e298c461e225487ba75faf41b0d51288"
+          for gate in "$VALIDATION"/run_*.mjs; do node "$gate" .; done
+          echo OZON_PROVIDER_LIFECYCLE_ROLLBACK_LINUX_PASS
+
+  windows-regression:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exact prepatch runtime assertions
+        shell: pwsh
+        run: |
+          node --check "$env:DIST/service_worker.js"
+          node --check "$env:DIST/shared/provider_transport_core.js"
+          $sw = git hash-object "$env:DIST/service_worker.js"
+          $tr = git hash-object "$env:DIST/shared/provider_transport_core.js"
+          if ($sw -ne '6beac3005cbac2f1913e1fe8c77acfc25f29c946') { throw "service worker rollback blob mismatch: $sw" }
+          if ($tr -ne '346332d6e298c461e225487ba75faf41b0d51288') { throw "transport rollback blob mismatch: $tr" }
+          Write-Output OZON_PROVIDER_LIFECYCLE_ROLLBACK_WINDOWS_PASS
+
+  package-exact-rollback:
+    needs: [linux-regression, windows-regression]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and verify exact rollback archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          NAME="OZON_BRIDGE_v0.1.19_ROLLBACK_TO_PRE_LIFECYCLE_PATCH_74e0589b.zip"
+          export NAME
+          python - <<'PY'
+          import os, pathlib, zipfile, hashlib, shutil
+          root = pathlib.Path('tooling/llm-api-bridges/ozon-seller/dist-step7-candidate')
+          files = sorted(p for p in root.rglob('*') if p.is_file())
+          if len(files) != 21:
+              raise SystemExit(f'expected 21 production files, got {len(files)}')
+          out = pathlib.Path(os.environ['NAME'])
+          with zipfile.ZipFile(out, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+              for p in files:
+                  rel = p.relative_to(root).as_posix()
+                  info = zipfile.ZipInfo(rel, date_time=(1980,1,1,0,0,0))
+                  info.compress_type = zipfile.ZIP_DEFLATED
+                  info.external_attr = 0o100644 << 16
+                  z.writestr(info, p.read_bytes())
+          extract = pathlib.Path('fresh-extract')
+          if extract.exists(): shutil.rmtree(extract)
+          extract.mkdir()
+          with zipfile.ZipFile(out) as z: z.extractall(extract)
+          extracted = sorted(p for p in extract.rglob('*') if p.is_file())
+          if [p.relative_to(extract).as_posix() for p in extracted] != [p.relative_to(root).as_posix() for p in files]:
+              raise SystemExit('fresh extraction tree mismatch')
+          for src, dst in zip(files, extracted):
+              if src.read_bytes() != dst.read_bytes():
+                  raise SystemExit(f'byte mismatch: {src}')
+          digest = hashlib.sha256(out.read_bytes()).hexdigest()
+          pathlib.Path('ROLLBACK_PACKAGE_VERIFICATION.txt').write_text(
+              f'authority=74e0589b5034581664c17727b8efba18ed0711d0\ncommit={os.environ["GITHUB_SHA"]}\nfile_count={len(files)}\nbytes={out.stat().st_size}\nsha256={digest}\nfresh_extract=PASS\nbyte_for_byte=PASS\n', encoding='utf-8')
+          print('OZON_PROVIDER_LIFECYCLE_ROLLBACK_EXACT_PACKAGE_TREE_PASS')
+          print('OZON_PROVIDER_LIFECYCLE_ROLLBACK_FRESH_EXTRACTION_PASS')
+          print('OZON_PROVIDER_LIFECYCLE_ROLLBACK_BYTE_FOR_BYTE_PASS')
+          print(f'ARTIFACT={out}')
+          print(f'BYTES={out.stat().st_size}')
+          print(f'SHA256={digest}')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-provider-lifecycle-rollback-74e0589b
+          path: |
+            OZON_BRIDGE_v0.1.19_ROLLBACK_TO_PRE_LIFECYCLE_PATCH_74e0589b.zip
+            ROLLBACK_PACKAGE_VERIFICATION.txt
+          if-no-files-found: error
+          retention-days: 30
