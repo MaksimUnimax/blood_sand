@@ -109,6 +109,228 @@ export interface BillingProviderPort {
   ): Promise<ProviderCheckoutResult>;
 }
 
+export const BillingPaymentStatusStateSchema = z.enum([
+  "PENDING",
+  "SUCCEEDED",
+  "FAILED",
+  "CANCELED",
+]);
+export type BillingPaymentStatusState = z.infer<
+  typeof BillingPaymentStatusStateSchema
+>;
+
+export const BillingPaymentStatusFoundSchema = z
+  .object({
+    kind: z.literal("FOUND"),
+    state: BillingPaymentStatusStateSchema,
+    amountMinor: AmountMinorSchema,
+    currency: CurrencySchema,
+    statusAt: z.date(),
+  })
+  .strict();
+export const BillingPaymentStatusResultSchema = z.discriminatedUnion("kind", [
+  BillingPaymentStatusFoundSchema,
+  z.object({ kind: z.literal("NOT_FOUND") }).strict(),
+  z.object({ kind: z.literal("UNAVAILABLE") }).strict(),
+]);
+export type BillingPaymentStatusResult = z.infer<
+  typeof BillingPaymentStatusResultSchema
+>;
+
+/** Status lookup is deliberately separate from checkout creation. */
+export interface BillingPaymentStatusPort {
+  readonly providerKey: string;
+  fetchPaymentStatus(input: {
+    providerPaymentId: string;
+  }): Promise<BillingPaymentStatusResult>;
+}
+
+export const BillingReconciliationJobStateSchema = z.enum([
+  "READY",
+  "LEASED",
+  "SETTLED",
+  "BLOCKED",
+]);
+export type BillingReconciliationJobState = z.infer<
+  typeof BillingReconciliationJobStateSchema
+>;
+
+export const BillingReconciliationRetryCodeSchema = z.enum([
+  "PROVIDER_PENDING",
+  "PROVIDER_UNAVAILABLE",
+  "PROVIDER_NOT_FOUND",
+  "CURRENT_SUBSCRIPTION_CONFLICT",
+  "PAYMENT_STATE_CONFLICT",
+  "PAYMENT_SUBSCRIPTION_CORRUPTED",
+]);
+export type BillingReconciliationRetryCode = z.infer<
+  typeof BillingReconciliationRetryCodeSchema
+>;
+
+export const BILLING_RECONCILIATION_RETRY_DELAY_MS = 60_000;
+export function reconciliationRetryAt(
+  processedAt: Date,
+  delayMs = BILLING_RECONCILIATION_RETRY_DELAY_MS,
+): Date {
+  if (!Number.isFinite(delayMs) || delayMs < 0)
+    throw new Error("INVALID_RETRY_DELAY");
+  const result = new Date(processedAt.getTime() + delayMs);
+  if (Number.isNaN(result.getTime())) throw new Error("INVALID_DATE");
+  return result;
+}
+
+const RECONCILIATION_IDENTITY_DOMAIN =
+  "product-control-plane/billing-reconciliation/event-identity/v1";
+const RECONCILIATION_PAYLOAD_DOMAIN =
+  "product-control-plane/billing-reconciliation/payload/v1";
+
+export function reconciliationPayloadSha256(input: {
+  paymentId: string;
+  provider: string;
+  providerPaymentId: string;
+  state: BillingPaymentStatusState;
+  amountMinor: number;
+  currency: string;
+  statusAt: Date;
+}): string {
+  return sha256(
+    `${RECONCILIATION_PAYLOAD_DOMAIN}\npaymentId=${input.paymentId}\nprovider=${input.provider}\nproviderPaymentId=${input.providerPaymentId}\nstate=${input.state}\namountMinor=${input.amountMinor}\ncurrency=${input.currency}\nstatusAt=${input.statusAt.toISOString()}`,
+  );
+}
+
+export function reconciliationEventIdentity(input: {
+  paymentId: string;
+  attemptCount: number;
+  state: BillingPaymentStatusState;
+  statusAt: Date;
+  normalizedPayloadSha256: string;
+}): string {
+  return `recon_v1_${sha256(`${RECONCILIATION_IDENTITY_DOMAIN}\npaymentId=${input.paymentId}\nattempt=${input.attemptCount}\nstate=${input.state}\nstatusAt=${input.statusAt.toISOString()}\npayloadSha256=${input.normalizedPayloadSha256}`)}`;
+}
+
+export type BillingReconciliationClaim = {
+  paymentId: string;
+  provider: string;
+  providerPaymentId: string;
+  accountId: string;
+  priceRevisionId: string;
+  amountMinor: number;
+  currency: string;
+  paymentState:
+    | "PENDING"
+    | "SUCCEEDED"
+    | "FAILED"
+    | "CANCELED"
+    | "REFUNDED"
+    | "CHARGEBACK";
+  createdAt: Date;
+  attemptCount: number;
+  leaseToken: string;
+};
+
+export type BillingReconciliationProcessResult =
+  | { kind: "RESCHEDULED"; code: BillingReconciliationRetryCode }
+  | {
+      kind: "APPLIED" | "IGNORED" | "BLOCKED" | "FAILED";
+      code?: string;
+      billingEventId?: string | null;
+      paymentId: string;
+    }
+  | { kind: "STALE_LEASE"; paymentId: string };
+
+export interface BillingReconciliationRepository {
+  claimDue(input: {
+    now: Date;
+    leaseMs: number;
+    batchSize: number;
+  }): Promise<BillingReconciliationClaim[]>;
+  reschedule(input: {
+    paymentId: string;
+    leaseToken: string;
+    nextAttemptAt: Date;
+    code: BillingReconciliationRetryCode;
+  }): Promise<BillingReconciliationProcessResult>;
+  applyStatus(input: {
+    claim: BillingReconciliationClaim;
+    status: Extract<BillingPaymentStatusResult, { kind: "FOUND" }>;
+    processedAt: Date;
+    correlationId: string;
+  }): Promise<BillingReconciliationProcessResult>;
+  blockUnsupported(input: {
+    claim: BillingReconciliationClaim;
+    processedAt: Date;
+    correlationId: string;
+    code: string;
+  }): Promise<BillingReconciliationProcessResult>;
+}
+
+export type BillingReconciliationServiceOptions = {
+  repository: BillingReconciliationRepository;
+  statusPort: BillingPaymentStatusPort;
+  now?: () => Date;
+  retryDelayMs?: number;
+};
+
+export function createBillingReconciliationService(
+  options: BillingReconciliationServiceOptions,
+) {
+  const now = options.now ?? (() => new Date());
+  const retryDelayMs =
+    options.retryDelayMs ?? BILLING_RECONCILIATION_RETRY_DELAY_MS;
+  const providerKey = MachineKeySchema.parse(options.statusPort.providerKey);
+  async function processClaim(
+    claim: BillingReconciliationClaim,
+    correlationId: string,
+  ): Promise<BillingReconciliationProcessResult> {
+    if (claim.provider !== providerKey)
+      return options.repository.blockUnsupported({
+        claim,
+        processedAt: now(),
+        correlationId,
+        code: "PROVIDER_MISMATCH",
+      });
+    let status: BillingPaymentStatusResult;
+    try {
+      status = BillingPaymentStatusResultSchema.parse(
+        await options.statusPort.fetchPaymentStatus({
+          providerPaymentId: claim.providerPaymentId,
+        }),
+      );
+    } catch {
+      status = { kind: "UNAVAILABLE" };
+    }
+    const observedAt = new Date(now().getTime());
+    if (status.kind === "FOUND" && status.state === "PENDING")
+      return options.repository.reschedule({
+        paymentId: claim.paymentId,
+        leaseToken: claim.leaseToken,
+        nextAttemptAt: reconciliationRetryAt(observedAt, retryDelayMs),
+        code: "PROVIDER_PENDING",
+      });
+    if (status.kind === "UNAVAILABLE")
+      return options.repository.reschedule({
+        paymentId: claim.paymentId,
+        leaseToken: claim.leaseToken,
+        nextAttemptAt: reconciliationRetryAt(observedAt, retryDelayMs),
+        code: "PROVIDER_UNAVAILABLE",
+      });
+    if (status.kind === "NOT_FOUND")
+      return options.repository.reschedule({
+        paymentId: claim.paymentId,
+        leaseToken: claim.leaseToken,
+        nextAttemptAt: reconciliationRetryAt(observedAt, retryDelayMs),
+        code: "PROVIDER_NOT_FOUND",
+      });
+    return options.repository.applyStatus({
+      claim,
+      status,
+      processedAt: observedAt,
+      correlationId,
+    });
+  }
+  return { processClaim };
+}
+
 export const BillingEventTypeSchema = z.enum([
   "payment.succeeded",
   "payment.failed",

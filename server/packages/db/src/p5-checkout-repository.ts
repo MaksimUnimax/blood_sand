@@ -443,6 +443,11 @@ export function createP5CheckoutRepository(
               locked.requestFingerprintSha256,
             ],
           );
+          await q.query(
+            `INSERT INTO billing_reconciliation_jobs(payment_id,state,next_attempt_at,attempt_count,created_at,updated_at)
+             VALUES($1,'READY',$2,0,$2,$2)`,
+            [payment.rows[0]!.id, now()],
+          );
           const updated = await q.query<Row>(
             `UPDATE checkout_intents SET state='READY',provider_checkout_id=$1,provider_payment_id=$2,checkout_reference=$3,payment_id=$4,updated_at=GREATEST(CURRENT_TIMESTAMP,$5),completed_at=GREATEST(CURRENT_TIMESTAMP,$5) WHERE id=$6 RETURNING ${intentReturningColumns}`,
             [

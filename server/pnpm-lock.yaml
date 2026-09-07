@@ -169,6 +169,9 @@ importers:
       '@product/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@product/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@product/db':
         specifier: workspace:*
         version: link:../../packages/db

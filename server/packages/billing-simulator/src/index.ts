@@ -5,6 +5,9 @@ import {
   type BillingProviderPort,
   type BillingProviderCheckoutInput,
   type ProviderCheckoutResult,
+  type BillingPaymentStatusPort,
+  type BillingPaymentStatusResult,
+  BillingPaymentStatusResultSchema,
   sha256,
   VerifiedBillingEventSchema,
   type BillingEventVerificationPort,
@@ -20,7 +23,13 @@ export type BillingSimulatorScenario =
 
 export type BillingSimulatorOptions = {
   scenario?: BillingSimulatorScenario;
+  statusScenario?: "NORMAL" | "UNAVAILABLE";
 };
+
+export type SimulatorPaymentStatusSnapshot = Extract<
+  BillingPaymentStatusResult,
+  { kind: "FOUND" }
+>;
 
 export const SIMULATOR_EVENT_DOMAIN =
   "product-control-plane/billing-simulator/event/v1";
@@ -150,14 +159,54 @@ function id(prefix: string, requestId: string): string {
 }
 
 export class DeterministicBillingSimulator
-  implements BillingProviderPort, BillingEventVerificationPort
+  implements
+    BillingProviderPort,
+    BillingEventVerificationPort,
+    BillingPaymentStatusPort
 {
   readonly providerKey = "simulator";
   private readonly scenario: BillingSimulatorScenario;
   private readonly attempted = new Set<string>();
+  private readonly statuses = new Map<string, SimulatorPaymentStatusSnapshot>();
+  private readonly statusScenario: "NORMAL" | "UNAVAILABLE";
 
   constructor(options: BillingSimulatorOptions = {}) {
     this.scenario = options.scenario ?? "SUCCESS";
+    this.statusScenario = options.statusScenario ?? "NORMAL";
+  }
+
+  setPaymentStatus(
+    providerPaymentId: string,
+    snapshot: SimulatorPaymentStatusSnapshot,
+  ): void {
+    const checked = BillingPaymentStatusResultSchema.parse(snapshot);
+    if (checked.kind !== "FOUND")
+      throw new Error("SIMULATOR_STATUS_MUST_BE_FOUND");
+    this.statuses.set(providerPaymentId, {
+      ...checked,
+      statusAt: new Date(checked.statusAt.getTime()),
+    });
+  }
+
+  configurePaymentStatus(
+    providerPaymentId: string,
+    snapshot: SimulatorPaymentStatusSnapshot,
+  ): void {
+    this.setPaymentStatus(providerPaymentId, snapshot);
+  }
+
+  clearPaymentStatus(providerPaymentId: string): void {
+    this.statuses.delete(providerPaymentId);
+  }
+
+  async fetchPaymentStatus(input: {
+    providerPaymentId: string;
+  }): Promise<BillingPaymentStatusResult> {
+    if (this.statusScenario === "UNAVAILABLE") return { kind: "UNAVAILABLE" };
+    const snapshot = this.statuses.get(input.providerPaymentId);
+    return snapshot
+      ? { ...snapshot, statusAt: new Date(snapshot.statusAt.getTime()) }
+      : { kind: "NOT_FOUND" };
   }
 
   async createCheckout(

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   PlanMutationContextSchema,
   type PlanMutationContext,
@@ -240,6 +241,115 @@ export function resolveSubscriptionAccess(
     currentPeriodEnd: subscription.currentPeriodEnd,
     graceUntil: subscription.graceUntil,
   };
+}
+
+export type SubscriptionLifecycleDecision =
+  | { kind: "NOOP" }
+  | { kind: "CORRUPTED"; code: "SUBSCRIPTION_CORRUPTED" }
+  | {
+      kind: "TRANSITION";
+      toState: "EXPIRED" | "PAST_DUE";
+      reason: SubscriptionLifecycleReason;
+      dueAt: Date;
+    };
+export type SubscriptionLifecycleReason =
+  | "TRIAL_PERIOD_ENDED"
+  | "ACTIVE_PERIOD_ENDED"
+  | "CANCEL_AT_PERIOD_END"
+  | "CANCELED_PERIOD_ENDED"
+  | "GRACE_WINDOW_ENDED"
+  | "SUSPENDED_COMMERCIAL_WINDOW_ENDED";
+export const SubscriptionLifecycleReasonSchema = z.enum([
+  "TRIAL_PERIOD_ENDED",
+  "ACTIVE_PERIOD_ENDED",
+  "CANCEL_AT_PERIOD_END",
+  "CANCELED_PERIOD_ENDED",
+  "GRACE_WINDOW_ENDED",
+  "SUSPENDED_COMMERCIAL_WINDOW_ENDED",
+]);
+
+export function decideSubscriptionLifecycle(input: {
+  state: SubscriptionState;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd: Date;
+  graceUntil: Date | null;
+  suspendedOrigin?: SubscriptionState | null;
+  now: Date;
+}): SubscriptionLifecycleDecision {
+  const due = (at: Date) => at.getTime() <= input.now.getTime();
+  if (input.state === "TRIAL" && due(input.currentPeriodEnd))
+    return {
+      kind: "TRANSITION",
+      toState: "EXPIRED",
+      reason: "TRIAL_PERIOD_ENDED",
+      dueAt: input.currentPeriodEnd,
+    };
+  if (input.state === "ACTIVE" && due(input.currentPeriodEnd))
+    return {
+      kind: "TRANSITION",
+      toState: "EXPIRED",
+      reason: input.cancelAtPeriodEnd
+        ? "CANCEL_AT_PERIOD_END"
+        : "ACTIVE_PERIOD_ENDED",
+      dueAt: input.currentPeriodEnd,
+    };
+  if (input.state === "CANCELED" && due(input.currentPeriodEnd))
+    return {
+      kind: "TRANSITION",
+      toState: "EXPIRED",
+      reason: "CANCELED_PERIOD_ENDED",
+      dueAt: input.currentPeriodEnd,
+    };
+  if (input.state === "GRACE") {
+    if (!input.graceUntil)
+      return { kind: "CORRUPTED", code: "SUBSCRIPTION_CORRUPTED" };
+    return due(input.graceUntil)
+      ? {
+          kind: "TRANSITION",
+          toState: "PAST_DUE",
+          reason: "GRACE_WINDOW_ENDED",
+          dueAt: input.graceUntil,
+        }
+      : { kind: "NOOP" };
+  }
+  if (input.state === "SUSPENDED") {
+    if (!input.suspendedOrigin)
+      return { kind: "CORRUPTED", code: "SUBSCRIPTION_CORRUPTED" };
+    if (
+      ["TRIAL", "ACTIVE", "CANCELED"].includes(input.suspendedOrigin) &&
+      due(input.currentPeriodEnd)
+    )
+      return {
+        kind: "TRANSITION",
+        toState: "EXPIRED",
+        reason: "SUSPENDED_COMMERCIAL_WINDOW_ENDED",
+        dueAt: input.currentPeriodEnd,
+      };
+    if (input.suspendedOrigin === "GRACE") {
+      if (!input.graceUntil)
+        return { kind: "CORRUPTED", code: "SUBSCRIPTION_CORRUPTED" };
+      if (due(input.graceUntil))
+        return {
+          kind: "TRANSITION",
+          toState: "EXPIRED",
+          reason: "SUSPENDED_COMMERCIAL_WINDOW_ENDED",
+          dueAt: input.graceUntil,
+        };
+    }
+  }
+  return { kind: "NOOP" };
+}
+
+export function subscriptionLifecycleJobIdentity(input: {
+  subscriptionId: string;
+  oldState: SubscriptionState;
+  oldStateRevision: number;
+  toState: SubscriptionState;
+  dueAt: Date;
+}): string {
+  // Kept free of provider data and stable across worker restarts.
+  const value = `${input.subscriptionId}\n${input.oldState}\n${input.oldStateRevision}\n${input.toState}\n${input.dueAt.toISOString()}`;
+  return `job_v1_${createHash("sha256").update(`product-control-plane/subscription-lifecycle/v1\n${value}`).digest("hex")}`;
 }
 
 export interface CurrentSubscriptionReader {

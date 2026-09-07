@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@product/auth": "workspace:*",
+    "@product/billing": "workspace:*",
     "@product/db": "workspace:*",
     "@product/device-auth": "workspace:*",
     "@product/email": "workspace:*",

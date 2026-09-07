@@ -173,6 +173,34 @@ async function terminalize(
     ],
   );
   if (!updated.rows[0]) throw new Error("BILLING_EVENT_CLAIM_LOST");
+  if (refs.paymentId) {
+    const retryable = new Set([
+      "CURRENT_SUBSCRIPTION_CONFLICT",
+      "PAYMENT_STATE_CONFLICT",
+      "PAYMENT_SUBSCRIPTION_CORRUPTED",
+    ]);
+    if (state === "FAILED" && retryable.has(refs.failureCode ?? "")) {
+      await q.query(
+        `UPDATE billing_reconciliation_jobs
+            SET state='READY',next_attempt_at=GREATEST(CURRENT_TIMESTAMP,created_at),lease_token=NULL,lease_until=NULL,
+                last_result_code=$1,updated_at=GREATEST(CURRENT_TIMESTAMP,created_at)
+          WHERE payment_id=$2 AND state IN ('READY','LEASED')`,
+        [refs.failureCode, refs.paymentId],
+      );
+    } else {
+      await q.query(
+        `UPDATE billing_reconciliation_jobs
+            SET state=$1,next_attempt_at=NULL,lease_token=NULL,lease_until=NULL,
+                last_result_code=$2,updated_at=GREATEST(CURRENT_TIMESTAMP,created_at)
+          WHERE payment_id=$3 AND state IN ('READY','LEASED')`,
+        [
+          state === "FAILED" ? "BLOCKED" : "SETTLED",
+          state === "FAILED" ? refs.failureCode : null,
+          refs.paymentId,
+        ],
+      );
+    }
+  }
   return updated.rows[0];
 }
 
