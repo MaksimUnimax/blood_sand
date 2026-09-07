@@ -1,6 +1,6 @@
 # P6.1 Admin Security Local Evidence — 2026-09-07
 
-Status: **LOCAL ACCEPTED — P6.1 ACTIVE**
+Status: **ACCEPTED — P6.1 DONE**
 
 ## Base and runtime
 
@@ -126,7 +126,22 @@ No admin UI was added.
 - Payment go-live: `DEFERRED`
 
 ADR-0026 freezes P6.1-P6.6 and assigns AI/health/diagnostic admin ownership
-to P7/P8/P9 respectively. ROADMAP is `P6 ACTIVE`, `P6.1 ACTIVE`, and
-`P6.2..P6.6 PLANNED`; P7-P15 remain planned.
+to P7/P8/P9 respectively. ROADMAP is `P6 ACTIVE`, `P6.1 DONE`, `P6.2 NEXT`,
+and `P6.3..P6.6 PLANNED`; P7-P15 remain planned.
 
-This is an uncommitted local acceptance candidate. No commit or push was made.
+## Remote acceptance and finalization
+
+- Implementation SHA: `29f69a02914c231b89351e79714ca0fe59491afd`
+- Implementation Server CI: run `34125514652`; https://github.com/MaksimUnimax/blood_sand/actions/runs/34125514652; `SUCCESS`
+- `REMOTE_P6_1_REVIEW=PASS`
+- Findings: critical/high/material medium `0/0/0`
+- Unit/API: `685`; integration: `1165`; P6.1: `77`
+- Retained P5.7/P5.6/P5.5/P5.4/P5.3/P5.2/P5.1: `80/152/120/116/102/90/94`
+- Retained P4.6/P4.5/P4.4/P4.3/P4.2/P4.1: `38/52/48/52/21/30`
+- Crypto: `12/12`; E2E: `32/32`
+- OpenAPI: `21`; SHA-256 `587d67234a22b1529cad3ce447ca10f0dcc1eddd18646fae2310c28f99861a09`
+- Migrations: `0000..0012`; 0012 SHA-256 `9eafa0e106b55ccae61f8b4d254cdebdad45d490ede49c75cd6ca18700c7a679`; `0013` absent
+- Exact domain roles: `ADMIN_OWNER`, `ADMIN_OPS`, `ADMIN_SUPPORT`, `ADMIN_BILLING_READONLY`
+- Separate admin principal/session audience and server-side RBAC accepted
+- `ADMIN_MFA_IMPLEMENTED=NO`; `ADMIN_MFA_PRODUCTION_GATE=DEFERRED`
+- P6.2 and P7 were not executed; real payment-provider go-live remains deferred
