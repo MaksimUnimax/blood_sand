@@ -1,8 +1,8 @@
 # Roadmap — от стратегии до релиза
 
-Версия: **2.0**  
+Версия: **2.1**  
 Дата: **2026-09-08**  
-Статус: **рабочий управляющий roadmap проекта**
+Статус: **рабочий управляющий roadmap проекта / SEMANTIC-IA HANDOFF ACTIVE**
 
 Этот каталог задаёт последовательность работы от маркетингового исследования до production-релиза сайта.
 
@@ -10,11 +10,26 @@
 
 ## Scope текущей рабочей линии
 
-В текущем SEO/site research диалоге **не считаются самостоятельной работой проекта разработка и отладка browser/API extensions/bridges**. Такие инструменты могут быть техническим каналом получения evidence, но не должны подменять цель сайта и не определяют текущий SEO-этап.
+Browser/API extensions/bridges — инструменты получения evidence, а не самостоятельная цель сайта.
 
-Текущая рабочая линия:
+Исходная рабочая линия:
 
 `цель сайта → human demand → Yandex Search/SERP → Alice → opportunity map → customer/product evidence → competitors → economics → commercial model → IA → Page Jobs/content → ТЗ → UX/UI → разработка → измерение`
+
+Owner decision 2026-09-08 временно меняет исполнение середины цепочки:
+
+```text
+Stage 07 competitor work COMPLETE
+→ Stage 08 economics DEFERRED until site/SEO is substantially ready
+→ production semantic core / clustering / query→page / IA work temporarily executes in Yandex_direct as KW-002 greenfield Kwork rehearsal
+→ accepted KW-002 result returns to blood_sand
+→ reconcile/accept IA + Page Jobs authorities
+→ continue product/content/design/development roadmap
+```
+
+Cross-repo authority:
+
+`marketing/roadmap/KW002_YANDEX_DIRECT_SEMANTIC_HANDOFF_2026-09-08.md`
 
 ---
 
@@ -38,7 +53,8 @@ Roadmap имеет ровно два уровня:
 - `[ ]` — не начато;
 - `[~]` — в работе;
 - `[x]` — выполнено;
-- `[!]` — заблокировано/обязательная пауза.
+- `[!]` — заблокировано/обязательная пауза;
+- `[>]` — временно выполняется во внешнем связанном workspace/repository.
 
 Обсуждение в чате **не считается завершением**. Нужен зафиксированный результат/артефакт/измерение в GitHub.
 
@@ -59,14 +75,34 @@ Continuity rule:
 - [x] **04. Исследовать реальный Yandex Search/SERP и Alice AI** — [`04_YANDEX_SERP_ALICE_RESEARCH.md`](04_YANDEX_SERP_ALICE_RESEARCH.md); final R2: `marketing/research/R2_YANDEX_SERP_ALICE_FINAL_REPORT_2026-08-26.md`.
 - [x] **05. Свести Wordstat + Search/SERP + Alice в единую карту возможностей** — [`05_OPPORTUNITY_MAP.md`](05_OPPORTUNITY_MAP.md); final R3: `marketing/research/R3_OPPORTUNITY_MAP_FINAL_2026-08-26.md`.
 - [x] **06. Завершить исследование покупателей и полный паспорт SKU** — [`06_BUYER_EVIDENCE_AND_SKU_PASSPORT.md`](06_BUYER_EVIDENCE_AND_SKU_PASSPORT.md); final R4: `marketing/research/R4_STAGE06_BUYER_SKU_EVIDENCE_FINAL_2026-09-08.md`.
-- [~] **07. Завершить конкурентную разведку и определить реальные конкурентные преимущества** — **ACTIVE**; детализация: [`07_COMPETITOR_AND_DEFENSIBLE_ADVANTAGE.md`](07_COMPETITOR_AND_DEFENSIBLE_ADVANTAGE.md).
-- [ ] **08. Посчитать экономику каналов и direct-commerce** — предварительно 3–6 ранов.
-- [ ] **09. Принять окончательную коммерческую модель сайта** — предварительно 2–4 рана.
+- [x] **07. Завершить конкурентную разведку и определить реальные конкурентные преимущества** — final R5: `marketing/research/R5_STAGE07_COMPETITIVE_ADVANTAGE_FINAL_2026-09-08.md`.
+- [!] **08. Посчитать экономику каналов и direct-commerce** — **DEFERRED BY OWNER**; вернуться после существенной готовности SEO/site, не блокирует текущую semantic/IA работу.
+- [ ] **09. Принять окончательную коммерческую модель сайта** — остаётся отдельным решением; не подменяется KW-002.
+
+## Временный cross-repo semantic/IA handoff
+
+- [>] **KW-002 greenfield semantic-core rehearsal на Blood & Sand** — выполняется в `MaksimUnimax/Yandex_direct`, branch `roadmap/kwork-productization-2026-08-28`, path `extension/docs/kwork/KW002_SEMANTIC_CORE_FROM_SCRATCH/`.
+
+Ожидаемый возврат:
+
+```text
+final semantic core
+SERP-backed cluster master
+query→page map
+site IA
+Page Jobs
+internal-link model
+competitor-derived semantic gaps
+Search-vs-AI-search reconciliation
+client/implementation-ready structure artifacts
+```
+
+Старые Blood & Sand research conclusions до финальной заморозки KW-002 в тест не подаются.
 
 ## Проектирование продукта и контента
 
-- [ ] **10. Сформировать окончательную информационную архитектуру сайта** — предварительно 3–6 ранов.
-- [ ] **11. Сформировать полный контент-план и Page Jobs** — предварительно 4–8 ранов.
+- [>] **10. Сформировать окончательную информационную архитектуру сайта** — materially prepared inside KW-002, считается завершённым в blood_sand только после импорта и owner acceptance.
+- [>] **11. Сформировать полный контент-план и Page Jobs** — Page Jobs/semantic page roles materially prepared inside KW-002; полный контент-план/тексты остаются последующей работой после импорта.
 - [ ] **12. Сформировать продуктовое и техническое ТЗ** — предварительно 4–8 ранов.
 - [ ] **13. Спроектировать UX/UI и ключевые пользовательские сценарии** — предварительно 4–10 ранов.
 - [ ] **14. Подготовить контент и медиаматериалы к разработке** — предварительно 5–15 ранов.
@@ -93,30 +129,23 @@ Continuity rule:
 # Текущая точка — 2026-09-08
 
 Закрыто:
-- 01 strategy;
-- 02 data architecture;
-- 03 Wordstat R1;
-- 04 Yandex Search/SERP + Alice R2;
-- 05 opportunity map R3;
-- 06 buyer evidence + current Ozon/WB SKU/listing evidence R4.
 
-Stage 06 final facts now include:
-- current Ozon census 76/76 terminally proven;
-- fresh WB seller-account census 108 unique cards, of which 88 are Blood & Sand automotive symbolic listings;
-- Tier-A/contrast product facts and Ozon seller performance linkage;
-- current Ozon direct buyer-text channels explicitly blocked rather than inferred absent;
-- OU06 product-side overlap resolved as a real separate Veles/Pechat hierarchy for later architecture work;
-- OU09 reopen condition satisfied for Stage 07/08 investigation, without promoting broad zodiac to primary SEO.
+```text
+01 strategy
+02 data architecture
+03 Wordstat R1
+04 Yandex Search/SERP + Alice R2
+05 opportunity map R3
+06 buyer/SKU evidence R4
+07 competitor/defensible advantage R5
+```
 
-Активно:
+Текущее активное направление:
 
-> **07 — competitor + defensible advantage evidence.**
+> **KW-002 in Yandex_direct — построить с нуля production semantic core + clustering + query→page + IA + Page Jobs для Blood & Sand как чистый тест коммерческого Kwork.**
 
-Detailed Stage 07 plan:
-- `marketing/roadmap/07_COMPETITOR_AND_DEFENSIBLE_ADVANTAGE.md`.
+## Next exact step in this repository
 
-## Next exact step
+> **WAIT FOR KW-002 PREPARED ROADMAP OWNER APPROVAL AND EXECUTION; do not independently rebuild final semantic core/IA here in parallel.**
 
-> **07.1 — build the canonical competitor target registry from preserved Search/Alice/R2 evidence and execute only the bounded fresh public-page rechecks needed to establish current competitor patterns.**
-
-Do not jump to final IA/Page Jobs or site development.
+После принятия KW-002 результат импортируется и reconciles Stage 10/11 перед продолжением ТЗ/контента/UX/UI.
