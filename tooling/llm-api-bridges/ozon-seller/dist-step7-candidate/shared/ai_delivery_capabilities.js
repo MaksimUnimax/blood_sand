@@ -82,7 +82,7 @@
       return Object.freeze({ status: "unsupported", supported: false, reason: "file_type_not_supported", extension });
     }
     const byteLength = Math.max(0, Number(descriptor.byte_length || descriptor.byteLength || 0));
-    if (Number.isFinite(current.max_file_bytes) && current.max_file_bytes !== null && byteLength > current.max_file_bytes) {
+    if (current.max_file_bytes !== null && current.max_file_bytes !== undefined && Number.isFinite(Number(current.max_file_bytes)) && byteLength > Number(current.max_file_bytes)) {
       return Object.freeze({ status: "unsupported", supported: false, reason: "file_too_large_for_adapter", extension, byte_length: byteLength });
     }
     return Object.freeze({ status: "supported", supported: true, reason: null, extension, byte_length: byteLength });
@@ -92,7 +92,8 @@
     const current = profile(adapterId);
     if (!current) return Object.freeze({ representation: "plain_text", threshold_status: "unknown_adapter", unicode_chars: unicodeLength(text), threshold: null });
     const chars = unicodeLength(text);
-    const threshold = Number.isFinite(Number(current.plain_text_max_chars)) ? Number(current.plain_text_max_chars) : null;
+    const hasThreshold = current.plain_text_max_chars !== null && current.plain_text_max_chars !== undefined && Number.isFinite(Number(current.plain_text_max_chars));
+    const threshold = hasThreshold ? Number(current.plain_text_max_chars) : null;
     if (threshold === null) return Object.freeze({ representation: "plain_text", threshold_status: "pending_live_calibration", unicode_chars: chars, threshold: null });
     return Object.freeze({
       representation: chars > threshold ? "text_document" : "plain_text",
