@@ -1,6 +1,6 @@
 # P6.4 admin-commercial local evidence — 2026-09-08
 
-Status: LOCAL ACCEPTED — P6.4 ACTIVE
+Status: ACCEPTED — P6.4 DONE
 
 Technical ID: `PRODUCT-CONTROL-PLANE-P6.4-OPENAPI-AUTHORITY-RECONCILIATION`
 
@@ -145,8 +145,44 @@ The authoritative ledger is
 - Compatibility publication is revision-only and does not auto-activate,
   create config releases, mutate bootstrap/rollout, or expose signing keys.
 - Admin UI, real provider, bridge changes, P6.5 work, and P7 work: `NO`.
-- Roadmap: P6.1 DONE, P6.2 DONE, P6.3 DONE, P6.4 ACTIVE, P6.5 PLANNED,
-  P6.6 PLANNED; P7–P15 PLANNED. Payment go-live remains DEFERRED.
+- Roadmap after remote acceptance: P6.1 DONE, P6.2 DONE, P6.3 DONE, P6.4
+  DONE, P6.5 NEXT, P6.6 PLANNED; P7–P15 PLANNED. Payment go-live remains
+  DEFERRED.
+
+## Remote final acceptance
+
+`P6_4_ACCEPTANCE=PASS`.
+
+- Required base and both remote start reads: `3b195f0a97f33598e7bfb68becc1d95b1bd0de13`.
+- Implementation commit: `87ab8d6030cf29d469e1731fc24b001bee942ea6`; tree
+  `60343ca0a8fed9af6368ee17eb895066c65f1fdb`; parent is the required base;
+  exact message is `feat(server): add P6.4 admin commercial operations`.
+- Implementation push: fast-forward from the required base.
+- Exact-head Server CI: run `34223963495`,
+  https://github.com/MaksimUnimax/blood_sand/actions/runs/34223963495,
+  `push`, exact implementation head, `success`. Unit `1011`; P6.4 unit/API
+  `150`; integration `1456`; P6.4 physical real-PG `113`, meaningful `112`;
+  crypto `12/12`; E2E `32/32`; OpenAPI `67` method tuples; migrations
+  `0000..0012`, no `0013`.
+- Authoritative OpenAPI SHA:
+  `eec29f87be0b1309be5021fdd3c0e38ec90bea2add9978f2c4b439c7f79e88e4`.
+- Count inventory: `A=14, B=20, C=20, D=10, E=15, F=14, G=10, H=9`;
+  `COUNT_INTEGRITY=PASS`; schema padding, tautologies, duplicates, semantic
+  padding, UUID-only variants, renamed duplicates, and count inflation are
+  all zero.
+- Remote GitHub semantic/security review: `REMOTE_P6_4_REVIEW=PASS`;
+  critical `0`, high `0`, material medium `0`. Current-admin RBAC is
+  rechecked inside each mutation transaction; P4/P3 command and audit
+  authorities remain reused and atomic; typed stale mappings and all five
+  scoped cursor contracts were verified from remote blobs.
+- Compatibility publication is revision-only with
+  `REVISION_PUBLISHED_NOT_AUTO_ACTIVATED`; it does not publish config,
+  select signing keys, change bootstrap rollout, publish feature rules, or
+  disclose signing/config/cohort material. Generic feature-rule
+  administration was NOT added by P6.4.
+- Bridge path is unchanged; no real payment provider or payment call was
+  added and payment go-live remains `DEFERRED`. Admin UI, P6.5, and P7 were
+  not started.
 
 ## Recovery freeze
 
