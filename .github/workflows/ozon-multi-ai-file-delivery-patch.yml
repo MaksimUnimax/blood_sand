@@ -1,0 +1,131 @@
+name: Ozon multi-AI file delivery patch
+
+on:
+  push:
+    branches:
+      - repair/ozon-multi-ai-file-delivery-2026-09-08
+    paths:
+      - '.github/workflows/ozon-multi-ai-file-delivery-patch.yml'
+      - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/**'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_multi_ai_file_delivery_patch.mjs'
+      - 'tooling/llm-api-bridges/ozon-seller/research/product/OZON_AI_WORKER_BATCH_OUTPUT_MATERIALIZATION_BOUNDARY_TASK_2026-09-07.md'
+      - 'tooling/llm-api-bridges/ozon-seller/research/product/OZON_AI_WORKER_LARGE_TEXT_DELIVERY_THRESHOLD_2026-09-08.md'
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use accepted Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+
+      - name: Run multi-AI file delivery regression
+        shell: bash
+        env:
+          OZON_FILE_DELIVERY_BASE_SHA: 4f78cc9f84a926cc834256abcb8278b95c9539df
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = 'v24.12.0'
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_multi_ai_file_delivery_patch.mjs
+
+  package:
+    needs: regression
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use accepted Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+
+      - name: Re-run regression on exact package source
+        shell: bash
+        env:
+          OZON_FILE_DELIVERY_BASE_SHA: 4f78cc9f84a926cc834256abcb8278b95c9539df
+        run: |
+          set -euo pipefail
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_multi_ai_file_delivery_patch.mjs
+
+      - name: Build deterministic production ZIP and fresh-extract verify
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller"
+          SRC="$ROOT/dist-step7-candidate"
+          OUT="$RUNNER_TEMP/OZON_BRIDGE_v0.1.19_MULTI_AI_FILE_DELIVERY_${GITHUB_SHA:0:12}.zip"
+          EXTRACT="$RUNNER_TEMP/fresh-extract"
+          INVENTORY="$RUNNER_TEMP/package-inventory.txt"
+
+          find "$SRC" -type f -printf '%P\n' | LC_ALL=C sort > "$INVENTORY"
+          test -s "$INVENTORY"
+          grep -qx 'manifest.json' "$INVENTORY"
+          grep -qx 'service_worker_entry.js' "$INVENTORY"
+          grep -qx 'shared/file_delivery_worker.js' "$INVENTORY"
+          grep -qx 'shared/ai_delivery_capabilities.js' "$INVENTORY"
+          grep -qx 'shared/web_file_attachment.js' "$INVENTORY"
+          grep -qx 'attachment_delivery_content.js' "$INVENTORY"
+
+          rm -f "$OUT"
+          (cd "$SRC" && zip -X -q "$OUT" -@ < "$INVENTORY")
+          test -s "$OUT"
+          rm -rf "$EXTRACT"
+          mkdir -p "$EXTRACT"
+          unzip -q "$OUT" -d "$EXTRACT"
+          diff -ruN "$SRC" "$EXTRACT"
+
+          while IFS= read -r file; do
+            case "$file" in
+              *.js) node --check "$EXTRACT/$file" ;;
+            esac
+          done < "$INVENTORY"
+          node -e 'const fs=require("fs"); const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); if(m.manifest_version!==3||m.background?.service_worker!=="service_worker_entry.js") process.exit(1)' "$EXTRACT/manifest.json"
+
+          if command -v google-chrome >/dev/null 2>&1; then
+            google-chrome --version
+            timeout 60s google-chrome --headless=new --no-sandbox --disable-gpu --pack-extension="$EXTRACT" --pack-extension-key="" >/tmp/chrome-pack.log 2>&1 || {
+              cat /tmp/chrome-pack.log
+              echo 'CHROME_PACK_EXTENSION=UNAVAILABLE_OR_FAILED'
+              exit 1
+            }
+            echo 'CHROME_PACK_EXTENSION=PASS'
+          else
+            echo 'google-chrome unavailable on runner' >&2
+            exit 1
+          fi
+
+          BYTES=$(wc -c < "$OUT")
+          SHA=$(sha256sum "$OUT" | awk '{print $1}')
+          echo "PACKAGE_PATH=$OUT"
+          echo "PACKAGE_BYTES=$BYTES"
+          echo "PACKAGE_SHA256=$SHA"
+          echo "PACKAGE_FILE=$(basename "$OUT")"
+          echo "package_path=$OUT" >> "$GITHUB_OUTPUT"
+          echo "package_bytes=$BYTES" >> "$GITHUB_OUTPUT"
+          echo "package_sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "package_file=$(basename "$OUT")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload exact installable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-multi-ai-file-delivery-${{ github.sha }}
+          path: ${{ steps.package.outputs.package_path }}
+          if-no-files-found: error
+          retention-days: 30
