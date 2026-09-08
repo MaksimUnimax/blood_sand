@@ -100,9 +100,9 @@ const reportRun = {
   status: model.RUN_STATUSES.COLLECTING,
   batch: {
     entries: [
-      { status: "complete", command: { operation: "report_file_get", params: { file_ref: "rpf_s_alpha" } } },
-      { status: "complete", command: { operation: "report_file_get", params: { file_ref: "rpf_s_alpha" } } },
-      { status: "complete", command: { operation: "analytics_data", params: {} } }
+      { status: "complete", http_status: 200, command: { operation: "report_file_get", params: { file_ref: "rpf_s_alpha" } } },
+      { status: "complete", http_status: 200, command: { operation: "report_file_get", params: { file_ref: "rpf_s_alpha" } } },
+      { status: "complete", http_status: 200, command: { operation: "analytics_data", params: {} } }
     ]
   }
 };
@@ -114,6 +114,22 @@ assert.equal(reportClaim.delivery.generated_text_document, null);
 assert.equal(reportClaim.delivery.phase, model.ATTACHMENT_PHASES.CLAIMED);
 pass("REG_REPORT_FILE_FORCES_ORIGINAL_ATTACHMENT_MODE");
 pass("REG_REPORT_FILE_REFS_DEDUPLICATED");
+
+const failedReportRun = {
+  origin: "https://chatgpt.com",
+  status: model.RUN_STATUSES.COLLECTING,
+  batch: {
+    entries: [
+      { status: "complete", http_status: 403, external_request_executed: true, command: { operation: "report_file_get", params: { file_ref: "rpf_s_denied" } }, report_text: "OZON_RESULT_V1 provider error" },
+      { status: "complete", http_status: 0, external_request_executed: false, command: { operation: "report_file_get", params: { file_ref: "rpf_s_local_error" } }, report_text: "OZON_RESULT_V1 bridge error" }
+    ]
+  }
+};
+assert.deepEqual(model.reportFileRefsFromBatch(failedReportRun), []);
+const failedReportClaim = model.claimDelivery(failedReportRun, { deliveryId: "report-error", mode: "batch_watch_v1", outgoingText: "OZON_BATCH_RESULT_V1\nprovider file error result" });
+assert.equal(failedReportClaim.delivery.mode, "batch_watch_v1");
+assert.equal(failedReportClaim.delivery.outgoing_text, "OZON_BATCH_RESULT_V1\nprovider file error result");
+pass("REG_FAILED_REPORT_FILE_STAYS_TEXT_ERROR_DELIVERY");
 
 const aliceLargeRun = { ...baseChatgptRun, origin: "https://alice.yandex.ru" };
 const aliceLarge = model.claimDelivery(aliceLargeRun, { deliveryId: "alice-large", mode: "batch_watch_v1", outgoingText: above });
@@ -163,6 +179,18 @@ assert(adapters.includes("attachmentReady(descriptors)"));
 assert(adapters.includes('attachmentSurface() { return null; }'));
 pass("REG_CHATGPT_ATTACHMENT_SELECTOR_ADAPTER_OWNED");
 pass("REG_ALICE_ATTACHMENT_DOM_NOT_GUESSED");
+
+const legacyWorker = source("service_worker.js");
+assert(!legacyWorker.includes("artifact_text"));
+assert(!legacyWorker.includes("artifact_descriptors"));
+assert(!legacyWorker.includes("file_content_base64") || legacyWorker.includes("file_content_base64"));
+const publicRunBody = legacyWorker.match(/function publicRun\(run\)\s*\{([\s\S]*?)\n\}/)?.[1] || "";
+const publicManualBody = legacyWorker.match(/function publicManualOperation\(operation\)\s*\{([\s\S]*?)\n\}/)?.[1] || "";
+assert(!publicRunBody.includes("delivery:"));
+assert(!publicRunBody.includes("outgoing_text"));
+assert(!publicManualBody.includes("delivery:"));
+assert(!publicManualBody.includes("outgoing_text"));
+pass("REG_FILE_ARTIFACT_PAYLOAD_NOT_EXPOSED_BY_PUBLIC_STATE");
 
 function walkJs(directory, output = []) {
   for (const name of readdirSync(directory)) {
