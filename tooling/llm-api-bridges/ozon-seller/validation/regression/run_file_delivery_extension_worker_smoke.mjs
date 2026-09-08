@@ -156,6 +156,35 @@ async function evaluate(sessionId, expression) {
   return result?.result?.value;
 }
 
+async function waitForServiceWorkerBootstrap(sessionId) {
+  const deadline = Date.now() + 15_000;
+  let lastObserved = null;
+  let lastError = null;
+  while (Date.now() < deadline) {
+    try {
+      lastObserved = await evaluate(sessionId, `(() => ({
+        capabilities: typeof OzonAIDeliveryCapabilities,
+        file_delivery_worker: typeof OzonFileDeliveryWorker,
+        provider_transport: typeof ProviderTransportCore,
+        indexed_db: typeof indexedDB
+      }))()`);
+      if (lastObserved?.capabilities === "object" &&
+          lastObserved?.file_delivery_worker === "object" &&
+          lastObserved?.provider_transport === "object" &&
+          lastObserved?.indexed_db === "object") {
+        return lastObserved;
+      }
+    } catch (error) {
+      lastError = error;
+    }
+    if (child.exitCode !== null) {
+      throw new Error(`Chrome exited while waiting for service-worker bootstrap. last_observed=${JSON.stringify(lastObserved)} last_error=${lastError?.message || "none"} stderr=${stderr}`);
+    }
+    await sleep(50);
+  }
+  throw new Error(`Timed out waiting for service-worker bootstrap readiness. last_observed=${JSON.stringify(lastObserved)} last_error=${lastError?.message || "none"} stderr=${stderr}`);
+}
+
 try {
   const version = await waitForBrowserPipe();
   assert.match(String(version.product || ""), /Chrome/);
@@ -165,6 +194,13 @@ try {
   assert(attached?.sessionId, "Target.attachToTarget did not return a sessionId");
   const sessionId = attached.sessionId;
 
+  const bootstrap = await waitForServiceWorkerBootstrap(sessionId);
+  assert.deepEqual(bootstrap, {
+    capabilities: "object",
+    file_delivery_worker: "object",
+    provider_transport: "object",
+    indexed_db: "object"
+  });
   assert.equal(await evaluate(sessionId, `typeof OzonAIDeliveryCapabilities`), "object");
   assert.equal(await evaluate(sessionId, `OzonAIDeliveryCapabilities.TARGET_AI_IDS.length`), 8);
   assert.equal(await evaluate(sessionId, `OzonAIDeliveryCapabilities.CHATGPT_MAX_SAFE_PLAIN_TEXT_UNICODE_CHARACTERS`), 1_048_000);
@@ -179,6 +215,7 @@ try {
   console.log(`REG_EXTENSION_ID_DERIVED=${expectedExtensionId}`);
   console.log("REG_EXTENSION_DEVTOOLS_PIPE_TRANSPORT_PASS");
   console.log("REG_EXTENSION_MV3_EVENT_ACTIVATION_PASS");
+  console.log("REG_EXTENSION_MV3_SERVICE_WORKER_BOOTSTRAP_READINESS_PASS");
   console.log("REG_EXTENSION_MV3_SERVICE_WORKER_BOOTSTRAP_PASS");
   console.log("REG_EXTENSION_MV3_INDEXEDDB_ARTIFACT_STORE_PASS");
   console.log("REG_EXTENSION_PROVIDER_REPORT_CAPTURE_WRAPPER_ACTIVE_PASS");
