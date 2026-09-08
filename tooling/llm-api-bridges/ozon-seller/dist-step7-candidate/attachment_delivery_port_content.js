@@ -61,7 +61,7 @@
     const here = identity();
     return Boolean(here.status === "confirmed" && here.conversation_id &&
       String(here.origin || "").toLowerCase() === String(recovery?.origin || "").toLowerCase() &&
-      String(here.conversation_id).toLowerCase() === String(recovery?.conversation_id).toLowerCase() &&
+      String(here.conversation_id).toLowerCase() === String(recovery?.conversation_id || "").toLowerCase() &&
       conversationKey() === String(recovery?.conversation_key || "").toLowerCase());
   }
 
