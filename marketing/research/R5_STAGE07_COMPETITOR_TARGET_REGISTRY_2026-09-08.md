@@ -116,7 +116,7 @@ Observed current strengths include:
 - price and reviews;
 - long product/meaning content.
 
-The old 2026-08-01 landscape recorded marketplace alternative buttons on this page. In the fresh sampled page text, explicit `Wildberries`/`Ozon` marketplace-alternative text was **not observed**. That old feature is therefore not carried forward as a current fact.
+**07.2 correction of the earlier narrow sample:** a fresher current-page recheck directly exposes `Купить на Wildberries`, `Купить на Ozon`, and `Купить на Яндекс.Маркет`. Therefore marketplace-alternative checkout is retained as a current BEREGY strength. The earlier sentence that it was not currently observed is superseded by this later direct-page evidence.
 
 ### `ruyan-master.ru`
 Current site is accessible. Fresh searchable pages expose:
@@ -135,6 +135,7 @@ The sampled category text again mixes historical and magical claims without visi
 4. `SOURCE_RIGOR` remains a hypothesis requiring the dedicated 07.3 evidence pass; sampled lack of citations is not generalized to entire competitor domains.
 5. `REAL_CAR_USE / MOUNTING / SCALE` remains a high-value comparison dimension because Stage-06 customer evidence points to it and it was not yet observed as a systematic specialist strength in 07.1.
 6. The fresh competitor set is adequate to begin 07.2; no additional broad competitor discovery is justified before the deep comparison.
+7. BEREGY proves that hybrid direct + marketplace checkout is already implemented by a specialist competitor, so hybrid checkout alone cannot be claimed as a unique Blood & Sand advantage.
 
 ## Gate coverage
 
