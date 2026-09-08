@@ -1,6 +1,6 @@
 # 07 — Конкурентная разведка и доказуемое конкурентное преимущество
 
-Статус: **[~] IN PROGRESS — 07.1 ACTIVE**  
+Статус: **[~] IN PROGRESS — 07.1/07.2 COMPLETE; 07.3 ACTIVE**  
 Дата старта: **2026-09-08**
 
 ## Цель
@@ -39,54 +39,21 @@ Stage 07 не фиксирует финальную IA/Page Jobs и не счи�
 
 ## 07.1 — Freeze comparison contract + reuse existing evidence
 
-Status: **[~] ACTIVE**
+Status: **[x] COMPLETE**
 
-Tasks:
-- inventory competitor domains/pages already observed in R2 Search/Alice and historical landscape;
-- map them to current OU01–OU10 after Stage-06 decisions;
-- define one comparison schema applied to every page;
-- identify which historical observations need fresh public-page recheck and which do not.
+Canonical outputs:
+- `marketing/data/normalized/competitors/20260908__competitor_target_registry.csv`;
+- `marketing/research/R5_STAGE07_COMPETITOR_TARGET_REGISTRY_2026-09-08.md`.
 
-Comparison fields:
-- competitor_type;
-- domain/page URL;
-- page_role;
-- opportunity_ids;
-- current accessibility;
-- product breadth/depth;
-- exact physical product facts;
-- real-car scale/use visuals;
-- mounting/attachment explanation;
-- materials/construction explanation;
-- packaging/gift evidence;
-- price/availability/checkout;
-- marketplace alternative checkout;
-- reviews/UGC/social proof;
-- historical/source citations;
-- separation of historical fact vs modern/esoteric interpretation;
-- comparison/selection help;
-- FAQ/instructions;
-- internal knowledge↔commerce linkage;
-- source-worthiness for AI;
-- observed gap;
-- possible Blood & Sand response;
-- evidence certainty.
-
-Expected result:
-- canonical competitor target registry and comparison schema;
-- bounded fresh-page research package.
-
-Completion gate:
-- every active/investigate/reopened opportunity has at least one relevant competitor class assigned;
-- no domain is selected only because it appeared in an old web snapshot if it is no longer accessible/relevant.
+Gate: **PASS**.
 
 ---
 
 ## 07.2 — Fresh specialist-commerce competitor pass
 
-Status: **[ ] WAIT**
+Status: **[x] COMPLETE**
 
-Priority lanes:
+Priority lanes covered:
 - OU01 Slavic category;
 - OU02 Печать Велеса;
 - OU05 Алатырь;
@@ -95,26 +62,21 @@ Priority lanes:
 - OU08 Шлем Ужаса;
 - OU03/OU04 automotive/mirror-pendant product experience.
 
-Priority historical candidates to recheck first:
-- BEREGY;
-- Veles.bz;
-- Ярило / slavyanskieoberegi.ru;
-- Руническая мастерская / oberegi-runi.ru;
-- other independent specialist domains that appear in preserved Search/Alice evidence.
+Canonical outputs:
+- `marketing/data/normalized/competitors/20260908__stage07_2__specialist_commerce_feature_matrix.csv`;
+- `marketing/research/R5_STAGE07_2_SPECIALIST_COMMERCE_COMPARISON_2026-09-08.md`.
 
-Expected result:
-- fresh direct-page feature matrix;
-- exact examples of strengths and gaps;
-- no generic claims such as “content is weak” without page evidence.
+Key decision:
+- assortment breadth, exact dimensions/materials, reviews, direct checkout, hybrid marketplace checkout and generic knowledge↔commerce linkage are **parity capabilities**, not standalone defensible advantages;
+- remaining live gap is narrower: real-car exact-SKU evidence, exact mounting construction, evidence-based selection and source rigor.
 
-Completion gate:
-- decision-grade comparison exists for the major specialist-commerce patterns relevant to accepted opportunities.
+Gate: **PASS**.
 
 ---
 
 ## 07.3 — Fresh informational/source-quality pass
 
-Status: **[ ] WAIT**
+Status: **[~] ACTIVE**
 
 Priority questions:
 - how leading pages explain Печать Велеса / Велес / Алатырь / Vegvisir / Ægishjálmur;
@@ -175,20 +137,20 @@ Completion gate:
 
 ---
 
-# Initial hypotheses to test, not conclusions
+# Hypotheses status after 07.2
 
-H1. `real product documentation` can beat generic marketplace copy: exact dimensions, scale in real car, mounting, materials, packaging, construction.
+H1. `real product documentation` — **PARTIALLY SUPPORTED / NARROWED**: exact dimensions/materials are parity; real-car exact-SKU evidence and mounting construction remain candidate gaps.
 
-H2. `source-rigorous symbol explanation` can beat unsourced esoteric repetition and improve Alice/source-worthiness.
+H2. `source-rigorous symbol explanation` — **ACTIVE TEST IN 07.3**.
 
-H3. `knowledge → selection → exact product` linkage can be stronger than pure information sites or pure marketplaces.
+H3. `knowledge → selection → exact product` — **PARTIALLY SUPPORTED / HIGH BAR**: competitors already link knowledge and products; differentiation requires materially better selection logic, source rigor and exact-product evidence.
 
-H4. Hybrid direct + marketplace paths can reduce trust/checkout friction without forcing one channel.
+H4. Hybrid direct + marketplace paths — **USEFUL BUT NOT DEFENSIBLE**; BEREGY is direct counterexample to uniqueness.
 
-H5. OU04 may have product fit but no defensible Search advantage unless real-car/use evidence is substantially better than marketplace listings.
+H5. OU04 — **CONDITIONAL** pending 07.4; form factor itself is not defensible.
 
-H6. Reopened OU09 may deserve a seasonal/supporting specialist role, but not a generic “zodiac” SEO category unless Stage 07 finds a concrete defensible angle.
+H6. OU09 — **REOPENED_FOR_INVESTIGATION**, final role pending 07.4.
 
 # Current continuation point
 
-**07.1 ACTIVE — build the canonical competitor target registry from preserved Search/Alice + R2 evidence, then execute a bounded fresh public-page recheck before moving to 07.2.**
+**07.3 ACTIVE — execute a bounded source-quality pass for Pechat Velesa / Veles / Alatyr / Vegvisir / Aegishjalm and define the evidence bar for Blood & Sand historical/symbolic content.**
