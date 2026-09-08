@@ -1,0 +1,204 @@
+name: Ozon multi-AI file delivery FINAL Gate-35 v5
+
+on:
+  push:
+    branches:
+      - repair/ozon-multi-ai-file-delivery-2026-09-08
+    paths:
+      - '.github/workflows/ozon-multi-ai-file-delivery-final-gate35-v5.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  authority:
+    runs-on: ubuntu-latest
+    outputs:
+      production_sha: ${{ steps.authority.outputs.production_sha }}
+    steps:
+      - name: Checkout branch authority
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: repair/ozon-multi-ai-file-delivery-2026-09-08
+
+      - name: Prove production tree did not move after corrective candidate
+        id: authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          PRODUCTION_SHA='00af53dffe7e02f62a3a218038b70177fed5a17b'
+          PROD_PATH='tooling/llm-api-bridges/ozon-seller/dist-step7-candidate'
+          TEST_PATH='tooling/llm-api-bridges/ozon-seller/validation/regression'
+          CURRENT_PROD_TREE=$(git rev-parse "HEAD:${PROD_PATH}")
+          FROZEN_PROD_TREE=$(git rev-parse "${PRODUCTION_SHA}:${PROD_PATH}")
+          CURRENT_TEST_TREE=$(git rev-parse "HEAD:${TEST_PATH}")
+          FROZEN_TEST_TREE=$(git rev-parse "${PRODUCTION_SHA}:${TEST_PATH}")
+          test "$CURRENT_PROD_TREE" = "$FROZEN_PROD_TREE"
+          test "$CURRENT_TEST_TREE" = "$FROZEN_TEST_TREE"
+          echo "PRODUCTION_SHA=$PRODUCTION_SHA"
+          echo "PRODUCTION_TREE=$FROZEN_PROD_TREE"
+          echo "REGRESSION_TREE=$FROZEN_TEST_TREE"
+          echo 'POST_CANDIDATE_PRODUCTION_DRIFT=0'
+          echo 'POST_CANDIDATE_REGRESSION_DRIFT=0'
+          echo "production_sha=$PRODUCTION_SHA" >> "$GITHUB_OUTPUT"
+
+  regression:
+    needs: authority
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout exact frozen production candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.authority.outputs.production_sha }}
+
+      - name: Use accepted Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+
+      - name: Run exact final regression set
+        shell: bash
+        env:
+          OZON_FILE_DELIVERY_BASE_SHA: 4f78cc9f84a926cc834256abcb8278b95c9539df
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = 'v24.12.0'
+          test "$(git rev-parse HEAD)" = '${{ needs.authority.outputs.production_sha }}'
+          R=tooling/llm-api-bridges/ozon-seller/validation/regression
+          node "$R/run_multi_ai_file_delivery_patch.mjs"
+          node "$R/run_file_delivery_capture_accounting.mjs"
+          node "$R/run_file_delivery_port_worker_state_machine.mjs"
+          node "$R/run_file_delivery_mixed_batch_policy.mjs"
+          node "$R/run_file_delivery_adapter_gate_policy.mjs"
+          node "$R/run_file_delivery_wake_lifecycle.mjs"
+          node "$R/run_file_delivery_live_stop_repro.mjs"
+          test -z "$(git status --porcelain)"
+
+  package:
+    needs: [authority, regression]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact frozen production candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.authority.outputs.production_sha }}
+
+      - name: Use accepted Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+
+      - name: Re-run all deterministic regressions on package source
+        shell: bash
+        env:
+          OZON_FILE_DELIVERY_BASE_SHA: 4f78cc9f84a926cc834256abcb8278b95c9539df
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '${{ needs.authority.outputs.production_sha }}'
+          R=tooling/llm-api-bridges/ozon-seller/validation/regression
+          node "$R/run_multi_ai_file_delivery_patch.mjs"
+          node "$R/run_file_delivery_capture_accounting.mjs"
+          node "$R/run_file_delivery_port_worker_state_machine.mjs"
+          node "$R/run_file_delivery_mixed_batch_policy.mjs"
+          node "$R/run_file_delivery_adapter_gate_policy.mjs"
+          node "$R/run_file_delivery_wake_lifecycle.mjs"
+          node "$R/run_file_delivery_live_stop_repro.mjs"
+
+      - name: Install pinned Chrome for Testing from official Chrome host
+        shell: bash
+        run: |
+          set -euo pipefail
+          CFT_VERSION='152.0.7977.82'
+          CFT_URL="https://storage.googleapis.com/chrome-for-testing-public/${CFT_VERSION}/linux64/chrome-linux64.zip"
+          CFT_ROOT="$RUNNER_TEMP/chrome-for-testing-${CFT_VERSION}"
+          ARCHIVE="$RUNNER_TEMP/chrome-for-testing-${CFT_VERSION}.zip"
+          rm -rf "$CFT_ROOT" "$ARCHIVE"
+          mkdir -p "$CFT_ROOT"
+          curl --fail --location --silent --show-error "$CFT_URL" --output "$ARCHIVE"
+          CFT_ARCHIVE_SHA256=$(sha256sum "$ARCHIVE" | awk '{print $1}')
+          unzip -q "$ARCHIVE" -d "$CFT_ROOT"
+          CFT_BIN="$CFT_ROOT/chrome-linux64/chrome"
+          test -x "$CFT_BIN"
+          VERSION_OUT="$($CFT_BIN --version)"
+          echo "$VERSION_OUT" | grep -F "$CFT_VERSION"
+          echo "CFT_VERSION=$CFT_VERSION"
+          echo "CFT_SOURCE_URL=$CFT_URL"
+          echo "CFT_ARCHIVE_SHA256=$CFT_ARCHIVE_SHA256"
+          echo "CFT_BIN=$CFT_BIN" >> "$GITHUB_ENV"
+          echo "CFT_VERSION=$CFT_VERSION" >> "$GITHUB_ENV"
+          echo "CFT_SOURCE_URL=$CFT_URL" >> "$GITHUB_ENV"
+          echo "CFT_ARCHIVE_SHA256=$CFT_ARCHIVE_SHA256" >> "$GITHUB_ENV"
+
+      - name: Prove native File DataTransfer and ChatGPT attachment primitive in Chrome for Testing
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$CFT_BIN" --version
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_attachment_browser_primitive.mjs "$CFT_BIN"
+
+      - name: Prove real unpacked MV3 worker bootstrap and IndexedDB in Chrome for Testing
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$CFT_BIN" --version
+          command -v xvfb-run >/dev/null
+          xvfb-run -a node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_extension_worker_smoke.mjs "$CFT_BIN" "$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate"
+
+      - name: Build deterministic ZIP twice and fresh-extract verify
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate"
+          STAGE="$RUNNER_TEMP/stage"
+          EXTRACT="$RUNNER_TEMP/extract"
+          INV="$RUNNER_TEMP/inventory"
+          PROD_SHA='${{ needs.authority.outputs.production_sha }}'
+          OUT="$RUNNER_TEMP/OZON_BRIDGE_v0.1.19_MULTI_AI_FILE_DELIVERY_${PROD_SHA}.zip"
+          OUT2="$RUNNER_TEMP/rebuild.zip"
+          rm -rf "$STAGE" "$EXTRACT"
+          mkdir -p "$STAGE" "$EXTRACT"
+          cp -a "$SRC/." "$STAGE/"
+          find "$STAGE" -type f -exec touch -t 198001010000 {} +
+          find "$STAGE" -type f -printf '%P\n' | LC_ALL=C sort > "$INV"
+          test -s "$INV"
+          for f in manifest.json service_worker_entry.js shared/ai_delivery_capabilities.js shared/file_delivery_model_policy.js shared/file_delivery_port_worker.js shared/file_delivery_wake_worker.js shared/web_file_attachment.js attachment_delivery_port_content.js attachment_delivery_wake_content.js; do grep -qx "$f" "$INV"; done
+          ! grep -qx 'attachment_delivery_content.js' "$INV"
+          ! grep -qx 'shared/file_delivery_worker.js' "$INV"
+          (cd "$STAGE" && zip -X -q "$OUT" -@ < "$INV")
+          (cd "$STAGE" && zip -X -q "$OUT2" -@ < "$INV")
+          cmp "$OUT" "$OUT2"
+          echo 'DETERMINISTIC_ZIP_REBUILD=PASS'
+          unzip -q "$OUT" -d "$EXTRACT"
+          diff -ruN "$SRC" "$EXTRACT"
+          echo 'FRESH_EXTRACT_BYTE_CONTENT_EQUIVALENCE=PASS'
+          while IFS= read -r f; do case "$f" in *.js) node --check "$EXTRACT/$f";; esac; done < "$INV"
+          BYTES=$(wc -c < "$OUT" | tr -d ' ')
+          SHA=$(sha256sum "$OUT" | awk '{print $1}')
+          FILES=$(wc -l < "$INV" | tr -d ' ')
+          echo "PACKAGE_FILE=$(basename "$OUT")"
+          echo "PACKAGE_BYTES=$BYTES"
+          echo "PACKAGE_SHA256=$SHA"
+          echo "PRODUCTION_FILE_COUNT=$FILES"
+          echo "CFT_VERSION=$CFT_VERSION"
+          echo "CFT_SOURCE_URL=$CFT_SOURCE_URL"
+          echo "CFT_ARCHIVE_SHA256=$CFT_ARCHIVE_SHA256"
+          echo "path=$OUT" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "bytes=$BYTES" >> "$GITHUB_OUTPUT"
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+
+      - name: Upload exact installable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-multi-ai-file-delivery-final-${{ needs.authority.outputs.production_sha }}
+          path: ${{ steps.package.outputs.path }}
+          if-no-files-found: error
+          retention-days: 30
