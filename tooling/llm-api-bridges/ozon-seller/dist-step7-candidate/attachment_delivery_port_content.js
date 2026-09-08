@@ -10,7 +10,7 @@
   const SEND_TARGET_TIMEOUT_MS = 30_000;
   const SEND_RECONCILE_TIMEOUT_MS = 120_000;
   const PORT_REQUEST_TIMEOUT_MS = 20_000;
-  const RECOVERY_POLL_MS = 1500;
+  const RECOVERY_POLL_MS = 60_000;
 
   const prior = globalThis[RUNTIME_KEY];
   if (prior?.dispose) { try { prior.dispose(); } catch (_) {} }
@@ -92,7 +92,8 @@
     runtime.reconnect_timer = setTimeout(() => {
       runtime.reconnect_timer = null;
       if (!current()) return;
-      ensurePort();
+      runtime.recoverCurrent = recoverCurrent;
+  ensurePort();
       void recoverCurrent();
     }, 250);
   }

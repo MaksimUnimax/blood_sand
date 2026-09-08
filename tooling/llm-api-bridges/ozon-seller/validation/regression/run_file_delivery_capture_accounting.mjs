@@ -7,7 +7,7 @@ import { webcrypto } from "node:crypto";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
-const source = readFileSync(join(ROOT, "dist-step7-candidate/shared/file_delivery_worker.js"), "utf8");
+const source = readFileSync(join(ROOT, "dist-step7-candidate/shared/file_delivery_port_worker.js"), "utf8");
 const trustedUrl = "https://files.ozon.ru/report.xlsx";
 const state = {
   report_file_refs: {
@@ -91,12 +91,12 @@ const context = vm.createContext({
       },
       onChanged: { addListener() {} }
     },
-    runtime: { onMessage: { addListener() {} } },
+    runtime: { onConnect: { addListener() {} } },
     tabs: { async sendMessage() {} }
   }
 });
 context.globalThis = context;
-vm.runInContext(source, context, { filename: "file_delivery_worker.js" });
+vm.runInContext(source, context, { filename: "file_delivery_port_worker.js" });
 
 const bytes = new TextEncoder().encode("xlsx-byte-surrogate-for-test");
 let fetchCount = 0;

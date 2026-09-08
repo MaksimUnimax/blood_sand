@@ -37,9 +37,39 @@
     });
   }
 
+  function legacyTextClaim(run, payload) {
+    return {
+      ...run,
+      status: BASE.RUN_STATUSES.DELIVERING,
+      delivery: {
+        delivery_id: String(payload.deliveryId || ""),
+        phase: BASE.DELIVERY_PHASES.CLAIMED,
+        mode: String(payload.mode || "legacy"),
+        request_id: String(payload.requestId || ""),
+        outgoing_text: String(payload.outgoingText || ""),
+        outgoing_hash: String(payload.outgoingHash || ""),
+        report_prefix_applied: payload.reportPrefixApplied === true,
+        baseline_user_turn_ids: [],
+        commit_actor_id: null,
+        claimed_at: new Date().toISOString()
+      }
+    };
+  }
+
+  function hasLiveAttachmentStrategy(adapterId) {
+    const profile = globalThis.OzonAIDeliveryCapabilities?.profile?.(adapterId) || null;
+    return Boolean(profile?.status === "implemented" && profile?.attachment_strategy === "file_input_v1");
+  }
+
   function claimDelivery(run, payload = {}) {
     const next = BASE.claimDelivery(run, payload);
     if (!next?.delivery || next.delivery.mode !== "attachment_watch_v1") return next;
+
+    if (!hasLiveAttachmentStrategy(next.delivery.adapter_id)) {
+      if (next.delivery.generated_text_document) return next;
+      return legacyTextClaim(run, payload);
+    }
+
     const providerFileRefs = Array.isArray(next.delivery.provider_file_refs) ? next.delivery.provider_file_refs : [];
     if (!providerFileRefs.length || next.delivery.generated_text_document) return next;
     if (!needsCompleteTextCompanion(run, payload, providerFileRefs)) return next;
@@ -59,6 +89,7 @@
     ...BASE,
     claimDelivery,
     successfulReportFileRef,
-    needsCompleteTextCompanion
+    needsCompleteTextCompanion,
+    hasLiveAttachmentStrategy
   });
 })();
