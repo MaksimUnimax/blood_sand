@@ -18,8 +18,10 @@ jobs:
           fetch-depth: 0
           ref: repair/ozon-multi-ai-file-delivery-2026-09-08
 
-      - name: Append immutable operational evidence
+      - name: Append immutable operational evidence and push
         shell: bash
+        env:
+          ENTRY_B64: 'LS0tCgojIyAyMDI2LTA5LTA4IOKAlCBtdWx0aS1BSSBmaWxlIGRlbGl2ZXJ5IC8gbGFyZ2UtcmVzdWx0IGNvcnJlY3RpdmUgcHJlLWhhbmRvZmYgUEFTUwoKUGF0Y2ggYnJhbmNoOgoKYHJlcGFpci9vem9uLW11bHRpLWFpLWZpbGUtZGVsaXZlcnktMjAyNi0wOS0wOGAKCk9wZXJhdG9yIGF1dGhvcml6YXRpb246Cgpg0LTQtdC70LDQuS7QvdC1INC30LDQsdGL0LLQsNC5INC/0YDQviDQv9GA0LDQstC40LvQsCDQv9Cw0YLRh9C10LlgCgpQYXRjaCBhdXRob3JpdHk6CgpgT1pPTl9QQVRDSF9ERUxJVkVSWV9HQVRFLm1kYAoKIyMjIFRyaWdnZXJpbmcgbGl2ZSBpbmNpZGVudAoKVGhlIHByZWRlY2Vzc29yIGluc3RhbGxlZCBjYW5kaWRhdGUgc3VjY2VlZGVkIHRocm91Z2ggdGhlIE96b24gcHJvdmlkZXIvYnVzaW5lc3MgcGF0aCBmb3IgYW4gb3ZlcnNpemVkIGBwZXJmb3JtYW5jZV9jYW1wYWlnbnNgIHJlc3VsdCAoYEhUVFAgMjAwYCwgcmVzdWx0IHN0b3JlZCwgYmF0Y2ggY29sbGVjdGVkKSBidXQgcHJvZHVjZWQgbm8gYXR0YWNobWVudC1kZWxpdmVyeSBldmVudHMgYWZ0ZXIgYEJBVENIX0NPTExFQ1RJT05fQ09NUExFVEVEYC4gVGhlIHByb3ZpZGVyIHJlcXVlc3QgdGhlcmVmb3JlIHN1Y2NlZWRlZDsgdGhlIGZhaWx1cmUgd2FzIGluIHRoZSBuZXcgbGFyZ2UtcmVzdWx0IGRlbGl2ZXJ5IGhhbmRvZmYuCgpUaGUgZXhhY3QgZGVwZW5kZW5jeSBicmVhayB3YXMgZXN0YWJsaXNoZWQgZnJvbSBsaXZlIGRpYWdub3N0aWNzIGFuZCBzb3VyY2U6IHRoZSB3b3JrZXIgY2xhc3NpZmllZCB0aGUgcmVzdWx0IGFzIGBhdHRhY2htZW50X3dhdGNoX3YxYCwgYnV0IHRoZSBwYWNrYWdlIGRpZCBub3QgbG9hZCB0aGUgc3RvcmFnZS13YWtlIHdvcmtlciwgc3RpbGwgbG9hZGVkIHRoZSBzdXBlcnNlZGVkIG9uZS1zaG90IGF0dGFjaG1lbnQgY29udGVudCBydW50aW1lLCBkaWQgbm90IGxvYWQgdGhlIG5hbWVkLVBvcnQgY29udGVudCBydW50aW1lL3dha2UgbGlzdGVuZXIsIGRpZCBub3QgZXhwb3J0IGBydW50aW1lLnJlY292ZXJDdXJyZW50YCwgYW5kIHJldGFpbmVkIHRoZSBvbGQgMTUwMCBtcyByZWNvdmVyeSBwb2xsaW5nIGFzc3VtcHRpb24uIFRoZSBlYXJsaWVyIGZpbmFsaXplciBoYWQgcHJlcGFyZWQgdGhlIGludGVuZGVkIHdpcmluZyBidXQgZmFpbGVkIGJlZm9yZSBjb21taXQsIHNvIHRoZSBwcmVkZWNlc3NvciBaSVAgY29udGFpbmVkIGFuIGluY29tcGxldGUgbWl4dHVyZSBvZiBvbGQgYW5kIG5ldyBhdHRhY2htZW50IHBhdGhzLgoKIyMjIENvcnJlY3RpdmUgcHJvZHVjdGlvbiBhdXRob3JpdHkKClByb2R1Y3Rpb24gaW1wbGVtZW50YXRpb24gY29tbWl0OgoKYDAwYWY1M2RmZmU3ZTAyZjYyYTNhMjE4MDM4YjcwMTc3ZmVkNWExN2JgCgpGaW5hbCB0ZXN0ZWQgYnJhbmNoIGNvbW1pdCBhZnRlciB2YWxpZGF0aW9uLWhhcm5lc3MgaGFyZGVuaW5nOgoKYDNhOTU4NmEzNTRiNGZkODYxMDljZTI5MDUxYmM4ZDU2MDVkNzhhNWRgCgpUaGUgY29ycmVjdGVkIHBhY2thZ2UgdXNlczoKCi0gZXhhY3Qgd29ya2VyIGJvb3RzdHJhcCBvcmRlcjogQUkgY2FwYWJpbGl0aWVzIC0+IGhpc3RvcmljYWwgd29ya2VyIC0+IGRlbGl2ZXJ5IHBvbGljeSAtPiBuYW1lZC1Qb3J0IGF0dGFjaG1lbnQgd29ya2VyIC0+IHN0b3JhZ2Utd2FrZSB3b3JrZXI7Ci0gbmFtZWQgcnVudGltZSBQb3J0IGBvem9uLWF0dGFjaG1lbnQtZGVsaXZlcnktdjFgIGFzIHRoZSBzb2xlIGF0dGFjaG1lbnQgUlBDIGNoYW5uZWw7Ci0gZXZlbnQtZHJpdmVuIHN0b3JhZ2Ugd2FrZSB3aXRoIGEgNjAtc2Vjb25kIHBlcmlvZGljIGZhaWxzYWZlIG9ubHk7Ci0gYHJ1bnRpbWUucmVjb3ZlckN1cnJlbnRgIGV4cG9zZWQgYnkgdGhlIGNvbnRlbnQgUG9ydCBydW50aW1lOwotIG5vIHBhY2thZ2VkIGBhdHRhY2htZW50X2RlbGl2ZXJ5X2NvbnRlbnQuanNgIG9uZS1zaG90IHJ1bnRpbWU7Ci0gbm8gcGFja2FnZWQgYHNoYXJlZC9maWxlX2RlbGl2ZXJ5X3dvcmtlci5qc2Agb25lLXNob3Qgd29ya2VyOwotIGNvbXBsZXRlIGdlbmVyYXRlZCBUWFQgZGVsaXZlcnkgYWJvdmUgdGhlIENoYXRHUFQgdGhyZXNob2xkIG9mIGAxXzA0OF8wMDBgIFVuaWNvZGUgY29kZSBwb2ludHM7Ci0gb3JpZ2luYWwgcHJvdmlkZXIgZmlsZSBkZWxpdmVyeSBmcm9tIHRoZSBhbHJlYWR5LWRvd25sb2FkZWQgYnl0ZXMgd2l0aG91dCBhIGhpZGRlbiBzZWNvbmQgT3pvbiBmZXRjaDsKLSBjb21wbGV0ZSBUWFQgY29tcGFuaW9uIGZvciBtaXhlZCBmaWxlICsgbm9uLWZpbGUgcmVzdWx0IGJhdGNoZXM7Ci0gZmFpbC1ob25lc3QgdGV4dHVhbCBoYW5kbGluZyBmb3IgZmFpbGVkIGZpbGUgcmVxdWVzdHMgYW5kIGZvciB0YXJnZXQtQUkgY2FwYWJpbGl0aWVzIHRoYXQgYXJlIG5vdCBsaXZlIHByb3Zlbi4KClRoZSBjb21tb24gY2FwYWJpbGl0eSBjb250cmFjdCBjb3ZlcnMgQ2hhdEdQVCwgQWxpY2UsIERlZXBTZWVrLCBHcm9rLCBDbGF1ZGUsIEdlbWluaSwgUXdlbiBhbmQgS2ltaS4gT25seSBDaGF0R1BUIGhhcyB0aGUgb3duZXItZnJvemVuIGAxXzA0OF8wMDBgIHBsYWluLXRleHQgdGhyZXNob2xkOyBvdGhlciBBSSB0aHJlc2hvbGRzIHJlbWFpbiBgUEVORElOR19MSVZFX0NBTElCUkFUSU9OYC4KCiMjIyBGaXJzdC1mYWlsdXJlLXN0b3AgLyBkZXBlbmRlbmN5IGNsb3N1cmUKClRoZSByZXBhaXIgY29udGludWVkIGJleW9uZCB0aGUgZmlyc3Qgd2lyaW5nIGRlZmVjdC4gSW5kZXBlbmRlbnQgZGVmZWN0cyBjbG9zZWQgaW4gdGhlIHNhbWUgcmVwYWlyIGN5Y2xlIGluY2x1ZGUgdGhyZXNob2xkIG51bGwtY29lcmNpb24sIGZhaWxlZC1maWxlIGZhbHNlIGF0dGFjaG1lbnQgc2VsZWN0aW9uLCBkZXRlcm1pbmlzdGljIFpJUCB0aW1lc3RhbXAgaGFuZGxpbmcsIHByb3ZpZGVyLWFjY291bnRpbmcgcHJlc2VydmF0aW9uIG9uIGxvY2FsIGFydGlmYWN0LXN0b3JlIGZhaWx1cmUsIG9uZS1zaG90IG1lc3NhZ2UtbGlzdGVuZXIgY29sbGlzaW9uLCBtaXhlZC1iYXRjaCBjb21wbGV0ZW5lc3MsIGFuZCB0aGUgaW5jb21wbGV0ZSB3b3JrZXIvY29udGVudCBhdHRhY2htZW50IHdpcmluZyBleHBvc2VkIGJ5IHRoZSBsaXZlIHRlc3QuCgpGaW5hbCBkZXBlbmRlbmN5IHN0YXRlIGJlZm9yZSBoYW5kb2ZmOgoKLSBgSGlzdG9yaWNhbCBjbG9zZWQtc2V0IGF1ZGl0OiBQQVNTYDsKLSBgRmlyc3QtZmFpbHVyZS1zdG9wIGd1YXJkOiBQQVNTYDsKLSBgVW5hY2NvdW50ZWQgZGVwZW5kZW5jaWVzOiAwYDsKLSBgU3RhbGUgYXNzdW1wdGlvbnM6IDBgOwotIGBBdmFpbGFibGUtYnV0LXVudmVyaWZpZWQgZGVwZW5kZW5jaWVzOiAwYDsKLSBgREVQRU5ERU5DWSBWRVJESUNUOiBQQVNTYC4KCiMjIyBGaW5hbCBkZXRlcm1pbmlzdGljIGV2aWRlbmNlCgpDYW5vbmljYWwgc3VjY2Vzc2Z1bCBHaXRIdWIgQWN0aW9ucyBydW46CgpgMzQxOTYyNjY0MTJgCgpDb25jbHVzaW9uOgoKYHN1Y2Nlc3NgCgpUaGUgc2FtZSBmaW5hbCB0ZXN0ZWQgY29tbWl0IHBhc3NlZCBMaW51eCBhbmQgV2luZG93cyByZWdyZXNzaW9ucywgcGFja2FnZS1zb3VyY2UgcmVydW4sIG5hdGl2ZSBDaHJvbWUgYEZpbGVgL2BEYXRhVHJhbnNmZXJgIGF0dGFjaG1lbnQgcHJpbWl0aXZlLCByZWFsIHVucGFja2VkIE1WMyBzZXJ2aWNlLXdvcmtlciBhY3RpdmF0aW9uLCBJbmRleGVkREIgYXJ0aWZhY3Qtc3RvcmUgcHJvb2YsIHByb3ZpZGVyIHJlcG9ydC1jYXB0dXJlIHdyYXBwZXIgcHJvb2YsIGRldGVybWluaXN0aWMgZG91YmxlIFpJUCByZWJ1aWxkIGFuZCBmcmVzaC1leHRyYWN0aW9uIGJ5dGUtY29udGVudCBlcXVpdmFsZW5jZS4KClRoZSByZWFsIE1WMyBzbW9rZSB1c2VzIENocm9tZSBmb3IgVGVzdGluZyBgMTUyLjAuNzk3Ny44MmAgYW5kIENocm9taXVtIENEUCBwaXBlIHRyYW5zcG9ydCBhZnRlciBUQ1AgRGV2VG9vbHMgcHJvdmVkIHVuYXZhaWxhYmxlIGluIHRoZSBydW5uZXIgZW52aXJvbm1lbnQuIFRoZSBDaHJvbWUgZm9yIFRlc3RpbmcgYXJjaGl2ZSB1c2VkIGJ5IHRoZSBydW4gaGFkIFNIQS0yNTY6CgpgMDcwNDYzMWZiM2U0Zjc0MTA5MmUwOGY1NTI3MmY5MGFiYzNlMzA3Zjk5MWYwNWYzMzI5MjQzNjQ0MTViMDJlMGAKCkluc3RhbGxhYmxlIHByb2R1Y3Rpb24gWklQOgoKYE9aT05fQlJJREdFX3YwLjEuMTlfTVVMVElfQUlfRklMRV9ERUxJVkVSWV8zYTk1ODZhMzU0YjQuemlwYAoKWklQIGJ5dGVzOgoKYDI0MTgwN2AKClpJUCBTSEEtMjU2OgoKYDIxYjBiNGIxMGJhYWZmMGRkOWZhN2IwYzFkYzgyOWM3ODU2ZGFiNTg1NDIwNzk3ZTUxNDczZjY2NWFlYmZiZGZgCgpHaXRIdWIgQWN0aW9ucyBhcnRpZmFjdCBJRDoKCmAxMDA0NDAyMjQ2MWAKCkluZGVwZW5kZW50IHBvc3QtZG93bmxvYWQgaGFuZG9mZiB2ZXJpZmljYXRpb24gcmVwcm9kdWNlZCB0aGUgZXhwZWN0ZWQgaW5uZXIgWklQIHNpemUgYW5kIFNIQS0yNTYgYW5kIHBhc3NlZCBaSVAgaW50ZWdyaXR5LCByZXF1aXJlZC1maWxlIGludmVudG9yeSwgc3RhbGUtZmlsZSBhYnNlbmNlLCBib290c3RyYXAtb3JkZXIsIG1hbmlmZXN0IHNlcnZpY2Utd29ya2VyIGFuZCB0aHJlc2hvbGQgY2hlY2tzLgoKIyMjIExpdmUgYWNjZXB0YW5jZSBib3VuZGFyeQoKYFBSRS1IQU5ET0ZGIFZFUkRJQ1Q6IFBBU1NgCgpgTElWRS1HQVRFLTAxYDogYSBzbWFsbC1yZXN1bHQgdGV4dCBkZWxpdmVyeSB3YXMgb2JzZXJ2ZWQgUEFTUyBvbiB0aGUgcHJlZGVjZXNzb3IgaW5zdGFsbGVkIGNhbmRpZGF0ZSB0aHJvdWdoIG9uZSBwcm92aWRlciByZXF1ZXN0LCBvbmUgYXV0b21hdGljIFNlbmQsIGNvbmZpcm1hdGlvbiBhbmQgUkVBRFk7IHRoZSBwcm90ZWN0ZWQgbGVnYWN5IHRleHQtZGVsaXZlcnkgZmlsZXMgcmVtYWluIGJ5dGUtdW5jaGFuZ2VkIGluIHRoZSBjb3JyZWN0aXZlIGNhbmRpZGF0ZS4KCmBMSVZFLUdBVEUtMDJgOiBgUEVORElORyBSRVRFU1QgT04gQ09SUkVDVEVEIFpJUGAuIFRoZSBwcmVkZWNlc3NvciBsYXJnZS1yZXN1bHQgZmFpbHVyZSBpcyBwcmVzZXJ2ZWQgYXMgdGhlIGV4YWN0IHJlZ3Jlc3Npb24gc291cmNlIGFuZCBpcyBub3QgcmVsYWJlbGVkIGFzIGEgUEFTUy4KCmBMSVZFLUdBVEUtMDMuLjA1YDogYFBFTkRJTkcgUE9TVC1JTlNUQUxMYC4KCmBMSVZFIENFUlRJRklDQVRJT046IFBFTkRJTkcgLgoKYENBUC0yNCA9IEZST1pFTl9BVF8yMjAwX09GXzk1MTlgIHVudGlsIHRoZSBnbG9iYWwgZGVsaXZlcnkgbGl2ZSBjb21wbGV0aW9uIGdhdGUgcGFzc2VzLgo='
         run: |
           set -euo pipefail
           FILE='tooling/llm-api-bridges/ozon-seller/OZON_BRIDGE_APPEND_ONLY_DOCUMENTATION.md'
@@ -28,119 +30,12 @@ jobs:
             echo 'APPEND_ONLY_RECORD_ALREADY_PRESENT=PASS'
             exit 0
           fi
-          cat >> "$FILE" <<'EOF'
-
----
-
-## 2026-09-08 — multi-AI file delivery / large-result corrective pre-handoff PASS
-
-Patch branch:
-
-`repair/ozon-multi-ai-file-delivery-2026-09-08`
-
-Operator authorization:
-
-`делай.не забывай про правила патчей`
-
-Patch authority:
-
-`OZON_PATCH_DELIVERY_GATE.md`
-
-### Triggering live incident
-
-The predecessor installed candidate succeeded through the Ozon provider/business path for an oversized `performance_campaigns` result (`HTTP 200`, result stored, batch collected) but produced no attachment-delivery events after `BATCH_COLLECTION_COMPLETED`. The provider request therefore succeeded; the failure was in the new large-result delivery handoff.
-
-The exact dependency break was established from live diagnostics and source: the worker classified the result as `attachment_watch_v1`, but the package did not load the storage-wake worker, still loaded the superseded one-shot attachment content runtime, did not load the named-Port content runtime/wake listener, did not export `runtime.recoverCurrent`, and retained the old 1500 ms recovery polling assumption. The earlier finalizer had prepared the intended wiring but failed before commit, so the predecessor ZIP contained an incomplete mixture of old and new attachment paths.
-
-### Corrective production authority
-
-Production implementation commit:
-
-`00af53dffe7e02f62a3a218038b70177fed5a17b`
-
-Final tested branch commit after validation-harness hardening:
-
-`3a9586a354b4fd86109ce29051bc8d5605d78a5d`
-
-The corrected package uses:
-
-- exact worker bootstrap order: AI capabilities -> historical worker -> delivery policy -> named-Port attachment worker -> storage-wake worker;
-- named runtime Port `ozon-attachment-delivery-v1` as the sole attachment RPC channel;
-- event-driven storage wake with a 60-second periodic failsafe only;
-- `runtime.recoverCurrent` exposed by the content Port runtime;
-- no packaged `attachment_delivery_content.js` one-shot runtime;
-- no packaged `shared/file_delivery_worker.js` one-shot worker;
-- complete generated TXT delivery above the ChatGPT threshold of `1_048_000` Unicode code points;
-- original provider file delivery from the already-downloaded bytes without a hidden second Ozon fetch;
-- complete TXT companion for mixed file + non-file result batches;
-- fail-honest textual handling for failed file requests and for target-AI capabilities that are not live proven.
-
-The common capability contract covers ChatGPT, Alice, DeepSeek, Grok, Claude, Gemini, Qwen and Kimi. Only ChatGPT has the owner-frozen `1_048_000` plain-text threshold; other AI thresholds remain `PENDING_LIVE_CALIBRATION`.
-
-### First-failure-stop / dependency closure
-
-The repair continued beyond the first wiring defect. Independent defects closed in the same repair cycle include threshold null-coercion, failed-file false attachment selection, deterministic ZIP timestamp handling, provider-accounting preservation on local artifact-store failure, one-shot message-listener collision, mixed-batch completeness, and the incomplete worker/content attachment wiring exposed by the live test.
-
-Final dependency state before handoff:
-
-- `Historical closed-set audit: PASS`;
-- `First-failure-stop guard: PASS`;
-- `Unaccounted dependencies: 0`;
-- `Stale assumptions: 0`;
-- `Available-but-unverified dependencies: 0`;
-- `DEPENDENCY VERDICT: PASS`.
-
-### Final deterministic evidence
-
-Canonical successful GitHub Actions run:
-
-`34196266412`
-
-Conclusion:
-
-`success`
-
-The same final tested commit passed Linux and Windows regressions, package-source rerun, native Chrome `File`/`DataTransfer` attachment primitive, real unpacked MV3 service-worker activation, IndexedDB artifact-store proof, provider report-capture wrapper proof, deterministic double ZIP rebuild and fresh-extraction byte-content equivalence.
-
-The real MV3 smoke uses Chrome for Testing `152.0.7977.82` and Chromium CDP pipe transport after TCP DevTools proved unavailable in the runner environment. The Chrome for Testing archive used by the run had SHA-256:
-
-`0704631fb3e4f741092e08f55272f90abc3e307f991f05f332924364415b02e0`
-
-Installable production ZIP:
-
-`OZON_BRIDGE_v0.1.19_MULTI_AI_FILE_DELIVERY_3a9586a354b4.zip`
-
-ZIP bytes:
-
-`241807`
-
-ZIP SHA-256:
-
-`21b0b4b10baaff0dd9fa7b0c1dc829c7856dab585420797e51473f665aebfbdf`
-
-GitHub Actions artifact ID:
-
-`10044022461`
-
-Independent post-download handoff verification reproduced the expected inner ZIP size and SHA-256 and passed ZIP integrity, required-file inventory, stale-file absence, bootstrap-order, manifest service-worker and threshold checks.
-
-### Live acceptance boundary
-
-`PRE-HANDOFF VERDICT: PASS`
-
-`LIVE-GATE-01`: a small-result text delivery was observed PASS on the predecessor installed candidate through one provider request, one automatic Send, confirmation and READY; the protected legacy text-delivery files remain byte-unchanged in the corrective candidate.
-
-`LIVE-GATE-02`: `PENDING RETEST ON CORRECTED ZIP`. The predecessor large-result failure is preserved as the exact regression source and is not relabeled as a PASS.
-
-`LIVE-GATE-03..05`: `PENDING POST-INSTALL`.
-
-`LIVE CERTIFICATION: PENDING`.
-
-`CAP-24 = FROZEN_AT_2200_OF_9519` until the global delivery live completion gate passes.
-EOF
+          printf '\n' >> "$FILE"
+          printf '%s' "$ENTRY_B64" | base64 --decode >> "$FILE"
           git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add "$FILE"
           git commit -m 'docs(ozon): append final file-delivery pre-handoff evidence'
           git push origin HEAD:repair/ozon-multi-ai-file-delivery-2026-09-08
+          git ls-remote origin refs/heads/repair/ozon-multi-ai-file-delivery-2026-09-08
