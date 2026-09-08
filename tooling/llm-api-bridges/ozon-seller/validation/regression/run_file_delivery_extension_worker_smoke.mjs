@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -11,10 +12,14 @@ const EXTENSION = resolve(process.argv[3] || join(ROOT, "dist-step7-candidate"))
 const chromePath = process.argv[2] || process.env.CHROME_PATH || "google-chrome";
 const profile = mkdtempSync(join(tmpdir(), "ozon-file-delivery-extension-smoke-"));
 const activePortPath = join(profile, "DevToolsActivePort");
-const preferencesPath = join(profile, "Default", "Preferences");
 
-const child = spawn(chromePath, [
-  "--headless=new",
+function unpackedExtensionId(path) {
+  const hex = createHash("sha256").update(resolve(path), "utf8").digest("hex").slice(0, 32);
+  return [...hex].map((character) => String.fromCharCode("a".charCodeAt(0) + parseInt(character, 16))).join("");
+}
+
+const expectedExtensionId = unpackedExtensionId(EXTENSION);
+const chromeArgs = [
   "--no-sandbox",
   "--disable-gpu",
   "--disable-background-networking",
@@ -23,8 +28,10 @@ const child = spawn(chromePath, [
   `--disable-extensions-except=${EXTENSION}`,
   `--load-extension=${EXTENSION}`,
   "about:blank"
-], { stdio: ["ignore", "pipe", "pipe"] });
+];
+if (!process.env.DISPLAY) chromeArgs.unshift("--headless=new");
 
+const child = spawn(chromePath, chromeArgs, { stdio: ["ignore", "pipe", "pipe"] });
 let stderr = "";
 child.stderr.on("data", (chunk) => { stderr += chunk.toString(); if (stderr.length > 200_000) stderr = stderr.slice(-200_000); });
 
@@ -44,25 +51,6 @@ async function waitForPort() {
   throw new Error(`Timed out waiting for DevToolsActivePort. stderr=${stderr}`);
 }
 
-async function waitForExtensionId() {
-  const deadline = Date.now() + 30_000;
-  while (Date.now() < deadline) {
-    try {
-      const preferences = JSON.parse(readFileSync(preferencesPath, "utf8"));
-      const settings = preferences?.extensions?.settings || {};
-      for (const [id, record] of Object.entries(settings)) {
-        if (!/^[a-p]{32}$/.test(id)) continue;
-        const recordPath = record?.path ? resolve(String(record.path)) : "";
-        const manifestName = String(record?.manifest?.name || "");
-        if (recordPath === EXTENSION || manifestName.startsWith("Ozon Bridge")) return id;
-      }
-    } catch (_) {}
-    if (child.exitCode !== null) throw new Error(`Chrome exited before unpacked extension registration. stderr=${stderr}`);
-    await sleep(100);
-  }
-  throw new Error(`Timed out waiting for unpacked extension id in Chrome profile. stderr=${stderr}`);
-}
-
 async function browserWebSocket(port) {
   const response = await fetch(`http://127.0.0.1:${port}/json/version`);
   const value = await response.json();
@@ -75,11 +63,11 @@ async function waitForServiceWorker(port) {
   while (Date.now() < deadline) {
     const response = await fetch(`http://127.0.0.1:${port}/json/list`);
     const targets = await response.json();
-    const worker = targets.find((target) => target.type === "service_worker" && /chrome-extension:\/\/[^/]+\/service_worker_entry\.js$/.test(String(target.url || "")));
+    const worker = targets.find((target) => target.type === "service_worker" && String(target.url || "") === `chrome-extension://${expectedExtensionId}/service_worker_entry.js`);
     if (worker?.webSocketDebuggerUrl) return worker;
     await sleep(100);
   }
-  throw new Error(`Timed out waiting for activated extension service worker target. stderr=${stderr}`);
+  throw new Error(`Timed out waiting for activated extension service worker ${expectedExtensionId}. stderr=${stderr}`);
 }
 
 function cdpSession(wsUrl) {
@@ -118,15 +106,13 @@ async function evaluate(session, expression) {
 
 try {
   const port = await waitForPort();
-  const extensionId = await waitForExtensionId();
   const browserSession = cdpSession(await browserWebSocket(port));
   try {
-    // MV3 workers are intentionally event-driven and may be stopped while idle.
-    // Opening the real popup activates the installed extension through its normal
-    // runtime path instead of treating an idle worker as a production failure.
-    await browserSession.call("Target.createTarget", { url: `chrome-extension://${extensionId}/popup.html` });
+    // MV3 workers are event-driven and may be stopped while idle. The unpacked
+    // extension ID is Chromium's deterministic path hash. Opening its real popup
+    // activates the installed runtime instead of mistaking an idle worker for a failure.
+    await browserSession.call("Target.createTarget", { url: `chrome-extension://${expectedExtensionId}/popup.html` });
     const target = await waitForServiceWorker(port);
-    assert.match(String(target.url || ""), new RegExp(`^chrome-extension://${extensionId}/service_worker_entry\\.js$`));
     const session = cdpSession(target.webSocketDebuggerUrl);
     try {
       assert.equal(await evaluate(session, `typeof OzonAIDeliveryCapabilities`), "object");
@@ -138,7 +124,7 @@ try {
       assert.equal(await evaluate(session, `String(ProviderTransportCore.executeTrustedReportFileOnce).includes('capturingFetch')`), true);
       const dbReady = await evaluate(session, `(async()=>await new Promise((resolve,reject)=>{const r=indexedDB.open('ozon_bridge_delivery_artifacts_v1',1);r.onerror=()=>reject(r.error);r.onsuccess=()=>{const db=r.result;const ok=db.objectStoreNames.contains('artifacts');db.close();resolve(ok);};}))()`);
       assert.equal(dbReady, true);
-      console.log(`REG_EXTENSION_ID_DISCOVERED=${extensionId}`);
+      console.log(`REG_EXTENSION_ID_DERIVED=${expectedExtensionId}`);
       console.log("REG_EXTENSION_MV3_EVENT_ACTIVATION_PASS");
       console.log("REG_EXTENSION_MV3_SERVICE_WORKER_BOOTSTRAP_PASS");
       console.log("REG_EXTENSION_MV3_INDEXEDDB_ARTIFACT_STORE_PASS");
