@@ -9,6 +9,7 @@ on:
       - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/**'
       - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_multi_ai_file_delivery_patch.mjs'
       - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_attachment_browser_primitive.mjs'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_extension_worker_smoke.mjs'
       - 'tooling/llm-api-bridges/ozon-seller/research/product/OZON_AI_WORKER_BATCH_OUTPUT_MATERIALIZATION_BOUNDARY_TASK_2026-09-07.md'
       - 'tooling/llm-api-bridges/ozon-seller/research/product/OZON_AI_WORKER_LARGE_TEXT_DELIVERY_THRESHOLD_2026-09-08.md'
       - 'tooling/llm-api-bridges/ozon-seller/validation/reports/OZON_MULTI_AI_FILE_DELIVERY_PATCH_2026-09-08.md'
@@ -72,6 +73,13 @@ jobs:
           set -euo pipefail
           google-chrome --version
           node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_attachment_browser_primitive.mjs "$(command -v google-chrome)"
+
+      - name: Prove installed MV3 service worker and IndexedDB artifact store
+        shell: bash
+        run: |
+          set -euo pipefail
+          google-chrome --version
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_extension_worker_smoke.mjs "$(command -v google-chrome)" "$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate"
 
       - name: Build deterministic production ZIP and fresh-extract verify
         id: package
