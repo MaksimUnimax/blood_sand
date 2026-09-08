@@ -2,7 +2,7 @@
 
 ## Status
 
-**LOCAL ACCEPTED — P6.2 ACTIVE**
+**ACCEPTED — P6.2 DONE**
 
 Technical ID: `PRODUCT-CONTROL-PLANE-P6.2-ADMIN-READ-SUPPORT-PRINCIPAL-MANAGEMENT-LOCAL`  
 Correction technical ID: `PRODUCT-CONTROL-PLANE-P6.2-LOCAL-ACCEPTANCE-CORRECTION`  
@@ -12,6 +12,7 @@ Attempt: `3`
 ## Base and runtime
 
 - Local implementation HEAD: `c17a6725b3c5d7dc045591311f30bed4863bc736`.
+- API test correction commit: `ef78734e76299708415f6a77cadf052a53922201`.
 - Remote start reads 1 and 2: `c17a6725b3c5d7dc045591311f30bed4863bc736`.
 - Accepted P6.1 implementation: `29f69a02914c231b89351e79714ca0fe59491afd`.
 - Node `v24.20.0`; pnpm `10.34.5`; host Node 12 was not used.
@@ -135,6 +136,61 @@ column. Domain state and audit writes are one PostgreSQL transaction.
   `04d716c1740281b08d22a8df0d3140817c7f536e36f099c6d278508f340aefbe`.
 - Existing E2E: 32/32 passed, 0 failed, 0 skipped, 0 retries.
 - Lint, formatting, typecheck, bridge guard, and frozen-lockfile install: PASS.
+
+### Remote acceptance and final counts
+
+The API test correction was pushed as a fast-forward from the implementation
+head. Server CI run `34185737057` passed at exact head
+`ef78734e76299708415f6a77cadf052a53922201`:
+https://github.com/MaksimUnimax/blood_sand/actions/runs/34185737057
+
+The accepted unit total is `815 = 685 P6.1 baseline + 117 original P6.2 + 13
+API correction`. P6.2 real PostgreSQL remains `106` distinct meaningful cases
+and `106` physical instances. Full integration remains `1271 = 1165 + 106`.
+Retained integration counts remain P6.1 `77`; P5.7/P5.6/P5.5/P5.4/P5.3/P5.2/P5.1
+`80/152/120/116/102/90/94`; and P4.6/P4.5/P4.4/P4.3/P4.2/P4.1
+`38/52/48/52/21/30`. Crypto is `12/12`, E2E is `32/32`, and OpenAPI is 33
+tuples with SHA256
+`04d716c1740281b08d22a8df0d3140817c7f536e36f099c6d278508f340aefbe`.
+
+The final remote review is:
+
+```text
+REMOTE_P6_2_REVIEW=PASS
+REMOTE_IMPLEMENTATION_TREE_PASS
+REMOTE_UNIT_COUNT_SANITY_PASS
+REMOTE_P6_2_TEST_COUNT_INTEGRITY_PASS
+REMOTE_API_CORRECTION_COUNT_INTEGRITY_PASS
+REMOTE_HTTP_ERROR_MATRIX_PASS
+REMOTE_FORBIDDEN_PRELOOKUP_PASS
+REMOTE_NONEMPTY_ACCOUNT_PRIVACY_PASS
+REMOTE_NONEMPTY_USER_PRIVACY_PASS
+REMOTE_NONEMPTY_SUBSCRIPTION_PRIVACY_PASS
+REMOTE_NONEMPTY_DEVICE_PRIVACY_PASS
+REMOTE_NONEMPTY_AUDIT_PRIVACY_PASS
+REMOTE_NONEMPTY_PRINCIPAL_PRIVACY_PASS
+REMOTE_MUTATION_SUCCESS_CONTRACT_PASS
+ZERO_GROUP_B_COVERAGE_CLOSED=YES
+ZERO_GROUP_D_COVERAGE_CLOSED=YES
+ZERO_GROUP_N_COVERAGE_CLOSED=YES
+ZERO_GROUPS_ARE_COVERAGE_ALLOCATION_NOT_GAPS=YES
+REMOTE_ADMIN_ROUTE_GUARD_PASS
+REMOTE_MUTATION_RBAC_RECHECK_PASS
+REMOTE_SHARED_P5_SUBSCRIPTION_READ_PASS
+REMOTE_SHARED_DEVICE_REVOCATION_PASS
+REMOTE_PORTAL_REVOKE_REGRESSION_PASS
+REMOTE_PRINCIPAL_REVISION_PASS
+REMOTE_LAST_OWNER_PROTECTION_PASS
+REMOTE_PRINCIPAL_LOCK_ORDER_PASS
+REMOTE_SUSPEND_RESTORE_PASS
+REMOTE_P6_2_AUDIT_ATOMICITY_PASS
+REMOTE_OPENAPI_33_PASS
+REMOTE_P6_3_NOT_STARTED_PASS
+REMOTE_P7_NOT_STARTED_PASS
+CRITICAL=0
+HIGH=0
+MATERIAL_MEDIUM=0
+```
 
 ## Corrected acceptance evidence
 
@@ -294,6 +350,6 @@ verification. No commit or push is part of this correction.
   webhook, checkout, account/user status mutation, subscription mutation,
   billing admin read, plan/price/entitlement mutation, AI/health/diagnostic
   admin domain, P6.3, or P7 work was added.
-- Roadmap is P0–P5 DONE / FINAL ACCEPTED; P6 ACTIVE; P6.1 DONE; P6.2 ACTIVE;
+- Roadmap is P0–P5 DONE / FINAL ACCEPTED; P6 ACTIVE; P6.1 DONE; P6.2 DONE;
   P6.3–P6.6 PLANNED; P7–P15 PLANNED.
 - Real payment go-live remains DEFERRED.
