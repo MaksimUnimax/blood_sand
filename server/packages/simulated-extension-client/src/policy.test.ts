@@ -134,6 +134,13 @@ function deterministicClock(): {
   };
 }
 
+function tamperBase64UrlBytes(value: string): string {
+  const bytes = Buffer.from(value, "base64url");
+  if (bytes.length === 0) throw new Error("empty test fixture");
+  bytes[0] = bytes[0]! ^ 0x01;
+  return bytes.toString("base64url");
+}
+
 describe("P3.6 cache and policy", () => {
   it("normalizes absent, null, and omitted AI variants", () => {
     expect(normalizeDetectedAi(undefined)).toBeNull();
@@ -302,13 +309,19 @@ describe("P3.6 cache and policy", () => {
     [
       "tampered payload",
       (record: BootstrapCacheRecord) => {
-        record.envelope.payload = record.envelope.payload.slice(0, -1) + "A";
+        record.envelope.payload = tamperBase64UrlBytes(record.envelope.payload);
       },
     ],
     [
       "tampered signature",
       (record: BootstrapCacheRecord) => {
-        record.envelope.signature = "A" + record.envelope.signature.slice(1);
+        const original = record.envelope.signature;
+        const tampered = tamperBase64UrlBytes(original);
+        expect(tampered).not.toBe(original);
+        expect(Buffer.from(tampered, "base64url")).not.toEqual(
+          Buffer.from(original, "base64url"),
+        );
+        record.envelope.signature = tampered;
       },
     ],
     [
