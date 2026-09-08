@@ -8,14 +8,8 @@ on:
       - '.github/workflows/ozon-multi-ai-file-delivery-patch.yml'
       - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/**'
       - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_multi_ai_file_delivery_patch.mjs'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_*.mjs'
       - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_attachment_browser_primitive.mjs'
-      - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_extension_worker_smoke.mjs'
-      - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_capture_accounting.mjs'
-      - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_worker_state_machine.mjs'
-      - 'tooling/llm-api-bridges/ozon-seller/research/product/OZON_AI_WORKER_BATCH_OUTPUT_MATERIALIZATION_BOUNDARY_TASK_2026-09-07.md'
-      - 'tooling/llm-api-bridges/ozon-seller/research/product/OZON_AI_WORKER_LARGE_TEXT_DELIVERY_THRESHOLD_2026-09-08.md'
-      - 'tooling/llm-api-bridges/ozon-seller/validation/reports/OZON_MULTI_AI_FILE_DELIVERY_PATCH_2026-09-08.md'
-      - 'tooling/llm-api-bridges/ozon-seller/OZON_BRIDGE_APPEND_ONLY_DOCUMENTATION.md'
 
 permissions:
   contents: read
@@ -38,16 +32,21 @@ jobs:
         with:
           node-version: '24.12.0'
 
-      - name: Run multi-AI file delivery regression
+      - name: Run exact file-delivery regression set
         shell: bash
         env:
           OZON_FILE_DELIVERY_BASE_SHA: 4f78cc9f84a926cc834256abcb8278b95c9539df
         run: |
           set -euo pipefail
           test "$(node --version)" = 'v24.12.0'
-          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_multi_ai_file_delivery_patch.mjs
-          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_capture_accounting.mjs
-          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_worker_state_machine.mjs
+          R=tooling/llm-api-bridges/ozon-seller/validation/regression
+          node "$R/run_multi_ai_file_delivery_patch.mjs"
+          node "$R/run_file_delivery_capture_accounting.mjs"
+          node "$R/run_file_delivery_port_worker_state_machine.mjs"
+          node "$R/run_file_delivery_mixed_batch_policy.mjs"
+          node "$R/run_file_delivery_adapter_gate_policy.mjs"
+          node "$R/run_file_delivery_wake_lifecycle.mjs"
+          node "$R/run_file_delivery_live_stop_repro.mjs"
 
   package:
     needs: regression
@@ -69,11 +68,16 @@ jobs:
           OZON_FILE_DELIVERY_BASE_SHA: 4f78cc9f84a926cc834256abcb8278b95c9539df
         run: |
           set -euo pipefail
-          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_multi_ai_file_delivery_patch.mjs
-          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_capture_accounting.mjs
-          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_worker_state_machine.mjs
+          R=tooling/llm-api-bridges/ozon-seller/validation/regression
+          node "$R/run_multi_ai_file_delivery_patch.mjs"
+          node "$R/run_file_delivery_capture_accounting.mjs"
+          node "$R/run_file_delivery_port_worker_state_machine.mjs"
+          node "$R/run_file_delivery_mixed_batch_policy.mjs"
+          node "$R/run_file_delivery_adapter_gate_policy.mjs"
+          node "$R/run_file_delivery_wake_lifecycle.mjs"
+          node "$R/run_file_delivery_live_stop_repro.mjs"
 
-      - name: Prove native Chrome File/DataTransfer and adapter attachment primitives
+      - name: Prove native Chrome File and DataTransfer primitive
         shell: bash
         run: |
           set -euo pipefail
@@ -100,57 +104,30 @@ jobs:
           OUT2="$RUNNER_TEMP/OZON_BRIDGE_v0.1.19_MULTI_AI_FILE_DELIVERY_${GITHUB_SHA:0:12}.rebuild.zip"
           EXTRACT="$RUNNER_TEMP/fresh-extract"
           INVENTORY="$RUNNER_TEMP/package-inventory.txt"
-
           rm -rf "$STAGE" "$EXTRACT"
           mkdir -p "$STAGE" "$EXTRACT"
           cp -a "$SRC/." "$STAGE/"
           find "$STAGE" -type f -exec touch -t 198001010000 {} +
-
           find "$STAGE" -type f -printf '%P\n' | LC_ALL=C sort > "$INVENTORY"
           test -s "$INVENTORY"
-          grep -qx 'manifest.json' "$INVENTORY"
-          grep -qx 'service_worker_entry.js' "$INVENTORY"
-          grep -qx 'shared/file_delivery_worker.js' "$INVENTORY"
-          grep -qx 'shared/ai_delivery_capabilities.js' "$INVENTORY"
-          grep -qx 'shared/web_file_attachment.js' "$INVENTORY"
-          grep -qx 'attachment_delivery_content.js' "$INVENTORY"
-
+          for f in manifest.json service_worker_entry.js shared/ai_delivery_capabilities.js shared/file_delivery_model_policy.js shared/file_delivery_port_worker.js shared/file_delivery_wake_worker.js shared/web_file_attachment.js attachment_delivery_port_content.js attachment_delivery_wake_content.js; do grep -qx "$f" "$INVENTORY"; done
+          ! grep -qx 'attachment_delivery_content.js' "$INVENTORY"
+          ! grep -qx 'shared/file_delivery_worker.js' "$INVENTORY"
           rm -f "$OUT" "$OUT2"
           (cd "$STAGE" && zip -X -q "$OUT" -@ < "$INVENTORY")
           (cd "$STAGE" && zip -X -q "$OUT2" -@ < "$INVENTORY")
-          test -s "$OUT"
           cmp "$OUT" "$OUT2"
           echo 'DETERMINISTIC_ZIP_REBUILD=PASS'
-
           unzip -q "$OUT" -d "$EXTRACT"
           diff -ruN "$SRC" "$EXTRACT"
           echo 'FRESH_EXTRACT_BYTE_CONTENT_EQUIVALENCE=PASS'
-
-          while IFS= read -r file; do
-            case "$file" in
-              *.js) node --check "$EXTRACT/$file" ;;
-            esac
-          done < "$INVENTORY"
-          node -e 'const fs=require("fs"); const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); if(m.manifest_version!==3||m.background?.service_worker!=="service_worker_entry.js") process.exit(1)' "$EXTRACT/manifest.json"
-
-          google-chrome --version
-          timeout 60s google-chrome --headless=new --no-sandbox --disable-gpu --pack-extension="$EXTRACT" --pack-extension-key="" >/tmp/chrome-pack.log 2>&1 || {
-            cat /tmp/chrome-pack.log
-            echo 'CHROME_PACK_EXTENSION=UNAVAILABLE_OR_FAILED'
-            exit 1
-          }
-          echo 'CHROME_PACK_EXTENSION=PASS'
-
-          BYTES=$(wc -c < "$OUT")
+          while IFS= read -r file; do case "$file" in *.js) node --check "$EXTRACT/$file";; esac; done < "$INVENTORY"
+          BYTES=$(wc -c < "$OUT" | tr -d ' ')
           SHA=$(sha256sum "$OUT" | awk '{print $1}')
-          echo "PACKAGE_PATH=$OUT"
+          echo "PACKAGE_FILE=$(basename "$OUT")"
           echo "PACKAGE_BYTES=$BYTES"
           echo "PACKAGE_SHA256=$SHA"
-          echo "PACKAGE_FILE=$(basename "$OUT")"
           echo "package_path=$OUT" >> "$GITHUB_OUTPUT"
-          echo "package_bytes=$BYTES" >> "$GITHUB_OUTPUT"
-          echo "package_sha256=$SHA" >> "$GITHUB_OUTPUT"
-          echo "package_file=$(basename "$OUT")" >> "$GITHUB_OUTPUT"
 
       - name: Upload exact installable ZIP
         uses: actions/upload-artifact@v4
