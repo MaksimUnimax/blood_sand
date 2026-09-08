@@ -1,8 +1,8 @@
 # 06 — Buyer evidence + полный паспорт SKU
 
-Статус: **[~] IN PROGRESS — 06.1/06.2/06.3/06.4 COMPLETE; 06.5 ACTIVE**  
+Статус: **[x] COMPLETE — 06.1–06.6 COMPLETE**  
 Дата старта: **2026-08-26**  
-Последнее продолжение: **2026-09-07**
+Дата закрытия: **2026-09-08**
 
 ## Цель
 
@@ -30,8 +30,8 @@ Canonical artifacts:
 - `marketing/research/R4_STAGE06_EVIDENCE_INVENTORY_2026-08-26.md`
 - `marketing/data/PRODUCT_SKU_PASSPORT_SCHEMA.md`
 
-Historical baseline:
-- Ozon snapshot completeness: **76/76 PROVEN**;
+Historical Ozon baseline:
+- **76/76 PROVEN** current identities;
 - 90d ordered units: **1519**;
 - Slavic: 25 / 928;
 - zodiac: 37 / 356;
@@ -45,9 +45,9 @@ Historical baseline:
 Status: **[x] COMPLETE**
 
 Fresh sequence:
-- page 1 request `7c5e5bc9-4208-44e4-8651-296eb4ce6a7f`: 76 items / total 76 / non-empty cursor;
-- terminal request `91bbb10d-3ad3-4f39-bda7-b838637e05ac`: items empty / total 76 / cursor empty;
-- identity comparison vs historical: **76/76 exact product_id + SKU matches**;
+- page 1 `7c5e5bc9-4208-44e4-8651-296eb4ce6a7f`: 76 items / total 76 / non-empty cursor;
+- terminal `91bbb10d-3ad3-4f39-bda7-b838637e05ac`: items empty / total 76 / cursor empty;
+- historical/current identity comparison: **76/76 exact product_id + SKU matches**;
 - additions/removals/unresolved: **0/0/0**.
 
 Canonical artifacts:
@@ -67,15 +67,15 @@ Canonical artifacts:
 - `marketing/research/R4_STAGE06_ASSORTMENT_OPPORTUNITY_MAPPING_2026-08-26.md`
 
 Coverage:
-- current identities: **76/76**;
+- current Ozon identities: **76/76**;
 - accepted/reopen-linked identities: **67**;
 - intentionally unmapped identities: **9**;
 - unresolved joins: **0**.
 
-Key boundaries retained:
-- OU02 Печать Велеса and OU06 broader Велес are separate seller identities;
-- OU03 automotive function/use-case and OU04 mirror-pendant form factor remain separate jobs;
-- 37 current zodiac identities satisfy the assortment-side OU09 reopen trigger but do not override the R3 broad-query rejection.
+Key boundaries:
+- OU02 `Печать Велеса` and OU06 broader `Велес` remain separate seller/product lanes;
+- OU03 automotive use-case and OU04 mirror-pendant form factor remain separate jobs;
+- zodiac assortment-side reopen trigger is satisfied by a coherent 37-identity family, but R3 Search/Alice evidence is not overwritten.
 
 ---
 
@@ -84,7 +84,7 @@ Key boundaries retained:
 Status: **[x] COMPLETE — PRODUCT INFO 5/5 + ATTRIBUTES 5/5**
 
 Tier A:
-1. Печать Велеса — SKU `1636048691`;
+1. Печать Велеса — Ozon SKU `1636048691`;
 2. Велес — `1636041142`;
 3. Алатырь — `1640251697`;
 4. Вегвизир — `1602722942`;
@@ -93,8 +93,7 @@ Tier A:
 Product info:
 - request `4a6a224d-43ae-4c7a-a99f-c9842273e43e`;
 - HTTP 200;
-- 5/5 returned;
-- current listing titles directly prove automotive rear-view-mirror pendant framing for all five.
+- 5/5 returned.
 
 Attributes:
 - request `877ef57d-d048-4d8d-98f0-d17ce5d71a0d`;
@@ -102,13 +101,14 @@ Attributes:
 - total 5;
 - `last_id=""` terminal.
 
-Common direct seller-declared physical facts:
+Common seller-declared physical facts:
+- rear-view-mirror automotive pendant framing;
 - wooden medallion/obereg;
 - diameter 45 mm;
 - acrylic beads 12 mm;
-- total talisman length 36 cm.
+- total length 36 cm.
 
-Top-level Ozon package/dimension fields remain separate observations. Protection/luck/energy claims remain `SELLER_CLAIM_UNVERIFIED`.
+Protection/luck/energy/historical copy remains `SELLER_CLAIM_UNVERIFIED` where not independently supported.
 
 Canonical artifacts:
 - `marketing/data/raw/marketplace/ozon/20260907T1721+0500__ozon__seller-product-attributes__tier-a5.md`
@@ -124,112 +124,181 @@ Status: **[x] COMPLETE**
 ### Direct Ozon buyer text
 
 Reviews:
-- request `5649ec00-ecdb-437c-951d-f9edaddf9244`;
-- real provider request executed;
-- HTTP 403 `auth_or_permission`;
-- classification: `BLOCKED_BY_PROVIDER_PERMISSION`.
+- request `5649ec00-ecdb-437c-951d-f9edaddf9244` reached provider;
+- HTTP 403 auth/permission;
+- `BLOCKED_BY_PROVIDER_PERMISSION`.
 
 Questions:
-- request `capability-967db1fe-1c3c-4d84-af6d-cdc6c92ce091`;
 - capability probe HTTP 200;
-- subscription `UNSPECIFIED`;
 - endpoint requires `PREMIUM_PLUS`;
+- current subscription not entitled;
 - business request not executed;
-- classification: `BLOCKED_BY_SUBSCRIPTION`.
+- `BLOCKED_BY_SUBSCRIPTION`.
 
 Combined:
-
 `CURRENT_DIRECT_OZON_BUYER_TEXT = BLOCKED`
 
 Do not infer zero reviews/questions.
 
-Customer evidence:
-- analog/category evidence preserved in `marketing/research/CUSTOMER_EVIDENCE_AUTO_PENDANTS_2026-08-01.md`;
-- normalized in `marketing/data/normalized/customer/customer_evidence.csv`;
-- remains category/analog evidence and is not silently assigned to owned SKUs.
+Analog/category customer evidence remains separately normalized in:
+- `marketing/data/normalized/customer/customer_evidence.csv`.
+
+Recurring analog buyer topics:
+- appearance in car;
+- size/scale;
+- material/finish;
+- aging/darkening;
+- cord quality;
+- hanging/attachment;
+- heat/sun resistance;
+- packaging;
+- gift motive;
+- review/social-proof trust.
 
 Seller performance linkage:
-- canonical normalized file: `marketing/data/normalized/products/product_marketplace_metrics.csv`;
-- Tier A five products: **623 ordered units / 1,057,274 RUB revenue** over preserved 2026-05-13..2026-08-10 90d window;
+- `marketing/data/normalized/products/product_marketplace_metrics.csv`;
+- Tier A five products: **623 ordered units / 1,057,274 RUB** over preserved 2026-05-13..2026-08-10 Ozon 90d window;
 - approximately **41.0%** of the 1519-unit current-identity baseline;
-- sales/revenue do not prove buyer motive or margin.
+- revenue is not margin/profit.
 
 ### Targeted contrast enrichment
 
 Completed contrast set:
-- `1602715556` — Бусидо / Путь Воина;
-- `1720148880` — zodiac classic Овен;
-- `2186857668` — zodiac antique Лев;
-- `2271210394` — zodiac symbols Близнецы.
+- Busido / Путь Воина;
+- zodiac classic Овен;
+- zodiac antique Лев;
+- zodiac symbols Близнецы.
 
-Product info:
-- request `2f3c8b11-1539-4cc1-96fc-8a3647d67ea6`;
-- HTTP 200;
-- 4/4 returned.
+Product info request `2f3c8b11-1539-4cc1-96fc-8a3647d67ea6`: HTTP 200, 4/4.
 
-Attributes:
-- request `b6da99cf-491d-4570-ae30-a5d282ee3345`;
-- HTTP 200;
-- total 4;
-- `last_id=""` terminal.
+Attributes request `b6da99cf-491d-4570-ae30-a5d282ee3345`: HTTP 200, total 4, terminal `last_id=""`.
 
-Contrast result:
-- all four are active automotive rear-view-mirror pendant listings under the same Ozon description category/type as Tier A;
-- all four share the same core seller-declared physical pattern: wooden 45 mm medallion/talisman, 12 mm acrylic beads, total length 36 cm;
-- Busido top-level Ozon observation: 200 g;
-- sampled zodiac rows: 300 g;
-- all sampled zodiac rows are real current automotive product lines; this strengthens the assortment-side OU09 reopen condition without overturning the R3 broad-Search contamination decision.
+All four are current automotive mirror-pendant listings and share the same core seller-declared 45 mm wood / 12 mm acrylic / 36 cm construction pattern.
 
 Canonical contrast artifacts:
 - `marketing/data/raw/marketplace/ozon/20260907__ozon__seller-product-attributes__contrast4.md`
 - `marketing/data/normalized/products/20260907__ozon__contrast4__physical-content-passport.csv`
 - `marketing/research/R4_STAGE06_CONTRAST_ENRICHMENT_FINAL_2026-09-07.md`
 
-06.4 completion: **PASS**. No further Ozon Tier B/C enrichment is justified by current Stage-06 decision gaps.
-
 ---
 
 ## 06.5 — Cross-platform / Wildberries status
 
-Status: **[~] ACTIVE — DIRECT SELLER READ CHANNEL FOUND; FRESH COMPLETE CATALOG PASS NEXT**
+Status: **[x] COMPLETE — FRESH SELLER CATALOG CENSUS PROVEN**
 
-Channel discovery:
-- retained runtime artifact proves `wildberries-llm-api-bridge` v0.1.2;
-- command/result protocol: `WB_API_V1` → `WB_RESULT_V1`;
-- accepted seller-content operation: `cards_list`;
-- provider host: `content`;
-- HTTP: `POST /content/v2/get/cards/list`;
-- operation is read-only, current and execution-enabled in the inspected runtime registry;
-- parser accepts top-level `body` for this POST operation.
+Accepted direct channel:
+- `wildberries-llm-api-bridge` v0.1.2;
+- operation `cards_list`;
+- `POST /content/v2/get/cards/list`;
+- explicit cursor pagination.
 
-Canonical discovery checkpoint:
-- `marketing/research/R4_STAGE06_WB_CHANNEL_DISCOVERY_2026-09-07.md`.
+Fresh pass:
+- page 1 request `fc8e8dcd-a1e9-404b-8f7e-5e7db09d2541`: HTTP 200, **100 cards**;
+- page 2 request `6e9dea89-d64d-4294-b1e1-d28fe1219b46`: HTTP 200, **8 cards**;
+- page 2 returned `8 < limit 100`, therefore terminal;
+- overlap by `nmID`: **0**;
+- combined fresh seller-account census: **108 unique cards**.
 
-Preserved historical seller-side page:
-- request `2dbd77b1-df36-459c-b677-a13524475438`;
-- HTTP 200;
-- exactly 100 cards;
-- returned cursor `updatedAt=2025-08-11T02:44:38.675204Z`, `nmID=481155639`, `total=100`;
-- therefore useful but **not terminal and not a proven complete catalog**.
+Account composition:
+- **88** fresh cards belong to brand `Кровь и Песок` / `Кровь и песок` and are automotive symbolic pendant/talisman listings by current title;
+- **20** cards are unrelated/adjacent open-card/puzzle product lines on the same seller account and are excluded from Blood & Sand family counts.
 
-Current classification:
-- `WB_SELLER_SIDE_CHANNEL = AVAILABLE_AND_DIRECT`;
-- `WB_CURRENT_CATALOG_COMPLETENESS = NOT_YET_PROVEN`.
+Fresh Blood & Sand WB family shape:
+- Slavic/named Slavic: **37** cards;
+- zodiac: **37** cards;
+- Norse/runic: **4** cards;
+- remaining automotive symbolic: **10** cards.
 
-Next measurement is a **fresh page 1**, not continuation of the historical cursor. Use `limit=100`, `withPhoto=-1`, newest-first sort; save before issuing any explicit continuation request.
+The WB Slavic count exceeds the Ozon Slavic identity count because several symbols have parallel/legacy WB cards. Listing/card count is therefore not treated as unique physical-product count.
 
-Do not start bridge engineering as Stage-06 research work.
+Canonical artifacts:
+- `marketing/data/raw/marketplace/wildberries/20260908__wb__cards-list__fresh-page1-checkpoint.md`
+- `marketing/data/raw/marketplace/wildberries/20260908__wb__cards-list__fresh-page2-terminal-checkpoint.md`
+- `marketing/data/normalized/marketplace/wildberries/20260908__wb__cards-list__fresh-page2.csv`
+- `marketing/data/normalized/marketplace/wildberries/20260908__wb__cards-list__fresh-current108-identities.csv`
+
+### Preserved WB zodiac performance evidence
+
+A separate completed 12-month `promo_fullstats` dataset exists for campaign `26225434`, 2025-09..2026-08:
+- views 630,632;
+- clicks 10,635;
+- ATB 1,449;
+- advertising-attributed orders 213;
+- advertising spend 50,163.40 RUB;
+- advertising-attributed revenue 283,382 RUB;
+- zodiac orders **196**;
+- zodiac attributed revenue **260,349 RUB**.
+
+Two-month zodiac-window association:
+- observed 45/196 matching-window zodiac orders;
+- fixed-margin null mean ≈29.35;
+- Monte-Carlo `p ≈ 0.00143`.
+
+This is advertising-attributed evidence only, not total WB seller sales.
+
+Preserved authority:
+- `продажи/статистика/wildberries/26225434/monthly_zodiac_funnel.tsv`
+- `продажи/статистика/wildberries/26225434/seasonality_analysis_2025-09_2026-08.md`
+
+No seller-wide WB sales/stock read operation was verified from the Stage-06 accepted/current runtime evidence used here. Full WB seller sales/stock remain `NOT_MEASURED`.
 
 ---
 
 ## 06.6 — Final passports + Stage 07 handoff
 
-Status: **[ ] WAIT**
+Status: **[x] COMPLETE**
 
-Close only when WB coverage status is explicit and all current Stage-06 evidence is consolidated into decision-grade passports/handoff.
+Canonical final outputs:
+- `marketing/data/normalized/products/product_listing_master.csv`
+- `marketing/data/normalized/products/product_opportunity_map.csv`
+- `marketing/data/normalized/products/product_marketplace_metrics.csv`
+- `marketing/data/normalized/customer/customer_evidence.csv`
+- `marketing/research/R4_STAGE06_BUYER_SKU_EVIDENCE_FINAL_2026-09-08.md`
+
+Cross-platform identity control:
+- selected Ozon↔WB pairs are recorded only as `PROVISIONAL_STRONG_CROSS_PLATFORM_MATCH`;
+- no stable cross-platform `product_master_id` is assigned because no shared provider/barcode authority proves a legal merge;
+- marketplace listing identities remain separate.
+
+### Opportunity outcomes
+
+- **OU01 Slavic category** — product gate PASS / KEEP.
+- **OU02 Печать Велеса** — product gate PASS / KEEP.
+- **OU03 automotive use-case** — product gate PASS / KEEP.
+- **OU04 mirror-pendant form factor** — product gate PASS / remains INVESTIGATE for differentiation.
+- **OU05 Алатырь** — product gate PASS / KEEP.
+- **OU06 broader Велес** — Stage-06 overlap gate PASS; keep separate from OU02 for next stages. Distinct Ozon identities/sales and distinct WB cards prove a real product-side hierarchy.
+- **OU07 Vegvisir** — product gate PASS / KEEP.
+- **OU08 Шлем Ужаса** — product gate PASS / remains INVESTIGATE because exact Alice usefulness remains unresolved.
+- **OU09 broad zodiac** — **REOPEN CONDITION SATISFIED → REOPEN FOR STAGE 07/08 INVESTIGATION**. Coherent 37+37 Ozon/WB assortment plus direct marketplace performance evidence satisfies the Stage-05 reopen condition, but does not override weak/contaminated broad Search/Alice fit or promote zodiac to primary SEO automatically.
+- **OU10 generic gift** — reopen condition not proven; remains REJECT_AS_PRIMARY.
+
+Explicit remaining gaps are carried forward, not hidden:
+- direct owned review/question text;
+- full seller-wide WB sales/stock;
+- cord/adjustability and exact hanging construction;
+- independent durability/heat/darkening tests;
+- stable cross-platform product-master IDs;
+- margin/profit/AOV/net economics;
+- final IA/Page Jobs.
 
 ---
 
+# Stage 07 handoff
+
+Next stage: **competitor / defensible advantage evidence**.
+
+Required questions:
+1. Why specialist independents win Slavic/named-symbol searches versus marketplaces.
+2. Whether Blood & Sand can organize actual assortment depth into a defensible specialist experience.
+3. What product-content gaps matter most: real-car scale, mounting, materials, packaging, source quality, social proof.
+4. What historical/source-quality standard is required for Vegvisir and Ægishjálmur.
+5. Whether OU04 can differentiate beyond a commodity mirror-pendant catalog.
+6. Whether reopened OU09 has a defensible specialist angle despite weak broad Search purity.
+7. Which seller claims must become sourced explanation instead of copied marketplace claims.
+
+Do **not** freeze final IA/Page Jobs until later roadmap gates.
+
 # Current continuation point
 
-**06.5 ACTIVE — run one fresh WB `cards_list` page 1 through the accepted v0.1.2 channel. Save/analyze that page first. If its returned cursor proves continuation is required, issue exactly one next-page request using only that fresh returned `updatedAt + nmID`.**
+**ROADMAP 06 COMPLETE. NEXT_ACTION = START_ROADMAP_07_COMPETITOR_AND_DEFENSIBLE_ADVANTAGE_EVIDENCE_FROM_FINAL_STAGE06_HANDOFF.**
