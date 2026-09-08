@@ -681,3 +681,111 @@ Reproducible v0.1.9→v0.1.10 patch evidence is stored in two ordered base64 par
 ### Acceptance boundary
 
 Automated/source/package/emulator regression acceptance is complete for v0.1.10. Logged-in live v0.1.10 acceptance is still pending installation of this new package. In particular, the readiness color/copy-only transition and ordinary user-chat non-interference must be observed in the real ChatGPT UI before live acceptance is claimed.
+
+---
+
+## 2026-09-08 — multi-AI file delivery / large-result corrective pre-handoff PASS
+
+Patch branch:
+
+`repair/ozon-multi-ai-file-delivery-2026-09-08`
+
+Operator authorization:
+
+`делай.не забывай про правила патчей`
+
+Patch authority:
+
+`OZON_PATCH_DELIVERY_GATE.md`
+
+### Triggering live incident
+
+The predecessor installed candidate succeeded through the Ozon provider/business path for an oversized `performance_campaigns` result (`HTTP 200`, result stored, batch collected) but produced no attachment-delivery events after `BATCH_COLLECTION_COMPLETED`. The provider request therefore succeeded; the failure was in the new large-result delivery handoff.
+
+The exact dependency break was established from live diagnostics and source: the worker classified the result as `attachment_watch_v1`, but the package did not load the storage-wake worker, still loaded the superseded one-shot attachment content runtime, did not load the named-Port content runtime/wake listener, did not export `runtime.recoverCurrent`, and retained the old 1500 ms recovery polling assumption. The earlier finalizer had prepared the intended wiring but failed before commit, so the predecessor ZIP contained an incomplete mixture of old and new attachment paths.
+
+### Corrective production authority
+
+Production implementation commit:
+
+`00af53dffe7e02f62a3a218038b70177fed5a17b`
+
+Final tested branch commit after validation-harness hardening:
+
+`3a9586a354b4fd86109ce29051bc8d5605d78a5d`
+
+The corrected package uses:
+
+- exact worker bootstrap order: AI capabilities -> historical worker -> delivery policy -> named-Port attachment worker -> storage-wake worker;
+- named runtime Port `ozon-attachment-delivery-v1` as the sole attachment RPC channel;
+- event-driven storage wake with a 60-second periodic failsafe only;
+- `runtime.recoverCurrent` exposed by the content Port runtime;
+- no packaged `attachment_delivery_content.js` one-shot runtime;
+- no packaged `shared/file_delivery_worker.js` one-shot worker;
+- complete generated TXT delivery above the ChatGPT threshold of `1_048_000` Unicode code points;
+- original provider file delivery from the already-downloaded bytes without a hidden second Ozon fetch;
+- complete TXT companion for mixed file + non-file result batches;
+- fail-honest textual handling for failed file requests and for target-AI capabilities that are not live proven.
+
+The common capability contract covers ChatGPT, Alice, DeepSeek, Grok, Claude, Gemini, Qwen and Kimi. Only ChatGPT has the owner-frozen `1_048_000` plain-text threshold; other AI thresholds remain `PENDING_LIVE_CALIBRATION`.
+
+### First-failure-stop / dependency closure
+
+The repair continued beyond the first wiring defect. Independent defects closed in the same repair cycle include threshold null-coercion, failed-file false attachment selection, deterministic ZIP timestamp handling, provider-accounting preservation on local artifact-store failure, one-shot message-listener collision, mixed-batch completeness, and the incomplete worker/content attachment wiring exposed by the live test.
+
+Final dependency state before handoff:
+
+- `Historical closed-set audit: PASS`;
+- `First-failure-stop guard: PASS`;
+- `Unaccounted dependencies: 0`;
+- `Stale assumptions: 0`;
+- `Available-but-unverified dependencies: 0`;
+- `DEPENDENCY VERDICT: PASS`.
+
+### Final deterministic evidence
+
+Canonical successful GitHub Actions run:
+
+`34196266412`
+
+Conclusion:
+
+`success`
+
+The same final tested commit passed Linux and Windows regressions, package-source rerun, native Chrome `File`/`DataTransfer` attachment primitive, real unpacked MV3 service-worker activation, IndexedDB artifact-store proof, provider report-capture wrapper proof, deterministic double ZIP rebuild and fresh-extraction byte-content equivalence.
+
+The real MV3 smoke uses Chrome for Testing `152.0.7977.82` and Chromium CDP pipe transport after TCP DevTools proved unavailable in the runner environment. The Chrome for Testing archive used by the run had SHA-256:
+
+`0704631fb3e4f741092e08f55272f90abc3e307f991f05f332924364415b02e0`
+
+Installable production ZIP:
+
+`OZON_BRIDGE_v0.1.19_MULTI_AI_FILE_DELIVERY_3a9586a354b4.zip`
+
+ZIP bytes:
+
+`241807`
+
+ZIP SHA-256:
+
+`21b0b4b10baaff0dd9fa7b0c1dc829c7856dab585420797e51473f665aebfbdf`
+
+GitHub Actions artifact ID:
+
+`10044022461`
+
+Independent post-download handoff verification reproduced the expected inner ZIP size and SHA-256 and passed ZIP integrity, required-file inventory, stale-file absence, bootstrap-order, manifest service-worker and threshold checks.
+
+### Live acceptance boundary
+
+`PRE-HANDOFF VERDICT: PASS`
+
+`LIVE-GATE-01`: a small-result text delivery was observed PASS on the predecessor installed candidate through one provider request, one automatic Send, confirmation and READY; the protected legacy text-delivery files remain byte-unchanged in the corrective candidate.
+
+`LIVE-GATE-02`: `PENDING RETEST ON CORRECTED ZIP`. The predecessor large-result failure is preserved as the exact regression source and is not relabeled as a PASS.
+
+`LIVE-GATE-03..05`: `PENDING POST-INSTALL`.
+
+`LIVE CERTIFICATION: PENDING .
+
+`CAP-24 = FROZEN_AT_2200_OF_9519` until the global delivery live completion gate passes.
