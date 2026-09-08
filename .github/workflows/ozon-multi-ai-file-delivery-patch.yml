@@ -4,11 +4,13 @@ on:
   push:
     branches:
       - repair/ozon-multi-ai-file-delivery-2026-09-08
+      - repair/ozon-generic-direct-binary-delivery-2026-09-08
     paths:
       - '.github/workflows/ozon-multi-ai-file-delivery-patch.yml'
       - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/**'
       - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_multi_ai_file_delivery_patch.mjs'
       - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_*.mjs'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_direct_binary_provider_attachment_gate.mjs'
       - 'tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_attachment_browser_primitive.mjs'
 
 permissions:
@@ -47,6 +49,7 @@ jobs:
           node "$R/run_file_delivery_adapter_gate_policy.mjs"
           node "$R/run_file_delivery_wake_lifecycle.mjs"
           node "$R/run_file_delivery_live_stop_repro.mjs"
+          node "$R/run_direct_binary_provider_attachment_gate.mjs"
 
   package:
     needs: regression
@@ -76,6 +79,7 @@ jobs:
           node "$R/run_file_delivery_adapter_gate_policy.mjs"
           node "$R/run_file_delivery_wake_lifecycle.mjs"
           node "$R/run_file_delivery_live_stop_repro.mjs"
+          node "$R/run_direct_binary_provider_attachment_gate.mjs"
 
       - name: Install pinned Chrome for Testing
         shell: bash
@@ -132,7 +136,7 @@ jobs:
           find "$STAGE" -type f -exec touch -t 198001010000 {} +
           find "$STAGE" -type f -printf '%P\n' | LC_ALL=C sort > "$INVENTORY"
           test -s "$INVENTORY"
-          for f in manifest.json service_worker_entry.js shared/ai_delivery_capabilities.js shared/file_delivery_model_policy.js shared/file_delivery_port_worker.js shared/file_delivery_wake_worker.js shared/web_file_attachment.js attachment_delivery_port_content.js attachment_delivery_wake_content.js; do grep -qx "$f" "$INVENTORY"; done
+          for f in manifest.json service_worker_entry.js shared/ai_delivery_capabilities.js shared/direct_binary_file_delivery_patch.js shared/file_delivery_model_policy.js shared/file_delivery_port_worker.js shared/file_delivery_wake_worker.js shared/web_file_attachment.js attachment_delivery_port_content.js attachment_delivery_wake_content.js; do grep -qx "$f" "$INVENTORY"; done
           ! grep -qx 'attachment_delivery_content.js' "$INVENTORY"
           ! grep -qx 'shared/file_delivery_worker.js' "$INVENTORY"
           rm -f "$OUT" "$OUT2"
