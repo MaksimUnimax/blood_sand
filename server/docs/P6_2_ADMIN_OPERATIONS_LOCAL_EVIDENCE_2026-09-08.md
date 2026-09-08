@@ -6,15 +6,59 @@
 
 Technical ID: `PRODUCT-CONTROL-PLANE-P6.2-ADMIN-READ-SUPPORT-PRINCIPAL-MANAGEMENT-LOCAL`  
 Correction technical ID: `PRODUCT-CONTROL-PLANE-P6.2-LOCAL-ACCEPTANCE-CORRECTION`  
-Attempt: `2`
+API coverage correction technical ID: `PRODUCT-CONTROL-PLANE-P6.2-ADMIN-API-CONTRACT-COVERAGE-LOCAL-CORRECTION`  
+Attempt: `3`
 
 ## Base and runtime
 
-- HEAD and both initial/final remote reads: `7bb332c5cc1001a230a425ba55b799df9f3c5f8f`.
+- Local implementation HEAD: `c17a6725b3c5d7dc045591311f30bed4863bc736`.
+- Remote start reads 1 and 2: `c17a6725b3c5d7dc045591311f30bed4863bc736`.
 - Accepted P6.1 implementation: `29f69a02914c231b89351e79714ca0fe59491afd`.
 - Node `v24.20.0`; pnpm `10.34.5`; host Node 12 was not used.
-- Final host disk: `/` 84% used, 9.1 GiB free; inode use 31%.
-- One disposable PostgreSQL 18 container was used and removed after testing.
+- Final host disk is recorded in the correction freeze manifest; no PostgreSQL
+  container was required for this controller-only correction.
+
+### Implementation byte inventory
+
+The P6.2 implementation parent is `7bb332c5cc1001a230a425ba55b799df9f3c5f8f`,
+the implementation tree is
+`5e39e2c888389e37c36fa924119e8e33b5deabf3`, and the implementation commit is
+`c17a6725b3c5d7dc045591311f30bed4863bc736` (Server CI run `34182408920`).
+The deterministic binary diff digest from the parent to the implementation
+commit is
+`8dfe8d002e563104029fb032d1c03882318cc1033dea7c415788124e300b2782`.
+The complete changed-path inventory relative to P6.1 is:
+
+```text
+server/apps/api/package.json
+server/apps/api/src/admin-auth-routes.ts
+server/apps/api/src/admin-ops-routes.test.ts
+server/apps/api/src/admin-ops-routes.ts
+server/apps/api/src/admin-route-guard.ts
+server/apps/api/src/app.ts
+server/apps/api/src/main.ts
+server/apps/api/src/openapi.test.ts
+server/apps/api/src/openapi.ts
+server/docs/ADR/0027-p6-admin-read-support-and-principal-management.md
+server/docs/API_CONTRACTS.md
+server/docs/P6_2_ADMIN_OPERATIONS_LOCAL_EVIDENCE_2026-09-08.md
+server/docs/ROADMAP.md
+server/integration/p5-7-p5-final-acceptance.integration.test.ts
+server/integration/p6-2-admin-operations.integration.test.ts
+server/openapi/openapi.json
+server/packages/admin-ops/package.json
+server/packages/admin-ops/src/index.test.ts
+server/packages/admin-ops/src/index.ts
+server/packages/admin-ops/tsconfig.json
+server/packages/commercial-access/src/index.ts
+server/packages/contracts/src/index.ts
+server/packages/db/package.json
+server/packages/db/src/device-management-repository.ts
+server/packages/db/src/device-revocation.ts
+server/packages/db/src/index.ts
+server/packages/db/src/p6-admin-ops-repository.ts
+server/pnpm-lock.yaml
+```
 
 ## P6.2 implementation
 
@@ -76,8 +120,11 @@ column. Domain state and audit writes are one PostgreSQL transaction.
 - Migrations: files `0000..0012` only; no `0013`; migration 0012 SHA256 is
   `9eafa0e106b55ccae61f8b4d254cdebdad45d490ede49c75cd6ca18700c7a679`.
 - Fresh PostgreSQL 18 migration run 1: PASS; run 2: PASS.
-- Unit/API: `802 passed`, `0 failed`, `0 skipped/todo`; baseline 685 plus 117
-  new P6.2 unit/API tests; no duplicate runner; crypto regression 12/12.
+- Implementation unit/API baseline: `802 passed`, `0 failed`, `0 skipped/todo`;
+  baseline 685 plus 117 original P6.2 unit/API tests.
+- API correction: 13 new controller instances; targeted API file total 23,
+  all passed with 0 skip/todo. Current full unit/API total: `815 passed`,
+  `0 failed`, `0 skipped/todo`; no duplicate runner; crypto regression 12/12.
 - Real PostgreSQL: `1271 passed`, `0 failed`, `0 skipped/todo`; P6.2 has 106
   actual test instances and 106 distinct meaningful cases.
 - Retained integration counts: P6.1 77; P5.7 80, P5.6 152, P5.5 120,
@@ -148,6 +195,98 @@ Each case is assigned to one group only:
 
 The zero-count delegated/regression groups are covered by the retained P5/P6.1
 integration and API suites; no test is counted twice in the P6.2 total.
+
+## Remote acceptance attempt 2 invalidation and attempt 3 correction
+
+`REMOTE ACCEPTANCE ATTEMPT 2` was invalidated because zero-group N controller
+coverage was incomplete. The prior API tests did not physically exercise the
+HTTP mappings for `ADMIN_FORBIDDEN`, `ADMIN_RESOURCE_NOT_FOUND`,
+`ADMIN_CONFLICT`, `ADMIN_STATE_STALE`, or `ADMIN_LAST_OWNER_REQUIRED`, and did
+not assert non-empty privacy-safe read responses. Domain or real-PG tests were
+not substituted for those controller-contract tests.
+
+The correction changed only
+`server/apps/api/src/admin-ops-routes.test.ts` and this evidence file. The
+existing strict `INVALID_REQUEST`, unauthenticated `ADMIN_UNAUTHORIZED`, read
+without CSRF, and missing-CSRF `ADMIN_CSRF_INVALID` tests remain present.
+
+### Corrected controller coverage matrix
+
+| Requirement | Actual HTTP test |
+| --- | --- |
+| `ADMIN_UNAUTHORIZED` | `rejects unauthenticated read %s %s` |
+| `ADMIN_FORBIDDEN` read | `rejects a read caller without the exact permission` |
+| `ADMIN_FORBIDDEN` mutation | `rejects a mutation caller without the exact permission` |
+| `ADMIN_CSRF_INVALID` | `requires admin CSRF for device revoke` |
+| `INVALID_REQUEST` | `rejects unknown mutation fields strictly` |
+| `ADMIN_RESOURCE_NOT_FOUND` | `maps a missing subscription account to a safe resource error` |
+| `ADMIN_CONFLICT` | `maps principal creation conflict to the controller error contract` |
+| `ADMIN_STATE_STALE` | `maps a stale role grant to ADMIN_STATE_STALE` |
+| `ADMIN_LAST_OWNER_REQUIRED` | `maps last-owner role removal to ADMIN_LAST_OWNER_REQUIRED` |
+| non-empty account privacy | `returns a non-empty account projection without private fields` |
+| non-empty user privacy | `returns non-empty users with only safe, ordered email fields` |
+| non-empty subscription privacy | `returns the non-empty safe subscription projection` |
+| non-empty device privacy | `returns non-empty devices without authorization secrets` |
+| non-empty audit privacy | `returns non-empty audit events without reason or metadata` |
+| non-empty principal privacy | `returns non-empty principals with sorted roles and no session data` |
+| successful mutation | `returns the exact safe shape for a successful device revoke` |
+
+```text
+P6_2_API_CONTRACT_COVERAGE_CORRECTED=PASS
+ZERO_GROUP_B_COVERAGE_CLOSED=YES
+ZERO_GROUP_D_COVERAGE_CLOSED=YES
+ZERO_GROUP_N_COVERAGE_CLOSED=YES
+P6_2_API_CORRECTION_NEW_TESTS=13
+API_FILE_TOTAL_TEST_INSTANCES=23
+CORRECTED_UNIT_TOTAL=802 + 13 = 815
+DUPLICATE_UNIT_RUNNER=NO
+DUPLICATE_NEW_API_TESTS=0
+SEMANTIC_PADDING_NEW_API_TESTS=0
+UNIT_COUNT_INTEGRITY=PASS
+```
+
+Group B remains closed by shared accepted P5 commercial authority, P5.6
+real-PG regression, and P6.2 route/unit wrappers. Group D remains closed by
+the shared DB primitive, retained portal real-PG regression, and P6.2 admin
+real-PG tests. Group N is now closed by the HTTP matrix above; no integration
+file was changed and the P6.2 real-PG count remains 106.
+
+### Correction scope markers
+
+```text
+PRODUCT_SOURCE_CHANGED=NO
+ADMIN_OPS_DOMAIN_CHANGED=NO
+DB_SOURCE_CHANGED=NO
+CONTRACT_SOURCE_CHANGED=NO
+APP_ROUTE_IMPLEMENTATION_CHANGED=NO
+PACKAGE_LOCK_CHANGED=NO
+MIGRATION_CHANGED=NO
+OPENAPI_PRODUCT_CHANGED=NO
+P6_2_INTEGRATION_FILE_CHANGED=NO
+BRIDGE_CHANGED=NO
+OPENAPI_ROUTES=33
+OPENAPI_SHA256=04d716c1740281b08d22a8df0d3140817c7f536e36f099c6d278508f340aefbe
+MIGRATIONS=0000..0012
+MIGRATION_0012_SHA256=9eafa0e106b55ccae61f8b4d254cdebdad45d490ede49c75cd6ca18700c7a679
+MIGRATION_0013_PRESENT=NO
+```
+
+## Attempt 3 recovery and freeze
+
+The new correction artifacts are separate from the prior invalidated and
+implementation recovery artifacts:
+
+```text
+PATCH=/var/backups/product-control-plane/git/blood_sand-p6.2-api-coverage-local-accepted-uncommitted.patch
+ARCHIVE=/var/backups/product-control-plane/git/blood_sand-p6.2-api-coverage-local-accepted-untracked.tar.gz
+MANIFEST=/var/backups/product-control-plane/git/blood_sand-p6.2-api-coverage-local-accepted.manifest.txt
+RECOVERY_BASE=c17a6725b3c5d7dc045591311f30bed4863bc736
+UNTRACKED_COUNT=0
+```
+
+The manifest is authoritative for final artifact byte counts, SHA256 values,
+the detached reconstruction tree SHA, dual remote-final reads, and freeze
+verification. No commit or push is part of this correction.
 
 ## Boundaries and roadmap
 
