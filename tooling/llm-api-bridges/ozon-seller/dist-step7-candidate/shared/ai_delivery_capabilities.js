@@ -20,7 +20,7 @@
       status: "implemented",
       plain_text_max_chars: CHATGPT_MAX_SAFE_PLAIN_TEXT_UNICODE_CHARACTERS,
       attachments_supported: true,
-      accepted_extensions: Object.freeze(["txt", "pdf", "csv", "tsv", "xls", "xlsx", "docx", "pptx"]),
+      accepted_extensions: Object.freeze(["txt", "pdf", "png", "csv", "tsv", "zip", "xls", "xlsx", "docx", "pptx"]),
       max_file_bytes: null,
       max_files_per_turn: null,
       attachment_strategy: "file_input_v1"
