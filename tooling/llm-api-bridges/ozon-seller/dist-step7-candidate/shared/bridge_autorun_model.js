@@ -26,6 +26,14 @@
     CONFIRMED: "confirmed"
   });
 
+  const ATTACHMENT_PHASES = Object.freeze({
+    CLAIMED: "attachment_claimed",
+    ATTACH_COMMITTED: "attachment_committed",
+    READY: "attachment_ready",
+    SEND_COMMITTED: "attachment_send_committed",
+    CONFIRMED: "attachment_confirmed"
+  });
+
   function clampInteger(value, min, max, fallback = min) {
     const number = Number(value);
     if (!Number.isFinite(number)) return fallback;
@@ -159,8 +167,101 @@
     };
   }
 
+  function reportFileRefsFromBatch(run) {
+    const refs = [];
+    const seen = new Set();
+    for (const entry of Array.isArray(run?.batch?.entries) ? run.batch.entries : []) {
+      if (!entry || entry.status !== "complete") continue;
+      const operation = String(entry?.command?.operation || entry?.operation || "");
+      if (operation !== "report_file_get") continue;
+      const ref = String(entry?.command?.params?.file_ref || "").trim();
+      if (!ref || seen.has(ref)) continue;
+      seen.add(ref);
+      refs.push(ref);
+    }
+    return refs;
+  }
+
+  function buildAttachmentMarker({ deliveryId, generatedDocument, providerFileRefs }) {
+    const payload = {
+      delivery_representation: generatedDocument ? "ATTACHED_COMPLETE_TEXT_DOCUMENT" : "ATTACHED_ORIGINAL_PROVIDER_FILE",
+      delivery_id: String(deliveryId || ""),
+      complete: true,
+      generated_text_document: generatedDocument ? {
+        filename: generatedDocument.filename,
+        unicode_char_length: generatedDocument.unicode_char_length,
+        byte_length: generatedDocument.byte_length
+      } : null,
+      original_provider_file_count: providerFileRefs.length
+    };
+    return `OZON_BATCH_RESULT_V1\n${JSON.stringify(payload)}`;
+  }
+
+  function attachmentDeliveryPlan(run, payload) {
+    const requestedMode = String(payload.mode || "legacy");
+    if (requestedMode !== "batch_watch_v1") return null;
+    const outgoingText = String(payload.outgoingText || "");
+    const capabilities = globalThis.OzonAIDeliveryCapabilities;
+    const adapterId = capabilities?.adapterIdForOrigin?.(run?.origin) || null;
+    const textDecision = capabilities?.generatedTextDecision?.(adapterId, outgoingText) || { representation: "plain_text", unicode_chars: String(outgoingText).length, threshold: null };
+    const providerFileRefs = reportFileRefsFromBatch(run);
+    const needsGeneratedDocument = textDecision.representation === "text_document";
+    if (!needsGeneratedDocument && providerFileRefs.length === 0) return null;
+
+    const deliveryId = String(payload.deliveryId || "");
+    const generatedDocument = needsGeneratedDocument ? {
+      artifact_id: `generated-${deliveryId}`,
+      filename: `ozon-bridge-result-${deliveryId}.txt`,
+      mime_type: "text/plain;charset=utf-8",
+      extension: "txt",
+      unicode_char_length: Number(textDecision.unicode_chars || 0),
+      byte_length: capabilities?.utf8ByteLength?.(outgoingText) ?? new TextEncoder().encode(outgoingText).byteLength,
+      complete: true
+    } : null;
+    const markerText = needsGeneratedDocument
+      ? buildAttachmentMarker({ deliveryId, generatedDocument, providerFileRefs })
+      : outgoingText;
+
+    return Object.freeze({
+      adapter_id: adapterId,
+      original_outgoing_text: outgoingText,
+      outgoing_text: markerText,
+      generated_text_document: generatedDocument,
+      provider_file_refs: providerFileRefs,
+      text_decision: textDecision
+    });
+  }
+
   function claimDelivery(run, payload = {}) {
     if (!run) return run;
+    const attachmentPlan = attachmentDeliveryPlan(run, payload);
+    if (attachmentPlan) {
+      return {
+        ...run,
+        status: RUN_STATUSES.DELIVERING,
+        delivery: {
+          delivery_id: String(payload.deliveryId || ""),
+          phase: ATTACHMENT_PHASES.CLAIMED,
+          mode: "attachment_watch_v1",
+          representation: "attachment_bundle_v1",
+          adapter_id: attachmentPlan.adapter_id,
+          request_id: String(payload.requestId || ""),
+          outgoing_text: attachmentPlan.outgoing_text,
+          outgoing_hash: "",
+          artifact_text: attachmentPlan.generated_text_document ? attachmentPlan.original_outgoing_text : null,
+          generated_text_document: attachmentPlan.generated_text_document,
+          provider_file_refs: attachmentPlan.provider_file_refs,
+          text_decision: attachmentPlan.text_decision,
+          report_prefix_applied: payload.reportPrefixApplied === true,
+          baseline_user_turn_ids: [],
+          baseline_assistant_turn_ids: [],
+          commit_actor_id: null,
+          attachment_send_actor_id: null,
+          attachment_send_committed_at: null,
+          claimed_at: new Date().toISOString()
+        }
+      };
+    }
     return {
       ...run,
       status: RUN_STATUSES.DELIVERING,
@@ -250,6 +351,9 @@
       return { type: "resume_collection" };
     }
     if (run.status === RUN_STATUSES.DELIVERING) {
+      if (run.delivery?.mode === "attachment_watch_v1") {
+        return { type: "attachment_external_handler", phase: String(run.delivery?.phase || "") };
+      }
       if (run.delivery?.mode === "batch_watch_v1") {
         if (run.delivery?.phase === DELIVERY_PHASES.CLAIMED) return { type: "deliver_claimed" };
         if (run.delivery?.phase === DELIVERY_PHASES.INSERT_COMMITTED) return { type: "unsafe_insert_outcome", code: "DELIVERY_INSERT_OUTCOME_UNKNOWN_NO_RETRY" };
@@ -290,6 +394,7 @@
     RUN_STATUSES,
     START_PHASES,
     DELIVERY_PHASES,
+    ATTACHMENT_PHASES,
     normalizeIdList,
     normalizePrefixRecord,
     reportPrefixIsDue,
@@ -306,6 +411,7 @@
     commitDeliveryInsert,
     markDeliveryInserted,
     recoveryDecision,
-    afterConfirmedDelivery
+    afterConfirmedDelivery,
+    reportFileRefsFromBatch
   });
 })();
