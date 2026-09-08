@@ -77,20 +77,42 @@ jobs:
           node "$R/run_file_delivery_wake_lifecycle.mjs"
           node "$R/run_file_delivery_live_stop_repro.mjs"
 
-      - name: Prove native Chrome File and DataTransfer primitive
+      - name: Install pinned Chrome for Testing
         shell: bash
         run: |
           set -euo pipefail
-          google-chrome --version
-          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_attachment_browser_primitive.mjs "$(command -v google-chrome)"
+          CFT_VERSION='152.0.7977.82'
+          CFT_URL="https://storage.googleapis.com/chrome-for-testing-public/${CFT_VERSION}/linux64/chrome-linux64.zip"
+          CFT_ROOT="$RUNNER_TEMP/chrome-for-testing-${CFT_VERSION}"
+          ARCHIVE="$RUNNER_TEMP/chrome-for-testing-${CFT_VERSION}.zip"
+          rm -rf "$CFT_ROOT" "$ARCHIVE"
+          mkdir -p "$CFT_ROOT"
+          curl --fail --location --silent --show-error "$CFT_URL" --output "$ARCHIVE"
+          echo "CFT_ARCHIVE_SHA256=$(sha256sum "$ARCHIVE" | awk '{print $1}')"
+          unzip -q "$ARCHIVE" -d "$CFT_ROOT"
+          CFT_BIN="$CFT_ROOT/chrome-linux64/chrome"
+          test -x "$CFT_BIN"
+          VERSION_OUT="$($CFT_BIN --version)"
+          echo "$VERSION_OUT"
+          echo "$VERSION_OUT" | grep -F "$CFT_VERSION"
+          echo "CFT_BIN=$CFT_BIN" >> "$GITHUB_ENV"
+          echo "CFT_VERSION=$CFT_VERSION" >> "$GITHUB_ENV"
+          echo "CFT_SOURCE_URL=$CFT_URL" >> "$GITHUB_ENV"
 
-      - name: Prove installed MV3 service worker and IndexedDB artifact store
+      - name: Prove native Chrome for Testing File and DataTransfer primitive
         shell: bash
         run: |
           set -euo pipefail
-          google-chrome --version
+          "$CFT_BIN" --version
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_attachment_browser_primitive.mjs "$CFT_BIN"
+
+      - name: Prove installed MV3 service worker and IndexedDB artifact store with Chrome for Testing
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$CFT_BIN" --version
           command -v xvfb-run >/dev/null
-          xvfb-run -a node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_extension_worker_smoke.mjs "$(command -v google-chrome)" "$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate"
+          xvfb-run -a node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_extension_worker_smoke.mjs "$CFT_BIN" "$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate"
 
       - name: Build deterministic production ZIP and fresh-extract verify
         id: package
@@ -127,6 +149,8 @@ jobs:
           echo "PACKAGE_FILE=$(basename "$OUT")"
           echo "PACKAGE_BYTES=$BYTES"
           echo "PACKAGE_SHA256=$SHA"
+          echo "CFT_VERSION=$CFT_VERSION"
+          echo "CFT_SOURCE_URL=$CFT_SOURCE_URL"
           echo "package_path=$OUT" >> "$GITHUB_OUTPUT"
 
       - name: Upload exact installable ZIP
