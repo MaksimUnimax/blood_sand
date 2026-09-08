@@ -204,27 +204,44 @@ Potential event dimensions:
 
 ## 9. Admin API groups
 
-All admin APIs use separate admin auth/RBAC and audit mutation.
+All admin APIs use the separate admin session/RBAC boundary. P6.2 implements
+only the following 12 method/route tuples; every successful admin response is
+`Cache-Control: no-store`.
 
-### Accounts
+### P6.2 accounts, users, subscription, and devices
 
-- `GET /v1/admin/accounts` search;
-- `GET /v1/admin/accounts/{id}`;
-- account status actions as specifically defined.
+- `GET /v1/admin/accounts` — exact account ID, owner user ID, exact normalized
+  owner email, or status lookup; filters are mutually exclusive where stated,
+  and pagination is bounded to 1–100 with a result-scoped UUID cursor.
+- `GET /v1/admin/users` — exact user ID or exact normalized email, plus status.
+- `GET /v1/admin/accounts/{account_id}/subscription` — shared safe P5
+  timestamp-authoritative subscription projection.
+- `GET /v1/admin/accounts/{account_id}/devices` — safe device metadata only.
+- `POST /v1/admin/accounts/{account_id}/devices/{device_id}/revoke` — support
+  revoke through the shared portal/device transaction; requires CSRF and a
+  bounded operator reason.
 
-### Devices
+### P6.2 audit and principals
 
-- list;
-- revoke.
+- `GET /v1/admin/audit-events` — exact bounded filters and safe envelope only;
+  `reason` and `safeMetadata` are never exposed.
+- `GET /v1/admin/principals` — principal status, optimistic revision, and
+  sorted active roles.
+- `POST /v1/admin/principals` — create a principal for an existing active user
+  with a verified email and one initial role.
+- `POST /v1/admin/principals/{principal_id}/roles/{role}/grant`
+- `POST /v1/admin/principals/{principal_id}/roles/{role}/revoke`
+- `POST /v1/admin/principals/{principal_id}/suspend`
+- `POST /v1/admin/principals/{principal_id}/restore`
 
-### Subscriptions
+Principal mutations require the current revision, CSRF, and a bounded reason;
+they are transactionally audited and protect the last active `ADMIN_OWNER`.
+Stable P6.2 failures include `ADMIN_RESOURCE_NOT_FOUND`, `ADMIN_CONFLICT`,
+`ADMIN_STATE_STALE`, and `ADMIN_LAST_OWNER_REQUIRED`.
 
-- grant;
-- extend;
-- suspend;
-- restore/cancel according to state machine.
-
-Each action is an explicit command endpoint or typed mutation, not arbitrary subscription row editing.
+Subscription mutation, billing/payment administrative reads, plans, prices,
+entitlements, AI/health/diagnostics, and account/user status mutations remain
+outside P6.2 and are assigned to later roadmap stages.
 
 ### Plans
 

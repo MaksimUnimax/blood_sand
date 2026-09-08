@@ -54,6 +54,9 @@ import {
   type AdminAuthService as AdminAuthServiceType,
 } from "@product/admin-auth";
 import { registerAdminAuthRoutes } from "./admin-auth-routes.js";
+import type { AdminOpsService } from "@product/admin-ops";
+import { registerAdminOpsRoutes } from "./admin-ops-routes.js";
+import { createAdminRouteGuard } from "./admin-route-guard.js";
 
 export class ControlledError extends Error {
   public constructor(
@@ -77,6 +80,7 @@ export interface ApiDependencies {
   readonly catalogClock?: () => Date;
   readonly commercialPortalService?: CommercialPortalService;
   readonly adminAuthService?: AdminAuthServiceType;
+  readonly adminOpsService?: AdminOpsService;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -118,6 +122,8 @@ export function createApiApp(
 
   app.addHook("onSend", async (request, reply) => {
     reply.header("x-request-id", correlationId(request));
+    if (request.url.startsWith("/v1/admin/"))
+      reply.header("cache-control", "no-store");
   });
   app.setErrorHandler((error, request, reply) => {
     const controlled = error instanceof ControlledError;
@@ -279,6 +285,14 @@ export function createApiApp(
       dependencies.adminAuthService ?? unavailableAdmin,
       dependencies.config.environment === "production",
     );
+    if (dependencies.adminOpsService)
+      registerAdminOpsRoutes(
+        app,
+        createAdminRouteGuard(
+          dependencies.adminAuthService ?? unavailableAdmin,
+        ),
+        dependencies.adminOpsService,
+      );
   });
   return app;
 }

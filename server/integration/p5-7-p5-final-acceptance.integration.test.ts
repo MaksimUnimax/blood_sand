@@ -1466,7 +1466,7 @@ describe.sequential(
       expect(source).not.toContain("/v1/billing/checkouts");
       expect(source).not.toContain("/v1/webhooks");
     });
-    it("STATIC-71 OpenAPI has exactly 21 tuples and the frozen hash", async () => {
+    it("STATIC-71 OpenAPI has the P6.2 route expansion and generated hash", async () => {
       const artifact = JSON.parse(await text("openapi/openapi.json")) as {
         paths: Record<string, Record<string, unknown>>;
       };
@@ -1478,7 +1478,7 @@ describe.sequential(
           ).length,
         0,
       );
-      expect(count).toBe(21);
+      expect(count).toBe(33);
       expect(
         createHash("sha256")
           .update(
@@ -1488,7 +1488,7 @@ describe.sequential(
           )
           .digest("hex"),
       ).toBe(
-        "587d67234a22b1529cad3ce447ca10f0dcc1eddd18646fae2310c28f99861a09",
+        "04d716c1740281b08d22a8df0d3140817c7f536e36f099c6d278508f340aefbe",
       );
     });
     it("STATIC-72 OpenAPI has no checkout, webhook, or fake completion route", async () => {

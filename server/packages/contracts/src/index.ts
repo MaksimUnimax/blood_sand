@@ -41,6 +41,11 @@ export const ApiErrorCodeV1Schema = z.enum([
   "ADMIN_FORBIDDEN",
   "ADMIN_REAUTH_REQUIRED",
   "ADMIN_CSRF_INVALID",
+  "ADMIN_RESOURCE_NOT_FOUND",
+  "ADMIN_CONFLICT",
+  "ADMIN_STATE_STALE",
+  "ADMIN_LAST_OWNER_REQUIRED",
+  "INTERNAL_ERROR",
 ]);
 export type ApiErrorCodeV1 = z.infer<typeof ApiErrorCodeV1Schema>;
 
@@ -590,3 +595,209 @@ export const SignedBootstrapEnvelopeV1Schema = z
 export type SignedBootstrapEnvelopeV1 = z.infer<
   typeof SignedBootstrapEnvelopeV1Schema
 >;
+
+/** P6.2 admin read/support/principal-management contracts. */
+const AdminUuid = z.uuid();
+const AdminLimit = z.coerce.number().int().min(1).max(100).optional();
+const AdminCursor = AdminUuid.optional();
+const AdminStatus = z.enum(["ACTIVE", "SUSPENDED"]);
+const AdminRoleV1Schema = z.enum([
+  "ADMIN_OWNER",
+  "ADMIN_OPS",
+  "ADMIN_SUPPORT",
+  "ADMIN_BILLING_READONLY",
+]);
+const AdminBoundedMachineString = z
+  .string()
+  .min(1)
+  .max(128)
+  .regex(/^[A-Za-z0-9._:-]+$/u);
+export const AdminReasonV1Schema = z
+  .string()
+  .min(1)
+  .max(256)
+  .refine((value) =>
+    [...value].every((character) => {
+      const code = character.charCodeAt(0);
+      return code > 0x1f && code !== 0x7f;
+    }),
+  )
+  .transform((value) => value.trim())
+  .pipe(z.string().min(1).max(256));
+export const AdminAccountsQueryV1Schema = z
+  .object({
+    accountId: AdminUuid.optional(),
+    ownerUserId: AdminUuid.optional(),
+    ownerEmail: z.string().min(1).max(320).optional(),
+    status: AdminStatus.optional(),
+    limit: AdminLimit,
+    cursor: AdminCursor,
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (
+      [value.accountId, value.ownerUserId, value.ownerEmail].filter(Boolean)
+        .length > 1
+    )
+      context.addIssue({
+        code: "custom",
+        message: "account filters are mutually exclusive",
+      });
+  });
+export const AdminUsersQueryV1Schema = z
+  .object({
+    userId: AdminUuid.optional(),
+    email: z.string().min(1).max(320).optional(),
+    status: AdminStatus.optional(),
+    limit: AdminLimit,
+    cursor: AdminCursor,
+  })
+  .strict()
+  .refine(
+    (value) => !(value.userId && value.email),
+    "user filters are mutually exclusive",
+  );
+export const AdminAccountParamsV1Schema = z
+  .object({ account_id: AdminUuid })
+  .strict();
+export const AdminDeviceParamsV1Schema = z
+  .object({ account_id: AdminUuid, device_id: AdminUuid })
+  .strict();
+export const AdminDeviceQueryV1Schema = z
+  .object({
+    status: z.enum(["ACTIVE", "REVOKED"]).optional(),
+    limit: AdminLimit,
+    cursor: AdminCursor,
+  })
+  .strict();
+export const AdminAuditEventsQueryV1Schema = z
+  .object({
+    action: AdminBoundedMachineString.optional(),
+    targetType: AdminBoundedMachineString.optional(),
+    targetId: AdminUuid.optional(),
+    actorType: AdminBoundedMachineString.optional(),
+    actorId: AdminUuid.optional(),
+    correlationId: AdminBoundedMachineString.optional(),
+    limit: AdminLimit,
+    cursor: AdminCursor,
+  })
+  .strict();
+export const AdminPrincipalsQueryV1Schema = z
+  .object({
+    principalId: AdminUuid.optional(),
+    userId: AdminUuid.optional(),
+    status: AdminStatus.optional(),
+    role: AdminRoleV1Schema.optional(),
+    limit: AdminLimit,
+    cursor: AdminCursor,
+  })
+  .strict();
+export const AdminPrincipalCreateBodyV1Schema = z
+  .object({
+    userId: AdminUuid,
+    initialRole: AdminRoleV1Schema,
+    reason: AdminReasonV1Schema,
+  })
+  .strict();
+export const AdminPrincipalRoleParamsV1Schema = z
+  .object({ principal_id: AdminUuid, role: AdminRoleV1Schema })
+  .strict();
+export const AdminPrincipalMutationParamsV1Schema = z
+  .object({ principal_id: AdminUuid })
+  .strict();
+export const AdminPrincipalMutationBodyV1Schema = z
+  .object({
+    expectedRevision: z.number().int().positive().safe(),
+    reason: AdminReasonV1Schema,
+  })
+  .strict();
+export const AdminDeviceRevokeBodyV1Schema = z
+  .object({ reason: AdminReasonV1Schema })
+  .strict();
+
+const AdminPage = <T extends z.ZodType>(item: T) =>
+  z.object({ items: z.array(item), nextCursor: AdminUuid.nullable() }).strict();
+export const AdminAccountItemV1Schema = z
+  .object({
+    id: AdminUuid,
+    status: AdminStatus,
+    displayName: z.string().nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+export const AdminAccountsResponseV1Schema = AdminPage(
+  AdminAccountItemV1Schema,
+);
+export const AdminUserEmailV1Schema = z
+  .object({
+    email: z.string().email(),
+    verifiedAt: z.string().datetime({ offset: true }).nullable(),
+  })
+  .strict();
+export const AdminUserItemV1Schema = z
+  .object({
+    id: AdminUuid,
+    status: AdminStatus,
+    emails: z.array(AdminUserEmailV1Schema),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+export const AdminUsersResponseV1Schema = AdminPage(AdminUserItemV1Schema);
+export const AdminDeviceItemV1Schema = DeviceListItemV1Schema.strict();
+export const AdminDevicesResponseV1Schema = AdminPage(AdminDeviceItemV1Schema);
+export const AdminSubscriptionResponseV1Schema = z
+  .object({
+    accountId: AdminUuid,
+    access: z
+      .object({
+        status: z.enum(["ELIGIBLE", "INELIGIBLE"]),
+        reason: SubscriptionAccessReasonV1Schema.nullable(),
+      })
+      .strict(),
+    subscription: SubscriptionResponseV1Schema.shape.subscription,
+    deviceAllowance: SubscriptionResponseV1Schema.shape.deviceAllowance,
+  })
+  .strict();
+export const AdminDeviceRevokeResponseV1Schema = z
+  .object({
+    status: z.literal("revoked"),
+    deviceId: AdminUuid,
+    idempotent: z.boolean(),
+  })
+  .strict();
+export const AdminAuditEventItemV1Schema = z
+  .object({
+    id: AdminUuid,
+    actorType: z.string().min(1),
+    actorId: AdminUuid.nullable(),
+    action: z.string().min(1),
+    targetType: z.string().min(1),
+    targetId: AdminUuid.nullable(),
+    correlationId: CorrelationIdV1Schema,
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+export const AdminAuditEventsResponseV1Schema = AdminPage(
+  AdminAuditEventItemV1Schema,
+);
+export const AdminPrincipalItemV1Schema = z
+  .object({
+    principalId: AdminUuid,
+    userId: AdminUuid,
+    status: AdminStatus,
+    revision: z.number().int().positive().safe(),
+    roles: z.array(AdminRoleV1Schema),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+export const AdminPrincipalsResponseV1Schema = AdminPage(
+  AdminPrincipalItemV1Schema,
+);
+export const AdminPrincipalMutationResponseV1Schema =
+  AdminPrincipalItemV1Schema;
+export const AdminPrincipalStatusResponseV1Schema = z
+  .object({ changed: z.boolean(), principal: AdminPrincipalItemV1Schema })
+  .strict();

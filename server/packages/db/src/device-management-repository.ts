@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { DeviceManagementRepository } from "@product/device-management";
 import type { DatabaseRuntime } from "./index.js";
+import { revokeDeviceInTransaction } from "./device-revocation.js";
 
 export function createDeviceManagementRepository(
   runtime: DatabaseRuntime,
@@ -244,32 +245,20 @@ export function createDeviceManagementRepository(
     },
     async revoke(input) {
       return runtime.transaction(async (tx) => {
-        const q = await tx.query<{ id: string; status: string }>(
-          `SELECT d.id,d.status FROM devices d JOIN account_memberships m ON m.account_id=d.account_id AND m.user_id=$2 AND m.role='OWNER' WHERE d.id=$1 FOR UPDATE`,
+        const q = await tx.query<{ account_id: string }>(
+          `SELECT d.account_id FROM devices d JOIN account_memberships m ON m.account_id=d.account_id AND m.user_id=$2 AND m.role='OWNER' WHERE d.id=$1`,
           [input.deviceId, input.portalUserId],
         );
-        const d = q.rows[0];
-        if (!d) return "not-found" as const;
-        if (d.status !== "ACTIVE") return "already-revoked" as const;
-        const now = new Date();
-        await tx.query(
-          `UPDATE devices SET status='REVOKED',revoked_at=$2,revoke_reason='USER_REVOKED' WHERE id=$1`,
-          [d.id, now],
-        );
-        await tx.query(
-          `INSERT INTO audit_events(actor_type,actor_id,action,target_type,target_id,correlation_id) VALUES('USER',$1,'DEVICE_REVOKED','DEVICE',$2,$3)`,
-          [input.portalUserId, d.id, input.correlationId],
-        );
-        const sessions = await tx.query<{ id: string }>(
-          `UPDATE sessions SET status='REVOKED',revoked_at=$2,revoke_reason='DEVICE_REVOKED' WHERE device_id=$1 AND status='ACTIVE' RETURNING id`,
-          [d.id, now],
-        );
-        for (const s of sessions.rows)
-          await tx.query(
-            `INSERT INTO audit_events(actor_type,actor_id,action,target_type,target_id,correlation_id) VALUES('USER',$1,'EXTENSION_SESSION_REVOKED','SESSION',$2,$3)`,
-            [input.portalUserId, s.id, input.correlationId],
-          );
-        return "revoked" as const;
+        if (!q.rows[0]) return "not-found" as const;
+        return revokeDeviceInTransaction(tx, {
+          deviceId: input.deviceId,
+          expectedAccountId: q.rows[0].account_id,
+          actorType: "USER",
+          actorId: input.portalUserId,
+          deviceRevokeReason: "USER_REVOKED",
+          deviceAuditAction: "DEVICE_REVOKED",
+          correlationId: input.correlationId,
+        });
       });
     },
   };

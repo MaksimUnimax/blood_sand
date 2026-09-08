@@ -13,9 +13,11 @@ import {
 } from "@product/contracts";
 import type { AuthService } from "@product/auth";
 import { ControlledError } from "./app.js";
-
-const adminSessionCookie = "pcp_admin_session";
-const adminCsrfCookie = "pcp_admin_csrf";
+import {
+  ADMIN_CSRF_COOKIE,
+  ADMIN_SESSION_COOKIE,
+  createAdminRouteGuard,
+} from "./admin-route-guard.js";
 const portalSessionCookie = "pcp_portal_session";
 const portalCsrfCookie = "pcp_csrf";
 
@@ -64,8 +66,8 @@ function clearAdminCookies(
     sameSite: "strict" as const,
     secure: production,
   };
-  reply.clearCookie(adminSessionCookie, options);
-  reply.clearCookie(adminCsrfCookie, options);
+  reply.clearCookie(ADMIN_SESSION_COOKIE, options);
+  reply.clearCookie(ADMIN_CSRF_COOKIE, options);
 }
 
 export function registerAdminAuthRoutes(
@@ -77,19 +79,7 @@ export function registerAdminAuthRoutes(
   const safeHeaders = (reply: {
     header(name: string, value: string): unknown;
   }) => reply.header("cache-control", "no-store");
-  const authenticatedAdmin = async (request: {
-    cookies: Record<string, string | undefined>;
-  }) => {
-    const token = request.cookies[adminSessionCookie];
-    if (!token) throw adminError("ADMIN_UNAUTHORIZED");
-    const result = await adminAuth.authenticateAdminSession(token);
-    if (!result.ok) {
-      if (result.code === "SERVICE_UNAVAILABLE") throw adminError(result.code);
-      if (result.code === "ADMIN_UNAUTHORIZED") throw adminError(result.code);
-      throw adminError("ADMIN_UNAUTHORIZED");
-    }
-    return { token, subject: result.value };
-  };
+  const guard = createAdminRouteGuard(adminAuth);
 
   app.post(
     "/v1/admin/session",
@@ -134,12 +124,12 @@ export function registerAdminAuthRoutes(
         secure: production,
         maxAge: 30 * 60,
       };
-      reply.setCookie(adminSessionCookie, result.value.sessionToken, {
+      reply.setCookie(ADMIN_SESSION_COOKIE, result.value.sessionToken, {
         ...options,
         httpOnly: true,
       });
       reply.setCookie(
-        adminCsrfCookie,
+        ADMIN_CSRF_COOKIE,
         adminAuth.csrf(result.value.sessionToken),
         {
           ...options,
@@ -166,7 +156,7 @@ export function registerAdminAuthRoutes(
       },
     },
     async (request, reply) => {
-      const { subject } = await authenticatedAdmin(request);
+      const { subject } = await guard.requireAdminSubject(request);
       safeHeaders(reply);
       return {
         status: "authenticated" as const,
@@ -179,11 +169,7 @@ export function registerAdminAuthRoutes(
   );
 
   app.delete("/v1/admin/session", async (request, reply) => {
-    const { token, subject } = await authenticatedAdmin(request);
-    const csrfHeader = request.headers["x-csrf-token"];
-    const csrf = typeof csrfHeader === "string" ? csrfHeader : undefined;
-    if (!adminAuth.csrfValid(token, csrf, request.cookies[adminCsrfCookie]))
-      throw adminError("ADMIN_CSRF_INVALID");
+    const { token, subject } = await guard.requireAdminMutation(request);
     const result = await adminAuth.revokeAdminSession(
       token,
       subject.adminPrincipalId,

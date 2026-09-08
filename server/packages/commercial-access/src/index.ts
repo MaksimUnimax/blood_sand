@@ -304,6 +304,17 @@ export class CommercialPortalService {
   > {
     if (!(await this.repository.isOwner(userId, accountId)))
       return { kind: "ACCOUNT_FORBIDDEN" };
+    return this.readAccountSubscription(accountId);
+  }
+
+  /** Shared timestamp-authoritative safe account projection for portal and admin reads. */
+  async readAccountSubscription(
+    accountId: string,
+  ): Promise<
+    | { kind: "OK"; value: PortalSubscriptionRead }
+    | { kind: "ACCOUNT_NOT_FOUND" }
+    | { kind: "SERVICE_UNAVAILABLE" }
+  > {
     const at = new Date(this.now().getTime());
     const access = await this.commercialAccess.resolve(accountId, at);
     if (access.kind === "ACCOUNT_NOT_FOUND") return access;

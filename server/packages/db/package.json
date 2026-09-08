@@ -22,6 +22,7 @@
   "dependencies": {
     "@product/auth": "workspace:*",
     "@product/admin-auth": "workspace:*",
+    "@product/admin-ops": "workspace:*",
     "@product/billing": "workspace:*",
     "@product/commercial-catalog": "workspace:*",
     "@product/commercial-access": "workspace:*",

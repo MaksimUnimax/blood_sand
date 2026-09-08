@@ -11,9 +11,11 @@ import {
   createP5SubscriptionRepository,
   createP5CommercialPortalRepository,
   createAdminAuthRepository,
+  createAdminOpsRepository,
 } from "@product/db";
 import { AuthService, deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
 import { AdminAuthService, deriveAdminAuthKeys } from "@product/admin-auth";
+import { AdminOpsService } from "@product/admin-ops";
 import {
   DeviceAuthorizationService,
   deriveDeviceAuthKeys,
@@ -49,6 +51,10 @@ const commercialAccess = new CommercialAccessService({
   currentSubscriptionReader: subscriptions,
   entitlementResolver: entitlements,
 });
+const commercialPortal = new CommercialPortalService(
+  createP5CommercialPortalRepository(database),
+  commercialAccess,
+);
 const rootSecret = loadAuthRootSecret(process.env);
 const adminAuth = new AdminAuthService(
   createAdminAuthRepository(database),
@@ -92,11 +98,12 @@ const app = createApiApp({
     commercialAccess,
   ),
   publicCommercialCatalogReader: createP4CommercialCatalogRepository(database),
-  commercialPortalService: new CommercialPortalService(
-    createP5CommercialPortalRepository(database),
-    commercialAccess,
-  ),
+  commercialPortalService: commercialPortal,
   adminAuthService: adminAuth,
+  adminOpsService: new AdminOpsService(
+    createAdminOpsRepository(database),
+    commercialPortal,
+  ),
 });
 let closing = false;
 async function shutdown(signal: string): Promise<void> {

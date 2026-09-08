@@ -29,6 +29,8 @@ import {
   CommercialPortalService,
 } from "@product/commercial-access";
 import type { CommercialPortalRepository } from "@product/commercial-access";
+import { AdminOpsService, type AdminOpsRepository } from "@product/admin-ops";
+import { AdminAuthService } from "@product/admin-auth";
 
 type JsonPrimitive = boolean | null | number | string;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -94,6 +96,18 @@ export async function generateOpenApiRepresentation(): Promise<string> {
       }),
     },
   });
+  const adminOpsRepository: AdminOpsRepository = {
+    listAccounts: async () => ({ items: [] }),
+    listUsers: async () => ({ items: [] }),
+    listDevices: async () => ({ kind: "ACCOUNT_NOT_FOUND" }),
+    listAuditEvents: async () => ({ items: [] }),
+    listPrincipals: async () => ({ items: [] }),
+    revokeDevice: async () => "NOT_FOUND",
+    createPrincipal: async () => ({ kind: "CONFLICT" }),
+    grantRole: async () => ({ kind: "NOT_FOUND" }),
+    revokeRole: async () => ({ kind: "NOT_FOUND" }),
+    setPrincipalStatus: async () => ({ kind: "NOT_FOUND" }),
+  };
   const app = createApiApp({
     config: generatorConfig,
     isInfrastructureReady: async () => true,
@@ -156,6 +170,19 @@ export async function generateOpenApiRepresentation(): Promise<string> {
     commercialPortalService: new CommercialPortalService(
       portalRepository,
       commercialAccess,
+    ),
+    adminAuthService: new AdminAuthService(
+      {
+        createAdminSession: async () => ({ kind: "forbidden" }),
+        authenticateAdminSession: async () => ({ kind: "unauthorized" }),
+        revokeAdminSession: async () => "missing",
+        bootstrapOwner: async () => ({ kind: "closed" }),
+      },
+      { session: Buffer.alloc(32), csrf: Buffer.alloc(32) },
+    ),
+    adminOpsService: new AdminOpsService(
+      adminOpsRepository,
+      new CommercialPortalService(portalRepository, commercialAccess),
     ),
   });
   try {
