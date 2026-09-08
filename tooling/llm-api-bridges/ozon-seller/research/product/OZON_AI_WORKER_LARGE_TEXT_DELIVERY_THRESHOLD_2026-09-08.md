@@ -77,23 +77,23 @@ Current threshold authority:
 | Grok | `PENDING_LIVE_CALIBRATION` | Adapter-specific attachment capability/profile required |
 | Claude | `PENDING_LIVE_CALIBRATION` | Adapter-specific attachment capability/profile required |
 | Gemini | `PENDING_LIVE_CALIBRATION` | Adapter-specific attachment capability/profile required |
-| Qwen | `PENDING_LIVE_CALIBRATION` | Official product surface supports document/data-file upload, but exact consumer-web limits and DOM flow require adapter/live verification |
+| Qwen | `PENDING_LIVE_CALIBRATION` | Official Qwen DeepResearch material proves local-file integration for PDF, Excel and images; exact normal Qwen Chat formats/limits and DOM flow require current adapter/live verification |
 | Kimi | `PENDING_LIVE_CALIBRATION` | Official Kimi web/help surface supports document/file upload; exact adapter DOM flow still requires live verification |
 
 No `PENDING_LIVE_CALIBRATION` row may be promoted to the ChatGPT threshold without direct evidence.
 
 ## 4. Current official file-capability evidence relevant to Qwen and Kimi
 
-Qwen is now an explicit planned AI target. Current official Qwen product material describes uploading structured or unstructured data files such as CSV, Excel and text documents for analysis, and Qwen DeepResearch material describes local-file integration including PDF and Excel. Exact consumer-web size/count limits and the exact attachment DOM mechanism remain a live-adapter question rather than a core assumption.
+Qwen is now an explicit planned AI target. Current official Qwen DeepResearch material documents local-file integration and explicitly names PDF, Excel and image uploads. That is enough to require Qwen-compatible document-delivery architecture, but it does **not** establish the complete accepted-format list, size/count limits or DOM upload mechanism of ordinary Qwen Chat. Those remain adapter/live-verification work.
 
-Current evidence entry points:
+Current official evidence entry points:
 
 - `https://qwen.ai/qwenchat`
 - `https://qwen.ai/blog?id=qwen-deepresearch`
 
 Kimi is now an explicit planned AI target. Current official Kimi Help Center material states that normal Kimi chat supports file processing including PDF, Word, Excel, PPT, images, TXT and video, with up to 100 MB per file and up to 50 files in the documented product surface. The extension still must prove the actual current browser attachment mechanism and automatic Send/confirmation path before Kimi delivery is marked PASS.
 
-Current evidence entry points:
+Current official evidence entry points:
 
 - `https://www.kimi.com/en/help/new-user-guide/overview`
 - `https://www.kimi.com/en/help/features/project`
@@ -118,42 +118,38 @@ OZON_API_V1
 Observed end-to-end result:
 
 - Bridge completed the three logical commands;
-- the delivered batch appeared as a new user-turn in ChatGPT;
-- normal automatic ChatGPT text delivery therefore passed at this calibration point;
-- the owner explicitly chose this point as the maximum ChatGPT plain-text operating point and ended further ChatGPT threshold search.
+- the delivered batch appeared as a new user-turn in the chat;
+- normal automatic text delivery therefore passed at this calibration point;
+- the owner explicitly chose this point as the maximum plain-text operating point and ended further threshold search.
 
 The `1_048_000` character constant is the owner-selected ChatGPT implementation ceiling derived from this PASS point. Do not relabel the estimated live payload size as an exact byte-for-byte measurement of that specific run unless a preserved full payload is later measured.
 
 ## 6. Nearest measured ChatGPT FAIL evidence
 
-A preserved failing large-text payload from the immediately adjacent ChatGPT calibration series measured:
+A preserved failing large-text payload from the immediately adjacent calibration series measured:
 
 - `1,053,496` Unicode characters;
 - `1,091,381` UTF-8 bytes.
 
 At the failing class of points, Bridge successfully staged the large text in the ChatGPT composer but native Send did not become usable, so the intended automatic delivery workflow could not complete.
 
-Earlier failing ChatGPT points also included approximately `1.09M` characters and the original approximately `2.16M` character batch.
+Earlier failing points also included approximately `1.09M` characters and the original approximately `2.16M` character batch.
 
-The fixed ChatGPT `1_048_000` ceiling intentionally stays below the nearest measured ChatGPT FAIL point.
+The fixed ChatGPT `1_048_000` ceiling intentionally stays below the nearest measured FAIL point.
 
 ## 7. Required generated-text implementation behavior
 
-### Shared behavior
+### ChatGPT at or below its frozen ceiling
 
-`generated OZON_RESULT/OZON_BATCH_RESULT -> measure payload -> query target AI adapter delivery capabilities -> choose safe representation -> stage/attach -> automatic Send -> matching user-turn -> AI continues`
+`generated OZON_RESULT/OZON_BATCH_RESULT -> measure Unicode length -> <= 1_048_000 -> stage plain text -> native Send usable -> automatic Send -> matching user-turn -> AI continues`
 
-### ChatGPT at or below its ceiling
+### ChatGPT above its frozen ceiling
 
-`generated result -> <= 1_048_000 -> stage plain text -> native Send usable -> automatic Send -> matching user-turn -> AI continues`
+`generated OZON_RESULT/OZON_BATCH_RESULT -> measure Unicode length -> > 1_048_000 -> do not stage full plain text -> create complete text document -> attach document -> native Send usable -> automatic Send -> matching user-turn -> AI receives complete result -> AI continues`
 
-### ChatGPT above its ceiling
+### Other AI adapters
 
-`generated result -> > 1_048_000 -> do not stage full plain text -> create complete text document -> attach document -> native Send usable -> automatic Send -> matching user-turn -> AI receives complete result -> AI continues`
-
-### Other AIs
-
-For Alice / DeepSeek / Grok / Claude / Gemini / Qwen / Kimi, the corresponding plain-text/document switching rule remains adapter-specific and must be calibrated or safely capability-gated. Until a threshold is proven, the core must not silently reuse the ChatGPT value.
+The same representation selector must query that adapter's own calibrated capability/profile instead of using the ChatGPT number. Until evidence exists, the threshold remains explicitly unknown/pending for that adapter; no inherited `1_048_000` assumption is allowed.
 
 No manual copy, cut, paste, file creation, attachment or Send is part of the supported product workflow.
 
@@ -161,54 +157,45 @@ The generated text document must contain the complete Bridge delivery payload. I
 
 ## 8. Keep real report/file delivery separate
 
-The ChatGPT numeric threshold applies only to **generated textual Bridge deliveries through the ChatGPT adapter**.
+This threshold applies only to **generated textual Bridge deliveries**.
 
 It does not replace the separate real-file mechanism required by the parent task:
 
-`Ozon report/file reference -> download original complete file -> target AI adapter capability check -> attach original complete file when supported -> automatic Send -> matching user-turn -> AI continues`
+`Ozon report/file reference -> download original complete file -> query target AI adapter file capabilities -> attach original complete file when supported -> automatic Send -> matching user-turn -> AI continues`
 
-Two shared source classes therefore remain distinct:
+Two global functions therefore remain distinct:
 
-1. `REAL_REPORT_FILE_DELIVERY` — original provider/report file is downloaded and preserved byte-complete.
-2. `LARGE_GENERATED_TEXT_DELIVERY` — Bridge-generated text may be materialized by the extension into a text document when the target AI's representation policy requires it.
+1. `REAL_REPORT_FILE_DELIVERY` — original provider/report file is downloaded and attached as the original document when the target AI supports that file class.
+2. `LARGE_GENERATED_TEXT_DELIVERY` — Bridge-generated text above the target adapter's calibrated safe plain-text boundary is materialized by the extension into a text document and attached.
 
-For a real provider file, the core must ask the target adapter whether that original MIME/extension is supported. If supported, attach the original bytes. If not supported, do not pretend the original file was delivered. Use an explicit safe failure or a separately designed and provenance-preserving derived-file fallback. Any derived artifact must remain distinguishable from the original provider file.
-
-Do not convert existing XLSX/CSV/report artifacts into text merely because a generated-text threshold exists.
+Do not convert existing XLSX/CSV/report artifacts into text merely because the generated-text threshold exists. If the target AI does not support the original file type, the Bridge must fail honestly or use a separately designed/evidence-backed derived-document fallback that is explicitly labelled as derived rather than original.
 
 ## 9. Required regressions / live acceptance
 
-Before this calibration can be considered implemented, regression and live evidence must prove at minimum for ChatGPT:
+Before this calibration can be considered implemented, regression and live evidence must prove at minimum:
 
-- `< threshold` generated text still uses plain-text auto-delivery;
-- `= threshold` follows the defined plain-text branch deterministically;
-- `> threshold` never stages the full oversized payload as ordinary composer text;
-- `> threshold` creates a complete text document and attaches it;
+- ChatGPT `< threshold` generated text still uses plain-text auto-delivery;
+- ChatGPT `= threshold` follows the defined plain-text branch deterministically;
+- ChatGPT `> threshold` never stages the full oversized payload as ordinary composer text;
+- ChatGPT `> threshold` creates a complete text document and attaches it;
 - attachment Send is automatic;
 - matching user-turn confirmation still works;
 - exactly-once delivery remains intact;
 - no hidden resend/retry is introduced;
 - no stale BUSY state remains;
 - Manual and Autorun share the intended representation-selection rule;
-- real Ozon report/file delivery remains a separate original-file attachment path.
-
-The common-core regression contract must also prove that:
-
-- the numeric ChatGPT threshold is read through ChatGPT adapter/profile capability rather than hard-coded as a universal AI constant;
-- switching to another AI cannot accidentally inherit ChatGPT DOM selectors or file-format assumptions;
-- unsupported file types fail or use an explicitly designed derived-artifact path without corrupting original-file provenance;
-- future Qwen and Kimi adapters can implement the same generic attachment/delivery contract without core special cases.
-
-Each additional AI is marked delivery PASS only after its own live/browser adapter evidence exists. Architecture support is not the same as live acceptance.
+- real Ozon report/file delivery remains a separate original-file attachment path;
+- per-AI threshold/file assumptions are adapter/profile-owned, not hard-coded globally;
+- unimplemented/planned adapters remain explicit `PENDING`, not false PASS.
 
 ## 10. Work ordering / CAP-24
 
 The numerical ChatGPT text-boundary search is now closed by owner decision.
 
-The remaining mandatory pre-resume work is to design / implement / live-accept both shared delivery functions without a ChatGPT-only core hack:
+The remaining mandatory pre-resume work is to recalibrate / implement / live-accept both global delivery functions through the multi-AI-capable delivery architecture:
 
-1. real report/file download -> preserve original -> target-adapter capability check -> attachment -> automatic Send;
-2. generated text representation switch -> target-adapter policy, using the frozen `1_048_000` character ceiling specifically for ChatGPT and independently calibrated/capability-gated rules for other AIs.
+1. real report/file download -> target-AI capability check -> original document attachment when supported -> automatic Send;
+2. generated text representation switch using the target adapter's threshold, with ChatGPT frozen at `1_048_000`.
 
 Frozen business cursor remains:
 
