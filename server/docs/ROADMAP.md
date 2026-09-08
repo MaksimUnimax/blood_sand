@@ -16,7 +16,7 @@ Legend: `[DONE] [ACTIVE] [NEXT] [PLANNED] [BLOCKED]`.
 
 # Level 1 — Product roadmap
 
-## P0 — Architecture and development contract `[DONE]`
+## P0 — Architecture and development contract `[DONE / FINAL ACCEPTED]`
 
 Goal: remove architecture ambiguity before server implementation.
 
@@ -51,7 +51,7 @@ Key decisions frozen for P1:
 
 Acceptance: `P0_ARCHITECTURE_AUDIT.md` = PASS.
 
-## P1 — Repository and engineering foundation `[DONE]`
+## P1 — Repository and engineering foundation `[DONE / FINAL ACCEPTED]`
 
 Goal: create reproducible server workspace with infrastructure shells only.
 
@@ -90,7 +90,7 @@ Exit gate:
 
 P1 implementation status: P1.1 `[DONE]`; P1.2 `[DONE]`; P1.3 `[DONE]`; P1.4 `[DONE]`; P1.5 `[DONE]`; P1.6 `[DONE]`.
 
-## P2 — Accounts, OTP identity and device authorization `[DONE]`
+## P2 — Accounts, OTP identity and device authorization `[DONE / FINAL ACCEPTED]`
 
 Goal: user can authenticate and authorize an extension installation.
 
@@ -109,7 +109,7 @@ Scope:
 
 Exit: complete simulated extension activation/refresh/revoke/device-limit flow with security tests.
 
-## P3 — Bootstrap, compatibility and signed remote configuration `[DONE]`
+## P3 — Bootstrap, compatibility and signed remote configuration `[DONE / FINAL ACCEPTED]`
 
 Goal: authorized client receives a safe versioned policy/config snapshot.
 
@@ -127,7 +127,7 @@ Scope:
 
 Exit: valid/tampered/expired/offline/unsupported-client tests pass; remote payload cannot expand packaged capability.
 
-## P4 — Plans, price revisions and entitlement engine `[DONE]`
+## P4 — Plans, price revisions and entitlement engine `[DONE / FINAL ACCEPTED]`
 
 Goal: admin can change sellable capabilities/pricing structure without extension releases.
 
@@ -199,8 +199,8 @@ P6 execution decomposition (frozen by ADR-0026):
 
 - P6.1 `[DONE]` admin identity/session/RBAC foundation, CSRF and one-time owner bootstrap.
 - P6.2 `[DONE]` admin read plane, safe account/subscription/device views, audit reads, support device revoke, and principal/role management.
-- P6.3 `[ACTIVE]` subscription/billing operations through accepted P5 commands and safe billing reads.
-- P6.4 `[PLANNED]` existing plan, price, entitlement and compatibility policy operations.
+- P6.3 `[DONE]` subscription/billing operations through accepted P5 commands and safe billing reads.
+- P6.4 `[NEXT]` existing plan, price, entitlement and compatibility policy operations.
 - P6.5 `[PLANNED]` admin portal shell and operations UX.
 - P6.6 `[PLANNED]` P6 security, architecture, regression and final acceptance.
 

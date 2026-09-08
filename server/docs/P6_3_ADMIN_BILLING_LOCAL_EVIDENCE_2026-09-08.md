@@ -1,6 +1,6 @@
 # P6.3 admin subscription and billing operations — local evidence
 
-LOCAL ACCEPTED — P6.3 ACTIVE
+ACCEPTED — P6.3 DONE
 
 ## Base and runtime
 
@@ -141,5 +141,32 @@ Retained integration stage counts: P6.2 `106`; P6.1 `77`; P5.7 `80`; P5.6
   `9b211667b35c117e49305cb22504405260bc60ec6a998a086f62265d9857936f`;
   migrations `0000..0012`, no `0013`.
 
-P6.3 remains `LOCAL ACCEPTED — P6.3 ACTIVE` pending correction-head Server CI,
-remote P6.3 review, and final documentation acceptance.
+At the blocked-attempt checkpoint, P6.3 remained `LOCAL ACCEPTED — P6.3 ACTIVE`
+pending correction-head Server CI, remote P6.3 review, and final documentation
+acceptance.
+
+## Final remote acceptance
+
+- `P6_3_ACCEPTANCE=PASS`.
+- P6.2 final base: `93a8bb4541e58126251040b6c2ff8f9dd8f80dbb`.
+- P6.3 implementation: `3ca8afa3ec55523353b89a638e31855205399ccc`.
+- Implementation CI attempt 1: failed run `34193907729` because of the
+  pre-existing P3.6 signature-tamper no-op fixture.
+- Test-fix SHA: `dfa3c3ae5658a11a1c05eb12923451971d3abae3`.
+- Successful correction-head Server CI: run `34195982259`.
+- Unit/API: `861`; P6.3 integration: `72/72`; inventory `A=8, B=12, C=10,
+  D=8, E=9, F=18, G=7`; full integration: `1343`.
+- Retained integration counts: P6.2 `106`; P6.1 `77`; P5 `80/152/120/116/102/90/94`;
+  P4 `38/52/48/52/21/30`.
+- Crypto: `12/12`; E2E: `32/32`.
+- OpenAPI: `40`; SHA-256:
+  `9b211667b35c117e49305cb22504405260bc60ec6a998a086f62265d9857936f`.
+- Migrations: `0000..0012`; no `0013`.
+- Review: P5 command reuse, transaction-time RBAC, account/cursor scoping,
+  privacy-safe projections, and failure mapping all pass. Bridge unchanged;
+  no admin UI, real provider, P6.4, or P7 work. Payment go-live remains
+  `DEFERRED`.
+- Review severity: Critical `0`; High `0`; material Medium `0`;
+  `REMOTE_P6_3_REVIEW=PASS`; `COUNT_INTEGRITY=PASS`.
+- Final documentation commit SHA is recorded in the acceptance handoff after
+  the docs-only commit.
