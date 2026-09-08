@@ -1,0 +1,118 @@
+name: Ozon multi-AI file delivery handoff files
+
+on:
+  push:
+    branches:
+      - handoff/ozon-multi-ai-file-delivery-files-2026-09-08
+
+permissions:
+  contents: read
+
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout handoff commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prove exact production authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_HEAD='3da38fa76ba8d1ab22b780edd63964b818397354'
+          BASE_TREE='a6843d0c2a05e761c035c80b1195fe1f7735c255'
+          CANDIDATE_TREE='66176f9bd11e62e59d7a1a15743deebe541133fc'
+          test "$(git rev-parse HEAD^)" = "$BASE_HEAD"
+          test "$(git show -s --format=%T "$BASE_HEAD")" = "$BASE_TREE"
+          test "$(git rev-parse "$BASE_HEAD:tooling/llm-api-bridges/ozon-seller/dist-step7-candidate")" = "$CANDIDATE_TREE"
+          git diff --exit-code "$BASE_HEAD" HEAD -- tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+          echo 'EXACT_PRODUCTION_AUTHORITY=PASS'
+
+      - name: Materialize exact candidate and authority files
+        id: handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_HEAD='3da38fa76ba8d1ab22b780edd63964b818397354'
+          BASE_TREE='a6843d0c2a05e761c035c80b1195fe1f7735c255'
+          CANDIDATE_TREE='66176f9bd11e62e59d7a1a15743deebe541133fc'
+          LATEST_FINAL_GATE35_RUN='34188925478'
+          ROOT="$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller"
+          SRC="$ROOT/dist-step7-candidate"
+          STAGE="$RUNNER_TEMP/stage"
+          OUT="$GITHUB_WORKSPACE/handoff-files"
+          ZIP="$OUT/OZON_BRIDGE_v0.1.19_MULTI_AI_FILE_DELIVERY_CURRENT_3da38fa76ba.zip"
+          VERIFY="$OUT/OZON_BRIDGE_v0.1.19_MULTI_AI_FILE_DELIVERY_CURRENT_3da38fa76ba_VERIFY.txt"
+          INVENTORY="$RUNNER_TEMP/inventory.txt"
+
+          rm -rf "$STAGE" "$OUT"
+          mkdir -p "$STAGE" "$OUT"
+          cp -a "$SRC/." "$STAGE/"
+          find "$STAGE" -type f -exec touch -t 198001010000 {} +
+          find "$STAGE" -type f -printf '%P\n' | LC_ALL=C sort > "$INVENTORY"
+          test -s "$INVENTORY"
+
+          for f in \
+            manifest.json \
+            service_worker_entry.js \
+            shared/ai_delivery_capabilities.js \
+            shared/file_delivery_model_policy.js \
+            shared/file_delivery_port_worker.js \
+            shared/file_delivery_wake_worker.js \
+            shared/web_file_attachment.js \
+            attachment_delivery_port_content.js \
+            attachment_delivery_wake_content.js; do
+            grep -qx "$f" "$INVENTORY"
+          done
+
+          (cd "$STAGE" && zip -X -q "$ZIP" -@ < "$INVENTORY")
+          test -s "$ZIP"
+
+          EXTRACT="$RUNNER_TEMP/extract"
+          rm -rf "$EXTRACT" && mkdir -p "$EXTRACT"
+          unzip -q "$ZIP" -d "$EXTRACT"
+          diff -ruN "$SRC" "$EXTRACT"
+
+          FILES=$(wc -l < "$INVENTORY" | tr -d ' ')
+          BYTES=$(wc -c < "$ZIP" | tr -d ' ')
+          SHA=$(sha256sum "$ZIP" | awk '{print $1}')
+          SERVICE_WORKER=$(node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(String(m.background?.service_worker||""));' "$EXTRACT/manifest.json")
+          test "$SERVICE_WORKER" = 'service_worker_entry.js'
+
+          cat > "$VERIFY" <<EOF
+STATUS=CURRENT_CANDIDATE_NOT_GATE35_PASS
+HEAD=$BASE_HEAD
+TREE=$BASE_TREE
+PRODUCTION_TREE=$CANDIDATE_TREE
+LATEST_FINAL_GATE35_RUN=$LATEST_FINAL_GATE35_RUN
+LATEST_FINAL_GATE35_CONCLUSION=FAIL
+LATEST_FINAL_GATE35_FAILURE_STAGE=prepare__Create_exact_Gate-35_evidence_commit
+LIVE_CERTIFICATION=PENDING
+CAP24=FROZEN_AT_2200_OF_9519
+ZIP_FILE=$(basename "$ZIP")
+ZIP_BYTES=$BYTES
+ZIP_SHA256=$SHA
+PRODUCTION_FILE_COUNT=$FILES
+SERVICE_WORKER=$SERVICE_WORKER
+REQUIRED_FILE_CHECKS=PASS
+FRESH_EXTRACT_CONTENT_EQUIVALENCE=PASS
+NOTE=This is the exact production candidate tree from HEAD $BASE_HEAD. It is not a Gate-35 PASS artifact and is not live-certified.
+EOF
+
+          cp "$ROOT/validation/reports/OZON_MULTI_AI_FILE_DELIVERY_PATCH_2026-09-08.md" "$OUT/"
+          cp "$ROOT/research/product/OZON_AI_WORKER_BATCH_OUTPUT_MATERIALIZATION_BOUNDARY_TASK_2026-09-07.md" "$OUT/"
+          cp "$ROOT/research/product/OZON_AI_WORKER_LARGE_TEXT_DELIVERY_THRESHOLD_2026-09-08.md" "$OUT/"
+
+          sha256sum "$OUT"/* | LC_ALL=C sort > "$OUT/SHA256SUMS.txt"
+          cat "$VERIFY"
+          cat "$OUT/SHA256SUMS.txt"
+
+      - name: Upload verified handoff files
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-multi-ai-file-delivery-handoff-3da38fa76ba
+          path: handoff-files/*
+          if-no-files-found: error
+          retention-days: 30
