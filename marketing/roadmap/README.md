@@ -1,7 +1,7 @@
 # Roadmap — от стратегии до релиза
 
-Версия: **1.9**  
-Дата: **2026-08-26**  
+Версия: **2.0**  
+Дата: **2026-09-08**  
 Статус: **рабочий управляющий roadmap проекта**
 
 Этот каталог задаёт последовательность работы от маркетингового исследования до production-релиза сайта.
@@ -58,8 +58,8 @@ Continuity rule:
 - [~] **03A. Marketplace/API tooling и assortment master** — параллельная инфраструктурная ветка; не является текущей SEO-задачей. [`03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md`](03A_MARKETPLACE_API_TOOLING_AND_ASSORTMENT.md).
 - [x] **04. Исследовать реальный Yandex Search/SERP и Alice AI** — [`04_YANDEX_SERP_ALICE_RESEARCH.md`](04_YANDEX_SERP_ALICE_RESEARCH.md); final R2: `marketing/research/R2_YANDEX_SERP_ALICE_FINAL_REPORT_2026-08-26.md`.
 - [x] **05. Свести Wordstat + Search/SERP + Alice в единую карту возможностей** — [`05_OPPORTUNITY_MAP.md`](05_OPPORTUNITY_MAP.md); final R3: `marketing/research/R3_OPPORTUNITY_MAP_FINAL_2026-08-26.md`.
-- [~] **06. Завершить исследование покупателей и полный паспорт SKU** — **ACTIVE**; детализация: [`06_BUYER_EVIDENCE_AND_SKU_PASSPORT.md`](06_BUYER_EVIDENCE_AND_SKU_PASSPORT.md).
-- [ ] **07. Завершить конкурентную разведку и определить реальные конкурентные преимущества** — предварительно 3–6 ранов.
+- [x] **06. Завершить исследование покупателей и полный паспорт SKU** — [`06_BUYER_EVIDENCE_AND_SKU_PASSPORT.md`](06_BUYER_EVIDENCE_AND_SKU_PASSPORT.md); final R4: `marketing/research/R4_STAGE06_BUYER_SKU_EVIDENCE_FINAL_2026-09-08.md`.
+- [~] **07. Завершить конкурентную разведку и определить реальные конкурентные преимущества** — **ACTIVE**; детализация: [`07_COMPETITOR_AND_DEFENSIBLE_ADVANTAGE.md`](07_COMPETITOR_AND_DEFENSIBLE_ADVANTAGE.md).
 - [ ] **08. Посчитать экономику каналов и direct-commerce** — предварительно 3–6 ранов.
 - [ ] **09. Принять окончательную коммерческую модель сайта** — предварительно 2–4 рана.
 
@@ -90,35 +90,33 @@ Continuity rule:
 
 ---
 
-# Текущая точка — 2026-08-26
+# Текущая точка — 2026-09-08
 
 Закрыто:
 - 01 strategy;
 - 02 data architecture;
 - 03 Wordstat R1;
 - 04 Yandex Search/SERP + Alice R2;
-- 05 opportunity map R3.
+- 05 opportunity map R3;
+- 06 buyer evidence + current Ozon/WB SKU/listing evidence R4.
+
+Stage 06 final facts now include:
+- current Ozon census 76/76 terminally proven;
+- fresh WB seller-account census 108 unique cards, of which 88 are Blood & Sand automotive symbolic listings;
+- Tier-A/contrast product facts and Ozon seller performance linkage;
+- current Ozon direct buyer-text channels explicitly blocked rather than inferred absent;
+- OU06 product-side overlap resolved as a real separate Veles/Pechat hierarchy for later architecture work;
+- OU09 reopen condition satisfied for Stage 07/08 investigation, without promoting broad zodiac to primary SEO.
 
 Активно:
 
-> **06 — buyer evidence + complete SKU passport.**
+> **07 — competitor + defensible advantage evidence.**
 
-Detailed Stage 06 plan:
-- `marketing/roadmap/06_BUYER_EVIDENCE_AND_SKU_PASSPORT.md`.
-
-Existing reusable Stage 06 evidence already confirmed in repository:
-- dated Ozon stocks snapshot (2026-08-11);
-- multiple Ozon SKU ordered_units/revenue measurement windows;
-- marketplace measurement registry;
-- existing customer evidence for auto pendants / Печать Велеса-like products;
-- R3 opportunity map.
-
-Important gap:
-- canonical normalized Product/SKU passport master does not yet exist;
-- Wildberries seller-side accepted read channel is not currently available in `main` and must be handled explicitly rather than inferred.
+Detailed Stage 07 plan:
+- `marketing/roadmap/07_COMPETITOR_AND_DEFENSIBLE_ADVANTAGE.md`.
 
 ## Next exact step
 
-> **06.1 — inventory reusable evidence, define canonical passport schema and create provisional direct SKU↔opportunity mapping.**
+> **07.1 — build the canonical competitor target registry from preserved Search/Alice/R2 evidence and execute only the bounded fresh public-page rechecks needed to establish current competitor patterns.**
 
 Do not jump to final IA/Page Jobs or site development.
