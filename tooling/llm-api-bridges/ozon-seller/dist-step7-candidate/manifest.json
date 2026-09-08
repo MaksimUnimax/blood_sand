@@ -47,7 +47,8 @@
         "shared/proven_writing_block_capture.js",
         "shared/web_file_attachment.js",
         "content_script.js",
-        "attachment_delivery_content.js"
+        "attachment_delivery_port_content.js",
+        "attachment_delivery_wake_content.js"
       ],
       "run_at": "document_idle"
     }
