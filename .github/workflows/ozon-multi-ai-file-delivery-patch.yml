@@ -80,11 +80,20 @@ jobs:
           set -euo pipefail
           ROOT="$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller"
           SRC="$ROOT/dist-step7-candidate"
+          STAGE="$RUNNER_TEMP/package-stage"
           OUT="$RUNNER_TEMP/OZON_BRIDGE_v0.1.19_MULTI_AI_FILE_DELIVERY_${GITHUB_SHA:0:12}.zip"
+          OUT2="$RUNNER_TEMP/OZON_BRIDGE_v0.1.19_MULTI_AI_FILE_DELIVERY_${GITHUB_SHA:0:12}.rebuild.zip"
           EXTRACT="$RUNNER_TEMP/fresh-extract"
           INVENTORY="$RUNNER_TEMP/package-inventory.txt"
 
-          find "$SRC" -type f -printf '%P\n' | LC_ALL=C sort > "$INVENTORY"
+          rm -rf "$STAGE" "$EXTRACT"
+          mkdir -p "$STAGE" "$EXTRACT"
+          cp -a "$SRC/." "$STAGE/"
+          # ZIP stores DOS timestamps even with -X. Normalize all production-file mtimes
+          # so an independent rebuild of the same commit is byte-identical.
+          find "$STAGE" -type f -exec touch -t 198001010000 {} +
+
+          find "$STAGE" -type f -printf '%P\n' | LC_ALL=C sort > "$INVENTORY"
           test -s "$INVENTORY"
           grep -qx 'manifest.json' "$INVENTORY"
           grep -qx 'service_worker_entry.js' "$INVENTORY"
@@ -93,13 +102,16 @@ jobs:
           grep -qx 'shared/web_file_attachment.js' "$INVENTORY"
           grep -qx 'attachment_delivery_content.js' "$INVENTORY"
 
-          rm -f "$OUT"
-          (cd "$SRC" && zip -X -q "$OUT" -@ < "$INVENTORY")
+          rm -f "$OUT" "$OUT2"
+          (cd "$STAGE" && zip -X -q "$OUT" -@ < "$INVENTORY")
+          (cd "$STAGE" && zip -X -q "$OUT2" -@ < "$INVENTORY")
           test -s "$OUT"
-          rm -rf "$EXTRACT"
-          mkdir -p "$EXTRACT"
+          cmp "$OUT" "$OUT2"
+          echo 'DETERMINISTIC_ZIP_REBUILD=PASS'
+
           unzip -q "$OUT" -d "$EXTRACT"
           diff -ruN "$SRC" "$EXTRACT"
+          echo 'FRESH_EXTRACT_BYTE_CONTENT_EQUIVALENCE=PASS'
 
           while IFS= read -r file; do
             case "$file" in
