@@ -219,14 +219,19 @@
       throw error;
     }
     if (result?.ok !== true || !capturePromise) return result;
-    const captured = await capturePromise;
-    if (Number(result.byteLength || 0) !== captured.bytes.byteLength) {
-      const error = new Error("Captured report bytes do not match parsed provider response length.");
-      error.code = "REPORT_FILE_CAPTURE_LENGTH_MISMATCH";
-      throw error;
-    }
-    const refs = await reportRefsForTrustedUrl(trustedUrl);
-    for (const ref of refs) await storeProviderArtifactForRef(ref, captured);
+
+    // Artifact capture happens after the provider request has already completed.
+    // A local clone/session/IndexedDB failure must never rewrite provider truth or
+    // trigger a hidden re-download. Missing bytes are detected later by the
+    // attachment lifecycle as REPORT_FILE_ARTIFACT_NOT_CAPTURED.
+    try {
+      const captured = await capturePromise;
+      if (Number(result.byteLength || 0) !== captured.bytes.byteLength) return result;
+      const refs = await reportRefsForTrustedUrl(trustedUrl);
+      for (const ref of refs) {
+        try { await storeProviderArtifactForRef(ref, captured); } catch (_) {}
+      }
+    } catch (_) {}
     return result;
   }
 
@@ -386,7 +391,7 @@
     if (!profile || profile.status !== "implemented" || profile.attachment_strategy !== "file_input_v1") {
       throw Object.assign(new Error("Target AI attachment adapter is not implemented/live-profiled in this build."), { code: "TARGET_AI_ATTACHMENT_ADAPTER_UNAVAILABLE" });
     }
-    if (Number.isFinite(profile.max_files_per_turn) && profile.max_files_per_turn !== null && records.length > profile.max_files_per_turn) {
+    if (profile.max_files_per_turn !== null && profile.max_files_per_turn !== undefined && Number.isFinite(Number(profile.max_files_per_turn)) && records.length > Number(profile.max_files_per_turn)) {
       throw Object.assign(new Error("Target AI does not allow this many files in one delivery turn."), { code: "TARGET_AI_FILE_COUNT_UNSUPPORTED" });
     }
     for (const record of records) {
@@ -676,9 +681,11 @@
 
   async function pushOwner(kind, owner) {
     if (!owner?.tab_id || owner.delivery?.mode !== ATTACHMENT_MODE) return;
-    const signature = `${ownerId(owner, kind)}|${owner.delivery.delivery_id}|${owner.delivery.phase}`;
-    if (pushed.get(kind) === signature) return;
-    pushed.set(kind, signature);
+    const id = ownerId(owner, kind);
+    const pushKey = `${kind}:${id}`;
+    const signature = `${id}|${owner.delivery.delivery_id}|${owner.delivery.phase}`;
+    if (pushed.get(pushKey) === signature) return;
+    pushed.set(pushKey, signature);
     try { await chrome.tabs.sendMessage(Number(owner.tab_id), { type: "OZ_ATTACHMENT_DELIVERY_AVAILABLE", recovery: recoveryPayload(kind, owner) }); } catch (_) {}
   }
 
