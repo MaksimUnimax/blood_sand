@@ -79,11 +79,15 @@ Each adapter should expose the equivalent of:
 - detect conversation readiness;
 - locate composer/input surface;
 - insert text safely;
+- expose practical plain-text delivery limits or an explicit unknown/pending state;
+- expose document/file attachment support, accepted MIME/extensions and relevant file-size/count limits;
+- stage or attach bridge delivery artifacts using site-specific UI mechanics;
+- detect attachment-ready or attachment-failure state where files are supported;
 - detect/send current message when required by the chosen mode;
 - detect busy/generating state;
 - detect completion/ready-for-next-input state;
 - identify AI response/message surface for command discovery;
-- insert/paste bridge result using the common delivery lifecycle;
+- insert/paste/attach bridge result using the common delivery lifecycle;
 - expose diagnostic state;
 - provide adapter/version metadata.
 
@@ -97,6 +101,8 @@ Design the adapter so ordinary DOM changes can eventually be expressed through d
 - selectors;
 - selector fallbacks;
 - readiness/completion markers;
+- attachment selectors/strategies;
+- accepted file types and per-site delivery limits;
 - timeouts;
 - feature flags.
 
@@ -250,9 +256,13 @@ Preferred targets, in no fixed order:
 
 - Grok;
 - Claude;
-- Gemini.
+- Gemini;
+- Qwen;
+- Kimi.
 
-These are not all mandatory for the first migration gate if ChatGPT + Alice + DeepSeek already prove the abstraction cleanly. However, adding one or more before migration is valuable if it exposes missing adapter capabilities.
+These are not all mandatory for the first migration gate if ChatGPT + Alice + DeepSeek already prove the abstraction cleanly. However, all five are planned product targets and must be accounted for by the common adapter/delivery contract. Adding one or more before migration is valuable if it exposes missing adapter capabilities.
+
+Qwen and Kimi must be treated the same way as the other planned AI targets: no pairwise Ozon-specific fork, no inheritance of ChatGPT DOM selectors, file-format assumptions or composer-size thresholds without evidence.
 
 ## Rule
 
@@ -331,16 +341,20 @@ Prevent the bridge from failing on questions whose factual result is too large f
 
 ## Required behavior
 
-- define practical per-result limits;
+- define practical **per-target-AI** plain-text/result limits rather than one universal composer threshold;
+- define per-adapter document/file attachment capabilities and accepted formats;
+- keep the owner-frozen ChatGPT large-text threshold scoped to ChatGPT unless equivalent evidence exists for another AI;
+- keep unknown Alice / DeepSeek / Grok / Claude / Gemini / Qwen / Kimi limits explicit as pending rather than guessing from ChatGPT;
 - ensure server/provider pagination is not confused with AI-context pagination;
 - allow bounded aggregation/selection where the Ozon API already supports it;
 - support an explicit "need another batch" continuation path;
 - do not silently truncate factual data without declaring truncation/continuation metadata;
-- keep ordinary seller questions optimized for one batch/one final report.
+- keep ordinary seller questions optimized for one batch/one final report;
+- preserve original provider/report file bytes and only attach an original format when the target AI supports that format; otherwise fail explicitly or use a separately designed provenance-preserving derived artifact.
 
 ## Exit gate
 
-Large-result tests fail safely or continue explicitly rather than producing misleading partial answers.
+Large-result and file-delivery tests fail safely or continue explicitly rather than producing misleading partial answers, and no target AI silently inherits another adapter's unsupported assumptions.
 
 ---
 
@@ -360,6 +374,8 @@ Make the final extension diagnosable without reading raw console logs from every
 - conversation readiness state;
 - Ozon credential presence/validation state without secret values;
 - last batch state;
+- last delivery representation (`plain_text` / `original_file` / `generated_document` / failure);
+- target adapter file/size capability decision without leaking file contents;
 - last delivery state;
 - last normalized error code;
 - safe copy/export diagnostics action.
@@ -412,7 +428,12 @@ For every migration-required AI:
 - multi-command batch;
 - completion detection;
 - delivery watcher lifecycle;
+- plain-text/result-size policy through adapter capability rather than universal constants;
+- document/file attachment path when required by that adapter's accepted scope;
+- automatic Send and matching-turn confirmation for supported attachment delivery;
 - normal post-completion user chat unaffected.
+
+For additional planned targets Grok / Claude / Gemini / Qwen / Kimi, keep unimplemented/live-unproven adapter capabilities explicitly pending rather than manufacturing PASS from architectural compatibility alone.
 
 ### Browsers
 
@@ -457,6 +478,7 @@ Create the separate commercial repository only when all mandatory conditions bel
 10. Diagnostics are sufficient for basic self-service troubleshooting.
 11. A frozen extension package and acceptance evidence exist.
 12. The migration package clearly distinguishes production code from laboratory evidence/history.
+13. The common adapter/delivery architecture has explicit target compatibility for Grok, Claude, Gemini, Qwen and Kimi without pairwise Ozon-specific core forks, even if some of those adapters remain post-migration implementation work.
 
 Do not create the new repository merely because the concept is attractive. Create it when the extension core is proven and worth productizing.
 
@@ -473,6 +495,7 @@ Expected migration set:
 - common bridge protocol implementation;
 - AI adapter engine;
 - accepted AI adapters/profiles;
+- planned-adapter capability definitions for Grok, Claude, Gemini, Qwen and Kimi where they are not yet accepted;
 - handshake prompts/templates;
 - production tests;
 - security/privacy design docs;
