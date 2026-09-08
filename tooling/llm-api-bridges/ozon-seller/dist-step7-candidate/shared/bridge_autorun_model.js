@@ -174,6 +174,8 @@
       if (!entry || entry.status !== "complete") continue;
       const operation = String(entry?.command?.operation || entry?.operation || "");
       if (operation !== "report_file_get") continue;
+      const httpStatus = Number(entry.http_status || 0);
+      if (!(httpStatus >= 200 && httpStatus < 300)) continue;
       const ref = String(entry?.command?.params?.file_ref || "").trim();
       if (!ref || seen.has(ref)) continue;
       seen.add(ref);
