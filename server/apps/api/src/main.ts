@@ -14,11 +14,17 @@ import {
   createAdminOpsRepository,
   createP6AdminBillingRepository,
   createP6AdminSubscriptionCommandAdapter,
+  createP6AdminCommercialReadRepository,
+  createP6AdminPlanCommandAdapter,
+  createP6AdminPriceCommandAdapter,
+  createP6AdminEntitlementCommandAdapter,
+  createP6AdminCompatibilityCommandAdapter,
 } from "@product/db";
 import { AuthService, deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
 import { AdminAuthService, deriveAdminAuthKeys } from "@product/admin-auth";
 import { AdminOpsService } from "@product/admin-ops";
 import { AdminBillingService } from "@product/admin-billing";
+import { createAdminCommercialService } from "@product/admin-commercial";
 import {
   DeviceAuthorizationService,
   deriveDeviceAuthKeys,
@@ -110,6 +116,15 @@ const app = createApiApp({
   adminBillingService: new AdminBillingService(
     createP6AdminSubscriptionCommandAdapter(database),
     createP6AdminBillingRepository(database),
+  ),
+  adminCommercialService: createAdminCommercialService(
+    createP6AdminCommercialReadRepository(database),
+    {
+      plans: createP6AdminPlanCommandAdapter(database),
+      prices: createP6AdminPriceCommandAdapter(database),
+      overrides: createP6AdminEntitlementCommandAdapter(database),
+      compatibility: createP6AdminCompatibilityCommandAdapter(database),
+    },
   ),
 });
 let closing = false;

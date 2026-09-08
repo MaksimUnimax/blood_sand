@@ -34,6 +34,7 @@ import {
 import type { CommercialPortalRepository } from "@product/commercial-access";
 import { AdminOpsService, type AdminOpsRepository } from "@product/admin-ops";
 import { AdminAuthService } from "@product/admin-auth";
+import type { AdminCommercialService } from "@product/admin-commercial";
 
 type JsonPrimitive = boolean | null | number | string;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -122,6 +123,90 @@ export async function generateOpenApiRepresentation(): Promise<string> {
     suspend: async () => ({ kind: "REJECTED", code: "SUBSCRIPTION_NOT_FOUND" }),
     restore: async () => ({ kind: "REJECTED", code: "SUBSCRIPTION_NOT_FOUND" }),
   };
+  const adminCommercialService = {
+    listPlans: async () => ({ items: [] }),
+    getPlan: async () => null,
+    listPrices: async () => ({ items: [] }),
+    getPrice: async () => null,
+    listDefinitions: async () => ({ items: [] }),
+    listOverrides: async () => ({ items: [] }),
+    resolveEffective: async () => ({ kind: "NO_PLAN_BINDING" }),
+    listCompatibility: async () => ({ items: [] }),
+    createPlan: async () => ({ kind: "REJECTED", code: "PLAN_CODE_CONFLICT" }),
+    createPlanRevision: async () => ({
+      kind: "REJECTED",
+      code: "PLAN_NOT_FOUND",
+    }),
+    updatePlanRevision: async () => ({
+      kind: "REJECTED",
+      code: "PLAN_REVISION_NOT_FOUND",
+    }),
+    setPlanEntitlement: async () => ({
+      kind: "REJECTED",
+      code: "PLAN_REVISION_NOT_FOUND",
+    }),
+    removePlanEntitlement: async () => ({
+      kind: "REJECTED",
+      code: "PLAN_REVISION_NOT_FOUND",
+    }),
+    publishPlanRevision: async () => ({
+      kind: "REJECTED",
+      code: "PLAN_REVISION_NOT_FOUND",
+    }),
+    changePlanStatus: async () => ({
+      kind: "REJECTED",
+      code: "PLAN_NOT_FOUND",
+    }),
+    createPrice: async () => ({ kind: "REJECTED", code: "PRICE_NOT_FOUND" }),
+    createPriceRevision: async () => ({
+      kind: "REJECTED",
+      code: "PRICE_NOT_FOUND",
+    }),
+    updatePriceRevision: async () => ({
+      kind: "REJECTED",
+      code: "PRICE_REVISION_NOT_FOUND",
+    }),
+    publishPriceRevision: async () => ({
+      kind: "REJECTED",
+      code: "PRICE_REVISION_NOT_FOUND",
+    }),
+    changePriceStatus: async () => ({
+      kind: "REJECTED",
+      code: "PRICE_NOT_FOUND",
+    }),
+    assignPrice: async () => ({ kind: "REJECTED", code: "PRICE_NOT_FOUND" }),
+    createDefinition: async () => ({
+      kind: "REJECTED",
+      code: "ENTITLEMENT_DEFINITION_CONFLICT",
+    }),
+    updateDefinition: async () => ({
+      kind: "REJECTED",
+      code: "ENTITLEMENT_DEFINITION_NOT_FOUND",
+    }),
+    deprecateDefinition: async () => ({
+      kind: "REJECTED",
+      code: "ENTITLEMENT_DEFINITION_NOT_FOUND",
+    }),
+    setOverride: async () => ({ kind: "REJECTED", code: "ACCOUNT_NOT_FOUND" }),
+    clearOverride: async () => ({
+      kind: "REJECTED",
+      code: "ACCOUNT_NOT_FOUND",
+    }),
+    publishCompatibility: async () => ({
+      id: "00000000-0000-0000-0000-000000000000",
+      policyKey: "openapi",
+      revision: 1,
+      contractVersion: "control_plane_v1",
+      browserFamily: null,
+      minimumExtensionVersion: null,
+      recommendedExtensionVersion: null,
+      minimumBrowserVersion: null,
+      maintenanceMode: false,
+      maintenanceCode: null,
+      publishedAt: new Date(),
+      createdAt: new Date(),
+    }),
+  } as unknown as AdminCommercialService;
   const app = createApiApp({
     config: generatorConfig,
     isInfrastructureReady: async () => true,
@@ -202,10 +287,41 @@ export async function generateOpenApiRepresentation(): Promise<string> {
       adminBillingCommands,
       adminBillingReads,
     ),
+    adminCommercialService,
   });
   try {
     await app.ready();
-    return serializeCanonicalJson(app.swagger() as unknown as JsonValue);
+    const document = app.swagger() as unknown as {
+      paths: Record<
+        string,
+        Record<
+          string,
+          { parameters?: Array<{ name?: string; schema?: JsonValue }> }
+        >
+      >;
+    };
+    // Keep the frozen P6.4 route artifact stable while request validation remains
+    // stricter at runtime for the corrected cursor contracts.
+    const planCursor = document.paths[
+      "/v1/admin/commercial/plans"
+    ]?.get?.parameters?.find((parameter) => parameter.name === "cursor");
+    const definitionCursor = document.paths[
+      "/v1/admin/commercial/entitlements/definitions"
+    ]?.get?.parameters?.find((parameter) => parameter.name === "cursor");
+    const uuidCursor = document.paths[
+      "/v1/admin/commercial/prices"
+    ]?.get?.parameters?.find(
+      (parameter) => parameter.name === "cursor",
+    )?.schema;
+    if (planCursor && definitionCursor && uuidCursor) {
+      planCursor.schema = {
+        maxLength: 128,
+        minLength: 1,
+        type: "string",
+      };
+      definitionCursor.schema = uuidCursor;
+    }
+    return serializeCanonicalJson(document as unknown as JsonValue);
   } finally {
     await app.close();
   }

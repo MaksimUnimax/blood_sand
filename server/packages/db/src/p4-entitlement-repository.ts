@@ -354,6 +354,7 @@ async function resolutionRows(
 
 export function createP4EntitlementRepository(
   runtime: DatabaseRuntime,
+  options: { beforeMutation?: (tx: DatabaseQuery) => Promise<void> } = {},
 ): AccountEntitlementOverrideMutationPort & CommercialEntitlementResolver {
   const mutate = async (
     rawCommand: unknown,
@@ -368,6 +369,7 @@ export function createP4EntitlementRepository(
         : ClearAccountEntitlementOverrideCommandSchema.parse(rawCommand);
     const context = PlanMutationContextSchema.parse(rawContext);
     return runtime.transaction(async (q) => {
+      await options.beforeMutation?.(q);
       const accountId = command.accountId;
       await advisoryLock(
         q,

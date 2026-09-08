@@ -78,6 +78,23 @@ export const P3MutationContextSchema = z
   })
   .strict();
 export type P3MutationContext = z.infer<typeof P3MutationContextSchema>;
+export const CompatibilityMutationContextSchema = z.discriminatedUnion(
+  "actorType",
+  [
+    P3MutationContextSchema,
+    z
+      .object({
+        actorType: z.literal("ADMIN"),
+        actorId: z.uuid(),
+        correlationId: z.string().min(1).max(128),
+        reason: z.string().min(1).max(512),
+      })
+      .strict(),
+  ],
+);
+export type CompatibilityMutationContext = z.infer<
+  typeof CompatibilityMutationContextSchema
+>;
 export const PublishExtensionReleaseCommandSchema = z
   .object({
     version: SemVerV1Schema,
@@ -150,7 +167,7 @@ export interface CompatibilityPublicationPort {
   ): Promise<ExtensionRelease>;
   publishCompatibilityPolicyRevision(
     command: PublishCompatibilityPolicyRevisionCommand,
-    context: P3MutationContext,
+    context: CompatibilityMutationContext,
   ): Promise<CompatibilityPolicyRevision>;
 }
 

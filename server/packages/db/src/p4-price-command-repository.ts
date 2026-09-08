@@ -336,7 +336,10 @@ async function planRevisionBelongsToPlan(
 
 export function createP4PriceCommandRepository(
   runtime: DatabaseRuntime,
-  options: { clock?: () => Date } = {},
+  options: {
+    clock?: () => Date;
+    beforeMutation?: (tx: DatabaseQuery) => Promise<void>;
+  } = {},
 ): PriceCommandRepository {
   const clock = options.clock ?? (() => new Date());
 
@@ -345,6 +348,7 @@ export function createP4PriceCommandRepository(
       const command = CreatePriceCommandSchema.parse(rawCommand);
       const context = PriceMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         await lock(q, `p4-plan:${command.planId}`);
         const plan = await q.query<{
           id: string;
@@ -382,6 +386,7 @@ export function createP4PriceCommandRepository(
       const command = CreateDraftPriceRevisionCommandSchema.parse(rawCommand);
       const context = PriceMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         const planId = await lockPriceAggregate(q, command.priceId);
         if (!planId) return rejection<PriceRevisionDraft>("PRICE_NOT_FOUND");
         const price = await loadPrice(q, command.priceId, true);
@@ -458,6 +463,7 @@ export function createP4PriceCommandRepository(
       const command = UpdateDraftPriceRevisionCommandSchema.parse(rawCommand);
       const context = PriceMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         const initial = await loadRevisionForPlan(
           q,
           command.priceRevisionId,
@@ -573,6 +579,7 @@ export function createP4PriceCommandRepository(
       const command = PublishPriceRevisionCommandSchema.parse(rawCommand);
       const context = PriceMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         const initial = await loadRevisionForPlan(
           q,
           command.priceRevisionId,
@@ -647,6 +654,7 @@ export function createP4PriceCommandRepository(
       const command = ChangePriceStatusCommandSchema.parse(rawCommand);
       const context = PriceMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         const planId = await lockPriceAggregate(q, command.priceId);
         if (!planId) return rejection<PriceSummary>("PRICE_NOT_FOUND");
         const price = await loadPrice(q, command.priceId, true);
@@ -696,6 +704,7 @@ export function createP4PriceCommandRepository(
         SchedulePriceSaleAssignmentCommandSchema.parse(rawCommand);
       const context = PriceMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         const planId = await lockPriceAggregate(q, command.priceId);
         if (!planId) return rejection<PriceSaleAssignment>("PRICE_NOT_FOUND");
         const price = await loadPrice(q, command.priceId, true);

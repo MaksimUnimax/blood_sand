@@ -3,11 +3,13 @@ import {
   PublishCompatibilityPolicyRevisionCommandSchema,
   PublishExtensionReleaseCommandSchema,
   P3MutationContextSchema,
+  CompatibilityMutationContextSchema,
   type CompatibilityPublicationPort,
   type CompatibilityPolicyRevision,
   CompatibilityPolicyRevisionSchema,
   type ExtensionRelease,
   type P3MutationContext,
+  type CompatibilityMutationContext,
 } from "@product/compatibility";
 import {
   compareSemVerV1,
@@ -36,7 +38,7 @@ import {
 } from "@product/remote-config";
 import type { DatabaseQuery, DatabaseRuntime } from "./index.js";
 
-type Context = P3MutationContext;
+type Context = P3MutationContext | CompatibilityMutationContext;
 async function audit(
   q: { query: DatabaseQuery["query"] },
   context: Context,
@@ -297,7 +299,10 @@ function rowPolicy(row: Record<string, unknown>): CompatibilityPolicyRevision {
 /** The sole P3.3 mutating adapter. Every mutation and audit write share a PG transaction. */
 export function createP3PolicyPublicationRepository(
   runtime: DatabaseRuntime,
-  options: { clock?: () => Date } = {},
+  options: {
+    clock?: () => Date;
+    beforeCompatibilityPublication?: (tx: DatabaseQuery) => Promise<void>;
+  } = {},
 ): CompatibilityPublicationPort & P3PublicationPort {
   const clock = options.clock ?? (() => new Date());
   return {
@@ -472,7 +477,9 @@ export function createP3PolicyPublicationRepository(
     async publishCompatibilityPolicyRevision(command, context) {
       const value =
         PublishCompatibilityPolicyRevisionCommandSchema.parse(command);
+      CompatibilityMutationContextSchema.parse(context);
       return runtime.transaction(async (q) => {
+        await options.beforeCompatibilityPublication?.(q);
         await q.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
           `p3-policy:${value.policyKey}`,
         ]);

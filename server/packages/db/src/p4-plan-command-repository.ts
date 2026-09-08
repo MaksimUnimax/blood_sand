@@ -283,7 +283,10 @@ async function loadDefinition(
 
 export function createP4PlanCommandRepository(
   runtime: DatabaseRuntime,
-  options: { clock?: () => Date } = {},
+  options: {
+    clock?: () => Date;
+    beforeMutation?: (tx: DatabaseQuery) => Promise<void>;
+  } = {},
 ): PlanEntitlementCommandRepository {
   const clock = options.clock ?? (() => new Date());
 
@@ -292,6 +295,7 @@ export function createP4PlanCommandRepository(
       const command = CreatePlanCommandSchema.parse(rawCommand);
       const context = PlanMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         await lock(q, `p4-plan-code:${command.code}`);
         const existing = await q.query<PlanRow>(
           'SELECT id,code,status,created_at AS "createdAt",updated_at AS "updatedAt" FROM plans WHERE code=$1',
@@ -316,6 +320,7 @@ export function createP4PlanCommandRepository(
       const command = CreateDraftPlanRevisionCommandSchema.parse(rawCommand);
       const context = PlanMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         await lock(q, `p4-plan:${command.planId}`);
         const planResult = await q.query<PlanRow>(
           'SELECT id,code,status,created_at AS "createdAt",updated_at AS "updatedAt" FROM plans WHERE id=$1 FOR UPDATE',
@@ -393,6 +398,7 @@ export function createP4PlanCommandRepository(
       const command = UpdateDraftPlanRevisionCommandSchema.parse(rawCommand);
       const context = PlanMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         const initial = await loadRevision(q, command.planRevisionId, false);
         if (!initial)
           return rejection<PlanRevisionDraft>("PLAN_REVISION_NOT_FOUND");
@@ -447,6 +453,7 @@ export function createP4PlanCommandRepository(
       const command = SetDraftPlanEntitlementCommandSchema.parse(rawCommand);
       const context = PlanMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         const initial = await loadRevision(q, command.planRevisionId, false);
         if (!initial)
           return rejection<PlanRevisionDraft>("PLAN_REVISION_NOT_FOUND");
@@ -515,6 +522,7 @@ export function createP4PlanCommandRepository(
       const command = RemoveDraftPlanEntitlementCommandSchema.parse(rawCommand);
       const context = PlanMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         const initial = await loadRevision(q, command.planRevisionId, false);
         if (!initial)
           return rejection<PlanRevisionDraft>("PLAN_REVISION_NOT_FOUND");
@@ -563,6 +571,7 @@ export function createP4PlanCommandRepository(
       const command = PublishPlanRevisionCommandSchema.parse(rawCommand);
       const context = PlanMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         const initial = await loadRevision(q, command.planRevisionId, false);
         if (!initial)
           return rejection<PublishedPlanRevision>("PLAN_REVISION_NOT_FOUND");
@@ -633,6 +642,7 @@ export function createP4PlanCommandRepository(
       const command = ChangePlanStatusCommandSchema.parse(rawCommand);
       const context = PlanMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         await lock(q, `p4-plan:${command.planId}`);
         const result = await q.query<PlanRow>(
           'SELECT id,code,status,created_at AS "createdAt",updated_at AS "updatedAt" FROM plans WHERE id=$1 FOR UPDATE',
@@ -674,6 +684,7 @@ export function createP4PlanCommandRepository(
         CreateEntitlementDefinitionCommandSchema.parse(rawCommand);
       const context = PlanMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         await lock(q, `p4-entitlement-definition:${command.entitlementKey}`);
         const existing = await loadDefinition(
           q,
@@ -715,6 +726,7 @@ export function createP4PlanCommandRepository(
         UpdateEntitlementDefinitionDescriptionCommandSchema.parse(rawCommand);
       const context = PlanMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         const definition = await loadDefinition(
           q,
           command.entitlementKey,
@@ -759,6 +771,7 @@ export function createP4PlanCommandRepository(
         DeprecateEntitlementDefinitionCommandSchema.parse(rawCommand);
       const context = PlanMutationContextSchema.parse(rawContext);
       return runtime.transaction(async (q) => {
+        await options.beforeMutation?.(q);
         const definition = await loadDefinition(
           q,
           command.entitlementKey,

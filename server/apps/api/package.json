@@ -16,6 +16,8 @@
     "@fastify/swagger": "9.8.1",
     "@product/admin-auth": "workspace:*",
     "@product/admin-billing": "workspace:*",
+    "@product/admin-commercial": "workspace:*",
+    "@product/plans": "workspace:*",
     "@product/admin-ops": "workspace:*",
     "@product/auth": "workspace:*",
     "@product/bootstrap": "workspace:*",

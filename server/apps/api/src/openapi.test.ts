@@ -14,7 +14,7 @@ describe("OpenAPI foundation", () => {
     ).toBe(false);
   });
 
-  it("generates the implemented P3.4 API surface", async () => {
+  it("generates the implemented P6.4 API surface", async () => {
     const document = JSON.parse(await generateOpenApiRepresentation()) as {
       openapi: string;
       paths: Record<string, unknown>;
@@ -30,12 +30,36 @@ describe("OpenAPI foundation", () => {
       "/v1/admin/accounts/{account_id}/billing/reconciliation-jobs",
       "/v1/admin/accounts/{account_id}/devices",
       "/v1/admin/accounts/{account_id}/devices/{device_id}/revoke",
+      "/v1/admin/accounts/{account_id}/entitlement-overrides",
+      "/v1/admin/accounts/{account_id}/entitlement-overrides/{entitlement_key}/clear",
+      "/v1/admin/accounts/{account_id}/entitlement-overrides/{entitlement_key}/set",
+      "/v1/admin/accounts/{account_id}/entitlements/{entitlement_key}",
       "/v1/admin/accounts/{account_id}/subscription",
       "/v1/admin/accounts/{account_id}/subscription/grant",
       "/v1/admin/accounts/{account_id}/subscription/{subscription_id}/extend",
       "/v1/admin/accounts/{account_id}/subscription/{subscription_id}/restore",
       "/v1/admin/accounts/{account_id}/subscription/{subscription_id}/suspend",
       "/v1/admin/audit-events",
+      "/v1/admin/commercial/entitlements/definitions",
+      "/v1/admin/commercial/entitlements/definitions/{entitlement_key}/deprecate",
+      "/v1/admin/commercial/entitlements/definitions/{entitlement_key}/description",
+      "/v1/admin/commercial/plans",
+      "/v1/admin/commercial/plans/{plan_id}",
+      "/v1/admin/commercial/plans/{plan_id}/revisions",
+      "/v1/admin/commercial/plans/{plan_id}/revisions/{plan_revision_id}/entitlements/{entitlement_key}/remove",
+      "/v1/admin/commercial/plans/{plan_id}/revisions/{plan_revision_id}/entitlements/{entitlement_key}/set",
+      "/v1/admin/commercial/plans/{plan_id}/revisions/{plan_revision_id}/publish",
+      "/v1/admin/commercial/plans/{plan_id}/revisions/{plan_revision_id}/update",
+      "/v1/admin/commercial/plans/{plan_id}/status",
+      "/v1/admin/commercial/prices",
+      "/v1/admin/commercial/prices/{price_id}",
+      "/v1/admin/commercial/prices/{price_id}/revisions",
+      "/v1/admin/commercial/prices/{price_id}/revisions/{price_revision_id}/publish",
+      "/v1/admin/commercial/prices/{price_id}/revisions/{price_revision_id}/update",
+      "/v1/admin/commercial/prices/{price_id}/sale-assignments",
+      "/v1/admin/commercial/prices/{price_id}/status",
+      "/v1/admin/compatibility/policies",
+      "/v1/admin/compatibility/policies/{policy_key}/publish",
       "/v1/admin/me",
       "/v1/admin/principals",
       "/v1/admin/principals/{principal_id}/restore",

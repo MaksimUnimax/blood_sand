@@ -57,6 +57,8 @@ import { registerAdminAuthRoutes } from "./admin-auth-routes.js";
 import type { AdminOpsService } from "@product/admin-ops";
 import { registerAdminOpsRoutes } from "./admin-ops-routes.js";
 import type { AdminBillingService } from "@product/admin-billing";
+import type { AdminCommercialService } from "@product/admin-commercial";
+import { registerAdminCommercialRoutes } from "./admin-commercial-routes.js";
 import { registerAdminBillingRoutes } from "./admin-billing-routes.js";
 import { createAdminRouteGuard } from "./admin-route-guard.js";
 
@@ -84,6 +86,7 @@ export interface ApiDependencies {
   readonly adminAuthService?: AdminAuthServiceType;
   readonly adminOpsService?: AdminOpsService;
   readonly adminBillingService?: AdminBillingService;
+  readonly adminCommercialService?: AdminCommercialService;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -303,6 +306,14 @@ export function createApiApp(
           dependencies.adminAuthService ?? unavailableAdmin,
         ),
         dependencies.adminBillingService,
+      );
+    if (dependencies.adminCommercialService)
+      registerAdminCommercialRoutes(
+        app,
+        createAdminRouteGuard(
+          dependencies.adminAuthService ?? unavailableAdmin,
+        ),
+        dependencies.adminCommercialService,
       );
   });
   return app;

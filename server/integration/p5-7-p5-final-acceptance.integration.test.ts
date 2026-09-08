@@ -1478,7 +1478,7 @@ describe.sequential(
           ).length,
         0,
       );
-      expect(count).toBe(40);
+      expect(count).toBe(67);
       expect(
         createHash("sha256")
           .update(
@@ -1488,7 +1488,7 @@ describe.sequential(
           )
           .digest("hex"),
       ).toBe(
-        "9b211667b35c117e49305cb22504405260bc60ec6a998a086f62265d9857936f",
+        "eec29f87be0b1309be5021fdd3c0e38ec90bea2add9978f2c4b439c7f79e88e4",
       );
     });
     it("STATIC-72 OpenAPI has no checkout, webhook, or fake completion route", async () => {

@@ -281,6 +281,37 @@ Subscription mutation, plans, prices, entitlements, AI/health/diagnostics, and
 account/user status mutations remain outside P6.3 and are assigned to later
 roadmap stages.
 
+### P6.4 commercial and compatibility operations
+
+P6.4 adds exactly 27 method/route tuples (OpenAPI total: 67). All use the
+separate admin session boundary, exact permissions, bounded cursor pagination
+(default 50, maximum 100), strict V1 objects, `Cache-Control: no-store`, and
+safe stable error envelopes. GET requests do not require CSRF; every POST does.
+
+The eight reads are plans and plan inspection, prices and price inspection,
+entitlement definitions, account override history, effective account
+entitlement, and compatibility policies. Plan and price inspection reuses
+`CommercialCatalogInspectionReader`; revision content fingerprints reuse the
+accepted P4 fingerprint functions. Effective entitlement reuses the current
+P5 account plan binding and `CommercialEntitlementResolver`. Assignment and
+override operator reasons, signing-key material, rollout seeds, and config
+release internals are not returned.
+
+The nineteen mutations compose the accepted P4 commands for plan/price/
+definition/override operations and the accepted P3
+`PublishCompatibilityPolicyRevisionCommand`. P4 remains authority for path
+coherence, optimistic fingerprints/revisions, typed values, deprecation,
+effective windows, idempotency, and audit. Compatibility publication is
+revision-only and returns `REVISION_PUBLISHED_NOT_AUTO_ACTIVATED`; it never
+publishes a config release or changes signing keys, rollouts, or feature rules.
+
+Every mutation performs transaction-time current-admin authorization by locking
+the actor principal, reloading current grants, and recomputing the exact
+permission before the existing P4/P3 domain lock. The P4 hooks are optional so
+direct P4 callers retain accepted behavior. AI/profile, health, diagnostics,
+signing-key/config-release/rollout/feature administration, admin UI, and real
+payment-provider go-live remain outside P6.4.
+
 ### Plans
 
 - create draft plan;
