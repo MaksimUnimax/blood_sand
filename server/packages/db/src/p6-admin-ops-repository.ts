@@ -1,4 +1,4 @@
-import { permissionsForRoles, type AdminRole } from "@product/admin-auth";
+import { type AdminPermission, type AdminRole } from "@product/admin-auth";
 import type {
   AdminOpsRepository,
   AdminPrincipal,
@@ -9,6 +9,10 @@ import type {
 import type { SafeDevice } from "@product/admin-ops";
 import type { DatabaseQuery, DatabaseRuntime } from "./index.js";
 import { revokeDeviceInTransaction } from "./device-revocation.js";
+import {
+  AdminMutationAuthorizationError,
+  authorizeAdminMutationInTransaction,
+} from "./admin-mutation-authorization.js";
 
 const manageLock = "product-control-plane/admin-auth/manage/v1";
 
@@ -99,15 +103,15 @@ async function lockActorAndTarget(
 async function actorCan(
   tx: DatabaseQuery,
   actorId: string,
-  permission: string,
+  permission: AdminPermission,
 ): Promise<boolean> {
-  const principal = await tx.query<{ status: "ACTIVE" | "SUSPENDED" }>(
-    "SELECT status FROM admin_principals WHERE id=$1 FOR UPDATE",
-    [actorId],
-  );
-  if (principal.rows[0]?.status !== "ACTIVE") return false;
-  const roles = await rolesFor(tx, actorId);
-  return permissionsForRoles(roles).includes(permission as never);
+  try {
+    await authorizeAdminMutationInTransaction(tx, actorId, permission);
+    return true;
+  } catch (error) {
+    if (error instanceof AdminMutationAuthorizationError) return false;
+    throw error;
+  }
 }
 async function lockManage(tx: DatabaseQuery): Promise<void> {
   await tx.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [

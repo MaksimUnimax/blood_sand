@@ -7,6 +7,8 @@ export { createDeviceAuthorizationRepository } from "./device-authorization-repo
 export { createExtensionAuthRepository } from "./extension-auth-repository.js";
 export { createDeviceManagementRepository } from "./device-management-repository.js";
 export { createAdminOpsRepository } from "./p6-admin-ops-repository.js";
+export { createP6AdminBillingRepository } from "./p6-admin-billing-repository.js";
+export { createP6AdminSubscriptionCommandAdapter } from "./p6-admin-subscription-command-adapter.js";
 export { createP5CommercialPortalRepository } from "./p5-commercial-portal-repository.js";
 export { createCompatibilityCatalogRepository } from "./compatibility-catalog-repository.js";
 export { createRemoteConfigCatalogRepository } from "./remote-config-catalog-repository.js";

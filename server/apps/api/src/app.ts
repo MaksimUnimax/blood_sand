@@ -56,6 +56,8 @@ import {
 import { registerAdminAuthRoutes } from "./admin-auth-routes.js";
 import type { AdminOpsService } from "@product/admin-ops";
 import { registerAdminOpsRoutes } from "./admin-ops-routes.js";
+import type { AdminBillingService } from "@product/admin-billing";
+import { registerAdminBillingRoutes } from "./admin-billing-routes.js";
 import { createAdminRouteGuard } from "./admin-route-guard.js";
 
 export class ControlledError extends Error {
@@ -81,6 +83,7 @@ export interface ApiDependencies {
   readonly commercialPortalService?: CommercialPortalService;
   readonly adminAuthService?: AdminAuthServiceType;
   readonly adminOpsService?: AdminOpsService;
+  readonly adminBillingService?: AdminBillingService;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -292,6 +295,14 @@ export function createApiApp(
           dependencies.adminAuthService ?? unavailableAdmin,
         ),
         dependencies.adminOpsService,
+      );
+    if (dependencies.adminBillingService)
+      registerAdminBillingRoutes(
+        app,
+        createAdminRouteGuard(
+          dependencies.adminAuthService ?? unavailableAdmin,
+        ),
+        dependencies.adminBillingService,
       );
   });
   return app;

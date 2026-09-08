@@ -2,6 +2,9 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AppConfig } from "@product/shared";
+import { AdminBillingService } from "@product/admin-billing";
+import type { AdminBillingReadRepository } from "@product/admin-billing";
+import type { AdminSubscriptionCommandPort } from "@product/admin-billing";
 import { createApiApp } from "./app.js";
 import {
   AuthService,
@@ -108,6 +111,17 @@ export async function generateOpenApiRepresentation(): Promise<string> {
     revokeRole: async () => ({ kind: "NOT_FOUND" }),
     setPrincipalStatus: async () => ({ kind: "NOT_FOUND" }),
   };
+  const adminBillingReads: AdminBillingReadRepository = {
+    listPayments: async () => ({ items: [] }),
+    listEvents: async () => ({ items: [] }),
+    listReconciliationJobs: async () => ({ items: [] }),
+  };
+  const adminBillingCommands: AdminSubscriptionCommandPort = {
+    grant: async () => ({ kind: "REJECTED", code: "ACCOUNT_NOT_FOUND" }),
+    extend: async () => ({ kind: "REJECTED", code: "SUBSCRIPTION_NOT_FOUND" }),
+    suspend: async () => ({ kind: "REJECTED", code: "SUBSCRIPTION_NOT_FOUND" }),
+    restore: async () => ({ kind: "REJECTED", code: "SUBSCRIPTION_NOT_FOUND" }),
+  };
   const app = createApiApp({
     config: generatorConfig,
     isInfrastructureReady: async () => true,
@@ -183,6 +197,10 @@ export async function generateOpenApiRepresentation(): Promise<string> {
     adminOpsService: new AdminOpsService(
       adminOpsRepository,
       new CommercialPortalService(portalRepository, commercialAccess),
+    ),
+    adminBillingService: new AdminBillingService(
+      adminBillingCommands,
+      adminBillingReads,
     ),
   });
   try {

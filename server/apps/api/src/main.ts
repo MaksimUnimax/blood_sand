@@ -12,10 +12,13 @@ import {
   createP5CommercialPortalRepository,
   createAdminAuthRepository,
   createAdminOpsRepository,
+  createP6AdminBillingRepository,
+  createP6AdminSubscriptionCommandAdapter,
 } from "@product/db";
 import { AuthService, deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
 import { AdminAuthService, deriveAdminAuthKeys } from "@product/admin-auth";
 import { AdminOpsService } from "@product/admin-ops";
+import { AdminBillingService } from "@product/admin-billing";
 import {
   DeviceAuthorizationService,
   deriveDeviceAuthKeys,
@@ -103,6 +106,10 @@ const app = createApiApp({
   adminOpsService: new AdminOpsService(
     createAdminOpsRepository(database),
     commercialPortal,
+  ),
+  adminBillingService: new AdminBillingService(
+    createP6AdminSubscriptionCommandAdapter(database),
+    createP6AdminBillingRepository(database),
   ),
 });
 let closing = false;

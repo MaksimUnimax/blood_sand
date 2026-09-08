@@ -45,7 +45,18 @@ export const ApiErrorCodeV1Schema = z.enum([
   "ADMIN_CONFLICT",
   "ADMIN_STATE_STALE",
   "ADMIN_LAST_OWNER_REQUIRED",
-  "INTERNAL_ERROR",
+  "SUBSCRIPTION_ALREADY_EXISTS",
+  "PLAN_REVISION_NOT_PUBLISHED",
+  "SUBSCRIPTION_PERIOD_INVALID",
+  "SUBSCRIPTION_PERIOD_NOT_EXTENDED",
+  "SUBSCRIPTION_GRACE_WINDOW_CONFLICT",
+  "SUBSCRIPTION_STATE_TRANSITION_INVALID",
+  "SUBSCRIPTION_ALREADY_SUSPENDED",
+  "SUBSCRIPTION_NOT_SUSPENDED",
+  "SUBSCRIPTION_RESTORE_ORIGIN_NOT_FOUND",
+  "SUBSCRIPTION_PERIOD_ENDED",
+  "SUBSCRIPTION_GRACE_ENDED",
+  "SUBSCRIPTION_CORRUPTED",
 ]);
 export type ApiErrorCodeV1 = z.infer<typeof ApiErrorCodeV1Schema>;
 
@@ -801,3 +812,128 @@ export const AdminPrincipalMutationResponseV1Schema =
 export const AdminPrincipalStatusResponseV1Schema = z
   .object({ changed: z.boolean(), principal: AdminPrincipalItemV1Schema })
   .strict();
+
+/** P6.3 admin subscription operations and account-scoped billing reads. */
+export const AdminBillingQueryV1Schema = z
+  .object({ limit: AdminLimit, cursor: AdminCursor })
+  .strict();
+export const AdminSubscriptionResourceParamsV1Schema = z
+  .object({ account_id: AdminUuid, subscription_id: AdminUuid })
+  .strict();
+export const AdminSubscriptionGrantBodyV1Schema = z
+  .object({
+    planRevisionId: AdminUuid,
+    currentPeriodEnd: z.string().datetime({ offset: true }),
+    reason: AdminReasonV1Schema,
+  })
+  .strict();
+export const AdminSubscriptionMutationBodyV1Schema = z
+  .object({
+    expectedStateRevision: z.number().int().positive().safe(),
+    reason: AdminReasonV1Schema,
+  })
+  .strict();
+export const AdminSubscriptionExtendBodyV1Schema = z
+  .object({
+    expectedStateRevision: z.number().int().positive().safe(),
+    newCurrentPeriodEnd: z.string().datetime({ offset: true }),
+    reason: AdminReasonV1Schema,
+  })
+  .strict();
+const AdminSubscriptionStateV1Schema = z.enum([
+  "TRIAL",
+  "ACTIVE",
+  "GRACE",
+  "PAST_DUE",
+  "CANCELED",
+  "EXPIRED",
+  "SUSPENDED",
+]);
+export const AdminSubscriptionMutationResponseV1Schema = z
+  .object({
+    status: z.literal("applied"),
+    changed: z.boolean(),
+    subscription: z
+      .object({
+        id: AdminUuid,
+        accountId: AdminUuid,
+        state: AdminSubscriptionStateV1Schema,
+        stateRevision: z.number().int().positive().safe(),
+        planRevisionId: AdminUuid,
+        boundPriceRevisionId: AdminUuid.nullable(),
+        currentPeriodStart: z.string().datetime({ offset: true }),
+        currentPeriodEnd: z.string().datetime({ offset: true }),
+        graceUntil: z.string().datetime({ offset: true }).nullable(),
+        cancelAtPeriodEnd: z.boolean(),
+        suspendedAt: z.string().datetime({ offset: true }).nullable(),
+        updatedAt: z.string().datetime({ offset: true }),
+      })
+      .strict(),
+  })
+  .strict();
+export const AdminPaymentItemV1Schema = z
+  .object({
+    id: AdminUuid,
+    subscriptionId: AdminUuid.nullable(),
+    state: z.enum([
+      "PENDING",
+      "SUCCEEDED",
+      "FAILED",
+      "CANCELED",
+      "REFUNDED",
+      "CHARGEBACK",
+    ]),
+    priceRevisionId: AdminUuid,
+    amountMinor: z.number().int().nonnegative().safe(),
+    currency: z.string().regex(/^[A-Z]{3}$/),
+    plan: z
+      .object({
+        planRevisionId: AdminUuid,
+        planCode: z.string().min(1),
+        planRevision: z.number().int().positive().safe(),
+        displayName: z.string(),
+      })
+      .strict()
+      .nullable(),
+    billingInterval: PublicCommercialBillingIntervalV1Schema.nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+    confirmedAt: z.string().datetime({ offset: true }).nullable(),
+  })
+  .strict();
+export const AdminPaymentsResponseV1Schema = AdminPage(
+  AdminPaymentItemV1Schema,
+);
+export const AdminBillingEventItemV1Schema = z
+  .object({
+    id: AdminUuid,
+    source: z.enum(["WEBHOOK", "RECONCILIATION"]),
+    eventType: z.string().min(1),
+    processingState: z.enum(["VERIFIED", "APPLIED", "IGNORED", "FAILED"]),
+    paymentId: AdminUuid.nullable(),
+    subscriptionId: AdminUuid.nullable(),
+    failureCode: z.string().min(1).nullable(),
+    receivedAt: z.string().datetime({ offset: true }),
+    verifiedAt: z.string().datetime({ offset: true }),
+    processedAt: z.string().datetime({ offset: true }).nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+export const AdminBillingEventsResponseV1Schema = AdminPage(
+  AdminBillingEventItemV1Schema,
+);
+export const AdminReconciliationJobItemV1Schema = z
+  .object({
+    paymentId: AdminUuid,
+    state: z.enum(["READY", "LEASED", "SETTLED", "BLOCKED"]),
+    nextAttemptAt: z.string().datetime({ offset: true }).nullable(),
+    leaseUntil: z.string().datetime({ offset: true }).nullable(),
+    attemptCount: z.number().int().nonnegative().safe(),
+    lastResultCode: z.string().min(1).nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+export const AdminReconciliationJobsResponseV1Schema = AdminPage(
+  AdminReconciliationJobItemV1Schema,
+);

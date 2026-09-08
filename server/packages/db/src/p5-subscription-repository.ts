@@ -180,13 +180,31 @@ export type P5SubscriptionRepository = SubscriptionCommandRepository &
   CurrentSubscriptionReader &
   SubscriptionAccessObservationReader;
 
-export type P5SubscriptionRepositoryOptions = { now?: () => Date };
+export type P5SubscriptionMutationOperation =
+  | "GRANT"
+  | "EXTEND"
+  | "SUSPEND"
+  | "RESTORE";
+
+export type P5SubscriptionMutationHook = (input: {
+  tx: DatabaseQuery;
+  operation: P5SubscriptionMutationOperation;
+  accountId: string;
+  subscriptionId?: string;
+  context: SubscriptionMutationContext;
+}) => Promise<void>;
+
+export type P5SubscriptionRepositoryOptions = {
+  now?: () => Date;
+  beforeMutation?: P5SubscriptionMutationHook;
+};
 
 export function createP5SubscriptionRepository(
   runtime: DatabaseRuntime,
   options: P5SubscriptionRepositoryOptions = {},
 ): P5SubscriptionRepository {
   const now = options.now ?? (() => new Date());
+  const beforeMutation = options.beforeMutation;
 
   async function grantSubscription(
     rawCommand: unknown,
@@ -198,6 +216,12 @@ export function createP5SubscriptionRepository(
     if (!(command.currentPeriodEnd > capturedNow))
       return rejection("SUBSCRIPTION_PERIOD_INVALID");
     return runtime.transaction(async (q) => {
+      await beforeMutation?.({
+        tx: q,
+        operation: "GRANT",
+        accountId: command.accountId,
+        context,
+      });
       if (!(await accountLock(q, command.accountId)))
         return rejection("ACCOUNT_NOT_FOUND");
       const existing = await q.query<{ id: string }>(
@@ -261,6 +285,13 @@ export function createP5SubscriptionRepository(
     if (!accountId) return rejection("SUBSCRIPTION_NOT_FOUND");
     const capturedNow = now();
     return runtime.transaction(async (q) => {
+      await beforeMutation?.({
+        tx: q,
+        operation,
+        accountId,
+        subscriptionId,
+        context,
+      });
       await advisoryLock(q, `p5-subscription-account:${accountId}`);
       await advisoryLock(q, `p5-subscription:${subscriptionId}`);
       const current = await loadSubscription(q, subscriptionId, true);

@@ -239,9 +239,47 @@ they are transactionally audited and protect the last active `ADMIN_OWNER`.
 Stable P6.2 failures include `ADMIN_RESOURCE_NOT_FOUND`, `ADMIN_CONFLICT`,
 `ADMIN_STATE_STALE`, and `ADMIN_LAST_OWNER_REQUIRED`.
 
-Subscription mutation, billing/payment administrative reads, plans, prices,
-entitlements, AI/health/diagnostics, and account/user status mutations remain
-outside P6.2 and are assigned to later roadmap stages.
+### P6.3 subscription and billing operations
+
+P6.3 adds exactly seven method/route tuples. Every successful response remains
+`Cache-Control: no-store`; all request objects are strict V1 contracts.
+
+- `GET /v1/admin/accounts/{account_id}/billing/payments` — account-scoped,
+  bounded UUID-cursor payment history with safe plan snapshot fields only;
+  requires `billing.read` and no CSRF.
+- `GET /v1/admin/accounts/{account_id}/billing/events` — account-scoped,
+  bounded UUID-cursor safe billing-event projection; unlinked or inconsistent
+  cross-account events fail closed; requires `billing.read` and no CSRF.
+- `GET /v1/admin/accounts/{account_id}/billing/reconciliation-jobs` —
+  account-scoped payment-backed job projection ordered by `updatedAt` and
+  payment ID; lease tokens and provider data are never exposed; requires
+  `billing.read` and no CSRF.
+- `POST /v1/admin/accounts/{account_id}/subscription/grant` — requires
+  `subscription.grant` and admin CSRF; accepts a published plan revision,
+  future offset-aware period end, and the bounded P6.2 admin reason.
+- `POST /v1/admin/accounts/{account_id}/subscription/{subscription_id}/extend`
+  — requires `subscription.extend` and admin CSRF.
+- `POST /v1/admin/accounts/{account_id}/subscription/{subscription_id}/suspend`
+  — requires `subscription.suspend` and admin CSRF.
+- `POST /v1/admin/accounts/{account_id}/subscription/{subscription_id}/restore`
+  — requires `subscription.restore` and admin CSRF.
+
+The four subscription mutations delegate to the accepted P5 command repository
+and its state machine, period/grace validation, optimistic revision, transition,
+and audit semantics. The acting admin is reauthorized from current database
+authority inside the same transaction. Extend, suspend, and restore require
+the immutable subscription/account path binding. P5 failures map to the
+stable admin resource-not-found, stale-state, conflict, forbidden, and service
+unavailable envelopes; raw SQL state and internal exceptions are never exposed.
+
+Safe billing projections exclude provider identities, payment provider IDs,
+idempotency and request-fingerprint hashes, event identities, payload hashes,
+raw payloads, and reconciliation lease tokens. P6.3 adds no billing mutation,
+checkout, webhook, provider integration, or admin UI.
+
+Subscription mutation, plans, prices, entitlements, AI/health/diagnostics, and
+account/user status mutations remain outside P6.3 and are assigned to later
+roadmap stages.
 
 ### Plans
 
