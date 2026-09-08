@@ -7,11 +7,13 @@
 
   function successfulReportFileRef(entry) {
     if (!entry || entry.status !== "complete") return null;
-    const operation = String(entry?.command?.operation || entry?.operation || "");
-    if (operation !== "report_file_get") return null;
     const httpStatus = Number(entry.http_status || 0);
     if (!(httpStatus >= 200 && httpStatus < 300)) return null;
-    return String(entry?.command?.params?.file_ref || "").trim() || null;
+    const operation = String(entry?.command?.operation || entry?.operation || "");
+    const ref = operation === "report_file_get"
+      ? String(entry?.command?.params?.file_ref || "").trim()
+      : String(BASE.directInlineFileRefFromReportText?.(entry) || "").trim();
+    return /^rpf_[sp]_[A-Za-z0-9_-]+$/.test(ref) ? ref : null;
   }
 
   function needsCompleteTextCompanion(run, payload, providerFileRefs) {
