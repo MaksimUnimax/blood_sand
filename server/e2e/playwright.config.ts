@@ -1,5 +1,8 @@
 import { defineConfig } from "@playwright/test";
 import { generateKeyPairSync } from "node:crypto";
+import { resolve } from "node:path";
+
+const serverWorkspaceCwd = resolve(__dirname, "..");
 
 // Per-run only: the private half is passed to the disposable API process via
 // its environment and is never persisted or exposed by the test API.
@@ -37,6 +40,7 @@ export default defineConfig({
   globalSetup: "./support/global-setup.ts",
   webServer: [
     {
+      cwd: serverWorkspaceCwd,
       command:
         "pnpm db:migrate && pnpm --filter @product/api exec tsx ../../e2e/support/api-harness.ts",
       url: "http://127.0.0.1:3100/health/ready",
@@ -53,9 +57,22 @@ export default defineConfig({
       },
     },
     {
+      cwd: serverWorkspaceCwd,
       command:
-        "cd ../apps/portal && pnpm exec next dev --hostname 127.0.0.1 --port 3200",
+        "pnpm --filter @product/portal exec next dev --hostname 127.0.0.1 --port 3200",
       url: "http://127.0.0.1:3200/login",
+      timeout: 60_000,
+      reuseExistingServer: false,
+      env: {
+        ...process.env,
+        CONTROL_PLANE_API_ORIGIN: "http://127.0.0.1:3100",
+      },
+    },
+    {
+      cwd: serverWorkspaceCwd,
+      command:
+        "pnpm --filter @product/admin exec next dev --hostname 127.0.0.1 --port 3300",
+      url: "http://127.0.0.1:3300/login",
       timeout: 60_000,
       reuseExistingServer: false,
       env: {

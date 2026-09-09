@@ -5,6 +5,15 @@ import {
   createDeviceAuthorizationRepository,
   createDeviceManagementRepository,
   createExtensionAuthRepository,
+  createAdminAuthRepository,
+  createAdminOpsRepository,
+  createP6AdminBillingRepository,
+  createP6AdminSubscriptionCommandAdapter,
+  createP6AdminCommercialReadRepository,
+  createP6AdminPlanCommandAdapter,
+  createP6AdminPriceCommandAdapter,
+  createP6AdminEntitlementCommandAdapter,
+  createP6AdminCompatibilityCommandAdapter,
   createP3BootstrapPolicyCatalogRepository,
   createP4EntitlementRepository,
   createP5CommercialPortalRepository,
@@ -12,6 +21,10 @@ import {
   createP5SubscriptionRepository,
 } from "@product/db";
 import { AuthService, deriveAuthKeys } from "@product/auth";
+import { AdminAuthService, deriveAdminAuthKeys } from "@product/admin-auth";
+import { AdminOpsService } from "@product/admin-ops";
+import { AdminBillingService } from "@product/admin-billing";
+import { createAdminCommercialService } from "@product/admin-commercial";
 import {
   DeviceAuthorizationService,
   deriveDeviceAuthKeys,
@@ -88,6 +101,10 @@ async function main(): Promise<void> {
       p3Catalog.findSigningKey(keyId),
     );
     const subscriptionRepository = createP5SubscriptionRepository(database);
+    const adminAuth = new AdminAuthService(
+      createAdminAuthRepository(database),
+      deriveAdminAuthKeys(root),
+    );
     const commercialAccess = new CommercialAccessService({
       accessResolver: createP5SubscriptionAccessResolver(
         subscriptionRepository,
@@ -130,6 +147,27 @@ async function main(): Promise<void> {
       commercialPortalService: new CommercialPortalService(
         createP5CommercialPortalRepository(database),
         commercialAccess,
+      ),
+      adminAuthService: adminAuth,
+      adminOpsService: new AdminOpsService(
+        createAdminOpsRepository(database),
+        new CommercialPortalService(
+          createP5CommercialPortalRepository(database),
+          commercialAccess,
+        ),
+      ),
+      adminBillingService: new AdminBillingService(
+        createP6AdminSubscriptionCommandAdapter(database),
+        createP6AdminBillingRepository(database),
+      ),
+      adminCommercialService: createAdminCommercialService(
+        createP6AdminCommercialReadRepository(database),
+        {
+          plans: createP6AdminPlanCommandAdapter(database),
+          prices: createP6AdminPriceCommandAdapter(database),
+          overrides: createP6AdminEntitlementCommandAdapter(database),
+          compatibility: createP6AdminCompatibilityCommandAdapter(database),
+        },
       ),
     });
     await app.listen({ host: "127.0.0.1", port: 3100 });

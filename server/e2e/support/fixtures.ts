@@ -14,9 +14,62 @@ export { sql };
 
 export const apiOrigin = "http://127.0.0.1:3100";
 export const portalOrigin = "http://127.0.0.1:3200";
+export const adminOrigin = "http://127.0.0.1:3300";
 
 export async function reset(): Promise<void> {
   await resetE2eDatabase();
+}
+
+export async function seedAdminIdentity(
+  email: string,
+  role?:
+    | "ADMIN_OWNER"
+    | "ADMIN_OPS"
+    | "ADMIN_SUPPORT"
+    | "ADMIN_BILLING_READONLY",
+): Promise<{ userId: string; accountId: string; principalId?: string }> {
+  const userId = randomUUID();
+  const accountId = randomUUID();
+  await sql("INSERT INTO users(id) VALUES($1)", [userId]);
+  await sql("INSERT INTO accounts(id,display_name) VALUES($1,$2)", [
+    accountId,
+    "E2E admin account",
+  ]);
+  await sql(
+    "INSERT INTO account_memberships(account_id,user_id,role) VALUES($1,$2,'OWNER')",
+    [accountId, userId],
+  );
+  await sql(
+    "INSERT INTO user_identities(user_id,provider,normalized_identifier,verified_at) VALUES($1,'EMAIL',$2,now())",
+    [userId, email.toLowerCase()],
+  );
+  if (!role) return { userId, accountId };
+  const principalId = randomUUID();
+  await sql("INSERT INTO admin_principals(id,user_id) VALUES($1,$2)", [
+    principalId,
+    userId,
+  ]);
+  await sql(
+    "INSERT INTO admin_role_grants(admin_principal_id,role) VALUES($1,$2)",
+    [principalId, role],
+  );
+  return { userId, accountId, principalId };
+}
+
+export async function adminLogin(page: Page, email: string): Promise<void> {
+  await page.goto(`${adminOrigin}/login`);
+  await page.getByLabel("Email").fill(email);
+  await page.getByRole("button", { name: "Start OTP sign-in" }).click();
+  await page.getByLabel("One-time code").fill("424242");
+  const elevation = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/control-plane/v1/admin/session") &&
+      response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "Verify and elevate" }).click();
+  const elevationResponse = await elevation;
+  if (!elevationResponse.ok()) throw new Error("admin elevation failed");
+  await expect(page).toHaveURL(`${adminOrigin}/`);
 }
 
 export async function login(page: Page, returnTo = "/"): Promise<void> {
