@@ -1,7 +1,7 @@
 # Product Control Plane — Requirements / Technical Specification
 
 Status: normative product/server requirements  
-Date: 2026-09-03
+Date: 2026-09-09
 
 ## 1. Product objective
 
@@ -45,6 +45,7 @@ The server must turn the bridge from a developer extension into a maintainable p
 - notifications;
 - observability;
 - deployment/backup/runbook foundations;
+- production public-domain/ingress configuration and acceptance;
 - simulated extension client for server development;
 - eventual Bridge integration.
 
@@ -280,6 +281,32 @@ The admin panel MUST support, subject to RBAC:
 - remote configuration cannot become remote executable code;
 - raw seller payloads and Ozon credentials are forbidden from baseline server storage.
 
+### NFR-INGRESS — Production domain and public ingress
+
+The approved product-domain authority is:
+
+- `selleragents.ru` — canonical public user Portal origin;
+- `selleragents.ru/admin/` — initial Admin UI route on the same web origin as Portal;
+- `api.selleragents.ru` — public Control Plane API origin;
+- `docs.selleragents.ru` — documentation origin;
+- `www.selleragents.ru` — alias that MUST redirect canonically to `https://selleragents.ru/` and MUST NOT operate as a second independent application origin.
+
+Current owner-prepared DNS points `selleragents.ru`, `api.selleragents.ru` and `docs.selleragents.ru` to VPS `78.17.68.165`; `www.selleragents.ru` is a CNAME to `selleragents.ru`.
+
+Production ingress MUST satisfy all of the following before launch acceptance:
+
+- public HTTP(S) terminates at the accepted reverse proxy/ingress layer, not directly at application development ports;
+- HTTP redirects to HTTPS;
+- valid TLS certificates cover every enabled public hostname and certificate renewal is tested/documented;
+- Portal/Admin/API application ports remain loopback/private behind ingress;
+- Portal and Admin routing preserves the accepted source-portal-session, admin-session, cookie and CSRF boundaries;
+- API routing preserves the accepted authentication, authorization, rate-limit, exact-contract/allowlist and security-header behavior;
+- production observability distinguishes Portal/Admin/API ingress without logging secrets;
+- DNS availability does not by itself mean a hostname or service is production-accepted;
+- no `admin.selleragents.ru` origin is introduced unless a later ADR deliberately changes the cookie/CSRF topology.
+
+The current zone mail `MX` records are not acceptance evidence for production OTP delivery. Production OTP email still requires an explicitly selected/configured SMTP/email provider and separate delivery/security acceptance.
+
 ### NFR-PRIV — Privacy/data minimization
 
 The database and telemetry schemas MUST be designed around data minimization. Every persisted field must have an operational/commercial/security purpose and a retention policy where applicable.
@@ -418,3 +445,17 @@ Each contour definition must state:
 - switching AI/browser binding does not reset unrelated provider state;
 - offline-grace/restart flows pass;
 - existing bridge security/exactly-once/delivery regressions remain protected.
+
+### Production ingress/domain acceptance
+
+- authoritative DNS resolves the approved public names to the intended ingress host(s);
+- `https://selleragents.ru/` serves the user Portal through the accepted ingress path;
+- `https://selleragents.ru/admin/` serves Admin on the same origin without weakening the accepted Portal/Admin session and CSRF model;
+- `https://api.selleragents.ru/` reaches only the accepted public Control Plane API surface;
+- `https://docs.selleragents.ru/` serves the approved documentation surface;
+- `http://...` redirects to HTTPS for every enabled public hostname;
+- `www.selleragents.ru` redirects canonically to `https://selleragents.ru/`;
+- certificate issuance and automatic renewal are proven;
+- application/internal ports are not publicly exposed as alternate bypasses around ingress;
+- production security headers, auth, CSRF, rate limits and BFF/API boundaries are verified through the real HTTPS origins;
+- DNS/HTTPS rollback and incident recovery are documented before staged launch.
