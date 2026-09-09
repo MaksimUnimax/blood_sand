@@ -201,8 +201,8 @@ P6 execution decomposition (frozen by ADR-0026):
 - P6.2 `[DONE]` admin read plane, safe account/subscription/device views, audit reads, support device revoke, and principal/role management.
 - P6.3 `[DONE]` subscription/billing operations through accepted P5 commands and safe billing reads.
 - P6.4 `[DONE]` existing plan, price, entitlement and compatibility policy operations; remote final acceptance complete.
-- P6.5 `[ACTIVE]` admin portal shell and operations UX; Attempt 3 local repairs and gates pass, with a third independent read-only review and remote acceptance still required.
-- P6.6 `[PLANNED]` P6 security, architecture, regression and final acceptance.
+- P6.5 `[DONE]` admin portal shell and operations UX; Attempt 4 was independently reviewed, committed as `bc566930c36654a6dd57a8f9eb79872cdb89e8f5`, pushed fast-forward, and passed exact-SHA Server CI plus remote product-safety acceptance.
+- P6.6 `[NEXT]` P6 security, architecture, regression and final acceptance.
 
 P6.1 does not implement admin UI, account search, subscription/plan/price/
 entitlement endpoints, or AI/health/diagnostic admin domains. P7, P8 and P9

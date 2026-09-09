@@ -1,31 +1,41 @@
 # P6.5 Admin Portal Local Evidence — 2026-09-08
 
-Status: **LOCAL ATTEMPT 4 CANDIDATE — P6.5 ACTIVE, PENDING INDEPENDENT REVIEW**
+Status: **P6.5 FINAL REMOTE ACCEPTANCE — PASS**
 
 Technical ID: `PRODUCT-CONTROL-PLANE-P6.5-ADMIN-PORTAL-OPERATIONS-UX-LOCAL`
-Attempt: `4`
+Attempt: `4` (accepted implementation)
 
 ## Historical acceptance and rejection record
 
-1. The original P6.5 local suite initially reported PASS.
-2. An independent product-safety review rejected that result for D01–D04.
-3. The first corrective attempt was reconstructed as tree
-   `1f869e85df877f2b4c6021d64a1411aa6cccddf8`.
-4. A second independent review rejected that candidate because D02 remained
-   open, D03 remained open, D04 remained open, D01 had no behavioral proof,
-   the admin logout CSRF regression existed, and the safety evidence was
-   incomplete.
-5. Attempt 3 repairs and retests those findings. This document records local
-   evidence only; it does not accept either rejected candidate and does not
-   authorize commit, push, or remote acceptance.
+1. The original P6.5 candidate local suite initially reported PASS; the
+   first independent product-safety review rejected it for D01–D04.
+2. Corrected candidate `1f869e85df877f2b4c6021d64a1411aa6cccddf8` was
+   reconstructed; the second independent review rejected it because D02, D03,
+   and D04 remained open, D01 had no behavioral proof, the admin logout CSRF
+   regression existed, and the safety evidence was incomplete.
+3. Attempt 3 was reconstructed as tree
+   `1c03080bb400f83ddbf5211bb247a98844d78f0c`.
+4. Attempt 3 received a product-safety PASS, but the shipped-entrypoint
+   review rejected it because `pnpm test:e2e` ran from `server/e2e` and the
+   migration command failed with `ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND`.
+5. Attempt 4 was reconstructed as tree
+   `77b56750d0264f59affa7925fc076af1ba5085ca`.
+6. Attempt 4 local acceptance passed all required safety, contract, build,
+   and shipped-entrypoint E2E gates.
+7. The independent Attempt 4 final review passed and marked it safe to commit.
+8. The implementation commit, parent, and tree are recorded below.
+9. The exact-SHA push-triggered Server CI result is recorded below.
+10. Independent GitHub readback of the implementation commit is recorded
+    below.
+11. The remote product-safety verdict is recorded below; P6.5 is DONE and
+    P6.6 remains NEXT.
 
 ## Base and runtime
 
 - Canonical worktree: `/opt/product-control-plane-src/blood_sand`
 - Branch: `feature/product-control-plane-server-2026-09-04`
-- Base HEAD and both starting remote reads: `fdf66f8c2cc89de0f861a20221ca0a26f342d2e8`
-- Required parent: `87ab8d6030cf29d469e1731fc24b001bee942ea6`
-- Required implementation parent: `3b195f0a97f33598e7bfb68becc1d95b1bd0de13`
+- Historical Attempt 1–3 content base: `fdf66f8c2cc89de0f861a20221ca0a26f342d2e8`
+- Final implementation parent: `191f1a2d392f1e12cf5f0a34989a88e0788a9cb6`
 - Node: `v24.20.0`
 - pnpm: `10.34.5`
 - Host Node 12 used: `NO`
@@ -134,9 +144,11 @@ The repair adds a deterministic cwd derived from the shipped config location to 
 
 The actual shipped config regression proof passed: PLAYWRIGHT_DB_MIGRATE_CWD_HAS_PACKAGE_MANIFEST=YES, PLAYWRIGHT_DB_MIGRATE_SCRIPT_RESOLVES=YES, and TEMPORARY_CWD_CORRECTION_REQUIRED=NO. The exact shipped pnpm test:e2e entrypoint then passed 69 tests with 0 failures, 0 skips, and 0 retries. The explicit six-test safety rerun passed D01, D02, D03, D04, and logout CSRF.
 
-Attempt 4 gates passed: format, lint, typecheck, unit/component (1,103), integration (1,456), OpenAPI, Bridge guard, build, and full shipped-entrypoint E2E. Product runtime behavior, control-plane API, OpenAPI, migrations, database schema, and Bridge remained unchanged; P6.6 and P7 were not started. Commit, push, and remote CI remain intentionally unperformed.
+Attempt 4 gates passed: format, lint, typecheck, unit/component (1,103), integration (1,456), OpenAPI, Bridge guard, build, and full shipped-entrypoint E2E. Product runtime behavior, control-plane API, OpenAPI, migrations, database schema, and Bridge remained unchanged; P6.6 and P7 were not started. Commit, push, and remote CI were intentionally unperformed at the freeze gate.
 
-## Local roadmap state
+The final implementation and remote acceptance are recorded below.
+
+## Final roadmap state
 
 - P0–P5: `DONE / FINAL ACCEPTED`
 - P6: `ACTIVE`
@@ -144,8 +156,25 @@ Attempt 4 gates passed: format, lint, typecheck, unit/component (1,103), integra
 - P6.2: `DONE`
 - P6.3: `DONE`
 - P6.4: `DONE`
-- P6.5: `ACTIVE`
-- P6.6: `PLANNED`
+- P6.5: `DONE`
+- P6.6: `NEXT`
 - P7–P15: `PLANNED`
 
-This is local evidence only. P6.5 is not marked DONE, and P6.6 is not marked NEXT, pending remote acceptance.
+P6 remains ACTIVE. P6.5 is finalized; P6.6 is the next cursor. P7 remains planned and not started.
+
+Domain documentation `docs/selleragents-domain-ingress-2026-09-09` was not merged.
+
+
+## Final remote acceptance — 2026-09-09
+
+- Remote head before reconstruction: `191f1a2d392f1e12cf5f0a34989a88e0788a9cb6`.
+- Accepted Attempt 4 tree: `77b56750d0264f59affa7925fc076af1ba5085ca`.
+- Implementation SHA: `bc566930c36654a6dd57a8f9eb79872cdb89e8f5`.
+- Implementation parent/tree: `191f1a2d392f1e12cf5f0a34989a88e0788a9cb6` / `77b56750d0264f59affa7925fc076af1ba5085ca`; parent and tree match: **YES**.
+- Normal push: fast-forward `191f1a2d..bc566930`; no force or ref rewriting.
+- GitHub branch readback: head `bc566930c36654a6dd57a8f9eb79872cdb89e8f5`, parent `191f1a2d392f1e12cf5f0a34989a88e0788a9cb6`, tree `77b56750d0264f59affa7925fc076af1ba5085ca`; tree and accepted 33-path changed-file set match: **YES**.
+- Exact-SHA Server CI: run `34323694683`, event `push`, head `bc566930c36654a6dd57a8f9eb79872cdb89e8f5`, status `completed`, conclusion `success`; server job `102375958125` completed every mandatory step successfully, including shipped `pnpm test:e2e`.
+- Remote safety verdict: D01 **PASS**, D02 **PASS**, D03 **PASS**, D04 **PASS**, logout CSRF **PASS**. Confirmation bypasses: `0`; expected-revision-null unsafe paths: `0`; automatic mutation retry paths: `0`; admin endpoints using portal CSRF unsafely: `0`.
+- Shipped E2E fix: **PASS**. Remote config resolves `cwd` from `__dirname` to `server/` for all web servers; the remote regression proof verifies the package manifest, the `db:migrate` script, one migration server, no shell `cd`, and no temporary override.
+- Contract and scope: 67 OpenAPI operations with SHA256 `eec29f87be0b1309be5021fdd3c0e38ec90bea2add9978f2c4b439c7f79e88e4`; migrations `0000..0012`; migration 0012 SHA256 `9eafa0e106b55ccae61f8b4d254cdebdad45d490ede49c75cd6ca18700c7a679`; no 0013. OpenAPI, migrations, Bridge, provider, and payment-provider changes: **NO**. P6.6 and P7 started: **NO**.
+- Findings: critical `0`, high `0`, material medium `0`; low `0`.

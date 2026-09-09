@@ -1,7 +1,7 @@
 # ADR-0030 — P6 admin portal shell and operations UX
 
-Status: Local Attempt 3 candidate — pending independent review
-Date: 2026-09-08
+Status: Accepted — P6.5 remote implementation acceptance complete
+Date: 2026-09-09
 
 ## Decision
 
@@ -58,3 +58,8 @@ signing-key/config-release/rollout UI, or real payment provider integration.
 P7, P8, and P9 remain planned domain stages. P6.6 owns the final P6 security
 and architecture acceptance/hardening review. Payment go-live remains
 deferred.
+
+
+## Final acceptance
+
+The Attempt 4 implementation was committed as `bc566930c36654a6dd57a8f9eb79872cdb89e8f5`, with parent `191f1a2d392f1e12cf5f0a34989a88e0788a9cb6` and tree `77b56750d0264f59affa7925fc076af1ba5085ca`. The normal push was fast-forward only. Exact-SHA Server CI run `34323694683` (`push`) completed successfully on that SHA, and the independent GitHub readback plus remote product-safety review passed D01–D04, logout CSRF, and the shipped E2E cwd regression. P6 remains ACTIVE, P6.5 is DONE, P6.6 is NEXT, and P7 remains planned/not started.
