@@ -1,7 +1,7 @@
 # Product Control Plane — Two-Level Roadmap
 
 Status: active source of truth  
-Date: 2026-09-08
+Date: 2026-09-09
 
 ## 1. Execution rules
 
@@ -11,6 +11,7 @@ Date: 2026-09-08
 4. Server work does not opportunistically patch the active Bridge during parallel development.
 5. Bridge integration happens only at P11 using the then-current accepted Bridge candidate.
 6. Architecture changes are made deliberately in docs/ADR; Codex implements approved architecture.
+7. Owner-provided infrastructure prerequisites (for example domain/DNS preparation) may be recorded before their later roadmap stage begins; recording them MUST NOT implicitly start or accept that stage.
 
 Legend: `[DONE] [ACTIVE] [NEXT] [PLANNED] [BLOCKED]`.
 
@@ -324,17 +325,48 @@ Exit: independent browser health and no duplicated commercial/domain logic.
 
 ## P14 — Production launch hardening `[PLANNED]`
 
+Approved prerequisite already completed outside P14 implementation:
+
+- product domain acquired: `selleragents.ru`;
+- owner-prepared DNS: `selleragents.ru`, `api.selleragents.ru` and `docs.selleragents.ru` resolve to VPS `78.17.68.165`;
+- `www.selleragents.ru` is a CNAME to `selleragents.ru`.
+
+This prerequisite does **not** mean P14 has started or that any public service is production-accepted.
+
 Scope:
 
 - production infrastructure/secrets;
+- public ingress/reverse proxy for the approved domain topology;
+- `https://selleragents.ru/` user Portal;
+- `https://selleragents.ru/admin/` Admin on the same origin unless a later ADR deliberately changes the cookie/CSRF topology;
+- `https://api.selleragents.ru/` Control Plane API;
+- `https://docs.selleragents.ru/` documentation surface;
+- canonical `www.selleragents.ru -> https://selleragents.ru/` redirect;
+- TLS issuance, automatic renewal and renewal-failure monitoring;
+- HTTP -> HTTPS redirects;
+- non-public/loopback application ports behind ingress;
+- production ingress security-header/auth/CSRF/rate-limit validation;
 - backup + restore drill;
 - deployment/rollback;
 - payment reconciliation runbook;
 - AI compatibility incident runbook;
 - monitoring/alerts;
 - admin MFA/RBAC acceptance;
+- production OTP email/SMTP provider and deliverability/security acceptance;
 - privacy/legal/store readiness;
 - staged launch.
+
+P14 provisional ingress-related substeps:
+
+- P14.0 `[DONE PREREQUISITE ONLY]` acquire `selleragents.ru` and prepare the owner-managed DNS records listed above; P14 remains `[PLANNED]`.
+- P14.1 `[PLANNED]` implement nginx/accepted reverse-proxy routing, bind internal services privately, and verify no alternate public application-port bypass exists.
+- P14.2 `[PLANNED]` issue TLS for enabled public names, enforce HTTP -> HTTPS, canonicalize `www`, and prove automatic certificate renewal.
+- P14.3 `[PLANNED]` validate real-origin Portal/Admin session-cookie/CSRF behavior and API authentication/rate-limit/security-header boundaries.
+- P14.4 `[PLANNED]` productionize secrets, backup/restore, deployment/rollback and monitoring for the public endpoints.
+- P14.5 `[PLANNED]` select/configure the production OTP email provider independently of the current zone MX records and prove delivery/security acceptance.
+- P14.6 `[PLANNED]` complete remaining MFA/privacy/legal/store/staged-launch gates.
+
+Exit: all enabled `selleragents.ru` HTTPS origins pass real-ingress security, certificate-renewal, private-port, deployment/rollback and monitoring acceptance; DNS existence alone is never treated as launch readiness.
 
 ## P15 — Post-Ozon expansion `[PLANNED]`
 
