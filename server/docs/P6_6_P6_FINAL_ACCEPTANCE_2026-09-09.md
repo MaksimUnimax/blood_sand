@@ -272,3 +272,59 @@ This local verdict is not the final P6 verdict. Remote exact-SHA CI, GitHub
 readback, and final security readback remain pending before P6 can be marked
 DONE.
 
+## Remote acceptance and finalization record
+
+Acceptance candidate:
+
+~~~text
+P6_6_ACCEPTANCE_CANDIDATE_SHA=b052d3333e9dca6a2e87637a3341b776f14cfe49
+P6_6_ACCEPTANCE_CANDIDATE_PARENT=208b99ebc284fff9f37f50fce2cb80ce172a480b
+P6_6_ACCEPTANCE_CANDIDATE_DOCS_ONLY=YES
+~~~
+
+Exact-SHA remote CI:
+
+~~~text
+CI_RUN_ID=34332800556
+CI_EVENT=push
+CI_HEAD_SHA=b052d3333e9dca6a2e87637a3341b776f14cfe49
+CI_STATUS=completed
+CI_CONCLUSION=success
+FAILED_MANDATORY_JOBS=0
+SKIPPED_MANDATORY_JOBS=0
+~~~
+
+Independent GitHub readback at the candidate SHA confirmed the parent and
+docs-only changed-file set. The remote product tree is the already-audited
+product tree plus the two allowed documentation changes. Focused exact-content
+readback passed for admin session security, admin CSRF/RBAC guards, strict BFF
+allowlisting, seller-data boundary, D01-D04/logout safety coverage, and the
+shipped Playwright E2E repair.
+
+~~~text
+REMOTE_READBACK=PASS
+REMOTE_PRODUCT_CODE_UNCHANGED=YES
+REMOTE_ADMIN_SESSION_SECURITY=PASS
+REMOTE_CSRF_SECURITY=PASS
+REMOTE_RBAC_BOUNDARY=PASS
+REMOTE_BFF_BOUNDARY=PASS
+REMOTE_SELLER_DATA_BOUNDARY=PASS
+REMOTE_D01=PASS
+REMOTE_D02=PASS
+REMOTE_D03=PASS
+REMOTE_D04=PASS
+REMOTE_LOGOUT_CSRF=PASS
+REMOTE_SHIPPED_E2E_FIX=PASS
+REMOTE_SECURITY_REGRESSION=NO
+CRITICAL=0
+HIGH=0
+MEDIUM=0
+MATERIAL_MEDIUM=0
+LOW=0
+~~~
+
+The candidate has therefore passed local acceptance, exact-SHA CI, remote
+readback, and final security readback. P6 finalization is recorded in the
+separate docs-only commit whose SHA is supplied in the final acceptance
+handoff.
+
