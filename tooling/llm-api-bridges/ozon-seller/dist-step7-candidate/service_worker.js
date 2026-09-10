@@ -1,4 +1,4 @@
-/* global BB2ConversationIdentity, BB2ManualControls, OzonRuntime, OzonCredentials, OzonOperationRegistry, OzonEntitlements, OzonContract, OzonGuidance, OzonWorkSessionModel, BridgeAutorunModel, ProviderTransportCore, OzonProvider */
+/* global BB2ConversationIdentity, BB2ManualControls, OzonRuntime, OzonCredentials, OzonOperationRegistry, OzonEntitlements, OzonContract, OzonGuidance, OzonMixedBatchDiscovery, OzonWorkSessionModel, BridgeAutorunModel, ProviderTransportCore, OzonProvider */
 importScripts("shared/conversation_identity.js", "shared/runtime_names.js", "shared/work_session_model.js", "shared/manual_controls.js", "shared/ozon_credentials.js", "shared/ozon_operation_registry.js", "shared/ozon_entitlements.js", "shared/ozon_contract.js", "shared/ozon_guidance.js", "shared/bridge_autorun_model.js", "shared/provider_transport_core.js", "shared/ozon_provider.js");
 
 const VERSION = "0.1.19";
@@ -2677,17 +2677,57 @@ function batchErrorEntry(error, stage = "command_discovery", commandFingerprint 
 
 function discoverBatchEntries(text) {
   const source = String(text || "");
-  const apiCount = source.split(OzonRuntime.RUNTIME.commandPrefix).length - 1;
-  const helpCountV1 = source.split(OzonRuntime.RUNTIME.helpPrefix).length - 1;
-  const helpCountV2 = source.split(OzonRuntime.RUNTIME.helpPrefixV2 || "OZON_HELP_V2").length - 1;
-  const helpCount = helpCountV1 + helpCountV2;
-  if (apiCount && helpCount) return [batchErrorEntry(Object.assign(new Error("OZON_HELP нельзя смешивать с OZON_API_V1 в одном assistant response."), { code: "MIXED_HELP_AND_API" }), "guidance_discovery", OzonContract.textFingerprint(source))];
-  if (helpCount) {
-    const help = OzonGuidance.parseHelp(source);
-    if (!help.ok) return [{ kind: "guidance", status: "pending", guidance: { status: "guidance_error", cluster: null, section: null, version: helpCountV2 ? 2 : 1, error: help.code }, request_id: null, http_status: 0, external_request_executed: false, report_text: null }];
-    return [{ kind: "guidance", status: "pending", guidance: { status: help.section ? "section_selected" : "cluster_selected", cluster: help.cluster, section: help.section || null, version: help.version || 1, error: null }, request_id: null, http_status: 0, external_request_executed: false, report_text: null }];
+  if (!globalThis.OzonMixedBatchDiscovery?.discover) {
+    return [batchErrorEntry(Object.assign(new Error("Ordered mixed HELP/API discovery module is unavailable."), { code: "MIXED_BATCH_DISCOVERY_UNAVAILABLE" }), "mixed_batch_discovery", OzonContract.textFingerprint(source))];
   }
-  return OzonContract.discoverCommands(source).map(batchEntryFromDiscovery);
+  let discovered;
+  try {
+    discovered = OzonMixedBatchDiscovery.discover(source, {
+      commandPrefix: OzonRuntime.RUNTIME.commandPrefix,
+      helpPrefixV1: OzonRuntime.RUNTIME.helpPrefix,
+      helpPrefixV2: OzonRuntime.RUNTIME.helpPrefixV2 || "OZON_HELP_V2",
+      apiDiscover: (value) => OzonContract.discoverCommands(value),
+      parseHelp: (value) => OzonGuidance.parseHelp(value)
+    });
+  } catch (error) {
+    return [batchErrorEntry(Object.assign(new Error(String(error?.message || error || "Mixed batch discovery failed.")), { code: String(error?.code || "MIXED_BATCH_DISCOVERY_FAILED_CLOSED") }), "mixed_batch_discovery", OzonContract.textFingerprint(source))];
+  }
+  return discovered.map((item) => {
+    if (item.kind === "api") return batchEntryFromDiscovery(item.discovery);
+    const help = item.help;
+    if (!help?.ok) {
+      return {
+        kind: "guidance",
+        status: "pending",
+        guidance: {
+          status: "guidance_error",
+          cluster: null,
+          section: null,
+          version: Number(item.version || 1),
+          error: String(help?.code || "HELP_DISCOVERY_FAILED_CLOSED")
+        },
+        request_id: null,
+        http_status: 0,
+        external_request_executed: false,
+        report_text: null
+      };
+    }
+    return {
+      kind: "guidance",
+      status: "pending",
+      guidance: {
+        status: help.section ? "section_selected" : "cluster_selected",
+        cluster: help.cluster,
+        section: help.section || null,
+        version: Number(help.version || item.version || 1),
+        error: null
+      },
+      request_id: null,
+      http_status: 0,
+      external_request_executed: false,
+      report_text: null
+    };
+  });
 }
 
 function localGuidanceResult(entry) {
