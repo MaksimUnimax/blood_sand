@@ -83,12 +83,85 @@ This test directly proves the repaired failing boundary for the `HELP → API` o
 6. Logical and physical fingerprints match and `command_transformed=false`.
 7. No hidden second business request is visible in aggregate accounting.
 
-It does NOT by itself prove reverse ordering, malformed-envelope isolation in live runtime, disabled-alias behavior in a mixed live source, startup-prompt UI materialization, or the complete LIVE-GATE-01..05 set.
+## LIVE TEST 02 — API then HELP in one assistant response
+
+### Input
+
+```text
+OZON_API_V1
+{"operation":"seller_product_list","params":{"filter":{},"limit":1}}
+
+OZON_HELP_V2
+{"cluster":"stocks_inventory"}
+```
+
+### Observed aggregate
+
+- result envelope: `OZON_BATCH_RESULT_V1`
+- bridge: `ozon-llm-api-bridge`
+- version: `0.1.19`
+- delivery mode: `sequential_batch_single_delivery`
+- result count: `2`
+- capability probe performed: `false`
+- query planner status: `complete`
+- coalesced group count: `0`
+- coalesced logical count: `0`
+- logical business result count: `1`
+- physical business request count: `1`
+
+### Observed result 1 — API
+
+- result type: `OZON_RESULT_V1`
+- request ID: `ad608ce5-e362-413d-bc44-11b491d03836`
+- operation: `seller_product_list`
+- command fingerprint: `9d82cd2e`
+- provider: `ozon`
+- host alias: `seller_api`
+- HTTP method: `POST`
+- external request executed: `true`
+- HTTP status: `200`
+- elapsed: `1398 ms`
+- capability probe executed: `false`
+- entitlement: `SUPPORTED_AND_ENTITLED`
+- exact request preserved: `true`
+- logical command fingerprint: `9d82cd2e`
+- physical command fingerprint: `9d82cd2e`
+- command transformed: `false`
+- provider returned one bounded item and reported total `76`
+- returned `last_id=WzEwODI4NDgzNzUsMTA4Mjg0ODM3NV0=`; it is evidence only and is not consumed automatically
+
+### Observed result 2 — HELP
+
+- result type: `OZON_GUIDANCE_RESULT_V2`
+- guidance version: `2`
+- status: `cluster_selected`
+- cluster: `stocks_inventory`
+- section: `null`
+- external request executed: `false`
+- physical business request count: `0`
+- error: `null`
+- stock/inventory guidance choices were returned
+
+### Verdict
+
+`LIVE TEST 02 = PASS`
+
+This test proves the reverse `API → HELP` ordering on the installed runtime:
+
+1. API and HELP coexist in one admitted assistant source.
+2. Source order is preserved in the aggregate output.
+3. The API is executed exactly once and reaches Ozon with HTTP 200.
+4. HELP remains local and contributes zero provider business requests.
+5. Aggregate accounting remains exactly one logical business result and one physical business request.
+6. No coalescing or hidden additional provider business request is reported.
+7. The API logical and physical fingerprints match and `command_transformed=false`.
+
+Together, LIVE TEST 01 and LIVE TEST 02 now live-prove both basic mixed orderings required by the repaired source-ordered typed-envelope batch contract. They do not yet prove malformed-envelope isolation, disabled-alias fail-closed behavior inside a mixed source, startup-prompt UI materialization, or final live certification.
 
 ## Current live validation cursor
 
 - TEST-01 HELP→API: PASS
-- reverse API→HELP: NOT RUN
+- TEST-02 API→HELP: PASS
 - malformed-envelope isolation: NOT RUN
 - disabled alias mixed fail-closed: NOT RUN
 - startup prompt live observation: NOT RUN
