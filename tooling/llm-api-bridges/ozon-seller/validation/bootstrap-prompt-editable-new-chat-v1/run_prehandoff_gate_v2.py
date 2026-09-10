@@ -40,8 +40,12 @@ def verify_scope_exact() -> None:
     assert v1.default_block(v1.git_show(runtime_path)) == v1.default_block(new_runtime), "built-in prompt wording changed"
     assert v1.git_show(manifest_path) == manifest_path.read_text(encoding="utf-8"), "manifest changed"
     assert v1.git_show(entry_path) == entry_path.read_text(encoding="utf-8"), "service-worker entry changed"
+
+    # Compare each protected lifecycle case only to its actual immediate next switch case.
+    # SHOW is followed by REFRESH; REFRESH is followed by START; HIDE is followed by FINISH.
+    # Comparing SHOW all the way to HIDE would incorrectly include the authorized START repair.
+    assert v1.case_block(old_worker, "OZ_WORK_SHOW", "OZ_WORK_REFRESH") == v1.case_block(new_worker, "OZ_WORK_SHOW", "OZ_WORK_REFRESH"), "show case changed"
     assert v1.case_block(old_worker, "OZ_WORK_REFRESH", "OZ_WORK_START") == v1.case_block(new_worker, "OZ_WORK_REFRESH", "OZ_WORK_START"), "refresh case changed"
-    assert v1.case_block(old_worker, "OZ_WORK_SHOW", "OZ_WORK_HIDE") == v1.case_block(new_worker, "OZ_WORK_SHOW", "OZ_WORK_HIDE"), "show case changed"
     assert v1.case_block(old_worker, "OZ_WORK_HIDE", "OZ_WORK_FINISH") == v1.case_block(new_worker, "OZ_WORK_HIDE", "OZ_WORK_FINISH"), "hide case changed"
 
     sw_rel = worker_path.relative_to(v1.REPO_ROOT).as_posix()
@@ -57,8 +61,9 @@ def verify_scope_exact() -> None:
     print("PRODUCTION_DIFF_SCOPE_EXACT_PASS")
     print("BUILTIN_DEFAULT_TEXT_UNCHANGED_PASS")
     print("MANIFEST_AND_ENTRY_UNCHANGED_PASS")
+    print("WORK_SHOW_EXACT_CASE_UNCHANGED_PASS")
     print("WORK_REFRESH_EXACT_CASE_UNCHANGED_PASS")
-    print("WORK_SHOW_HIDE_EXACT_CASES_UNCHANGED_PASS")
+    print("WORK_HIDE_EXACT_CASE_UNCHANGED_PASS")
     print("PROVIDER_REQUEST_CREDENTIAL_SURFACES_UNCHANGED_PASS")
 
 
@@ -94,7 +99,6 @@ def classify_pending_start_and_run_current_guard(extension_root: Path) -> str:
                     assert marker in before_text and marker in after_text, f"historical pending-start failed before preserved safety marker: {marker}"
                 historical_state = "BASELINE_STALE_SAME_RESULT"
 
-            # Replacement/current guard must pass on both exact authorized base and candidate.
             v1.run(["node", str(CURRENT_VISIBILITY_GATE), str(base_dist)])
             v1.run(["node", str(CURRENT_VISIBILITY_GATE), str(extension_root)])
         finally:
