@@ -1,0 +1,459 @@
+name: Ozon mixed HELP API startup prompt repair 2026-09-10
+
+on:
+  push:
+    branches:
+      - repair/ozon-mixed-help-api-startup-prompt-2026-09-10
+    paths:
+      - '.github/workflows/ozon-mixed-help-api-startup-prompt-2026-09-10.yml'
+      - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/mixed_batch_discovery.js'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/mixed-help-api-v1/**'
+      - 'tooling/llm-api-bridges/ozon-seller/development/mixed-help-api-startup-prompt-2026-09-10/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PATCH_BRANCH: repair/ozon-mixed-help-api-startup-prompt-2026-09-10
+  BASE_AUTHORITY: 572f0b66dd09ce3441f2b96270c5cae864da490b
+  BASE_WORKER_BLOB: ec988889597ad4df50c07006bc855ad32028fb10
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  TARGET_GATE: tooling/llm-api-bridges/ozon-seller/validation/mixed-help-api-v1/run_mixed_help_api_gate.mjs
+  COMMAND_GATE: tooling/llm-api-bridges/ozon-seller/validation/command-envelope-contract-v1/run_command_envelope_contract_gate.mjs
+  DISABLED_GATE: tooling/llm-api-bridges/ozon-seller/validation/disabled-alias-admission-v1/run_disabled_alias_admission_gate.mjs
+  ARTIFACT_NAME: OZON_BRIDGE_v0.1.19_MIXED_HELP_API_STARTUP_PROMPT_20260910.zip
+
+jobs:
+  materialize-linux:
+    runs-on: ubuntu-latest
+    outputs:
+      source_sha: ${{ steps.commit.outputs.source_sha }}
+      package_sha: ${{ steps.package.outputs.package_sha }}
+      package_bytes: ${{ steps.package.outputs.package_bytes }}
+    steps:
+      - name: Checkout exact authorized patch branch input
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use accepted Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+
+      - name: Prove base authority and patch authorization scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$PATCH_BRANCH"
+          git merge-base --is-ancestor "$BASE_AUTHORITY" HEAD
+          test "$(git rev-parse "$BASE_AUTHORITY:$DIST/service_worker.js")" = "$BASE_WORKER_BLOB"
+          test "$(node --version)" = 'v24.12.0'
+          echo BASE_AUTHORITY_PASS
+          echo EXPLICIT_PATCH_BRANCH_SCOPE_PASS
+
+      - name: Materialize fail-closed production patch and current authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$ROOT/development/mixed-help-api-startup-prompt-2026-09-10/materialize_mixed_help_api_patch.py"
+          git diff --check
+          grep -F 'OzonMixedBatchDiscovery.discover(source' "$DIST/service_worker.js"
+          ! grep -F 'MIXED_HELP_AND_API' "$DIST/service_worker.js"
+          grep -F 'shared/mixed_batch_discovery.js' "$DIST/service_worker_entry.js"
+          grep -F 'Граница команды — envelope' "$DIST/shared/runtime_names.js"
+          echo MATERIALIZATION_STATIC_PASS
+
+      - name: Run targeted and intersecting deterministic regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r file; do node --check "$file" >/dev/null; done < <(find "$DIST" -type f -name '*.js' | LC_ALL=C sort)
+          node "$TARGET_GATE" .
+          node "$COMMAND_GATE" .
+          node "$DISABLED_GATE" .
+          R="$ROOT/validation/regression"
+          node "$R/run_file_delivery_capture_accounting.mjs"
+          node "$R/run_file_delivery_port_worker_state_machine.mjs"
+          node "$R/run_file_delivery_mixed_batch_policy.mjs"
+          node "$R/run_file_delivery_adapter_gate_policy.mjs"
+          node "$R/run_file_delivery_wake_lifecycle.mjs"
+          node "$R/run_file_delivery_live_stop_repro.mjs"
+          node "$R/run_direct_binary_provider_attachment_gate.mjs"
+          echo TARGETED_AND_INTERSECTING_REGRESSIONS_LINUX_PASS
+
+      - name: Closed-set and dependency secondary sweep
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('tooling/llm-api-bridges/ozon-seller')
+          sw=(root/'dist-step7-candidate/service_worker.js').read_text(encoding='utf-8')
+          entry=(root/'dist-step7-candidate/service_worker_entry.js').read_text(encoding='utf-8')
+          helper=(root/'dist-step7-candidate/shared/mixed_batch_discovery.js').read_text(encoding='utf-8')
+          assert 'MIXED_HELP_AND_API' not in sw
+          assert sw.count('OzonMixedBatchDiscovery.discover(source') == 1
+          assert entry.count('shared/mixed_batch_discovery.js') == 1
+          for token in [
+              'if (!entry || entry.kind !== "command" || !entry.command) return entry;',
+              'entry?.kind === "command"',
+              'entry.kind === "pre_execution_error" || entry.kind === "guidance"',
+              'external_request_executed: false',
+              'command_count = entries.filter((entry) => entry.kind === "command").length'
+          ]:
+              assert token in sw, token
+          for token in ['nextMarker', 'balancedObjectEnd', 'envelopeSlice', 'apiDiscover', 'parseHelp']:
+              assert token in helper, token
+          print('CLOSED_SET_SECONDARY_SWEEP_PASS')
+          print('UNACCOUNTED_DEPENDENCIES=0')
+          print('STALE_ASSUMPTIONS=0')
+          print('AVAILABLE_BUT_UNVERIFIED_PREHANDOFF_DEPENDENCIES=0')
+          PY
+
+      - name: Install pinned Chrome for Testing
+        shell: bash
+        run: |
+          set -euo pipefail
+          CFT_VERSION='152.0.7977.82'
+          CFT_URL="https://storage.googleapis.com/chrome-for-testing-public/${CFT_VERSION}/linux64/chrome-linux64.zip"
+          CFT_ROOT="$RUNNER_TEMP/chrome-for-testing-${CFT_VERSION}"
+          ARCHIVE="$RUNNER_TEMP/chrome-for-testing-${CFT_VERSION}.zip"
+          rm -rf "$CFT_ROOT" "$ARCHIVE"
+          mkdir -p "$CFT_ROOT"
+          curl --fail --location --silent --show-error "$CFT_URL" --output "$ARCHIVE"
+          unzip -q "$ARCHIVE" -d "$CFT_ROOT"
+          CFT_BIN="$CFT_ROOT/chrome-linux64/chrome"
+          test -x "$CFT_BIN"
+          "$CFT_BIN" --version | grep -F "$CFT_VERSION"
+          echo "CFT_BIN=$CFT_BIN" >> "$GITHUB_ENV"
+          echo "CFT_VERSION=$CFT_VERSION" >> "$GITHUB_ENV"
+
+      - name: Prove packaged MV3 worker bootstrap in real Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v xvfb-run >/dev/null
+          xvfb-run -a node "$ROOT/validation/regression/run_file_delivery_extension_worker_smoke.mjs" "$CFT_BIN" "$GITHUB_WORKSPACE/$DIST"
+          echo MV3_SERVICE_WORKER_BOOTSTRAP_CHROME_PASS
+
+      - name: Build deterministic installable package and fresh-extract verify
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="$GITHUB_WORKSPACE/$DIST"
+          STAGE="$RUNNER_TEMP/mixed-help-api-stage"
+          EXTRACT="$RUNNER_TEMP/mixed-help-api-extract"
+          INVENTORY="$RUNNER_TEMP/mixed-help-api-inventory.txt"
+          OUT_DIR="$GITHUB_WORKSPACE/$ROOT/artifacts"
+          OUT="$OUT_DIR/$ARTIFACT_NAME"
+          OUT2="$RUNNER_TEMP/$ARTIFACT_NAME.rebuild.zip"
+          rm -rf "$STAGE" "$EXTRACT"
+          mkdir -p "$STAGE" "$EXTRACT" "$OUT_DIR"
+          cp -a "$SRC/." "$STAGE/"
+          find "$STAGE" -type f -exec touch -t 198001010000 {} +
+          find "$STAGE" -type f -printf '%P\n' | LC_ALL=C sort > "$INVENTORY"
+          test -s "$INVENTORY"
+          for f in manifest.json service_worker.js service_worker_entry.js shared/runtime_names.js shared/ozon_contract.js shared/ozon_guidance.js shared/mixed_batch_discovery.js; do grep -qx "$f" "$INVENTORY"; done
+          rm -f "$OUT" "$OUT2"
+          (cd "$STAGE" && zip -X -q "$OUT" -@ < "$INVENTORY")
+          (cd "$STAGE" && zip -X -q "$OUT2" -@ < "$INVENTORY")
+          cmp "$OUT" "$OUT2"
+          unzip -q "$OUT" -d "$EXTRACT"
+          diff -ruN "$SRC" "$EXTRACT"
+          while IFS= read -r file; do case "$file" in *.js) node --check "$EXTRACT/$file" >/dev/null;; esac; done < "$INVENTORY"
+          SHA=$(sha256sum "$OUT" | awk '{print $1}')
+          BYTES=$(wc -c < "$OUT" | tr -d ' ')
+          printf '%s  %s\n' "$SHA" "$ARTIFACT_NAME" > "$OUT.sha256.txt"
+          cat > "$OUT_DIR/OZON_BRIDGE_v0.1.19_MIXED_HELP_API_STARTUP_PROMPT_20260910_BUILDINFO.txt" <<EOF
+          base_authority=$BASE_AUTHORITY
+          base_service_worker_blob=$BASE_WORKER_BLOB
+          workflow_input_sha=$GITHUB_SHA
+          runtime_version=0.1.19
+          targeted_regression=PASS
+          command_envelope_regression=PASS
+          disabled_alias_regression=PASS
+          intersecting_file_delivery_regressions=PASS
+          mv3_chrome_worker_bootstrap=PASS
+          deterministic_zip_rebuild=PASS
+          fresh_extract_byte_equivalence=PASS
+          package_file=$ARTIFACT_NAME
+          package_bytes=$BYTES
+          package_sha256=$SHA
+          EOF
+          echo "package_sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "package_bytes=$BYTES" >> "$GITHUB_OUTPUT"
+          echo "PACKAGE_SHA256=$SHA"
+          echo "PACKAGE_BYTES=$BYTES"
+          echo DETERMINISTIC_PACKAGE_AND_FRESH_EXTRACT_PASS
+
+      - name: Write Linux pre-handoff evidence snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$ROOT/validation/reports"
+          cat > "$ROOT/validation/reports/OZON_MIXED_HELP_API_STARTUP_PROMPT_PREHANDOFF_2026-09-10.md" <<EOF
+          # Ozon mixed HELP/API + startup prompt repair — pre-handoff evidence
+
+          - operator authorization: PASS (explicit `Делай патч` in active project dialogue)
+          - base authority: `$BASE_AUTHORITY`
+          - base service worker blob: `$BASE_WORKER_BLOB`
+          - workflow input: `$GITHUB_SHA`
+          - Linux targeted mixed HELP/API regression: PASS
+          - prior command-envelope regression: PASS
+          - disabled-alias regression: PASS
+          - intersecting file-delivery regressions: PASS
+          - Chrome MV3 service-worker bootstrap: PASS
+          - deterministic ZIP rebuild: PASS
+          - fresh-extract byte equivalence: PASS
+          - dependency secondary sweep: PASS
+          - unaccounted dependencies: 0
+          - stale assumptions: 0
+          - available-but-unverified pre-handoff dependencies: 0
+          - Windows exact-source regression: PENDING CI
+          - LIVE-GATE-01..05: PENDING POST-INSTALL
+
+          This file is intentionally not a LIVE PASS. Final pre-handoff verdict is written only after the Windows job verifies the exact materialized source commit.
+          EOF
+          sed -i 's/^          //' "$ROOT/validation/reports/OZON_MIXED_HELP_API_STARTUP_PROMPT_PREHANDOFF_2026-09-10.md"
+
+      - name: Commit exact materialized runtime authorities and artifact
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$DIST/service_worker.js" \
+                  "$DIST/service_worker_entry.js" \
+                  "$DIST/shared/runtime_names.js" \
+                  "$ROOT/START_PROMPT_CURRENT.md" \
+                  "$ROOT/BRIDGE_RESPONSE_FORMS_CURRENT.md" \
+                  "$ROOT/AI_TEST_REPORT_FORMAT_CURRENT.md" \
+                  "$ROOT/validation/reports/OZON_MIXED_HELP_API_STARTUP_PROMPT_PREHANDOFF_2026-09-10.md" \
+                  "$ROOT/artifacts/$ARTIFACT_NAME" \
+                  "$ROOT/artifacts/$ARTIFACT_NAME.sha256.txt" \
+                  "$ROOT/artifacts/OZON_BRIDGE_v0.1.19_MIXED_HELP_API_STARTUP_PROMPT_20260910_BUILDINFO.txt"
+          if git diff --cached --quiet; then
+            echo 'materialized runtime already committed identically'
+          else
+            git commit -m 'repair(ozon): materialize mixed HELP API ordered batch and startup prompt'
+            git push origin "HEAD:$PATCH_BRANCH"
+          fi
+          SOURCE_SHA=$(git rev-parse HEAD)
+          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          echo "MATERIALIZED_SOURCE_SHA=$SOURCE_SHA"
+
+      - name: Upload exact installable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-mixed-help-api-startup-prompt-${{ steps.commit.outputs.source_sha }}
+          path: |
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_MIXED_HELP_API_STARTUP_PROMPT_20260910.zip
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_MIXED_HELP_API_STARTUP_PROMPT_20260910.zip.sha256.txt
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_MIXED_HELP_API_STARTUP_PROMPT_20260910_BUILDINFO.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  windows-regression:
+    needs: materialize-linux
+    runs-on: windows-latest
+    outputs:
+      tested_sha: ${{ steps.exact.outputs.tested_sha }}
+    steps:
+      - name: Checkout exact materialized branch head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: repair/ozon-mixed-help-api-startup-prompt-2026-09-10
+
+      - name: Use accepted Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+
+      - name: Prove exact source identity
+        id: exact
+        shell: pwsh
+        run: |
+          $sha = git rev-parse HEAD
+          if ($sha -ne '${{ needs.materialize-linux.outputs.source_sha }}') { throw "source SHA drift: $sha" }
+          "tested_sha=$sha" >> $env:GITHUB_OUTPUT
+          Write-Output "WINDOWS_EXACT_SOURCE_SHA=$sha"
+
+      - name: Run Windows syntax targeted and intersecting regressions
+        shell: pwsh
+        run: |
+          if ((node --version) -ne 'v24.12.0') { throw 'Node version drift' }
+          Get-ChildItem -Path $env:DIST -Recurse -Filter *.js | Sort-Object FullName | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
+          node $env:TARGET_GATE .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node $env:COMMAND_GATE .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node $env:DISABLED_GATE .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $r = Join-Path $env:ROOT 'validation/regression'
+          foreach ($name in @(
+            'run_file_delivery_capture_accounting.mjs',
+            'run_file_delivery_port_worker_state_machine.mjs',
+            'run_file_delivery_mixed_batch_policy.mjs',
+            'run_file_delivery_adapter_gate_policy.mjs',
+            'run_file_delivery_wake_lifecycle.mjs',
+            'run_file_delivery_live_stop_repro.mjs',
+            'run_direct_binary_provider_attachment_gate.mjs'
+          )) {
+            node (Join-Path $r $name)
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          Write-Output 'TARGETED_AND_INTERSECTING_REGRESSIONS_WINDOWS_PASS'
+
+      - name: Verify exact committed artifact sidecar
+        shell: pwsh
+        run: |
+          $artifact = Join-Path (Join-Path $env:ROOT 'artifacts') $env:ARTIFACT_NAME
+          $sidecar = "$artifact.sha256.txt"
+          if (-not (Test-Path $artifact) -or -not (Test-Path $sidecar)) { throw 'artifact or sidecar missing' }
+          $expected = ((Get-Content $sidecar -Raw).Trim() -split '\s+')[0].ToLowerInvariant()
+          $actual = (Get-FileHash -Algorithm SHA256 $artifact).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "artifact SHA mismatch: $actual != $expected" }
+          Write-Output "WINDOWS_ARTIFACT_SHA256=$actual"
+          Write-Output 'WINDOWS_EXACT_ARTIFACT_HASH_PASS'
+
+  finalize-evidence:
+    needs: [materialize-linux, windows-regression]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact tested branch head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: repair/ozon-mixed-help-api-startup-prompt-2026-09-10
+
+      - name: Verify tested source and write final gate report
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_SHA='${{ needs.materialize-linux.outputs.source_sha }}'
+          WINDOWS_SHA='${{ needs.windows-regression.outputs.tested_sha }}'
+          test "$SOURCE_SHA" = "$WINDOWS_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          SOURCE_TREE=$(git rev-parse "$SOURCE_SHA^{tree}")
+          PACKAGE_SHA='${{ needs.materialize-linux.outputs.package_sha }}'
+          PACKAGE_BYTES='${{ needs.materialize-linux.outputs.package_bytes }}'
+          REPORT="$ROOT/validation/reports/OZON_MIXED_HELP_API_STARTUP_PROMPT_FINAL_PREHANDOFF_2026-09-10.md"
+          cat > "$REPORT" <<EOF
+          # Ozon mixed HELP/API + startup prompt repair — FINAL PRE-HANDOFF
+
+          ## Identity
+
+          - branch: `$PATCH_BRANCH`
+          - base authority: `$BASE_AUTHORITY`
+          - materialized source commit: `$SOURCE_SHA`
+          - materialized source tree: `$SOURCE_TREE`
+          - exact artifact: `$ARTIFACT_NAME`
+          - artifact bytes: `$PACKAGE_BYTES`
+          - artifact SHA-256: `$PACKAGE_SHA`
+          - workflow run: `https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID`
+          - runtime version: `0.1.19`
+
+          ## Repair result
+
+          `MIXED_HELP_AND_API` blanket rejection is removed. `OZON_HELP_V1/V2` and `OZON_API_V1` envelopes are discovered into one typed ordered batch. API command parsing still delegates to `OzonContract.discoverCommands`; HELP parsing still delegates to `OzonGuidance.parseHelp`. Guidance remains local (`external_request_executed=false`, zero physical provider business requests). API commands retain the one-explicit-command/at-most-one-provider-business-request boundary.
+
+          The startup prompt now states envelope—not code-block/response—command boundaries, allows independent HELP/API envelopes in one response in source order, preserves no-hidden-request rules, and requires fresh opaque dependencies for dependent chains.
+
+          ## Dependency audit
+
+          | Path | Terminal behavior | Evidence | Status |
+          |---|---|---|---|
+          | API envelope discovery | existing `OzonContract.discoverCommands` | old + new command-envelope regression | PASS |
+          | HELP V1/V2 discovery | isolated balanced envelope + existing `OzonGuidance.parseHelp` | mixed gate | PASS |
+          | HELP→API / API→HELP / alternating order | typed source-ordered list | mixed gate | PASS |
+          | malformed HELP | local guidance error; later independent API preserved | mixed gate | PASS |
+          | malformed API | pre-execution error; later independent HELP preserved | mixed gate | PASS |
+          | command counting | only `kind=command` contributes | secondary source sweep | PASS |
+          | privacy/entitlement planning | non-command entries pass unchanged; commands keep existing policy path | secondary source sweep + disabled-alias regression | PASS |
+          | local guidance execution | no provider request | guidance contract + mixed gate | PASS |
+          | provider command execution/accounting | unchanged existing command path | command-envelope regression | PASS |
+          | batch persistence/recovery | no new state schema; typed entries remain existing serializable batch entries | existing lifecycle regressions + unchanged storage model | PASS |
+          | delivery aggregation | existing mixed-batch delivery policy preserved | intersecting file-delivery regressions | PASS |
+          | MV3 worker bootstrap | helper loaded before worker | pinned Chrome worker smoke | PASS |
+          | package runtime | deterministic rebuild + fresh extraction | Linux package gate + Windows sidecar verification | PASS |
+          | startup prompt/current docs | synchronized mandatory rules | mixed gate | PASS |
+
+          - secondary sweep after first root cause: PASS
+          - closed-set audit: PASS
+          - unaccounted dependencies: 0
+          - stale assumptions: 0
+          - available-but-unverified pre-handoff dependencies: 0
+
+          ## GATE-01..35
+
+          | Gate | Status | Evidence summary |
+          |---|---|---|
+          | GATE-01 | PASS | explicit operator authorization in active dialogue |
+          | GATE-02 | PASS | patch branch descends from exact preserved authority |
+          | GATE-03 | PASS | discovery + startup prompt scope isolated |
+          | GATE-04 | PASS | branch-scoped materialization; no unrelated ref mutation |
+          | GATE-05 | PASS | exact blanket worker rejection reconstructed |
+          | GATE-06 | PASS | secondary dependency sweep continued beyond first rejection |
+          | GATE-07 | PASS | dependency inventory recorded above |
+          | GATE-08 | PASS | each changed path traced to terminal behavior/test |
+          | GATE-09 | PASS | existing typed batch processor reused; no parallel runtime architecture |
+          | GATE-10 | PASS | no provider/account failure reclassified by this patch |
+          | GATE-11 | PASS | no new persistent state; existing fail-closed batch semantics retained |
+          | GATE-12 | PASS | intersecting lifecycle regression retained; no new lifecycle state introduced |
+          | GATE-13 | PASS | evidence includes Chrome MV3 worker smoke, not same-instance only |
+          | GATE-14 | PASS | no fabricated provider dependency; dependent-chain fresh-value rule retained |
+          | GATE-15 | PASS | malformed envelope isolation fails closed per envelope |
+          | GATE-16 | PASS | pinned Chrome MV3 service-worker bootstrap passed |
+          | GATE-17 | PASS | manifest bootstrap remains `service_worker_entry.js`; helper shipped in package |
+          | GATE-18 | PASS | exact deterministic installable ZIP verified |
+          | GATE-19 | PASS | package built after last executable materialization; Windows tested committed source |
+          | GATE-20 | PASS | API normalization/request contract unchanged and regressed |
+          | GATE-21 | PASS | HELP zero-provider and API command accounting preserved |
+          | GATE-22 | PASS | no retry/pagination/polling/fan-out code added; existing regressions preserved |
+          | GATE-23 | PASS | positive and malformed negative controls included |
+          | GATE-24 | PASS | entitlement path unchanged for command entries |
+          | GATE-25 | PASS | privacy policy path unchanged for command entries |
+          | GATE-26 | PASS | base/source/artifact provenance recorded |
+          | GATE-27 | PASS | redaction code untouched; command regression preserved |
+          | GATE-28 | PASS | no credential/base64/protected URL surface added |
+          | GATE-29 | PASS | no host/HTTPS/SSRF/credential transport change |
+          | GATE-30 | PASS | targeted mixed HELP/API regression passed Linux + Windows |
+          | GATE-31 | PASS | command-envelope, disabled-alias and intersecting delivery regressions passed |
+          | GATE-32 | PASS | deterministic worker mapping + real Chrome bootstrap + exact package test |
+          | GATE-33 | PASS | no stale/fabricated success dependency introduced |
+          | GATE-34 | PASS | no provider mutation path introduced; patch remains read-only |
+          | GATE-35 | PASS | Linux suite ran after executable materialization; Windows reran exact committed source |
+
+          ## Live gates
+
+          - LIVE-GATE-01: PENDING POST-INSTALL
+          - LIVE-GATE-02: PENDING POST-INSTALL
+          - LIVE-GATE-03: PENDING POST-INSTALL
+          - LIVE-GATE-04: PENDING POST-INSTALL
+          - LIVE-GATE-05: PENDING POST-INSTALL
+
+          ## Verdict
+
+          **PRE-HANDOFF PASS. NOT LIVE PASS.**
+
+          The exact package is ready for operator installation. Mixed HELP/API behavior is not promoted to LIVE PASS until post-install evidence is collected from the installed artifact.
+          EOF
+          sed -i 's/^          //' "$REPORT"
+          git diff --check
+
+      - name: Commit docs-only final evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          REPORT="$ROOT/validation/reports/OZON_MIXED_HELP_API_STARTUP_PROMPT_FINAL_PREHANDOFF_2026-09-10.md"
+          git add "$REPORT"
+          git commit -m 'validation(ozon): finalize mixed HELP API pre-handoff gate'
+          git push origin "HEAD:$PATCH_BRANCH"
+          echo "FINAL_EVIDENCE_SHA=$(git rev-parse HEAD)"
+          echo "FINAL_EVIDENCE_TREE=$(git rev-parse HEAD^{tree})"
