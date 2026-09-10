@@ -156,13 +156,90 @@ This test proves the reverse `API → HELP` ordering on the installed runtime:
 6. No coalescing or hidden additional provider business request is reported.
 7. The API logical and physical fingerprints match and `command_transformed=false`.
 
-Together, LIVE TEST 01 and LIVE TEST 02 now live-prove both basic mixed orderings required by the repaired source-ordered typed-envelope batch contract. They do not yet prove malformed-envelope isolation, disabled-alias fail-closed behavior inside a mixed source, startup-prompt UI materialization, or final live certification.
+Together, LIVE TEST 01 and LIVE TEST 02 live-prove both basic mixed orderings required by the repaired source-ordered typed-envelope batch contract.
+
+## LIVE TEST 03 — malformed HELP then valid API
+
+### Input
+
+```text
+OZON_HELP_V2 nope
+OZON_API_V1
+{"operation":"seller_product_list","params":{"filter":{},"limit":1}}
+```
+
+This input exactly mirrors the malformed-HELP isolation shape used by the authoritative pre-handoff regression.
+
+### Observed aggregate
+
+- result envelope: `OZON_BATCH_RESULT_V1`
+- bridge: `ozon-llm-api-bridge`
+- version: `0.1.19`
+- delivery mode: `sequential_batch_single_delivery`
+- result count: `2`
+- capability probe performed: `false`
+- query planner status: `complete`
+- coalesced group count: `0`
+- coalesced logical count: `0`
+- logical business result count: `1`
+- physical business request count: `1`
+
+### Observed result 1 — malformed HELP isolated locally
+
+- result type: `OZON_GUIDANCE_RESULT_V2`
+- guidance version: `2`
+- status: `guidance_error`
+- cluster: `null`
+- section: `null`
+- external request executed: `false`
+- physical business request count: `0`
+- error: `HELP_JSON_REQUIRED`
+- descriptor error code: `INVALID_COMMAND`
+- fallback guidance choices were returned
+
+### Observed result 2 — later independent API survives
+
+- result type: `OZON_RESULT_V1`
+- request ID: `3be07ab6-23cc-4e44-b7d3-6286cc9b1246`
+- operation: `seller_product_list`
+- command fingerprint: `9d82cd2e`
+- provider: `ozon`
+- host alias: `seller_api`
+- HTTP method: `POST`
+- external request executed: `true`
+- HTTP status: `200`
+- elapsed: `1398 ms`
+- capability probe executed: `false`
+- entitlement: `SUPPORTED_AND_ENTITLED`
+- exact request preserved: `true`
+- logical command fingerprint: `9d82cd2e`
+- physical command fingerprint: `9d82cd2e`
+- command transformed: `false`
+- provider returned one bounded item and reported total `76`
+- returned `last_id=WzEwODI4NDgzNzUsMTA4Mjg0ODM3NV0=`; it is evidence only and is not consumed automatically
+
+### Verdict
+
+`LIVE TEST 03 = PASS`
+
+This test live-proves malformed HELP isolation without poisoning a later independent API envelope:
+
+1. The malformed HELP is represented as its own local guidance error rather than aborting the complete source.
+2. The malformed HELP performs zero provider business requests.
+3. The exact expected error `HELP_JSON_REQUIRED` is surfaced.
+4. The later independent API remains discoverable and is executed exactly once.
+5. The API reaches Ozon with HTTP 200.
+6. Aggregate accounting remains exactly one logical business result and one physical business request.
+7. No coalescing, retry, or hidden second provider business request is visible.
+
+This proves one malformed-envelope direction in live runtime. It does not yet prove `malformed API → valid HELP`, disabled-alias fail-closed behavior inside a mixed source, startup-prompt UI materialization, or final live certification.
 
 ## Current live validation cursor
 
 - TEST-01 HELP→API: PASS
 - TEST-02 API→HELP: PASS
-- malformed-envelope isolation: NOT RUN
+- TEST-03 malformed HELP→valid API: PASS
+- malformed API→valid HELP: NOT RUN
 - disabled alias mixed fail-closed: NOT RUN
 - startup prompt live observation: NOT RUN
 - final live certification: OPEN
