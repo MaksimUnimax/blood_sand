@@ -1,0 +1,29 @@
+name: Ozon Alice large-result pre-fix gate
+
+on:
+  push:
+    branches:
+      - repair/ozon-alice-large-result-document-delivery-2026-09-10
+    paths:
+      - 'tooling/llm-api-bridges/ozon-seller/validation/alice-large-result-v1/**'
+      - '.github/workflows/ozon-alice-large-result-prefx-2026-09-10.yml'
+
+jobs:
+  pre-fix-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Expected pre-fix failure
+        shell: bash
+        run: |
+          set +e
+          node tooling/llm-api-bridges/ozon-seller/validation/alice-large-result-v1/run_alice_large_result_delivery_gate.mjs tooling/llm-api-bridges/ozon-seller/dist-step7-candidate > /tmp/alice-prefx.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/alice-prefx.log
+          test "$status" -ne 0
+          grep -E 'ALICE_SAFE_PLAIN_TEXT_THRESHOLD_MUST_BE_90000|ALICE_ATTACHMENT_STRATEGY_MUST_BE_EXECUTABLE|ALICE_ATTACHMENT_SURFACE_NULL_STUB_FORBIDDEN' /tmp/alice-prefx.log
+          echo 'ALICE_LARGE_RESULT_EXPECTED_PREFX_FAILURE_CONFIRMED'
