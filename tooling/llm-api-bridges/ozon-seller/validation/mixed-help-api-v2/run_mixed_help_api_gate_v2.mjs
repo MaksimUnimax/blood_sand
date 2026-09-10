@@ -9,6 +9,55 @@ function loadClassic(file) {
   vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file, displayErrors: true });
 }
 
+function extractFunction(source, functionName) {
+  const marker = `function ${functionName}(`;
+  const starts = [];
+  let cursor = 0;
+  while (true) {
+    const index = source.indexOf(marker, cursor);
+    if (index < 0) break;
+    starts.push(index);
+    cursor = index + marker.length;
+  }
+  assert.equal(starts.length, 1, `${functionName}: expected exactly one function definition`);
+  const start = starts[0];
+  const braceStart = source.indexOf('{', start + marker.length);
+  assert.ok(braceStart >= 0, `${functionName}: opening brace missing`);
+  let depth = 0;
+  let quote = null;
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
+  for (let index = braceStart; index < source.length; index += 1) {
+    const char = source[index];
+    const next = source[index + 1] || '';
+    if (lineComment) {
+      if (char === '\n') lineComment = false;
+      continue;
+    }
+    if (blockComment) {
+      if (char === '*' && next === '/') { blockComment = false; index += 1; }
+      continue;
+    }
+    if (quote) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === quote) quote = null;
+      continue;
+    }
+    if (char === '/' && next === '/') { lineComment = true; index += 1; continue; }
+    if (char === '/' && next === '*') { blockComment = true; index += 1; continue; }
+    if (char === '"' || char === "'" || char === '`') { quote = char; continue; }
+    if (char === '{') depth += 1;
+    else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) return source.slice(start, index + 1);
+      assert.ok(depth >= 0, `${functionName}: negative brace depth`);
+    }
+  }
+  assert.fail(`${functionName}: unterminated function`);
+}
+
 const repo = path.resolve(process.argv[2] || '.');
 const root = path.join(repo, 'tooling', 'llm-api-bridges', 'ozon-seller');
 const dist = path.join(root, 'dist-step7-candidate');
@@ -109,10 +158,10 @@ assert.ok(helperImportIndex >= 0 && workerImportIndex > helperImportIndex, 'mixe
 const workerSource = fs.readFileSync(path.join(dist, 'service_worker.js'), 'utf8');
 assert.doesNotMatch(workerSource, /MIXED_HELP_AND_API/, 'blanket mixed rejection must be removed');
 assert.match(workerSource, /OzonMixedBatchDiscovery\.discover\(source/);
-const fnStart = workerSource.indexOf('function discoverBatchEntries(text) {');
-const fnEnd = workerSource.indexOf('\nfunction batchEntryFromDiscovery', fnStart);
-assert.ok(fnStart >= 0 && fnEnd > fnStart, 'discoverBatchEntries must be extractable');
-const discoverFunctionSource = workerSource.slice(fnStart, fnEnd);
+const discoverFunctionSource = extractFunction(workerSource, 'discoverBatchEntries');
+assert.match(discoverFunctionSource, /batchEntryFromDiscovery\(item\.discovery\)/);
+assert.match(discoverFunctionSource, /kind: "guidance"/);
+console.log('REG_V2_DISCOVER_FUNCTION_STRUCTURAL_EXTRACTION_PASS');
 
 const integrationContext = vm.createContext({
   OzonRuntime: globalThis.OzonRuntime,
