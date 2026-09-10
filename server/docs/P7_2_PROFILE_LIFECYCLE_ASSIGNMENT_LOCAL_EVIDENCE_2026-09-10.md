@@ -156,3 +156,57 @@ remote acceptance was performed.
 
 Local Attempt-4 findings: `CRITICAL = 0`, `HIGH = 0`, `MEDIUM = 0`,
 `MATERIAL_MEDIUM = 0`, `LOW = 0`.
+## Remote acceptance finalization
+
+The exact Attempt-4 candidate was committed and pushed fast-forward-only:
+
+- `IMPLEMENTATION_SHA = 868e0873a6dcf22f2f81e475fe91687f17dd132d`.
+- `IMPLEMENTATION_PARENT = b415db7c6f3c5c7db4a0c7a56791335bbd0f2a87`.
+- `IMPLEMENTATION_TREE = 3d2b636b1d460b69ceb5ec1fb17f30de247aa42f`.
+- `IMPLEMENTATION_PUSH = FAST_FORWARD`.
+- `IMPLEMENTATION_CI_WORKFLOW = Server CI`.
+- `IMPLEMENTATION_CI_RUN_ID = 34485896603`.
+- `IMPLEMENTATION_CI_EVENT = push`.
+- `IMPLEMENTATION_CI_HEAD_SHA = 868e0873a6dcf22f2f81e475fe91687f17dd132d`.
+- `IMPLEMENTATION_CI_STATUS = completed`.
+- `IMPLEMENTATION_CI_CONCLUSION = success`.
+- `IMPLEMENTATION_CI_FAILED_MANDATORY_JOBS = 0`.
+- `IMPLEMENTATION_CI_SKIPPED_MANDATORY_JOBS = 0`.
+
+Fresh GitHub readback from the exact implementation commit passed. The
+remote branch head, parent, tree, and changed path set matched the accepted
+candidate; the remote P7.2 ADR, lifecycle/assignment repository, schema,
+migration, and tests were present. Remote migration 0014 is
+`4a12aa34d6be16648fc6cd12b4f3de04f3cce0f3abd6938918905dfa2c471558`, the
+migration range is `0000..0014`, `0015` is absent, and OpenAPI remains 67
+operations with SHA-256
+`eec29f87be0b1309be5021fdd3c0e38ec90bea2add9978f2c4b439c7f79e88e4`.
+
+Remote acceptance preserved the final boundaries: draft-only initial profile
+revisions, database candidate freeze, published/retired immutability,
+append-only assignment history, `pg_advisory_xact_lock` target
+serialization, P3 `selectRolloutCandidateV1` reuse, server-generated
+`node:crypto randomBytes(32)` cohort seeds, no public seed override, no raw
+lifecycle bypass export, and no profile JSON or raw cohort seed in audit.
+No OpenAPI, bootstrap AI wire, bootstrap profile resolution, config-release
+profile source, signed profile distribution, HTTP route, P7 permission,
+Bridge, or Alice-ledger change was present; P7.3, P8, P9, and P14 were not
+started. Remote findings: `CRITICAL = 0`, `HIGH = 0`, `MEDIUM = 0`,
+`MATERIAL_MEDIUM = 0`, `LOW = 0`.
+
+Remote finalization records:
+
+- `REMOTE_IMPLEMENTATION_READBACK = PASS`.
+- `MIGRATION_0014_SHA256 = 4a12aa34d6be16648fc6cd12b4f3de04f3cce0f3abd6938918905dfa2c471558`.
+- `OPENAPI_OPERATIONS = 67`.
+- `OPENAPI_SHA256 = eec29f87be0b1309be5021fdd3c0e38ec90bea2add9978f2c4b439c7f79e88e4`.
+- `ACCEPTED_FINAL_UNIT = 1173 / 0`.
+- `ACCEPTED_FINAL_INTEGRATION = 1475 / 35 files / 0`.
+- `ACCEPTED_FINAL_E2E = 69 / 0 fail / 0 skip / 0 retry`.
+- `CANONICAL_BASE_EXACT_PNPM_TEST = 1169 / 0`.
+- `P7.2 = DONE / REMOTE ACCEPTED`.
+- `P7_2_REMOTE_ACCEPTED = YES`.
+- `P7_3_STARTED = NO`.
+
+The finalization commit is documentation-only and records no product-code,
+test-code, or migration change.
