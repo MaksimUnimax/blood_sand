@@ -1,4 +1,4 @@
-name: Ozon bootstrap prompt editable new-chat v6
+name: Ozon bootstrap prompt editable new-chat v7
 on:
   push:
     branches: [repair/ozon-bootstrap-prompt-editable-new-chat-2026-09-10]
@@ -7,7 +7,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: ozon-bootstrap-prompt-editable-v6-${{ github.ref }}
+  group: ozon-bootstrap-prompt-editable-v7-${{ github.ref }}
   cancel-in-progress: false
 env:
   ROOT: tooling/llm-api-bridges/ozon-seller
