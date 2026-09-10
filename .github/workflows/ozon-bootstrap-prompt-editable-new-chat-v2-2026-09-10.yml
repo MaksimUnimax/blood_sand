@@ -1,0 +1,228 @@
+name: Ozon bootstrap prompt editable new-chat v2
+run-name: Ozon bootstrap prompt editable new-chat v2 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - repair/ozon-bootstrap-prompt-editable-new-chat-2026-09-10
+    paths:
+      - .github/workflows/ozon-bootstrap-prompt-editable-new-chat-v2-2026-09-10.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-bootstrap-prompt-editable-new-chat-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PATCH_BRANCH: repair/ozon-bootstrap-prompt-editable-new-chat-2026-09-10
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE_ROOT: tooling/llm-api-bridges/ozon-seller/validation/bootstrap-prompt-editable-new-chat-v1
+  TARGET_GATE: tooling/llm-api-bridges/ozon-seller/validation/bootstrap-prompt-editable-new-chat-v1/run_bootstrap_prompt_editable_new_chat_gate.mjs
+  ARTIFACT_NAME: OZON_BRIDGE_v0.1.19_BOOTSTRAP_PROMPT_EDITABLE_NEW_CHAT_20260910.zip
+  BUILDINFO_NAME: OZON_BRIDGE_v0.1.19_BOOTSTRAP_PROMPT_EDITABLE_NEW_CHAT_20260910_BUILDINFO.txt
+
+jobs:
+  linux-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      source_sha: ${{ steps.commit.outputs.source_sha }}
+      source_tree: ${{ steps.commit.outputs.source_tree }}
+      package_sha: ${{ steps.identity.outputs.package_sha }}
+      package_bytes: ${{ steps.identity.outputs.package_bytes }}
+      refresh_state: ${{ steps.identity.outputs.refresh_state }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run authorized deterministic pre-handoff gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = 'v24.12.0'
+          python "$GATE_ROOT/run_prehandoff_gate.py" --materialize-and-test
+          git diff --check
+          echo DETERMINISTIC_PREHANDOFF_GATE_PASS
+
+      - name: Install pinned Chrome for Testing
+        shell: bash
+        run: |
+          set -euo pipefail
+          CFT_VERSION='152.0.7977.82'
+          ARCHIVE="$RUNNER_TEMP/chrome-linux64.zip"
+          CFT_ROOT="$RUNNER_TEMP/chrome-for-testing"
+          rm -rf "$CFT_ROOT" "$ARCHIVE"
+          mkdir -p "$CFT_ROOT"
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${CFT_VERSION}/linux64/chrome-linux64.zip" --output "$ARCHIVE"
+          unzip -q "$ARCHIVE" -d "$CFT_ROOT"
+          CFT_BIN="$CFT_ROOT/chrome-linux64/chrome"
+          test -x "$CFT_BIN"
+          "$CFT_BIN" --version | grep -F "$CFT_VERSION"
+          echo "CFT_BIN=$CFT_BIN" >> "$GITHUB_ENV"
+          echo PINNED_CHROME_INSTALL_PASS
+
+      - name: Prove real Chrome MV3 service-worker bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          xvfb-run -a node "$ROOT/validation/regression/run_file_delivery_extension_worker_smoke.mjs" "$CFT_BIN" "$GITHUB_WORKSPACE/$DIST"
+          sed -i 's/mv3_chrome_worker_bootstrap=PENDING_CI_STEP/mv3_chrome_worker_bootstrap=PASS/' "$ROOT/artifacts/$BUILDINFO_NAME"
+          grep -F 'mv3_chrome_worker_bootstrap=PASS' "$ROOT/artifacts/$BUILDINFO_NAME"
+          echo MV3_CHROME_BOOTSTRAP_PASS
+
+      - name: Read exact package identity
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -c "import json; from pathlib import Path; d=json.loads(Path('$GATE_ROOT/gate_outputs.json').read_text()); print('package_sha='+str(d['package_sha'])); print('package_bytes='+str(d['package_bytes'])); print('refresh_state='+str(d['refresh_guard_state']))" >> "$GITHUB_OUTPUT"
+          cat "$GATE_ROOT/gate_outputs.json"
+          echo PACKAGE_IDENTITY_READ_PASS
+
+      - name: Commit exact materialized candidate and package
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$DIST/service_worker.js"
+          git add "$DIST/popup.js"
+          git add "$DIST/popup.html"
+          git add "$DIST/shared/runtime_names.js"
+          git add "$GATE_ROOT/DEPENDENCY_CLOSURE_2026-09-10.md"
+          git add "$GATE_ROOT/PREHANDOFF_EVIDENCE_2026-09-10.md"
+          git add "$GATE_ROOT/gate_outputs.json"
+          git add "$ROOT/artifacts/$ARTIFACT_NAME"
+          git add "$ROOT/artifacts/$ARTIFACT_NAME.sha256.txt"
+          git add "$ROOT/artifacts/$BUILDINFO_NAME"
+          test -n "$(git diff --cached --name-only)"
+          git diff --cached --check
+          git commit -m 'repair(ozon): make bootstrap prompt editable before conversation identity'
+          git push origin "HEAD:$PATCH_BRANCH"
+          SHA=$(git rev-parse HEAD)
+          TREE=$(git rev-parse HEAD^{tree})
+          echo "source_sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "source_tree=$TREE" >> "$GITHUB_OUTPUT"
+          echo "MATERIALIZED_SOURCE_SHA=$SHA"
+          echo "MATERIALIZED_SOURCE_TREE=$TREE"
+
+      - name: Upload exact installable candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-bootstrap-prompt-editable-new-chat-${{ steps.commit.outputs.source_sha }}
+          path: |
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_BOOTSTRAP_PROMPT_EDITABLE_NEW_CHAT_20260910.zip
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_BOOTSTRAP_PROMPT_EDITABLE_NEW_CHAT_20260910.zip.sha256.txt
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_BOOTSTRAP_PROMPT_EDITABLE_NEW_CHAT_20260910_BUILDINFO.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  windows-gate:
+    needs: linux-gate
+    runs-on: windows-latest
+    outputs:
+      tested_sha: ${{ steps.identity.outputs.tested_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.linux-gate.outputs.source_sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+
+      - name: Verify exact committed source identity
+        id: identity
+        shell: pwsh
+        run: |
+          $sha = git rev-parse HEAD
+          $expected = '${{ needs.linux-gate.outputs.source_sha }}'
+          if ($sha -ne $expected) { throw "source SHA drift: $sha != $expected" }
+          "tested_sha=$sha" >> $env:GITHUB_OUTPUT
+          Write-Output "WINDOWS_EXACT_SOURCE_SHA=$sha"
+
+      - name: Run exact-source Windows syntax and bootstrap regressions
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path $env:DIST -Recurse -Filter *.js | Sort-Object FullName | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
+          node $env:TARGET_GATE $env:DIST; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node (Join-Path $env:ROOT 'validation/WORK_SESSION_MODEL_REGRESSION_2026-08-21.mjs') $env:DIST; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node (Join-Path $env:ROOT 'validation/WORK_SESSION_PENDING_START_REGRESSION_2026-08-21.mjs') $env:DIST; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node (Join-Path $env:ROOT 'validation/mixed-help-api-v2/run_mixed_help_api_gate_v2.mjs') .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node (Join-Path $env:ROOT 'validation/mixed-help-api-v2/run_mixed_help_api_disabled_alias_gate.mjs') .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node (Join-Path $env:ROOT 'validation/command-envelope-contract-v1/run_command_envelope_contract_gate.mjs') .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Output 'WINDOWS_TARGET_AND_SHARED_COMMAND_REGRESSIONS_PASS'
+
+      - name: Run exact-source Windows delivery lifecycle regressions
+        shell: pwsh
+        run: |
+          $r = Join-Path $env:ROOT 'validation/regression'
+          foreach ($name in @('run_file_delivery_capture_accounting.mjs','run_file_delivery_port_worker_state_machine.mjs','run_file_delivery_mixed_batch_policy.mjs','run_file_delivery_adapter_gate_policy.mjs','run_file_delivery_wake_lifecycle.mjs','run_file_delivery_live_stop_repro.mjs','run_direct_binary_provider_attachment_gate.mjs')) {
+            node (Join-Path $r $name)
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          Write-Output 'WINDOWS_DELIVERY_LIFECYCLE_REGRESSIONS_PASS'
+
+      - name: Verify exact package SHA and fresh extracted target gate
+        shell: pwsh
+        run: |
+          $artifact = Join-Path (Join-Path $env:ROOT 'artifacts') $env:ARTIFACT_NAME
+          $sidecar = "$artifact.sha256.txt"
+          if (-not (Test-Path $artifact)) { throw 'artifact missing' }
+          if (-not (Test-Path $sidecar)) { throw 'sidecar missing' }
+          $actual = (Get-FileHash -Algorithm SHA256 $artifact).Hash.ToLowerInvariant()
+          $side = ((Get-Content $sidecar -Raw).Trim() -split '\s+')[0].ToLowerInvariant()
+          if ($actual -ne $side) { throw 'sidecar mismatch' }
+          if ($actual -ne '${{ needs.linux-gate.outputs.package_sha }}') { throw 'Linux/Windows package SHA mismatch' }
+          $extract = Join-Path $env:RUNNER_TEMP 'ozon-bootstrap-extract'
+          Expand-Archive -LiteralPath $artifact -DestinationPath $extract -Force
+          node $env:TARGET_GATE $extract; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Output "WINDOWS_PACKAGE_SHA256=$actual"
+          Write-Output 'WINDOWS_EXACT_PACKAGE_FRESH_EXTRACT_PASS'
+
+  finalize-evidence:
+    needs: [linux-gate, windows-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.linux-gate.outputs.source_sha }}
+
+      - name: Create factual mandatory GATE report
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '${{ needs.windows-gate.outputs.tested_sha }}'
+          python "$GATE_ROOT/finalize_gate_report.py" --source-sha '${{ needs.linux-gate.outputs.source_sha }}' --source-tree '${{ needs.linux-gate.outputs.source_tree }}' --package-sha '${{ needs.linux-gate.outputs.package_sha }}' --package-bytes '${{ needs.linux-gate.outputs.package_bytes }}' --workflow-run "$GITHUB_RUN_ID" --refresh-state '${{ needs.linux-gate.outputs.refresh_state }}' --output "$GATE_ROOT/FINAL_PREHANDOFF_2026-09-10.md"
+          grep -F '**PRE-HANDOFF VERDICT: PASS**' "$GATE_ROOT/FINAL_PREHANDOFF_2026-09-10.md"
+          grep -F '**LIVE CERTIFICATION: PENDING**' "$GATE_ROOT/FINAL_PREHANDOFF_2026-09-10.md"
+          echo FINAL_GATE_REPORT_CHECK_PASS
+
+      - name: Commit docs-only final gate evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$GATE_ROOT/FINAL_PREHANDOFF_2026-09-10.md"
+          git diff --cached --check
+          git commit -m 'docs(ozon): finalize editable bootstrap prompt gate evidence'
+          git push origin "HEAD:$PATCH_BRANCH"
+          echo "FINAL_DOCS_HEAD=$(git rev-parse HEAD)"
+          echo "FINAL_DOCS_TREE=$(git rev-parse HEAD^{tree})"
+          echo PRE_HANDOFF_FULL_GATE_PASS
