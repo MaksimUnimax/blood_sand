@@ -19,7 +19,8 @@ export { createP4PriceCommandRepository } from "./p4-price-command-repository.js
 export { createP4EntitlementRepository } from "./p4-entitlement-repository.js";
 export { createP4CommercialCatalogRepository } from "./p4-commercial-catalog-repository.js";
 export { createP6AdminCommercialReadRepository } from "./p6-admin-commercial-read-repository.js";
-export { createAdapterRegistryRepository } from "./adapter-registry-repository.js";
+export { createAdapterRegistryCatalogRepository } from "./adapter-registry-repository.js";
+export { createProfileLifecycleRepository } from "./p7-profile-lifecycle-repository.js";
 export {
   createP6AdminPlanCommandAdapter,
   createP6AdminPriceCommandAdapter,

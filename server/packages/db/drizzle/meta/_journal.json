@@ -99,6 +99,13 @@
       "when": 1788705000000,
       "tag": "0013_p7_1_adapter_registry_profile_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1788706000000,
+      "tag": "0014_p7_2_profile_assignments_lifecycle",
+      "breakpoints": true
     }
   ]
 }

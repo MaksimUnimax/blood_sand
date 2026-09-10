@@ -1,16 +1,13 @@
 import {
   AdapterProfileSchema,
-  AdapterRegistryRepository,
+  AdapterRegistryCatalogRepository,
   AdapterSchema,
   PersistedProfileRevisionSchema,
-  ProfileRevisionCreateInputSchema,
   SurfaceSchema,
   VariantSchema,
-  profileRevisionFingerprint,
   type Adapter,
   type AdapterProfile,
   type PersistedProfileRevision,
-  type ProfileRevisionCreateInput,
   type Surface,
   type Variant,
 } from "@product/adapter-registry";
@@ -78,9 +75,9 @@ const revisionProjection =
   ' published_by_admin_principal_id AS "publishedByAdminPrincipalId"' +
   " FROM adapter_profile_revisions";
 
-export function createAdapterRegistryRepository(
+export function createAdapterRegistryCatalogRepository(
   runtime: DatabaseRuntime,
-): AdapterRegistryRepository {
+): AdapterRegistryCatalogRepository {
   return {
     async findAdapter(id) {
       const result = await runtime.query<IdentityRow>(
@@ -128,47 +125,6 @@ export function createAdapterRegistryRepository(
       );
       const row = result.rows[0];
       return row ? mapProfile(row) : undefined;
-    },
-
-    async createProfileRevision(input: ProfileRevisionCreateInput) {
-      const parsed = ProfileRevisionCreateInputSchema.parse(input);
-      const contentSha256 = profileRevisionFingerprint(parsed);
-      const result = await runtime.query<RevisionRow>(
-        "INSERT INTO adapter_profile_revisions" +
-          " (id, profile_id, adapter_id, surface_id, variant_id, revision," +
-          " schema_version, state, content, compatibility_constraints," +
-          " content_sha256, created_at, published_at," +
-          " created_by_admin_principal_id, published_by_admin_principal_id)" +
-          " VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,$13,$14,$15)" +
-          ' RETURNING id, profile_id AS "profileId", adapter_id AS "adapterId",' +
-          ' surface_id AS "surfaceId", variant_id AS "variantId", revision,' +
-          ' schema_version AS "schemaVersion", state, content,' +
-          " compatibility_constraints AS compatibility," +
-          ' content_sha256 AS "contentSha256", created_at AS "createdAt",' +
-          ' published_at AS "publishedAt",' +
-          ' created_by_admin_principal_id AS "createdByAdminPrincipalId",' +
-          ' published_by_admin_principal_id AS "publishedByAdminPrincipalId"',
-        [
-          parsed.id,
-          parsed.profileId,
-          parsed.adapterId,
-          parsed.surfaceId,
-          parsed.variantId,
-          parsed.revision,
-          parsed.schemaVersion,
-          parsed.state,
-          JSON.stringify(parsed.content),
-          JSON.stringify(parsed.compatibility),
-          contentSha256,
-          parsed.createdAt,
-          parsed.publishedAt,
-          parsed.createdByAdminPrincipalId,
-          parsed.publishedByAdminPrincipalId,
-        ],
-      );
-      const row = result.rows[0];
-      if (!row) throw new Error("ADAPTER_PROFILE_REVISION_INSERT_FAILED");
-      return mapRevision(row);
     },
 
     async findProfileRevision(profileId, revision) {

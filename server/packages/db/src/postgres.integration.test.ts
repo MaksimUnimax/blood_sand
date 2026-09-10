@@ -75,6 +75,8 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
       "account_entitlement_overrides",
       "account_memberships",
       "accounts",
+      "adapter_profile_assignment_revisions",
+      "adapter_profile_assignments",
       "adapter_profile_revisions",
       "adapter_profiles",
       "admin_principals",
@@ -126,7 +128,7 @@ describe.sequential("P2.1 PostgreSQL persistence integration", () => {
     const count = await runtime.db.execute<{ count: string }>(sql`
       SELECT count(*)::text AS "count" FROM drizzle."__drizzle_migrations"
     `);
-    expect(count.rows[0]?.count).toBe("14");
+    expect(count.rows[0]?.count).toBe("15");
     const probe = await runtime.db.execute<{ probe: string | null }>(sql`
       SELECT to_regclass('__p1_migration_probe') AS "probe"
     `);

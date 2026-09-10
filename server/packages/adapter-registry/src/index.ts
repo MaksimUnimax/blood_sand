@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { canonicalizeJson } from "@product/remote-config";
+import { selectRolloutCandidateV1 } from "@product/remote-config";
 import { SemVerV1Schema } from "@product/shared";
 import { z } from "zod";
 
@@ -319,14 +320,11 @@ export type PersistedProfileRevision = z.infer<
 >;
 export type ProfileRevisionInput = ProfileRevisionCreateInput;
 
-export interface AdapterRegistryRepository {
+export interface AdapterRegistryCatalogRepository {
   findAdapter(id: string): Promise<Adapter | undefined>;
   findSurface(id: string): Promise<Surface | undefined>;
   findVariant(id: string): Promise<Variant | undefined>;
   findProfile(id: string): Promise<AdapterProfile | undefined>;
-  createProfileRevision(
-    input: ProfileRevisionCreateInput,
-  ): Promise<PersistedProfileRevision>;
   findProfileRevision(
     profileId: string,
     revision: number,
@@ -374,4 +372,175 @@ export function profileRevisionFingerprint(input: {
   compatibility: unknown;
 }): string {
   return validateProfileContent(input).contentSha256;
+}
+
+export const ProfileMutationContextSchema = z.discriminatedUnion("actorType", [
+  z
+    .object({
+      actorType: z.literal("SYSTEM"),
+      actorId: z.uuid().optional(),
+      correlationId: z.string().min(1).max(128),
+      reason: z.string().min(1).max(512),
+    })
+    .strict(),
+  z
+    .object({
+      actorType: z.literal("ADMIN"),
+      actorId: z.uuid(),
+      correlationId: z.string().min(1).max(128),
+      reason: z.string().min(1).max(512),
+    })
+    .strict(),
+]);
+export type ProfileMutationContext = z.infer<
+  typeof ProfileMutationContextSchema
+>;
+export const AssignmentSubjectKindSchema = z.enum(["ACCOUNT", "DEVICE"]);
+export const AssignmentModeSchema = z.enum(["DIRECT", "ROLLOUT", "PAUSED"]);
+export type AssignmentSubjectKind = z.infer<typeof AssignmentSubjectKindSchema>;
+export type AssignmentMode = z.infer<typeof AssignmentModeSchema>;
+export const P7_PROFILE_ROLLOUT_KEY = "ai.profile.assignment" as const;
+const AssignmentPercentageSchema = z.number().int().min(0).max(10000);
+export const AssignmentScopeCommandSchema = z
+  .object({
+    adapterId: z.uuid(),
+    surfaceId: z.uuid(),
+    variantId: z.uuid().nullable(),
+    browserFamily: BrowserFamilySchema,
+    subjectKind: AssignmentSubjectKindSchema,
+  })
+  .strict();
+export type AssignmentScopeCommand = z.infer<
+  typeof AssignmentScopeCommandSchema
+>;
+export const AssignmentExpectedRevisionSchema = z
+  .number()
+  .int()
+  .positive()
+  .nullable();
+export const RolloutCommandSchema = z
+  .object({
+    assignmentId: z.uuid(),
+    baselineProfileRevisionId: z.uuid(),
+    candidateProfileRevisionId: z.uuid(),
+    percentageBps: AssignmentPercentageSchema,
+    expectedLatestAssignmentRevision: AssignmentExpectedRevisionSchema,
+  })
+  .strict();
+export const DirectAssignmentCommandSchema = z
+  .object({
+    assignmentId: z.uuid(),
+    baselineProfileRevisionId: z.uuid(),
+    expectedLatestAssignmentRevision: AssignmentExpectedRevisionSchema,
+  })
+  .strict();
+export const AssignmentMutationCommandSchema = z
+  .object({
+    assignmentId: z.uuid(),
+    expectedLatestAssignmentRevision: z.number().int().positive(),
+  })
+  .strict();
+export const ChangeRolloutPercentageCommandSchema =
+  AssignmentMutationCommandSchema.extend({
+    percentageBps: AssignmentPercentageSchema,
+  }).strict();
+export const RollbackAssignmentCommandSchema =
+  AssignmentMutationCommandSchema.extend({
+    profileRevisionId: z.uuid(),
+  }).strict();
+export type RolloutCommand = z.infer<typeof RolloutCommandSchema>;
+export type DirectAssignmentCommand = z.infer<
+  typeof DirectAssignmentCommandSchema
+>;
+export type AssignmentMutationCommand = z.infer<
+  typeof AssignmentMutationCommandSchema
+>;
+export type ChangeRolloutPercentageCommand = z.infer<
+  typeof ChangeRolloutPercentageCommandSchema
+>;
+export type RollbackAssignmentCommand = z.infer<
+  typeof RollbackAssignmentCommandSchema
+>;
+export function selectAssignedProfileRevision(input: {
+  mode: AssignmentMode;
+  baselineProfileRevisionId: string;
+  candidateProfileRevisionId: string | null;
+  percentageBps: number;
+  cohortSeed: Buffer;
+  subjectKind: AssignmentSubjectKind;
+  subjectId: string;
+}): string {
+  AssignmentModeSchema.parse(input.mode);
+  AssignmentPercentageSchema.parse(input.percentageBps);
+  if (input.mode !== "ROLLOUT" || !input.candidateProfileRevisionId)
+    return input.baselineProfileRevisionId;
+  return selectRolloutCandidateV1({
+    state: "ACTIVE",
+    percentageBps: input.percentageBps,
+    rolloutKey: P7_PROFILE_ROLLOUT_KEY,
+    cohortSeed: input.cohortSeed,
+    subjectKind: input.subjectKind,
+    subjectId: input.subjectId,
+  })
+    ? input.candidateProfileRevisionId
+    : input.baselineProfileRevisionId;
+}
+export interface ProfileLifecycleRepository {
+  createDraftProfileRevision(input: {
+    profileId: string;
+    content: unknown;
+    compatibility: unknown;
+    context: ProfileMutationContext;
+  }): Promise<PersistedProfileRevision>;
+  updateDraftProfileRevision(input: {
+    profileId: string;
+    revision: number;
+    content: unknown;
+    compatibility: unknown;
+    expectedContentSha256: string;
+    context: ProfileMutationContext;
+  }): Promise<PersistedProfileRevision>;
+  markProfileRevisionCandidate(input: {
+    profileId: string;
+    revision: number;
+    context: ProfileMutationContext;
+  }): Promise<PersistedProfileRevision>;
+  publishProfileRevision(input: {
+    profileId: string;
+    revision: number;
+    context: ProfileMutationContext;
+  }): Promise<PersistedProfileRevision>;
+  retireProfileRevision(input: {
+    profileId: string;
+    revision: number;
+    context: ProfileMutationContext;
+  }): Promise<PersistedProfileRevision>;
+  createAssignmentScope(input: {
+    scope: AssignmentScopeCommand;
+    context: ProfileMutationContext;
+  }): Promise<{ id: string; cohortSeed: Buffer }>;
+  assignDirect(
+    input: DirectAssignmentCommand & { context: ProfileMutationContext },
+  ): Promise<unknown>;
+  startRollout(
+    input: RolloutCommand & { context: ProfileMutationContext },
+  ): Promise<unknown>;
+  changeRolloutPercentage(
+    input: ChangeRolloutPercentageCommand & { context: ProfileMutationContext },
+  ): Promise<unknown>;
+  pauseProfileRollout(
+    input: AssignmentMutationCommand & { context: ProfileMutationContext },
+  ): Promise<unknown>;
+  resumeProfileRollout(
+    input: AssignmentMutationCommand & {
+      context: ProfileMutationContext;
+      percentageBps?: number;
+    },
+  ): Promise<unknown>;
+  completeRollout(
+    input: AssignmentMutationCommand & { context: ProfileMutationContext },
+  ): Promise<unknown>;
+  rollbackProfileAssignment(
+    input: RollbackAssignmentCommand & { context: ProfileMutationContext },
+  ): Promise<unknown>;
 }

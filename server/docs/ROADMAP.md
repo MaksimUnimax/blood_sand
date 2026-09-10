@@ -234,7 +234,7 @@ Exit: independent ChatGPT Standard/Work resolution, safe rollback and no remote 
 P7 execution decomposition (frozen by ADR-0031):
 
 - P7.1 [DONE / REMOTE ACCEPTED] AI adapter registry/profile persistence foundation and strict declarative profile schema.
-- P7.2 [NEXT / NOT STARTED] profile lifecycle commands, deterministic assignment, rollout/pause/rollback authority.
+- P7.2 [ACTIVE / LOCAL CANDIDATE] profile lifecycle commands, deterministic assignment, rollout/pause/rollback authority; remote acceptance pending.
 - P7.3 [PLANNED] bootstrap AI resolution, signed wire contract, and simulated-client automatic selection.
 - P7.4 [PLANNED] admin API and P7 RBAC permissions.
 - P7.5 [PLANNED] admin portal AI adapter/profile operations UX.
@@ -447,7 +447,7 @@ Architecture remains:
 
 - P7 [ACTIVE].
 - P7.1 [DONE / REMOTE ACCEPTED].
-- P7.2 [NEXT / NOT STARTED].
+- P7.2 [ACTIVE / LOCAL CANDIDATE].
 - P7.3 [PLANNED].
 - P7.4 [PLANNED].
 - P7.5 [PLANNED].

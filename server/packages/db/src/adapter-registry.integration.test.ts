@@ -1,15 +1,13 @@
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  createAdapterRegistryRepository,
+  createAdapterRegistryCatalogRepository,
   createDatabaseRuntime,
+  createProfileLifecycleRepository,
   type DatabaseRuntime,
 } from "./index.js";
 import { runMigrations } from "./migrations.js";
-import {
-  ProfileRevisionCreateInputSchema,
-  profileRevisionFingerprint,
-} from "@product/adapter-registry";
+import { profileRevisionFingerprint } from "@product/adapter-registry";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString)
@@ -24,7 +22,6 @@ const P1 = "00000000-0000-4000-8000-000000000006";
 const R1 = "00000000-0000-4000-8000-000000000007";
 const R2 = "00000000-0000-4000-8000-000000000008";
 const badProfileRevision = "00000000-0000-4000-8000-000000000009";
-const R3 = "00000000-0000-4000-8000-000000000010";
 const R4 = "00000000-0000-4000-8000-000000000011";
 const checksum = "a".repeat(64);
 const content = JSON.stringify({ schemaVersion: "adapter_profile_v1" });
@@ -147,7 +144,7 @@ describe.sequential("P7.1 adapter registry PostgreSQL boundary", () => {
     const result = await runtime.db.execute<{ count: string }>(sql`
       SELECT count(*)::text AS count FROM drizzle."__drizzle_migrations"
     `);
-    expect(result.rows[0]?.count).toBe("14");
+    expect(result.rows[0]?.count).toBe("15");
   });
 
   it("enforces scoped identity uniqueness and hierarchy foreign keys", async () => {
@@ -227,47 +224,28 @@ describe.sequential("P7.1 adapter registry PostgreSQL boundary", () => {
     `);
   });
 
-  it("computes and persists only the canonical repository fingerprint", async () => {
-    const repository = createAdapterRegistryRepository(runtime);
-    const input = {
-      id: R3,
+  it("computes fingerprints through lifecycle authority and exposes catalog reads", async () => {
+    const lifecycle = createProfileLifecycleRepository(runtime);
+    const inserted = await lifecycle.createDraftProfileRevision({
       profileId: P1,
-      adapterId: A,
-      surfaceId: S1,
-      variantId: null,
-      revision: 3,
-      schemaVersion: "adapter_profile_v1" as const,
-      state: "DRAFT" as const,
       content: validContent,
       compatibility: validCompatibility,
-      createdAt: new Date("2026-09-09T00:00:00.000Z"),
-      publishedAt: null,
-      createdByAdminPrincipalId: null,
-      publishedByAdminPrincipalId: null,
-    };
-    const expected = profileRevisionFingerprint(input);
-    expect(() =>
-      ProfileRevisionCreateInputSchema.parse({
-        ...input,
-        contentSha256: checksum,
-      }),
-    ).toThrow();
-    await expect(
-      repository.createProfileRevision({
-        ...input,
-        contentSha256: checksum,
-      } as never),
-    ).rejects.toThrow();
-    const inserted = await repository.createProfileRevision(input);
+      context: {
+        actorType: "SYSTEM",
+        correlationId: "p7.1-catalog-test",
+        reason: "catalog read regression",
+      },
+    });
+    const expected = profileRevisionFingerprint({
+      content: validContent,
+      compatibility: validCompatibility,
+    });
     expect(inserted.contentSha256).toBe(expected);
-    const readback = await repository.findProfileRevision(P1, 3);
+    const catalog = createAdapterRegistryCatalogRepository(runtime);
+    expect((await catalog.findAdapter(A))?.id).toBe(A);
+    expect((await catalog.findProfile(P1))?.id).toBe(P1);
+    const readback = await catalog.findProfileRevision(P1, inserted.revision);
     expect(readback?.contentSha256).toBe(expected);
-    expect(
-      profileRevisionFingerprint({
-        content: readback!.content,
-        compatibility: readback!.compatibility,
-      }),
-    ).toBe(readback!.contentSha256);
   });
 
   it("enforces the combined UTF-8 byte payload bound", async () => {
@@ -290,16 +268,19 @@ describe.sequential("P7.1 adapter registry PostgreSQL boundary", () => {
     await runtime.db.execute(sql`
       INSERT INTO adapter_profile_revisions
         (id, profile_id, adapter_id, surface_id, revision, schema_version, state, content, compatibility_constraints, content_sha256)
-      VALUES (${R2}, ${P1}, ${A}, ${S1}, 2, 'adapter_profile_v1', 'CANDIDATE', ${content}::jsonb, ${compatibility}::jsonb, ${checksum})
+      VALUES (${R2}, ${P1}, ${A}, ${S1}, 3, 'adapter_profile_v1', 'DRAFT', ${content}::jsonb, ${compatibility}::jsonb, ${checksum})
     `);
     await runtime.db.execute(
-      sql`UPDATE adapter_profile_revisions SET state = 'PUBLISHED', published_at = now() WHERE id = ${R2}`,
+      sql`UPDATE adapter_profile_revisions SET state = 'CANDIDATE' WHERE id = ${R2}`,
     );
     await rejects(
       sql`UPDATE adapter_profile_revisions SET content = '{"changed": true}'::jsonb WHERE id = ${R2}`,
     );
     await rejects(
       sql`UPDATE adapter_profile_revisions SET state = 'DRAFT' WHERE id = ${R2}`,
+    );
+    await runtime.db.execute(
+      sql`UPDATE adapter_profile_revisions SET state = 'PUBLISHED', published_at = now() WHERE id = ${R2}`,
     );
     await rejects(sql`DELETE FROM adapter_profile_revisions WHERE id = ${R2}`);
     await runtime.db.execute(
