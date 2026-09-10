@@ -13,6 +13,7 @@ def main() -> None:
     p.add_argument("--package-bytes", required=True)
     p.add_argument("--workflow-run", required=True)
     p.add_argument("--refresh-state", required=True)
+    p.add_argument("--pending-start-state", required=True)
     p.add_argument("--output", required=True)
     a = p.parse_args()
 
@@ -28,7 +29,7 @@ def main() -> None:
         9: "existing real-identity/per-conversation isolation preserved; missing global bootstrap-template layer added",
         10: "no provider/account blocker reclassified or repaired in bridge code",
         11: "global prompt deliberately durable in existing local storage; per-conversation custom overrides remain durable",
-        12: "work-session model/pending-start lifecycle regressions plus MV3 worker bootstrap passed",
+        12: "current work-session model plus current pending-start/show-hide visibility guards passed on exact base/candidate; MV3 worker bootstrap passed",
         13: "proof is not same-instance-only: storage VM semantics, lifecycle regressions, Chrome MV3 and cross-platform exact-source checks used",
         14: "no fabricated live IDs/refs used; deterministic prompt test keys are explicit synthetic unit-test fixtures only",
         15: "no fake conversation key introduced; per-conversation controls still fail closed before stable identity",
@@ -47,7 +48,7 @@ def main() -> None:
         28: "credential/URL/base64 output paths unchanged; no new transport handling introduced",
         29: "no external URL/host handling added; packaged manifest unchanged",
         30: "target regression failed on pre-fix specifically at `GLOBAL_BOOTSTRAP_PROMPT_STORAGE_KEY_MISSING` and passed final candidate",
-        31: f"relevant work-session/mixed/command/delivery guards passed; historical refresh guard classified `{a.refresh_state}` without false promotion",
+        31: f"current lifecycle guards passed; historical pending-start guard classified `{a.pending_start_state}` and historical refresh guard `{a.refresh_state}` by exact base-vs-candidate execution, with no stale assertion promoted to current PASS",
         32: "complete available new-chat configuration path tested from popup/storage source through effective resolver and exact extracted artifact",
         33: "no stale/fabricated live dependency used to make acceptance pass",
         34: "repair tests perform zero Ozon business mutations; prompt configuration path performs no provider request",
@@ -65,18 +66,20 @@ def main() -> None:
         "- artifact: `OZON_BRIDGE_v0.1.19_BOOTSTRAP_PROMPT_EDITABLE_NEW_CHAT_20260910.zip`",
         f"- artifact bytes: `{a.package_bytes}`",
         f"- artifact SHA-256: `{a.package_sha}`",
-        f"- certification workflow run: `{a.workflow_run}`", "",
-        "Built-in startup-prompt wording was deliberately **not changed** by this patch. The separate Alice wording issue remains out of scope.", "",
+        f"- certification workflow run: `{a.workflow_run}`",
+        f"- historical pending-start guard: `{a.pending_start_state}`; current replacement guard: `PASS_BASE_AND_CANDIDATE`",
+        f"- historical refresh guard: `{a.refresh_state}`", "",
+        "Built-in startup-prompt wording was deliberately **not changed** by this patch.", "",
         "## Mandatory GATE-01..35", "", "| Gate | Status | Evidence |", "|---|---|---|",
     ]
     for i in range(1, 36):
         lines.append(f"| GATE-{i:02d} | PASS | {evidence[i]} |")
     lines += [
         "", "## Post-install LIVE-GATE", "", "| Gate | Status | Required evidence |", "|---|---|---|",
-        "| LIVE-GATE-01 | PENDING POST-INSTALL | Brand-new supported ChatGPT/Alice chat with no stable conversation ID: edit global prompt before any message, save, press Start, observe that exact configured text sent once. |",
+        "| LIVE-GATE-01 | PENDING POST-INSTALL | Brand-new supported ChatGPT/Alice chat with no stable conversation ID: edit the global prompt before any message, save, press Start, and observe that exact configured text sent once. |",
         "| LIVE-GATE-02 | PENDING POST-INSTALL | Repeat through a real MV3 lifecycle boundary; verify durable global prompt plus correct pending-start binding. |",
         "| LIVE-GATE-03 | PENDING POST-INSTALL | Validate UI state, effective prompt source, one submission, stable binding and zero Ozon provider business requests. |",
-        "| LIVE-GATE-04 | PENDING POST-INSTALL | Verify existing custom per-conversation override survives global changes; local reset returns that conversation to global inheritance. |",
+        "| LIVE-GATE-04 | PENDING POST-INSTALL | Verify an existing custom per-conversation override survives global changes; local reset returns that conversation to global inheritance. |",
         "| LIVE-GATE-05 | PENDING POST-INSTALL | CI/package PASS is not LIVE PASS; installed live evidence is still required. |", "",
         "**PRE-HANDOFF VERDICT: PASS**", "", "**LIVE CERTIFICATION: PENDING**", "",
     ]
