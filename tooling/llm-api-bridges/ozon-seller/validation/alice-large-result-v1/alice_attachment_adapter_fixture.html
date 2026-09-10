@@ -1,0 +1,67 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Alice attachment adapter fixture</title>
+<div id="fixture"></div>
+<pre id="result">PENDING</pre>
+<script src="../../dist-step7-candidate/shared/ai_delivery_capabilities.js"></script>
+<script src="../../dist-step7-candidate/shared/ai_adapters.js"></script>
+<script>
+(() => {
+  'use strict';
+  const fixture = document.getElementById('fixture');
+  const result = document.getElementById('result');
+  function assert(condition, message) { if (!condition) throw new Error(message); }
+  function render(extra = '') {
+    fixture.innerHTML = `
+      <section id="alice-shell">
+        <div data-testid="standalone-input">
+          <textarea data-testid="inputbase-textarea"></textarea>
+          <input id="alice-doc-input" type="file" accept=".txt,.pdf,.doc,.docx,text/plain,application/pdf">
+          <div data-testid="attachment-file" title="ozon-bridge-result-fixture.txt">ozon-bridge-result-fixture.txt</div>
+          <button data-testid="oknyx" aria-label="Отправить">send</button>
+          ${extra}
+        </div>
+      </section>`;
+  }
+  try {
+    const alice = globalThis.OzonAIAdapters.ADAPTERS.alice;
+    assert(alice, 'Alice adapter missing');
+
+    render();
+    let surface = alice.attachmentSurface();
+    assert(surface && surface.input && surface.input.id === 'alice-doc-input', 'unique document file input not resolved');
+    assert(alice.attachmentPreview('ozon-bridge-result-fixture.txt'), 'attachment preview not resolved');
+    assert(alice.attachmentReady([{ filename: 'ozon-bridge-result-fixture.txt' }]) === true, 'ready attachment not confirmed');
+
+    document.querySelector('[data-testid="attachment-file"]').setAttribute('aria-busy', 'true');
+    assert(alice.attachmentReady([{ filename: 'ozon-bridge-result-fixture.txt' }]) === false, 'aria-busy attachment must not be ready');
+    document.querySelector('[data-testid="attachment-file"]').removeAttribute('aria-busy');
+    document.querySelector('[data-testid="attachment-file"]').setAttribute('data-status', 'uploading');
+    assert(alice.attachmentReady([{ filename: 'ozon-bridge-result-fixture.txt' }]) === false, 'uploading attachment must not be ready');
+
+    render('<input id="image-only" type="file" accept="image/png,image/jpeg">');
+    surface = alice.attachmentSurface();
+    assert(surface && surface.input && surface.input.id === 'alice-doc-input', 'image-only input must not steal document attachment');
+
+    render('<input id="second-doc" type="file" accept=".txt,.pdf,.doc,.docx">');
+    assert(alice.attachmentSurface() === null, 'ambiguous same-scope document inputs must fail closed');
+
+    render();
+    document.getElementById('alice-doc-input').remove();
+    assert(alice.attachmentSurface() === null, 'missing file input must fail closed');
+
+    render();
+    document.querySelector('[data-testid="attachment-file"]').remove();
+    assert(alice.attachmentReady([{ filename: 'ozon-bridge-result-fixture.txt' }]) === false, 'missing exact preview must fail closed');
+
+    fixture.innerHTML = '<input id="unrelated-global-image" type="file" accept="image/png">';
+    assert(alice.attachmentSurface() === null, 'missing Alice composer must fail closed');
+
+    result.textContent = 'ALICE_ATTACHMENT_BROWSER_FIXTURE_PASS';
+    document.documentElement.setAttribute('data-ozon-test', 'PASS');
+  } catch (error) {
+    result.textContent = 'ALICE_ATTACHMENT_BROWSER_FIXTURE_FAIL: ' + (error && error.stack ? error.stack : error);
+    document.documentElement.setAttribute('data-ozon-test', 'FAIL');
+  }
+})();
+</script>
