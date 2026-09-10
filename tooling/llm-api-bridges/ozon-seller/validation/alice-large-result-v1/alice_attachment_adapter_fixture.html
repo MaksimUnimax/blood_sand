@@ -42,6 +42,11 @@
     document.querySelector('[data-testid="attachment-file"]').setAttribute('data-status', 'uploading');
     assert(alice.attachmentReady([{ filename: 'ozon-bridge-result-fixture.txt' }]) === false, 'uploading attachment must not be ready');
 
+    render();
+    const hiddenPreview = document.querySelector('[data-testid="attachment-file"]');
+    hiddenPreview.style.display = 'none';
+    assert(alice.attachmentReady([{ filename: 'ozon-bridge-result-fixture.txt' }]) === false, 'hidden attachment preview must not be ready');
+
     render('<input id="image-only" type="file" accept="image/png,image/jpeg">');
     surface = alice.attachmentSurface();
     assert(surface && surface.input && surface.input.id === 'alice-doc-input', 'image-only input must not steal document attachment');
@@ -51,7 +56,7 @@
 
     render();
     document.getElementById('alice-doc-input').remove();
-    assert(alice.attachmentSurface() === null, 'missing file input must fail closed');
+    assert(alice.attachmentSurface() === null, 'missing scoped file input must fail closed');
 
     render('', false);
     surface = alice.attachmentSurface();
@@ -76,8 +81,8 @@
     document.querySelector('[data-testid="attachment-file"]').remove();
     assert(alice.attachmentReady([{ filename: 'ozon-bridge-result-fixture.txt' }]) === false, 'missing exact preview must fail closed');
 
-    fixture.innerHTML = '<input id="unrelated-global-image" type="file" accept="image/png">';
-    assert(alice.attachmentSurface() === null, 'missing Alice composer must fail closed');
+    fixture.innerHTML = '<input id="unrelated-global-image" type="file" accept="image/png"><input id="unrelated-global-doc" type="file" accept=".txt,.pdf">';
+    assert(alice.attachmentSurface() === null, 'file inputs outside Alice composer context must fail closed');
 
     result.textContent = 'ALICE_ATTACHMENT_BROWSER_FIXTURE_PASS';
     document.documentElement.setAttribute('data-ozon-test', 'PASS');
