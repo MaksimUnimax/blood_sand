@@ -1,12 +1,10 @@
 name: Ozon Alice large-result pre-fix gate
 
+# Historical negative-control workflow. The pre-fix failure was captured by
+# authoritative run 34486079777 before production repair. Keep it manually
+# runnable for archaeology, but do not auto-run it after the defect is fixed.
 on:
-  push:
-    branches:
-      - repair/ozon-alice-large-result-document-delivery-2026-09-10
-    paths:
-      - 'tooling/llm-api-bridges/ozon-seller/validation/alice-large-result-v1/**'
-      - '.github/workflows/ozon-alice-large-result-prefx-2026-09-10.yml'
+  workflow_dispatch:
 
 jobs:
   pre-fix-regression:
