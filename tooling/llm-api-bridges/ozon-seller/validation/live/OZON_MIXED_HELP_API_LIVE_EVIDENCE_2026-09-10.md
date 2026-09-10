@@ -300,13 +300,105 @@ This test live-proves malformed API isolation without poisoning a later independ
 6. No provider request, automatic retry, hidden pagination, polling, or fan-out is evidenced.
 7. Together with LIVE TEST 03, both malformed-envelope directions are now live-proved.
 
+## LIVE TEST 05 — disabled alias remains fail-closed in mixed source
+
+### Input
+
+```text
+OZON_HELP_V2
+{"cluster":"finance"}
+
+OZON_API_V1
+{"operation":"finance_transaction_list_v3","params":{"filter":{"date":{"from":"2026-08-01T00:00:00Z","to":"2026-08-31T23:59:59Z"}},"page":1,"page_size":1000}}
+
+OZON_API_V1
+{"operation":"seller_product_list","params":{"filter":{},"limit":1}}
+```
+
+This input mirrors the authoritative disabled-alias mixed regression sequence: HELP → disabled API alias → enabled API positive control.
+
+### Observed aggregate
+
+- result envelope: `OZON_BATCH_RESULT_V1`
+- bridge: `ozon-llm-api-bridge`
+- version: `0.1.19`
+- delivery mode: `sequential_batch_single_delivery`
+- result count: `3`
+- capability probe performed: `false`
+- capability status: `not_needed`
+- query planner status: `complete`
+- coalesced group count: `0`
+- coalesced logical count: `0`
+- logical business result count: `1`
+- physical business request count: `1`
+
+### Observed result 1 — HELP remains local
+
+- result type: `OZON_GUIDANCE_RESULT_V2`
+- guidance version: `2`
+- status: `cluster_selected`
+- cluster: `finance`
+- external request executed: `false`
+- physical business request count: `0`
+- error: `null`
+
+### Observed result 2 — disabled API remains blocked before provider execution
+
+- result type: `OZON_GUIDANCE_RESULT_V2`
+- guidance version: `2`
+- status: `cluster_suggested`
+- cluster: `finance`
+- external request executed: `false`
+- physical business request count: `0`
+- error: `OPERATION_BLOCKED`
+- descriptor error code: `OPERATION_BLOCKED`
+- descriptor intent operation: `finance_transaction_list_v3`
+- descriptor parameter keys: `filter`, `page`, `page_size`
+
+### Observed result 3 — later enabled API survives
+
+- result type: `OZON_RESULT_V1`
+- request ID: `8accd21c-89d5-4409-892a-8e36df380a0a`
+- operation: `seller_product_list`
+- command fingerprint: `9d82cd2e`
+- external request executed: `true`
+- provider: `ozon`
+- host alias: `seller_api`
+- HTTP method: `POST`
+- HTTP status: `200`
+- elapsed: `1416 ms`
+- capability probe executed: `false`
+- entitlement: `SUPPORTED_AND_ENTITLED`
+- exact request preserved: `true`
+- logical command fingerprint: `9d82cd2e`
+- physical command fingerprint: `9d82cd2e`
+- command transformed: `false`
+- provider returned one bounded item and reported total `76`
+- returned `last_id=WzEwODI4NDgzNzUsMTA4Mjg0ODM3NV0=`; it is evidence only and is not consumed automatically
+
+### Verdict
+
+`LIVE TEST 05 = PASS`
+
+This test live-proves the disabled-alias fail-closed boundary inside the repaired mixed source path:
+
+1. All three envelopes are preserved in source order.
+2. HELP remains local and contributes zero provider business requests.
+3. `finance_transaction_list_v3` remains blocked as `OPERATION_BLOCKED` and does not reach the provider.
+4. Blocking the disabled alias does not poison the later independent enabled API envelope.
+5. `seller_product_list` is the only provider business request, reaches Ozon, and returns HTTP 200.
+6. Aggregate accounting is exactly one logical business result and one physical business request.
+7. The enabled API request is preserved exactly and is not transformed.
+8. No coalescing, hidden retry, pagination, polling, fan-out, or second provider business request is evidenced.
+
 ## Current live validation cursor
 
 - TEST-01 HELP→API: PASS
 - TEST-02 API→HELP: PASS
 - TEST-03 malformed HELP→valid API: PASS
 - TEST-04 malformed API→valid HELP: PASS
+- TEST-05 disabled alias mixed fail-closed: PASS
 - malformed-envelope isolation both directions: PASS
-- disabled alias mixed fail-closed: NOT RUN
+- five selected mixed patch live cases: PASS
 - startup prompt live observation: NOT RUN
-- final live certification: OPEN
+- formal LIVE-GATE-01..05 certification: OPEN
