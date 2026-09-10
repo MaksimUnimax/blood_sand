@@ -32,12 +32,11 @@ const alice = model.claimDelivery({
   outgoingHash: "alice-hash",
   reportPrefixApplied: false
 });
-assert.equal(alice.delivery.mode, "batch_watch_v1");
-assert.equal(alice.delivery.phase, model.DELIVERY_PHASES.CLAIMED);
-assert.equal(alice.delivery.outgoing_text, "OZON_BATCH_RESULT_V1\nparsed Alice report text");
-assert.equal(alice.delivery.outgoing_hash, "alice-hash");
-assert.equal(alice.delivery.generated_text_document, undefined);
-console.log("REG_ALICE_REPORT_FILE_TEXT_PATH_PRESERVED_UNTIL_ATTACHMENT_PROFILE_PASS");
+assert.equal(alice.delivery.mode, "attachment_watch_v1");
+assert.equal(alice.delivery.phase, model.ATTACHMENT_PHASES.CLAIMED);
+assert.deepEqual(Array.from(alice.delivery.provider_file_refs), ["rpf_s_test"]);
+assert.equal(alice.delivery.generated_text_document, null);
+console.log("REG_ALICE_SINGLE_PROVIDER_FILE_ATTACHMENT_PATH_ENABLED_PASS");
 
 const chatgpt = model.claimDelivery({
   origin: "https://chatgpt.com",
@@ -53,6 +52,18 @@ assert.equal(chatgpt.delivery.mode, "attachment_watch_v1");
 assert.deepEqual(Array.from(chatgpt.delivery.provider_file_refs), ["rpf_s_test"]);
 console.log("REG_CHATGPT_REPORT_FILE_ATTACHMENT_PATH_ENABLED_PASS");
 
+const aliceBoundary = model.claimDelivery({
+  origin: "https://alice.yandex.ru",
+  status: model.RUN_STATUSES.COLLECTING,
+  batch: { entries: [] }
+}, {
+  deliveryId: "alice-boundary",
+  mode: "batch_watch_v1",
+  outgoingText: "x".repeat(90_000),
+  reportPrefixApplied: false
+});
+assert.equal(aliceBoundary.delivery.mode, "batch_watch_v1");
+
 const aliceHuge = model.claimDelivery({
   origin: "https://alice.yandex.ru",
   status: model.RUN_STATUSES.COLLECTING,
@@ -60,10 +71,13 @@ const aliceHuge = model.claimDelivery({
 }, {
   deliveryId: "alice-huge",
   mode: "batch_watch_v1",
-  outgoingText: "x".repeat(1_048_001),
+  outgoingText: "x".repeat(90_001),
   reportPrefixApplied: false
 });
-assert.equal(aliceHuge.delivery.mode, "batch_watch_v1");
-console.log("REG_ALICE_DOES_NOT_INHERIT_CHATGPT_LARGE_TEXT_RULE_PASS");
+assert.equal(aliceHuge.delivery.mode, "attachment_watch_v1");
+assert.equal(aliceHuge.delivery.generated_text_document.complete, true);
+assert.equal(aliceHuge.delivery.generated_text_document.extension, "txt");
+assert.equal(aliceHuge.delivery.artifact_text.length, 90_001);
+console.log("REG_ALICE_SAFE_LARGE_TEXT_DOCUMENT_RULE_PASS");
 
 console.log("FILE_DELIVERY_ADAPTER_GATE_POLICY_PASS");

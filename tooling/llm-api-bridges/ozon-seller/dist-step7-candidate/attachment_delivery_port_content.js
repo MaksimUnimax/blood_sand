@@ -206,13 +206,22 @@
     return bytes;
   }
 
+  function assertAttachmentCountSupported(active, descriptors) {
+    const profile = active?.deliveryCapabilities?.() || null;
+    const maxFiles = Number(profile?.max_files_per_turn);
+    if (profile?.max_files_per_turn !== null && profile?.max_files_per_turn !== undefined && Number.isFinite(maxFiles) && descriptors.length > maxFiles) {
+      throw Object.assign(new Error(`Target AI accepts at most ${maxFiles} attachment(s) per turn; ${descriptors.length} are required for this complete delivery.`), { code: "TARGET_AI_FILE_COUNT_UNSUPPORTED" });
+    }
+    return profile;
+  }
+
   async function buildFiles(recovery) {
     const metadata = await request("OZ_ATTACHMENT_ARTIFACT_META", ownerPayload(recovery));
     if (!metadata?.ok) throw Object.assign(new Error(metadata?.error || "Attachment metadata unavailable."), { code: metadata?.code || "ATTACHMENT_META_FAILED" });
     const descriptors = Array.isArray(metadata.descriptors) ? metadata.descriptors : [];
     if (!descriptors.length) throw Object.assign(new Error("Attachment delivery has no artifact descriptors."), { code: "ATTACHMENT_DESCRIPTORS_EMPTY" });
     const active = adapter();
-    const profile = active?.deliveryCapabilities?.() || null;
+    const profile = assertAttachmentCountSupported(active, descriptors);
     if (!profile || profile.attachment_strategy !== "file_input_v1") throw Object.assign(new Error("Target AI has no verified file-input attachment strategy in this build."), { code: "TARGET_AI_ATTACHMENT_ADAPTER_UNAVAILABLE" });
     const files = [];
     for (const descriptor of descriptors) {
@@ -292,6 +301,7 @@
     const active = adapter();
     const descriptors = Array.isArray(recovery.artifact_descriptors) ? recovery.artifact_descriptors : [];
     if (!active || !descriptors.length) throw Object.assign(new Error("Committed attachment has no adapter/descriptors for reconciliation."), { code: "ATTACHMENT_RECONCILIATION_DATA_MISSING" });
+    assertAttachmentCountSupported(active, descriptors);
     const ready = await waitAttachmentReady(active, descriptors, ATTACH_RECONCILE_TIMEOUT_MS);
     if (!ready) throw Object.assign(new Error("Attachment commit survived but the existing attachment cannot be proven; automatic re-attach is forbidden."), { code: "ATTACH_OUTCOME_UNKNOWN_NO_RETRY" });
     stageMarker(recovery);

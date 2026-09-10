@@ -160,6 +160,73 @@
     return null;
   }
 
+  function aliceAttachmentScopes() {
+    const context = aliceComposerContext();
+    if (!context?.root) return [];
+    const scopes = [];
+    const add = (node) => {
+      if (!(node instanceof Element) || scopes.includes(node)) return;
+      scopes.push(node);
+    };
+    add(context.form);
+    add(context.root);
+    let node = context.root.parentElement;
+    for (let depth = 0; node && depth < 4; depth += 1, node = node.parentElement) {
+      add(node);
+      if (node === document.body) break;
+    }
+    return scopes;
+  }
+
+  function aliceFileInputScore(input) {
+    if (!(input instanceof HTMLInputElement) || !input.isConnected || input.disabled || String(input.type || "").toLowerCase() !== "file") return -1;
+    const accept = String(input.getAttribute("accept") || "").toLowerCase();
+    const docAccept = /(?:\.txt|\.pdf|\.docx?|text\/plain|application\/pdf|msword|officedocument)/.test(accept);
+    const imageOnly = Boolean(accept) && /image\//.test(accept) && !docAccept;
+    if (imageOnly) return -1;
+    const token = [input.id, input.name, input.getAttribute("data-testid") || "", input.getAttribute("aria-label") || "", input.getAttribute("title") || ""].join(" ").toLowerCase();
+    let score = docAccept ? 500 : 0;
+    if (/attach|upload|file|document|прикреп|файл|документ/.test(token)) score += 200;
+    return score;
+  }
+
+  function aliceUniqueFileInput(scope) {
+    if (!(scope instanceof Element)) return null;
+    const candidates = [...scope.querySelectorAll('input[type="file"]')]
+      .filter((input) => aliceFileInputScore(input) >= 0)
+      .map((input) => ({ input, score: aliceFileInputScore(input) }));
+    if (!candidates.length) return null;
+    candidates.sort((a, b) => b.score - a.score);
+    const top = candidates[0];
+    return candidates.filter((item) => item.score === top.score).length === 1 ? top.input : null;
+  }
+
+  function aliceFileInput() {
+    const scopes = aliceAttachmentScopes();
+    for (const scope of scopes) {
+      const all = [...scope.querySelectorAll('input[type="file"]')].filter((input) => input instanceof HTMLInputElement && input.isConnected && !input.disabled);
+      if (!all.length) continue;
+      return aliceUniqueFileInput(scope);
+    }
+    return null;
+  }
+
+  function aliceAttachmentPreview(filename) {
+    const target = String(filename || "").trim();
+    if (!target) return null;
+    const selectors = '[data-testid*="attach" i], [data-testid*="file" i], [data-testid*="upload" i], [data-filename], [data-file-name], [aria-label], [title]';
+    for (const scope of aliceAttachmentScopes()) {
+      const matches = [...scope.querySelectorAll(selectors)].filter((node) => {
+        const token = [node.getAttribute("data-filename") || "", node.getAttribute("data-file-name") || "", node.getAttribute("aria-label") || "", node.getAttribute("title") || "", node.textContent || ""].join(" ");
+        return token.includes(target);
+      });
+      if (!matches.length) continue;
+      const leaves = matches.filter((node) => !matches.some((other) => other !== node && node.contains(other)));
+      return leaves.length === 1 ? leaves[0] : (matches.length === 1 ? matches[0] : null);
+    }
+    return null;
+  }
+
   const CHATGPT_COPY_ANCHORS = new WeakMap();
   const ALICE_COPY_ANCHORS = new WeakMap();
   const CHATGPT_CODE_COPY_SELECTOR = 'button[aria-label="Копировать"], button[aria-label="Copy"]';
@@ -310,8 +377,18 @@
       return [button.tagName, button.getAttribute("data-testid") || "", button.getAttribute("aria-label") || "", button.getAttribute("title") || ""].join("|");
     },
     deliveryCapabilities() { return globalThis.OzonAIDeliveryCapabilities?.profile?.("alice") || null; },
-    attachmentSurface() { return null; },
-    attachmentReady() { return false; },
+    attachmentSurface() { const input = aliceFileInput(); const context = aliceComposerContext(); return input ? { input, root: context?.root || input.parentElement || document.documentElement } : null; },
+    attachmentPreview(filename) { return aliceAttachmentPreview(filename); },
+    attachmentReady(descriptors) {
+      const list = Array.isArray(descriptors) ? descriptors : [];
+      if (!list.length) return false;
+      return list.every((descriptor) => {
+        const preview = aliceAttachmentPreview(descriptor.filename);
+        if (!preview?.isConnected || !visible(preview) || preview.matches?.('[aria-busy="true"]') || preview.querySelector?.('[aria-busy="true"]')) return false;
+        const status = [preview.getAttribute?.("data-status") || "", preview.getAttribute?.("aria-label") || "", preview.getAttribute?.("title") || ""].join(" ").toLowerCase();
+        return !/uploading|loading|загруз|обработ/.test(status);
+      });
+    },
     isGenerating() {
       const button = document.querySelector('[data-testid="oknyx"]');
       return String(button?.getAttribute("aria-label") || "").trim().toLowerCase() === "алиса, стоп";

@@ -13,12 +13,14 @@
   ]);
 
   const CHATGPT_MAX_SAFE_PLAIN_TEXT_UNICODE_CHARACTERS = 1_048_000;
+  const ALICE_MAX_SAFE_PLAIN_TEXT_UTF16_CODE_UNITS = 90_000;
 
   const PROFILES = Object.freeze({
     chatgpt: Object.freeze({
       id: "chatgpt",
       status: "implemented",
       plain_text_max_chars: CHATGPT_MAX_SAFE_PLAIN_TEXT_UNICODE_CHARACTERS,
+      plain_text_length_metric: "unicode_code_points",
       attachments_supported: true,
       accepted_extensions: Object.freeze(["txt", "pdf", "png", "csv", "tsv", "zip", "xls", "xlsx", "docx", "pptx"]),
       max_file_bytes: null,
@@ -28,12 +30,13 @@
     alice: Object.freeze({
       id: "alice",
       status: "implemented",
-      plain_text_max_chars: null,
+      plain_text_max_chars: ALICE_MAX_SAFE_PLAIN_TEXT_UTF16_CODE_UNITS,
+      plain_text_length_metric: "utf16_code_units",
       attachments_supported: true,
       accepted_extensions: Object.freeze(["txt", "pdf", "doc", "docx"]),
       max_file_bytes: 100 * 1024 * 1024,
       max_files_per_turn: 1,
-      attachment_strategy: "live_profile_required"
+      attachment_strategy: "file_input_v1"
     }),
     deepseek: Object.freeze({ id: "deepseek", status: "planned", plain_text_max_chars: null, attachments_supported: null, accepted_extensions: Object.freeze([]), max_file_bytes: null, max_files_per_turn: null, attachment_strategy: "pending" }),
     grok: Object.freeze({ id: "grok", status: "planned", plain_text_max_chars: null, attachments_supported: true, accepted_extensions: Object.freeze(["txt", "pdf", "csv", "xlsx", "docx", "pptx"]), max_file_bytes: null, max_files_per_turn: null, attachment_strategy: "pending" }),
@@ -90,15 +93,20 @@
 
   function generatedTextDecision(adapterId, text) {
     const current = profile(adapterId);
-    if (!current) return Object.freeze({ representation: "plain_text", threshold_status: "unknown_adapter", unicode_chars: unicodeLength(text), threshold: null });
-    const chars = unicodeLength(text);
+    const value = String(text || "");
+    const unicodeChars = unicodeLength(value);
+    if (!current) return Object.freeze({ representation: "plain_text", threshold_status: "unknown_adapter", unicode_chars: unicodeChars, threshold_chars: unicodeChars, length_metric: "unicode_code_points", threshold: null });
+    const metric = current.plain_text_length_metric === "utf16_code_units" ? "utf16_code_units" : "unicode_code_points";
+    const thresholdChars = metric === "utf16_code_units" ? value.length : unicodeChars;
     const hasThreshold = current.plain_text_max_chars !== null && current.plain_text_max_chars !== undefined && Number.isFinite(Number(current.plain_text_max_chars));
     const threshold = hasThreshold ? Number(current.plain_text_max_chars) : null;
-    if (threshold === null) return Object.freeze({ representation: "plain_text", threshold_status: "pending_live_calibration", unicode_chars: chars, threshold: null });
+    if (threshold === null) return Object.freeze({ representation: "plain_text", threshold_status: "pending_live_calibration", unicode_chars: unicodeChars, threshold_chars: thresholdChars, length_metric: metric, threshold: null });
     return Object.freeze({
-      representation: chars > threshold ? "text_document" : "plain_text",
+      representation: thresholdChars > threshold ? "text_document" : "plain_text",
       threshold_status: "calibrated",
-      unicode_chars: chars,
+      unicode_chars: unicodeChars,
+      threshold_chars: thresholdChars,
+      length_metric: metric,
       threshold
     });
   }
@@ -107,6 +115,7 @@
     TARGET_AI_IDS,
     PROFILES,
     CHATGPT_MAX_SAFE_PLAIN_TEXT_UNICODE_CHARACTERS,
+    ALICE_MAX_SAFE_PLAIN_TEXT_UTF16_CODE_UNITS,
     adapterIdForOrigin,
     profile,
     unicodeLength,
