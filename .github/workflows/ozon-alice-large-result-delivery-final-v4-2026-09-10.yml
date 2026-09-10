@@ -1,0 +1,175 @@
+name: Ozon Alice large-result delivery final v4
+run-name: Ozon Alice large-result final v4 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-large-result-document-delivery-2026-09-10]
+    paths: [.github/workflows/ozon-alice-large-result-delivery-final-v4-2026-09-10.yml]
+
+permissions:
+  contents: write
+
+env:
+  PATCH_BRANCH: repair/ozon-alice-large-result-document-delivery-2026-09-10
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/alice-large-result-v1
+  ARTIFACT_NAME: OZON_BRIDGE_v0.1.19_ALICE_LARGE_RESULT_DOCUMENT_DELIVERY_20260910.zip
+  BUILDINFO_NAME: OZON_BRIDGE_v0.1.19_ALICE_LARGE_RESULT_DOCUMENT_DELIVERY_20260910_BUILDINFO.txt
+
+jobs:
+  linux-authoritative:
+    runs-on: ubuntu-latest
+    outputs:
+      source_sha: ${{ steps.commit.outputs.source_sha }}
+      source_tree: ${{ steps.commit.outputs.source_tree }}
+      package_sha: ${{ steps.identity.outputs.package_sha }}
+      package_bytes: ${{ steps.identity.outputs.package_bytes }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
+      - name: Full Linux source browser lifecycle package gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$PATCH_BRANCH"
+          VER='152.0.7977.82'
+          CZIP="$RUNNER_TEMP/chrome.zip"
+          CDIR="$RUNNER_TEMP/chrome"
+          mkdir -p "$CDIR"
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" --output "$CZIP"
+          unzip -q "$CZIP" -d "$CDIR"
+          CHROME="$CDIR/chrome-linux64/chrome"
+          "$CHROME" --version | grep -F "$VER"
+          python "$GATE/run_prehandoff_gate.py" "$CHROME"
+          git diff --check
+          echo LINUX_ALICE_AUTHORITATIVE_GATE_PASS
+
+      - name: Read exact package identity
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          p=Path('tooling/llm-api-bridges/ozon-seller/validation/alice-large-result-v1/gate_outputs.json')
+          d=json.loads(p.read_text())
+          print('package_sha='+d['package_sha'])
+          print('package_bytes='+str(d['package_bytes']))
+          PY
+          cat "$GATE/gate_outputs.json"
+
+      - name: Commit exact tested executable candidate
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+MaksimUnimax@users.noreply.github.com'
+          git add "$DIST/shared/ai_delivery_capabilities.js"
+          git add "$DIST/shared/ai_adapters.js"
+          git add "$DIST/attachment_delivery_port_content.js"
+          git add "$ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs"
+          git add "$GATE/DEPENDENCY_CLOSURE_2026-09-10.md" "$GATE/gate_outputs.json"
+          git add "$ROOT/artifacts/$ARTIFACT_NAME" "$ROOT/artifacts/$ARTIFACT_NAME.sha256.txt" "$ROOT/artifacts/$BUILDINFO_NAME"
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
+          git commit -m 'repair(ozon): deliver oversized Alice results as complete TXT'
+          git push origin "HEAD:$PATCH_BRANCH"
+          echo "source_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "source_tree=$(git rev-parse HEAD^{tree})" >> "$GITHUB_OUTPUT"
+          echo "EXACT_EXECUTABLE_SOURCE_COMMIT=$(git rev-parse HEAD)"
+          echo "EXACT_EXECUTABLE_SOURCE_TREE=$(git rev-parse HEAD^{tree})"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-alice-large-result-${{ steps.commit.outputs.source_sha }}
+          path: |
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_ALICE_LARGE_RESULT_DOCUMENT_DELIVERY_20260910.zip
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_ALICE_LARGE_RESULT_DOCUMENT_DELIVERY_20260910.zip.sha256.txt
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_ALICE_LARGE_RESULT_DOCUMENT_DELIVERY_20260910_BUILDINFO.txt
+          retention-days: 30
+
+  windows-authoritative:
+    needs: linux-authoritative
+    runs-on: windows-latest
+    outputs:
+      tested_sha: ${{ steps.reg.outputs.tested_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.linux-authoritative.outputs.source_sha }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+
+      - name: Exact-source Windows regressions
+        id: reg
+        shell: pwsh
+        run: |
+          $sha = git rev-parse HEAD
+          if ($sha -ne '${{ needs.linux-authoritative.outputs.source_sha }}') { throw 'source SHA drift' }
+          "tested_sha=$sha" >> $env:GITHUB_OUTPUT
+          Get-ChildItem -Path $env:DIST -Recurse -Filter *.js | Sort-Object FullName | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
+          node "$env:GATE/run_alice_large_result_delivery_gate.mjs" $env:DIST; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node "$env:GATE/run_alice_large_result_delivery_gate_v2.mjs" . $env:DIST; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node "$env:ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs"; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($n in @('run_file_delivery_capture_accounting.mjs','run_file_delivery_port_worker_state_machine.mjs','run_file_delivery_mixed_batch_policy.mjs','run_file_delivery_wake_lifecycle.mjs','run_file_delivery_live_stop_repro.mjs','run_direct_binary_provider_attachment_gate.mjs')) {
+            node "$env:ROOT/validation/regression/$n"; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          node "$env:ROOT/validation/mixed-help-api-v2/run_mixed_help_api_gate_v2.mjs" .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node "$env:ROOT/validation/mixed-help-api-v2/run_mixed_help_api_disabled_alias_gate.mjs" .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node "$env:ROOT/validation/command-envelope-contract-v1/run_command_envelope_contract_gate.mjs" .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Output 'WINDOWS_ALICE_EXACT_SOURCE_REGRESSION_PASS'
+
+      - name: Verify exact ZIP and fresh extraction
+        shell: pwsh
+        run: |
+          $a = Join-Path (Join-Path $env:ROOT 'artifacts') $env:ARTIFACT_NAME
+          $actual = (Get-FileHash -Algorithm SHA256 $a).Hash.ToLowerInvariant()
+          if ($actual -ne '${{ needs.linux-authoritative.outputs.package_sha }}') { throw 'package SHA drift' }
+          if ((Get-Item $a).Length -ne [int64]'${{ needs.linux-authoritative.outputs.package_bytes }}') { throw 'package byte-length drift' }
+          $e = Join-Path $env:RUNNER_TEMP 'extract'
+          Expand-Archive -LiteralPath $a -DestinationPath $e -Force
+          node "$env:GATE/run_alice_large_result_delivery_gate_v2.mjs" . $e; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Output "WINDOWS_PACKAGE_SHA256=$actual"
+          Write-Output 'WINDOWS_ALICE_EXACT_PACKAGE_PASS'
+
+  finalize-evidence:
+    needs: [linux-authoritative, windows-authoritative]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.linux-authoritative.outputs.source_sha }}
+      - name: Terminalize dependencies and GATE-01..35
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '${{ needs.windows-authoritative.outputs.tested_sha }}'
+          python "$GATE/finalize_gate_report.py" \
+            --source-sha '${{ needs.linux-authoritative.outputs.source_sha }}' \
+            --source-tree '${{ needs.linux-authoritative.outputs.source_tree }}' \
+            --package-sha '${{ needs.linux-authoritative.outputs.package_sha }}' \
+            --package-bytes '${{ needs.linux-authoritative.outputs.package_bytes }}' \
+            --workflow-run "$GITHUB_RUN_ID"
+          grep -F 'Available-but-unverified pre-handoff dependencies: **0**.' "$GATE/DEPENDENCY_CLOSURE_2026-09-10.md"
+          grep -F '**DEPENDENCY VERDICT: PASS FOR PRE-HANDOFF SCOPE**' "$GATE/DEPENDENCY_CLOSURE_2026-09-10.md"
+          grep -F 'windows_exact_source_package=PASS' "$ROOT/artifacts/$BUILDINFO_NAME"
+          grep -F '**PRE-HANDOFF VERDICT: PASS**' "$GATE/FINAL_PREHANDOFF_2026-09-10.md"
+          grep -F '**LIVE CERTIFICATION: PENDING**' "$GATE/FINAL_PREHANDOFF_2026-09-10.md"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+MaksimUnimax@users.noreply.github.com'
+          git add "$GATE/DEPENDENCY_CLOSURE_2026-09-10.md" "$GATE/FINAL_PREHANDOFF_2026-09-10.md" "$ROOT/artifacts/$BUILDINFO_NAME"
+          git diff --cached --check
+          git commit -m 'docs(ozon): finalize Alice large-result pre-handoff evidence'
+          git push origin "HEAD:$PATCH_BRANCH"
+          echo "FINAL_DOCS_HEAD=$(git rev-parse HEAD)"
+          echo ALICE_LARGE_RESULT_PREHANDOFF_PASS
