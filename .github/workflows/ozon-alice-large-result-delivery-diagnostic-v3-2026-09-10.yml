@@ -1,0 +1,40 @@
+name: Ozon Alice large-result delivery diagnostic v3
+run-name: Ozon Alice large-result diagnostic v3 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-large-result-document-delivery-2026-09-10]
+    paths: [.github/workflows/ozon-alice-large-result-delivery-diagnostic-v3-2026-09-10.yml]
+
+permissions:
+  contents: read
+
+env:
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/alice-large-result-v1
+
+jobs:
+  linux-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Run corrected deterministic pre-handoff chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          CZIP="$RUNNER_TEMP/chrome.zip"
+          CDIR="$RUNNER_TEMP/chrome"
+          mkdir -p "$CDIR"
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" --output "$CZIP"
+          unzip -q "$CZIP" -d "$CDIR"
+          CHROME="$CDIR/chrome-linux64/chrome"
+          "$CHROME" --version | grep -F "$VER"
+          python "$GATE/run_prehandoff_gate.py" "$CHROME"
+          git diff --check
+          echo ALICE_DIAGNOSTIC_V3_PASS
