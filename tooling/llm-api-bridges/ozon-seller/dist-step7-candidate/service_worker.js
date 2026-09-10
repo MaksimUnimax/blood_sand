@@ -1601,38 +1601,76 @@ function normalizeAutoStartPromptText(value) {
   return text;
 }
 
+function normalizeGlobalAutoStartPromptRecord(raw) {
+  const current = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : null;
+  const now = new Date().toISOString();
+  if (current?.text && String(current.text).trim()) {
+    const normalizedText = normalizeAutoStartPromptText(current.text);
+    if (current.is_default === true && normalizedText !== DEFAULT_AUTO_START_TEXT) {
+      return { record: { text: DEFAULT_AUTO_START_TEXT, is_default: true, updated_at: now }, changed: true };
+    }
+    return {
+      record: { text: normalizedText, is_default: current.is_default === true, updated_at: current.updated_at || null },
+      changed: normalizedText !== current.text
+    };
+  }
+  return { record: { text: DEFAULT_AUTO_START_TEXT, is_default: true, updated_at: now }, changed: true };
+}
+
+async function getGlobalAutoStartPrompt({ ensureStored = true } = {}) {
+  return withStartPromptWrite(async () => {
+    const data = await storageGet(KEYS.GLOBAL_AUTO_START_PROMPT);
+    const normalized = normalizeGlobalAutoStartPromptRecord(data[KEYS.GLOBAL_AUTO_START_PROMPT]);
+    if (ensureStored && normalized.changed) await storageSet({ [KEYS.GLOBAL_AUTO_START_PROMPT]: normalized.record });
+    return normalized.record;
+  });
+}
+
+async function saveGlobalAutoStartPrompt(text) {
+  const normalizedText = normalizeAutoStartPromptText(text);
+  return withStartPromptWrite(async () => {
+    const record = {
+      text: normalizedText,
+      is_default: normalizedText === DEFAULT_AUTO_START_TEXT,
+      updated_at: new Date().toISOString()
+    };
+    await storageSet({ [KEYS.GLOBAL_AUTO_START_PROMPT]: record });
+    return record;
+  });
+}
+
+async function resetGlobalAutoStartPrompt() {
+  return saveGlobalAutoStartPrompt(DEFAULT_AUTO_START_TEXT);
+}
+
 async function getAutoStartPrompt(conversationKey, { ensureStored = true } = {}) {
   const key = normalizeConversationKey(conversationKey);
   return withStartPromptWrite(async () => {
-    const data = await storageGet(KEYS.AUTO_START_PROMPTS);
+    const data = await storageGet([KEYS.AUTO_START_PROMPTS, KEYS.GLOBAL_AUTO_START_PROMPT]);
     const prompts = { ...(data[KEYS.AUTO_START_PROMPTS] || {}) };
     const current = prompts[key] || null;
-    if (current?.text && String(current.text).trim()) {
-      const normalizedCurrent = normalizeAutoStartPromptText(current.text);
-      if (current.is_default === true && normalizedCurrent !== DEFAULT_AUTO_START_TEXT) {
-        const migrated = { text: DEFAULT_AUTO_START_TEXT, is_default: true, updated_at: new Date().toISOString() };
-        if (ensureStored) {
-          prompts[key] = migrated;
-          await storageSet({ [KEYS.AUTO_START_PROMPTS]: prompts });
-        }
-        return migrated;
-      }
+    const globalResolved = normalizeGlobalAutoStartPromptRecord(data[KEYS.GLOBAL_AUTO_START_PROMPT]);
+    const updates = {};
+
+    if (globalResolved.changed && ensureStored) updates[KEYS.GLOBAL_AUTO_START_PROMPT] = globalResolved.record;
+
+    if (current?.text && String(current.text).trim() && current.is_default !== true) {
+      if (Object.keys(updates).length) await storageSet(updates);
       return {
-        text: normalizedCurrent,
-        is_default: current.is_default === true,
+        text: normalizeAutoStartPromptText(current.text),
+        is_default: false,
+        is_override: true,
+        source: "conversation_override",
         updated_at: current.updated_at || null
       };
     }
-    const record = {
-      text: DEFAULT_AUTO_START_TEXT,
-      is_default: true,
-      updated_at: new Date().toISOString()
-    };
-    if (ensureStored) {
-      prompts[key] = record;
-      await storageSet({ [KEYS.AUTO_START_PROMPTS]: prompts });
+
+    if (current && ensureStored) {
+      delete prompts[key];
+      updates[KEYS.AUTO_START_PROMPTS] = prompts;
     }
-    return record;
+    if (Object.keys(updates).length) await storageSet(updates);
+    return { ...globalResolved.record, is_override: false, source: "global" };
   });
 }
 
@@ -1644,16 +1682,25 @@ async function saveAutoStartPrompt(conversationKey, text) {
     const prompts = { ...(data[KEYS.AUTO_START_PROMPTS] || {}) };
     prompts[key] = {
       text: normalizedText,
-      is_default: normalizedText === DEFAULT_AUTO_START_TEXT,
+      is_default: false,
       updated_at: new Date().toISOString()
     };
     await storageSet({ [KEYS.AUTO_START_PROMPTS]: prompts });
-    return prompts[key];
+    return { ...prompts[key], is_override: true, source: "conversation_override" };
   });
 }
 
 async function resetAutoStartPrompt(conversationKey) {
-  return saveAutoStartPrompt(conversationKey, DEFAULT_AUTO_START_TEXT);
+  const key = normalizeConversationKey(conversationKey);
+  await withStartPromptWrite(async () => {
+    const data = await storageGet(KEYS.AUTO_START_PROMPTS);
+    const prompts = { ...(data[KEYS.AUTO_START_PROMPTS] || {}) };
+    if (Object.prototype.hasOwnProperty.call(prompts, key)) {
+      delete prompts[key];
+      await storageSet({ [KEYS.AUTO_START_PROMPTS]: prompts });
+    }
+  });
+  return getAutoStartPrompt(key);
 }
 
 function publicRun(run) {
@@ -1682,10 +1729,11 @@ function publicRun(run) {
 
 async function commonPublicSettingsFields() {
   const settings = await getSettings();
-  const [sendData, microphoneData, copyProfiles] = await Promise.all([
+  const [sendData, microphoneData, copyProfiles, globalStartPrompt] = await Promise.all([
     storageGet(KEYS.SEND_BUTTON_PROFILE),
     storageGet(KEYS.MICROPHONE_BUTTON_PROFILE),
-    getCopyButtonProfiles()
+    getCopyButtonProfiles(),
+    getGlobalAutoStartPrompt()
   ]);
   const credentialState = OzonCredentials.publicCredentialState(settings.sellerCredentials);
   const performanceCredentialState = OzonCredentials.publicPerformanceCredentialState(settings.performanceCredentials);
@@ -1704,6 +1752,11 @@ async function commonPublicSettingsFields() {
     ai_mode_scope: "per_tab",
     auto_send: settings.autoSend,
     personal_data_enabled: settings.personalDataEnabled === true,
+    global_auto_start_prompt: {
+      text: String(globalStartPrompt?.text || DEFAULT_AUTO_START_TEXT),
+      is_default: globalStartPrompt?.is_default === true,
+      updated_at: globalStartPrompt?.updated_at || null
+    },
     seller_api_metadata: OzonEntitlements.summary(settings.sellerApiMetadata),
     send_button_profile: sendData[KEYS.SEND_BUTTON_PROFILE] || null,
     microphone_button_profile: microphoneData[KEYS.MICROPHONE_BUTTON_PROFILE] || null,
@@ -1733,6 +1786,8 @@ async function publicSettingsState(conversationKey) {
     auto_start_prompt: {
       text: String(startPrompt?.text || DEFAULT_AUTO_START_TEXT),
       is_default: startPrompt?.is_default === true,
+      is_override: startPrompt?.is_override === true,
+      source: String(startPrompt?.source || "global"),
       updated_at: startPrompt?.updated_at || null
     },
     report_prefix: prefix ? {
@@ -1759,7 +1814,7 @@ async function publicGlobalSettingsState(pageContextError = null) {
     manual_operation_active: false,
     work_session: OzonWorkSessionModel.normalize(null, null),
     auto_run: null,
-    auto_start_prompt: { text: DEFAULT_AUTO_START_TEXT, is_default: true, updated_at: null },
+    auto_start_prompt: { ...common.global_auto_start_prompt, is_override: false, source: "global" },
     report_prefix: null
   };
 }
@@ -4909,6 +4964,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           OzonProvider.clearPerformanceToken();
         }
         await storageSet(values);
+        if (typeof message.global_auto_start_prompt_text === "string") await saveGlobalAutoStartPrompt(message.global_auto_start_prompt_text);
         return { ok: true, state: await publicGlobalSettingsState(message.page_context_error || null) };
       }
       case "OZ_SAVE_SETTINGS": {
@@ -4937,9 +4993,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           OzonProvider.clearPerformanceToken();
         }
         await storageSet(values);
+        if (typeof message.global_auto_start_prompt_text === "string") await saveGlobalAutoStartPrompt(message.global_auto_start_prompt_text);
         await saveReportPrefix(key, message);
-        if (typeof message.auto_start_prompt_text === "string") await saveAutoStartPrompt(key, message.auto_start_prompt_text);
+        if (message.auto_start_prompt_override_enabled === true) {
+          if (typeof message.auto_start_prompt_text !== "string") throw Object.assign(new Error("Для индивидуального start prompt нужен текст."), { code: "AUTO_START_PROMPT_TEXT_REQUIRED" });
+          await saveAutoStartPrompt(key, message.auto_start_prompt_text);
+        } else if (message.auto_start_prompt_override_enabled === false) {
+          await resetAutoStartPrompt(key);
+        } else if (typeof message.auto_start_prompt_text === "string") {
+          // Backward-compatible message contract for an older popup talking to this worker.
+          await saveAutoStartPrompt(key, message.auto_start_prompt_text);
+        }
         return { ok: true, state: await publicSettingsState(key) };
+      }
+      case "OZ_RESET_GLOBAL_AUTO_START_PROMPT": {
+        await resetGlobalAutoStartPrompt();
+        if (typeof message.conversation_key === "string" && message.conversation_key.trim()) {
+          return { ok: true, state: await publicSettingsState(message.conversation_key) };
+        }
+        return { ok: true, state: await publicGlobalSettingsState(message.page_context_error || null) };
       }
       case "OZ_RESET_AUTO_START_PROMPT": {
         const key = normalizeConversationKey(message.conversation_key);
@@ -5065,7 +5137,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (!live.conversation_id) {
           const pending = await createPendingWorkStart(tab, live);
           if (pending.duplicate) return { ok: true, accepted: false, code: "WORK_START_ALREADY_PENDING", pending_start: pending.transaction };
-          const sent = await tabMessage(tab, { type: "OZ_WORK_SEND_INITIAL_PROMPT", intent_id: pending.transaction.intent_id, revision: pending.transaction.revision, prompt_text: DEFAULT_AUTO_START_TEXT });
+          const bootstrapPrompt = await getGlobalAutoStartPrompt();
+          const sent = await tabMessage(tab, { type: "OZ_WORK_SEND_INITIAL_PROMPT", intent_id: pending.transaction.intent_id, revision: pending.transaction.revision, prompt_text: String(bootstrapPrompt?.text || DEFAULT_AUTO_START_TEXT) });
           if (!sent?.ok || sent.sent !== true) {
             const starts = await getPendingWorkStarts();
             delete starts[String(tab)];

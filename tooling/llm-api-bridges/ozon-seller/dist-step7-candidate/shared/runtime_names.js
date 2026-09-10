@@ -32,6 +32,7 @@
     WORK_SESSION_RECOVERIES: "ozmb_work_session_recoveries_v1",
     REPORT_PREFIXES: "ozmb_report_prefix_configs",
     AUTO_START_PROMPTS: "ozmb_auto_start_prompts",
+    GLOBAL_AUTO_START_PROMPT: "ozmb_global_auto_start_prompt_v1",
     SEND_BUTTON_PROFILE: "ozmb_send_button_profile",
     MICROPHONE_BUTTON_PROFILE: "ozmb_microphone_button_profile",
     COPY_BUTTON_PROFILES: "ozmb_copy_button_profiles",

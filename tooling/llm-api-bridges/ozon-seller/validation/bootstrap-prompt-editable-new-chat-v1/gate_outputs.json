@@ -1,0 +1,7 @@
+{
+  "dependency_inventory_rows": 300,
+  "package_bytes": 248034,
+  "package_sha": "654ccae84d714f7c28988fe5697898dcad312b9de0831ea67df6a1b50138c3ba",
+  "pending_start_guard_state": "BASELINE_STALE_SAME_RESULT",
+  "refresh_guard_state": "BASELINE_STALE_SAME_RESULT"
+}

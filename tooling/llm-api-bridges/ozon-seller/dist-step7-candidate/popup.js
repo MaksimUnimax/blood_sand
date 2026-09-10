@@ -105,12 +105,14 @@ function runLabel(run) {
 function setConversationControlsEnabled(enabled) {
   for (const id of [
     "startAuto", "pauseAuto", "resumeAuto", "finishAuto",
-    "autoStartPromptText", "resetAutoStartPrompt", "reportPrefixEnabled",
+    "autoStartPromptOverrideEnabled", "resetAutoStartPrompt", "reportPrefixEnabled",
     "reportPrefixText", "reportPrefixInterval"
   ]) {
     const element = $(id);
     if (element) element.disabled = !enabled;
   }
+  const localPrompt = $("autoStartPromptText");
+  if (localPrompt) localPrompt.disabled = !enabled || $("autoStartPromptOverrideEnabled")?.checked !== true;
 }
 
 function renderState(state) {
@@ -162,8 +164,19 @@ function renderState(state) {
     $("sellerMetadataMeta").textContent = `Последний полностью проверенный snapshot${captured}${hash}. Неудачное обновление сохраняет предыдущий snapshot.`;
   }
 
+  const globalStartPrompt = state.global_auto_start_prompt || {};
+  $("globalAutoStartPromptText").value = globalStartPrompt.text || "";
+  if ($("globalAutoStartPromptMeta")) $("globalAutoStartPromptMeta").textContent = globalStartPrompt.is_default === true
+    ? "Общий prompt сейчас совпадает со встроенным default. Он доступен и сохраняется даже до появления conversation ID."
+    : "Используется пользовательский общий prompt для новых диалогов и для диалогов без индивидуального override.";
+
   const startPrompt = state.auto_start_prompt || {};
-  $("autoStartPromptText").value = startPrompt.text || "";
+  const localPromptOverride = startPrompt.is_override === true;
+  if ($("autoStartPromptOverrideEnabled")) $("autoStartPromptOverrideEnabled").checked = localPromptOverride;
+  $("autoStartPromptText").value = startPrompt.text || globalStartPrompt.text || "";
+  if ($("autoStartPromptMeta")) $("autoStartPromptMeta").textContent = localPromptOverride
+    ? "Для текущего AI-диалога сохранён индивидуальный override. Изменение общего prompt его не перезапишет."
+    : "Текущий AI-диалог наследует общий стартовый prompt. Обычное «Сохранить всё» не создаёт override, пока переключатель выключен.";
 
   const prefix = state.report_prefix || {};
   $("reportPrefixEnabled").checked = prefix.enabled === true;
@@ -290,7 +303,8 @@ async function saveAll({ includeKey = true } = {}) {
     performance_client_id: includeKey ? $("performanceClientId").value : "",
     performance_client_secret: includeKey ? $("performanceClientSecret").value : "",
     auto_send: $("autoSend").checked,
-    personal_data_enabled: $("personalDataEnabled")?.checked === true
+    personal_data_enabled: $("personalDataEnabled")?.checked === true,
+    global_auto_start_prompt_text: $("globalAutoStartPromptText").value
   };
   const response = context.available
     ? await send("OZ_SAVE_SETTINGS", {
@@ -298,6 +312,7 @@ async function saveAll({ includeKey = true } = {}) {
       report_prefix_enabled: $("reportPrefixEnabled").checked,
       report_prefix_text: $("reportPrefixText").value,
       report_prefix_interval: Number($("reportPrefixInterval").value || 1),
+      auto_start_prompt_override_enabled: $("autoStartPromptOverrideEnabled")?.checked === true,
       auto_start_prompt_text: $("autoStartPromptText").value,
       conversation_key: context.conversation_key
     })
@@ -510,13 +525,33 @@ $("finishAuto").addEventListener("click", () => busy($("finishAuto"), async () =
   status(deferred ? "Завершение запрошено. Уже начатый API/result не дублируется и будет доведён до безопасной delivery/reconciliation границы." : "Autorun завершён.", "ok");
 }));
 
+$("autoStartPromptOverrideEnabled")?.addEventListener("change", () => {
+  const enabled = $("autoStartPromptOverrideEnabled").checked === true;
+  const pageAvailable = lastState?.page_context_available !== false;
+  $("autoStartPromptText").disabled = !pageAvailable || !enabled;
+  if (enabled && lastState?.auto_start_prompt?.is_override !== true) {
+    $("autoStartPromptText").value = lastState?.global_auto_start_prompt?.text || lastState?.auto_start_prompt?.text || "";
+  }
+});
+
+$("resetGlobalAutoStartPrompt").addEventListener("click", () => busy($("resetGlobalAutoStartPrompt"), async () => {
+  const context = await resolvePopupContext({ required: false });
+  const response = await send("OZ_RESET_GLOBAL_AUTO_START_PROMPT", {
+    conversation_key: context.available ? context.conversation_key : null,
+    page_context_error: context.error || null
+  });
+  if (!response.ok) return status(response.error || "Не удалось вернуть общий стартовый prompt по умолчанию.", "error");
+  renderState(response.state);
+  status("Общий стартовый prompt возвращён к встроенному default.", "ok");
+}));
+
 $("resetAutoStartPrompt").addEventListener("click", () => busy($("resetAutoStartPrompt"), async () => {
   try {
     const context = await resolvePopupContext();
     const response = await send("OZ_RESET_AUTO_START_PROMPT", { conversation_key: context.conversation_key });
     if (!response.ok) return status(response.error || "Не удалось вернуть стартовый prompt по умолчанию.", "error");
     renderState(response.state);
-    status("Стартовый prompt autorun возвращён к встроенному безопасному варианту.", "ok");
+    status("Индивидуальный prompt удалён: текущий диалог снова использует общий стартовый prompt.", "ok");
   } catch (error) {
     status(error.message || String(error), "error");
   }
