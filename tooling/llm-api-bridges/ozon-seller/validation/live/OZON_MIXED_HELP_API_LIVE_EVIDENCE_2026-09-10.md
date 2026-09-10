@@ -232,14 +232,81 @@ This test live-proves malformed HELP isolation without poisoning a later indepen
 6. Aggregate accounting remains exactly one logical business result and one physical business request.
 7. No coalescing, retry, or hidden second provider business request is visible.
 
-This proves one malformed-envelope direction in live runtime. It does not yet prove `malformed API → valid HELP`, disabled-alias fail-closed behavior inside a mixed source, startup-prompt UI materialization, or final live certification.
+## LIVE TEST 04 — malformed API then valid HELP
+
+### Input
+
+```text
+OZON_API_V1
+{"operation":"seller_product_list","args":{}}
+OZON_HELP_V2
+{"cluster":"finance"}
+```
+
+This input exactly mirrors the malformed-API isolation shape used by the authoritative pre-handoff regression.
+
+### Observed aggregate
+
+- result envelope: `OZON_BATCH_RESULT_V1`
+- bridge: `ozon-llm-api-bridge`
+- version: `0.1.19`
+- delivery mode: `sequential_batch_single_delivery`
+- result count: `2`
+- capability probe performed: `false`
+- capability status: `not_resolved`
+- query planner status: `pending`
+- coalesced group count: `0`
+- coalesced logical count: `0`
+- logical business result count: `0`
+- physical business request count: `0`
+
+### Observed result 1 — malformed API isolated locally
+
+- result type: `OZON_GUIDANCE_RESULT_V2`
+- guidance version: `2`
+- status: `cluster_suggested`
+- cluster: `catalog_products`
+- section: `null`
+- external request executed: `false`
+- physical business request count: `0`
+- error: `UNKNOWN_TOP_LEVEL_FIELD`
+- descriptor error code: `UNKNOWN_TOP_LEVEL_FIELD`
+- descriptor intent operation: `seller_product_list`
+- fallback catalog guidance choices were returned
+
+### Observed result 2 — later independent HELP survives
+
+- result type: `OZON_GUIDANCE_RESULT_V2`
+- guidance version: `2`
+- status: `cluster_selected`
+- cluster: `finance`
+- section: `null`
+- external request executed: `false`
+- physical business request count: `0`
+- error: `null`
+- finance guidance choices were returned
+
+### Verdict
+
+`LIVE TEST 04 = PASS`
+
+This test live-proves malformed API isolation without poisoning a later independent HELP envelope:
+
+1. The malformed API becomes its own local guidance result with `UNKNOWN_TOP_LEVEL_FIELD`.
+2. The malformed API performs zero provider business requests.
+3. The later independent HELP remains discoverable and is processed in source order.
+4. HELP remains local and performs zero provider business requests.
+5. Aggregate accounting reports zero logical business results and zero physical business requests.
+6. No provider request, automatic retry, hidden pagination, polling, or fan-out is evidenced.
+7. Together with LIVE TEST 03, both malformed-envelope directions are now live-proved.
 
 ## Current live validation cursor
 
 - TEST-01 HELP→API: PASS
 - TEST-02 API→HELP: PASS
 - TEST-03 malformed HELP→valid API: PASS
-- malformed API→valid HELP: NOT RUN
+- TEST-04 malformed API→valid HELP: PASS
+- malformed-envelope isolation both directions: PASS
 - disabled alias mixed fail-closed: NOT RUN
 - startup prompt live observation: NOT RUN
 - final live certification: OPEN
