@@ -5,19 +5,20 @@
 <pre id="result">PENDING</pre>
 <script src="../../dist-step7-candidate/shared/ai_delivery_capabilities.js"></script>
 <script src="../../dist-step7-candidate/shared/ai_adapters.js"></script>
+<script src="../../dist-step7-candidate/shared/web_file_attachment.js"></script>
 <script>
 (() => {
   'use strict';
   const fixture = document.getElementById('fixture');
   const result = document.getElementById('result');
   function assert(condition, message) { if (!condition) throw new Error(message); }
-  function render(extra = '') {
+  function render(extra = '', withPreview = true) {
     fixture.innerHTML = `
       <section id="alice-shell">
         <div data-testid="standalone-input">
           <textarea data-testid="inputbase-textarea"></textarea>
           <input id="alice-doc-input" type="file" accept=".txt,.pdf,.doc,.docx,text/plain,application/pdf">
-          <div data-testid="attachment-file" title="ozon-bridge-result-fixture.txt">ozon-bridge-result-fixture.txt</div>
+          ${withPreview ? '<div data-testid="attachment-file" title="ozon-bridge-result-fixture.txt">ozon-bridge-result-fixture.txt</div>' : ''}
           <button data-testid="oknyx" aria-label="Отправить">send</button>
           ${extra}
         </div>
@@ -25,7 +26,9 @@
   }
   try {
     const alice = globalThis.OzonAIAdapters.ADAPTERS.alice;
+    const files = globalThis.OzonWebFileAttachment;
     assert(alice, 'Alice adapter missing');
+    assert(files, 'Web file attachment helper missing');
 
     render();
     let surface = alice.attachmentSurface();
@@ -50,7 +53,26 @@
     document.getElementById('alice-doc-input').remove();
     assert(alice.attachmentSurface() === null, 'missing file input must fail closed');
 
-    render();
+    render('', false);
+    surface = alice.attachmentSurface();
+    assert(surface && surface.input, 'attachment input missing before File dispatch');
+    surface.input.addEventListener('change', () => {
+      const selected = [...surface.input.files];
+      if (selected.length !== 1) return;
+      const preview = document.createElement('div');
+      preview.setAttribute('data-testid', 'attachment-file');
+      preview.setAttribute('title', selected[0].name);
+      preview.textContent = selected[0].name;
+      surface.input.insertAdjacentElement('afterend', preview);
+    }, { once: true });
+    const payload = new TextEncoder().encode('Полный синтетический результат Alice');
+    const file = files.createFile(payload, { filename: 'ozon-bridge-result-fixture.txt', mime_type: 'text/plain;charset=utf-8' });
+    const accepted = files.setInputFiles(surface.input, [file]);
+    assert(accepted.length === 1, 'browser did not accept exactly one File');
+    assert(accepted[0].name === 'ozon-bridge-result-fixture.txt', 'browser changed generated TXT filename');
+    assert(accepted[0].size === payload.byteLength, 'browser changed generated TXT bytes');
+    assert(alice.attachmentReady([{ filename: 'ozon-bridge-result-fixture.txt' }]) === true, 'post-change preview not recognized as ready');
+
     document.querySelector('[data-testid="attachment-file"]').remove();
     assert(alice.attachmentReady([{ filename: 'ozon-bridge-result-fixture.txt' }]) === false, 'missing exact preview must fail closed');
 
