@@ -10,3 +10,4 @@ export * from "./commercial";
 export * from "./billing";
 export * from "./checkout";
 export * from "./reconciliation";
+export * from "./adapter-registry";

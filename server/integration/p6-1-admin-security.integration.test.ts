@@ -105,11 +105,11 @@ describe.sequential("P6.1 admin security foundation on real PostgreSQL", () => {
       "admin_sessions",
     ]);
   });
-  it("does not create migration 0013", async () => {
+  it("includes the P7.1 migration 0013", async () => {
     const rows = await q<{ count: string }>(
       "SELECT count(*)::text AS count FROM drizzle.__drizzle_migrations",
     );
-    expect(rows.rows[0]!.count).toBe("13");
+    expect(rows.rows[0]!.count).toBe("14");
   });
   it("principal user binding is unique", async () => {
     const u = await user();

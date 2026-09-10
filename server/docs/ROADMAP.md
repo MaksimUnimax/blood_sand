@@ -213,7 +213,7 @@ P6.1 does not implement admin UI, account search, subscription/plan/price/
 entitlement endpoints, or AI/health/diagnostic admin domains. P7, P8 and P9
 own those later domain modules respectively; they reuse this admin framework.
 
-## P7 — AI adapter registry and auto-selection contract `[NEXT]`
+## P7 — AI adapter registry and auto-selection contract `[ACTIVE]`
 
 Goal: normal UX automatically detects the active supported AI; profiles become safely server-managed.
 
@@ -230,6 +230,15 @@ Scope:
 - diagnostic manual override only.
 
 Exit: independent ChatGPT Standard/Work resolution, safe rollback and no remote capability expansion.
+
+P7 execution decomposition (frozen by ADR-0031):
+
+- P7.1 [ACTIVE / LOCAL CANDIDATE] AI adapter registry/profile persistence foundation and strict declarative profile schema.
+- P7.2 [PLANNED] profile lifecycle commands, deterministic assignment, rollout/pause/rollback authority.
+- P7.3 [PLANNED] bootstrap AI resolution, signed wire contract, and simulated-client automatic selection.
+- P7.4 [PLANNED] admin API and P7 RBAC permissions.
+- P7.5 [PLANNED] admin portal AI adapter/profile operations UX.
+- P7.6 [PLANNED] P7 security, architecture, full regression, and final acceptance.
 
 ## P8 — AI Compatibility Health v1 `[PLANNED]`
 
@@ -433,6 +442,16 @@ Architecture remains:
 - P4.4 `[DONE]` Deterministic commercial entitlement resolver, account override resolution, explanation objects and `device.max_active` adapter contract.
 - P4.5 `[DONE]` Public commercial catalog read model/API plus stable P5/P6 consumer interfaces, without implementing subscriptions/admin mutation transport.
 - P4.6 `[DONE]` P4 security/architecture audit, full regression and final P4 acceptance.
+
+## P7 current execution
+
+- P7 [ACTIVE].
+- P7.1 [ACTIVE / LOCAL CANDIDATE]; local acceptance and remote review are pending.
+- P7.2 [PLANNED].
+- P7.3 [PLANNED].
+- P7.4 [PLANNED].
+- P7.5 [PLANNED].
+- P7.6 [PLANNED].
 
 # Parallel Bridge rule
 

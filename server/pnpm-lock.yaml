@@ -219,6 +219,18 @@ importers:
         specifier: 8.5.0
         version: 8.5.0(postcss@8.5.18)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.9.0)
 
+  packages/adapter-registry:
+    dependencies:
+      '@product/remote-config':
+        specifier: workspace:*
+        version: link:../remote-config
+      '@product/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: 4.1.5
+        version: 4.1.5
+
   packages/admin-auth:
     dependencies:
       '@product/auth':
@@ -362,6 +374,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@product/adapter-registry':
+        specifier: workspace:*
+        version: link:../adapter-registry
       '@product/admin-auth':
         specifier: workspace:*
         version: link:../admin-auth

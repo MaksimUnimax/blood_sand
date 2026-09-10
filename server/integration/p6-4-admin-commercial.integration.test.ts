@@ -26,6 +26,9 @@ if (!connectionString) throw new Error("DATABASE_URL is required for P6.4");
 const NOW = new Date("2026-09-08T12:00:00.000Z");
 const LATER = new Date("2026-09-09T12:00:00.000Z");
 const EARLIER = new Date("2026-09-07T12:00:00.000Z");
+const E08_FUTURE_OFFSET_MS = 10 * 365 * 24 * 60 * 60 * 1000;
+const futureFromExecutionClock = () =>
+  new Date(Date.now() + E08_FUTURE_OFFSET_MS);
 const config: AppConfig = {
   environment: "test",
   databaseUrl: connectionString,
@@ -1680,7 +1683,7 @@ describe.sequential("P6.4 behavioral real PostgreSQL acceptance matrix", () => {
           {
             expectedLatestRevision: null,
             value: { kind: "BOOLEAN", value: true },
-            effectiveFrom: iso(LATER),
+            effectiveFrom: iso(futureFromExecutionClock()),
             expiresAt: null,
             reason: rsn("e08"),
           },
