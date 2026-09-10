@@ -1,6 +1,7 @@
 name: Ozon Alice large-result delivery diagnostic v3
 run-name: Ozon Alice large-result diagnostic v3 · ${{ github.ref_name }} · ${{ github.sha }}
 
+# Retry generation 2: includes scoped-input and visible-preview hardening.
 on:
   push:
     branches: [repair/ozon-alice-large-result-document-delivery-2026-09-10]
