@@ -1,0 +1,118 @@
+name: Ozon bootstrap prompt editable new-chat v6
+on:
+  push:
+    branches: [repair/ozon-bootstrap-prompt-editable-new-chat-2026-09-10]
+    paths: [.github/workflows/ozon-bootstrap-prompt-editable-new-chat-v6-2026-09-10.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ozon-bootstrap-prompt-editable-v6-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/bootstrap-prompt-editable-new-chat-v1
+  BRANCH: repair/ozon-bootstrap-prompt-editable-new-chat-2026-09-10
+  ZIP: OZON_BRIDGE_v0.1.19_BOOTSTRAP_PROMPT_EDITABLE_NEW_CHAT_20260910.zip
+  BUILDINFO: OZON_BRIDGE_v0.1.19_BOOTSTRAP_PROMPT_EDITABLE_NEW_CHAT_20260910_BUILDINFO.txt
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+      tree: ${{ steps.commit.outputs.tree }}
+      package_sha: ${{ steps.meta.outputs.package_sha }}
+      package_bytes: ${{ steps.meta.outputs.package_bytes }}
+      refresh_state: ${{ steps.meta.outputs.refresh_state }}
+      pending_state: ${{ steps.meta.outputs.pending_state }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Full deterministic gate
+        run: python "$GATE/run_prehandoff_gate_v3.py"
+      - name: Chrome MV3 bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          V=152.0.7977.82
+          curl -fsSL "https://storage.googleapis.com/chrome-for-testing-public/$V/linux64/chrome-linux64.zip" -o "$RUNNER_TEMP/chrome.zip"
+          unzip -q "$RUNNER_TEMP/chrome.zip" -d "$RUNNER_TEMP/chrome"
+          BIN="$RUNNER_TEMP/chrome/chrome-linux64/chrome"
+          "$BIN" --version | grep -F "$V"
+          xvfb-run -a node "$ROOT/validation/regression/run_file_delivery_extension_worker_smoke.mjs" "$BIN" "$GITHUB_WORKSPACE/$DIST"
+          sed -i 's/mv3_chrome_worker_bootstrap=PENDING_CI_STEP/mv3_chrome_worker_bootstrap=PASS/' "$ROOT/artifacts/$BUILDINFO"
+      - name: Read gate outputs
+        id: meta
+        shell: bash
+        run: |
+          python -c "import json,os;d=json.load(open(os.environ['GATE']+'/gate_outputs.json'));o=open(os.environ['GITHUB_OUTPUT'],'a');o.write('package_sha='+d['package_sha']+'\npackage_bytes='+str(d['package_bytes'])+'\nrefresh_state='+d['refresh_guard_state']+'\npending_state='+d['pending_start_guard_state']+'\n')"
+      - name: Commit exact tested candidate
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$DIST/service_worker.js" "$DIST/popup.js" "$DIST/popup.html" "$DIST/shared/runtime_names.js"
+          git add "$GATE/DEPENDENCY_CLOSURE_2026-09-10.md" "$GATE/PREHANDOFF_EVIDENCE_2026-09-10.md" "$GATE/gate_outputs.json"
+          git add "$ROOT/artifacts/$ZIP" "$ROOT/artifacts/$ZIP.sha256.txt" "$ROOT/artifacts/$BUILDINFO"
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
+          git commit -m 'repair(ozon): make bootstrap prompt editable before conversation identity'
+          git push origin "HEAD:$BRANCH"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "tree=$(git rev-parse HEAD^{tree})" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-bootstrap-prompt-editable-new-chat
+          path: tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_BOOTSTRAP_PROMPT_EDITABLE_NEW_CHAT_20260910.zip
+          retention-days: 30
+  windows:
+    needs: linux
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.linux.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Exact source and package gate
+        shell: pwsh
+        run: python "$env:GATE/run_windows_gate.py" --source-sha '${{ needs.linux.outputs.sha }}' --package-sha '${{ needs.linux.outputs.package_sha }}'
+  finalize:
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.linux.outputs.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Full mandatory gate report
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$GATE/finalize_gate_report.py" --source-sha '${{ needs.linux.outputs.sha }}' --source-tree '${{ needs.linux.outputs.tree }}' --package-sha '${{ needs.linux.outputs.package_sha }}' --package-bytes '${{ needs.linux.outputs.package_bytes }}' --workflow-run "$GITHUB_RUN_ID" --refresh-state '${{ needs.linux.outputs.refresh_state }}' --pending-start-state '${{ needs.linux.outputs.pending_state }}' --output "$GATE/FINAL_PREHANDOFF_2026-09-10.md"
+          grep -F '**PRE-HANDOFF VERDICT: PASS**' "$GATE/FINAL_PREHANDOFF_2026-09-10.md"
+          grep -F '**LIVE CERTIFICATION: PENDING**' "$GATE/FINAL_PREHANDOFF_2026-09-10.md"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$GATE/FINAL_PREHANDOFF_2026-09-10.md"
+          git diff --cached --check
+          git commit -m 'docs(ozon): finalize editable bootstrap prompt gate evidence'
+          git push origin "HEAD:$BRANCH"
