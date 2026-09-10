@@ -223,3 +223,29 @@ tree twice.
 The evidence is non-empty, valid UTF-8, and contains substantive recorded history. Attempt 1
 history, Attempt 2 history, the zero-byte evidence rejection, and the AFC
 canonical rebase are explicitly retained. This document does not claim remote
+acceptance in the candidate itself; the remote acceptance is recorded below.
+
+## Remote acceptance
+
+- IMPLEMENTATION_SHA = 8c540e958edc9f560a8078b135fa583c0152dd3d.
+- IMPLEMENTATION_PARENT = afc27bc74f83abc727e18a347dec4db0cd5351f7.
+- IMPLEMENTATION_TREE = aaa9ec6b2aedc0ad44fce0b92f09aa4e449bb55a.
+- PUSH = FAST_FORWARD.
+- SERVER_CI_RUN_ID = 34438296018.
+- SERVER_CI_HEAD_SHA = 8c540e958edc9f560a8078b135fa583c0152dd3d.
+- SERVER_CI_CONCLUSION = success.
+- REMOTE_READBACK = PASS.
+- REMOTE_SECURITY_READBACK = PASS.
+- OPENAPI = 67 / unchanged hash
+  eec29f87be0b1309be5021fdd3c0e38ec90bea2add9978f2c4b439c7f79e88e4.
+- MIGRATION = 0000..0013.
+- 0013 SHA256 = 9291008cb5cf6d42fe15b7c824f2048821680104b85a50639df716a014d4098b.
+- 0014 = absent.
+- BRIDGE_CHANGED_BY_P7_1 = NO.
+- ALICE_LEDGER_PRESERVED = YES.
+
+Final evidence verdict:
+
+- P7.1 = DONE / REMOTE ACCEPTED.
+- P7 = ACTIVE.
+- P7.2 = NEXT / NOT STARTED.
