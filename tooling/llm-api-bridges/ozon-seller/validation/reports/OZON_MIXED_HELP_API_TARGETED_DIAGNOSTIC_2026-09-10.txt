@@ -1,0 +1,51 @@
+workflow_input_sha=bf9bbeba2dc5441a93a69eba486bf17d7b2e07e4
+materializer_exit_code=0
+targeted_exit_code=1
+--- materializer stdout+stderr ---
+BASE_AUTHORITY=572f0b66dd09ce3441f2b96270c5cae864da490b
+BASE_WORKER_BLOB=ec988889597ad4df50c07006bc855ad32028fb10
+BASE_ENTRY_BLOB=c225dc2ea73faf1f087064bb492307ab0778af3a
+BASE_RUNTIME_BLOB=cb1cf684f71974a26b9f3b745c986786f2cd3221
+WORKER_STATE=ALREADY_MATERIALIZED
+MIXED_HELP_API_MATERIALIZE_V2_PASS
+STRUCTURAL_FUNCTION_REPLACEMENT_PASS
+START_PROMPT_SYNTAX_SAFE_REWRITE_PASS
+PRODUCTION_JS_TARGET_SYNTAX_PASS
+MIXED_HELP_API_MATERIALIZE_V4_PASS
+MIXED_HELP_API_MATERIALIZE_V3_COMPAT_WRAPPER_PASS
+--- targeted stdout+stderr ---
+REG_V2_MIXED_HELP_THEN_API_ORDER_PASS
+REG_V2_MIXED_API_THEN_HELP_ORDER_PASS
+REG_V2_MIXED_ALTERNATING_SOURCE_ORDER_PASS
+REG_V2_API_ONLY_UNCHANGED_PASS
+REG_V2_MULTI_HELP_PASS
+REG_V2_MALFORMED_HELP_ISOLATED_PASS
+REG_V2_MALFORMED_API_ISOLATED_PASS
+REG_V2_BALANCED_JSON_MARKER_ISOLATION_PASS
+REG_V2_GUIDANCE_ZERO_PROVIDER_REQUEST_PASS
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: discoverBatchEntries must be extractable
+    at file:///home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/validation/mixed-help-api-v2/run_mixed_help_api_gate_v2.mjs:114:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.12.0
+--- workspace changed paths (runtime changes NOT committed) ---
+ M tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/service_worker.js
+ M tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/service_worker_entry.js
+ M tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/runtime_names.js
+?? tooling/llm-api-bridges/ozon-seller/AI_TEST_REPORT_FORMAT_CURRENT.md
+?? tooling/llm-api-bridges/ozon-seller/BRIDGE_RESPONSE_FORMS_CURRENT.md
+?? tooling/llm-api-bridges/ozon-seller/START_PROMPT_CURRENT.md
+?? tooling/llm-api-bridges/ozon-seller/validation/reports/OZON_MIXED_HELP_API_TARGETED_DIAGNOSTIC_2026-09-10.txt
