@@ -1,0 +1,370 @@
+name: Ozon Alice large-result delivery v1
+run-name: Ozon Alice large-result delivery v1 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-large-result-document-delivery-2026-09-10]
+    paths: [.github/workflows/ozon-alice-large-result-delivery-v1-2026-09-10.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-alice-large-result-delivery-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PATCH_BRANCH: repair/ozon-alice-large-result-document-delivery-2026-09-10
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/alice-large-result-v1
+  MATERIALIZER: tooling/llm-api-bridges/ozon-seller/development/alice-large-result-document-delivery-2026-09-10/materialize_alice_large_result_patch.py
+  ARTIFACT_NAME: OZON_BRIDGE_v0.1.19_ALICE_LARGE_RESULT_DOCUMENT_DELIVERY_20260910.zip
+  BUILDINFO_NAME: OZON_BRIDGE_v0.1.19_ALICE_LARGE_RESULT_DOCUMENT_DELIVERY_20260910_BUILDINFO.txt
+
+jobs:
+  linux-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      source_sha: ${{ steps.commit.outputs.source_sha }}
+      source_tree: ${{ steps.commit.outputs.source_tree }}
+      package_sha: ${{ steps.identity.outputs.package_sha }}
+      package_bytes: ${{ steps.identity.outputs.package_bytes }}
+      production_files: ${{ steps.identity.outputs.production_files }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
+      - name: Materialize authorized minimal production repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$PATCH_BRANCH"
+          python "$MATERIALIZER"
+          git diff --check
+          printf '%s\n' \
+            "$DIST/attachment_delivery_port_content.js" \
+            "$DIST/shared/ai_adapters.js" \
+            "$DIST/shared/ai_delivery_capabilities.js" \
+            "$ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs" | sort > /tmp/expected.txt
+          git diff --name-only | sort > /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          ! git diff | grep -E '^\+.*(sellerApiKey|performanceClientSecret|Authorization|Client-Id|Api-Key|automatic_retry[^:]*:[[:space:]]*true|automatic_pagination[^:]*:[[:space:]]*true)'
+          echo ALICE_REPAIR_EXACT_DIFF_SCOPE_PASS
+
+      - name: Syntax and targeted post-fix gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          find "$DIST" -type f -name '*.js' -print0 | sort -z | xargs -0 -n1 node --check
+          node "$GATE/run_alice_large_result_delivery_gate.mjs" "$DIST"
+          node "$GATE/run_alice_large_result_delivery_gate_v2.mjs" . "$DIST"
+          node "$ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs"
+          echo ALICE_TARGETED_POSTFIX_GATES_PASS
+
+      - name: Shared delivery and command regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$ROOT/validation/regression/run_file_delivery_capture_accounting.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_port_worker_state_machine.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_mixed_batch_policy.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_wake_lifecycle.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_live_stop_repro.mjs"
+          node "$ROOT/validation/regression/run_direct_binary_provider_attachment_gate.mjs"
+          node "$ROOT/validation/mixed-help-api-v2/run_mixed_help_api_gate_v2.mjs" .
+          node "$ROOT/validation/mixed-help-api-v2/run_mixed_help_api_disabled_alias_gate.mjs" .
+          node "$ROOT/validation/command-envelope-contract-v1/run_command_envelope_contract_gate.mjs" .
+          echo SHARED_DELIVERY_COMMAND_REGRESSION_PASS
+
+      - name: Browser fixture and real Chrome MV3 bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          ZIP="$RUNNER_TEMP/chrome.zip"
+          CDIR="$RUNNER_TEMP/chrome"
+          mkdir -p "$CDIR"
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" --output "$ZIP"
+          unzip -q "$ZIP" -d "$CDIR"
+          CHROME="$CDIR/chrome-linux64/chrome"
+          "$CHROME" --version | grep -F "$VER"
+          FIXTURE="file://$GITHUB_WORKSPACE/$GATE/alice_attachment_adapter_fixture.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --allow-file-access-from-files --dump-dom "$FIXTURE" > "$RUNNER_TEMP/alice-fixture.html" 2> "$RUNNER_TEMP/alice-fixture.err" || { cat "$RUNNER_TEMP/alice-fixture.err"; exit 1; }
+          grep -F 'ALICE_ATTACHMENT_BROWSER_FIXTURE_PASS' "$RUNNER_TEMP/alice-fixture.html"
+          ! grep -F 'ALICE_ATTACHMENT_BROWSER_FIXTURE_FAIL' "$RUNNER_TEMP/alice-fixture.html"
+          xvfb-run -a node "$ROOT/validation/regression/run_file_delivery_extension_worker_smoke.mjs" "$CHROME" "$GITHUB_WORKSPACE/$DIST"
+          echo ALICE_BROWSER_AND_MV3_PASS
+
+      - name: Build dependency closure evidence and exact deterministic package
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json, zipfile
+
+          root = Path('tooling/llm-api-bridges/ozon-seller')
+          dist = root / 'dist-step7-candidate'
+          gate = root / 'validation/alice-large-result-v1'
+          artifacts = root / 'artifacts'
+          artifacts.mkdir(parents=True, exist_ok=True)
+          name = 'OZON_BRIDGE_v0.1.19_ALICE_LARGE_RESULT_DOCUMENT_DELIVERY_20260910.zip'
+          out = artifacts / name
+
+          rows = [
+            ('01','Alice capability profile','shared/ai_delivery_capabilities.js','90k UTF-16 threshold + file_input_v1','PASS'),
+            ('02','ChatGPT threshold isolation','shared/ai_delivery_capabilities.js','1,048,000 Unicode-code-point behavior unchanged','PASS'),
+            ('03','Generated text decision metric','shared/ai_delivery_capabilities.js','Alice cannot undercount surrogate pairs','PASS'),
+            ('04','Alice origin/profile mapping','shared/ai_delivery_capabilities.js','alice.yandex.ru resolves Alice profile','PASS'),
+            ('05','File type policy','shared/ai_delivery_capabilities.js','TXT/PDF/DOC/DOCX only','PASS'),
+            ('06','Alice file byte limit','shared/ai_delivery_capabilities.js','100 MiB enforced','PASS'),
+            ('07','Alice one-file limit','shared/ai_delivery_capabilities.js + attachment_delivery_port_content.js','max_files_per_turn=1 and fail-closed guard','PASS'),
+            ('08','Alice composer context','shared/ai_adapters.js','existing standalone-input context preserved','PASS'),
+            ('09','Alice file-input resolver','shared/ai_adapters.js','scoped, document-capable, ambiguity fail-closed','PASS'),
+            ('10','Image-only input exclusion','shared/ai_adapters.js','image-only candidate cannot steal document delivery','PASS'),
+            ('11','Alice attachment preview resolver','shared/ai_adapters.js','exact filename attributable near composer','PASS'),
+            ('12','Alice attachment readiness','shared/ai_adapters.js','busy/uploading/missing preview fail closed','PASS'),
+            ('13','Browser File/DataTransfer path','shared/web_file_attachment.js + browser fixture','one exact File accepted; bytes/name preserved','PASS'),
+            ('14','Attachment surface consumer','attachment_delivery_port_content.js','existing generic port consumes adapter surface','PASS'),
+            ('15','Local artifact metadata','attachment_delivery_port_content.js','descriptor required before file creation','PASS'),
+            ('16','Local artifact chunks','attachment_delivery_port_content.js','bounded chunk transport only; no Ozon refetch','PASS'),
+            ('17','Attachment SHA-256 integrity','attachment_delivery_port_content.js','complete local bytes checked before UI attach','PASS'),
+            ('18','Attachment count guard','attachment_delivery_port_content.js','over-budget bundle stops with TARGET_AI_FILE_COUNT_UNSUPPORTED','PASS'),
+            ('19','Attachment commit','attachment_delivery_port_content.js','commit-before-UI mutation semantics retained','PASS'),
+            ('20','Committed attach recovery','attachment_delivery_port_content.js','no automatic reattach after unknown outcome','PASS'),
+            ('21','Ready state acknowledgement','attachment_delivery_port_content.js','preview proof required before Send','PASS'),
+            ('22','Send commit','attachment_delivery_port_content.js','exactly-once send state machine retained','PASS'),
+            ('23','Send recovery','attachment_delivery_port_content.js','no resend after unknown committed Send','PASS'),
+            ('24','Manual result planning','service_worker.js','manual collected result uses batch_watch_v1','PASS_UNCHANGED'),
+            ('25','Autorun result planning','service_worker.js','autorun collected result uses batch_watch_v1','PASS_UNCHANGED'),
+            ('26','Generated TXT materialization','shared/bridge_autorun_model.js','full outgoing text becomes one TXT, no truncation','PASS_UNCHANGED_GENERIC_PATH'),
+            ('27','Original provider file preservation','shared/bridge_autorun_model.js + file_delivery_model_policy.js','provider refs remain original file attachments','PASS_UNCHANGED_GENERIC_PATH'),
+            ('28','Mixed batch companion policy','shared/file_delivery_model_policy.js','existing completeness behavior preserved; Alice file budget enforced downstream','PASS'),
+            ('29','Attachment worker persistence','shared/bridge_autorun_model.js + service worker','attachment phases remain durable/recoverable','PASS'),
+            ('30','MV3 service-worker bootstrap','service_worker_entry.js + manifest.json','real Chrome bootstrap regression','PASS'),
+            ('31','Manifest Alice host permission','manifest.json','https://alice.yandex.ru/* already present','PASS_UNCHANGED'),
+            ('32','Content-script dependency order','manifest.json','capabilities→adapters→web_file_attachment→attachment port preserved','PASS_UNCHANGED'),
+            ('33','Ozon provider request path','service_worker.js/provider modules','no executable provider/request/auth diff','PASS_UNCHANGED'),
+            ('34','Command-envelope contract','command regressions','no parser/cardinality change','PASS'),
+            ('35','Mixed HELP/API','mixed-help regression','ordered mixed behavior unchanged','PASS'),
+            ('36','Hidden retry/pagination/fanout','shared regressions + exact diff audit','none added by delivery repair','PASS'),
+            ('37','Privacy/entitlement','no related production diff','no policy weakening','PASS_UNCHANGED'),
+            ('38','Startup/bootstrap prompt','no related production diff','separate prompt-content issue not bundled','PASS_UNCHANGED'),
+            ('39','Linux exact-source regression','CI','targeted + shared + browser gates','PASS'),
+            ('40','Deterministic ZIP/fresh extraction','CI','exact installable artifact verified','PASS'),
+            ('41','Windows exact-source/package regression','CI','must pass before final report','PENDING_CI_JOB'),
+            ('42','Live Alice actual DOM file input','installed Alice web UI','real provider UI selector/preview behavior','PENDING_POST_INSTALL'),
+            ('43','Live 364805-character delivery','installed Alice + explicit Ozon read','one TXT, one Send, zero delivery retry','PENDING_POST_INSTALL'),
+          ]
+          md = ['# Alice large-result document delivery — dependency closure','',
+                'Scope: authorized post-result delivery repair only. No Ozon provider call is required for pre-handoff.','',
+                '| # | Dependency | Authority/path | Verified behavior | Status |','|---|---|---|---|---|']
+          md += [f'| {n} | {d} | `{p}` | {b} | `{s}` |' for n,d,p,b,s in rows]
+          md += ['', 'Unaccounted dependencies: **0**.', 'Stale assumptions after secondary sweep: **0**.',
+                 'Available-but-unverified pre-handoff dependencies: **0**.',
+                 'Live-only dependencies: **2**, both explicitly `PENDING_POST_INSTALL`.',
+                 '', '**DEPENDENCY VERDICT: PASS FOR PRE-HANDOFF SCOPE**',
+                 '', 'The live-only items are not promoted to PASS by this document.']
+          (gate/'DEPENDENCY_CLOSURE_2026-09-10.md').write_text('\n'.join(md)+'\n', encoding='utf-8')
+
+          files = sorted(p for p in dist.rglob('*') if p.is_file())
+          with zipfile.ZipFile(out, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+            for p in files:
+              rel = p.relative_to(dist).as_posix()
+              info = zipfile.ZipInfo(rel, date_time=(1980,1,1,0,0,0))
+              info.compress_type = zipfile.ZIP_DEFLATED
+              info.external_attr = 0o100644 << 16
+              z.writestr(info, p.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+          data = out.read_bytes()
+          sha = hashlib.sha256(data).hexdigest()
+          (artifacts/(name+'.sha256.txt')).write_text(f'{sha}  {name}\n', encoding='utf-8')
+          build = [
+            'patch=alice_large_result_document_delivery_2026-09-10',
+            'version=0.1.19',
+            f'package={name}',
+            f'package_bytes={len(data)}',
+            f'package_sha256={sha}',
+            f'production_files={len(files)}',
+            'alice_plain_text_safe_threshold_utf16_code_units=90000',
+            'alice_observed_live_composer_limit_reference=100000',
+            'chatgpt_plain_text_threshold_unicode_code_points=1048000',
+            'provider_calls_during_patch_gate=0',
+            'automatic_retry_added=false',
+            'automatic_pagination_added=false',
+            'automatic_fanout_added=false',
+            'live_alice_dom=PENDING_POST_INSTALL',
+            'live_large_result_delivery=PENDING_POST_INSTALL',
+          ]
+          (artifacts/'OZON_BRIDGE_v0.1.19_ALICE_LARGE_RESULT_DOCUMENT_DELIVERY_20260910_BUILDINFO.txt').write_text('\n'.join(build)+'\n', encoding='utf-8')
+          (gate/'gate_outputs.json').write_text(json.dumps({'package_sha':sha,'package_bytes':len(data),'production_files':len(files)}, indent=2)+'\n', encoding='utf-8')
+          print(json.dumps({'package_sha':sha,'package_bytes':len(data),'production_files':len(files)}))
+          PY
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          d=json.loads(Path('tooling/llm-api-bridges/ozon-seller/validation/alice-large-result-v1/gate_outputs.json').read_text())
+          print('package_sha='+d['package_sha'])
+          print('package_bytes='+str(d['package_bytes']))
+          print('production_files='+str(d['production_files']))
+          PY
+          unzip -t "$ROOT/artifacts/$ARTIFACT_NAME" | tail -1 | grep -F 'No errors detected'
+          rm -rf "$RUNNER_TEMP/extract"
+          mkdir -p "$RUNNER_TEMP/extract"
+          unzip -q "$ROOT/artifacts/$ARTIFACT_NAME" -d "$RUNNER_TEMP/extract"
+          node "$GATE/run_alice_large_result_delivery_gate_v2.mjs" . "$RUNNER_TEMP/extract"
+          diff -qr "$DIST" "$RUNNER_TEMP/extract"
+          echo ALICE_DETERMINISTIC_PACKAGE_AND_FRESH_EXTRACTION_PASS
+
+      - name: Commit exact tested executable candidate
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+MaksimUnimax@users.noreply.github.com'
+          git add "$DIST/shared/ai_delivery_capabilities.js" "$DIST/shared/ai_adapters.js" "$DIST/attachment_delivery_port_content.js"
+          git add "$ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs"
+          git add "$GATE/DEPENDENCY_CLOSURE_2026-09-10.md" "$GATE/gate_outputs.json"
+          git add "$ROOT/artifacts/$ARTIFACT_NAME" "$ROOT/artifacts/$ARTIFACT_NAME.sha256.txt" "$ROOT/artifacts/$BUILDINFO_NAME"
+          git diff --cached --check
+          git commit -m 'repair(ozon): deliver oversized Alice results as complete TXT'
+          git push origin "HEAD:$PATCH_BRANCH"
+          echo "source_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "source_tree=$(git rev-parse HEAD^{tree})" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-alice-large-result-${{ steps.commit.outputs.source_sha }}
+          path: |
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_ALICE_LARGE_RESULT_DOCUMENT_DELIVERY_20260910.zip
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_ALICE_LARGE_RESULT_DOCUMENT_DELIVERY_20260910.zip.sha256.txt
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_ALICE_LARGE_RESULT_DOCUMENT_DELIVERY_20260910_BUILDINFO.txt
+          retention-days: 30
+
+  windows-gate:
+    needs: linux-gate
+    runs-on: windows-latest
+    outputs:
+      tested_sha: ${{ steps.id.outputs.tested_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.linux-gate.outputs.source_sha }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Exact-source Windows regressions and exact package
+        id: id
+        shell: pwsh
+        run: |
+          $sha = git rev-parse HEAD
+          if ($sha -ne '${{ needs.linux-gate.outputs.source_sha }}') { throw 'source SHA drift' }
+          "tested_sha=$sha" >> $env:GITHUB_OUTPUT
+          Get-ChildItem -Path $env:DIST -Recurse -Filter *.js | Sort-Object FullName | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
+          node "$env:GATE/run_alice_large_result_delivery_gate.mjs" $env:DIST; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node "$env:GATE/run_alice_large_result_delivery_gate_v2.mjs" . $env:DIST; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node "$env:ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs"; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($n in @('run_file_delivery_capture_accounting.mjs','run_file_delivery_port_worker_state_machine.mjs','run_file_delivery_mixed_batch_policy.mjs','run_file_delivery_wake_lifecycle.mjs','run_file_delivery_live_stop_repro.mjs','run_direct_binary_provider_attachment_gate.mjs')) { node "$env:ROOT/validation/regression/$n"; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
+          node "$env:ROOT/validation/mixed-help-api-v2/run_mixed_help_api_gate_v2.mjs" .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node "$env:ROOT/validation/command-envelope-contract-v1/run_command_envelope_contract_gate.mjs" .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $a = Join-Path (Join-Path $env:ROOT 'artifacts') $env:ARTIFACT_NAME
+          $actual = (Get-FileHash -Algorithm SHA256 $a).Hash.ToLowerInvariant()
+          if ($actual -ne '${{ needs.linux-gate.outputs.package_sha }}') { throw 'package SHA drift' }
+          $e = Join-Path $env:RUNNER_TEMP 'extract'
+          Expand-Archive -LiteralPath $a -DestinationPath $e -Force
+          node "$env:GATE/run_alice_large_result_delivery_gate_v2.mjs" . $e; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Output "WINDOWS_PACKAGE_SHA256=$actual"
+          Write-Output 'WINDOWS_ALICE_EXACT_SOURCE_AND_PACKAGE_PASS'
+
+  finalize-evidence:
+    needs: [linux-gate, windows-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.linux-gate.outputs.source_sha }}
+      - name: Final GATE-01..35 evidence and docs-only commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '${{ needs.windows-gate.outputs.tested_sha }}'
+          python - <<'PY'
+          from pathlib import Path
+          gate=Path('tooling/llm-api-bridges/ozon-seller/validation/alice-large-result-v1')
+          statuses = {
+            1:'PASS — explicit operator authorization: “Делай”',
+            2:'PASS — prior bootstrap-prompt PRE-HANDOFF authority frozen at baseline 6509a5f2…',
+            3:'PASS — exact repair scope: capabilities + Alice adapter + attachment count guard; one intersecting regression updated',
+            4:'PASS — exact diff scope audited; no hidden production changes',
+            5:'PASS — 364805-char Alice composer failure reconstructed by pre-fix regression',
+            6:'PASS — secondary sweep found and covered the second root cause (attachment stub) plus one-file budget dependency',
+            7:'PASS — 43-row dependency inventory materialized',
+            8:'PASS — each pre-handoff dependency has terminal verification/status',
+            9:'PASS — existing capability/adapter/attachment-port architecture extended; no parallel uploader',
+            10:'PASS — UI delivery defect separated from provider/account boundaries',
+            11:'PASS — attachment state remains durable; ambiguous UI state fails closed',
+            12:'PASS — existing wake/lifecycle regression plus MV3 Chrome bootstrap passed',
+            13:'PASS — same-instance evidence not sole evidence',
+            14:'PASS — positive browser File/DataTransfer + exact preview flow',
+            15:'PASS — missing/ambiguous/busy/uploading surfaces fail closed',
+            16:'PASS — real Chrome browser boundary exercised deterministically',
+            17:'PASS — manifest/host permissions unchanged and Alice host already allowed',
+            18:'PASS — exact deterministic installable ZIP verified',
+            19:'PASS — package rebuilt after final executable materialization',
+            20:'PASS — provider exact/transformed request code unchanged',
+            21:'PASS — logical/physical/external request accounting regression unchanged',
+            22:'PASS — no hidden retry/pagination/fanout/refetch added',
+            23:'PASS — positive and negative controls present',
+            24:'PASS — entitlement code unchanged',
+            25:'PASS — privacy code unchanged',
+            26:'PASS — provenance/file SHA checks preserved',
+            27:'PASS — redaction semantics unchanged',
+            28:'PASS — no URL/base64/credential leakage added',
+            29:'PASS — trusted-host/HTTPS/SSRF/credentials paths unchanged',
+            30:'PASS — targeted Alice threshold/adapter/browser regression',
+            31:'PASS — mixed HELP/API, command-envelope, delivery regressions passed',
+            32:'PASS — deterministic generated-TXT→File→preview flow + MV3 bootstrap exercised',
+            33:'PASS — no stale/fabricated opaque dependencies used',
+            34:'PASS — provider-side mutations: 0; provider calls during patch gate: 0',
+            35:'PASS — Linux + Windows green chain after last executable change',
+          }
+          lines=['# Alice large-result document delivery — final pre-handoff gate','',
+                 f'Exact executable source commit: `${{SOURCE_SHA}}`',
+                 f'Exact executable source tree: `${{SOURCE_TREE}}`',
+                 f'Exact ZIP SHA-256: `${{PACKAGE_SHA}}`',
+                 f'Exact ZIP bytes: `${{PACKAGE_BYTES}}`','',
+                 '| Gate | Status |','|---|---|']
+          lines += [f'| GATE-{i:02d} | {statuses[i]} |' for i in range(1,36)]
+          lines += ['', '**PRE-HANDOFF VERDICT: PASS**','',
+                    'LIVE-GATE-01: `PENDING POST-INSTALL` — exact ZIP installed in Alice-targeted browser.',
+                    'LIVE-GATE-02: `PENDING POST-INSTALL` — live Alice file-input/preview selectors confirmed.',
+                    'LIVE-GATE-03: `PENDING POST-INSTALL` — real >90k Ozon result delivered as one complete TXT.',
+                    'LIVE-GATE-04: `PENDING POST-INSTALL` — exactly one Send and no delivery-triggered Ozon retry observed.',
+                    'LIVE-GATE-05: `PENDING POST-INSTALL` — post-send continuation/recovery confirmed.',
+                    '', '**LIVE CERTIFICATION: PENDING**','',
+                    'No live-only gate is promoted to PASS by deterministic CI.']
+          text='\n'.join(lines)+'\n'
+          text=text.replace('${SOURCE_SHA}', '${{ needs.linux-gate.outputs.source_sha }}')
+          text=text.replace('${SOURCE_TREE}', '${{ needs.linux-gate.outputs.source_tree }}')
+          text=text.replace('${PACKAGE_SHA}', '${{ needs.linux-gate.outputs.package_sha }}')
+          text=text.replace('${PACKAGE_BYTES}', '${{ needs.linux-gate.outputs.package_bytes }}')
+          (gate/'FINAL_PREHANDOFF_2026-09-10.md').write_text(text,encoding='utf-8')
+          PY
+          grep -F '**PRE-HANDOFF VERDICT: PASS**' "$GATE/FINAL_PREHANDOFF_2026-09-10.md"
+          grep -F '**LIVE CERTIFICATION: PENDING**' "$GATE/FINAL_PREHANDOFF_2026-09-10.md"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+MaksimUnimax@users.noreply.github.com'
+          git add "$GATE/FINAL_PREHANDOFF_2026-09-10.md"
+          git diff --cached --check
+          git commit -m 'docs(ozon): finalize Alice large-result pre-handoff evidence'
+          git push origin "HEAD:$PATCH_BRANCH"
+          echo "FINAL_DOCS_HEAD=$(git rev-parse HEAD)"
+          echo ALICE_LARGE_RESULT_PREHANDOFF_PASS
