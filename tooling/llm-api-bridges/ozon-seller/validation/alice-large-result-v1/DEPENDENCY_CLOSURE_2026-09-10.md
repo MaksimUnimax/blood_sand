@@ -44,15 +44,15 @@ Scope: authorized post-result delivery repair only. Pre-handoff provider calls: 
 | 38 | Startup/bootstrap prompt | `no related production diff` | separate prompt-content issue not bundled | `PASS_UNCHANGED` |
 | 39 | Linux exact-source regression | `CI runner` | targeted + shared + browser gates | `PASS` |
 | 40 | Deterministic ZIP/fresh extraction | `CI runner` | exact installable artifact verified | `PASS` |
-| 41 | Windows exact-source/package regression | `CI Windows job` | must pass before final report | `PENDING_CI_JOB` |
+| 41 | Windows exact-source/package regression | `CI Windows job` | exact tested source and exact ZIP verified | `PASS` |
 | 42 | Live Alice current DOM | `installed Alice web UI` | real current file-input/preview behavior | `PENDING_POST_INSTALL` |
 | 43 | Live >90k result delivery | `installed Alice + explicit Ozon read` | one complete TXT; exactly one Send; no Ozon retry | `PENDING_POST_INSTALL` |
 
 Unaccounted dependencies: **0**.
 Stale assumptions after secondary sweep: **0**.
-Available-but-unverified pre-handoff dependencies: **1** — Windows exact-source/package job remains pending until the downstream CI job completes.
+Available-but-unverified pre-handoff dependencies: **0**.
 Live-only dependencies: **2**, both explicitly `PENDING_POST_INSTALL`.
 
-**DEPENDENCY VERDICT: PENDING WINDOWS GATE**
+**DEPENDENCY VERDICT: PASS FOR PRE-HANDOFF SCOPE**
 
 Live-only checks are not promoted to PASS by deterministic CI.

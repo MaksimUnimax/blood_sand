@@ -11,6 +11,6 @@ provider_calls_during_patch_gate=0
 automatic_retry_added=false
 automatic_pagination_added=false
 automatic_fanout_added=false
-windows_exact_source_package=PENDING_CI_JOB
+windows_exact_source_package=PASS
 live_alice_dom=PENDING_POST_INSTALL
 live_large_result_delivery=PENDING_POST_INSTALL
