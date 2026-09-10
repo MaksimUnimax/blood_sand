@@ -1,0 +1,16 @@
+workflow_input_sha=52fe4991f3ea8e62ee6f4bf1ae16f3915fcf3495
+exit_code=1
+--- materializer stdout+stderr ---
+Traceback (most recent call last):
+  File "/home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/development/mixed-help-api-startup-prompt-2026-09-10/materialize_mixed_help_api_patch_v2.py", line 68, in <module>
+    end = worker.index(end_marker, start)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: substring not found
+Traceback (most recent call last):
+  File "/home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/development/mixed-help-api-startup-prompt-2026-09-10/materialize_mixed_help_api_patch_v3.py", line 22, in <module>
+    subprocess.run([sys.executable, str(V2)], check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/usr/bin/python3', '/home/runner/work/blood_sand/blood_sand/tooling/llm-api-bridges/ozon-seller/development/mixed-help-api-startup-prompt-2026-09-10/materialize_mixed_help_api_patch_v2.py']' returned non-zero exit status 1.
+--- workspace changed paths (NOT committed except this diagnostic) ---
+?? tooling/llm-api-bridges/ozon-seller/validation/reports/OZON_MIXED_HELP_API_MATERIALIZER_DIAGNOSTIC_2026-09-10.txt
