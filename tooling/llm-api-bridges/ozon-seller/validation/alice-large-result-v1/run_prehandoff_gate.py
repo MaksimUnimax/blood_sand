@@ -90,7 +90,10 @@ def browser_and_mv3(chrome: Path) -> None:
         chrome, "--headless=new", "--no-sandbox", "--disable-gpu", "--disable-background-networking",
         "--allow-file-access-from-files", "--dump-dom", fixture
     ], capture=True).stdout
-    if "ALICE_ATTACHMENT_BROWSER_FIXTURE_PASS" not in dumped or "ALICE_ATTACHMENT_BROWSER_FIXTURE_FAIL" in dumped:
+    # --dump-dom includes the fixture's script source, so the literal FAIL marker exists
+    # inside the catch branch even when execution passed. Trust only rendered runtime state.
+    runtime_pass = 'data-ozon-test="PASS"' in dumped and '<pre id="result">ALICE_ATTACHMENT_BROWSER_FIXTURE_PASS</pre>' in dumped
+    if not runtime_pass:
         raise AssertionError("Alice browser attachment fixture failed\n" + dumped[-10000:])
     run(["xvfb-run", "-a", "node", OZON_ROOT / "validation/regression/run_file_delivery_extension_worker_smoke.mjs", chrome, DIST])
     print("ALICE_BROWSER_FILE_INPUT_AND_MV3_PASS")
@@ -154,9 +157,9 @@ def write_dependency_evidence() -> None:
     lines += [f"| {n} | {d} | `{p}` | {b} | `{s}` |" for n,d,p,b,s in rows]
     lines += [
         "", "Unaccounted dependencies: **0**.", "Stale assumptions after secondary sweep: **0**.",
-        "Available-but-unverified pre-handoff dependencies: **0**.",
+        "Available-but-unverified pre-handoff dependencies: **1** — Windows exact-source/package job remains pending until the downstream CI job completes.",
         "Live-only dependencies: **2**, both explicitly `PENDING_POST_INSTALL`.", "",
-        "**DEPENDENCY VERDICT: PASS FOR PRE-HANDOFF SCOPE**", "",
+        "**DEPENDENCY VERDICT: PENDING WINDOWS GATE**", "",
         "Live-only checks are not promoted to PASS by deterministic CI.",
     ]
     (HERE / "DEPENDENCY_CLOSURE_2026-09-10.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -185,6 +188,7 @@ def build_package() -> dict:
         "chatgpt_plain_text_threshold_unicode_code_points=1048000",
         "provider_calls_during_patch_gate=0",
         "automatic_retry_added=false", "automatic_pagination_added=false", "automatic_fanout_added=false",
+        "windows_exact_source_package=PENDING_CI_JOB",
         "live_alice_dom=PENDING_POST_INSTALL", "live_large_result_delivery=PENDING_POST_INSTALL",
     ]
     (ARTIFACT.parent / BUILDINFO_NAME).write_text("\n".join(buildinfo) + "\n", encoding="utf-8")
