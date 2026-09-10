@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import json
 import pathlib
 import subprocess
 import sys
@@ -8,7 +9,10 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DIST = ROOT / "dist-step7-candidate"
 WORKER = DIST / "service_worker.js"
-V3 = pathlib.Path(__file__).with_name("materialize_mixed_help_api_patch_v3.py")
+ENTRY = DIST / "service_worker_entry.js"
+RUNTIME = DIST / "shared" / "runtime_names.js"
+HELPER = DIST / "shared" / "mixed_batch_discovery.js"
+V2 = pathlib.Path(__file__).with_name("materialize_mixed_help_api_patch_v2.py")
 BASE_WORKER_BLOB = "ec988889597ad4df50c07006bc855ad32028fb10"
 
 
@@ -22,7 +26,7 @@ def git_blob(path: pathlib.Path) -> str:
 
 def function_span(source: str, function_name: str) -> tuple[int, int]:
     marker = f"function {function_name}("
-    starts = []
+    starts: list[int] = []
     cursor = 0
     while True:
         index = source.find(marker, cursor)
@@ -38,7 +42,7 @@ def function_span(source: str, function_name: str) -> tuple[int, int]:
         fail(f"{function_name}: opening brace missing")
 
     depth = 0
-    quote = None
+    quote: str | None = None
     escaped = False
     line_comment = False
     block_comment = False
@@ -89,6 +93,24 @@ def function_span(source: str, function_name: str) -> tuple[int, int]:
                 fail(f"{function_name}: negative brace depth")
         index += 1
     fail(f"{function_name}: unterminated function")
+
+
+def replace_startup_help_line_safely() -> None:
+    runtime = RUNTIME.read_text(encoding="utf-8")
+    needle = "Если точная API-команда не ясна, используй guidance:"
+    lines = runtime.splitlines(keepends=True)
+    matches = [index for index, line in enumerate(lines) if needle in line]
+    if len(matches) != 1:
+        fail(f"startup HELP line cardinality is {len(matches)}, expected 1")
+    message = (
+        'Если точная API-команда не ясна, используй guidance: OZON_HELP_V2 вида '
+        '{"cluster":"cluster_id"} или {"cluster":"cluster_id","section":"section_id"}. '
+        'Guidance может быть отдельным envelope в том же ответе рядом с независимыми API-envelope.'
+    )
+    index = matches[0]
+    newline = "\r\n" if lines[index].endswith("\r\n") else "\n"
+    lines[index] = "    " + json.dumps(message, ensure_ascii=False) + "," + newline
+    RUNTIME.write_text("".join(lines), encoding="utf-8")
 
 
 replacement = r'''function discoverBatchEntries(text) {
@@ -169,14 +191,51 @@ if worker.count("OzonMixedBatchDiscovery.discover(source") != 1:
     fail("ordered mixed discovery call cardinality is not 1")
 start, end = function_span(worker, "discoverBatchEntries")
 function_text = worker[start:end]
-for token in ["item.kind === \"api\"", "batchEntryFromDiscovery(item.discovery)", "kind: \"guidance\"", "external_request_executed: false"]:
+for token in [
+    'item.kind === "api"',
+    "batchEntryFromDiscovery(item.discovery)",
+    'kind: "guidance"',
+    "external_request_executed: false",
+]:
     if token not in function_text:
         fail(f"materialized discoverBatchEntries missing token: {token}")
 
-# v3 now sees an already-materialized worker and safely handles entry, startup prompt,
-# authority docs, and final production-JS syntax checks without relying on the obsolete
-# discoverBatchEntries textual end anchor in v2.
-subprocess.run([sys.executable, str(V3)], check=True)
+# v2 now sees an already-materialized worker, so its obsolete textual function-end
+# anchor is not executed. It safely materializes the bootstrap import, startup prompt
+# additions, and current authority documents.
+subprocess.run([sys.executable, str(V2)], check=True)
+
+# v2 intentionally leaves one generated source line in an escaped form that is useful
+# for anchor stability but is not valid JavaScript source. Rewrite that exact startup
+# HELP line with JSON's escaping rules, then syntax-check every changed production file.
+replace_startup_help_line_safely()
+
+runtime = RUNTIME.read_text(encoding="utf-8")
+entry = ENTRY.read_text(encoding="utf-8")
+for required in [
+    "Граница команды — envelope",
+    "OZON_HELP_V2 и OZON_API_V1 могут находиться в одном ответе",
+    "HELP обрабатывается локально и не выполняет provider business request",
+    "Зависимые цепочки нельзя заранее батчить",
+    "используй только свежий code, file_ref, cursor",
+    "Polling также не запускается скрыто",
+]:
+    if required not in runtime:
+        fail(f"required startup rule missing: {required}")
+if "Выбирай их отдельной новой командой OZON_HELP_V2" in runtime:
+    fail("stale HELP separate-only wording remains")
+if entry.count('importScripts("shared/mixed_batch_discovery.js");') != 1:
+    fail("mixed helper bootstrap import cardinality is not 1")
+if entry.index('importScripts("shared/mixed_batch_discovery.js");') > entry.index('importScripts("service_worker.js");'):
+    fail("mixed helper loads after service worker")
+for doc in ["START_PROMPT_CURRENT.md", "BRIDGE_RESPONSE_FORMS_CURRENT.md", "AI_TEST_REPORT_FORMAT_CURRENT.md"]:
+    target = ROOT / doc
+    if not target.exists() or not target.read_text(encoding="utf-8").strip():
+        fail(f"authority document missing/empty: {doc}")
+for script in [WORKER, ENTRY, RUNTIME, HELPER]:
+    subprocess.run(["node", "--check", str(script)], check=True)
 
 print("STRUCTURAL_FUNCTION_REPLACEMENT_PASS")
+print("START_PROMPT_SYNTAX_SAFE_REWRITE_PASS")
+print("PRODUCTION_JS_TARGET_SYNTAX_PASS")
 print("MIXED_HELP_API_MATERIALIZE_V4_PASS")
