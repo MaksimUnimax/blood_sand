@@ -31,24 +31,54 @@ Bridge: `ozon-llm-api-bridge`.
 3. `BY_GMV / DESCENDING`;
 4. `BY_GMV / ASCENDING`.
 
-Каждый набор дочитывается по всем фактическим страницам. После завершения всех четырёх срезов производная таблица может дедуплицироваться по `period + sku + query`, но сырые page-level evidence-файлы не удаляются.
+После завершения всех четырёх срезов производная таблица может дедуплицироваться по `period + sku + query`, но raw evidence не удаляется.
+
+## Важная поправка: глобальная пагинация при равных значениях нестабильна
+
+Live batch `BY_SEARCHES / ASCENDING` от 2026-09-11 доказал, что отдельные запросы page 1, page 2 и далее могут повторять одинаковые `(sku, query)` строки на разных `query_index`, когда основной показатель сортировки одинаков. Для ASCENDING это особенно заметно из-за большого числа строк с `unique_search_users=0`.
+
+Следовательно:
+- `total=1110`, `page_count=12` и формальное покрытие `query_index=1..1110` **не доказывают 1110 уникальных строк**, если страницы вызываются отдельными provider requests;
+- глобальный page sweep по всем 76 SKU больше не считается детерминированным completeness authority;
+- подробный evidence-файл: `raw/2026-08-13_2026-09-10/BY_SEARCHES_ASC_PAGINATION_INSTABILITY_2026-09-11.md`;
+- отклонённые page requests сохранены отдельно в `rejected_unstable_page_requests.tsv`.
+
+## Исправленный способ сбора
+
+Чтобы вообще убрать глобальную page boundary из задачи:
+
+1. фиксируем 76 target SKU;
+2. режем их на явные чанки максимум по 6 SKU;
+3. при `limit_by_sku=15` один чанк даёт максимум `6 × 15 = 90` строк, то есть помещается в `page_size=100`;
+4. для каждого чанка вызываем только `page=0`;
+5. каждый чанк — отдельная явная `OZON_API_V1` команда и максимум один provider request;
+6. одинаковый chunk plan повторяется для всех четырёх сортировок;
+7. raw chunk responses сохраняются с точным `request_id`;
+8. дедупликация между сортировками выполняется только в derived layer.
+
+Так мы получаем полный разрешённый 15-per-SKU slice без зависимости от нестабильной межстраничной сортировки.
 
 ## Правило исполнения
 
 - одна `OZON_API_V1` команда создаёт не более одного физического business request;
 - несколько независимых команд можно отправлять одним sequential batch;
 - скрытые retry, pagination-loop и fan-out запрещены;
-- следующая страница всегда является новой явной командой;
 - при ошибке request не повторяется автоматически;
-- сохраняем точный `request_id`, период, sort/page и фактически возвращённые строки.
+- сохраняем точный `request_id`, период, sort/chunk и фактически возвращённые строки.
 
 ## Хранилище
 
-`raw/<period>/collection_manifest.tsv` — authority по выполненным страницам: request ID, сортировка, page, диапазон `query_index`, число строк и row-level файл.
+`raw/<period>/collection_manifest.tsv` — ранний page-level authority до обнаружения проблемы нестабильной пагинации.
 
-`raw/<period>/product_queries_details_*.tsv|txt` — сырые page-level строки Ozon.
+`raw/<period>/rejected_unstable_page_requests.tsv` — запросы, выполненные успешно технически, но отклонённые как completeness authority из-за нестабильных page boundaries.
 
-`monthly_search_queries.tsv` — ранний пилотный накопительный файл, созданный до перехода на полную пагинацию. Он **не является полным authority первого месяца**, пока не будет детерминированно материализован из полного raw-набора. Полный raw archive имеет приоритет.
+`raw/<period>/BY_SEARCHES_ASC_PAGINATION_INSTABILITY_2026-09-11.md` — доказательство дефекта методики глобальной пагинации и corrected collection rule.
+
+`raw/<period>/product_queries_details_*.tsv|txt` — ранее сохранённые page-level evidence-файлы; они не удаляются.
+
+Новый authoritative monthly capture строится chunk-level, без межстраничной пагинации.
+
+`monthly_search_queries.tsv` — ранний пилотный накопительный файл; он не является completeness authority первого месяца.
 
 `NULL` означает, что provider/Bridge вернул `null`; это не заменяется нулём и не интерпретируется.
 
@@ -60,18 +90,19 @@ Bridge: `ozon-llm-api-bridge`.
 `marketing/data/normalized/marketplace/ozon/20260826__ozon__product-master__fresh-current76.csv`.
 
 Текущий статус:
-- `BY_SEARCHES / DESCENDING` — **COMPLETE, 12/12 pages, 1110/1110 rows persisted**;
-- `BY_SEARCHES / ASCENDING` — page 0 persisted, pages 1–11 pending;
-- `BY_GMV / DESCENDING` — page 0 persisted, pages 1–11 pending;
-- `BY_GMV / ASCENDING` — page 0 persisted, pages 1–11 pending;
-- никакой SEO-аналитики на этом этапе не выполняем.
+- ранний `BY_SEARCHES / DESCENDING` global page sweep — сохранён полностью как historical raw, но его прежний deterministic-complete статус **снят до chunked validation/recollection**;
+- `BY_SEARCHES / ASCENDING` global page sweep — технически выполнен, но **REJECTED_UNSTABLE_PAGINATION** как completeness authority;
+- corrected chunked no-pagination collection — **IN PROGRESS**;
+- `BY_GMV` будет собираться тем же chunked способом;
+- никакой SEO-аналитики до закрытия raw collection не выполняем.
 
 ## Ежемесячное правило
 
 1. Зафиксировать актуальный список Ozon SKU.
 2. Использовать доступное непремиальное месячное окно.
-3. Для каждого из четырёх разрешённых срезов выполнить page 0 и дочитать все фактические `page_count` отдельными явными командами.
-4. Сохранить каждую успешную страницу с точным `request_id`, периодом, sort/page и версией Bridge.
-5. Не удалять старые периоды и не пересчитывать historical raw задним числом.
-6. Новые месяцы только добавлять.
-7. Аналитические производные хранить отдельно от raw/evidence журнала.
+3. Разбить SKU на чанки максимум по 6 при `limit_by_sku=15`, `page_size=100`.
+4. Для каждого из четырёх разрешённых срезов выполнить `page=0` для каждого чанка отдельной явной командой.
+5. Сохранить каждый успешный chunk response с точным `request_id`, периодом, sort и составом SKU.
+6. Не удалять старые периоды и не переписывать historical raw задним числом.
+7. Новые месяцы только добавлять.
+8. Аналитические производные хранить отдельно от raw/evidence журнала.
