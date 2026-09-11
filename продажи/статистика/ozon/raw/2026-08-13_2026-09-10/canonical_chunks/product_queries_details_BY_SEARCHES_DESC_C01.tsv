@@ -1,0 +1,16 @@
+request_id	chunk_id	query_index	sku	query	unique_search_users	unique_view_users	view_conversion	position	order_count	gmv	currency
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	1	1602722942	зеркало	8794	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	2	1602722942	руны	5189	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	3	1602722942	оберег	3574	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	4	1602722942	подвеска в машину	3171	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	5	1602722942	амулет	3070	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	6	1602722942	оберег от сглаза и порчи	1968	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	7	1602722942	коловрат	1932	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	8	1602722942	подвеска в машину на зеркало	1560	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	9	1602722942	подвеска на зеркало в машину	1288	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	10	1602722942	оберег в машину	1190	NULL	NULL	NULL	0	1089	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	11	1602722942	в машину	1159	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	12	1602722942	славянские обереги	1109	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	13	1602722942	амулеты обереги и талисманы	833	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	14	1602722942	четки в машину	772	NULL	NULL	NULL	0	0	RUB
+3e63515e-fdcf-4ce5-8e3b-0c6108b0bfc7	C01	15	1602722942	талисман	672	NULL	NULL	NULL	0	0	RUB
