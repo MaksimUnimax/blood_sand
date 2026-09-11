@@ -1,0 +1,104 @@
+name: Ozon Alice original provider runtime capability materialize
+run-name: Ozon Alice original provider runtime capability materialize · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-provider-file-runtime-capability-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-alice-original-provider-runtime-capability-materialize-2026-09-11.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PATCH_BRANCH: repair/ozon-alice-provider-file-runtime-capability-2026-09-11
+  BASELINE_SHA: fa792f2b3bef70eda76e3a80892545e15815b1a7
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/alice-original-provider-runtime-capability-v1
+
+jobs:
+  materialize-and-targeted-gate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
+      - name: Materialize exact production diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$PATCH_BRANCH"
+          git merge-base --is-ancestor "$BASELINE_SHA" HEAD
+          test -z "$(git diff --name-only "$BASELINE_SHA"..HEAD -- "$DIST")"
+          python "$GATE/materialize_patch.py"
+          mapfile -t changed < <(git diff --name-only -- "$DIST")
+          test "${#changed[@]}" -eq 3
+          printf '%s\n' "${changed[@]}" | grep -Fx "$DIST/shared/ai_delivery_capabilities.js"
+          printf '%s\n' "${changed[@]}" | grep -Fx "$DIST/shared/file_delivery_port_worker.js"
+          printf '%s\n' "${changed[@]}" | grep -Fx "$DIST/attachment_delivery_port_content.js"
+          git diff --check
+
+      - name: Targeted and dependency regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$DIST/shared/ai_delivery_capabilities.js"
+          node --check "$DIST/shared/file_delivery_port_worker.js"
+          node --check "$DIST/attachment_delivery_port_content.js"
+          node "$GATE/run_postfix_original_provider_runtime_capability.mjs" .
+          node "$GATE/run_secondary_dependency_sweep.mjs" .
+          node "$ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_capture_accounting.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_port_worker_state_machine.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_mixed_batch_policy.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_wake_lifecycle.mjs"
+          node "$ROOT/validation/regression/run_direct_binary_provider_attachment_gate.mjs"
+          node "$ROOT/validation/indexeddb-transaction-durability-v1/run_prefix_transaction_abort_gate.mjs" .
+          node "$ROOT/validation/indexeddb-transaction-durability-v1/run_secondary_dependency_sweep.mjs" .
+          node "$ROOT/validation/alice-drag-drop-v1/run_alice_drag_drop_runtime_gate.mjs" . "$DIST"
+          node "$ROOT/validation/alice-auto-send-v1/run_alice_auto_send_postfix_source_gate.mjs" "$DIST"
+          node "$ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate_v2.mjs" . "$DIST"
+          node "$ROOT/validation/llm-output-report-workflow-v1/run_output_contract_gate.mjs" .
+          node "$ROOT/validation/llm-output-report-workflow-v1/run_secondary_dependency_sweep.mjs" .
+          node "$ROOT/validation/command-envelope-contract-v1/run_command_envelope_contract_gate.mjs" .
+          echo provider_calls_during_patch_gate=0
+
+      - name: Pinned Chrome File DataTransfer runtime gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          CZIP="$RUNNER_TEMP/chrome.zip"
+          CDIR="$RUNNER_TEMP/chrome"
+          mkdir -p "$CDIR"
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" --output "$CZIP"
+          unzip -q "$CZIP" -d "$CDIR"
+          CHROME="$CDIR/chrome-linux64/chrome"
+          "$CHROME" --version | grep -F "$VER"
+          OUT="$RUNNER_TEMP/alice-original-provider-runtime.out"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --allow-file-access-from-files --virtual-time-budget=2500 --dump-dom "file://$GITHUB_WORKSPACE/$GATE/alice_original_provider_runtime_fixture.html" > "$OUT"
+          grep -F '<title>ALICE_ORIGINAL_PROVIDER_RUNTIME_BROWSER_PASS</title>' "$OUT"
+          grep -F '<pre id="result">PASS: static-unproven -&gt; runtime-dispatch -&gt; exact File/DataTransfer/drop</pre>' "$OUT"
+          ! grep -F '<title>FAIL:' "$OUT"
+
+      - name: Commit exact executable patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+MaksimUnimax@users.noreply.github.com'
+          git add "$DIST/shared/ai_delivery_capabilities.js" "$DIST/shared/file_delivery_port_worker.js" "$DIST/attachment_delivery_port_content.js"
+          git diff --cached --check
+          test "$(git diff --cached --name-only | wc -l)" -eq 3
+          git commit -m 'fix(ozon): runtime-verify original provider file types in Alice'
+          git push origin "HEAD:$PATCH_BRANCH"
+          echo "EXACT_EXECUTABLE_SHA=$(git rev-parse HEAD)"
+          echo "EXACT_EXECUTABLE_TREE=$(git show -s --format=%T HEAD)"
+          echo ALICE_ORIGINAL_PROVIDER_RUNTIME_CAPABILITY_TARGETED_PASS
