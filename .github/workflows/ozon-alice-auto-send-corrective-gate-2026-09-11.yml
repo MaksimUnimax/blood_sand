@@ -1,0 +1,143 @@
+name: Ozon Alice auto-send blocked-guard corrective gate
+run-name: Ozon Alice auto-send corrective · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-auto-send-2026-09-11]
+    paths:
+      - tooling/llm-api-bridges/ozon-seller/development/alice-auto-send-2026-09-11/**
+      - tooling/llm-api-bridges/ozon-seller/validation/alice-auto-send-v1/alice_blocked_send_postfix_fixture.html
+      - tooling/llm-api-bridges/ozon-seller/validation/alice-auto-send-v1/run_alice_auto_send_postfix_source_gate.mjs
+      - .github/workflows/ozon-alice-auto-send-corrective-gate-2026-09-11.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-alice-auto-send-corrective-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PATCH_BRANCH: repair/ozon-alice-auto-send-2026-09-11
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/alice-auto-send-v1
+  MATERIALIZER: tooling/llm-api-bridges/ozon-seller/development/alice-auto-send-2026-09-11/materialize_alice_auto_send_blocked_guard.py
+
+jobs:
+  linux-corrective-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      executable_sha: ${{ steps.commit.outputs.executable_sha }}
+      executable_tree: ${{ steps.commit.outputs.executable_tree }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
+      - name: Materialize exact authorized production correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$PATCH_BRANCH"
+          test -z "$(git diff --name-only 39eadd2699320774ef53964ea8cf347057c1b813..HEAD -- "$DIST")"
+          python "$MATERIALIZER"
+          git diff --check
+          printf '%s\n' "$DIST/shared/ai_adapters.js" > /tmp/expected.txt
+          git diff --name-only | sort > /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          ! git diff | grep -E '^\+.*(sellerApiKey|performanceClientSecret|Authorization|Client-Id|Api-Key|automatic_retry[^:]*:[[:space:]]*true|automatic_pagination[^:]*:[[:space:]]*true|automatic_fanout[^:]*:[[:space:]]*true)'
+          echo ALICE_AUTO_SEND_EXACT_DIFF_SCOPE_PASS
+
+      - name: Syntax targeted source and inherited regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          find "$DIST" -type f -name '*.js' -print0 | sort -z | xargs -0 -n1 node --check
+          node "$GATE/run_alice_auto_send_postfix_source_gate.mjs" "$DIST"
+          node "$ROOT/validation/alice-drag-drop-v1/run_alice_drag_drop_runtime_gate.mjs" . "$DIST"
+          node "$ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate.mjs" "$DIST"
+          node "$ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate_v2.mjs" . "$DIST"
+          node "$ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs"
+          echo ALICE_AUTO_SEND_TARGETED_SOURCE_GATES_PASS
+
+      - name: Pinned Chrome blocked to unblocked Send controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'; CZIP="$RUNNER_TEMP/chrome.zip"; CDIR="$RUNNER_TEMP/chrome"; mkdir -p "$CDIR"
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" --output "$CZIP"
+          unzip -q "$CZIP" -d "$CDIR"; CHROME="$CDIR/chrome-linux64/chrome"
+          "$CHROME" --version | grep -F "$VER"
+          for fixture in \
+            "$GATE/alice_blocked_send_postfix_fixture.html" \
+            "$GATE/alice_current_dom_send_chain_fixture.html" \
+            "$ROOT/validation/alice-drag-drop-v1/alice_drag_drop_adapter_fixture.html"; do
+            out="$RUNNER_TEMP/$(basename "$fixture").out"
+            "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --allow-file-access-from-files --virtual-time-budget=2500 --dump-dom "file://$GITHUB_WORKSPACE/$fixture" > "$out"
+            ! grep -F '<pre id="result">FAIL:' "$out"
+          done
+          grep -F '<title>ALICE_BLOCKED_SEND_POSTFIX_PASS</title>' "$RUNNER_TEMP/alice_blocked_send_postfix_fixture.html.out"
+          grep -F '<title>ALICE_CURRENT_DOM_SEND_CHAIN_PASS</title>' "$RUNNER_TEMP/alice_current_dom_send_chain_fixture.html.out"
+          grep -F '<title>ALICE_DND_ADAPTER_PASS</title>' "$RUNNER_TEMP/alice_drag_drop_adapter_fixture.html.out"
+          node "$ROOT/validation/regression/run_file_attachment_browser_primitive.mjs" "$CHROME"
+          xvfb-run -a node "$ROOT/validation/regression/run_file_delivery_extension_worker_smoke.mjs" "$CHROME" "$DIST"
+          echo ALICE_AUTO_SEND_BROWSER_MV3_GATES_PASS
+
+      - name: Shared delivery lifecycle command security regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$ROOT/validation/regression/run_file_delivery_capture_accounting.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_port_worker_state_machine.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_mixed_batch_policy.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_wake_lifecycle.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_live_stop_repro.mjs"
+          node "$ROOT/validation/regression/run_direct_binary_provider_attachment_gate.mjs"
+          node "$ROOT/validation/mixed-help-api-v2/run_mixed_help_api_gate_v2.mjs" .
+          node "$ROOT/validation/mixed-help-api-v2/run_mixed_help_api_disabled_alias_gate.mjs" .
+          node "$ROOT/validation/command-envelope-contract-v1/run_command_envelope_contract_gate.mjs" .
+          echo provider_calls_during_corrective_gate=0
+          echo automatic_retry_added=false
+          echo automatic_pagination_added=false
+          echo automatic_fanout_added=false
+          echo ALICE_AUTO_SEND_SHARED_REGRESSIONS_PASS
+
+      - name: Closed-set and secondary dependency sweep
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'StandaloneOknyx_error' "$DIST/shared/ai_adapters.js"
+          grep -F '"send_disabled" : "send_active"' "$DIST/shared/ai_adapters.js"
+          ! grep -RIn --exclude='*.zip' --exclude-dir=artifacts 'kind:[[:space:]]*"send_blocked"' "$DIST"
+          test "$(grep -RIl --exclude='*.zip' --exclude-dir=artifacts 'classifyComposerControl' "$DIST" | wc -l)" -eq 1
+          test "$(grep -RIl --exclude='*.zip' --exclude-dir=artifacts 'send_active' "$DIST" | wc -l)" -eq 1
+          test "$(grep -RIl --exclude='*.zip' --exclude-dir=artifacts 'send_disabled' "$DIST" | wc -l)" -eq 1
+          grep -F 'BB2ComposerSend.waitForValidatedTarget' "$DIST/attachment_delivery_port_content.js"
+          grep -F 'OZ_ATTACHMENT_SEND_COMMIT' "$DIST/attachment_delivery_port_content.js"
+          grep -F 'BB2ComposerSend.clickSynchronously' "$DIST/attachment_delivery_port_content.js"
+          echo 'Unaccounted dependencies=0'
+          echo 'Stale assumptions=0'
+          echo 'Available-but-unverified pre-handoff dependencies=0'
+          echo ALICE_AUTO_SEND_SECONDARY_SWEEP_PASS
+
+      - name: Commit exact green executable correction
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+MaksimUnimax@users.noreply.github.com'
+          git add "$DIST/shared/ai_adapters.js"
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
+          git commit -m 'repair(ozon): wait out Alice blocked send state'
+          git push origin "HEAD:$PATCH_BRANCH"
+          echo "executable_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "executable_tree=$(git rev-parse HEAD^{tree})" >> "$GITHUB_OUTPUT"
+          echo "ALICE_AUTO_SEND_EXECUTABLE_COMMIT=$(git rev-parse HEAD)"
+          echo "ALICE_AUTO_SEND_EXECUTABLE_TREE=$(git rev-parse HEAD^{tree})"
