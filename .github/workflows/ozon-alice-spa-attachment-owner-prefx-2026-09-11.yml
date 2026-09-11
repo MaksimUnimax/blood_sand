@@ -1,0 +1,24 @@
+name: Ozon Alice SPA attachment owner pre-fix
+run-name: Ozon Alice SPA attachment owner pre-fix · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-spa-attachment-owner-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-alice-spa-attachment-owner-prefx-2026-09-11.yml'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/alice-spa-attachment-owner-v1/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pre-fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Reproduce frozen-port sender URL vs live SPA owner defect
+        run: node tooling/llm-api-bridges/ozon-seller/validation/alice-spa-attachment-owner-v1/run_prefx_spa_owner_gate.mjs .
