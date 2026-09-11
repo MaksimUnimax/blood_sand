@@ -1,0 +1,9 @@
+{
+ "scope":"Block004 protocol/guidance module ONLY; not yet connected to worker/content at this checkpoint",
+ "command":"node protocol.mjs CANDIDATE NEW_OUTPUT",
+ "checks":47,"passed":47,"failed":0,"real_wb_requests":0,
+ "source_sha256":"05fdc2321e6f865642328de2de70e532ff02360ccc69b3b65bf72f2d75a9236a",
+ "base_zip_sha256":"b6628d00fba1b98f1a0dfe37f0d658b6cd00842b071e4bc927a2ae58f2859ceb",
+ "next":"Wire shared plan into actual Manual and Autorun entrypoints, then persistent per-item batch execution and complete-source capture. Preserve single-command regressions.",
+ "full_phase1":"INCOMPLETE", "live_certification":"NOT_RUN"
+}
