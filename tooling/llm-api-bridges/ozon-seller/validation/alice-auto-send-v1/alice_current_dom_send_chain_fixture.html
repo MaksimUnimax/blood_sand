@@ -1,0 +1,64 @@
+<!doctype html><html><head><meta charset="utf-8"><title>ALICE_CURRENT_DOM_SEND_PENDING</title><style>
+body{font-family:sans-serif}.Standalone-Input{display:block;width:760px}.StandaloneInput-Container{display:flex}.StandaloneInput-Field{display:block;width:680px}.AliceInput{display:block}.StandaloneRichInput-Controls{display:flex}textarea{width:580px;height:100px}button{width:40px;height:40px;display:block}
+</style></head><body>
+<div class="Standalone-Input">
+  <div class="StandaloneInput-Container">
+    <div class="StandaloneInput-Field" data-testid="standalone-input-field">
+      <div class="AliceInput StandaloneRichInput" data-highlight-id="alice-input">
+        <textarea data-testid="inputbase-textarea"></textarea>
+        <div class="AliceInput-Controls">
+          <div class="StandaloneRichInput-Controls" data-testid="input-controls-root">
+            <button data-testid="InputControls-Plus-Button" aria-label="Добавить файл" aria-haspopup="dialog" type="button">+</button>
+            <button id="oknyx-button" data-highlight-id="alice-oknyx-button" class="StandaloneOknyx StandaloneOknyx_arrow" aria-label="Отправить" type="button" data-testid="oknyx">→</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<pre id="result">PENDING</pre>
+<script src="../../dist-step7-candidate/shared/ai_adapters.js"></script>
+<script src="../../dist-step7-candidate/shared/composer_send.js"></script>
+<script>
+(async()=>{
+ const result=document.querySelector('#result');
+ try{
+  const alice=OzonAIAdapters.ADAPTERS.alice;
+  const marker='OZON_BATCH_RESULT_V1\n{"delivery_id":"manual-delivery-live-unsent"}';
+  const ctx=alice.composerContext();
+  if(!ctx) throw new Error('context missing');
+  if(ctx.root.getAttribute('data-testid')!=='standalone-input-field') throw new Error('wrong root:'+ctx.root.outerHTML.slice(0,120));
+  alice.setComposerText(ctx.composer,marker);
+  if(alice.readComposerText(ctx.composer)!==marker) throw new Error('marker staging mismatch');
+  const button=alice.sendButton(ctx);
+  if(!button||button.id!=='oknyx-button') throw new Error('sendButton failed');
+  const deps={
+    resolveContext:()=>alice.composerContext(),
+    resolveButton:(c)=>alice.sendButton(c),
+    candidateButtons:(c)=>alice.sendButtonCandidates(c),
+    visible:OzonAIAdapters.visible,
+    readComposerText:(c)=>alice.readComposerText(c),
+    fingerprint:(b)=>alice.sendButtonFingerprint(b),
+    sleep:async()=>{}
+  };
+  const v=BB2ComposerSend.validateTarget({context:ctx,button},marker,deps);
+  if(!v.ok) throw new Error('validateTarget:'+v.code);
+  const target=await BB2ComposerSend.waitForValidatedTarget({expectedText:marker,timeoutMs:100,sampleIntervalMs:0,requiredStableSamples:3,deps});
+  if(!target) throw new Error('stable target missing');
+  let clicks=0; button.addEventListener('click',()=>clicks++);
+  const receipt=BB2ComposerSend.clickSynchronously({target,expectedText:marker,deps});
+  if(receipt.method!=='button.click'||clicks!==1) throw new Error('click not exactly once:'+JSON.stringify({receipt,clicks}));
+
+  button.setAttribute('aria-label','Алиса, начни слушать');
+  if(alice.sendButton(alice.composerContext())!==null) throw new Error('ready state accepted as send');
+  button.setAttribute('aria-label','Алиса, стоп');
+  if(alice.sendButton(alice.composerContext())!==null) throw new Error('stop state accepted as send');
+  button.setAttribute('aria-label','Отправить'); button.disabled=true;
+  if(alice.sendButton(alice.composerContext())!==null) throw new Error('disabled send accepted');
+
+  document.title='ALICE_CURRENT_DOM_SEND_CHAIN_PASS';
+  document.documentElement.setAttribute('data-ozon-test','PASS');
+  result.textContent='ALICE_CURRENT_DOM_SEND_CHAIN_PASS';
+ }catch(e){document.title='ALICE_CURRENT_DOM_SEND_CHAIN_FAIL';result.textContent='FAIL:'+(e?.stack||e);}
+})();
+</script></body></html>
