@@ -83,3 +83,5 @@ bridge_version	date_from	date_to	sort_by	sort_dir	chunk_id	requested_sku_count	r
 0.1.19	2026-08-13	2026-09-10	BY_SEARCHES	ASCENDING	C02R1	6	6	90	90	1	7403d382-6a2b-4c02-b264-ef0e53b315b0	PERSISTED		canonical_chunks/product_queries_details_BY_SEARCHES_ASC_C02R1.tsv
 0.1.19	2026-08-13	2026-09-10	BY_SEARCHES	ASCENDING	C03R1	6	6	90	90	1	5dd7e47a-0aa4-4c37-b92d-510c7fa3fe37	PERSISTED		canonical_chunks/product_queries_details_BY_SEARCHES_ASC_C03R1.tsv
 0.1.19	2026-08-13	2026-09-10	BY_SEARCHES	ASCENDING	C05R1	6	6	90	90	1	d6cb0bc3-042e-484b-af0b-2db5ea6f9ad6	PERSISTED		canonical_chunks/product_queries_details_BY_SEARCHES_ASC_C05R1.tsv
+0.1.19	2026-08-13	2026-09-10	BY_SEARCHES	ASCENDING	C06R1	6	6	90	90	1	5c7076da-11d4-409b-acb4-6d49abecb553	PERSISTED		canonical_chunks/product_queries_details_BY_SEARCHES_ASC_C06R1.tsv
+0.1.19	2026-08-13	2026-09-10	BY_SEARCHES	ASCENDING	C08R1	6	6	90	90	1	0d2b3881-cfe5-48d8-a177-e2e48a95ba58	PERSISTED		canonical_chunks/product_queries_details_BY_SEARCHES_ASC_C08R1.tsv
