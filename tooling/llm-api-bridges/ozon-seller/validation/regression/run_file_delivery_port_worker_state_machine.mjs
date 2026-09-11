@@ -10,6 +10,7 @@ const ROOT=resolve(HERE,"../..");
 const source=(p)=>readFileSync(join(ROOT,"dist-step7-candidate",p),"utf8");
 const conversationId="11111111-2222-4333-8444-555555555555";
 const conversationKey=`https://chatgpt.com|${conversationId}`;
+const liveOwner={origin:"https://chatgpt.com",conversation_id:conversationId};
 const storage={auto_runs:{},manual_ops:{},manual_modes:{},prefixes:{}};
 let onConnect=null;
 const normalize=(keys)=>Array.isArray(keys)?keys:(typeof keys==="string"?[keys]:Object.keys(keys||{}));
@@ -19,7 +20,11 @@ const context=vm.createContext({
   indexedDB:{open(){throw new Error("not used");}},
   OzonRuntime:{STORAGE_KEYS:{REPORT_FILE_SESSION_STATE:"report_state",MANUAL_OPERATIONS:"manual_ops",AUTO_RUNS:"auto_runs",REPORT_PREFIXES:"prefixes",MANUAL_MODES:"manual_modes"}},
   ProviderTransportCore:{normalizeTrustedReportFileUrl(v){return String(v);},async executeTrustedReportFileOnce(){throw new Error("provider must not execute");},reportBase64ToBytes(){return new Uint8Array(0);}},
-  BB2ConversationIdentity:{resolve({origin,pathname}){const m=String(pathname||"").match(/\/c\/([0-9a-f-]+)/i);return {origin:String(origin||"").toLowerCase(),conversation_id:m?.[1]?.toLowerCase()||null,status:m?"confirmed":"unknown",ai_id:"chatgpt"};}},
+  BB2ConversationIdentity:{
+    providerForOrigin(origin){return String(origin||"").toLowerCase()==="https://chatgpt.com"?"chatgpt":null;},
+    conversationIdFromPath(pathname,provider="chatgpt"){if(provider!=="chatgpt")return null;const m=String(pathname||"").match(/\/c\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\/|$)/i);return m?.[1]?.toLowerCase()||null;},
+    resolve({origin,pathname}){const m=String(pathname||"").match(/\/c\/([0-9a-f-]+)/i);return {origin:String(origin||"").toLowerCase(),conversation_id:m?.[1]?.toLowerCase()||null,status:m?"confirmed":"unknown",ai_id:"chatgpt"};}
+  },
   OzonAIDeliveryCapabilities:{extensionFromFilename(n){return String(n||"").split(".").pop();},unicodeLength(v){return [...String(v||"")].length;},profile(){return null;},supportsFile(){return {supported:false};}},
   chrome:{
     storage:{local:{async get(keys){const out={};for(const k of normalize(keys))out[k]=structuredClone(storage[k]??{});return out;},async set(values){for(const [k,v] of Object.entries(values||{}))storage[k]=structuredClone(v);}},session:{async get(){return {report_state:{report_file_refs:{}}};}},onChanged:{addListener(){}}},
@@ -38,7 +43,7 @@ let listener=null; const responses=[];
 const port={name:"ozon-attachment-delivery-v1",sender:{tab:{id:7,url:`https://chatgpt.com/c/${conversationId}`},url:`https://chatgpt.com/c/${conversationId}`},onMessage:{addListener(fn){listener=fn;}},onDisconnect:{addListener(){}},postMessage(msg){responses.push(structuredClone(msg));}};
 onConnect(port); assert.equal(typeof listener,"function");
 let seq=0;
-async function call(type,payload={}){const request_id=`r${++seq}`;listener({request_id,type,...payload});for(let i=0;i<50;i++){await new Promise(r=>setTimeout(r,0));const idx=responses.findIndex(x=>x.request_id===request_id);if(idx>=0)return responses.splice(idx,1)[0].response;}throw new Error(`timeout ${type}`);}
+async function call(type,payload={}){const request_id=`r${++seq}`;listener({request_id,type,...payload,live_owner:liveOwner});for(let i=0;i<50;i++){await new Promise(r=>setTimeout(r,0));const idx=responses.findIndex(x=>x.request_id===request_id);if(idx>=0)return responses.splice(idx,1)[0].response;}throw new Error(`timeout ${type}`);}
 const owner={owner_kind:"autorun",owner_id:"run-1",run_id:"run-1",conversation_key:conversationKey,delivery_id:"delivery-1"};
 const recovery=await call("OZ_ATTACHMENT_RECOVERY_GET",owner); assert.equal(recovery.ok,true); assert.equal(recovery.recovery.delivery_phase,"attachment_ready");
 console.log("REG_ATTACHMENT_PORT_RECOVERY_GET_PASS");
