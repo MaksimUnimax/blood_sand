@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>ALICE_DND_PROBE_INIT</title></head>
+<body>
+<div class="Standalone Standalone_type_chat Standalone_userLoggedIn">
+  <div class="Standalone-FileOverlay"></div>
+  <div class="Standalone-Input">
+    <div class="StandaloneInput-Field" data-testid="standalone-input-field">
+      <div data-highlight-id="alice-input" class="AliceInput StandaloneRichInput">
+        <textarea data-testid="inputbase-textarea"></textarea>
+        <div class="AliceInput-Controls"><div class="StandaloneRichInput-Controls">
+          <div class="InputControls InputControls_inited InputControls_veilTarget_more" data-testid="input-controls-root" aria-busy="false">
+            <button aria-label="Добавить файл" aria-haspopup="dialog" data-testid="InputControls-Plus-Button">+</button>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="probe-preview-root"></div>
+<script>
+(() => {
+  const observed = { sequence: [], drops: 0, names: [], sizes: [], types: [], ingress: null };
+  const inputFilesStore = {
+    addFiles(files, ingress) {
+      observed.ingress = ingress;
+      observed.names = files.map((file) => file.name);
+      observed.sizes = files.map((file) => file.size);
+      observed.types = files.map((file) => file.type);
+      for (const file of files) {
+        const preview = document.createElement('div');
+        preview.setAttribute('data-file-name', file.name);
+        preview.textContent = file.name;
+        document.querySelector('#probe-preview-root').appendChild(preview);
+      }
+    }
+  };
+
+  const body = document.body;
+  const preventNative = (event) => {
+    if (event.dataTransfer?.types?.includes('Files')) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+  const onDrop = (event) => {
+    observed.sequence.push('drop');
+    observed.drops += 1;
+    const list = event.dataTransfer?.files;
+    if (list) inputFilesStore.addFiles([...list], 'drag_and_drop');
+  };
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((type) => body.addEventListener(type, preventNative, true));
+  body.addEventListener('dragenter', () => observed.sequence.push('dragenter'), true);
+  body.addEventListener('dragover', () => observed.sequence.push('dragover'), true);
+  body.addEventListener('drop', onDrop, true);
+
+  const file = new File([new TextEncoder().encode('ozon alice drag drop probe')], 'ozon-alice-attachment-probe.txt', { type: 'text/plain' });
+  const transfer = new DataTransfer();
+  transfer.items.add(file);
+  const beforeInputCount = document.querySelectorAll('input[type="file"]').length;
+  for (const type of ['dragenter', 'dragover', 'drop']) {
+    body.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: transfer }));
+  }
+  const afterInputCount = document.querySelectorAll('input[type="file"]').length;
+  const preview = document.querySelector('[data-file-name="ozon-alice-attachment-probe.txt"]');
+  const ok = beforeInputCount === 0 && afterInputCount === 0 &&
+    observed.drops === 1 && observed.sequence.join(',') === 'dragenter,dragover,drop' &&
+    observed.ingress === 'drag_and_drop' &&
+    observed.names.length === 1 && observed.names[0] === file.name &&
+    observed.sizes[0] === file.size && observed.types[0] === file.type &&
+    preview?.textContent === file.name &&
+    document.querySelector('[data-testid="inputbase-textarea"]') &&
+    document.querySelector('[data-testid="InputControls-Plus-Button"][aria-label="Добавить файл"]');
+
+  document.title = ok ? 'ALICE_DND_PROBE_PASS' : 'ALICE_DND_PROBE_FAIL';
+  document.body.setAttribute('data-probe-result', ok ? 'PASS' : 'FAIL');
+  const out = document.createElement('pre');
+  out.id = 'probe-result';
+  out.textContent = JSON.stringify({ ok, beforeInputCount, afterInputCount, observed });
+  document.body.appendChild(out);
+})();
+</script>
+</body>
+</html>
