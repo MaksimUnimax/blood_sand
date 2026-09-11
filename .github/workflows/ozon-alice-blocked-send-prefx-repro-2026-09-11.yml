@@ -1,0 +1,37 @@
+name: Ozon Alice blocked Send pre-fix reproduction
+run-name: Ozon Alice blocked Send pre-fix · ${{ github.ref_name }} · ${{ github.sha }}
+on:
+  push:
+    branches: [repair/ozon-alice-auto-send-2026-09-11]
+    paths:
+      - tooling/llm-api-bridges/ozon-seller/validation/alice-auto-send-v1/alice_blocked_send_prefx_repro.html
+      - .github/workflows/ozon-alice-blocked-send-prefx-repro-2026-09-11.yml
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Verify production unchanged from installed executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='tooling/llm-api-bridges/ozon-seller'
+          test -z "$(git diff --name-only 39eadd2699320774ef53964ea8cf347057c1b813..HEAD -- "$ROOT/dist-step7-candidate")"
+      - name: Reproduce blocked no-op Send in pinned Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'; CZIP="$RUNNER_TEMP/chrome.zip"; CDIR="$RUNNER_TEMP/chrome"; mkdir -p "$CDIR"
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" --output "$CZIP"
+          unzip -q "$CZIP" -d "$CDIR"; CHROME="$CDIR/chrome-linux64/chrome"
+          "$CHROME" --version | grep -F "$VER"
+          FIXTURE="$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller/validation/alice-auto-send-v1/alice_blocked_send_prefx_repro.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --allow-file-access-from-files --virtual-time-budget=1500 --dump-dom "file://$FIXTURE" > "$RUNNER_TEMP/out.html"
+          grep -F '<title>ALICE_BLOCKED_SEND_PREFX_REPRO_PASS</title>' "$RUNNER_TEMP/out.html"
+          grep -F 'data-ozon-test="PASS"' "$RUNNER_TEMP/out.html"
+          grep -F 'PREFX_BAD_STATE_PROVEN: blocked control accepted, click_event_observed=true, submitted_turns=0' "$RUNNER_TEMP/out.html"
+          echo ALICE_BLOCKED_SEND_PREFX_REPRO_PASS
+          echo provider_calls=0
