@@ -126,10 +126,18 @@
     return port;
   }
 
+  function liveOwnerBinding() {
+    const here = identity();
+    if (here.status !== "confirmed" || !here.conversation_id || !here.origin) return null;
+    return { origin: String(here.origin).toLowerCase(), conversation_id: String(here.conversation_id).toLowerCase() };
+  }
+
   function request(type, payload = {}, timeoutMs = PORT_REQUEST_TIMEOUT_MS) {
     return new Promise((resolve) => {
       const port = ensurePort();
       if (!port) { resolve({ ok: false, code: "ATTACHMENT_PORT_UNAVAILABLE", error: "Attachment delivery port is unavailable." }); return; }
+      const liveOwner = liveOwnerBinding();
+      if (!liveOwner) { resolve({ ok: false, code: "ATTACHMENT_LIVE_OWNER_UNAVAILABLE", error: "Current AI conversation identity is unavailable." }); return; }
       const requestId = `${runtime.id}:${++runtime.request_seq}`;
       const timer = setTimeout(() => {
         if (!runtime.pending.has(requestId)) return;
@@ -137,7 +145,7 @@
         resolve({ ok: false, code: "ATTACHMENT_PORT_TIMEOUT", error: `Attachment port request timed out: ${type}` });
       }, timeoutMs);
       runtime.pending.set(requestId, { resolve, timer });
-      try { port.postMessage({ request_id: requestId, type, ...payload }); }
+      try { port.postMessage({ request_id: requestId, type, ...payload, live_owner: liveOwner }); }
       catch (error) {
         runtime.pending.delete(requestId);
         clearTimeout(timer);
@@ -424,14 +432,20 @@
     const key = conversationKey();
     if (!key) return null;
     const response = await request("OZ_ATTACHMENT_RECOVERY_GET", { conversation_key: key });
-    return response?.ok ? response.recovery || null : null;
+    if (!response?.ok) throw Object.assign(new Error(response?.error || "Attachment recovery request failed."), { code: response?.code || "ATTACHMENT_RECOVERY_FAILED" });
+    return response.recovery || null;
   }
 
   async function recoverCurrent() {
     if (!current()) return { ok: false, code: "ATTACHMENT_RUNTIME_DISPOSED" };
-    const recovery = await queryRecovery();
-    if (recovery) return await processRecovery(recovery);
-    return { ok: true, recovery: null };
+    try {
+      const recovery = await queryRecovery();
+      if (recovery) return await processRecovery(recovery);
+      return { ok: true, recovery: null };
+    } catch (error) {
+      status(`Ozon: ошибка проверки доставки файла (${error?.code || "ATTACHMENT_RECOVERY_FAILED"}).`, "error");
+      return { ok: false, code: error?.code || "ATTACHMENT_RECOVERY_FAILED", error: String(error?.message || error) };
+    }
   }
 
   runtime.recoverCurrent = recoverCurrent;

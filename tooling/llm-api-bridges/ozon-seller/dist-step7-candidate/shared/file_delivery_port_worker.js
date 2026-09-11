@@ -282,22 +282,42 @@
     });
   }
 
-  function senderIdentity(sender) {
+  function senderOrigin(sender) {
     const rawUrl = sender?.url || sender?.tab?.url || "";
-    try {
-      const parsed = new URL(rawUrl);
-      return BB2ConversationIdentity.resolve({ origin: parsed.origin, pathname: parsed.pathname, canonicalHref: "" });
-    } catch (_) { return null; }
+    try { return normalizeKey(new URL(rawUrl).origin); } catch (_) { return ""; }
   }
 
-  function assertSenderOwner(sender, owner) {
+  function normalizedLiveOwner(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    const origin = normalizeKey(value.origin);
+    const conversationId = normalizeKey(value.conversation_id);
+    if (!origin || !conversationId) return null;
+    try {
+      const parsed = new URL(origin);
+      if (normalizeKey(parsed.origin) !== origin || parsed.protocol !== "https:") return null;
+    } catch (_) { return null; }
+    const provider = BB2ConversationIdentity.providerForOrigin(origin);
+    if (!provider) return null;
+    const syntheticPath = provider === "alice" ? `/chat/${conversationId}` : `/c/${conversationId}`;
+    if (BB2ConversationIdentity.conversationIdFromPath(syntheticPath, provider) !== conversationId) return null;
+    return { origin, conversation_id: conversationId };
+  }
+
+  function assertSenderOwner(sender, owner, liveOwnerValue) {
     const senderTab = Number(sender?.tab?.id || 0);
     if (!Number.isInteger(senderTab) || senderTab <= 0 || senderTab !== Number(owner?.tab_id || 0)) {
       throw Object.assign(new Error("Attachment delivery request came from a non-owner tab."), { code: "ATTACHMENT_NON_OWNER_TAB" });
     }
-    const identity = senderIdentity(sender);
-    if (!identity || identity.status !== "confirmed" || normalizeKey(identity.origin) !== normalizeKey(owner.origin) || normalizeKey(identity.conversation_id) !== normalizeKey(owner.conversation_id)) {
-      throw Object.assign(new Error("Attachment delivery request came from a different AI conversation."), { code: "ATTACHMENT_CONVERSATION_MISMATCH" });
+    const expectedOrigin = normalizeKey(owner?.origin);
+    if (!expectedOrigin || senderOrigin(sender) !== expectedOrigin) {
+      throw Object.assign(new Error("Attachment delivery request came from a different AI origin."), { code: "ATTACHMENT_ORIGIN_MISMATCH" });
+    }
+    const liveOwner = normalizedLiveOwner(liveOwnerValue);
+    if (!liveOwner) {
+      throw Object.assign(new Error("Attachment delivery request is missing a confirmed live conversation owner."), { code: "ATTACHMENT_LIVE_OWNER_REQUIRED" });
+    }
+    if (liveOwner.origin !== expectedOrigin || liveOwner.conversation_id !== normalizeKey(owner?.conversation_id)) {
+      throw Object.assign(new Error("Attachment delivery request came from a different live AI conversation."), { code: "ATTACHMENT_CONVERSATION_MISMATCH" });
     }
   }
 
@@ -442,7 +462,7 @@
     const preferredId = String(message.owner_id || message.run_id || message.operation_id || "");
     const found = await findAttachmentOwner(key, preferredKind, preferredId);
     if (!found) throw Object.assign(new Error("Attachment delivery owner not found."), { code: "ATTACHMENT_DELIVERY_NOT_FOUND" });
-    assertSenderOwner(sender, found.owner);
+    assertSenderOwner(sender, found.owner, message.live_owner);
     if (message.delivery_id && String(found.owner.delivery?.delivery_id || "") !== String(message.delivery_id)) throw Object.assign(new Error("Attachment delivery ID mismatch."), { code: "ATTACHMENT_DELIVERY_ID_MISMATCH" });
     return { key, ...found };
   }
@@ -639,7 +659,7 @@
       case "OZ_ATTACHMENT_RECOVERY_GET": {
         const found = await findAttachmentOwner(message.conversation_key, String(message.owner_kind || ""), String(message.owner_id || ""));
         if (!found) return { ok: true, recovery: null };
-        assertSenderOwner(sender, found.owner);
+        assertSenderOwner(sender, found.owner, message.live_owner);
         if (found.kind === "manual" && await cancelManualClaimedIfDisabled(message.conversation_key, found.owner)) return { ok: true, recovery: null, cancelled: true };
         return { ok: true, recovery: recoveryPayload(found.kind, found.owner) };
       }
