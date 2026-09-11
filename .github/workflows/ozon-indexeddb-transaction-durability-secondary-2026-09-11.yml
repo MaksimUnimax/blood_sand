@@ -1,0 +1,35 @@
+name: Ozon IndexedDB durability secondary sweep
+run-name: Ozon IndexedDB durability secondary · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-indexeddb-transaction-durability-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-indexeddb-transaction-durability-secondary-2026-09-11.yml'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/indexeddb-transaction-durability-v1/**'
+      - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/direct_binary_file_delivery_patch.js'
+      - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/file_delivery_port_worker.js'
+      - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/service_worker_entry.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secondary-sweep:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Syntax
+        run: |
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/direct_binary_file_delivery_patch.js
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/file_delivery_port_worker.js
+      - name: Transaction durability gate
+        run: node tooling/llm-api-bridges/ozon-seller/validation/indexeddb-transaction-durability-v1/run_prefix_transaction_abort_gate.mjs .
+      - name: Closed-set dependency sweep
+        run: node tooling/llm-api-bridges/ozon-seller/validation/indexeddb-transaction-durability-v1/run_secondary_dependency_sweep.mjs .
+      - name: Diff hygiene
+        run: git diff --check
