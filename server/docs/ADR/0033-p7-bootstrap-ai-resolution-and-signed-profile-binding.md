@@ -1,7 +1,7 @@
 # ADR-0033 — P7.3 Bootstrap AI Resolution and Signed Profile Binding
 
 Date: 2026-09-11
-Status: Implemented local candidate; independent review pending
+Status: Implemented; remotely accepted
 
 ## Decision
 
