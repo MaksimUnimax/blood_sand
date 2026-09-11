@@ -93,3 +93,4 @@ bridge_version	date_from	date_to	sort_by	sort_dir	chunk_id	requested_sku_count	r
 0.1.19	2026-08-13	2026-09-10	BY_GMV	DESCENDING	C05	6	6	90	90	1	6ea0008c-faf2-4a31-aa6b-162aa9f551c8	PERSISTED		canonical_chunks/product_queries_details_BY_GMV_DESC_C05.tsv
 0.1.19	2026-08-13	2026-09-10	BY_GMV	DESCENDING	C06	6	6	90	90	1	5e844786-8316-452b-8659-c163b6f54d88	PERSISTED		canonical_chunks/product_queries_details_BY_GMV_DESC_C06.tsv
 0.1.19	2026-08-13	2026-09-10	BY_GMV	DESCENDING	C07	6	6	90	90	1	8d5bc83e-4c5a-42c5-acc7-e2185bf95253	PERSISTED		canonical_chunks/product_queries_details_BY_GMV_DESC_C07.tsv
+0.1.19	2026-08-13	2026-09-10	BY_GMV	DESCENDING	C08	6	6	90	90	1	0353d205-a81a-4719-9b67-a5181c9cbed6	PERSISTED		canonical_chunks/product_queries_details_BY_GMV_DESC_C08.tsv
