@@ -1,0 +1,285 @@
+name: Ozon LLM output report workflow final pre-handoff
+run-name: Ozon LLM output report workflow final · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-llm-output-report-workflow-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-llm-output-report-workflow-final-2026-09-11.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-llm-output-report-workflow-final-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PATCH_BRANCH: repair/ozon-llm-output-report-workflow-2026-09-11
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/llm-output-report-workflow-v1
+  ARTIFACT_NAME: OZON_BRIDGE_v0.1.19_LLM_OUTPUT_REPORT_WORKFLOW_20260911.zip
+  EXACT_EXECUTABLE_SHA: a6187d629e19d9efdc77866358b6bd6df46c183b
+  EXACT_EXECUTABLE_TREE: 06c55ccc8c682a764e2b873ef1ef8d974efb8112
+
+jobs:
+  linux-authoritative:
+    runs-on: ubuntu-24.04
+    outputs:
+      package_sha: ${{ steps.identity.outputs.package_sha }}
+      package_bytes: ${{ steps.identity.outputs.package_bytes }}
+      production_files: ${{ steps.identity.outputs.production_files }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
+      - name: Exact source and complete Linux regression chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$PATCH_BRANCH"
+          test "$(git show -s --format=%T "$EXACT_EXECUTABLE_SHA")" = "$EXACT_EXECUTABLE_TREE"
+          git merge-base --is-ancestor "$EXACT_EXECUTABLE_SHA" HEAD
+          test -z "$(git diff --name-only "$EXACT_EXECUTABLE_SHA"..HEAD -- "$DIST")"
+          find "$DIST" -type f -name '*.js' -print0 | sort -z | xargs -0 -n1 node --check
+
+          node "$GATE/run_output_contract_gate.mjs" .
+          node "$GATE/run_secondary_dependency_sweep.mjs" .
+
+          node "$ROOT/validation/alice-auto-send-v1/run_alice_auto_send_postfix_source_gate.mjs" "$DIST"
+          node "$ROOT/validation/alice-drag-drop-v1/run_alice_drag_drop_runtime_gate.mjs" . "$DIST"
+          node "$ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate.mjs" "$DIST"
+          node "$ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate_v2.mjs" . "$DIST"
+          node "$ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_capture_accounting.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_port_worker_state_machine.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_mixed_batch_policy.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_wake_lifecycle.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_live_stop_repro.mjs"
+          node "$ROOT/validation/regression/run_direct_binary_provider_attachment_gate.mjs"
+          node "$ROOT/validation/mixed-help-api-v2/run_mixed_help_api_gate_v2.mjs" .
+          node "$ROOT/validation/mixed-help-api-v2/run_mixed_help_api_disabled_alias_gate.mjs" .
+          node "$ROOT/validation/command-envelope-contract-v1/run_command_envelope_contract_gate.mjs" .
+          git diff --check
+          echo OZON_LLM_OUTPUT_REPORT_WORKFLOW_LINUX_REGRESSIONS_PASS
+
+      - name: Pinned Chrome browser and MV3 lifecycle chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          CZIP="$RUNNER_TEMP/chrome.zip"
+          CDIR="$RUNNER_TEMP/chrome"
+          mkdir -p "$CDIR"
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" --output "$CZIP"
+          unzip -q "$CZIP" -d "$CDIR"
+          CHROME="$CDIR/chrome-linux64/chrome"
+          "$CHROME" --version | grep -F "$VER"
+
+          for fixture in \
+            "$ROOT/validation/alice-auto-send-v1/alice_blocked_send_postfix_fixture.html" \
+            "$ROOT/validation/alice-auto-send-v1/alice_current_dom_send_chain_fixture.html" \
+            "$ROOT/validation/alice-drag-drop-v1/alice_drag_drop_adapter_fixture.html"; do
+            out="$RUNNER_TEMP/$(basename "$fixture").out"
+            "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --allow-file-access-from-files --virtual-time-budget=2500 --dump-dom "file://$GITHUB_WORKSPACE/$fixture" > "$out"
+            ! grep -F '<pre id="result">FAIL:' "$out"
+          done
+          grep -F '<title>ALICE_BLOCKED_SEND_POSTFIX_PASS</title>' "$RUNNER_TEMP/alice_blocked_send_postfix_fixture.html.out"
+          grep -F '<title>ALICE_CURRENT_DOM_SEND_CHAIN_PASS</title>' "$RUNNER_TEMP/alice_current_dom_send_chain_fixture.html.out"
+          grep -F '<title>ALICE_DND_ADAPTER_PASS</title>' "$RUNNER_TEMP/alice_drag_drop_adapter_fixture.html.out"
+
+          node "$ROOT/validation/regression/run_file_attachment_browser_primitive.mjs" "$CHROME"
+          xvfb-run -a node "$ROOT/validation/regression/run_file_delivery_extension_worker_smoke.mjs" "$CHROME" "$DIST"
+          echo OZON_LLM_OUTPUT_REPORT_WORKFLOW_BROWSER_MV3_PASS
+
+      - name: Build deterministic exact ZIP and fresh-extraction gate
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$ROOT/artifacts"
+          python - <<'PY'
+          import hashlib, os, pathlib, zipfile
+          dist=pathlib.Path(os.environ['DIST']); root=pathlib.Path(os.environ['ROOT']); name=os.environ['ARTIFACT_NAME']; out=root/'artifacts'/name
+          files=sorted(p for p in dist.rglob('*') if p.is_file())
+          with zipfile.ZipFile(out,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+              for p in files:
+                  info=zipfile.ZipInfo(p.relative_to(dist).as_posix(),date_time=(1980,1,1,0,0,0))
+                  info.compress_type=zipfile.ZIP_DEFLATED
+                  info.external_attr=0o100644<<16
+                  z.writestr(info,p.read_bytes(),compress_type=zipfile.ZIP_DEFLATED,compresslevel=9)
+          b=out.read_bytes(); sha=hashlib.sha256(b).hexdigest()
+          (out.parent/(name+'.sha256.txt')).write_text(f'{sha}  {name}\n',encoding='utf-8')
+          print('PACKAGE_SHA='+sha); print('PACKAGE_BYTES='+str(len(b))); print('PRODUCTION_FILES='+str(len(files)))
+          pathlib.Path(os.environ['RUNNER_TEMP']+'/package.env').write_text(f'package_sha={sha}\npackage_bytes={len(b)}\nproduction_files={len(files)}\n')
+          PY
+          cat "$RUNNER_TEMP/package.env" >> "$GITHUB_OUTPUT"
+          ZIP="$ROOT/artifacts/$ARTIFACT_NAME"
+          EXTRACT="$RUNNER_TEMP/extract"
+          rm -rf "$EXTRACT"; mkdir -p "$EXTRACT"; unzip -q "$ZIP" -d "$EXTRACT"
+          python - <<'PY'
+          import hashlib, os, pathlib
+          a=pathlib.Path(os.environ['DIST']); b=pathlib.Path(os.environ['RUNNER_TEMP'])/'extract'
+          snap=lambda r:{p.relative_to(r).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in r.rglob('*') if p.is_file()}
+          assert snap(a)==snap(b), 'Linux fresh extraction byte parity mismatch'
+          print('OZON_LLM_OUTPUT_REPORT_WORKFLOW_LINUX_FRESH_EXTRACTION_BYTE_PARITY_PASS')
+          PY
+          find "$EXTRACT" -type f -name '*.js' -print0 | sort -z | xargs -0 -n1 node --check
+          grep -F 'shared/llm_output_report_workflow_patch.js' "$EXTRACT/service_worker_entry.js"
+          grep -F 'максимум ОДИН такой command block' "$EXTRACT/shared/runtime_names.js"
+          echo provider_calls_during_patch_gate=0
+          echo OZON_LLM_OUTPUT_REPORT_WORKFLOW_EXACT_ZIP_PASS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-llm-output-report-workflow-exact-package
+          path: |
+            ${{ env.ROOT }}/artifacts/${{ env.ARTIFACT_NAME }}
+            ${{ env.ROOT }}/artifacts/${{ env.ARTIFACT_NAME }}.sha256.txt
+          retention-days: 30
+
+  windows-authoritative:
+    needs: linux-authoritative
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-llm-output-report-workflow-exact-package
+          path: ${{ env.ROOT }}/artifacts
+
+      - name: Windows exact-source regressions and canonical Git-blob package parity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $tree=(git show -s --format=%T $env:EXACT_EXECUTABLE_SHA).Trim()
+          if ($tree -ne $env:EXACT_EXECUTABLE_TREE) { throw "source tree mismatch" }
+          git merge-base --is-ancestor $env:EXACT_EXECUTABLE_SHA HEAD
+          if ($LASTEXITCODE -ne 0) { throw "exact executable is not ancestor" }
+          $drift=(git diff --name-only "$env:EXACT_EXECUTABLE_SHA..HEAD" -- $env:DIST)
+          if ($drift) { throw "production drift after exact executable commit: $drift" }
+
+          Get-ChildItem $env:DIST -Recurse -Filter *.js | Sort-Object FullName | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { throw "syntax fail $($_.FullName)" } }
+          node "$env:GATE/run_output_contract_gate.mjs" .
+          node "$env:GATE/run_secondary_dependency_sweep.mjs" .
+          node "$env:ROOT/validation/alice-auto-send-v1/run_alice_auto_send_postfix_source_gate.mjs" $env:DIST
+          node "$env:ROOT/validation/alice-drag-drop-v1/run_alice_drag_drop_runtime_gate.mjs" . $env:DIST
+          node "$env:ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate.mjs" $env:DIST
+          node "$env:ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate_v2.mjs" . $env:DIST
+          node "$env:ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs"
+          node "$env:ROOT/validation/regression/run_file_delivery_capture_accounting.mjs"
+          node "$env:ROOT/validation/regression/run_file_delivery_port_worker_state_machine.mjs"
+          node "$env:ROOT/validation/regression/run_file_delivery_mixed_batch_policy.mjs"
+          node "$env:ROOT/validation/regression/run_file_delivery_wake_lifecycle.mjs"
+          node "$env:ROOT/validation/regression/run_direct_binary_provider_attachment_gate.mjs"
+          node "$env:ROOT/validation/mixed-help-api-v2/run_mixed_help_api_gate_v2.mjs" .
+          node "$env:ROOT/validation/mixed-help-api-v2/run_mixed_help_api_disabled_alias_gate.mjs" .
+          node "$env:ROOT/validation/command-envelope-contract-v1/run_command_envelope_contract_gate.mjs" .
+
+          $zip=Join-Path "$env:ROOT/artifacts" $env:ARTIFACT_NAME
+          if (-not (Test-Path $zip)) { throw "ZIP missing" }
+          $sha=(Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant(); $bytes=(Get-Item $zip).Length
+          if ($sha -ne '${{ needs.linux-authoritative.outputs.package_sha }}') { throw "ZIP SHA mismatch $sha" }
+          if ($bytes -ne [int64]'${{ needs.linux-authoritative.outputs.package_bytes }}') { throw "ZIP bytes mismatch" }
+
+          $extract=Join-Path $env:RUNNER_TEMP 'llm-output-report-extract'
+          if (Test-Path $extract) { Remove-Item -Recurse -Force $extract }
+          Expand-Archive -Path $zip -DestinationPath $extract
+          Get-ChildItem $extract -Recurse -Filter *.js | Sort-Object FullName | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { throw "extracted syntax fail $($_.FullName)" } }
+
+          @'
+          import hashlib, os, pathlib, subprocess
+          sha=os.environ['EXACT_EXECUTABLE_SHA']; prefix=os.environ['DIST'].replace('\\','/').rstrip('/'); ext=pathlib.Path(os.environ['EXTRACT'])
+          tracked=subprocess.check_output(['git','ls-tree','-r','--name-only',sha,'--',prefix],text=True).splitlines()
+          expected=sorted(p[len(prefix)+1:] for p in tracked if p.startswith(prefix+'/'))
+          actual=sorted(p.relative_to(ext).as_posix() for p in ext.rglob('*') if p.is_file())
+          assert expected==actual,(expected,actual)
+          for rel in actual:
+              canonical=subprocess.check_output(['git','show',f'{sha}:{prefix}/{rel}'])
+              extracted=(ext/rel).read_bytes()
+              assert hashlib.sha256(canonical).digest()==hashlib.sha256(extracted).digest(),rel
+          print('CANONICAL_MEMBER_COUNT='+str(len(actual)))
+          print('OZON_LLM_OUTPUT_REPORT_WORKFLOW_WINDOWS_CANONICAL_GIT_BLOB_BYTE_PARITY_PASS')
+          '@ | Set-Content -Encoding utf8 "$env:RUNNER_TEMP\canonical_parity.py"
+          $env:EXTRACT=$extract
+          python "$env:RUNNER_TEMP\canonical_parity.py"
+          if ($LASTEXITCODE -ne 0) { throw "canonical Git-blob parity failed" }
+          Write-Output 'OZON_LLM_OUTPUT_REPORT_WORKFLOW_WINDOWS_AUTHORITATIVE_PASS'
+
+  finalize-evidence:
+    needs: [linux-authoritative, windows-authoritative]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-llm-output-report-workflow-exact-package
+          path: ${{ env.ROOT }}/artifacts
+
+      - name: Finalize dependency closure, GATE-01..35 and exact package evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$EXACT_EXECUTABLE_SHA" HEAD
+          test -z "$(git diff --name-only "$EXACT_EXECUTABLE_SHA"..HEAD -- "$DIST")"
+          ZIP="$ROOT/artifacts/$ARTIFACT_NAME"
+          test "$(sha256sum "$ZIP" | awk '{print $1}')" = '${{ needs.linux-authoritative.outputs.package_sha }}'
+          test "$(stat -c '%s' "$ZIP")" = '${{ needs.linux-authoritative.outputs.package_bytes }}'
+
+          python "$GATE/finalize_prehandoff.py" \
+            --source-sha "$EXACT_EXECUTABLE_SHA" --source-tree "$EXACT_EXECUTABLE_TREE" \
+            --package-name "$ARTIFACT_NAME" --package-sha '${{ needs.linux-authoritative.outputs.package_sha }}' \
+            --package-bytes '${{ needs.linux-authoritative.outputs.package_bytes }}' --production-files '${{ needs.linux-authoritative.outputs.production_files }}' \
+            --workflow-run "$GITHUB_RUN_ID"
+
+          DEP="$GATE/DEPENDENCY_CLOSURE_2026-09-11.md"
+          FINAL="$GATE/FINAL_PREHANDOFF_2026-09-11.md"
+          BUILDINFO="$ROOT/artifacts/${ARTIFACT_NAME%.zip}_BUILDINFO.txt"
+          grep -F 'Unaccounted pre-handoff dependencies: **0**.' "$DEP"
+          grep -F 'Stale active assumptions after secondary sweep: **0**.' "$DEP"
+          grep -F 'Available-but-unverified pre-handoff dependencies: **0**.' "$DEP"
+          grep -F '**DEPENDENCY VERDICT: PASS FOR PRE-HANDOFF SCOPE**' "$DEP"
+          grep -F '**PRE-HANDOFF VERDICT: PASS**' "$FINAL"
+          grep -F '**LIVE CERTIFICATION: PENDING**' "$FINAL"
+          grep -F 'linux_exact_source_package=PASS' "$BUILDINFO"
+          grep -F 'windows_exact_source_package=PASS' "$BUILDINFO"
+          grep -F 'report_create_closed_set=8/8' "$BUILDINFO"
+          grep -F 'generated_document_resolver_closed_set=7/7' "$BUILDINFO"
+          grep -F 'provider_calls_during_patch_gate=0' "$BUILDINFO"
+          grep -F 'automatic_retry_added=false' "$BUILDINFO"
+          grep -F 'automatic_polling_added=false' "$BUILDINFO"
+          grep -F 'automatic_pagination_added=false' "$BUILDINFO"
+          grep -F 'automatic_fanout_added=false' "$BUILDINFO"
+          git diff --check
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+MaksimUnimax@users.noreply.github.com'
+          git add \
+            "$ROOT/artifacts/$ARTIFACT_NAME" \
+            "$ROOT/artifacts/$ARTIFACT_NAME.sha256.txt" \
+            "$BUILDINFO" \
+            "$DEP" \
+            "$FINAL"
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
+          git commit -m 'docs(ozon): finalize LLM output report workflow pre-handoff'
+          git push origin "HEAD:$PATCH_BRANCH"
+          echo "FINAL_DOCS_HEAD=$(git rev-parse HEAD)"
+          echo "PACKAGE_SHA=${{ needs.linux-authoritative.outputs.package_sha }}"
+          echo "PACKAGE_BYTES=${{ needs.linux-authoritative.outputs.package_bytes }}"
+          echo "PRODUCTION_FILES=${{ needs.linux-authoritative.outputs.production_files }}"
+          echo OZON_LLM_OUTPUT_REPORT_WORKFLOW_PREHANDOFF_PASS
