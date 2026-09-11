@@ -1,0 +1,40 @@
+name: Ozon Alice drag-drop pre-production probe v1
+run-name: Ozon Alice drag-drop probe v1 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-drag-drop-transport-2026-09-11]
+    paths:
+      - 'tooling/llm-api-bridges/ozon-seller/validation/alice-drag-drop-v1/**'
+      - '.github/workflows/ozon-alice-drag-drop-probe-v1-2026-09-11.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser-transport-probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run body-level DataTransfer drop probe in pinned Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          CZIP="$RUNNER_TEMP/chrome.zip"
+          CDIR="$RUNNER_TEMP/chrome"
+          mkdir -p "$CDIR"
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" --output "$CZIP"
+          unzip -q "$CZIP" -d "$CDIR"
+          CHROME="$CDIR/chrome-linux64/chrome"
+          "$CHROME" --version | grep -F "$VER"
+          FIXTURE="$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller/validation/alice-drag-drop-v1/alice_drag_drop_transport_probe.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --allow-file-access-from-files --virtual-time-budget=1500 --dump-dom "file://$FIXTURE" > "$RUNNER_TEMP/alice-dnd-probe-dom.html"
+          grep -F '<title>ALICE_DND_PROBE_PASS</title>' "$RUNNER_TEMP/alice-dnd-probe-dom.html"
+          grep -F 'data-probe-result="PASS"' "$RUNNER_TEMP/alice-dnd-probe-dom.html"
+          grep -F '"ingress":"drag_and_drop"' "$RUNNER_TEMP/alice-dnd-probe-dom.html"
+          if grep -F '<input type="file"' "$RUNNER_TEMP/alice-dnd-probe-dom.html"; then
+            echo 'Persistent file input unexpectedly present' >&2
+            exit 1
+          fi
+          echo 'ALICE_DND_PREPRODUCTION_BROWSER_PROBE_PASS'
