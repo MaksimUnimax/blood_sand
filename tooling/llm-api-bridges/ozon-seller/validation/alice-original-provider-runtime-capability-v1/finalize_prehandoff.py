@@ -53,14 +53,14 @@ buildinfo.write_text('\n'.join([
 dep = HERE / 'DEPENDENCY_CLOSURE_2026-09-11.md'
 dep.write_text(f'''# Alice original provider file runtime capability — dependency closure
 
-Workflow run: `{a.workflow_run}`  
-Pre-fix FAIL run: `{a.prefx_run}`  
-Targeted materialization run: `{a.targeted_run}`  
-Exact executable source: `{a.source_sha}`  
-Exact executable tree: `{a.source_tree}`  
-Exact package: `{a.package_name}`  
-SHA-256: `{a.package_sha}`  
-Bytes: `{a.package_bytes}`  
+Workflow run: `{a.workflow_run}`
+Pre-fix FAIL run: `{a.prefx_run}`
+Targeted materialization run: `{a.targeted_run}`
+Exact executable source: `{a.source_sha}`
+Exact executable tree: `{a.source_tree}`
+Exact package: `{a.package_name}`
+SHA-256: `{a.package_sha}`
+Bytes: `{a.package_bytes}`
 Production files: `{a.production_files}`
 
 | Dependency layer | Closure |
@@ -89,9 +89,9 @@ Production files: `{a.production_files}`
 | packaged runtime | Deterministic ZIP is compared byte-for-byte against exact Git blobs and re-tested after fresh extraction on Linux and Windows. |
 | live | Actual Alice acceptance/rejection of XLSX remains live-only and must be observed after installing this exact package. |
 
-Unaccounted pre-handoff dependencies: **0**.  
-Stale active assumptions after secondary sweep: **0**.  
-Available-but-unverified pre-handoff dependencies: **0**.  
+Unaccounted pre-handoff dependencies: **0**.
+Stale active assumptions after secondary sweep: **0**.
+Available-but-unverified pre-handoff dependencies: **0**.
 Live-only dependencies pending: **1**.
 
 **DEPENDENCY VERDICT: PASS FOR PRE-HANDOFF SCOPE**
@@ -139,12 +139,12 @@ final = HERE / 'FINAL_PREHANDOFF_2026-09-11.md'
 rows = '\n'.join(f'| GATE-{i:02d} | PASS — {text} |' for i, text in enumerate(gates, 1))
 final.write_text(f'''# Alice original provider file runtime capability — final pre-handoff
 
-Workflow run: `{a.workflow_run}`  
-Exact executable source: `{a.source_sha}`  
-Exact executable tree: `{a.source_tree}`  
-Exact ZIP: `{a.package_name}`  
-Exact ZIP SHA-256: `{a.package_sha}`  
-Exact ZIP bytes: `{a.package_bytes}`  
+Workflow run: `{a.workflow_run}`
+Exact executable source: `{a.source_sha}`
+Exact executable tree: `{a.source_tree}`
+Exact ZIP: `{a.package_name}`
+Exact ZIP SHA-256: `{a.package_sha}`
+Exact ZIP bytes: `{a.package_bytes}`
 Production files: `{a.production_files}`
 
 ## GATE-01..35
@@ -160,6 +160,12 @@ LIVE-GATE-01: `PENDING POST-INSTALL` — install this exact ZIP and repeat the r
 **LIVE CERTIFICATION: PENDING**
 ''', encoding='utf-8')
 
+for generated in (buildinfo, dep, final):
+    bad_lines = [index for index, line in enumerate(generated.read_text(encoding='utf-8').splitlines(), 1) if line != line.rstrip()]
+    if bad_lines:
+        raise SystemExit(f'{generated}: trailing whitespace on lines {bad_lines}')
+
+print('FINALIZER_TRAILING_WHITESPACE_CHECK=PASS')
 print(buildinfo)
 print(dep)
 print(final)
