@@ -72,7 +72,18 @@
         let tx; let request;
         try { tx = db.transaction(STORE_NAME, "readwrite"); request = tx.objectStore(STORE_NAME).put(record); }
         catch (error) { reject(error); return; }
-        request.onsuccess = () => resolve(); request.onerror = () => reject(request.error || new Error("IndexedDB artifact put failed")); tx.onabort = () => reject(tx.error || new Error("IndexedDB artifact transaction aborted"));
+        let requestSucceeded = false;
+        let settled = false;
+        const rejectOnce = (error) => { if (settled) return; settled = true; reject(error); };
+        request.onsuccess = () => { requestSucceeded = true; };
+        request.onerror = () => rejectOnce(request.error || new Error("IndexedDB artifact put failed"));
+        tx.onabort = () => rejectOnce(tx.error || new Error("IndexedDB artifact transaction aborted"));
+        tx.oncomplete = () => {
+          if (settled) return;
+          if (!requestSucceeded) { rejectOnce(new Error("IndexedDB artifact transaction completed before put request success.")); return; }
+          settled = true;
+          resolve();
+        };
       });
     } finally { try { db.close(); } catch (_) {} }
   }
