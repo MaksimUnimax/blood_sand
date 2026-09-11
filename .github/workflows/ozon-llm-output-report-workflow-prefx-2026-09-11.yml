@@ -1,0 +1,24 @@
+name: Ozon LLM output report workflow pre-fix
+run-name: Ozon LLM output report workflow pre-fix · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-llm-output-report-workflow-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-llm-output-report-workflow-prefx-2026-09-11.yml'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/llm-output-report-workflow-v1/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pre-fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Reproduce missing output/report workflow contract
+        run: node tooling/llm-api-bridges/ozon-seller/validation/llm-output-report-workflow-v1/run_output_contract_gate.mjs .
