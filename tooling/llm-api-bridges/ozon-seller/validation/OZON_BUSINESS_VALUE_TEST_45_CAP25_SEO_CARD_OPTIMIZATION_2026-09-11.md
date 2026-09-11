@@ -1,43 +1,45 @@
 # Ozon Bridge business-value test 45 / CAP-25 — SEO optimization of Ozon product cards
 
 Date opened: 2026-09-11  
-Status: **IN_PROGRESS — DATA COLLECTION FIRST**  
+Status: **IN_PROGRESS — PHASE A MONTHLY QUERY CAPTURE**  
 Product: `ozon-llm-api-bridge` v0.1.19
 
 ## Position in the business-value series
 
-This is the next business-value scenario after the previously accumulated STD/CAP series ending at `CAP-24`.
-
 Serial number: **45**.  
 Capability id: **CAP-25**.
 
-This is a seller business-value test, not a technical PATCH/LIVE-GATE. Technical defects are investigated only if they block trustworthy execution of this business scenario.
+This is a seller business-value test after the previously accumulated STD/CAP series ending at `CAP-24`. It is not a technical PATCH/LIVE-GATE.
 
 ## Seller problem
 
 A seller needs to optimize Ozon product cards for internal marketplace search, but a useful semantic core cannot be built reliably from title text or external search demand alone.
 
-The Bridge must prove that it can assemble an evidence base for product-card SEO from Ozon-owned data and current product content.
+The Bridge must prove that it can assemble a reproducible evidence base from Ozon-owned search-query data and current product content.
 
-## Capability under test
+## Phase A — monthly Ozon search-query evidence
 
-### Phase A — monthly Ozon search-query evidence
+For the current assortment:
 
-For the seller's current assortment:
-
-1. collect the available monthly search-query detail for each SKU through `product_queries_details`;
-2. preserve the exact analytics period, `request_id`, Bridge version, SKU, query rank/text and returned metrics;
-3. repeat the collection monthly;
-4. append new periods without overwriting prior periods;
+1. collect the available monthly `product_queries_details` evidence for the full SKU set;
+2. preserve analytics period, Bridge version, `request_id`, sort/page provenance and returned query rows;
+3. repeat the capture monthly;
+4. append new periods without overwriting historical raw evidence;
 5. build a long-running first-party Ozon query history for later SEO analysis.
 
-Because the non-Premium accessible history is limited, recurring monthly capture is part of the capability itself.
+Because non-Premium history is limited, recurring monthly capture is part of the capability itself.
 
-Multiple independent `OZON_API_V1` envelopes may be executed in one sequential batch. The invariant remains one explicit command → at most one physical provider business request. No hidden retry, pagination-loop, polling, fan-out or provider chaining is allowed.
+### Runtime invariants
 
-### Phase B — product content evidence
+- one explicit `OZON_API_V1` command → at most one physical provider business request;
+- multiple independent envelopes may be executed in one sequential batch;
+- no hidden retry, pagination-loop, polling, fan-out or provider chaining;
+- every next page is a new explicit command;
+- errors are preserved and never silently retried.
 
-After the monthly query snapshot for the full assortment is captured, collect current product descriptions and current product attributes/characteristics for the corresponding SKUs through verified read-only Seller API operations.
+## Phase B — product content evidence
+
+After Phase A is complete for the current monthly cycle, collect current product descriptions and current product attributes/characteristics for the corresponding SKUs through verified read-only Seller API operations.
 
 The later analytical job will join:
 - Ozon search phrases;
@@ -46,61 +48,95 @@ The later analytical job will join:
 - characteristics/attributes;
 - SKU/product identity.
 
-That joined evidence will be used to build a product-card semantic core and SEO recommendations.
+Phase B is **not executed during the current raw statistics pass**.
 
-Phase B is **not executed as part of the current collection pass**. The immediate task is to finish Phase A for the full assortment first.
+## Live capability findings
 
-## Current live evidence
+`product_queries_details` accepts:
+- `limit_by_sku` up to 15;
+- `page_size` up to 100;
+- explicit `page` pagination;
+- up to 1000 SKU;
+- sorting by `BY_SEARCHES`, `BY_VIEWS`, `BY_POSITION`, `BY_CONVERSION`, `BY_GMV`.
 
-The search-visibility guidance exposed:
-- `product_queries` — own-product search-query summary;
-- `product_queries_details` — query detail by selected SKU;
-- marketplace search-query surfaces separately.
+Current account entitlement:
+- `BY_SEARCHES` — available;
+- `BY_GMV` — available;
+- `BY_VIEWS`, `BY_POSITION`, `BY_CONVERSION` — blocked before provider execution with `SUBSCRIPTION_REQUIRED` for Premium/Premium Plus.
 
-A request for history over one month was rejected before provider execution because the requested scope required Premium/Premium Plus/Premium Pro.
+The earlier request for history beyond one month was also blocked before provider execution because the requested historical scope requires a paid subscription.
 
-A shorter non-Premium window succeeded.
+## Why four non-Premium slices are collected
 
-First detail evidence:
-- SKU: `1636048691` (`Печать Велеса`);
-- analytics period returned by Ozon: `2026-08-13` — `2026-09-10`;
-- request_id: `c527ff0d-53dc-4ea1-9143-04142d37ddd5`;
-- HTTP: 200;
-- physical business requests: 1;
-- returned query rows: 10.
+The endpoint limits returned phrases to 15 per SKU. Observed live results prove that changing the allowed sort can surface a different 15-query subset for the same SKU. Therefore the non-Premium monthly archive collects four explicit slices:
 
-The result is persisted in:
-`продажи/статистика/ozon/monthly_search_queries.tsv`.
+1. `BY_SEARCHES / DESCENDING`;
+2. `BY_SEARCHES / ASCENDING`;
+3. `BY_GMV / DESCENDING`;
+4. `BY_GMV / ASCENDING`.
 
-## Current collection scope
+All pages for each slice are persisted before the slice is declared complete. Later deduplication is a derived operation; raw slice/page evidence remains append-only.
+
+## First monthly cycle
 
 Canonical current Ozon assortment authority:
 `marketing/data/normalized/marketplace/ozon/20260826__ozon__product-master__fresh-current76.csv`
 
-Target count for the first monthly cycle: **76 SKU**.
+Target: **76 SKU**.  
+Analytics period returned by Ozon: **2026-08-13 — 2026-09-10**.
 
-Collection state at opening:
-- 1 SKU has a persisted detailed-query result;
-- 75 SKU remain to be collected for the same first monthly cycle.
+### Completed slice
 
-## PASS criteria
+`BY_SEARCHES / DESCENDING`:
+- provider `total`: **1110**;
+- `page_count`: **12**;
+- pages persisted: **12/12**;
+- query-index coverage: **1–1110**;
+- row coverage: **1110/1110**.
 
-CAP-25 Phase A collection PASS requires:
-1. every one of the 76 target SKU receives one explicit `product_queries_details` attempt for the first monthly cycle;
-2. every successful provider result is persisted with exact request provenance;
-3. provider/Bridge failures are preserved as failures and are not silently retried;
+### Other allowed slices
+
+- `BY_SEARCHES / ASCENDING`: page 0 persisted; pages 1–11 pending.
+- `BY_GMV / DESCENDING`: page 0 persisted; pages 1–11 pending.
+- `BY_GMV / ASCENDING`: page 0 persisted; pages 1–11 pending.
+
+### Repository evidence
+
+Monthly rules:
+`продажи/статистика/ozon/README.md`
+
+Page/request authority:
+`продажи/статистика/ozon/raw/2026-08-13_2026-09-10/collection_manifest.tsv`
+
+Row-level raw evidence:
+`продажи/статистика/ozon/raw/2026-08-13_2026-09-10/product_queries_details_*`
+
+The original `monthly_search_queries.tsv` remains an early pilot file and is not the completeness authority for this month; the full raw page archive is authoritative until deterministic consolidation.
+
+## Phase A PASS criteria
+
+Phase A for one monthly cycle passes when:
+1. all four available non-Premium slices have page 0 plus every returned page explicitly collected;
+2. all successful pages are persisted with exact request provenance;
+3. provider/Bridge failures remain recorded as failures and are not silently retried;
 4. no hidden provider requests are introduced;
-5. the accumulated file is append-only by monthly period;
-6. no SEO interpretation is mixed into the raw monthly query ledger.
+5. historical raw evidence remains append-only;
+6. no SEO interpretation is mixed into the raw archive.
 
-Full CAP-25 business PASS will additionally require Phase B product-content evidence and a later reproducible semantic-core/SEO analysis using the accumulated evidence.
+## Full CAP-25 PASS criteria
+
+Full CAP-25 additionally requires:
+- Phase B product-description and attribute evidence;
+- deterministic join of search evidence with product content;
+- reproducible semantic-core / SEO analysis;
+- no unsupported causal claim that a card edit changes ranking unless separately measured.
 
 ## What is not yet claimed
 
-- The first 76-SKU monthly cycle is not complete yet.
+- The first monthly cycle is **not fully complete** until the remaining pages of the other three non-Premium slices are collected.
 - No annual history exists yet.
-- No SEO recommendation is accepted from this test yet.
+- No SEO recommendation is accepted yet.
+- Product descriptions/attributes have not yet been collected under Phase B.
 - No causal ranking effect from changing a title/description has been proven.
-- Product descriptions/attributes have not yet been collected under CAP-25 Phase B.
 
-The current action is data collection only.
+Current action: **raw statistics collection only**.
