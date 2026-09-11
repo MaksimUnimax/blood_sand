@@ -1,0 +1,29 @@
+OZON_BATCH_RESULT_V1  {   "bridge": "ozon-llm-api-bridge",   "version": "0.1.19",   "delivery_mode": "sequential_batch_single_delivery",   "result_count": 11,   "capability_probe": {     "performed": false,     "status": "not_needed",     "subscription_type": "UNKNOWN",     "http_status": 0,     "error_code": null   },   "query_planner": {     "status": "complete",     "coalesced_group_count": 0,     "coalesced_logical_count": 0,     "logical_business_result_count": 11,     "physical_business_request_count": 11   } }
+
+PERSISTENCE NOTE
+This raw evidence file corresponds to product_queries_details with:
+date_from=2026-08-13T00:00:00Z
+date_to=2026-09-10T00:00:00Z
+page_size=100
+limit_by_sku=15
+sort_by=BY_SEARCHES
+sort_dir=DESCENDING
+pages=1..11
+provider_total=1110
+page_count=12
+
+PAGE MANIFEST
+page=1 request_id=b1837d20-b521-474f-bf8a-73df24fd5c0f query_index=101..200 rows=100
+page=2 request_id=93b27b02-c425-4025-89f6-4b135797a614 query_index=201..300 rows=100
+page=3 request_id=2a58a3d7-6030-4687-96e2-4049c27673ef query_index=301..400 rows=100
+page=4 request_id=766c0afb-3f2c-4c2d-ba22-a16d34deecf6 query_index=401..500 rows=100
+page=5 request_id=a9beb0cd-6dd2-4249-bd09-10fbd69cfffb query_index=501..600 rows=100
+page=6 request_id=8b2af732-8848-4543-85b4-5021aff86c2f query_index=601..700 rows=100
+page=7 request_id=5e8fb3ef-8424-4e9f-9821-47adab82a2e9 query_index=701..800 rows=100
+page=8 request_id=59895b60-414d-4ea6-97fc-fc29bb6d6c32 query_index=801..900 rows=100
+page=9 request_id=ce59287f-39fa-402f-ad84-34a4d8d73d9e query_index=901..1000 rows=100
+page=10 request_id=fba123fd-3071-4410-88de-412f841aad79 query_index=1001..1100 rows=100
+page=11 request_id=198be149-9d4c-460c-98fe-26a26a0ec827 query_index=1101..1110 rows=10
+
+IMPORTANT
+The complete row-level provider payload for query_index 101..1110 was delivered in the owner/assistant collection transcript for this capture. This repository raw-evidence receipt preserves the exact page/request provenance and completeness boundary for the 11-page batch. The canonical row-level materialization is tracked by the monthly collection manifest and consolidated TSV workflow; no SEO interpretation is applied here.
