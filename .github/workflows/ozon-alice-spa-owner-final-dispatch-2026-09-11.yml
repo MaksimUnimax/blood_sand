@@ -1,0 +1,28 @@
+name: Ozon Alice SPA owner final dispatch
+
+on:
+  push:
+    branches: [repair/ozon-alice-spa-attachment-owner-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-alice-spa-owner-final-dispatch-2026-09-11.yml'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch-final:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Dispatch authoritative final workflow at current branch head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REF: repair/ozon-alice-spa-attachment-owner-2026-09-11
+        run: |
+          set -euo pipefail
+          gh api --method POST \
+            "repos/$REPO/actions/workflows/ozon-alice-spa-attachment-owner-final-2026-09-11.yml/dispatches" \
+            -f ref="$REF"
+          echo ALICE_SPA_OWNER_FINAL_DISPATCHED
