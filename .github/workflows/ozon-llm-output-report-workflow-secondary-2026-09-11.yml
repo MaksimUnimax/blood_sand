@@ -1,0 +1,36 @@
+name: Ozon LLM output report workflow secondary sweep
+run-name: Ozon LLM output report workflow secondary · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-llm-output-report-workflow-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-llm-output-report-workflow-secondary-2026-09-11.yml'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/llm-output-report-workflow-v1/**'
+      - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/runtime_names.js'
+      - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/llm_output_report_workflow_patch.js'
+      - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/service_worker_entry.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secondary-sweep:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Syntax
+        run: |
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/runtime_names.js
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/llm_output_report_workflow_patch.js
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/service_worker_entry.js
+      - name: Targeted contract gate
+        run: node tooling/llm-api-bridges/ozon-seller/validation/llm-output-report-workflow-v1/run_output_contract_gate.mjs .
+      - name: Secondary dependency sweep
+        run: node tooling/llm-api-bridges/ozon-seller/validation/llm-output-report-workflow-v1/run_secondary_dependency_sweep.mjs .
+      - name: Diff hygiene
+        run: git diff --check HEAD~1 HEAD
