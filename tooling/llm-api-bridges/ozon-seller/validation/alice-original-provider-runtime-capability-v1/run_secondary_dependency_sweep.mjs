@@ -1,8 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const repoRoot = path.resolve(process.argv[2] || '.');
-const dist = path.join(repoRoot, 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate');
+const inputRoot = path.resolve(process.argv[2] || '.');
+const dist = fs.existsSync(path.join(inputRoot, 'shared/ai_delivery_capabilities.js'))
+  ? inputRoot
+  : path.join(inputRoot, 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate');
 const capPath = path.join(dist, 'shared/ai_delivery_capabilities.js');
 const workerPath = path.join(dist, 'shared/file_delivery_port_worker.js');
 const contentPath = path.join(dist, 'attachment_delivery_port_content.js');
@@ -41,3 +43,4 @@ console.log('PROVIDER_PROVENANCE_AND_SHA_BOUNDARY=PASS');
 console.log('RUNTIME_TARGET_UI_VERIFICATION_PATH=PASS');
 console.log('UNKNOWN_OUTCOME_NO_RETRY=PASS');
 console.log('ALICE_ORIGINAL_PROVIDER_RUNTIME_CAPABILITY_SECONDARY_SWEEP=PASS');
+console.log(`TESTED_DIST_ROOT=${dist}`);
