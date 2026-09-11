@@ -10,6 +10,7 @@ const root = path.join(repo, 'tooling/llm-api-bridges/ozon-seller');
 const dist = path.join(root, 'dist-step7-candidate');
 const read = (rel) => fs.readFileSync(path.join(dist, rel), 'utf8');
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const STORE_NAME = 'artifacts';
 
 function transactionLifecycle({ outcome = 'abort', result = 'synthetic-key' } = {}) {
   const state = {
@@ -179,6 +180,7 @@ async function genericCase(outcome) {
   const helperSource = extractGenericIdbRequest(workerSource);
   const context = vm.createContext({
     Promise,
+    STORE_NAME,
     openDb: async () => lifecycle.db
   });
   context.globalThis = context;
