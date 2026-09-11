@@ -218,9 +218,10 @@ await genericCase('complete');
 
 const workerSource = read('shared/file_delivery_port_worker.js');
 const directSource = read('shared/direct_binary_file_delivery_patch.js');
-const genericPrematurePattern = workerSource.includes('request.onsuccess = () => resolve(request.result);');
+const genericIdbRequestSource = extractGenericIdbRequest(workerSource);
+const genericPrematurePattern = genericIdbRequestSource.includes('request.onsuccess = () => resolve(request.result);');
 const directPrematurePattern = directSource.includes('request.onsuccess = () => resolve(); request.onerror');
-const genericCommitBoundaryPresent = /tx\.oncomplete\s*=/.test(extractGenericIdbRequest(workerSource));
+const genericCommitBoundaryPresent = /tx\.oncomplete\s*=/.test(genericIdbRequestSource);
 const directPutSource = directSource.slice(directSource.indexOf('async function putArtifact'), directSource.indexOf('\n\n  function safeResultReport'));
 const directCommitBoundaryPresent = /tx\.oncomplete\s*=/.test(directPutSource);
 
