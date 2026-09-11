@@ -1,0 +1,34 @@
+name: Ozon Alice original provider runtime capability pre-fix
+run-name: Ozon Alice original provider runtime capability pre-fix · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-provider-file-runtime-capability-prefx-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-alice-original-provider-runtime-capability-prefx-2026-09-11.yml'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/alice-original-provider-runtime-capability-v1/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BASELINE_SHA: fa792f2b3bef70eda76e3a80892545e15815b1a7
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/alice-original-provider-runtime-capability-v1
+
+jobs:
+  pre-fix-reproduction:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Prove old production rejects original XLSX before Alice runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$BASELINE_SHA" HEAD
+          test -z "$(git diff --name-only "$BASELINE_SHA"..HEAD -- "$DIST")"
+          node "$GATE/run_prefx_original_provider_runtime_capability.mjs" .
