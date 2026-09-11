@@ -1,0 +1,42 @@
+name: Ozon Alice SPA attachment owner post-fix
+run-name: Ozon Alice SPA attachment owner post-fix · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-spa-attachment-owner-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-alice-spa-attachment-owner-postfix-2026-09-11.yml'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/alice-spa-attachment-owner-v1/**'
+      - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/attachment_delivery_port_content.js'
+      - 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/file_delivery_port_worker.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  post-fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Syntax and targeted SPA ownership gates
+        run: |
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/attachment_delivery_port_content.js
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/file_delivery_port_worker.js
+          node tooling/llm-api-bridges/ozon-seller/validation/alice-spa-attachment-owner-v1/run_prefx_spa_owner_gate.mjs .
+          node tooling/llm-api-bridges/ozon-seller/validation/alice-spa-attachment-owner-v1/run_postfix_spa_owner_gate.mjs .
+      - name: Existing attachment and transport regressions
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_adapter_gate_policy.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_capture_accounting.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_port_worker_state_machine.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_mixed_batch_policy.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_wake_lifecycle.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_direct_binary_provider_attachment_gate.mjs
+      - name: IndexedDB durability regression
+        run: node tooling/llm-api-bridges/ozon-seller/validation/indexeddb-transaction-durability-v1/run_prefix_transaction_abort_gate.mjs .
+      - name: Diff hygiene
+        run: git diff --check
