@@ -1,0 +1,26 @@
+{
+  "artifact": "wildberries-bridge-v0.1.3-phase1-WIP.zip",
+  "bytes": 86048,
+  "sha256": "b6628d00fba1b98f1a0dfe37f0d658b6cd00842b071e4bc927a2ae58f2859ceb",
+  "files": {
+    "content_script.js": "6b4dbd419a06a9b504c0cec688f1f6afb349a1c36a6dd6480bdd857a0455c513",
+    "manifest.json": "55a183963935fe27147918b8044cf3ca89084683d2715fda6cb33fcb8eb350d3",
+    "popup.css": "dd7249e12813f54af66b35a07dab93189d6643416019f0873f9d5624297e34b5",
+    "popup.html": "f99a837f1dbac711974a1631237ed8fd8732efafb0f041feeb0212d6e2397fc2",
+    "popup.js": "8a2bb1d06cf60814fa84ce03b58ff3626d737d03cc4f437e4059376b16bf4455",
+    "service_worker.js": "1f1deef23989a80d61b8cd0a273ed0e1009d7f615fd84a181f69825162aa22ec",
+    "shared/bridge_autorun_model.js": "dff5265640ec4b848b4dee6019261c7b230d015eeac6f12fd85b9b7c2e93c22c",
+    "shared/composer_send.js": "a6a2b25ea29637b76250a9f29fdcb177b52824a16a193b44ca5603df2494da79",
+    "shared/conversation_identity.js": "e56a9f352c4668f47a0f72c2044a943a88457024c4400fa878a974551518114a",
+    "shared/manual_controls.js": "81f302487da7b5ff7c1b746298353438b2cfec100a5bb8f7fa2c80d1e033c81e",
+    "shared/proven_writing_block_capture.js": "d0f8e413ad6081890c0b93c5c5f33e53d209b4ffec217a6761f32745653ff8a1",
+    "shared/provider_transport_core.js": "16bac4ddb2b202db2df984f1529b327b85da4f9dc0dfbe9ff36af593a7268d7e",
+    "shared/runtime_names.js": "147f059e6f73f6ee25fe062d0521a08e374c8650de4a1c7d787fd2c49d31556c",
+    "shared/wb_contract.js": "a95594af11fd0c9669f2bfbb4669237b2286d08dc8dc3417a8829b977715ad7a",
+    "shared/wb_credentials.js": "c731be6b35914ba6b1f0dc5a156dbfd8eb24709f52456c3f6623c83d3d5584a4",
+    "shared/wb_operations.js": "08e8a2ad1f325a4bdc0a909b37220b7abaa0be1d94d6b53192666ed5f22c2c75",
+    "shared/wb_provider.js": "5ef55e4ee22f05d90d1365a456baf8ed051d8f717906716ae7d3a7b49b911c5c"
+  },
+  "status": "PARTIAL_PHASE1_WIP_NOT_FULL_ACCEPTANCE",
+  "remote_code_checkpoint": "a16a0af18e80fa3817584598b8e4299f83018283"
+}

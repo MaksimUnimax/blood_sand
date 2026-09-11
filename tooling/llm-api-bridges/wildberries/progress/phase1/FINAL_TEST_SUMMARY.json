@@ -1,0 +1,51 @@
+{
+  "artifact": "wildberries-bridge-v0.1.3-phase1-WIP.zip",
+  "bytes": 86048,
+  "sha256": "b6628d00fba1b98f1a0dfe37f0d658b6cd00842b071e4bc927a2ae58f2859ceb",
+  "production_files": 17,
+  "changed_files": 7,
+  "scope": "Three actual Phase1 hardening blocks; not all A01-A53",
+  "suites": [
+    {
+      "suite": "final-contract",
+      "checks": 197,
+      "passed": 197,
+      "failed": 0,
+      "scope": "contract ingress + mocked request serialization, NOT full Phase1 or live acceptance",
+      "raw_results_sha256": "199fdd95aa3d5090e50fef4e9bbc1cae9442881ee6f791d419410725ca39146e",
+      "exit_code": 0
+    },
+    {
+      "suite": "final-worker",
+      "checks": 9,
+      "passed": 9,
+      "failed": 0,
+      "scope": "actual worker message handler + contract/provider/transport; mocked Chrome and provider; not installed/live acceptance",
+      "raw_results_sha256": "cee43ed6599635ebdc82582351210b1b6612da8d3655521bb8c30dc3926397f9",
+      "exit_code": 0
+    },
+    {
+      "suite": "final-browser",
+      "checks": 7,
+      "passed": 7,
+      "failed": 0,
+      "scope": "real Chromium; about:blank synthetic DOM; mocked identity and extension messages, NOT installed live acceptance",
+      "raw_results_sha256": "3afea941185256797939a7983f313e19703569d8ca2e2497f503024563865452",
+      "exit_code": 0
+    },
+    {
+      "suite": "final-package-script",
+      "checks": 26,
+      "passed": 26,
+      "failed": 0,
+      "scope": "exact artifact, reconstruction, manifest, syntax; not all migration gates",
+      "raw_results_sha256": "a23691368a9836257aa63c9e787e59cd7659360a3a58dff9237b73e561cb41d5",
+      "exit_code": 0
+    }
+  ],
+  "behavioral_checks": 213,
+  "package_checks": 26,
+  "live_wb_requests": 0,
+  "live_certification": "NOT_RUN",
+  "full_phase1_pre_handoff": "BLOCKED_INCOMPLETE"
+}

@@ -1,0 +1,26 @@
+{
+ "schema_version":1,
+ "scope":"Current overlay on the immutable recovery-time 53-feature/67-test inventories. No unlisted item becomes PASS.",
+ "candidate_sha256":"b6628d00fba1b98f1a0dfe37f0d658b6cd00842b071e4bc927a2ae58f2859ceb",
+ "feature_default":"NOT_VERIFIED",
+ "feature_overrides":{"A03":"PARTIAL_IMPLEMENTATION_STRICT_SINGLE_ENVELOPE","A08":"PARTIALLY_VERIFIED_EXISTING_NO_RETRY","A11":"VERIFIED_EXISTING_SINGLE_COMMAND_ADMISSION","A15":"PARTIAL_IMPLEMENTATION_STALE_RUNTIME_GUARDS","A52":"PARTIAL_IMPLEMENTATION_ERROR_METADATA","A53":"PARTIAL_IMPLEMENTATION_THREE_EXECUTABLE_SUITES"},
+ "test_default":"NOT_RUN",
+ "test_overrides":{
+  "TA-001":{"status":"PASS_MOCKED","evidence":"block001/contract.mjs; final-contract"},
+  "TA-003":{"status":"PASS_MOCKED","evidence":"block001/contract.mjs; final-contract"},
+  "TA-004":{"status":"PASS_MOCKED","evidence":"block001/contract.mjs; final-contract"},
+  "TA-005":{"status":"PASS_MOCKED","evidence":"block001/contract.mjs; final-contract"},
+  "TA-006":{"status":"PASS_MOCKED","evidence":"block001/contract.mjs; final-contract"},
+  "TA-009":{"status":"PASS_MOCKED","evidence":"block001/contract.mjs and block003/worker_error.mjs"},
+  "TA-010":{"status":"PASS_MOCKED","evidence":"block001/contract.mjs and block003/worker_error.mjs"},
+  "TA-016":{"status":"PASS_DETERMINISTIC_RECREATION","evidence":"block003/worker_error.mjs unknown outcome scenario"},
+  "TA-017":{"status":"PASS_DETERMINISTIC_RECREATION","evidence":"block003/worker_error.mjs new worker recovery scenario; actual browser reload remains live-only"},
+  "TA-019":{"status":"PARTIAL_SYNTHETIC_BROWSER","evidence":"block002/browser_runtime.py changed-conversation delayed response; full multi-AI binding not tested"},
+  "TA-021":{"status":"PASS_DEFINED_SYNTHETIC_BROWSER_CASES","evidence":"block002/browser_runtime.py 5 stale-generation cases; real installed extension not certified"},
+  "TA-061":{"status":"PARTIAL_SYNTHETIC_BROWSER","evidence":"block002/browser_runtime.py positive text delivery; actual ChatGPT UI not visited"}
+ },
+ "not_implemented_as_new_features":["multi-AI/Alice","Work Session","ordered multiple envelopes and HELP/API batches","new Personal Data and entitlement policies","quota/cache/coalescing/prefetch","large-result and file/Port/wake delivery","XLSX fixes"],
+ "all_53_features_complete":false,
+ "all_67_TA_complete":false,
+ "phase3_real_api_characterization":"NOT_STARTED"
+}

@@ -1,0 +1,11 @@
+{"event":"BASELINE_LOADED","date":"2026-09-11","wb_sha256":"56f0c78911db8ea84c82c3e874c8ac59c46acbf633886b014225d5ab0afe8715","old_55_pass_claim":"NOT_USED"}
+{"event":"BLOCK001_IMPLEMENTED","scope":"strict public command ingress, internal restored command revalidation, unsafe key/type checks, version 0.1.3","checks":197,"pass":197,"fail":0,"real_wb_calls":0}
+{"event":"PUBLICATION_TRANSPORT_ERROR_CORRECTED","bad_base64_commit":"99e5ee34a478eab6cbd4478a94c7523d9844beac","bad_file_removed":true,"replacement":"readable exact materializer plus regression runner","replacement_commit":"1bbed7de73955a16f84b7d4fe441955b00315a1f"}
+{"event":"BLOCK002_RED","scope":"actual Chromium, synthetic DOM","checks":7,"pass":2,"fail":5,"no_policy_bypass":true}
+{"event":"BLOCK002_GREEN","checks":7,"pass":7,"fail":0,"commit":"21f1fd712e2d6bd4917df2ced1606056c06407c1","remote_blob_parity":"PASS"}
+{"event":"BLOCK003_RED","scope":"actual worker message handler; mock Chrome/provider","checks":9,"pass":5,"fail":4,"root_cause":"preflight.meta.method does not exist in WB contract"}
+{"event":"BLOCK003_GREEN","checks":9,"pass":9,"fail":0,"commit":"a16a0af18e80fa3817584598b8e4299f83018283","remote_blob_parity":"PASS"}
+{"event":"FINAL_ZIP_BUILT","bytes":86048,"sha256":"b6628d00fba1b98f1a0dfe37f0d658b6cd00842b071e4bc927a2ae58f2859ceb","files":17,"changed_files":7}
+{"event":"FINAL_EXACT_PACKAGE_RETEST","contract_pass":197,"worker_pass":9,"synthetic_browser_pass":7,"package_pass":26,"fail":0,"real_wb_calls":0,"full_phase1_complete":false}
+{"event":"RECONSTRUCTION_VERIFIED","input":"original WB ZIP","scripts":"block001 then block002 then block003","production_file_hash_matches":17,"zip_byte_equal":true}
+{"event":"NEXT_BLOCK","action":"ordered API/HELP parser and Manual/Autorun integration","live_api_characterization":"NOT_STARTED"}
