@@ -1,0 +1,32 @@
+name: Ozon Alice public Oknyx source probe
+run-name: Ozon Alice public Oknyx source probe · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-drag-drop-transport-2026-09-11]
+    paths:
+      - tooling/llm-api-bridges/ozon-seller/validation/alice-auto-send-v1/probe_public_alice_oknyx_source.py
+      - .github/workflows/ozon-alice-auto-send-public-source-probe-2026-09-11.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-source-probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Probe only public first-party Alice page and assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='tooling/llm-api-bridges/ozon-seller'
+          test -z "$(git diff --name-only 39eadd2699320774ef53964ea8cf347057c1b813..HEAD -- "$ROOT/dist-step7-candidate")"
+          python "$ROOT/validation/alice-auto-send-v1/probe_public_alice_oknyx_source.py"
+          echo 'provider_calls=0'
+          echo 'owner_cookies_used=false'
+          echo 'seller_credentials_used=false'
