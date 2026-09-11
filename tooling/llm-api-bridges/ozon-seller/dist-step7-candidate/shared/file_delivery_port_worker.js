@@ -375,7 +375,8 @@
 
   function adapterCanAttach(delivery, records) {
     const profile = OzonAIDeliveryCapabilities.profile(delivery?.adapter_id);
-    if (!profile || profile.status !== "implemented" || profile.attachment_strategy !== "file_input_v1") {
+    const strategy = String(profile?.attachment_strategy || "");
+    if (!profile || profile.status !== "implemented" || !["file_input_v1", "drag_drop_v1"].includes(strategy)) {
       throw Object.assign(new Error("Target AI attachment adapter is not implemented/live-profiled in this build."), { code: "TARGET_AI_ATTACHMENT_ADAPTER_UNAVAILABLE" });
     }
     if (profile.max_files_per_turn !== null && profile.max_files_per_turn !== undefined && Number.isFinite(Number(profile.max_files_per_turn)) && records.length > Number(profile.max_files_per_turn)) {

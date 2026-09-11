@@ -49,6 +49,25 @@
     return actual;
   }
 
+  function dispatchFileDrop(target, files) {
+    if (!(target instanceof EventTarget) || !target.isConnected) throw Object.assign(new Error("Target AI drag-drop surface is not connected."), { code: "ATTACHMENT_DROP_TARGET_INVALID" });
+    const list = Array.isArray(files) ? files : [];
+    if (!list.length || list.some((file) => !(file instanceof File))) throw Object.assign(new Error("Attachment file list is empty or invalid."), { code: "ATTACHMENT_FILE_LIST_INVALID" });
+    const transfer = new DataTransfer();
+    for (const file of list) transfer.items.add(file);
+    const actual = [...(transfer.files || [])];
+    if (actual.length !== list.length || actual.some((file, index) => file.name !== list[index].name || file.size !== list[index].size || String(file.type || "") !== String(list[index].type || ""))) {
+      throw Object.assign(new Error("Browser DataTransfer did not preserve the complete attachment set."), { code: "ATTACHMENT_DROP_FILESET_MISMATCH" });
+    }
+    const eventOptions = { bubbles: true, cancelable: true, composed: true, dataTransfer: transfer };
+    for (const type of ["dragenter", "dragover", "drop"]) target.dispatchEvent(new DragEvent(type, eventOptions));
+    return Object.freeze({
+      dispatched: 3,
+      file_count: actual.length,
+      files: Object.freeze(actual.map((file) => Object.freeze({ name: file.name, size: file.size, type: file.type || "" })))
+    });
+  }
+
   function fileListSnapshot(input) {
     if (!inputAcceptsFiles(input)) return [];
     return [...(input.files || [])].map((file) => ({ name: file.name, size: file.size, type: file.type || "" }));
@@ -59,6 +78,7 @@
     createFile,
     inputAcceptsFiles,
     setInputFiles,
+    dispatchFileDrop,
     fileListSnapshot
   });
 })();

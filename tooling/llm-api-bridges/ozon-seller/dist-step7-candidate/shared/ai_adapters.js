@@ -160,71 +160,83 @@
     return null;
   }
 
-  function aliceAttachmentScopes() {
+  function aliceComposerShell() {
     const context = aliceComposerContext();
-    if (!context?.root) return [];
+    if (!context?.composer || !(context.root instanceof Element)) return null;
+    const standaloneInput = context.composer.closest('.Standalone-Input') || context.root.closest?.('.Standalone-Input') || context.root;
+    if (!(standaloneInput instanceof Element)) return null;
+    const controls = standaloneInput.querySelector('[data-testid="input-controls-root"]') || context.root.querySelector?.('[data-testid="input-controls-root"]');
+    if (!(controls instanceof Element) || !controls.isConnected) return null;
+    const plus = controls.querySelector('button[data-testid="InputControls-Plus-Button"][aria-label="Добавить файл"][aria-haspopup="dialog"]');
+    if (!(plus instanceof HTMLElement) || !visible(plus) || controlDisabled(plus)) return null;
+    if (!(document.body instanceof HTMLElement) || !document.body.isConnected) return null;
+    return { context, standaloneInput, controls, plus };
+  }
+
+  function aliceAttachmentSurface() {
+    const shell = aliceComposerShell();
+    if (!shell) return null;
+    return { kind: "drag_drop_v1", root: document.body, composer_root: shell.standaloneInput, controls_root: shell.controls, capability_marker: shell.plus };
+  }
+
+  function aliceAttachFiles(surface, files) {
+    if (surface?.kind !== "drag_drop_v1" || surface.root !== document.body || !surface.root?.isConnected) {
+      throw Object.assign(new Error("Alice drag-drop attachment surface is unavailable."), { code: "TARGET_AI_ATTACHMENT_SURFACE_UNAVAILABLE" });
+    }
+    const live = aliceAttachmentSurface();
+    if (!live || live.root !== surface.root || !surface.capability_marker?.isConnected || live.capability_marker !== surface.capability_marker) {
+      throw Object.assign(new Error("Alice drag-drop capability marker changed before attachment dispatch."), { code: "TARGET_AI_ATTACHMENT_SURFACE_CHANGED" });
+    }
+    const helper = globalThis.OzonWebFileAttachment;
+    if (typeof helper?.dispatchFileDrop !== "function") throw Object.assign(new Error("Alice drag-drop browser primitive is unavailable."), { code: "TARGET_AI_ATTACHMENT_TRANSPORT_UNAVAILABLE" });
+    return helper.dispatchFileDrop(live.root, files);
+  }
+
+  function aliceAttachmentScopes() {
+    const shell = aliceComposerShell();
+    if (!shell) return [];
     const scopes = [];
-    const add = (node) => {
-      if (!(node instanceof Element) || scopes.includes(node)) return;
-      scopes.push(node);
-    };
-    add(context.form);
-    add(context.root);
-    let node = context.root.parentElement;
-    for (let depth = 0; node && depth < 4; depth += 1, node = node.parentElement) {
-      add(node);
-      if (node === document.body) break;
-    }
+    const add = (node) => { if (node instanceof Element && node.isConnected && !scopes.includes(node)) scopes.push(node); };
+    add(shell.standaloneInput);
+    add(shell.context.root);
+    const topControls = shell.standaloneInput.querySelector?.('.StandaloneInput-TopControls');
+    add(topControls);
     return scopes;
-  }
-
-  function aliceFileInputScore(input) {
-    if (!(input instanceof HTMLInputElement) || !input.isConnected || input.disabled || String(input.type || "").toLowerCase() !== "file") return -1;
-    const accept = String(input.getAttribute("accept") || "").toLowerCase();
-    const docAccept = /(?:\.txt|\.pdf|\.docx?|text\/plain|application\/pdf|msword|officedocument)/.test(accept);
-    const imageOnly = Boolean(accept) && /image\//.test(accept) && !docAccept;
-    if (imageOnly) return -1;
-    const token = [input.id, input.name, input.getAttribute("data-testid") || "", input.getAttribute("aria-label") || "", input.getAttribute("title") || ""].join(" ").toLowerCase();
-    let score = docAccept ? 500 : 0;
-    if (/attach|upload|file|document|прикреп|файл|документ/.test(token)) score += 200;
-    return score;
-  }
-
-  function aliceUniqueFileInput(scope) {
-    if (!(scope instanceof Element)) return null;
-    const candidates = [...scope.querySelectorAll('input[type="file"]')]
-      .filter((input) => aliceFileInputScore(input) >= 0)
-      .map((input) => ({ input, score: aliceFileInputScore(input) }));
-    if (!candidates.length) return null;
-    candidates.sort((a, b) => b.score - a.score);
-    const top = candidates[0];
-    return candidates.filter((item) => item.score === top.score).length === 1 ? top.input : null;
-  }
-
-  function aliceFileInput() {
-    const scopes = aliceAttachmentScopes();
-    for (const scope of scopes) {
-      const all = [...scope.querySelectorAll('input[type="file"]')].filter((input) => input instanceof HTMLInputElement && input.isConnected && !input.disabled);
-      if (!all.length) continue;
-      return aliceUniqueFileInput(scope);
-    }
-    return null;
   }
 
   function aliceAttachmentPreview(filename) {
     const target = String(filename || "").trim();
     if (!target) return null;
-    const selectors = '[data-testid*="attach" i], [data-testid*="file" i], [data-testid*="upload" i], [data-filename], [data-file-name], [aria-label], [title]';
+    const matches = [];
     for (const scope of aliceAttachmentScopes()) {
-      const matches = [...scope.querySelectorAll(selectors)].filter((node) => {
-        const token = [node.getAttribute("data-filename") || "", node.getAttribute("data-file-name") || "", node.getAttribute("aria-label") || "", node.getAttribute("title") || "", node.textContent || ""].join(" ");
-        return token.includes(target);
-      });
-      if (!matches.length) continue;
-      const leaves = matches.filter((node) => !matches.some((other) => other !== node && node.contains(other)));
-      return leaves.length === 1 ? leaves[0] : (matches.length === 1 ? matches[0] : null);
+      for (const node of scope.querySelectorAll('*')) {
+        if (!(node instanceof HTMLElement) || !node.isConnected) continue;
+        const attrs = [
+          node.getAttribute('data-filename') || '', node.getAttribute('data-file-name') || '',
+          node.getAttribute('aria-label') || '', node.getAttribute('title') || ''
+        ].map((value) => String(value).trim()).filter(Boolean);
+        const exactAttr = attrs.some((value) => value === target || value.includes(target));
+        const nodeText = String(node.textContent || '').replace(/\u00a0/g, ' ').trim();
+        const exactText = nodeText === target;
+        if (exactAttr || exactText) matches.push(node);
+      }
+      if (matches.length) break;
     }
-    return null;
+    if (!matches.length) return null;
+    const leaves = matches.filter((node) => !matches.some((other) => other !== node && node.contains(other)));
+    const candidates = leaves.length ? leaves : matches;
+    return candidates.length === 1 ? candidates[0] : null;
+  }
+
+  function aliceAttachmentStatusText(preview) {
+    if (!(preview instanceof HTMLElement)) return "";
+    const tokens = [];
+    let node = preview;
+    for (let depth = 0; node instanceof HTMLElement && depth < 4; depth += 1, node = node.parentElement) {
+      tokens.push(node.getAttribute('data-status') || '', node.getAttribute('aria-label') || '', node.getAttribute('title') || '', node.textContent || '');
+      if (node.classList?.contains('Standalone-Input')) break;
+    }
+    return tokens.join(' ').replace(/\u00a0/g, ' ').toLowerCase();
   }
 
   const CHATGPT_COPY_ANCHORS = new WeakMap();
@@ -306,7 +318,11 @@
       return [button.tagName, button.getAttribute("data-testid") || "", button.getAttribute("aria-label") || "", button.getAttribute("title") || "", button.getAttribute("type") || "", button.getAttribute("name") || ""].join("|");
     },
     deliveryCapabilities() { return globalThis.OzonAIDeliveryCapabilities?.profile?.("chatgpt") || null; },
-    attachmentSurface() { const input = chatgptFileInput(); return input ? { input, root: input.closest("form") || document.documentElement } : null; },
+    attachmentSurface() { const input = chatgptFileInput(); return input ? { kind: "file_input_v1", input, root: input.closest("form") || document.documentElement } : null; },
+    attachFiles(surface, files) {
+      if (surface?.kind !== "file_input_v1" || !surface.input?.isConnected) throw Object.assign(new Error("ChatGPT file-input attachment surface is unavailable."), { code: "TARGET_AI_ATTACHMENT_SURFACE_UNAVAILABLE" });
+      return globalThis.OzonWebFileAttachment.setInputFiles(surface.input, files);
+    },
     attachmentPreview(filename) { return chatgptAttachmentPreview(filename); },
     attachmentReady(descriptors) {
       const list = Array.isArray(descriptors) ? descriptors : [];
@@ -377,7 +393,8 @@
       return [button.tagName, button.getAttribute("data-testid") || "", button.getAttribute("aria-label") || "", button.getAttribute("title") || ""].join("|");
     },
     deliveryCapabilities() { return globalThis.OzonAIDeliveryCapabilities?.profile?.("alice") || null; },
-    attachmentSurface() { const input = aliceFileInput(); const context = aliceComposerContext(); return input ? { input, root: context?.root || input.parentElement || document.documentElement } : null; },
+    attachmentSurface() { return aliceAttachmentSurface(); },
+    attachFiles(surface, files) { return aliceAttachFiles(surface, files); },
     attachmentPreview(filename) { return aliceAttachmentPreview(filename); },
     attachmentReady(descriptors) {
       const list = Array.isArray(descriptors) ? descriptors : [];
@@ -385,8 +402,8 @@
       return list.every((descriptor) => {
         const preview = aliceAttachmentPreview(descriptor.filename);
         if (!preview?.isConnected || !visible(preview) || preview.matches?.('[aria-busy="true"]') || preview.querySelector?.('[aria-busy="true"]')) return false;
-        const status = [preview.getAttribute?.("data-status") || "", preview.getAttribute?.("aria-label") || "", preview.getAttribute?.("title") || ""].join(" ").toLowerCase();
-        return !/uploading|loading|загруз|обработ/.test(status);
+        const status = aliceAttachmentStatusText(preview);
+        return !/uploading|loading|загружа|обработ|ошиб|error|не поддерж|unsupported|failed|сбой/.test(status);
       });
     },
     isGenerating() {

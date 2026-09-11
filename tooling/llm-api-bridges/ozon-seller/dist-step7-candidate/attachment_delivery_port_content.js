@@ -206,6 +206,10 @@
     return bytes;
   }
 
+  function attachmentStrategySupported(profile) {
+    return ["file_input_v1", "drag_drop_v1"].includes(String(profile?.attachment_strategy || ""));
+  }
+
   function assertAttachmentCountSupported(active, descriptors) {
     const profile = active?.deliveryCapabilities?.() || null;
     const maxFiles = Number(profile?.max_files_per_turn);
@@ -222,7 +226,7 @@
     if (!descriptors.length) throw Object.assign(new Error("Attachment delivery has no artifact descriptors."), { code: "ATTACHMENT_DESCRIPTORS_EMPTY" });
     const active = adapter();
     const profile = assertAttachmentCountSupported(active, descriptors);
-    if (!profile || profile.attachment_strategy !== "file_input_v1") throw Object.assign(new Error("Target AI has no verified file-input attachment strategy in this build."), { code: "TARGET_AI_ATTACHMENT_ADAPTER_UNAVAILABLE" });
+    if (!profile || !attachmentStrategySupported(profile)) throw Object.assign(new Error("Target AI has no verified attachment strategy in this build."), { code: "TARGET_AI_ATTACHMENT_ADAPTER_UNAVAILABLE" });
     const files = [];
     for (const descriptor of descriptors) {
       const support = OzonAIDeliveryCapabilities.supportsFile(active.id, descriptor);
@@ -315,8 +319,10 @@
     if (!active || active.id !== recovery.adapter_id) throw Object.assign(new Error("Target AI adapter changed before attachment delivery."), { code: "ATTACHMENT_ADAPTER_MISMATCH" });
     const context = await waitForComposerAvailable(recovery);
     if (!context) return null;
+    const profile = active.deliveryCapabilities?.() || null;
+    if (!profile || !attachmentStrategySupported(profile) || typeof active.attachFiles !== "function") throw Object.assign(new Error("Target AI attachment strategy is unavailable."), { code: "TARGET_AI_ATTACHMENT_ADAPTER_UNAVAILABLE" });
     const surfaceBeforeCommit = active.attachmentSurface?.();
-    if (!surfaceBeforeCommit?.input) throw Object.assign(new Error("Target AI file-input attachment surface is unavailable."), { code: "TARGET_AI_ATTACHMENT_SURFACE_UNAVAILABLE" });
+    if (!surfaceBeforeCommit || surfaceBeforeCommit.kind !== profile.attachment_strategy || !surfaceBeforeCommit.root?.isConnected) throw Object.assign(new Error("Target AI attachment surface is unavailable."), { code: "TARGET_AI_ATTACHMENT_SURFACE_UNAVAILABLE" });
     const commit = await request("OZ_ATTACHMENT_COMMIT", { ...ownerPayload(recovery), actor_id: runtime.id });
     if (!commit?.ok) throw Object.assign(new Error(commit?.error || "Attachment commit failed."), { code: commit?.code || "ATTACHMENT_COMMIT_FAILED" });
     if (commit.attach_allowed !== true) {
@@ -325,8 +331,12 @@
     }
     const committed = commit.recovery;
     const { descriptors, files } = await buildFiles(committed);
-    if (!surfaceBeforeCommit.input.isConnected) throw Object.assign(new Error("Target AI attachment input detached after commit; automatic re-attach is forbidden."), { code: "ATTACH_OUTCOME_UNKNOWN_NO_RETRY" });
-    OzonWebFileAttachment.setInputFiles(surfaceBeforeCommit.input, files);
+    if (!surfaceBeforeCommit.root?.isConnected) throw Object.assign(new Error("Target AI attachment surface detached after commit; automatic re-attach is forbidden."), { code: "ATTACH_OUTCOME_UNKNOWN_NO_RETRY" });
+    try {
+      active.attachFiles(surfaceBeforeCommit, files);
+    } catch (error) {
+      throw Object.assign(new Error(`Attachment transport outcome is unknown after commit; automatic re-attach is forbidden: ${error?.message || error}`), { code: "ATTACH_OUTCOME_UNKNOWN_NO_RETRY", cause: error });
+    }
     const ready = await waitAttachmentReady(active, descriptors, ATTACH_READY_TIMEOUT_MS);
     if (!ready) throw Object.assign(new Error("Target AI did not confirm attachment-ready state within the bounded wait."), { code: "ATTACH_OUTCOME_UNKNOWN_NO_RETRY" });
     stageMarker(committed);

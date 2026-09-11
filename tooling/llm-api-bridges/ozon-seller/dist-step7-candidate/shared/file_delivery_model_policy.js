@@ -60,7 +60,8 @@
 
   function hasLiveAttachmentStrategy(adapterId) {
     const profile = globalThis.OzonAIDeliveryCapabilities?.profile?.(adapterId) || null;
-    return Boolean(profile?.status === "implemented" && profile?.attachment_strategy === "file_input_v1");
+    const strategy = String(profile?.attachment_strategy || "");
+    return Boolean(profile?.status === "implemented" && ["file_input_v1", "drag_drop_v1"].includes(strategy));
   }
 
   function claimDelivery(run, payload = {}) {

@@ -36,7 +36,7 @@
       accepted_extensions: Object.freeze(["txt", "pdf", "doc", "docx"]),
       max_file_bytes: 100 * 1024 * 1024,
       max_files_per_turn: 1,
-      attachment_strategy: "file_input_v1"
+      attachment_strategy: "drag_drop_v1"
     }),
     deepseek: Object.freeze({ id: "deepseek", status: "planned", plain_text_max_chars: null, attachments_supported: null, accepted_extensions: Object.freeze([]), max_file_bytes: null, max_files_per_turn: null, attachment_strategy: "pending" }),
     grok: Object.freeze({ id: "grok", status: "planned", plain_text_max_chars: null, attachments_supported: true, accepted_extensions: Object.freeze(["txt", "pdf", "csv", "xlsx", "docx", "pptx"]), max_file_bytes: null, max_files_per_turn: null, attachment_strategy: "pending" }),

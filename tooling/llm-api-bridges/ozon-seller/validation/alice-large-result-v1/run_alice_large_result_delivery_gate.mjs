@@ -19,7 +19,7 @@ assert.ok(caps, 'OzonAIDeliveryCapabilities must load');
 const alice = caps.profile('alice');
 const chatgpt = caps.profile('chatgpt');
 assert.equal(alice?.plain_text_max_chars, 90_000, 'ALICE_SAFE_PLAIN_TEXT_THRESHOLD_MUST_BE_90000');
-assert.equal(alice?.attachment_strategy, 'file_input_v1', 'ALICE_ATTACHMENT_STRATEGY_MUST_BE_EXECUTABLE');
+assert.equal(alice?.attachment_strategy, 'drag_drop_v1', 'ALICE_ATTACHMENT_STRATEGY_MUST_BE_DRAG_DROP_V1');
 assert.equal(chatgpt?.plain_text_max_chars, 1_048_000, 'CHATGPT_THRESHOLD_MUST_REMAIN_UNCHANGED');
 
 for (const [length, expected] of [
@@ -43,12 +43,13 @@ assert.ok(Number(emojiDecision.threshold_chars ?? 0) >= 100_002, 'ALICE_DECISION
 assert.equal(caps.generatedTextDecision('chatgpt', 'a'.repeat(1_048_000)).representation, 'plain_text');
 assert.equal(caps.generatedTextDecision('chatgpt', 'a'.repeat(1_048_001)).representation, 'text_document');
 
-// Structural guards: oversized Alice delivery must have a real file-input surface and readiness
-// implementation; null/false stubs are prohibited. This remains fail-closed at runtime if no
-// uniquely attributable input/preview can be found.
-assert.doesNotMatch(adaptersSource, /attachmentSurface\(\)\s*\{\s*return null;\s*\}/, 'ALICE_ATTACHMENT_SURFACE_NULL_STUB_FORBIDDEN');
-assert.doesNotMatch(adaptersSource, /attachmentReady\(\)\s*\{\s*return false;\s*\}/, 'ALICE_ATTACHMENT_READY_FALSE_STUB_FORBIDDEN');
-assert.match(adaptersSource, /function aliceFileInput\s*\(/, 'ALICE_FILE_INPUT_RESOLVER_REQUIRED');
+// Structural guards: Alice must use the live-evidenced body drag/drop transport, not an invented
+// persistent composer-local file input. Readiness stays exact-filename and fail-closed.
+assert.doesNotMatch(adaptersSource, /function aliceFileInput\s*\(/, 'ALICE_PERSISTENT_FILE_INPUT_MODEL_FORBIDDEN');
+assert.match(adaptersSource, /function aliceAttachmentSurface\s*\(/, 'ALICE_DRAG_DROP_SURFACE_REQUIRED');
+assert.match(adaptersSource, /InputControls-Plus-Button/, 'ALICE_LIVE_PLUS_CAPABILITY_MARKER_REQUIRED');
+assert.match(adaptersSource, /function aliceAttachFiles\s*\(/, 'ALICE_ADAPTER_OWNED_ATTACHMENT_TRANSPORT_REQUIRED');
+assert.match(adaptersSource, /dispatchFileDrop/, 'ALICE_BODY_DROP_PRIMITIVE_REQUIRED');
 assert.match(adaptersSource, /function aliceAttachmentPreview\s*\(/, 'ALICE_ATTACHMENT_PREVIEW_RESOLVER_REQUIRED');
 
 console.log('ALICE_LARGE_RESULT_DELIVERY_GATE_PASS');
