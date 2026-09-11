@@ -1,0 +1,114 @@
+name: Ozon Alice DnD Windows parity diagnostic v1
+run-name: Ozon Alice DnD parity diagnostic · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-drag-drop-transport-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-alice-dnd-windows-parity-diagnostic-v1-2026-09-11.yml'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  ARTIFACT_NAME: OZON_BRIDGE_v0.1.19_ALICE_DRAG_DROP_CORRECTIVE_20260911.zip
+  SOURCE_RUN_ID: '34553141063'
+  SOURCE_ARTIFACT_NAME: ozon-alice-dnd-corrective-exact-package
+  EXPECTED_ZIP_SHA: 069808508accbb6a091f3ae9358bfee43f27c42f60210899dd0fc621c12233dd
+  EXPECTED_ZIP_BYTES: '249906'
+  EXACT_EXECUTABLE_SHA: 39eadd2699320774ef53964ea8cf347057c1b813
+  EXACT_EXECUTABLE_TREE: f8ec34c4754fb7369a5dbff618705b1d01c6e048
+
+jobs:
+  windows-parity-diagnostic:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_ARTIFACT_NAME }}
+          path: ${{ env.ROOT }}/artifacts
+          repository: MaksimUnimax/blood_sand
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prove exact ZIP and print exact source-vs-extraction byte differences
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $tree=(git show -s --format=%T $env:EXACT_EXECUTABLE_SHA).Trim()
+          if ($tree -ne $env:EXACT_EXECUTABLE_TREE) { throw "source tree mismatch: $tree" }
+          git merge-base --is-ancestor $env:EXACT_EXECUTABLE_SHA HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'exact executable not ancestor' }
+          $drift=(git diff --name-only "$env:EXACT_EXECUTABLE_SHA..HEAD" -- $env:DIST)
+          if ($drift) { throw "production drift: $drift" }
+
+          $zip=Join-Path "$env:ROOT/artifacts" $env:ARTIFACT_NAME
+          $sha=(Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+          $bytes=(Get-Item $zip).Length
+          Write-Output "ZIP_SHA=$sha"
+          Write-Output "ZIP_BYTES=$bytes"
+          if ($sha -ne $env:EXPECTED_ZIP_SHA) { throw "wrong diagnostic ZIP SHA: $sha" }
+          if ($bytes -ne [int64]$env:EXPECTED_ZIP_BYTES) { throw "wrong diagnostic ZIP bytes: $bytes" }
+
+          $extract=Join-Path $env:RUNNER_TEMP 'alice-dnd-parity-diagnostic'
+          if (Test-Path $extract) { Remove-Item -Recurse -Force $extract }
+          Expand-Archive -Path $zip -DestinationPath $extract
+
+          @'
+          import hashlib, json, os, pathlib, subprocess
+          src = pathlib.Path(os.environ['DIST'])
+          ext = pathlib.Path(os.environ['EXTRACT'])
+          def snap(root):
+              out={}
+              for p in root.rglob('*'):
+                  if not p.is_file(): continue
+                  rel=p.relative_to(root).as_posix()
+                  b=p.read_bytes()
+                  out[rel]={
+                      'sha256':hashlib.sha256(b).hexdigest(),
+                      'bytes':len(b),
+                      'crlf':b.count(b'\r\n'),
+                      'lf':b.count(b'\n'),
+                      'cr':b.count(b'\r'),
+                  }
+              return out
+          a=snap(src); b=snap(ext)
+          only_src=sorted(set(a)-set(b)); only_ext=sorted(set(b)-set(a))
+          mismatch=[]
+          for rel in sorted(set(a)&set(b)):
+              if a[rel]['sha256'] == b[rel]['sha256']: continue
+              sb=(src/rel).read_bytes(); eb=(ext/rel).read_bytes()
+              first=next((i for i,(x,y) in enumerate(zip(sb,eb)) if x!=y), min(len(sb),len(eb)))
+              mismatch.append({'path':rel,'source':a[rel],'extracted':b[rel], 'first_diff_offset':first,
+                               'source_window_hex':sb[max(0,first-8):first+16].hex(),
+                               'extracted_window_hex':eb[max(0,first-8):first+16].hex()})
+          print('SOURCE_FILE_COUNT='+str(len(a)))
+          print('EXTRACTED_FILE_COUNT='+str(len(b)))
+          print('ONLY_IN_SOURCE='+json.dumps(only_src, ensure_ascii=False))
+          print('ONLY_IN_EXTRACTED='+json.dumps(only_ext, ensure_ascii=False))
+          print('HASH_MISMATCH_COUNT='+str(len(mismatch)))
+          for m in mismatch:
+              print('MISMATCH='+json.dumps(m, ensure_ascii=False, sort_keys=True))
+          print('GIT_EOL_BEGIN')
+          cp=subprocess.run(['git','ls-files','--eol','--',os.environ['DIST']],capture_output=True,text=True,check=True)
+          print(cp.stdout)
+          print('GIT_EOL_END')
+          normalized=[]
+          for m in mismatch:
+              rel=m['path']; sb=(src/rel).read_bytes(); eb=(ext/rel).read_bytes()
+              if sb.replace(b'\r\n',b'\n') == eb.replace(b'\r\n',b'\n'):
+                  normalized.append(rel)
+          print('LINE_ENDING_ONLY_MISMATCHES='+json.dumps(normalized, ensure_ascii=False))
+          print('NON_LINE_ENDING_MISMATCHES='+json.dumps(sorted(set(m['path'] for m in mismatch)-set(normalized)), ensure_ascii=False))
+          '@ | Set-Content -Encoding utf8 "$env:RUNNER_TEMP\parity_diag.py"
+          $env:EXTRACT=$extract
+          python "$env:RUNNER_TEMP\parity_diag.py"
+          Write-Output 'ALICE_DND_WINDOWS_PARITY_DIAGNOSTIC_COMPLETE'
