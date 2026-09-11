@@ -1,0 +1,16 @@
+request_id	chunk_id	query_index	sku	query	unique_search_users	unique_view_users	view_conversion	position	order_count	gmv	currency
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	1	2186846833	зеркало	16292	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	2	2186846833	подвеска в машину	7092	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	3	2186846833	подвеска в машину на зеркало	1367	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	4	2186846833	подвеска на зеркало в машину	1207	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	5	2186846833	водолей	746	NULL	NULL	NULL	0	669	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	6	2186846833	оберег в машину	383	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	7	2186846833	четки в автомобиль	381	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	8	2186846833	четки в машину	284	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	9	2186846833	подвес в машину на зеркало	106	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	10	2186846833	четки в машину на зеркало	106	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	11	2186846833	подвеска водолей	99	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	12	2186846833	подвеска на зеркало автомобиля	97	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	13	2186846833	подвеска в автомобиль	96	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	14	2186846833	подвеска на машину	88	NULL	NULL	NULL	0	0	RUB
+45a0dcbc-db7b-4115-8b2e-e23108945fb5	C09A6	15	2186846833	в машину подвеска	81	NULL	NULL	NULL	0	0	RUB
