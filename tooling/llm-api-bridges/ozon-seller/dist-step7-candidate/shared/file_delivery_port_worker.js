@@ -56,9 +56,19 @@
           tx = db.transaction(STORE_NAME, mode);
           request = operation(tx.objectStore(STORE_NAME));
         } catch (error) { reject(error); return; }
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error || new Error("IndexedDB request failed"));
-        tx.onabort = () => reject(tx.error || new Error("IndexedDB transaction aborted"));
+        let requestSucceeded = false;
+        let requestResult;
+        let settled = false;
+        const rejectOnce = (error) => { if (settled) return; settled = true; reject(error); };
+        request.onsuccess = () => { requestSucceeded = true; requestResult = request.result; };
+        request.onerror = () => rejectOnce(request.error || new Error("IndexedDB request failed"));
+        tx.onabort = () => rejectOnce(tx.error || new Error("IndexedDB transaction aborted"));
+        tx.oncomplete = () => {
+          if (settled) return;
+          if (!requestSucceeded) { rejectOnce(new Error("IndexedDB transaction completed before request success.")); return; }
+          settled = true;
+          resolve(requestResult);
+        };
       });
     } finally {
       try { db.close(); } catch (_) {}
