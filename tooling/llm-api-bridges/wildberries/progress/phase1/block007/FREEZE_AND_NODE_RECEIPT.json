@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "scope": "WIP 0.1.4 freeze and actual repeated Node suites; not full Phase1 or live acceptance",
+  "artifact": "wildberries-bridge-v0.1.4-phase1-WIP.zip",
+  "bytes": 94498,
+  "sha256": "725c7e4bccb22d132b9e624f4acaa3a79a4f502635f3ff64da2b600124f32f8f",
+  "production_files": 19,
+  "restoration": "19/19 block006 hashes matched before version bump",
+  "version_bump_files": ["content_script.js", "service_worker.js", "popup.js", "popup.html", "shared/wb_contract.js", "shared/runtime_names.js", "manifest.json"],
+  "worker_sha256": "e8f4ead11e2ad28b71ad9711bca67ca70ec2dc7de3e40d2748cf86e267109d12",
+  "contract_sha256": "67f6d0878ebfdb01e1d071546f161a08c41e20bdd776c080d4a2190e025f8da7",
+  "registry_sha256": "08e8a2ad1f325a4bdc0a909b37220b7abaa0be1d94d6b53192666ed5f22c2c75",
+  "suites": [
+    {"name":"final-contract", "checks":197,"passed":197,"failed":0,"exit_code":0,"runner_sha256":"759145214de639001829a6bd6dff96ad475fcd0407728a5fcb578cf9be1a51ae"},
+    {"name":"final-protocol", "checks":47,"passed":47,"failed":0,"exit_code":0,"runner_source":"../block004/protocol.mjs"},
+    {"name":"final-worker", "checks":9,"passed":9,"failed":0,"exit_code":0,"runner_sha256":"f65685abe8cc7cb8b8c1897f274c6a820c170ba55463fd2db097473dbd8789b3"},
+    {"name":"final-batch", "checks":38,"passed":38,"failed":0,"exit_code":0,"runner_source":"../block006 snapshot tests/batch_worker.mjs"}
+  ],
+  "local_raw_snapshot":"checkpoint007a.txt",
+  "local_raw_snapshot_json_sha256":"ed3537c59824897a9f29dc676ebdabef6e51568d2e1ebda804d7fcba7b55ebbc",
+  "local_raw_snapshot_json_bytes":56724,
+  "local_raw_evidence":"/mnt/data/wb_continuation/evidence; per-assertion fsync; launch intent, stdout, stderr, exit receipt per suite",
+  "raw_snapshot_publication":"NEXT_CHECKPOINT_REQUIRED; this receipt alone is not the raw evidence",
+  "browser_tests":"NOT_YET_REPEATED_THIS_RUN",
+  "real_wb_requests":0,
+  "live_certification":"NOT_RUN",
+  "next_action":"Run old synthetic browser suite plus Manual and Autorun mixed capture suites on extracted 0.1.4; persist raw evidence and exact reconstruction route before further implementation."
+}
