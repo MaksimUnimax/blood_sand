@@ -107,6 +107,13 @@ Auth: extension access token.
 
 Returns signed product snapshot described in `INTEGRATION_CONTRACT.md`.
 
+P7.3 activates the signed `ai` union. It is `UNCONFIGURED` without detected
+AI context, `UNAVAILABLE` with a signed detected context and a bounded reason,
+or `RESOLVED` with a validated declarative profile and compatibility object.
+The route remains the existing bootstrap route and does not expose assignment
+IDs, cohort seeds, account/device identifiers, or Health states. Health
+classification is owned by P8.
+
 The payload can be represented as canonical signed bytes/object during implementation; exact serialization is part of schema/signing spec.
 
 ### `GET /v1/client/releases`

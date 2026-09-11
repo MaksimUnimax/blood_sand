@@ -9,6 +9,9 @@ import {
   type ResolveP3BootstrapPolicyResult,
 } from "@product/remote-config";
 import { BootstrapSnapshotPayloadV1Schema } from "@product/contracts";
+import { BootstrapAiResolutionService } from "./ai-resolution.js";
+
+export * from "./ai-resolution.js";
 
 export type BootstrapSubject = { accountId: string; deviceId: string };
 export type BootstrapPolicyResolver = {
@@ -37,6 +40,7 @@ export class BootstrapService {
     private readonly signer: BootstrapSnapshotSigningService,
     private readonly clock: BootstrapClock = { now: () => new Date() },
     private readonly commercialAccess?: BootstrapCommercialAccessResolver,
+    private readonly aiResolution?: BootstrapAiResolutionService,
   ) {}
   async issue(
     subject: BootstrapSubject,
@@ -60,6 +64,32 @@ export class BootstrapService {
       throw new BootstrapError("UNAVAILABLE");
     const currentSubscription = commercial?.value.currentSubscription ?? null;
     const eligible = commercial?.value.access.kind === "ELIGIBLE";
+    let ai: BootstrapSnapshotPayloadV1["ai"] = { status: "UNCONFIGURED" };
+    if (request.detectedAi) {
+      const detected = {
+        family: request.detectedAi.family,
+        surface: request.detectedAi.surface,
+        variant: request.detectedAi.variant ?? null,
+      };
+      if (commercial && !eligible) {
+        ai = { status: "UNAVAILABLE", detected, reason: "NO_PROFILE" };
+      } else if (this.aiResolution) {
+        try {
+          ai = await this.aiResolution.resolve({
+            detected,
+            contractVersion: request.contractVersion,
+            extensionVersion: request.extensionVersion,
+            browser: request.browser,
+            accountId: subject.accountId,
+            deviceId: subject.deviceId,
+          });
+        } catch {
+          throw new BootstrapError("UNAVAILABLE");
+        }
+      } else {
+        ai = { status: "UNAVAILABLE", detected, reason: "NO_PROFILE" };
+      }
+    }
     const issuedAt = now.toISOString();
     let expiresAt = new Date(now.getTime() + 15 * 60_000);
     let offlineGraceUntil = new Date(expiresAt.getTime() + 24 * 60 * 60_000);
@@ -93,7 +123,7 @@ export class BootstrapService {
       compatibility: result.compatibility,
       entitlements: eligible ? commercial!.value.entitlements : {},
       features: result.features,
-      ai: { status: "UNCONFIGURED" },
+      ai,
     });
     try {
       const envelope = await this.signer.sign(result.signingKeyId, payload);

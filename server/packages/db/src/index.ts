@@ -21,6 +21,7 @@ export { createP4CommercialCatalogRepository } from "./p4-commercial-catalog-rep
 export { createP6AdminCommercialReadRepository } from "./p6-admin-commercial-read-repository.js";
 export { createAdapterRegistryCatalogRepository } from "./adapter-registry-repository.js";
 export { createProfileLifecycleRepository } from "./p7-profile-lifecycle-repository.js";
+export { createBootstrapAiResolutionRepository } from "./bootstrap-ai-resolution-repository.js";
 export {
   createP6AdminPlanCommandAdapter,
   createP6AdminPriceCommandAdapter,

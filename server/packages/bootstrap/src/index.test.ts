@@ -221,7 +221,11 @@ describe("BootstrapService", () => {
         devicePolicy: { status: "ACTIVE" },
         entitlements: {},
         features: { feature_alpha: true },
-        ai: { status: "UNCONFIGURED" },
+        ai: {
+          status: "UNAVAILABLE",
+          detected: { family: "alpha", surface: "page", variant: null },
+          reason: "NO_PROFILE",
+        },
       });
     expect(reads).toBe(1);
   });
@@ -250,7 +254,7 @@ describe("BootstrapService", () => {
     } satisfies Partial<BootstrapError>);
     expect(called).toBe(false);
   });
-  it("forwards only the authenticated subject and ignores client freshness and AI hints", async () => {
+  it("forwards only the authenticated subject and resolves each signed AI context", async () => {
     const pair = generateKeyPairSync("ed25519");
     const inputs: unknown[] = [];
     const service = new BootstrapService(
@@ -292,7 +296,18 @@ describe("BootstrapService", () => {
     ]);
     expect(a).toMatchObject({ ok: true });
     expect(b).toMatchObject({ ok: true });
-    if (a.ok && b.ok) expect(a.payload).toEqual(b.payload);
+    if (a.ok && b.ok) {
+      expect(a.payload.ai).toEqual({
+        status: "UNAVAILABLE",
+        detected: { family: "one", surface: "page", variant: null },
+        reason: "NO_PROFILE",
+      });
+      expect(b.payload.ai).toEqual({
+        status: "UNAVAILABLE",
+        detected: { family: "two", surface: "popup", variant: "x" },
+        reason: "NO_PROFILE",
+      });
+    }
   });
   it("fails closed when the resolved configuration selects another signer", async () => {
     const pair = generateKeyPairSync("ed25519");

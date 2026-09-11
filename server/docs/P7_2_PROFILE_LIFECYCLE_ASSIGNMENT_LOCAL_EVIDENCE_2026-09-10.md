@@ -210,3 +210,12 @@ Remote finalization records:
 
 The finalization commit is documentation-only and records no product-code,
 test-code, or migration change.
+
+## Post-acceptance provenance pointer — 2026-09-11
+
+The historical `1169 / 1173` observations remain preserved as historical local
+observations. For exact canonical `pnpm test` regression authority, use
+`P7_2_TEST_COUNT_PROVENANCE_CORRECTION_2026-09-11.md`, which reconciles the
+exact-SHA remote CI observation and clean exact-base reproduction at `1113`.
+This pointer does not alter `P7.2 DONE / REMOTE ACCEPTED` or any product
+verdict.

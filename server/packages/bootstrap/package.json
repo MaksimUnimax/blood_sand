@@ -14,6 +14,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@product/adapter-registry": "workspace:*",
+    "@product/compatibility": "workspace:*",
     "@product/commercial-access": "workspace:*",
     "@product/contracts": "workspace:*",
     "@product/remote-config": "workspace:*"

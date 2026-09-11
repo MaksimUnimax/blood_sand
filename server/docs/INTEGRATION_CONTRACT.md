@@ -177,15 +177,33 @@ Conceptual signed response payload:
   },
   "features": {},
   "ai": {
-    "status": "HEALTHY",
-    "adapter": "chatgpt",
-    "surface": "work",
-    "profile_revision": 37
+    "status": "RESOLVED",
+    "detected": {
+      "family": "chatgpt",
+      "surface": "work",
+      "variant": "work_composer_v3"
+    },
+    "profile": {
+      "profileKey": "chatgpt-work",
+      "revision": 37,
+      "scopeVariant": "work_composer_v3",
+      "schemaVersion": "adapter_profile_v1",
+      "contentSha256": "…",
+      "content": { "…": "validated declarative profile" },
+      "compatibility": { "…": "profile_compatibility_v1" }
+    }
   }
 }
 ```
 
-The final implementation may split payload sections for caching, but the semantic snapshot must be coherent and versioned.
+The AI wire union also permits `{"status":"UNCONFIGURED"}` when no detected
+context exists, or `UNAVAILABLE` with the signed detected context and one of
+`UNSUPPORTED_DETECTED_AI`, `AI_DISABLED`, `NO_PROFILE`, or
+`PROFILE_INCOMPATIBLE`. A known non-null detected variant may resolve through
+a surface-default profile with `scopeVariant: null`; a non-null scope variant
+must equal the detected variant. Assignment and cohort internals are never
+returned. The final implementation may split payload sections for caching,
+but the semantic snapshot must be coherent and versioned.
 
 ## 8. Signed snapshot envelope
 
@@ -248,9 +266,21 @@ Responsibility split:
 
 ### Client
 
-- validates profile schema/signature;
+- verifies the existing signed envelope before trusting profile content;
+- validates the outer AI contract and strict `adapter_profile_v1`/
+  `profile_compatibility_v1` schemas;
+- recomputes the profile fingerprint and checks signed detected-context and
+  variant binding;
 - verifies profile strategy types are packaged/supported;
 - binds adapter.
+
+The simulated packaged detector is authoritative for the current tab. The
+P7.3 fixture recognizes only exact HTTPS origin `https://chatgpt.com` and
+distinguishes packaged Standard and Work fixtures; it does not claim live DOM
+knowledge. Cached/offline use requires current packaged detection, cached
+request context, and signed detected context to be equal. Actual compatibility
+Health states (`HEALTHY`, `DRIFT`, `DEGRADED`, `BROKEN`, `UNKNOWN`,
+`MAINTENANCE`) belong to P8 and are not represented by this AI union.
 
 ## 11. AI rebind vs provider lifecycle
 

@@ -7,6 +7,7 @@ import {
   createExtensionAuthRepository,
   createAdminAuthRepository,
   createAdminOpsRepository,
+  createBootstrapAiResolutionRepository,
   createP6AdminBillingRepository,
   createP6AdminSubscriptionCommandAdapter,
   createP6AdminCommercialReadRepository,
@@ -41,7 +42,10 @@ import {
 import { loadConfig } from "@product/shared";
 import { createApiApp } from "../../apps/api/src/app.js";
 import { createInfrastructureReadiness } from "../../apps/api/src/infrastructure.js";
-import { BootstrapService } from "../../packages/bootstrap/src/index.js";
+import {
+  BootstrapAiResolutionService,
+  BootstrapService,
+} from "../../packages/bootstrap/src/index.js";
 import { resolveP3BootstrapPolicy } from "../../packages/remote-config/src/index.js";
 import {
   bindConfigSigningRing,
@@ -143,6 +147,9 @@ async function main(): Promise<void> {
         createConfigSigningService(bootstrapSigningMaterial, p3Catalog),
         undefined,
         commercialAccess,
+        new BootstrapAiResolutionService(
+          createBootstrapAiResolutionRepository(database),
+        ),
       ),
       commercialPortalService: new CommercialPortalService(
         createP5CommercialPortalRepository(database),

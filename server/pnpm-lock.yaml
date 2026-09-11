@@ -320,9 +320,15 @@ importers:
 
   packages/bootstrap:
     dependencies:
+      '@product/adapter-registry':
+        specifier: workspace:*
+        version: link:../adapter-registry
       '@product/commercial-access':
         specifier: workspace:*
         version: link:../commercial-access
+      '@product/compatibility':
+        specifier: workspace:*
+        version: link:../compatibility
       '@product/contracts':
         specifier: workspace:*
         version: link:../contracts
@@ -553,12 +559,21 @@ importers:
 
   packages/simulated-extension-client:
     dependencies:
+      '@product/adapter-registry':
+        specifier: workspace:*
+        version: link:../adapter-registry
+      '@product/compatibility':
+        specifier: workspace:*
+        version: link:../compatibility
       '@product/contracts':
         specifier: workspace:*
         version: link:../contracts
       '@product/remote-config':
         specifier: workspace:*
         version: link:../remote-config
+      '@product/shared':
+        specifier: workspace:*
+        version: link:../shared
       zod:
         specifier: 4.1.5
         version: 4.1.5

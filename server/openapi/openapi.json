@@ -17668,6 +17668,7 @@
               "application/json": {
                 "schema": {
                   "additionalProperties": false,
+                  "description": "Ed25519-signed bootstrap snapshot; the verified canonical payload carries the P7.3 AI union.",
                   "properties": {
                     "algorithm": {
                       "enum": [
@@ -17711,7 +17712,7 @@
                 }
               }
             },
-            "description": "Default Response"
+            "description": "Ed25519-signed bootstrap snapshot; the verified canonical payload carries the P7.3 AI union."
           },
           "400": {
             "content": {

@@ -30,8 +30,19 @@ import {
   resolveClientCompatibility,
   type SignedOperationalResult,
 } from "./bootstrap-policy.js";
+import {
+  validateAndBindBootstrapAi,
+  type ClientAiBindingContext,
+  type SimulatedAiBinding,
+} from "./ai-binding.js";
+import {
+  detectSimulatedPackagedAi,
+  type SimulatedPackagedTab,
+} from "./detector.js";
 export * from "./bootstrap-cache.js";
 export * from "./bootstrap-policy.js";
+export * from "./ai-binding.js";
+export * from "./detector.js";
 export type ExchangeResult =
   | { kind: "ACTIVATED" }
   | { kind: "PENDING"; retryAfterSeconds: number }
@@ -79,6 +90,9 @@ export type BootstrapPolicyRequest = Omit<
   BootstrapRequestV1,
   "deviceId" | "lastConfigVersion"
 > & { detectedAi?: BootstrapRequestV1["detectedAi"] | null };
+export type BootstrapAutoSelectionResult =
+  | (SignedOperationalResult & { binding: SimulatedAiBinding | null })
+  | Extract<BootstrapPolicyResult, { kind: "UNAVAILABLE" }>;
 function validOrigin(raw: string): string {
   try {
     const url = new URL(raw);
@@ -319,7 +333,11 @@ export class SimulatedExtensionClient {
     try {
       live = await this.bootstrap(liveRequest);
     } catch {
-      return this.useOfflineCache(cacheState.matching, cacheState.reason);
+      return this.useOfflineCache(
+        cacheState.matching,
+        cacheState.reason,
+        context,
+      );
     }
 
     if (live.kind === "HTTP_ERROR") {
@@ -344,6 +362,14 @@ export class SimulatedExtensionClient {
         kind: "UNAVAILABLE",
         reason: "SECURITY_FAILURE",
         error: live.error,
+      };
+
+    const liveAi = this.validateAi(live.payload, context);
+    if (!liveAi.ok)
+      return {
+        kind: "UNAVAILABLE",
+        reason: "SECURITY_FAILURE",
+        error: liveAi.error,
       };
 
     const payloadServerTimeMs = Date.parse(live.payload.serverTime);
@@ -393,6 +419,32 @@ export class SimulatedExtensionClient {
     };
   }
 
+  /** Normal simulated UX: detect the tab, bootstrap, then bind automatically. */
+  async bootstrapDetectedTabWithPolicy(
+    tab: SimulatedPackagedTab,
+    input: Omit<BootstrapPolicyRequest, "detectedAi">,
+  ): Promise<BootstrapAutoSelectionResult> {
+    const detectedAi = detectSimulatedPackagedAi(tab);
+    const result = await this.bootstrapWithPolicy({
+      ...input,
+      detectedAi: detectedAi ?? undefined,
+    });
+    if (result.kind === "UNAVAILABLE") return result;
+    const binding = this.validateAi(result.payload, {
+      detectedAi,
+      contractVersion: input.contractVersion,
+      extensionVersion: input.extensionVersion,
+      browser: input.browser,
+    });
+    return binding.ok
+      ? { ...result, binding: binding.binding }
+      : {
+          kind: "UNAVAILABLE",
+          reason: "SECURITY_FAILURE",
+          error: binding.error,
+        };
+  }
+
   private async loadCacheState(
     key: BootstrapSnapshotStoreKey,
     context: BootstrapRequestContext,
@@ -432,8 +484,21 @@ export class SimulatedExtensionClient {
   private async useOfflineCache(
     cached: ValidatedBootstrapCache | undefined,
     noCacheReason: "CACHE_INVALID" | "NO_MATCHING_CACHE",
+    context: BootstrapRequestContext,
   ): Promise<BootstrapPolicyResult> {
     if (!cached) return { kind: "UNAVAILABLE", reason: noCacheReason };
+    const ai = this.validateAi(cached.payload, {
+      detectedAi: context.detectedAi,
+      contractVersion: context.contractVersion,
+      extensionVersion: context.extensionVersion,
+      browser: context.browser,
+    });
+    if (!ai.ok)
+      return {
+        kind: "UNAVAILABLE",
+        reason: "SECURITY_FAILURE",
+        error: ai.error,
+      };
     const monotonicNowMs = this.clock.monotonicNowMs();
     if (
       this.runtimeAnchor &&
@@ -470,6 +535,13 @@ export class SimulatedExtensionClient {
       freshness,
       payload: cached.payload,
     };
+  }
+
+  private validateAi(
+    payload: BootstrapSnapshotPayloadV1,
+    context: ClientAiBindingContext,
+  ) {
+    return validateAndBindBootstrapAi(payload, context);
   }
 
   private anchorLiveTime(payloadServerTimeMs: number): number {

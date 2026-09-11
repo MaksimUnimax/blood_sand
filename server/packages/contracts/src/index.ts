@@ -502,6 +502,66 @@ const BoundedEntitlementMapV1Schema = z
 const BoundedFeatureMapV1Schema = z
   .record(StableMachineIdentifierV1Schema, z.boolean())
   .refine((value) => Object.keys(value).length <= 128, "too many features");
+
+/**
+ * P7.3 keeps the outer signed wire contract independent from the adapter
+ * registry package. The registry applies detailed adapter_profile_v1 schemas
+ * after envelope verification.
+ */
+const BootstrapAiJsonObjectV1Schema = z
+  .record(z.string().min(1).max(128), z.json())
+  .refine(
+    (value) => Object.keys(value).length <= 128,
+    "too many profile fields",
+  );
+const BootstrapDetectedAiV1Schema = z
+  .object({
+    family: StableMachineIdentifierV1Schema,
+    surface: StableMachineIdentifierV1Schema,
+    variant: StableMachineIdentifierV1Schema.nullable(),
+  })
+  .strict();
+const BootstrapAiUnavailableReasonV1Schema = z.enum([
+  "UNSUPPORTED_DETECTED_AI",
+  "AI_DISABLED",
+  "NO_PROFILE",
+  "PROFILE_INCOMPATIBLE",
+]);
+const BootstrapAiProfileV1Schema = z
+  .object({
+    profileKey: StableMachineIdentifierV1Schema,
+    revision: z.number().int().positive(),
+    scopeVariant: StableMachineIdentifierV1Schema.nullable(),
+    schemaVersion: z.literal("adapter_profile_v1"),
+    contentSha256: z.string().regex(/^[0-9a-f]{64}$/),
+    content: BootstrapAiJsonObjectV1Schema,
+    compatibility: BootstrapAiJsonObjectV1Schema,
+  })
+  .strict();
+export const BootstrapAiResolutionV1Schema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("UNCONFIGURED") }).strict(),
+  z
+    .object({
+      status: z.literal("UNAVAILABLE"),
+      detected: BootstrapDetectedAiV1Schema,
+      reason: BootstrapAiUnavailableReasonV1Schema,
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal("RESOLVED"),
+      detected: BootstrapDetectedAiV1Schema,
+      profile: BootstrapAiProfileV1Schema,
+    })
+    .strict(),
+]);
+export type BootstrapDetectedAiV1 = z.infer<typeof BootstrapDetectedAiV1Schema>;
+export type BootstrapAiUnavailableReasonV1 = z.infer<
+  typeof BootstrapAiUnavailableReasonV1Schema
+>;
+export type BootstrapAiResolutionV1 = z.infer<
+  typeof BootstrapAiResolutionV1Schema
+>;
 const SubscriptionV1Schema = z.discriminatedUnion("state", [
   z.object({ state: z.literal("NONE"), planRevision: z.null() }).strict(),
   z
@@ -555,7 +615,7 @@ export const BootstrapSnapshotPayloadV1Schema = z
       .strict(),
     entitlements: BoundedEntitlementMapV1Schema,
     features: BoundedFeatureMapV1Schema,
-    ai: z.object({ status: z.literal("UNCONFIGURED") }).strict(),
+    ai: BootstrapAiResolutionV1Schema,
   })
   .strict()
   .superRefine((value, context) => {
@@ -602,7 +662,10 @@ export const SignedBootstrapEnvelopeV1Schema = z
       .max(256)
       .regex(/^[A-Za-z0-9_-]+$/),
   })
-  .strict();
+  .strict()
+  .describe(
+    "Ed25519-signed bootstrap snapshot; the verified canonical payload carries the P7.3 AI union.",
+  );
 export type SignedBootstrapEnvelopeV1 = z.infer<
   typeof SignedBootstrapEnvelopeV1Schema
 >;

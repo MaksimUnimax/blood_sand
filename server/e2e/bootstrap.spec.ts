@@ -170,7 +170,11 @@ test("bootstrap returns a cryptographically verified strict snapshot", async ({
       devicePolicy: { status: "ACTIVE" },
       entitlements: { "device.max_active": 1 },
       features: { "feature-e2e": true },
-      ai: { status: "UNCONFIGURED" },
+      ai: {
+        status: "UNAVAILABLE",
+        detected: { family: "chat", surface: "page", variant: null },
+        reason: "UNSUPPORTED_DETECTED_AI",
+      },
     });
 });
 

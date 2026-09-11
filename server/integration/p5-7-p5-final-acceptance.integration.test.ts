@@ -1466,7 +1466,7 @@ describe.sequential(
       expect(source).not.toContain("/v1/billing/checkouts");
       expect(source).not.toContain("/v1/webhooks");
     });
-    it("STATIC-71 OpenAPI has the P6.2 route expansion and generated hash", async () => {
+    it("STATIC-71 OpenAPI current repository artifact has 67 operations and exact hash", async () => {
       const artifact = JSON.parse(await text("openapi/openapi.json")) as {
         paths: Record<string, Record<string, unknown>>;
       };
@@ -1488,7 +1488,7 @@ describe.sequential(
           )
           .digest("hex"),
       ).toBe(
-        "eec29f87be0b1309be5021fdd3c0e38ec90bea2add9978f2c4b439c7f79e88e4",
+        "52f43a45720929b45c4350442537320c298f84023b583735f42e3eb1378459f2",
       );
     });
     it("STATIC-72 OpenAPI has no checkout, webhook, or fake completion route", async () => {

@@ -19,6 +19,7 @@ import {
   createP6AdminPriceCommandAdapter,
   createP6AdminEntitlementCommandAdapter,
   createP6AdminCompatibilityCommandAdapter,
+  createBootstrapAiResolutionRepository,
 } from "@product/db";
 import { AuthService, deriveAuthKeys, loadAuthRootSecret } from "@product/auth";
 import { AdminAuthService, deriveAdminAuthKeys } from "@product/admin-auth";
@@ -35,7 +36,10 @@ import {
   loadAccessTokenSigningKey,
 } from "@product/extension-auth";
 import { DeviceManagementService } from "@product/device-management";
-import { BootstrapService } from "@product/bootstrap";
+import {
+  BootstrapAiResolutionService,
+  BootstrapService,
+} from "@product/bootstrap";
 import {
   CommercialAccessService,
   CommercialPortalService,
@@ -105,6 +109,9 @@ const app = createApiApp({
     createConfigSigningService(bootstrapSigningMaterial, p3Catalog),
     undefined,
     commercialAccess,
+    new BootstrapAiResolutionService(
+      createBootstrapAiResolutionRepository(database),
+    ),
   ),
   publicCommercialCatalogReader: createP4CommercialCatalogRepository(database),
   commercialPortalService: commercialPortal,

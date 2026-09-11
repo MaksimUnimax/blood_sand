@@ -8,8 +8,11 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@product/adapter-registry": "workspace:*",
+    "@product/compatibility": "workspace:*",
     "@product/contracts": "workspace:*",
     "@product/remote-config": "workspace:*",
+    "@product/shared": "workspace:*",
     "zod": "4.1.5"
   }
 }
