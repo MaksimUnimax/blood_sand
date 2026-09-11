@@ -1,2 +1,2 @@
 probe_id	sku	product_id	operation	request_id	http_status	status	note
-C02A1-ID1	1608153316	1088172016	seller_product_attributes	81b13348-1de1-47a7-8338-e5d1b270eae1	404	PROVIDER_404_OPEN	Canonical SKU/product identity probe failed; do not drop SKU; verify current product/list identity before closing query coverage.
+C02A1-ID1	1608153316	1088172016	seller_product_attributes	81b13348-1de1-47a7-8338-e5d1b270eae1	404	INVALID_MANUAL_TARGET_SUPERSEDED	SKU/product pair came from the invalid manual reconstruction. Fresh seller_product_list request 6d0021f5-1f68-48af-94c4-e09e85f2b12f returned the complete live total=76 set and did not contain this pair; it is not a current76 coverage obligation.
