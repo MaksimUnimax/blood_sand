@@ -1,0 +1,2 @@
+bridge_version	date_from	date_to	sort_by	sort_dir	chunk_id	requested_sku_count	returned_sku_count	returned_row_count	provider_total	page_count	request_id	status	missing_requested_skus
+0.1.19	2026-08-13	2026-09-10	BY_SEARCHES	DESCENDING	C07A3	1	0	0	0	0	8dcc0305-b71c-475d-8243-9ffc487a0328	RATE_LIMIT_429	2183921966
