@@ -1,0 +1,40 @@
+name: Ozon Alice current DOM Send-chain probe
+run-name: Ozon Alice current DOM Send-chain probe · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-drag-drop-transport-2026-09-11]
+    paths:
+      - tooling/llm-api-bridges/ozon-seller/validation/alice-auto-send-v1/alice_current_dom_send_chain_fixture.html
+      - .github/workflows/ozon-alice-current-dom-send-chain-probe-2026-09-11.yml
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  current-dom-send-chain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Prove production source has no drift
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='tooling/llm-api-bridges/ozon-seller'
+          test -z "$(git diff --name-only 39eadd2699320774ef53964ea8cf347057c1b813..HEAD -- "$ROOT/dist-step7-candidate")"
+      - name: Run pinned Chrome current-DOM Send chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          CZIP="$RUNNER_TEMP/chrome.zip"; CDIR="$RUNNER_TEMP/chrome"; mkdir -p "$CDIR"
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" --output "$CZIP"
+          unzip -q "$CZIP" -d "$CDIR"
+          CHROME="$CDIR/chrome-linux64/chrome"
+          "$CHROME" --version | grep -F "$VER"
+          FIXTURE="$GITHUB_WORKSPACE/tooling/llm-api-bridges/ozon-seller/validation/alice-auto-send-v1/alice_current_dom_send_chain_fixture.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --allow-file-access-from-files --virtual-time-budget=1500 --dump-dom "file://$FIXTURE" > "$RUNNER_TEMP/out.html"
+          grep -F '<title>ALICE_CURRENT_DOM_SEND_CHAIN_PASS</title>' "$RUNNER_TEMP/out.html"
+          grep -F 'data-ozon-test="PASS"' "$RUNNER_TEMP/out.html"
+          grep -F '>ALICE_CURRENT_DOM_SEND_CHAIN_PASS</pre>' "$RUNNER_TEMP/out.html"
+          echo 'ALICE_CURRENT_DOM_SEND_CHAIN_PROBE_PASS'
+          echo 'provider_calls=0'
