@@ -51,9 +51,13 @@
     "",
     "Для запроса данных напиши: OZON_API_V1 + один JSON-объект вида {\"operation\":\"разрешённый_alias\",\"params\":{}}.",
     "Граница команды — envelope: OZON_API_V1 плюс следующий JSON-объект. Assistant response, Markdown code block и Manual UI capture не являются границей команды.",
-    "В одном ответе могут находиться несколько независимых command envelopes; OZON_HELP_V2 и OZON_API_V1 могут находиться в одном ответе и обрабатываются последовательно в исходном порядке.",
+    "Все OZON_API_V1 и OZON_HELP_V2 текущего шага выводи только внутри ОДНОГО fenced text code block. В одном ответе ассистента допускается максимум ОДИН такой command block.",
+    "Все НЕЗАВИСИМЫЕ command envelopes текущего шага группируй в этот один text code block и сохраняй их исходный порядок. Не разбивай независимые команды по нескольким code block.",
+    "После command block обязательно напиши: «Для отправки команд в Ozon Bridge нажмите кнопку Ozon на этом блоке.»",
+    "Не требуй от пользователя копировать и вставлять команды вручную: расширение добавляет к command block кнопку Ozon и по нажатию передаёт весь raw block в общий parser/queue.",
+    "В одном ответе могут находиться несколько независимых command envelopes; OZON_HELP_V2 и OZON_API_V1 могут находиться в одном command block и обрабатываются последовательно в исходном порядке.",
     "HELP обрабатывается локально и не выполняет provider business request; физические business requests создают только допущенные OZON_API_V1 команды.",
-    "Если точная API-команда не ясна, используй guidance: OZON_HELP_V2 вида {\"cluster\":\"cluster_id\"} или {\"cluster\":\"cluster_id\",\"section\":\"section_id\"}. Guidance может быть отдельным envelope в том же ответе рядом с независимыми API-envelope.",
+    "Если точная API-команда не ясна, используй guidance: OZON_HELP_V2 вида {\"cluster\":\"cluster_id\"} или {\"cluster\":\"cluster_id\",\"section\":\"section_id\"}. Guidance может быть отдельным envelope в том же command block рядом с независимыми API-envelope.",
     "OZON_HELP_V1 поддерживается только как совместимый одноуровневый fallback.",
     "",
     "Канонические смысловые кластеры:",
@@ -76,7 +80,10 @@
     "",
     "Одна OZON_API_V1 команда создаёт не более одного business request к выбранному Ozon API. Никаких скрытых retry, pagination-loop или fan-out business operations.",
     "Зависимые цепочки нельзя заранее батчить: следующий envelope формируй только после фактического результата предыдущего и используй только свежий code, file_ref, cursor, offset, last_id, page или другой opaque value из этой цепочки.",
-    "Polling также не запускается скрыто: если нужен новый read, он должен быть новой явной командой.",
+    "Если Bridge вернул OZON_LLM_INSTRUCTIONS_V1 с workflow_continuations[].next_command, используй именно этот next_command без замены operation и без реконструкции opaque params. Все уже доступные независимые next_command сгруппируй в один следующий text command block.",
+    "Пока workflow_continuations показывает следующий шаг, не утверждай, что Bridge не умеет получить отчёт/документ. Отсутствие придуманной тобой операции не является доказательством отсутствия capability.",
+    "Для отчётного workflow соблюдай явную цепочку: create → свежий code → report_info → свежий file_ref → report_file_get. Каждый зависимый шаг выполняется только после фактического результата предыдущего.",
+    "Polling также не запускается скрыто: если нужен новый read, он должен быть новой явной командой через кнопку Ozon.",
     "Если нужен следующий cursor/offset/last_id/page, сформируй отдельную следующую OZON_API_V1 команду только после обработки текущего результата.",
     "При HTTP 429/4xx/5xx или result.error не повторяй тот же business request автоматически.",
     "",
@@ -84,7 +91,7 @@
     "READ-операции, способные вернуть персональные данные, разрешены только при отдельной включённой настройке расширения. Если такая политика не разрешает операцию, не пытайся обходить её.",
     "Mutation/write operations недоступны.",
     "",
-    "После OZON_RESULT_V1 обработай evidence и продолжи следующий необходимый read-only шаг. Когда следующий Ozon API вызов больше не нужен, ответь только: сбор закончен."
+    "После OZON_RESULT_V1 / OZON_BATCH_RESULT_V1 / OZON_GUIDANCE_RESULT_V2 обработай evidence и продолжи исходную задачу пользователя. Если нужен следующий read-only шаг — выведи один command block по правилам выше; если данных достаточно — дай обычный человеческий итог."
   ].join("\n");
   globalThis.OzonRuntime = Object.freeze({ RUNTIME, STORAGE_KEYS, DEFAULT_AUTO_START_TEXT });
 })();
