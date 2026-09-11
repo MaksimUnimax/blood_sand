@@ -1,0 +1,16 @@
+request_id	chunk_id	query_index	sku	query	unique_search_users	unique_view_users	view_conversion	position	order_count	gmv	currency
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	1	1720141903	подвеска в машину	7092	NULL	NULL	NULL	0	756	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	2	1720141903	подвеска в машину на зеркало	1560	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	3	1720141903	подвеска на зеркало в машину	1288	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	4	1720141903	водолей	855	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	5	1720141903	четки в автомобиль	395	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	6	1720141903	амулеты обереги и талисманы	391	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	7	1720141903	четки в машину	284	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	8	1720141903	оберег в машину	258	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	9	1720141903	в машину подвеска	238	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	10	1720141903	кулон зеркало оберег	164	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	11	1720141903	мусульманский оберег	118	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	12	1720141903	в машину на зеркало	112	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	13	1720141903	знаки зодиака	111	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	14	1720141903	подвеска на зеркало автомобиля	97	NULL	NULL	NULL	0	0	RUB
+f659124d-b1b5-449d-bff3-f9f5abbc3038	C05A3	15	1720141903	подвеска водолей	93	NULL	NULL	NULL	0	0	RUB
