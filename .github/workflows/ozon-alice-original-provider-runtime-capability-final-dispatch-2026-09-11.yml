@@ -1,0 +1,26 @@
+name: Ozon Alice provider-file runtime final dispatch
+run-name: Ozon Alice provider-file runtime final dispatch · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-provider-file-runtime-capability-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-alice-original-provider-runtime-capability-final-dispatch-2026-09-11.yml'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch-final:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Dispatch authoritative final workflow at current branch head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run ozon-alice-original-provider-runtime-capability-final-2026-09-11.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"
+          echo "DISPATCHED_REF=$GITHUB_REF_NAME"
+          echo "DISPATCH_SOURCE_HEAD=$GITHUB_SHA"
