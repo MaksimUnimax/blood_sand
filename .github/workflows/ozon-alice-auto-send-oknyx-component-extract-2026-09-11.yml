@@ -1,0 +1,27 @@
+name: Ozon Alice Oknyx component extract
+run-name: Ozon Alice Oknyx component extract · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-drag-drop-transport-2026-09-11]
+    paths:
+      - tooling/llm-api-bridges/ozon-seller/validation/alice-auto-send-v1/extract_public_oknyx_component.py
+      - .github/workflows/ozon-alice-auto-send-oknyx-component-extract-2026-09-11.yml
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Extract public first-party Oknyx component contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='tooling/llm-api-bridges/ozon-seller'
+          test -z "$(git diff --name-only 39eadd2699320774ef53964ea8cf347057c1b813..HEAD -- "$ROOT/dist-step7-candidate")"
+          python "$ROOT/validation/alice-auto-send-v1/extract_public_oknyx_component.py"
+          echo provider_calls=0
