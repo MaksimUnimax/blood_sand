@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>ALICE_DND_ADAPTER_PENDING</title><style>body{font-family:sans-serif}.Standalone-Input{display:block;width:700px}.AliceInput{display:block}.InputControls{display:block}.preview{display:block;width:320px;height:28px}</style></head>
+<body>
+<div id="fixture"></div>
+<pre id="result">PENDING</pre>
+<script src="../../dist-step7-candidate/shared/ai_delivery_capabilities.js"></script>
+<script src="../../dist-step7-candidate/shared/ai_adapters.js"></script>
+<script src="../../dist-step7-candidate/shared/web_file_attachment.js"></script>
+<script>
+(() => {
+  'use strict';
+  const fixture = document.getElementById('fixture');
+  const result = document.getElementById('result');
+  const filename = 'ozon-bridge-result-dnd-fixture.txt';
+  function assert(condition, message) { if (!condition) throw new Error(message); }
+  function render({plus=true, plusLabel='Добавить файл', preview=false}={}) {
+    fixture.innerHTML = `
+      <section class="Standalone-Input" id="alice-input-shell">
+        <div data-highlight-id="alice-input" class="AliceInput">
+          <textarea data-testid="inputbase-textarea"></textarea>
+          <div class="AliceInput-Controls"><div class="StandaloneRichInput-Controls">
+            <div class="InputControls InputControls_inited" data-testid="input-controls-root" aria-busy="false">
+              ${plus ? `<button aria-label="${plusLabel}" aria-haspopup="dialog" data-testid="InputControls-Plus-Button">+</button>` : ''}
+              <button data-testid="oknyx" aria-label="Отправить">send</button>
+            </div>
+          </div></div>
+        </div>
+        <div class="StandaloneInput-TopControls" id="attached-files">${preview ? `<div class="preview" data-file-name="${filename}" title="${filename}">${filename}</div>` : ''}</div>
+      </section>
+      <div class="Standalone-FileOverlay"></div>`;
+  }
+  try {
+    const alice = globalThis.OzonAIAdapters.ADAPTERS.alice;
+    const files = globalThis.OzonWebFileAttachment;
+    assert(alice && files, 'Alice adapter primitives missing');
+    assert(globalThis.OzonAIDeliveryCapabilities.profile('alice').attachment_strategy === 'drag_drop_v1', 'Alice capability must declare drag_drop_v1');
+
+    render();
+    assert(document.querySelectorAll('input[type="file"]').length === 0, 'fixture must not contain persistent file inputs');
+    let surface = alice.attachmentSurface();
+    assert(surface && surface.kind === 'drag_drop_v1', 'Alice drag-drop surface not resolved');
+    assert(surface.root === document.body, 'Alice drag target must be body');
+    assert(alice.attachmentReady([{filename}]) === false, 'attachment cannot be ready before exact preview');
+
+    let drops = 0;
+    let dropped = null;
+    const onDrop = (event) => {
+      drops += 1;
+      dropped = [...(event.dataTransfer?.files || [])];
+      if (dropped.length !== 1) return;
+      const preview = document.createElement('div');
+      preview.className = 'preview';
+      preview.setAttribute('data-file-name', dropped[0].name);
+      preview.setAttribute('title', dropped[0].name);
+      preview.textContent = dropped[0].name;
+      document.querySelector('#attached-files').appendChild(preview);
+    };
+    const guard = (event) => {
+      if (event.dataTransfer?.types?.includes('Files')) { event.preventDefault(); event.stopPropagation(); }
+    };
+    for (const type of ['dragenter','dragover','drop']) document.body.addEventListener(type, guard, true);
+    document.body.addEventListener('drop', onDrop, true);
+
+    const payload = new TextEncoder().encode('Полный синтетический результат Alice DND');
+    const file = files.createFile(payload, {filename, mime_type:'text/plain;charset=utf-8'});
+    const receipt = alice.attachFiles(surface, [file]);
+    assert(receipt && receipt.dispatched === 3 && receipt.file_count === 1, 'drag-drop receipt mismatch');
+    assert(drops === 1, 'Alice body must observe exactly one drop');
+    assert(dropped?.[0]?.name === filename && dropped[0].size === payload.byteLength, 'drop File integrity mismatch');
+    assert(document.querySelectorAll('input[type="file"]').length === 0, 'drag-drop transport must not synthesize persistent file input');
+    assert(alice.attachmentReady([{filename}]) === true, 'exact visible preview must become ready');
+
+    const preview = document.querySelector(`[data-file-name="${filename}"]`);
+    preview.setAttribute('data-status', 'uploading');
+    assert(alice.attachmentReady([{filename}]) === false, 'uploading preview must fail closed');
+    preview.removeAttribute('data-status');
+    preview.textContent = `${filename} Ошибка обработки`;
+    assert(alice.attachmentReady([{filename}]) === false, 'error preview must fail closed');
+    preview.textContent = filename;
+    preview.style.display = 'none';
+    assert(alice.attachmentReady([{filename}]) === false, 'hidden preview must fail closed');
+
+    render({plus:false});
+    assert(alice.attachmentSurface() === null, 'missing live plus capability marker must fail closed');
+    render({plus:true, plusLabel:'Не тот контроль'});
+    assert(alice.attachmentSurface() === null, 'wrong plus marker must fail closed');
+
+    render();
+    const unrelated = document.createElement('input'); unrelated.type='file'; unrelated.id='unrelated-global-input'; document.body.appendChild(unrelated);
+    surface = alice.attachmentSurface();
+    assert(surface?.kind === 'drag_drop_v1' && surface.root === document.body, 'unrelated global input must not affect Alice drag surface');
+    unrelated.remove();
+
+    result.textContent = 'ALICE_DND_ADAPTER_BROWSER_FIXTURE_PASS';
+    document.title = 'ALICE_DND_ADAPTER_PASS';
+    document.documentElement.setAttribute('data-ozon-test','PASS');
+  } catch (error) {
+    result.textContent = 'ALICE_DND_ADAPTER_BROWSER_FIXTURE_FAIL: ' + (error?.stack || error);
+    document.title = 'ALICE_DND_ADAPTER_FAIL';
+    document.documentElement.setAttribute('data-ozon-test','FAIL');
+  }
+})();
+</script>
+</body>
+</html>
