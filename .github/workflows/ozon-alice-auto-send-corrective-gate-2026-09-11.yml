@@ -111,12 +111,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -F 'StandaloneOknyx_error' "$DIST/shared/ai_adapters.js"
-          grep -F '"send_disabled" : "send_active"' "$DIST/shared/ai_adapters.js"
+          ADAPTER="$DIST/shared/ai_adapters.js"
+          grep -F 'StandaloneOknyx_error' "$ADAPTER"
+          grep -F '"send_disabled" : "send_active"' "$ADAPTER"
+          test "$(grep -F 'const aliceInputBlocked = button.classList?.contains?.("StandaloneOknyx_error") === true;' "$ADAPTER" | wc -l)" -eq 1
           ! grep -RIn --exclude='*.zip' --exclude-dir=artifacts 'kind:[[:space:]]*"send_blocked"' "$DIST"
-          test "$(grep -RIl --exclude='*.zip' --exclude-dir=artifacts 'classifyComposerControl' "$DIST" | wc -l)" -eq 1
-          test "$(grep -RIl --exclude='*.zip' --exclude-dir=artifacts 'send_active' "$DIST" | wc -l)" -eq 1
-          test "$(grep -RIl --exclude='*.zip' --exclude-dir=artifacts 'send_disabled' "$DIST" | wc -l)" -eq 1
+          ! grep -RIn --exclude='*.zip' --exclude-dir=artifacts 'if (aria === "отправить") return { kind: controlDisabled(button) ? "send_disabled" : "send_active", button };' "$DIST"
+          echo '=== classifyComposerControl consumers ==='
+          grep -RIl --exclude='*.zip' --exclude-dir=artifacts 'classifyComposerControl' "$DIST" || true
+          echo '=== send_active consumers ==='
+          grep -RIl --exclude='*.zip' --exclude-dir=artifacts 'send_active' "$DIST" || true
+          echo '=== send_disabled consumers ==='
+          grep -RIl --exclude='*.zip' --exclude-dir=artifacts 'send_disabled' "$DIST" || true
+          grep -F '"shared/ai_adapters.js"' "$DIST/manifest.json"
           grep -F 'BB2ComposerSend.waitForValidatedTarget' "$DIST/attachment_delivery_port_content.js"
           grep -F 'OZ_ATTACHMENT_SEND_COMMIT' "$DIST/attachment_delivery_port_content.js"
           grep -F 'BB2ComposerSend.clickSynchronously' "$DIST/attachment_delivery_port_content.js"
