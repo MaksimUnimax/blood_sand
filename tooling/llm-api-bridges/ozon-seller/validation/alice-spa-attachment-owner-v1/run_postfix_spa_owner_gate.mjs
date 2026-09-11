@@ -2,8 +2,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 
-const repoRoot = path.resolve(process.argv[2] || '.');
-const root = path.join(repoRoot, 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate');
+const inputRoot = path.resolve(process.argv[2] || '.');
+function resolveBridgeRoot(root) {
+  const directWorker = path.join(root, 'shared/file_delivery_port_worker.js');
+  if (fs.existsSync(directWorker)) return root;
+  const nested = path.join(root, 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate');
+  if (fs.existsSync(path.join(nested, 'shared/file_delivery_port_worker.js'))) return nested;
+  throw new Error(`cannot resolve Ozon Bridge dist root from ${root}`);
+}
+const root = resolveBridgeRoot(inputRoot);
 const workerPath = path.join(root, 'shared/file_delivery_port_worker.js');
 const identityPath = path.join(root, 'shared/conversation_identity.js');
 const contentPath = path.join(root, 'attachment_delivery_port_content.js');
