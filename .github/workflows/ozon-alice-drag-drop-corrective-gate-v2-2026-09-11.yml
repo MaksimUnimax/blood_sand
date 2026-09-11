@@ -1,0 +1,160 @@
+name: Ozon Alice drag-drop corrective gate v2
+run-name: Ozon Alice drag-drop corrective gate v2 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-drag-drop-transport-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-alice-drag-drop-corrective-gate-v2-2026-09-11.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-alice-drag-drop-corrective-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PATCH_BRANCH: repair/ozon-alice-drag-drop-transport-2026-09-11
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/alice-drag-drop-v1
+  MATERIALIZER: tooling/llm-api-bridges/ozon-seller/development/alice-drag-drop-transport-2026-09-11/materialize_alice_drag_drop_patch.py
+
+jobs:
+  linux-corrective-gate:
+    runs-on: ubuntu-24.04
+    outputs:
+      executable_sha: ${{ steps.commit.outputs.executable_sha }}
+      executable_tree: ${{ steps.commit.outputs.executable_tree }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
+      - name: Materialize exact authorized corrective diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$PATCH_BRANCH"
+          python "$MATERIALIZER"
+          git diff --check
+          cat > /tmp/expected.txt <<EOF
+          $DIST/attachment_delivery_port_content.js
+          $DIST/shared/ai_adapters.js
+          $DIST/shared/ai_delivery_capabilities.js
+          $DIST/shared/file_delivery_model_policy.js
+          $DIST/shared/file_delivery_port_worker.js
+          $DIST/shared/web_file_attachment.js
+          $ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate.mjs
+          $ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate_v2.mjs
+          EOF
+          sed -i 's/^          //' /tmp/expected.txt
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          git diff --name-only | sort > /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          ! git diff | grep -E '^\+.*(sellerApiKey|performanceClientSecret|Authorization|Client-Id|Api-Key|automatic_retry[^:]*:[[:space:]]*true|automatic_pagination[^:]*:[[:space:]]*true|automatic_fanout[^:]*:[[:space:]]*true)'
+          echo ALICE_DND_EXACT_CORRECTIVE_DIFF_SCOPE_PASS
+
+      - name: Syntax and corrective source gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          find "$DIST" -type f -name '*.js' -print0 | sort -z | xargs -0 -n1 node --check
+          node "$GATE/run_alice_drag_drop_runtime_gate.mjs" . "$DIST"
+          node "$ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate.mjs" "$DIST"
+          node "$ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate_v2.mjs" . "$DIST"
+          node "$ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs"
+          echo ALICE_DND_TARGETED_SOURCE_GATES_PASS
+
+      - name: Pinned Chrome browser transport and adapter fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          CZIP="$RUNNER_TEMP/chrome.zip"
+          CDIR="$RUNNER_TEMP/chrome"
+          mkdir -p "$CDIR"
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" --output "$CZIP"
+          unzip -q "$CZIP" -d "$CDIR"
+          CHROME="$CDIR/chrome-linux64/chrome"
+          "$CHROME" --version | grep -F "$VER"
+
+          PROBE="$GITHUB_WORKSPACE/$GATE/alice_drag_drop_transport_probe.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --allow-file-access-from-files --virtual-time-budget=1500 --dump-dom "file://$PROBE" > "$RUNNER_TEMP/probe.html"
+          grep -F '<title>ALICE_DND_PROBE_PASS</title>' "$RUNNER_TEMP/probe.html"
+          grep -F 'data-probe-result="PASS"' "$RUNNER_TEMP/probe.html"
+
+          FIXTURE="$GITHUB_WORKSPACE/$GATE/alice_drag_drop_adapter_fixture.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --allow-file-access-from-files --virtual-time-budget=2500 --dump-dom "file://$FIXTURE" > "$RUNNER_TEMP/adapter.html"
+          grep -F '<title>ALICE_DND_ADAPTER_PASS</title>' "$RUNNER_TEMP/adapter.html"
+          grep -F 'data-ozon-test="PASS"' "$RUNNER_TEMP/adapter.html"
+          ! grep -F 'ALICE_DND_ADAPTER_BROWSER_FIXTURE_FAIL' "$RUNNER_TEMP/adapter.html"
+
+          node "$ROOT/validation/regression/run_file_attachment_browser_primitive.mjs" "$CHROME"
+          xvfb-run -a node "$ROOT/validation/regression/run_file_delivery_extension_worker_smoke.mjs" "$CHROME" "$DIST"
+          echo ALICE_DND_BROWSER_AND_MV3_GATES_PASS
+
+      - name: Shared delivery lifecycle and command regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$ROOT/validation/regression/run_file_delivery_capture_accounting.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_port_worker_state_machine.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_mixed_batch_policy.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_wake_lifecycle.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_live_stop_repro.mjs"
+          node "$ROOT/validation/regression/run_direct_binary_provider_attachment_gate.mjs"
+          node "$ROOT/validation/mixed-help-api-v2/run_mixed_help_api_gate_v2.mjs" .
+          node "$ROOT/validation/mixed-help-api-v2/run_mixed_help_api_disabled_alias_gate.mjs" .
+          node "$ROOT/validation/command-envelope-contract-v1/run_command_envelope_contract_gate.mjs" .
+          echo ALICE_DND_SHARED_REGRESSION_POOL_PASS
+
+      - name: Post-patch closed-set and no-provider-call static audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -RIn --exclude='*.zip' --exclude-dir=artifacts 'function aliceFileInput' "$DIST"
+          grep -F 'attachment_strategy: "drag_drop_v1"' "$DIST/shared/ai_delivery_capabilities.js"
+          grep -F 'attachment_strategy: "file_input_v1"' "$DIST/shared/ai_delivery_capabilities.js"
+          grep -F '["file_input_v1", "drag_drop_v1"]' "$DIST/shared/file_delivery_model_policy.js"
+          grep -F '["file_input_v1", "drag_drop_v1"]' "$DIST/shared/file_delivery_port_worker.js"
+          grep -F '["file_input_v1", "drag_drop_v1"]' "$DIST/attachment_delivery_port_content.js"
+          ! grep -F 'surfaceBeforeCommit.input' "$DIST/attachment_delivery_port_content.js"
+          ! grep -F 'setInputFiles(surfaceBeforeCommit' "$DIST/attachment_delivery_port_content.js"
+          grep -F 'dispatchFileDrop' "$DIST/shared/web_file_attachment.js"
+          grep -F 'InputControls-Plus-Button' "$DIST/shared/ai_adapters.js"
+          echo 'provider_calls_during_corrective_gate=0'
+          echo 'automatic_retry_added=false'
+          echo 'automatic_pagination_added=false'
+          echo 'automatic_fanout_added=false'
+          echo ALICE_DND_CLOSED_SET_POSTPATCH_PASS
+
+      - name: Commit exact green executable correction
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+MaksimUnimax@users.noreply.github.com'
+          git add \
+            "$DIST/attachment_delivery_port_content.js" \
+            "$DIST/shared/ai_adapters.js" \
+            "$DIST/shared/ai_delivery_capabilities.js" \
+            "$DIST/shared/file_delivery_model_policy.js" \
+            "$DIST/shared/file_delivery_port_worker.js" \
+            "$DIST/shared/web_file_attachment.js" \
+            "$ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate.mjs" \
+            "$ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate_v2.mjs"
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
+          git commit -m 'repair(ozon): use Alice live drag-drop attachment transport'
+          git push origin "HEAD:$PATCH_BRANCH"
+          echo "executable_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "executable_tree=$(git rev-parse HEAD^{tree})" >> "$GITHUB_OUTPUT"
+          echo "ALICE_DND_EXECUTABLE_COMMIT=$(git rev-parse HEAD)"
+          echo "ALICE_DND_EXECUTABLE_TREE=$(git rev-parse HEAD^{tree})"
