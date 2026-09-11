@@ -1,0 +1,29 @@
+name: Ozon Alice auto-send pre-fix gate
+run-name: Ozon Alice auto-send pre-fix · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-drag-drop-transport-2026-09-11]
+    paths:
+      - tooling/llm-api-bridges/ozon-seller/validation/alice-auto-send-v1/run_alice_auto_send_prefx_gate.mjs
+      - .github/workflows/ozon-alice-auto-send-prefx-2026-09-11.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pre-fix-reproduction:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Prove attached-but-unsent Alice Send dependency fails before production patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='tooling/llm-api-bridges/ozon-seller'
+          test -z "$(git diff --name-only 39eadd2699320774ef53964ea8cf347057c1b813..HEAD -- "$ROOT/dist-step7-candidate")"
+          node "$ROOT/validation/alice-auto-send-v1/run_alice_auto_send_prefx_gate.mjs" "$ROOT/dist-step7-candidate"
