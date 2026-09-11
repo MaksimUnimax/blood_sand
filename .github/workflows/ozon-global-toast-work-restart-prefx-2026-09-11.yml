@@ -1,0 +1,50 @@
+name: Ozon global plaque + repeated Work Start pre-fix RED
+run-name: Ozon pre-fix RED · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-global-toast-work-restart-prefx-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-global-toast-work-restart-prefx-2026-09-11.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/global-toast-work-restart-v1
+  BASE_EXECUTABLE_SHA: 4fb9c1a859ce7245101e47ffa6e189026e386d8f
+
+jobs:
+  intentional-red:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Verify exact old production and reproduce both defects
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only "$BASE_EXECUTABLE_SHA"..HEAD -- "$DIST")"
+          find "$DIST" -type f -name '*.js' -print0 | sort -z | xargs -0 -n1 node --check
+          set +e
+          node "$GATE/run_prefx_work_restart_behavior.mjs" "$DIST" > "$RUNNER_TEMP/work.log" 2>&1
+          work_rc=$?
+          node "$GATE/run_prefx_global_idle_plaque.mjs" "$DIST" > "$RUNNER_TEMP/plaque.log" 2>&1
+          plaque_rc=$?
+          set -e
+          cat "$RUNNER_TEMP/work.log"
+          cat "$RUNNER_TEMP/plaque.log"
+          test "$work_rc" -eq 1
+          test "$plaque_rc" -eq 1
+          grep -F 'PREFX_WORK_RESTART_REPRODUCED=YES' "$RUNNER_TEMP/work.log"
+          grep -F 'FIRST_DIVERGENCE=EXISTING_CONVERSATION_BYPASSES_DURABLE_PENDING_START_BEFORE_SEND' "$RUNNER_TEMP/work.log"
+          grep -F 'PREFX_GLOBAL_IDLE_PLAQUE_REPRODUCED=YES' "$RUNNER_TEMP/plaque.log"
+          grep -F 'FIRST_DIVERGENCE=IDLE_RECOVERY_PROBE_ESCALATED_TO_USER_VISIBLE_DELIVERY_ERROR' "$RUNNER_TEMP/plaque.log"
+          echo 'BOTH_PRE_FIX_DEFECTS_REPRODUCED=YES'
+          echo 'provider_calls_during_patch_gate=0'
+          exit 1
