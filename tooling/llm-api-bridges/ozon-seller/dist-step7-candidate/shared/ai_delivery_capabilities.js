@@ -34,6 +34,7 @@
       plain_text_length_metric: "utf16_code_units",
       attachments_supported: true,
       accepted_extensions: Object.freeze(["txt", "pdf", "doc", "docx"]),
+      original_provider_file_type_policy: "runtime_target_verification",
       max_file_bytes: 100 * 1024 * 1024,
       max_files_per_turn: 1,
       attachment_strategy: "drag_drop_v1"
@@ -91,6 +92,48 @@
     return Object.freeze({ status: "supported", supported: true, reason: null, extension, byte_length: byteLength });
   }
 
+  function fileDispatchDecision(adapterId, descriptor = {}) {
+    const current = profile(adapterId);
+    const staticSupport = supportsFile(adapterId, descriptor);
+    const extension = String(descriptor.extension || extensionFromFilename(descriptor.filename)).toLowerCase();
+    const byteLength = Math.max(0, Number(descriptor.byte_length || descriptor.byteLength || 0));
+    const mimeType = String(descriptor.mime_type || descriptor.mimeType || "").split(";", 1)[0].trim().toLowerCase();
+    const sourceKind = String(descriptor.source_kind || "").trim().toLowerCase();
+    const artifactKey = String(descriptor.artifact_key || "").trim();
+    const sha256 = String(descriptor.sha256 || "").trim().toLowerCase();
+
+    if (!current) return Object.freeze({ ...staticSupport, dispatch_allowed: false, runtime_verification_required: false });
+    if (current.max_file_bytes !== null && current.max_file_bytes !== undefined && Number.isFinite(Number(current.max_file_bytes)) && byteLength > Number(current.max_file_bytes)) {
+      return Object.freeze({ status: "unsupported", supported: false, dispatch_allowed: false, runtime_verification_required: false, reason: "file_too_large_for_adapter", extension, byte_length: byteLength, mime_type: mimeType, source_kind: sourceKind });
+    }
+    if (staticSupport.supported === true) {
+      return Object.freeze({ status: "verified_supported", supported: true, dispatch_allowed: true, runtime_verification_required: false, reason: null, extension, byte_length: byteLength, mime_type: mimeType, source_kind: sourceKind });
+    }
+
+    const runtimePolicy = String(current.original_provider_file_type_policy || "");
+    const integrityBackedOriginalProviderFile = sourceKind === "original_provider_file"
+      && artifactKey.startsWith("provider:")
+      && /^[a-f0-9]{64}$/.test(sha256);
+    const typeIsConcrete = Boolean(extension && extension !== "bin" && mimeType && mimeType !== "application/octet-stream");
+    if (staticSupport.reason === "file_type_not_supported"
+      && runtimePolicy === "runtime_target_verification"
+      && integrityBackedOriginalProviderFile
+      && typeIsConcrete) {
+      return Object.freeze({
+        status: "runtime_verification_required",
+        supported: false,
+        dispatch_allowed: true,
+        runtime_verification_required: true,
+        reason: "target_runtime_verification_required",
+        extension,
+        byte_length: byteLength,
+        mime_type: mimeType,
+        source_kind: sourceKind
+      });
+    }
+    return Object.freeze({ ...staticSupport, dispatch_allowed: false, runtime_verification_required: false, mime_type: mimeType, source_kind: sourceKind });
+  }
+
   function generatedTextDecision(adapterId, text) {
     const current = profile(adapterId);
     const value = String(text || "");
@@ -122,6 +165,7 @@
     utf8ByteLength,
     extensionFromFilename,
     supportsFile,
+    fileDispatchDecision,
     generatedTextDecision
   });
 })();

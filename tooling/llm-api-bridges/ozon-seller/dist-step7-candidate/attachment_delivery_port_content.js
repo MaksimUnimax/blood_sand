@@ -237,8 +237,8 @@
     if (!profile || !attachmentStrategySupported(profile)) throw Object.assign(new Error("Target AI has no verified attachment strategy in this build."), { code: "TARGET_AI_ATTACHMENT_ADAPTER_UNAVAILABLE" });
     const files = [];
     for (const descriptor of descriptors) {
-      const support = OzonAIDeliveryCapabilities.supportsFile(active.id, descriptor);
-      if (support.supported !== true) throw Object.assign(new Error(`Target AI cannot attach ${descriptor.filename}.`), { code: "TARGET_AI_FILE_TYPE_UNSUPPORTED" });
+      const decision = OzonAIDeliveryCapabilities.fileDispatchDecision(active.id, descriptor);
+      if (decision.dispatch_allowed !== true) throw Object.assign(new Error(`Target AI attachment preflight rejected ${descriptor.filename}: ${decision.reason || "unsupported"}.`), { code: "TARGET_AI_FILE_TYPE_UNSUPPORTED" });
       const bytes = await fetchArtifactBytes(recovery, descriptor);
       if (bytes.byteLength !== Number(descriptor.byte_length || 0)) throw Object.assign(new Error("Complete attachment length mismatch."), { code: "ATTACHMENT_LENGTH_MISMATCH" });
       files.push(OzonWebFileAttachment.createFile(bytes, descriptor));

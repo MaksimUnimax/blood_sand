@@ -413,8 +413,8 @@
       throw Object.assign(new Error("Target AI does not allow this many files in one delivery turn."), { code: "TARGET_AI_FILE_COUNT_UNSUPPORTED" });
     }
     for (const record of records) {
-      const support = OzonAIDeliveryCapabilities.supportsFile(delivery.adapter_id, record);
-      if (support.supported !== true) throw Object.assign(new Error(`Target AI does not support original attachment type .${record.extension || "unknown"}.`), { code: "TARGET_AI_FILE_TYPE_UNSUPPORTED" });
+      const decision = OzonAIDeliveryCapabilities.fileDispatchDecision(delivery.adapter_id, record);
+      if (decision.dispatch_allowed !== true) throw Object.assign(new Error(`Target AI attachment preflight rejected .${record.extension || "unknown"}: ${decision.reason || "unsupported"}.`), { code: "TARGET_AI_FILE_TYPE_UNSUPPORTED" });
     }
   }
 
