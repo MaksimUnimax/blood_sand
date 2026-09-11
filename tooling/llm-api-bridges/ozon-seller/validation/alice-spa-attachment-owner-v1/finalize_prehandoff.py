@@ -12,8 +12,8 @@ p.add_argument('--workflow-run', required=True)
 a = p.parse_args()
 
 root = Path(__file__).resolve().parent
-repo_root = root.parents[4]
-artifacts = repo_root / 'artifacts'
+ozon_root = root.parents[1]
+artifacts = ozon_root / 'artifacts'
 artifacts.mkdir(parents=True, exist_ok=True)
 buildinfo = artifacts / f'{a.package_name[:-4]}_BUILDINFO.txt'
 
