@@ -376,7 +376,15 @@
       if (!(button instanceof HTMLElement) || !visibleFn(button)) return { kind: "unknown", button: null };
       const aria = String(button.getAttribute("aria-label") || "").trim().toLowerCase();
       if (aria === "алиса, стоп") return { kind: "stop", button };
-      if (aria === "отправить") return { kind: controlDisabled(button) ? "send_disabled" : "send_active", button };
+      if (aria === "отправить") {
+        // Alice's first-party StandaloneOknyx handler intentionally no-ops submit while
+        // inputStore.status === "blocked". The current Alice bundle exposes that state as
+        // the boolean BEM modifier StandaloneOknyx_error even when the native button is not
+        // disabled and aria-label is still "Отправить". Treat it as send-disabled so the
+        // delivery state machine waits before SEND_COMMIT instead of committing a no-op click.
+        const aliceInputBlocked = button.classList?.contains?.("StandaloneOknyx_error") === true;
+        return { kind: (controlDisabled(button) || aliceInputBlocked) ? "send_disabled" : "send_active", button };
+      }
       if (aria === "алиса, начни слушать") return { kind: "ready", button };
       return { kind: "unknown", button };
     },
