@@ -1,0 +1,16 @@
+request_id	chunk_id	query_index	sku	query	unique_search_users	unique_view_users	view_conversion	position	order_count	gmv	currency
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	1	1720155616	зеркало	7498	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	2	1720155616	подвеска в машину	7058	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	3	1720155616	подвеска в машину на зеркало	6256	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	4	1720155616	рыба	4286	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	5	1720155616	четки в машину	988	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	6	1720155616	подвеска на зеркало в машину	971	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	7	1720155616	оберег	618	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	8	1720155616	подвеска в автомобиль	250	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	9	1720155616	четки в автомобиль	178	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	10	1720155616	рыбы	161	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	11	1720155616	четки в машину на зеркало	115	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	12	1720155616	от сглаза	104	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	13	1720155616	подвеска на зеркало автомобиля	92	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	14	1720155616	оберег от сглаза и порчи	87	NULL	NULL	NULL	0	0	RUB
+4fe514e9-ef73-40c6-8747-a96d59efa5ff	C06A3	15	1720155616	ловец снов в машину	87	NULL	NULL	NULL	0	0	RUB
