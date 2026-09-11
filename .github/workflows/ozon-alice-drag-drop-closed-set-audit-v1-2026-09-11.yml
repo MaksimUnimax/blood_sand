@@ -1,0 +1,40 @@
+name: Ozon Alice drag-drop closed-set audit v1
+run-name: Ozon Alice drag-drop closed-set audit v1 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-drag-drop-transport-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-alice-drag-drop-closed-set-audit-v1-2026-09-11.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  closed-set-audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Enumerate attachment transport consumers and old closed-set assumptions
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='tooling/llm-api-bridges/ozon-seller'
+          OUT="$RUNNER_TEMP/alice-dnd-closed-set.txt"
+          {
+            echo '=== attachment_strategy ==='
+            grep -RIn --exclude='*.zip' --exclude='*.sha256.txt' --exclude-dir=artifacts 'attachment_strategy' "$ROOT" || true
+            echo '=== file_input_v1 ==='
+            grep -RIn --exclude='*.zip' --exclude='*.sha256.txt' --exclude-dir=artifacts 'file_input_v1' "$ROOT" || true
+            echo '=== attachmentSurface ==='
+            grep -RIn --exclude='*.zip' --exclude='*.sha256.txt' --exclude-dir=artifacts 'attachmentSurface' "$ROOT" || true
+            echo '=== setInputFiles ==='
+            grep -RIn --exclude='*.zip' --exclude='*.sha256.txt' --exclude-dir=artifacts 'setInputFiles' "$ROOT" || true
+            echo '=== attachmentReady ==='
+            grep -RIn --exclude='*.zip' --exclude='*.sha256.txt' --exclude-dir=artifacts 'attachmentReady' "$ROOT" || true
+            echo '=== TARGET_AI_ATTACHMENT_SURFACE_UNAVAILABLE ==='
+            grep -RIn --exclude='*.zip' --exclude='*.sha256.txt' --exclude-dir=artifacts 'TARGET_AI_ATTACHMENT_SURFACE_UNAVAILABLE' "$ROOT" || true
+          } | tee "$OUT"
+          test -s "$OUT"
+          echo 'ALICE_DND_CLOSED_SET_ENUMERATION_COMPLETE'
