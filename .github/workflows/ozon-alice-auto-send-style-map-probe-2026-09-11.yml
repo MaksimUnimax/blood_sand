@@ -1,0 +1,27 @@
+name: Ozon Alice Oknyx style-map probe
+run-name: Ozon Alice Oknyx style-map probe · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-auto-send-2026-09-11]
+    paths:
+      - tooling/llm-api-bridges/ozon-seller/validation/alice-auto-send-v1/extract_oknyx_style_map.py
+      - .github/workflows/ozon-alice-auto-send-style-map-probe-2026-09-11.yml
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Extract current first-party Oknyx style mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='tooling/llm-api-bridges/ozon-seller'
+          test -z "$(git diff --name-only 39eadd2699320774ef53964ea8cf347057c1b813..HEAD -- "$ROOT/dist-step7-candidate")"
+          python "$ROOT/validation/alice-auto-send-v1/extract_oknyx_style_map.py"
+          echo provider_calls=0
