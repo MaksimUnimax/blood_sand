@@ -2,6 +2,8 @@
 importScripts("shared/ai_delivery_capabilities.js");
 importScripts("shared/mixed_batch_discovery.js");
 importScripts("service_worker.js");
+/* LLM output contract is appended once per Bridge delivery and report/document continuations are explicit and fail-closed. */
+importScripts("shared/llm_output_report_workflow_patch.js");
 /* Successful direct binary provider responses are converted into durable opaque attachment refs without a second provider request. */
 importScripts("shared/direct_binary_file_delivery_patch.js");
 importScripts("shared/file_delivery_model_policy.js");
