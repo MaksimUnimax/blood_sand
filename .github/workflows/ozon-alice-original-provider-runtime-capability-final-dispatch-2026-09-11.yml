@@ -12,7 +12,7 @@ permissions:
   actions: write
   contents: read
 
-# Dispatch revision 2: cross-platform verifier newline closure.
+# Dispatch revision 3: finalizer diff-check/trailing-whitespace closure.
 jobs:
   dispatch-final:
     runs-on: ubuntu-24.04
