@@ -1,0 +1,19 @@
+{
+ "date":"2026-09-11",
+ "command":"python progress/verify_baseline.py wildberries-bridge-v0.1.2-extension.zip progress/evidence/baseline-001",
+ "exit_code":0,
+ "node_version":"v22.16.0",
+ "runner_sha256":"d223f28dfbd8d914b5bee38f26239f3b6c1c5f13f69383b64ae13e0faa9f536b",
+ "results_jsonl_sha256":"645486e37cd85d2839d8b0226c5d220294ba88db548760ab14519457801c53da",
+ "syntax_subprocess_count":14,
+ "syntax_stdout":"empty for all 14 subprocesses",
+ "syntax_stderr":"empty for all 14 subprocesses",
+ "registry_stdout":"{\"total\":188,\"enabled\":172,\"disabled\":16}\n",
+ "registry_stderr":"",
+ "scope":"Original WB baseline identity, CRC, manifest refs, JS syntax and registry counts; NOT migration acceptance or request parity",
+ "remote_checkpoint_before_this_evidence":"6d13c148e1d18a14f921c383787c4b9db60cd3ed",
+ "connector_cursor_readback":{"status":"PASS","blob_sha":"6314bdc0f14d1e3ffc508c67da8ba3eeca08e94d"},
+ "direct_raw_download":{"status":"FAILED_DNS_RESOLUTION","fallback":"GitHub connector remains working; do not claim all tools failed"},
+ "real_wb_requests":0,
+ "production_extension_changes_this_recovery_run":0
+}
