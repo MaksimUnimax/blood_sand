@@ -3,12 +3,12 @@ import path from 'node:path';
 import vm from 'node:vm';
 
 const repoRoot = path.resolve(process.argv[2] || '.');
-const bridgeRoot = path.join(repoRoot, 'tooling/llm-api-bridges/ozon-seller');
+const bridgeRoot = path.join(repoRoot, 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate');
 const workerPath = path.join(bridgeRoot, 'shared/file_delivery_port_worker.js');
 const identityPath = path.join(bridgeRoot, 'shared/conversation_identity.js');
 
 const CHAT_ID = '11111111-1111-4111-8111-111111111111';
-const CONVERSATION_KEY = `https://alice.yandex.ru::${CHAT_ID}`;
+const CONVERSATION_KEY = `https://alice.yandex.ru|${CHAT_ID}`;
 const storageState = {
   ozmb_manual_modes: { [CONVERSATION_KEY]: true },
   ozmb_manual_operations: {
@@ -96,7 +96,6 @@ onMessageListener({
   owner_kind: 'manual',
   owner_id: 'manual-op-spa-owner-prefx',
   live_owner: {
-    tab_id: 77,
     origin: 'https://alice.yandex.ru',
     conversation_id: CHAT_ID
   }
