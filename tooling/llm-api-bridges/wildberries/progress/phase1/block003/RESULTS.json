@@ -1,0 +1,14 @@
+{
+ "scope":"Actual worker message handler, contract, provider and transport; Chrome and provider network mocked. Not installed/live certification.",
+ "baseline_worker_sha256":"78350a7425c8806124133473014e83c4685bb41a9aa95da40e8794ef4c61be2c",
+ "candidate_worker_sha256":"1f1deef23989a80d61b8cd0a273ed0e1009d7f615fd84a181f69825162aa22ec",
+ "runner_sha256":"f65685abe8cc7cb8b8c1897f274c6a820c170ba55463fd2db097473dbd8789b3",
+ "before":{"checks":9,"passed":5,"failed":4},
+ "after":{"checks":9,"passed":9,"failed":0},
+ "fixed":"Error report creation dereferenced nonexistent preflight.meta.method. Error path now resolves reviewed WB metadata, preserves error/status, and persists delivery without retry.",
+ "actual_green_checks":["AUTORUN-ERROR-REPORT:network","AUTORUN-ERROR-REPORT:abort","AUTORUN-ERROR-REPORT:read-error","AUTORUN-SUCCESS-POSITIVE","AUTORUN-429-NO-RETRY","AUTORUN-ERROR-RECOVERY-NEW-WORKER","AUTORUN-UNKNOWN-OUTCOME-NEW-WORKER-ZERO-CALLS","AUTORUN-BLOCKED-ALIAS:subscriptions","AUTORUN-BLOCKED-ALIAS:unknown-alias"],
+ "red_log_sha256":"e3e8fab9932d9340916bfff711064ff7c94887877565768ae0e5b202c2baec5a",
+ "green_log_sha256":"cee43ed6599635ebdc82582351210b1b6612da8d3655521bb8c30dc3926397f9",
+ "real_wb_requests":0,
+ "full_phase1_complete":false
+}
