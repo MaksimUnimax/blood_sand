@@ -1,0 +1,43 @@
+name: Ozon Alice SPA attachment owner apply v2
+run-name: Ozon Alice SPA attachment owner apply v2 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-spa-attachment-owner-2026-09-11]
+    paths: ['.github/workflows/ozon-alice-spa-attachment-owner-apply-v2-2026-09-11.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Apply authorized repair
+        run: python tooling/llm-api-bridges/ozon-seller/validation/alice-spa-attachment-owner-v1/apply_authorized_patch.py
+      - name: Syntax and targeted regression
+        run: |
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/attachment_delivery_port_content.js
+          node --check tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/file_delivery_port_worker.js
+          node tooling/llm-api-bridges/ozon-seller/validation/alice-spa-attachment-owner-v1/run_prefx_spa_owner_gate.mjs .
+          git diff --check
+      - name: Existing attachment regressions
+        run: |
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_adapter_gate_policy.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_capture_accounting.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_port_worker_state_machine.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_mixed_batch_policy.mjs
+          node tooling/llm-api-bridges/ozon-seller/validation/regression/run_file_delivery_wake_lifecycle.mjs
+      - name: Commit executable repair
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/attachment_delivery_port_content.js tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/file_delivery_port_worker.js
+          git diff --cached --quiet && { echo 'No production diff'; exit 1; }
+          git commit -m 'fix(ozon): bind attachment ownership to live SPA conversation'
+          git push origin HEAD:repair/ozon-alice-spa-attachment-owner-2026-09-11
