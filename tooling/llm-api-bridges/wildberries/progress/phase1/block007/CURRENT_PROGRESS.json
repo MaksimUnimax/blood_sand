@@ -1,0 +1,22 @@
+{
+ "scope":"Feature coverage from saved blocks; not all-phase acceptance",
+ "artifact_sha256":"725c7e4bccb22d132b9e624f4acaa3a79a4f502635f3ff64da2b600124f32f8f",
+ "implemented_scoped_features":{
+  "A03":"Strict public command parser;197 contract checks plus protocol suite",
+  "A04":"Multiple explicit ordered envelopes;protocol/worker/browser integration",
+  "A05":"Common protocol admission for selected Manual block and full completed Autorun message",
+  "A06":"Mixed HELP/API source order;local HELP zero provider calls",
+  "A08":"No replay;preserve completed outcomes during batch recovery",
+  "A09":"Sequential durable explicit batch;no hidden fan-out",
+  "A10":"Exceptions/corrupt persisted records terminalize in exercised paths",
+  "A11":"Disabled/unknown local admission",
+  "A15":"Stale runtime/callback guards;full multi-AI generation migration pending",
+  "A16":"Old-source/reinit guards;Work Session Refresh not yet implemented",
+  "A20":"Registry-backed local catalog/describe HELP",
+  "A51":"Malformed mixed plan rejects before network"
+ },
+ "partial_features":["A02 ChatGPT-only binding;multi-AI pending","A07 batch accounting;future transformed request provenance pending","A19 existing188 registry reused;full metadata framework pending","A52 current diagnostic paths only","A53 scoped executable tests/materializers;remaining feature coverage pending"],
+ "all_other_features":"NOT_COMPLETED_OR_NOT_REVERIFIED_FOR_PARITY; not implied absent from original WB",
+ "full_TA_status":"PARTIAL; not67/67 acceptance",
+ "phases3_4_5":"NOT_STARTED"
+}

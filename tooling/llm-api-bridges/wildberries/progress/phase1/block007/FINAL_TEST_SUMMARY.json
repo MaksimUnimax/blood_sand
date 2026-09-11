@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-11",
+  "scope": "Blocks001-007 intermediate migration candidate; not all A01-A53 or all TA-001..067",
+  "artifact": "wildberries-bridge-v0.1.4-phase1-WIP.zip",
+  "artifact_bytes": 94498,
+  "artifact_sha256": "725c7e4bccb22d132b9e624f4acaa3a79a4f502635f3ff64da2b600124f32f8f",
+  "production_files": 19,
+  "suites": [
+    {
+      "suite": "final-auto-first5",
+      "checks": 5,
+      "passed": 5,
+      "failed": 0,
+      "scope": "Real Chromium; production content + parser, synthetic DOM and Chrome messaging. NOT operator-profile/live certification.",
+      "exit_code": 0,
+      "raw_results_sha256": "86cc950c463baae8ac6c9a6fb139ec27c661e9bdd97375a703e16a1d8c29343b"
+    },
+    {
+      "suite": "final-auto-last5",
+      "checks": 5,
+      "passed": 5,
+      "failed": 0,
+      "scope": "Real Chromium; production content + parser, synthetic DOM and Chrome messaging. NOT operator-profile/live certification.",
+      "exit_code": 0,
+      "raw_results_sha256": "7e54d7d6400b8ca41277d3fb63f790cbcb549e27889a1668d03b7aef138b868d"
+    },
+    {
+      "suite": "final-batch",
+      "checks": 38,
+      "passed": 38,
+      "failed": 0,
+      "scope": "Actual worker handlers + contract/provider/transport, mocked storage/network; no live WB",
+      "exit_code": 0,
+      "raw_results_sha256": "18cec72f22c194cf5e18621f5f84d91f3a763bf61eecab9804eb9590be9fa449"
+    },
+    {
+      "suite": "final-browser-legacy",
+      "checks": 7,
+      "passed": 7,
+      "failed": 0,
+      "scope": "real Chromium; about:blank synthetic DOM; mocked identity and extension messages, NOT installed live acceptance",
+      "exit_code": 0,
+      "raw_results_sha256": "3afea941185256797939a7983f313e19703569d8ca2e2497f503024563865452"
+    },
+    {
+      "suite": "final-browser-manual",
+      "checks": 5,
+      "passed": 5,
+      "failed": 0,
+      "scope": "Real Chromium; production content + parser, synthetic DOM and Chrome messaging. NOT operator-profile/live certification.",
+      "exit_code": 0,
+      "raw_results_sha256": "ed40c16239c14a0c64fc257cd3a4d96daee64f3a8675077cf20b68cff2a86dde"
+    },
+    {
+      "suite": "final-contract",
+      "checks": 197,
+      "passed": 197,
+      "failed": 0,
+      "scope": "contract ingress + mocked request serialization, NOT full Phase1 or live acceptance",
+      "exit_code": 0,
+      "raw_results_sha256": "199fdd95aa3d5090e50fef4e9bbc1cae9442881ee6f791d419410725ca39146e"
+    },
+    {
+      "suite": "final-package",
+      "checks": 40,
+      "passed": 40,
+      "failed": 0,
+      "scope": "Exact ZIP/manifest/source/syntax/reconstruction checks only",
+      "exit_code": 0,
+      "raw_results_sha256": "828fb6c51216bca6df1ab4a9bc0d6818bcc54bfa9df98231f8e8b2a54a21aa86"
+    },
+    {
+      "suite": "final-protocol",
+      "checks": 47,
+      "passed": 47,
+      "failed": 0,
+      "scope": "Shared protocol/guidance only; not worker/browser acceptance",
+      "exit_code": 0,
+      "raw_results_sha256": "0e8e528a723610c54483bc189624b80c7ef9de1977416e117d6d7f03cd429428"
+    },
+    {
+      "suite": "final-worker",
+      "checks": 9,
+      "passed": 9,
+      "failed": 0,
+      "scope": "actual worker message handler + contract/provider/transport; mocked Chrome and provider; not installed/live acceptance",
+      "exit_code": 0,
+      "raw_results_sha256": "cee43ed6599635ebdc82582351210b1b6612da8d3655521bb8c30dc3926397f9"
+    }
+  ],
+  "behavioral_passed": 313,
+  "behavioral_failed": 0,
+  "package_passed": 40,
+  "package_failed": 0,
+  "duplicate_partial_browser_assertions_not_counted": 8,
+  "partial_browser_attempt": "Outer tool timeout; raw evidence preserved. Same production bytes rerun in two bounded 5-case groups, each exit0 and no page errors.",
+  "byte_exact_reconstruction": "PASS",
+  "raw_evidence_snapshot": {
+    "files": 97,
+    "json_bytes": 95715,
+    "json_sha256": "db7d4042998ef4d7d2b03f697e8729239c83d59074dbb52f27077fb306aa97d8",
+    "parts": 3
+  },
+  "protected_wb_layer": "Registry/provider/credentials/transport byte-identical to WB0.1.3; 188 rows,172 enabled,16 blocked unchanged. This is not current API/account certification.",
+  "real_wb_requests": 0,
+  "phase1": "PARTIAL_IMPLEMENTATION",
+  "phase2": "PARTIAL_SCOPED_REGRESSION",
+  "full_phase1_pre_handoff": "BLOCKED_INCOMPLETE",
+  "live_certification": "PENDING_POST_INSTALL"
+}
