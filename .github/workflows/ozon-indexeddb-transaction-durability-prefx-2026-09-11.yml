@@ -1,0 +1,24 @@
+name: Ozon IndexedDB durability pre-fix
+run-name: Ozon IndexedDB durability pre-fix · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-indexeddb-transaction-durability-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-indexeddb-transaction-durability-prefx-2026-09-11.yml'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/indexeddb-transaction-durability-v1/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pre-fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Reproduce request-success transaction-abort durability defect
+        run: node tooling/llm-api-bridges/ozon-seller/validation/indexeddb-transaction-durability-v1/run_prefix_transaction_abort_gate.mjs .
