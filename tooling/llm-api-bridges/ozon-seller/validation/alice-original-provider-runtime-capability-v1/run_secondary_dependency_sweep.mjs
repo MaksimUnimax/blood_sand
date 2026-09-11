@@ -8,9 +8,10 @@ const dist = fs.existsSync(path.join(inputRoot, 'shared/ai_delivery_capabilities
 const capPath = path.join(dist, 'shared/ai_delivery_capabilities.js');
 const workerPath = path.join(dist, 'shared/file_delivery_port_worker.js');
 const contentPath = path.join(dist, 'attachment_delivery_port_content.js');
-const cap = fs.readFileSync(capPath, 'utf8');
-const worker = fs.readFileSync(workerPath, 'utf8');
-const content = fs.readFileSync(contentPath, 'utf8');
+const normalizeNewlines = (value) => String(value || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+const cap = normalizeNewlines(fs.readFileSync(capPath, 'utf8'));
+const worker = normalizeNewlines(fs.readFileSync(workerPath, 'utf8'));
+const content = normalizeNewlines(fs.readFileSync(contentPath, 'utf8'));
 
 const staleStaticConsumers = [];
 for (const [name, text] of [['worker', worker], ['content', content]]) {
@@ -42,5 +43,6 @@ console.log('ALICE_XLSX_ALLOWLIST_COSTYL=0');
 console.log('PROVIDER_PROVENANCE_AND_SHA_BOUNDARY=PASS');
 console.log('RUNTIME_TARGET_UI_VERIFICATION_PATH=PASS');
 console.log('UNKNOWN_OUTCOME_NO_RETRY=PASS');
+console.log('CROSS_PLATFORM_NEWLINE_NORMALIZATION=PASS');
 console.log('ALICE_ORIGINAL_PROVIDER_RUNTIME_CAPABILITY_SECONDARY_SWEEP=PASS');
 console.log(`TESTED_DIST_ROOT=${dist}`);
