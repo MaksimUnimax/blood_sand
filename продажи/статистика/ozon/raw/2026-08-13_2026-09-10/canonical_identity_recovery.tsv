@@ -1,0 +1,2 @@
+probe_id	sku	product_id	operation	request_id	http_status	status	note
+C02A1-ID1	1608153316	1088172016	seller_product_attributes	81b13348-1de1-47a7-8338-e5d1b270eae1	404	PROVIDER_404_OPEN	Canonical SKU/product identity probe failed; do not drop SKU; verify current product/list identity before closing query coverage.
