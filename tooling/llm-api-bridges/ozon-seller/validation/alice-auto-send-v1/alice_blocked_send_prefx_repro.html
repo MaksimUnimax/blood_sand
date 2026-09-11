@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"><title>ALICE_BLOCKED_SEND_PREFX_PENDING</title><style>
+.Standalone-Input,.StandaloneInput-Container,.StandaloneInput-Field,.AliceInput,.StandaloneRichInput-Controls{display:block}textarea{width:500px;height:90px}button{display:block;width:44px;height:44px}
+</style></head><body>
+<div class="Standalone-Input"><div class="StandaloneInput-Container"><div class="StandaloneInput-Field" data-testid="standalone-input-field"><div class="AliceInput" data-highlight-id="alice-input">
+<textarea data-testid="inputbase-textarea"></textarea>
+<div class="StandaloneRichInput-Controls" data-testid="input-controls-root">
+<button data-testid="InputControls-Plus-Button" aria-label="Добавить файл" aria-haspopup="dialog">+</button>
+<button id="oknyx-button" data-highlight-id="alice-oknyx-button" data-testid="oknyx" aria-label="Отправить" class="StandaloneOknyx StandaloneOknyx_error StandaloneOknyx_arrow" type="button">→</button>
+</div></div></div></div></div>
+<pre id="result">PENDING</pre>
+<script src="../../dist-step7-candidate/shared/ai_adapters.js"></script>
+<script src="../../dist-step7-candidate/shared/composer_send.js"></script>
+<script>
+(async()=>{
+ const out=document.querySelector('#result');
+ try{
+  const alice=OzonAIAdapters.ADAPTERS.alice;
+  const marker='OZON_BATCH_RESULT_V1\n{"delivery_id":"prefx-blocked-noop"}';
+  const ctx=alice.composerContext(); if(!ctx) throw new Error('context missing');
+  alice.setComposerText(ctx.composer,marker);
+  const control=alice.classifyComposerControl(ctx,OzonAIAdapters.visible);
+  if(control.kind!=='send_active') throw new Error('pre-fix authority changed: expected incorrect send_active, got '+control.kind);
+  const button=alice.sendButton(ctx); if(button?.id!=='oknyx-button') throw new Error('pre-fix blocked control not accepted');
+  const deps={resolveContext:()=>alice.composerContext(),resolveButton:(c)=>alice.sendButton(c),candidateButtons:(c)=>alice.sendButtonCandidates(c),visible:OzonAIAdapters.visible,readComposerText:(c)=>alice.readComposerText(c),fingerprint:(b)=>alice.sendButtonFingerprint(b),sleep:async()=>{}};
+  const validation=BB2ComposerSend.validateTarget({context:ctx,button},marker,deps);
+  if(!validation.ok) throw new Error('pre-fix validator unexpectedly rejected blocked control:'+validation.code);
+  let clickEvents=0, submittedTurns=0;
+  button.addEventListener('click',(event)=>{clickEvents++; event.preventDefault(); /* first-party Y.status===blocked => no submit */});
+  const receipt=BB2ComposerSend.clickSynchronously({target:{context:ctx,button,button_fingerprint:alice.sendButtonFingerprint(button)},expectedText:marker,deps});
+  if(receipt.click_event_observed!==true||clickEvents!==1) throw new Error('expected one observed no-op click');
+  if(submittedTurns!==0) throw new Error('fixture unexpectedly submitted');
+  document.title='ALICE_BLOCKED_SEND_PREFX_REPRO_PASS'; document.documentElement.dataset.ozonTest='PASS';
+  out.textContent='PREFX_BAD_STATE_PROVEN: blocked control accepted, click_event_observed=true, submitted_turns=0';
+ }catch(e){document.title='ALICE_BLOCKED_SEND_PREFX_REPRO_FAIL';out.textContent='FAIL:'+(e?.stack||e);}
+})();
+</script></body></html>
