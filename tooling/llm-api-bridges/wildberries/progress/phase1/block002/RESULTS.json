@@ -1,0 +1,19 @@
+{
+ "scope":"Real Chromium, about:blank synthetic ChatGPT-shaped DOM; identity and extension messaging mocked. NOT installed-extension or live-provider acceptance.",
+ "baseline_content_sha256":"227bf0b723e2c09d450ad041bc9e8ce161434934ff2a88654a6766f9c766bbb5",
+ "candidate_content_sha256":"6b4dbd419a06a9b504c0cec688f1f6afb349a1c36a6dd6480bdd857a0455c513",
+ "baseline":{"checks":7,"passed":2,"failed":5},
+ "candidate":{"checks":7,"passed":7,"failed":0,"page_errors":[]},
+ "rows":[
+  {"id":"TA-021-LATE-BOOTSTRAP","baseline":"FAIL","candidate":"PASS","baseline_content_ready_messages_before_after":[1,2],"candidate_before_after":[1,1]},
+  {"id":"TA-021-DOCUMENT-HANDLERS-REMOVED","baseline":"FAIL","candidate":"PASS","baseline_handler_counts":[2,2,2],"candidate_counts":[1,1,1]},
+  {"id":"TA-021-STALE-LISTENER","baseline":"FAIL","candidate":"PASS","candidate_draft":"KEEP_CURRENT_DRAFT"},
+  {"id":"TA-021-ONE-RUNTIME-LISTENER","baseline":"PASS","candidate":"PASS","candidate_count":1},
+  {"id":"LIVE-DOM-POSITIVE-MANUAL-DELIVERY","baseline":"PASS","candidate":"PASS","mock_execute_messages":1},
+  {"id":"TA-021-LATE-PROVIDER-RESULT","baseline":"FAIL","candidate":"PASS","candidate_composer":"","mock_execute_messages":1},
+  {"id":"TA-019-ROUTE-CHANGED","baseline":"FAIL","candidate":"PASS","candidate_composer":"","mock_execute_messages":1}
+ ],
+ "real_wb_requests":0,
+ "environment_incidents":"Navigating to external or localhost URLs was blocked by administrator before product assertions. No policy was changed or bypassed. Tests instead use about:blank with explicitly mocked identity; URL/installed/live acceptance remains unproven.",
+ "phase1_full_acceptance":"NOT_COMPLETE"
+}
