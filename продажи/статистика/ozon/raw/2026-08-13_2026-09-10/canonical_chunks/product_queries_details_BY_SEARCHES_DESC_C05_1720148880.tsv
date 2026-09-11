@@ -1,0 +1,16 @@
+request_id	chunk_id	query_index	sku	query	unique_search_users	unique_view_users	view_conversion	position	order_count	gmv	currency
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	1	1720148880	подвеска в машину	7092	NULL	NULL	NULL	0	617	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	2	1720148880	четки в машину	2492	NULL	NULL	NULL	0	0	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	3	1720148880	подвеска в машину на зеркало	2032	NULL	NULL	NULL	0	777	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	4	1720148880	оберег	1930	NULL	NULL	NULL	0	0	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	5	1720148880	овен	1305	NULL	NULL	NULL	0	0	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	6	1720148880	подвеска на зеркало в машину	1288	NULL	NULL	NULL	0	0	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	7	1720148880	оберег в машину	1149	NULL	NULL	NULL	0	0	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	8	1720148880	четки в автомобиль	573	NULL	NULL	NULL	0	0	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	9	1720148880	амулет	458	NULL	NULL	NULL	0	0	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	10	1720148880	четки в машину на зеркало	408	NULL	NULL	NULL	0	0	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	11	1720148880	знаки зодиака	371	NULL	NULL	NULL	0	0	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	12	1720148880	амулеты обереги и талисманы	324	NULL	NULL	NULL	0	0	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	13	1720148880	подвеска овен	225	NULL	NULL	NULL	0	0	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	14	1720148880	в машину подвеска	225	NULL	NULL	NULL	0	0	RUB
+55830c8d-b254-4be5-a24e-b3729fea0d5a	C05A6	15	1720148880	брелок в машину на зеркало	205	NULL	NULL	NULL	0	0	RUB
