@@ -1,0 +1,231 @@
+name: Ozon Alice drag-drop final pre-handoff v4
+run-name: Ozon Alice drag-drop final v4 · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-drag-drop-transport-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-alice-drag-drop-final-prehandoff-v4-2026-09-11.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ozon-alice-drag-drop-final-v4-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PATCH_BRANCH: repair/ozon-alice-drag-drop-transport-2026-09-11
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/alice-drag-drop-v1
+  ARTIFACT_NAME: OZON_BRIDGE_v0.1.19_ALICE_DRAG_DROP_CORRECTIVE_20260911.zip
+  EXACT_EXECUTABLE_SHA: 39eadd2699320774ef53964ea8cf347057c1b813
+  EXACT_EXECUTABLE_TREE: f8ec34c4754fb7369a5dbff618705b1d01c6e048
+  EXPECTED_PACKAGE_SHA: 069808508accbb6a091f3ae9358bfee43f27c42f60210899dd0fc621c12233dd
+  EXPECTED_PACKAGE_BYTES: '249906'
+
+jobs:
+  linux-authoritative:
+    runs-on: ubuntu-24.04
+    outputs:
+      package_sha: ${{ steps.identity.outputs.package_sha }}
+      package_bytes: ${{ steps.identity.outputs.package_bytes }}
+      production_files: ${{ steps.identity.outputs.production_files }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
+      - name: Exact-source Linux browser lifecycle package gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$PATCH_BRANCH"
+          test "$(git show -s --format=%T "$EXACT_EXECUTABLE_SHA")" = "$EXACT_EXECUTABLE_TREE"
+          git merge-base --is-ancestor "$EXACT_EXECUTABLE_SHA" HEAD
+          test -z "$(git diff --name-only "$EXACT_EXECUTABLE_SHA"..HEAD -- "$DIST")"
+          VER='152.0.7977.82'
+          CZIP="$RUNNER_TEMP/chrome.zip"
+          CDIR="$RUNNER_TEMP/chrome"
+          mkdir -p "$CDIR"
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" --output "$CZIP"
+          unzip -q "$CZIP" -d "$CDIR"
+          CHROME="$CDIR/chrome-linux64/chrome"
+          "$CHROME" --version | grep -F "$VER"
+          python "$GATE/run_exact_corrective_prehandoff.py" "$CHROME" --source-sha "$EXACT_EXECUTABLE_SHA" --source-tree "$EXACT_EXECUTABLE_TREE"
+          git diff --check
+          echo ALICE_DND_LINUX_AUTHORITATIVE_PASS
+
+      - name: Read and freeze exact package identity
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          p=Path('tooling/llm-api-bridges/ozon-seller/validation/alice-drag-drop-v1/gate_outputs_corrective.json')
+          d=json.loads(p.read_text())
+          print('package_sha='+d['package_sha'])
+          print('package_bytes='+str(d['package_bytes']))
+          print('production_files='+str(d['production_files']))
+          PY
+          cat "$GATE/gate_outputs_corrective.json"
+          test "$(python -c "import json; print(json.load(open('$GATE/gate_outputs_corrective.json'))['package_sha'])")" = "$EXPECTED_PACKAGE_SHA"
+          test "$(python -c "import json; print(json.load(open('$GATE/gate_outputs_corrective.json'))['package_bytes'])")" = "$EXPECTED_PACKAGE_BYTES"
+          echo ALICE_DND_PACKAGE_IDENTITY_UNCHANGED_FROM_V3_PASS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-alice-dnd-corrective-exact-package-v4
+          path: |
+            ${{ env.ROOT }}/artifacts/${{ env.ARTIFACT_NAME }}
+            ${{ env.ROOT }}/artifacts/${{ env.ARTIFACT_NAME }}.sha256.txt
+          retention-days: 30
+
+  windows-authoritative:
+    needs: linux-authoritative
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-alice-dnd-corrective-exact-package-v4
+          path: ${{ env.ROOT }}/artifacts
+
+      - name: Exact-source Windows regressions and canonical-Git-blob package parity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $tree=(git show -s --format=%T $env:EXACT_EXECUTABLE_SHA).Trim()
+          if ($tree -ne $env:EXACT_EXECUTABLE_TREE) { throw "source tree mismatch" }
+          git merge-base --is-ancestor $env:EXACT_EXECUTABLE_SHA HEAD
+          if ($LASTEXITCODE -ne 0) { throw "exact executable is not ancestor" }
+          $drift=(git diff --name-only "$env:EXACT_EXECUTABLE_SHA..HEAD" -- $env:DIST)
+          if ($drift) { throw "production drift after exact executable commit: $drift" }
+
+          Get-ChildItem $env:DIST -Recurse -Filter *.js | Sort-Object FullName | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { throw "syntax fail $($_.FullName)" } }
+          node "$env:GATE/run_alice_drag_drop_runtime_gate.mjs" . $env:DIST
+          node "$env:ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate.mjs" $env:DIST
+          node "$env:ROOT/validation/alice-large-result-v1/run_alice_large_result_delivery_gate_v2.mjs" . $env:DIST
+          node "$env:ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs"
+          node "$env:ROOT/validation/regression/run_file_delivery_capture_accounting.mjs"
+          node "$env:ROOT/validation/regression/run_file_delivery_port_worker_state_machine.mjs"
+          node "$env:ROOT/validation/regression/run_file_delivery_mixed_batch_policy.mjs"
+          node "$env:ROOT/validation/regression/run_file_delivery_wake_lifecycle.mjs"
+          node "$env:ROOT/validation/regression/run_direct_binary_provider_attachment_gate.mjs"
+          node "$env:ROOT/validation/mixed-help-api-v2/run_mixed_help_api_gate_v2.mjs" .
+          node "$env:ROOT/validation/mixed-help-api-v2/run_mixed_help_api_disabled_alias_gate.mjs" .
+          node "$env:ROOT/validation/command-envelope-contract-v1/run_command_envelope_contract_gate.mjs" .
+
+          $zip=Join-Path "$env:ROOT/artifacts" $env:ARTIFACT_NAME
+          if (-not (Test-Path $zip)) { throw "ZIP missing" }
+          $sha=(Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+          $bytes=(Get-Item $zip).Length
+          if ($sha -ne '${{ needs.linux-authoritative.outputs.package_sha }}') { throw "ZIP SHA mismatch $sha" }
+          if ($sha -ne $env:EXPECTED_PACKAGE_SHA) { throw "ZIP differs from v3 exact package $sha" }
+          if ($bytes -ne [int64]'${{ needs.linux-authoritative.outputs.package_bytes }}') { throw "ZIP byte length mismatch" }
+          if ($bytes -ne [int64]$env:EXPECTED_PACKAGE_BYTES) { throw "ZIP bytes differ from v3 exact package" }
+
+          $extract=Join-Path $env:RUNNER_TEMP 'alice-dnd-extract-v4'
+          if (Test-Path $extract) { Remove-Item -Recurse -Force $extract }
+          Expand-Archive -Path $zip -DestinationPath $extract
+          node "$env:GATE/run_alice_drag_drop_runtime_gate.mjs" . $extract
+
+          @'
+          import hashlib, os, pathlib, subprocess, sys
+          sha=os.environ['EXACT_EXECUTABLE_SHA']
+          prefix=os.environ['DIST'].replace('\\','/').rstrip('/')
+          ext=pathlib.Path(os.environ['EXTRACT'])
+          tracked=subprocess.check_output(['git','ls-tree','-r','--name-only',sha,'--',prefix], text=True).splitlines()
+          expected=sorted(p[len(prefix)+1:] for p in tracked if p.startswith(prefix+'/'))
+          actual=sorted(p.relative_to(ext).as_posix() for p in ext.rglob('*') if p.is_file())
+          if expected != actual:
+              print('EXPECTED_MEMBERS', expected)
+              print('ACTUAL_MEMBERS', actual)
+              raise SystemExit('ZIP member set differs from exact executable commit')
+          mismatches=[]
+          for rel in actual:
+              repo_path=f'{prefix}/{rel}'
+              canonical=subprocess.check_output(['git','show',f'{sha}:{repo_path}'])
+              extracted=(ext/rel).read_bytes()
+              ch=hashlib.sha256(canonical).hexdigest(); eh=hashlib.sha256(extracted).hexdigest()
+              if ch != eh:
+                  mismatches.append((rel,len(canonical),len(extracted),ch,eh))
+          if mismatches:
+              for item in mismatches: print('CANONICAL_BLOB_MISMATCH', item)
+              raise SystemExit('extracted ZIP bytes differ from exact Git blob bytes')
+          print('CANONICAL_MEMBER_COUNT='+str(len(actual)))
+          print('ALICE_DND_WINDOWS_CANONICAL_GIT_BLOB_BYTE_PARITY_PASS')
+          '@ | Set-Content -Encoding utf8 "$env:RUNNER_TEMP\canonical_parity.py"
+          $env:EXTRACT=$extract
+          python "$env:RUNNER_TEMP\canonical_parity.py"
+          if ($LASTEXITCODE -ne 0) { throw "canonical Git-blob parity failed" }
+          Write-Output 'ALICE_DND_WINDOWS_AUTHORITATIVE_PASS'
+
+  finalize-evidence:
+    needs: [linux-authoritative, windows-authoritative]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-alice-dnd-corrective-exact-package-v4
+          path: ${{ env.ROOT }}/artifacts
+
+      - name: Finalize dependency closure and GATE-01..35
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$EXACT_EXECUTABLE_SHA" HEAD
+          test -z "$(git diff --name-only "$EXACT_EXECUTABLE_SHA"..HEAD -- "$DIST")"
+          ZIP="$ROOT/artifacts/$ARTIFACT_NAME"
+          test "$(sha256sum "$ZIP" | awk '{print $1}')" = '${{ needs.linux-authoritative.outputs.package_sha }}'
+          test "$(sha256sum "$ZIP" | awk '{print $1}')" = "$EXPECTED_PACKAGE_SHA"
+          test "$(stat -c '%s' "$ZIP")" = '${{ needs.linux-authoritative.outputs.package_bytes }}'
+          test "$(stat -c '%s' "$ZIP")" = "$EXPECTED_PACKAGE_BYTES"
+          python "$GATE/finalize_corrective_prehandoff.py" \
+            --source-sha "$EXACT_EXECUTABLE_SHA" \
+            --source-tree "$EXACT_EXECUTABLE_TREE" \
+            --package-name "$ARTIFACT_NAME" \
+            --package-sha '${{ needs.linux-authoritative.outputs.package_sha }}' \
+            --package-bytes '${{ needs.linux-authoritative.outputs.package_bytes }}' \
+            --production-files '${{ needs.linux-authoritative.outputs.production_files }}' \
+            --workflow-run "$GITHUB_RUN_ID"
+          grep -F 'Unaccounted pre-handoff dependencies: **0**.' "$GATE/DEPENDENCY_CLOSURE_2026-09-11.md"
+          grep -F 'Stale active assumptions after secondary sweep: **0**.' "$GATE/DEPENDENCY_CLOSURE_2026-09-11.md"
+          grep -F 'Available-but-unverified pre-handoff dependencies: **0**.' "$GATE/DEPENDENCY_CLOSURE_2026-09-11.md"
+          grep -F '**DEPENDENCY VERDICT: PASS FOR PRE-HANDOFF SCOPE**' "$GATE/DEPENDENCY_CLOSURE_2026-09-11.md"
+          grep -F '**PRE-HANDOFF VERDICT: PASS**' "$GATE/FINAL_PREHANDOFF_2026-09-11.md"
+          grep -F '**LIVE CERTIFICATION: PENDING**' "$GATE/FINAL_PREHANDOFF_2026-09-11.md"
+          BUILDINFO="$ROOT/artifacts/${ARTIFACT_NAME%.zip}_BUILDINFO.txt"
+          grep -F 'windows_exact_source_package=PASS' "$BUILDINFO"
+          grep -F 'provider_calls_during_patch_gate=0' "$BUILDINFO"
+          git diff --check
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+MaksimUnimax@users.noreply.github.com'
+          git add \
+            "$ROOT/artifacts/$ARTIFACT_NAME" \
+            "$ROOT/artifacts/$ARTIFACT_NAME.sha256.txt" \
+            "$BUILDINFO" \
+            "$GATE/DEPENDENCY_CLOSURE_2026-09-11.md" \
+            "$GATE/FINAL_PREHANDOFF_2026-09-11.md"
+          git diff --cached --check
+          git commit -m 'docs(ozon): finalize Alice drag-drop corrective pre-handoff v4'
+          git push origin "HEAD:$PATCH_BRANCH"
+          echo "FINAL_DOCS_HEAD=$(git rev-parse HEAD)"
+          echo ALICE_DND_CORRECTIVE_PREHANDOFF_PASS
