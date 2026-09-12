@@ -1,0 +1,78 @@
+name: Ozon global plaque + repeated Work Start materialization gate
+run-name: Ozon targeted materialization · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-global-toast-work-restart-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-global-toast-work-restart-materialization-gate-2026-09-12.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/global-toast-work-restart-v1
+  BASE_EXECUTABLE_SHA: 4fb9c1a859ce7245101e47ffa6e189026e386d8f
+
+jobs:
+  targeted-materialization:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Decode, scope-audit, apply in ephemeral tree, and run behavioral gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          PATCH="$RUNNER_TEMP/production.patch"
+          IDLE="$RUNNER_TEMP/run_attachment_idle_behavior.mjs"
+          WORK="$RUNNER_TEMP/run_work_restart_extended.mjs"
+          base64 -d "$GATE/production.patch.gz.b64" | gzip -dc > "$PATCH"
+          base64 -d "$GATE/run_attachment_idle_behavior.mjs.gz.b64" | gzip -dc > "$IDLE"
+          base64 -d "$GATE/run_work_restart_extended.mjs.gz.b64" | gzip -dc > "$WORK"
+
+          echo '--- PATCH STAT ---'
+          git apply --stat "$PATCH"
+          echo '--- PATCH PATHS ---'
+          sed -n 's#^+++ b/##p' "$PATCH" | sort -u | tee "$RUNNER_TEMP/patch_paths.txt"
+          cat > "$RUNNER_TEMP/expected_paths.txt" <<'EOF'
+          tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/attachment_delivery_port_content.js
+          tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/service_worker.js
+          EOF
+          sort -o "$RUNNER_TEMP/expected_paths.txt" "$RUNNER_TEMP/expected_paths.txt"
+          diff -u "$RUNNER_TEMP/expected_paths.txt" "$RUNNER_TEMP/patch_paths.txt"
+          test "$(wc -l < "$RUNNER_TEMP/patch_paths.txt")" -eq 2
+
+          # The branch must still contain no production drift before this ephemeral apply.
+          test -z "$(git diff --name-only "$BASE_EXECUTABLE_SHA"..HEAD -- "$DIST")"
+          git apply --check "$PATCH"
+          git apply "$PATCH"
+          diff -u "$RUNNER_TEMP/expected_paths.txt" <(git diff --name-only -- "$DIST" | sort)
+          git diff --check
+          node --check "$DIST/attachment_delivery_port_content.js"
+          node --check "$DIST/service_worker.js"
+
+          # No provider/network semantics may be added by this corrective diff.
+          if git diff -U0 -- "$DIST" | grep -E '^\+.*(fetch\(|XMLHttpRequest|report_file_get|OZON_API_V1|retry|refetch|resend|pagination|fan.?out)' ; then
+            echo 'FORBIDDEN_PROVIDER_OR_HIDDEN_AUTOMATION_ADDITION=YES' >&2
+            exit 1
+          fi
+
+          echo '--- POSTFIX IDLE/ACTIVE ATTACHMENT BEHAVIOR ---'
+          node "$IDLE" "$DIST" | tee "$RUNNER_TEMP/idle.log"
+          echo '--- POSTFIX REPEATED WORK START BEHAVIOR ---'
+          node "$WORK" "$DIST" | tee "$RUNNER_TEMP/work.log"
+
+          # Re-run the old durable pending-start regression against the corrected tree.
+          OLD_WORK_GATE="$(find "$ROOT/validation" -type f -name 'WORK_SESSION_PENDING_START_REGRESSION_2026-08-21.mjs' -print -quit)"
+          test -n "$OLD_WORK_GATE"
+          node "$OLD_WORK_GATE" "$DIST"
+
+          echo 'TARGETED_MATERIALIZATION_SCOPE=PASS'
+          echo 'TARGETED_BEHAVIORAL_GATES=PASS'
+          echo 'provider_calls_during_patch_gate=0'
