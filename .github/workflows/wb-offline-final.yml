@@ -4,7 +4,9 @@ on:
     branches: [stage06-wb-terminal-2026-09-08]
     paths:
       - '.github/workflows/wb-offline-final.yml'
-      - 'tooling/llm-api-bridges/wildberries/progress/phase1/block010_final/**'
+      - 'tooling/llm-api-bridges/wildberries/progress/phase1/block010_final/reconstruct.py'
+      - 'tooling/llm-api-bridges/wildberries/progress/phase1/block010_final/restore_verified_012.py'
+      - 'tooling/llm-api-bridges/wildberries/progress/phase1/block010_final/repair_boundaries.py'
 permissions:
   contents: read
 concurrency:
