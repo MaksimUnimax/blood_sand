@@ -1,0 +1,29 @@
+{
+  "block_id": "B06",
+  "part": 1,
+  "rows": [
+    {"sku":"2186839757","query":"мыло стрелец","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186839757","query":"наклейки на автомобиль стрелец","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186839757","query":"наклейки на телефон знак зодиака стрелец","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186839757","query":"подвеска в машину авторская стрелец","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2186839757","query":"подвеска со заком зодиака стрелец","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2186839757","query":"стрелец подвеска на машину ключ","decision":"REJECT","reason_code":"AMBIGUOUS_DIFFERENT_FORMAT"},
+    {"sku":"2186843798","query":"брелок знак зодиака дева дева","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186843798","query":"все для знака зодиака дева","decision":"REJECT","reason_code":"TOO_BROAD_NO_CHANGE"},
+    {"sku":"2186843798","query":"горшок дева знак зодиака","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186843798","query":"дева знак зодиака рюмки","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186843798","query":"кольцо со знаком зодиака дева","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186843798","query":"кулон дева в машину","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2186843798","query":"оберег для знака дева","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2186843798","query":"подушка в машину дева","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186843798","query":"фигурка в машину дева","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186846833","query":"аквамарин подвеска водолей ровновесие","decision":"REJECT","reason_code":"MATERIAL_OR_VARIANT_MISMATCH"},
+    {"sku":"2186846833","query":"в машину фигурка водолей","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186846833","query":"водолей знак зодиака камееь","decision":"REJECT","reason_code":"MATERIAL_OR_PRODUCT_MISMATCH"},
+    {"sku":"2186846833","query":"водолей расческа","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186846833","query":"зонт водолей","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186846833","query":"костюм мужской водолей","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186846833","query":"нитка оберег на руку водолей","decision":"REJECT","reason_code":"USE_CASE_MISMATCH"},
+    {"sku":"2186848313","query":"ежедневник знак зодиака рыбы 2027","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"}
+  ]
+}
