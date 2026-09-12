@@ -27,7 +27,7 @@ jobs:
           test -n "$chrome"
           npm install --no-save puppeteer-core@24 >/dev/null 2>&1
           mkdir -p /tmp/ozon-swagger
-          cat >/tmp/fetch.mjs <<'JS'
+          cat >fetch-ozon-swagger.mjs <<'JS'
           import fs from 'fs';
           import puppeteer from 'puppeteer-core';
           const b=await puppeteer.launch({executablePath:process.env.CHROME_BIN,headless:false,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -51,7 +51,8 @@ jobs:
             }
           } finally { await b.close(); }
           JS
-          CHROME_BIN="$chrome" xvfb-run -a node /tmp/fetch.mjs
+          CHROME_BIN="$chrome" xvfb-run -a node ./fetch-ozon-swagger.mjs
+          rm -f fetch-ozon-swagger.mjs
           test "$(sha256sum /tmp/ozon-swagger/performance.json | awk '{print $1}')" = "ec1adb41f16d145b9a7487b7c7e0995a0db37f54cefed1933d6ad789dd5c2405"
           test "$(sha256sum /tmp/ozon-swagger/seller.json | awk '{print $1}')" = "87f9a1e99fa35c06e3d15567409d688849f6647420ceee5710c7b72769a41d33"
 
