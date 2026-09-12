@@ -11,9 +11,9 @@
 - `provider_query_index_renumbering = 0`
 - `relevance_rows_without_reason = 0`
 - `ready_candidates_without_source_query_evidence = 0`
-- `ready_candidates_without_card_evidence = 5`
+- `ready_candidates_without_card_evidence = 0`
 - `neighbor_queries_recommended_as_primary = 0`
 - `irrelevant_queries_recommended = 0`
 - `raw_files_modified = 0`
 
-`QA_STATUS = FAIL`
+`QA_STATUS = PASS`
