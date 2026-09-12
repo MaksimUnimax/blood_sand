@@ -3,6 +3,13 @@ import hashlib, json, os, shutil, subprocess, sys, zipfile
 p = Path('tooling/llm-api-bridges/wildberries/progress').resolve()
 f = p/'phase1'; b = f/'block009_full_runtime'
 out=Path('wb-build-output').resolve();out.mkdir(exist_ok=True)
+# Preserve byte-exact repository recipes before ANY potentially failing step.
+shutil.copytree(f,out/'saved-recipes',ignore=shutil.ignore_patterns('*.zip','__pycache__'))
+for name in ['EXECUTION_CURSOR.json','FEATURE_STATUS.json','TEST_STATUS.json','README.md']:
+ shutil.copy2(p/name,out/name)
+shutil.copy2(p.parent/'WB_OZON_PARITY_MIGRATION_AND_TEST_AUTHORITY_2026-09-11.md',out/'MIGRATION_AUTHORITY.md')
+shutil.copytree(p/'baselines',out/'saved-baselines',ignore=shutil.ignore_patterns('*.zip','__pycache__'))
+(out/'REPOSITORY_RECIPE_HASHES.json').write_text(json.dumps({x.relative_to(out).as_posix():hashlib.sha256(x.read_bytes()).hexdigest() for x in sorted(out.rglob('*')) if x.is_file()},indent=2))
 def run(name,args,cwd=None):
  r=subprocess.run(args,cwd=cwd,capture_output=True,text=True,timeout=90)
  (out/(name+'.stdout')).write_text(r.stdout);(out/(name+'.stderr')).write_text(r.stderr)
@@ -25,7 +32,6 @@ try:
  run('freeze020',[py,str(b/'freeze020/FINALIZE.py'),str(work)])
  for n in ('block006','block007'):
   run('restore-'+n,[py,str(f/n/'RESTORE_SNAPSHOT.py'),str(out/(n+'-restored'))])
- shutil.copytree(f,out/'saved-recipes',ignore=shutil.ignore_patterns('*.zip','__pycache__'))
  shutil.copy2(z12,out/z12.name)
  source=work/'src';hashes={x.relative_to(source).as_posix():hashlib.sha256(x.read_bytes()).hexdigest() for x in sorted(source.rglob('*')) if x.is_file()}
  (out/'SOURCE_HASHES.json').write_text(json.dumps(hashes,indent=2)+'\n')
