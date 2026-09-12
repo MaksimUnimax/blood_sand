@@ -1,0 +1,56 @@
+name: WB P4 P7 exact recovery snapshot
+on:
+  push:
+    branches: [stage06-wb-terminal-2026-09-08]
+    paths: [.github/workflows/wb-p4-p7-recovery-snapshot-20260912.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cac314e4e2deeec38dd1d4806dbb7fddf03ab9e6
+          path: wb_saved
+          persist-credentials: false
+          sparse-checkout: tooling/llm-api-bridges/wildberries
+      - uses: actions/checkout@v4
+        with:
+          ref: 97f1abc0ecaa04c6e24d0c32f8525b126b05d0e1
+          path: ozon_reference
+          persist-credentials: false
+          sparse-checkout: tooling/llm-api-bridges/ozon-seller
+      - name: Copy preserved bytes and text references (not build or acceptance)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, shutil
+          out = Path('recovery_snapshot')
+          out.mkdir()
+          wb = Path('wb_saved/tooling/llm-api-bridges/wildberries')
+          shutil.copytree(wb, out/'wildberries')
+          oz = Path('ozon_reference/tooling/llm-api-bridges/ozon-seller')
+          entries=[]
+          text_suffixes={'.md','.js','.mjs','.cjs','.py','.json','.jsonl','.html','.css','.yml','.yaml','.txt'}
+          for p in sorted(oz.rglob('*')):
+              if not p.is_file(): continue
+              rel=p.relative_to(oz)
+              entries.append({'path':str(rel),'bytes':p.stat().st_size})
+              if p.suffix.lower() in text_suffixes and p.stat().st_size <= 8000000:
+                  dest=out/'ozon-seller'/rel
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copyfile(p,dest)
+          (out/'OZON_ALL_PATHS.json').write_text(json.dumps(entries,indent=2),encoding='utf-8')
+          manifest={str(p.relative_to(out)):{'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(out.rglob('*')) if p.is_file()}
+          (out/'SNAPSHOT_MANIFEST.json').write_text(json.dumps({'wb_ref':'cac314e4e2deeec38dd1d4806dbb7fddf03ab9e6','ozon_ref':'97f1abc0ecaa04c6e24d0c32f8525b126b05d0e1','scope':'COPY_SAVED_BYTES_ONLY_NOT_REBUILT_NOT_TESTED_NO_MARKETPLACE_CALLS','files':manifest},indent=2),encoding='utf-8')
+          print(json.dumps({'files':len(manifest),'bytes':sum(x['bytes'] for x in manifest.values()),'marketplace_calls':0}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wb-p4-p7-recovery-snapshot
+          path: recovery_snapshot/
+          retention-days: 3
+          if-no-files-found: error
