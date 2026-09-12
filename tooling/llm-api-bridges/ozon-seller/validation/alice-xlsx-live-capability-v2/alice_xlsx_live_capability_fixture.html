@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>ALICE_XLSX_LIVE_CAPABILITY_PENDING</title></head>
+<body>
+<script src="../../dist-step7-candidate/shared/ai_delivery_capabilities.js"></script>
+<script src="../../dist-step7-candidate/shared/web_file_attachment.js"></script>
+<script>
+(async () => {
+  const fail = (message) => { document.title = 'FAIL: ' + message; document.body.dataset.ozonTest = 'FAIL'; throw new Error(message); };
+  const descriptor = {
+    artifact_key: 'provider:rpf_s_browser_xlsx_live',
+    source_kind: 'original_provider_file',
+    filename: 'REPORT_seller_placement.xlsx',
+    mime_type: 'application/octet-stream',
+    extension: 'xlsx',
+    byte_length: 4,
+    sha256: 'b'.repeat(64),
+    complete: true
+  };
+  const staticSupport = OzonAIDeliveryCapabilities.supportsFile('alice', descriptor);
+  if (staticSupport.supported !== true || staticSupport.status !== 'supported') fail('Alice XLSX must be statically supported after owner live proof');
+  const decision = OzonAIDeliveryCapabilities.fileDispatchDecision('alice', descriptor);
+  if (decision.dispatch_allowed !== true || decision.runtime_verification_required !== false || decision.status !== 'verified_supported') fail('Alice XLSX verified dispatch decision missing');
+
+  let dropCount = 0;
+  let dropped = null;
+  document.body.addEventListener('drop', (event) => {
+    dropCount += 1;
+    dropped = [...(event.dataTransfer?.files || [])].map((file) => ({ name: file.name, size: file.size, type: file.type }));
+  }, { once: true });
+
+  const bytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
+  const file = OzonWebFileAttachment.createFile(bytes, descriptor);
+  const result = OzonWebFileAttachment.dispatchFileDrop(document.body, [file]);
+  if (result.dispatched !== 3 || result.file_count !== 1) fail('drag-drop primitive dispatch mismatch');
+  if (dropCount !== 1 || !dropped || dropped.length !== 1) fail('exactly one drop with one file required');
+  if (dropped[0].name !== descriptor.filename || dropped[0].size !== 4 || dropped[0].type !== descriptor.mime_type) fail('DataTransfer did not preserve original provider XLSX descriptor');
+
+  document.body.dataset.ozonTest = 'PASS';
+  document.title = 'ALICE_XLSX_LIVE_CAPABILITY_BROWSER_PASS';
+  const pre = document.createElement('pre');
+  pre.id = 'result';
+  pre.textContent = 'PASS: live-verified XLSX capability -> exact File/DataTransfer/drop';
+  document.body.appendChild(pre);
+})().catch((error) => {
+  if (!String(document.title).startsWith('FAIL:')) document.title = 'FAIL: ' + String(error?.message || error);
+});
+</script>
+</body>
+</html>
