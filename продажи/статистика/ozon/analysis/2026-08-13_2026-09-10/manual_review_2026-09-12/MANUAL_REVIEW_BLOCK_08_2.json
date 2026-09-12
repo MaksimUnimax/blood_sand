@@ -1,0 +1,25 @@
+{
+  "block_id": "B08",
+  "part": 2,
+  "rows": [
+    {"sku":"2271285786","query":"трафарет стрелец знак зодиака для топора","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271292556","query":"my jewelry телец","decision":"REJECT","reason_code":"OTHER_BRAND_OR_ENTITY"},
+    {"sku":"2271292556","query":"брелок телец и","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271292556","query":"диффузор с палочками знак зодиака телец","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271292556","query":"золотой телец","decision":"REJECT","reason_code":"MATERIAL_OR_VARIANT_MISMATCH"},
+    {"sku":"2271292556","query":"кулон оеребро телец","decision":"REJECT","reason_code":"MATERIAL_AND_USE_CASE_MISMATCH"},
+    {"sku":"2271292556","query":"кулон череп телец","decision":"REJECT","reason_code":"DIFFERENT_MOTIF_OR_PRODUCT"},
+    {"sku":"2271292556","query":"подвеска в зеркало автомобиля телец","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2271292556","query":"сережки телец","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271292556","query":"телец знакзодиака на стену","decision":"REJECT","reason_code":"USE_CASE_MISMATCH"},
+    {"sku":"2271292556","query":"телец колье","decision":"REJECT","reason_code":"USE_CASE_OR_PRODUCT_TYPE_MISMATCH"},
+    {"sku":"2326866320","query":"адидас спаси и сохрани коыту","decision":"REJECT","reason_code":"OTHER_BRAND_OR_UNRELATED_ENTITY"},
+    {"sku":"2326866320","query":"брелокмтамара спаси и сохрани","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE_OR_ENTITY"},
+    {"sku":"2326866320","query":"брслет охранный спаси и сохрани","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2326866320","query":"иконка спаси сохрани","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2326866320","query":"спаси и сохрани в машину с подсветкой","decision":"REJECT","reason_code":"UNSUPPORTED_LIGHTING_VARIANT"},
+    {"sku":"2559817779","query":"герб рости наклека на машину","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2559817779","query":"флаги россии маленькие на присоске в машину","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE_OR_PLACEMENT"},
+    {"sku":"2559817779","query":"шифрондля школы герб россии","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"}
+  ]
+}
