@@ -1,4 +1,4 @@
-# Ozon manual semantic review — checkpoint after block 04
+# Ozon manual semantic review — checkpoint after block 05
 
 Date: 2026-09-12
 
@@ -6,24 +6,28 @@ Date: 2026-09-12
 
 - total READY candidates: 321
 - total READY SKUs: 63
-- completed blocks: B01–B04
-- reviewed candidates: 149 / 321
-- reviewed SKUs: 32 / 63
+- completed blocks: B01–B05
+- reviewed candidates: 187 / 321
+- reviewed SKUs: 40 / 63
 - cumulative APPROVE: 0
-- cumulative REJECT: 142
-- cumulative HOLD: 7
+- cumulative REJECT: 178
+- cumulative HOLD: 9
 
-## Block 04
+## Block 05
 
-- rows reviewed: 35
+- rows reviewed: 38
 - APPROVE: 0
-- REJECT: 35
-- HOLD: 0
+- REJECT: 36
+- HOLD: 2
 
-The block covered Scorpio, Taurus, a Christian prayer SKU and several Slavic-symbol SKUs. High-volume exact tokens such as `телец` and `подвеска телец` were rejected as new changes because the current title already literally covers them. Other rows were different product types, use cases, materials or unrelated entities.
+The block again showed that motif/sign names alone are not enough for approval. Product-type, use-case, material and variant modifiers were checked against the current card. Exact core intents already present in the card were treated as no-change rather than keyword additions.
+
+HOLD:
+- `амулет звезда руси` → SKU 2184234912 (`Звезда Лады`) — possible related/synonymous symbol, but identity is not safe to assert from current evidence;
+- `весы в машину лексус` → SKU 2186802133 — automotive context exists, but Lexus-specific intent may represent a different accessory.
 
 No card mutation and no provider call was performed.
 
 ## Continuation
 
-Next block: B05. Resume from `MANUAL_REVIEW_CURSOR_2026-09-12.json`.
+Next block: B06. Resume from `MANUAL_REVIEW_CURSOR_2026-09-12.json`.
