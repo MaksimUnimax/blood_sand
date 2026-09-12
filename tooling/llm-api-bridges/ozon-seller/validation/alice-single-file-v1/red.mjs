@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {runtime,seedFiles,file,info,help,provider} from './harness.mjs';
+const dist=process.argv[2];let red=0;
+const w=runtime(dist,{fetchImpl:provider});w.seed();seedFiles(w);
+const o=await w.batch([file(),info,help]);
+assert.equal(w.requests.length,2);assert.equal(o.batch.entries.length,3);
+assert.equal(o.delivery.provider_file_refs.length,1);
+assert(o.delivery.generated_text_document,'old unconditional synthetic TXT observed');
+const c=await w.port('OZ_ATTACHMENT_COMMIT',w.payload(o));
+assert.equal(c.code,'TARGET_AI_FILE_COUNT_UNSUPPORTED');red++;console.log('PREFX_RED mixed original + info + HELP produces 2 files then count failure');
+const v=runtime(dist,{fetchImpl:provider});v.seed();seedFiles(v);
+const two=await v.batch([file(),file('rpf_s_00000000-0000-4000-8000-000000000002')]);assert.equal(v.requests.length,2);assert.equal(two.delivery.provider_file_refs.length,2);red++;console.log('PREFX_RED second file downloads before target capacity gate');
+const fail=await w.port('OZ_ATTACHMENT_FAIL',{...w.payload(o),code:c.code,error:c.error});assert.equal(fail.failed,true);assert.equal(w.owner().batch,null);assert.equal(w.owner().delivery,null);red++;console.log('PREFX_RED pre-attach failure deletes result, model gets no response');
+assert.equal(red,3);console.log('EXPECTED_BEHAVIORAL_RED_CONFIRMED cases=3 provider_calls=0');

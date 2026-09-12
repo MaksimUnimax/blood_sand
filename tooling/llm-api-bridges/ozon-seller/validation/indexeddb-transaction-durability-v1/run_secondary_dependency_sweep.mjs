@@ -79,12 +79,12 @@ console.log(`COMMON_PUT_CALLS=${putCallCount}`);
 console.log(`COMMON_DELETE_CALLS=${deleteCallCount}`);
 console.log(`COMMON_GET_CALLS=${getCallCount}`);
 console.log(`COMMON_GETALL_CALLS=${allCallCount}`);
-assert.equal(putCallCount, 3, 'common artifact put consumer closed set changed');
+assert.equal(putCallCount, 4, 'common artifact put consumer closed set changed');
 assert.equal(deleteCallCount, 2, 'common artifact delete consumer closed set changed');
-assert.equal(getCallCount, 3, 'common artifact get consumer closed set changed');
+assert.equal(getCallCount, 5, 'common artifact get consumer closed set changed');
 assert.equal(allCallCount, 1, 'common artifact getAll consumer closed set changed');
 
-for (const producer of ['storeProviderArtifactForRef', 'materializeInlineProviderArtifact', 'ensureGeneratedArtifact']) {
+for (const producer of ['storeProviderArtifactForRef', 'materializeInlineProviderArtifact', 'ensureGeneratedArtifact', 'retainCompleteText']) {
   const start = worker.indexOf(`async function ${producer}`);
   assert.ok(start >= 0, `${producer}: producer missing`);
   const next = worker.indexOf('\n\n  async function ', start + 1);
@@ -117,7 +117,7 @@ assert.match(directRegression, /artifactWriter:\s*async \(artifact\) => \{ artif
 assert.match(directRegression, /default IndexedDB writer must not be used by deterministic gate/, 'existing direct-binary regression boundary changed; durability gate must remain separately necessary');
 
 console.log('INDEXEDDB_IMPLEMENTATIONS_CLOSED_SET=2/2');
-console.log('COMMON_ARTIFACT_STORAGE_CONSUMERS_CLOSED_SET=9/9');
+console.log('COMMON_ARTIFACT_STORAGE_CONSUMERS_CLOSED_SET=12/12');
 console.log('DIRECT_BINARY_DURABLE_BEFORE_REF_PASS');
 console.log('COMMON_ARTIFACT_STORE_DURABLE_BEFORE_RETURN_PASS');
 console.log('NO_HIDDEN_PROVIDER_REFETCH_ADDED_PASS');

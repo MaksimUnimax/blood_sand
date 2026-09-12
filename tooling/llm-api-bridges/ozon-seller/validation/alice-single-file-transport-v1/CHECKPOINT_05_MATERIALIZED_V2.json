@@ -1,0 +1,9 @@
+{
+  "executable": "9bf80af6fc5b1ce67a1a41baf5e0c599d5b874cc",
+  "tree": "ee7e58b2462a842d910dcdb75c0bcd8bac4af36d",
+  "prematerialization_run": "34698453048",
+  "base": "06ec1af2a1d90e2ff192e749b5bf90129963dd05",
+  "status": "MATERIALIZED_NOT_PRE_HANDOFF",
+  "next": "one exact ZIP Linux -> Chrome -> Windows -> final evidence",
+  "provider_calls": 0
+}
