@@ -1,5 +1,5 @@
 name: Ozon report attachment MIME UI materialization v2
-# regression baseline: accepted HELP_V2 executable for protected legacy delivery files
+# Combined repair authority: expiry + report attachment MIME + closable attachment status.
 on:
   push:
     branches: [repair/ozon-report-file-expiry-2026-09-12]
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Verify baseline and apply pinned candidate diff
+      - name: Verify baseline and apply pinned candidate plus test authorities
         shell: bash
         run: |
           set -euo pipefail
@@ -37,15 +37,17 @@ jobs:
           git apply "$GATE/production-v2.patch"
           test "$(sha256sum "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js" | awk '{print $1}')" = b1ef39d159b24cdec9e4b686b83eeffb7be5c404e4397f1d6cf109a53140ae71
           test "$(sha256sum "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js" | awk '{print $1}')" = c84fcf59af47ebbea27e49e0be9c90627fbd79dc01fa0d59b7e3f526dfcaa0b9
-          test "$(sha256sum "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" | awk '{print $1}')" = 3832ca2b6f6877c3067723fc037b206eb113f839f6aa3780b319a968c7e59122
           git apply --check "$GATE/stale-regression-authority-fix.patch"
           git apply "$GATE/stale-regression-authority-fix.patch"
           test "$(sha256sum "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" | awk '{print $1}')" = f265057db3ddcdd5f40a6d392515a7973c978d77e25e02bfc1404dec309fe6a8
+          git apply --check "$GATE/combined-production-scope-authority.patch"
+          git apply "$GATE/combined-production-scope-authority.patch"
           git diff --check
           grep -Fn 'storeProviderArtifactForRef(ref, captured, result?.parsed || null)' "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js"
           grep -Fn 'data-ozon-attachment-status-close' "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js"
-          grep -Fn 'portContent.indexOf("async function recoverCurrent(")' "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs"
-      - name: Run new gates twice and related regression sweep
+          grep -Fn "'shared/file_delivery_port_worker.js'" "$ROOT/validation/report-file-expiry-v1/run_suite.py"
+          grep -Fn "'attachment_delivery_port_content.js'" "$ROOT/validation/report-file-expiry-v1/run_suite.py"
+      - name: Run combined target gates and prove fifth-file scope rejection
         shell: bash
         run: |
           set -euo pipefail
@@ -67,9 +69,27 @@ jobs:
               node "$ROOT/validation/regression/$t"
           done
           python "$ROOT/validation/report-file-expiry-v1/run_suite.py" targeted
+          cp "$ROOT/dist-step7-candidate/popup.js" "$RUNNER_TEMP/popup.js.authorized"
+          printf '\n// INTENTIONAL FIFTH-FILE SCOPE NEGATIVE CONTROL\n' >> "$ROOT/dist-step7-candidate/popup.js"
+          set +e
+          python "$ROOT/validation/report-file-expiry-v1/run_suite.py" targeted > "$RUNNER_TEMP/fifth-file-scope.log" 2>&1
+          scope_rc=$?
+          set -e
+          cat "$RUNNER_TEMP/fifth-file-scope.log"
+          test "$scope_rc" -ne 0
+          grep -q 'AssertionError' "$RUNNER_TEMP/fifth-file-scope.log"
+          cp "$RUNNER_TEMP/popup.js.authorized" "$ROOT/dist-step7-candidate/popup.js"
+          cmp -s "$RUNNER_TEMP/popup.js.authorized" "$ROOT/dist-step7-candidate/popup.js"
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          root=Path('tooling/llm-api-bridges/ozon-seller/dist-step7-candidate')
+          print('FIFTH_FILE_SCOPE_NEGATIVE_CONTROL_PASS')
+          print('popup_sha256',hashlib.sha256((root/'popup.js').read_bytes()).hexdigest())
+          PY
           echo ATTACHMENT_MIME_UI_TARGETED_GREEN_PASS
           echo PROVIDER_CALLS_DURING_GATE=0
-      - name: Commit exact tested candidate
+      - name: Commit exact tested executable and test authorities
         shell: bash
         run: |
           set -euo pipefail
@@ -78,8 +98,10 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js" \
                   "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js" \
-                  "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs"
+                  "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" \
+                  "$ROOT/validation/report-file-expiry-v1/run_suite.py"
           git diff --cached --check
-          test "$(git diff --cached --name-only | wc -l)" -eq 3
-          git commit -m 'fix(ozon): preserve parsed report type and make attachment status closable'
+          test "$(git diff --cached --name-only | wc -l)" -eq 4
+          test -z "$(git diff --name-only -- "$ROOT/dist-step7-candidate" | grep -v -E '^(tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/(shared/file_delivery_port_worker.js|attachment_delivery_port_content.js))$' || true)"
+          git commit -m 'fix(ozon): preserve report XLSX type and make attachment status closable'
           git push origin HEAD:refs/heads/repair/ozon-report-file-expiry-2026-09-12
