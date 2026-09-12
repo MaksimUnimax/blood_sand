@@ -1,6 +1,6 @@
 # ADR-0034: P7 admin AI API and RBAC
 
-Status: Implemented; remotely accepted
+Status: Implemented; post-acceptance correction locally accepted; correction remote acceptance pending
 
 Date: 2026-09-11
 
@@ -85,10 +85,10 @@ POST /v1/admin/ai/profiles/{profile_id}/revisions/{revision}/retire
 POST /v1/admin/ai/assignments
 POST /v1/admin/ai/assignments/{assignment_id}/direct
 POST /v1/admin/ai/assignments/{assignment_id}/rollout
-POST /v1/admin/ai/assignments/{assignment_id}/rollout/percentage
-POST /v1/admin/ai/assignments/{assignment_id}/rollout/pause
-POST /v1/admin/ai/assignments/{assignment_id}/rollout/resume
-POST /v1/admin/ai/assignments/{assignment_id}/rollout/complete
+POST /v1/admin/ai/assignments/{assignment_id}/percentage
+POST /v1/admin/ai/assignments/{assignment_id}/pause
+POST /v1/admin/ai/assignments/{assignment_id}/resume
+POST /v1/admin/ai/assignments/{assignment_id}/complete
 POST /v1/admin/ai/assignments/{assignment_id}/rollback
 ```
 

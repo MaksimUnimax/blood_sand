@@ -164,7 +164,6 @@ function isoEntity<T extends { createdAt: Date; updatedAt: Date }>(value: T) {
 }
 function revision(value: unknown) {
   const row = value as {
-    id: string;
     revision: number;
     mode: string;
     baselineProfileRevisionId: string;
@@ -173,7 +172,6 @@ function revision(value: unknown) {
     createdAt: Date;
   };
   return {
-    id: row.id,
     revision: row.revision,
     mode: row.mode,
     baselineProfileRevisionId: row.baselineProfileRevisionId,

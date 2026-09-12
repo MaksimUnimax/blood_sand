@@ -14,6 +14,18 @@ const principalId = "00000000-0000-4000-8000-000000000001";
 const userId = "00000000-0000-4000-8000-000000000002";
 const sessionId = "00000000-0000-4000-8000-000000000003";
 const token = "admin-session-token";
+const assignmentId = "00000000-0000-4000-8000-000000000004";
+const baselineProfileRevisionId = "00000000-0000-4000-8000-000000000005";
+const candidateProfileRevisionId = "00000000-0000-4000-8000-000000000006";
+const mutationResult = {
+  id: "00000000-0000-4000-8000-000000000007",
+  revision: 2,
+  mode: "ROLLOUT" as const,
+  baselineProfileRevisionId,
+  candidateProfileRevisionId,
+  percentageBps: 5000,
+  createdAt: new Date("2030-01-01T00:01:00Z"),
+};
 const config: AppConfig = {
   environment: "test",
   databaseUrl: "postgres://test:test@localhost/test",
@@ -44,9 +56,19 @@ function fixture(role: AdminRole = "ADMIN_SUPPORT") {
     () => new Date("2030-01-01T00:00:00Z"),
   );
   const listAdapters = vi.fn(async () => ({ items: [], nextCursor: null }));
+  const mutations = {
+    direct: vi.fn(async () => mutationResult),
+    rollout: vi.fn(async () => mutationResult),
+    percentage: vi.fn(async () => mutationResult),
+    pause: vi.fn(async () => mutationResult),
+    resume: vi.fn(async () => mutationResult),
+    complete: vi.fn(async () => mutationResult),
+    rollback: vi.fn(async () => mutationResult),
+  };
   const service = {
     listAdapters,
     createAdapter: vi.fn(),
+    ...mutations,
   } as unknown as AdminAiService;
   const app = createApiApp({
     config,
@@ -59,12 +81,81 @@ function fixture(role: AdminRole = "ADMIN_SUPPORT") {
     app,
     service,
     listAdapters,
+    mutations,
     headers: {
       cookie: `pcp_admin_session=${token}; pcp_admin_csrf=${csrf}`,
       "x-csrf-token": csrf,
     },
   };
 }
+
+const mutationResponseFields = [
+  "baselineProfileRevisionId",
+  "candidateProfileRevisionId",
+  "createdAt",
+  "mode",
+  "percentageBps",
+  "revision",
+];
+type AssignmentMutationOperation =
+  | "direct"
+  | "rollout"
+  | "percentage"
+  | "pause"
+  | "resume"
+  | "complete"
+  | "rollback";
+const assignmentMutationCases: Array<{
+  operation: AssignmentMutationOperation;
+  body: Record<string, string | number | null>;
+}> = [
+  {
+    operation: "direct",
+    body: {
+      baselineProfileRevisionId,
+      expectedLatestAssignmentRevision: null,
+      reason: "regression",
+    },
+  },
+  {
+    operation: "rollout",
+    body: {
+      baselineProfileRevisionId,
+      candidateProfileRevisionId,
+      percentageBps: 5000,
+      expectedLatestAssignmentRevision: null,
+      reason: "regression",
+    },
+  },
+  {
+    operation: "percentage",
+    body: {
+      percentageBps: 5000,
+      expectedLatestAssignmentRevision: 1,
+      reason: "regression",
+    },
+  },
+  {
+    operation: "pause",
+    body: { expectedLatestAssignmentRevision: 1, reason: "regression" },
+  },
+  {
+    operation: "resume",
+    body: { expectedLatestAssignmentRevision: 1, reason: "regression" },
+  },
+  {
+    operation: "complete",
+    body: { expectedLatestAssignmentRevision: 1, reason: "regression" },
+  },
+  {
+    operation: "rollback",
+    body: {
+      profileRevisionId: baselineProfileRevisionId,
+      expectedLatestAssignmentRevision: 1,
+      reason: "regression",
+    },
+  },
+];
 
 describe("P7.4 admin AI route security", () => {
   it("allows support safe registry reads", async () => {
@@ -115,4 +206,35 @@ describe("P7.4 admin AI route security", () => {
     expect(response.json().error.code).toBe("ADMIN_CSRF_INVALID");
     await f.app.close();
   });
+
+  it.each(assignmentMutationCases)(
+    "serializes the accepted mutation response for $operation without internal fields",
+    async ({ operation, body }) => {
+      const f = fixture("ADMIN_OWNER");
+      const response = await f.app.inject({
+        method: "POST",
+        url: `/v1/admin/ai/assignments/${assignmentId}/${operation}`,
+        headers: f.headers,
+        payload: body,
+      });
+
+      expect(response.statusCode).toBe(200);
+      const responseBody = response.json();
+      expect(Object.keys(responseBody).sort()).toEqual(mutationResponseFields);
+      expect(responseBody).toEqual({
+        revision: 2,
+        mode: "ROLLOUT",
+        baselineProfileRevisionId,
+        candidateProfileRevisionId,
+        percentageBps: 5000,
+        createdAt: "2030-01-01T00:01:00.000Z",
+      });
+      expect(responseBody).not.toHaveProperty("id");
+      expect(responseBody).not.toHaveProperty("assignmentId");
+      expect(responseBody).not.toHaveProperty("cohortSeed");
+      expect(responseBody).not.toHaveProperty("reason");
+      expect(f.mutations[operation]).toHaveBeenCalledOnce();
+      await f.app.close();
+    },
+  );
 });

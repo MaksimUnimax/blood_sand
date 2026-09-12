@@ -466,8 +466,21 @@ Profile revision routes delegate to P7.2 and support only draft creation,
 fingerprint-guarded draft replacement, candidate, publish, and retire. The
 server owns the content fingerprint, timestamps, actor, and accepted
 `adapter_profile_v1` schema. Assignment routes delegate to P7.2 for immutable
-scopes and direct/rollout/pause/resume/percentage/complete/rollback commands.
-The server generates the cohort seed; clients cannot submit or receive it.
+scopes and these stable command paths:
+
+```text
+POST /v1/admin/ai/assignments/{assignment_id}/direct
+POST /v1/admin/ai/assignments/{assignment_id}/rollout
+POST /v1/admin/ai/assignments/{assignment_id}/percentage
+POST /v1/admin/ai/assignments/{assignment_id}/pause
+POST /v1/admin/ai/assignments/{assignment_id}/resume
+POST /v1/admin/ai/assignments/{assignment_id}/complete
+POST /v1/admin/ai/assignments/{assignment_id}/rollback
+```
+
+`/rollout` is the start operation. Percentage, pause, resume, and complete are
+top-level sibling operations; the `/rollout/{operation}` forms are not part of
+the API. The server generates the cohort seed; clients cannot submit or receive it.
 Existing assignment commands require the expected latest assignment revision.
 
 Lists are cursor/limit bounded to a maximum of 100. Safe reads omit cohort

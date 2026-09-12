@@ -62,6 +62,84 @@ ADMIN_BILLING_READONLY none
 OpenAPI SHA256 is
 `9563c57d622a7eee2197ea9a0508852f7c7a0aef87bbb9dddf5570cc83b50cc7`.
 
+## POST-ACCEPTANCE CONTRACT CORRECTION — FINAL LOCAL ACCEPTANCE — 2026-09-12
+
+This final local gate used the exact independently reviewed correction
+candidate. The historical Attempt1, Review1, Attempt2, Review2, original
+final local acceptance, original implementation publication, original remote
+acceptance, P7.5 blocker discovery, correction Attempt1, and correction
+Independent Review1 records above are preserved unchanged.
+
+```text
+TECHNICAL_ID = PRODUCT-CONTROL-PLANE-P7_4-POST-ACCEPTANCE-CONTRACT-CORRECTION-FINAL-LOCAL-ACCEPTANCE-2026-09-12
+BASE_HEAD = 60e42cc07a95afffdec92b7c6f0fac9a4f855d45
+BASE_TREE = 529fa02f398cc94008763ddb9ad5565e169dcc46
+REVIEWED_CORRECTION_TREE = 1b7baf6f3ee614003260b0d3a76cc6f3f398d0bf
+CANDIDATE_HEAD_UNCHANGED = YES
+INDEPENDENT_REVIEW = PASS
+DEFECT_A = CLOSED: response projection exactly excludes internal id, assignmentId, cohortSeed, and reason
+DEFECT_B = CLOSED: normative assignment mutation routes match the actual implementation
+UNIT = 1147 / 0 / 0
+INTEGRATION = 1487 / 0 / 0
+REVIEW_POSTGRES = 6 / 0 / 0
+FOCUSED_REVIEW_UNIT = 19 / 0 / 0
+FORMAT = PASS
+LINT = PASS
+TYPECHECK = PASS
+OPENAPI = PASS / 102 operations / SHA256 9563c57d622a7eee2197ea9a0508852f7c7a0aef87bbb9dddf5570cc83b50cc7
+BRIDGE = PASS
+BUILD = PASS
+FULL_E2E = 69 / 0 / 0
+FULL_E2E_FIRST_RUN_ONLY = YES
+E2E_RESOURCE = product-control-plane-p7.4-correction-final-e2e-pg, postgres:18.0, loopback 127.0.0.1:55435, no persistent volume
+DISK_FREE_START = 8616587264
+DISK_FREE_PRE_E2E = 8616349696
+DISK_HARD_FLOOR_MET_PRE_E2E = YES
+DISK_FREE_AFTER_E2E_CLEANUP = 8503885824
+MIGRATIONS = 0000..0014
+MIGRATION_0014_SHA256 = 4a12aa34d6be16648fc6cd12b4f3de04f3cce0f3abd6938918905dfa2c471558
+MIGRATION_0015 = ABSENT
+API_ROUTE_DELTA = 0
+PERMISSION_DELTA = 0
+SCHEMA_EXPANSION = 0
+PROVIDER_CALLS = 0
+P7.2 = UNCHANGED
+P7.3 = UNCHANGED
+P7.5 = STILL BLOCKED
+P7.6 = NOT STARTED
+P8 = NOT STARTED
+MAIN_C21_UNCHANGED = YES
+LOCAL_CORRECTION_ACCEPTANCE = PASS
+REMOTE_CORRECTION_ACCEPTANCE = PENDING
+SAFE_FOR_CORRECTION_PUBLICATION = PENDING_MAIN_CHATGPT_ACCEPTANCE
+```
+
+The canonical actual assignment mutation routes remain exactly:
+
+```text
+/v1/admin/ai/assignments/{assignment_id}/direct
+/v1/admin/ai/assignments/{assignment_id}/rollout
+/v1/admin/ai/assignments/{assignment_id}/percentage
+/v1/admin/ai/assignments/{assignment_id}/pause
+/v1/admin/ai/assignments/{assignment_id}/resume
+/v1/admin/ai/assignments/{assignment_id}/complete
+/v1/admin/ai/assignments/{assignment_id}/rollback
+```
+
+There are no aliases, route renames, OpenAPI expansions, migration changes,
+permission changes, or schema expansions. The one full E2E command was
+`pnpm test:e2e`, run exactly once with Node `v24.20.0` and pnpm `10.34.5`;
+all 69 tests passed. The product tree used by E2E was exactly
+`1b7baf6f3ee614003260b0d3a76cc6f3f398d0bf`. The disposable PostgreSQL
+container and generated Playwright result directory were removed afterward;
+no task-created Docker containers or volumes remain.
+
+The roadmap now records P7 ACTIVE, P7.1/P7.2/P7.3 DONE / REMOTE ACCEPTED,
+P7.4 POST-ACCEPTANCE CORRECTION / LOCAL ACCEPTED / REMOTE ACCEPTANCE PENDING,
+P7.5 PLANNED / BLOCKED BY P7.4 CORRECTION, P7.6 PLANNED, and P8 PLANNED.
+P7.5 was not resumed; P7.6 and P8 were not started. No commit or push was
+performed.
+
 The 10 read routes are:
 
 ```text
@@ -420,3 +498,48 @@ PROVIDER_CALLS = 0
 
 This records remote implementation acceptance only; it does not claim a
 production deployment.
+
+## POST-ACCEPTANCE CONTRACT CORRECTION — 2026-09-12
+
+The preceding local evidence and remote acceptance sections preserve the
+historical P7.4 acceptance record. P7.5 Attempt1 consumer validation then
+exposed two real post-acceptance contract defects. The previous review did not
+find these defects; this section records the bounded correction candidate.
+
+```text
+DISCOVERY_STAGE = P7.5 Attempt1
+P7_5_STATUS = BLOCKED_API_CONTRACT
+DEFECT_A = successful assignment mutation could commit then fail HTTP response
+serialization because undeclared `id` escaped the route projection
+DEFECT_B = ADR route authority contradicted actual implementation/OpenAPI for
+percentage/pause/resume/complete
+CORRECTION_A = response projection now exactly matches existing mutationResponse schema
+CORRECTION_B = normative route documentation corrected to actual stable wire paths
+API_ROUTE_RENAME = NO
+NEW_API_ROUTE = NO
+OPENAPI_CHANGE = NO
+MIGRATION_CHANGE = NO
+P7_2_SEMANTICS_CHANGE = NO
+P7_3_CHANGE = NO
+P7_5_RESUME = PENDING_CORRECTED_P7_4_ACCEPTANCE
+```
+
+The implementation and generated OpenAPI were already the wire authority:
+
+```text
+POST /v1/admin/ai/assignments/{assignment_id}/direct
+POST /v1/admin/ai/assignments/{assignment_id}/rollout
+POST /v1/admin/ai/assignments/{assignment_id}/percentage
+POST /v1/admin/ai/assignments/{assignment_id}/pause
+POST /v1/admin/ai/assignments/{assignment_id}/resume
+POST /v1/admin/ai/assignments/{assignment_id}/complete
+POST /v1/admin/ai/assignments/{assignment_id}/rollback
+```
+
+No route was renamed, aliased, or added. The historical route list above is
+superseded for normative use by this corrected route set. The accepted
+`mutationResponse` remains strict and contains exactly `revision`, `mode`,
+`baselineProfileRevisionId`, `candidateProfileRevisionId`, `percentageBps`, and
+`createdAt`; internal `id`, assignment ID, cohort seed, and reason remain
+excluded. OpenAPI remains 102 operations with SHA256
+`9563c57d622a7eee2197ea9a0508852f7c7a0aef87bbb9dddf5570cc83b50cc7`.
