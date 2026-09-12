@@ -1,0 +1,31 @@
+{
+  "block_id": "B07",
+  "part": 2,
+  "rows": [
+    {"sku":"2271234726","query":"витрина водолей","decision":"REJECT","reason_code":"NO_DEFENSIBLE_PRODUCT_INTENT"},
+    {"sku":"2271234726","query":"водолей подвеска ювелирная","decision":"REJECT","reason_code":"USE_CASE_OR_PRODUCT_TYPE_MISMATCH"},
+    {"sku":"2271240621","query":"брелок дева знак зодиака","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271240621","query":"в машину женская дева","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2271240621","query":"дева деревянная","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2271240621","query":"дева знак зодиака рюмки","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271240621","query":"дева знак зодиака худи","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271240621","query":"дева подвеска для мужчин","decision":"REJECT","reason_code":"USE_CASE_OR_PRODUCT_TYPE_MISMATCH"},
+    {"sku":"2271240621","query":"картина для знака зодиака дева мужская","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271240621","query":"четки в машину со знакам зодиака дева","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2271246783","query":"амулет козерог и клевер","decision":"REJECT","reason_code":"UNSUPPORTED_DIFFERENT_MOTIF"},
+    {"sku":"2271246783","query":"брелок со знаком зодиака козерог","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271246783","query":"зназодиака козерог","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2271246783","query":"картины со знаком зодиака козерог","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271246783","query":"козерог из серебра","decision":"REJECT","reason_code":"MATERIAL_MISMATCH"},
+    {"sku":"2271246783","query":"козерог на зеркало тайота прадо","decision":"REJECT","reason_code":"NO_CHANGE_MODEL_SEGMENT_NOT_FEATURE"},
+    {"sku":"2271246783","query":"козерог на зеркало фх","decision":"REJECT","reason_code":"NO_CHANGE_MODEL_SEGMENT_NOT_FEATURE"},
+    {"sku":"2271246783","query":"козерог подвеска мериада","decision":"REJECT","reason_code":"OTHER_BRAND_OR_VARIANT"},
+    {"sku":"2271246783","query":"подвеска ювелирная козерог","decision":"REJECT","reason_code":"USE_CASE_OR_PRODUCT_TYPE_MISMATCH"},
+    {"sku":"2271246783","query":"скрепка на авто козерог","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271246783","query":"шарм подвеска бусина мужская козерог","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271251938","query":"брелок черный овен","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271251938","query":"знак овен женский","decision":"REJECT","reason_code":"GENDER_SEGMENT_NOT_PRODUCT_FEATURE"},
+    {"sku":"2271251938","query":"маленький кулон овен","decision":"REJECT","reason_code":"USE_CASE_OR_PRODUCT_TYPE_MISMATCH"},
+    {"sku":"2271251938","query":"оберег в кошелек овен","decision":"REJECT","reason_code":"USE_CASE_MISMATCH"}
+  ]
+}
