@@ -1,0 +1,25 @@
+{
+  "block_id": "B08",
+  "part": 1,
+  "rows": [
+    {"sku":"2271262133","query":"знак зодиака рак подвеска шарм","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE_OR_FORMAT"},
+    {"sku":"2271262133","query":"карманные календари знак зодиак рак","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271262133","query":"кулон мужской на шею рак","decision":"REJECT","reason_code":"USE_CASE_MISMATCH"},
+    {"sku":"2271262133","query":"рак на присоске в машину","decision":"REJECT","reason_code":"PLACEMENT_OR_PRODUCT_FORMAT_MISMATCH"},
+    {"sku":"2271270261","query":"знак зодиака рыбы серебро мужская","decision":"REJECT","reason_code":"MATERIAL_MISMATCH"},
+    {"sku":"2271270261","query":"знакак зодиака рыбы","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2271270261","query":"ловец снов рыбы","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271275793","query":"yamasaki скорпион","decision":"REJECT","reason_code":"OTHER_BRAND_OR_ENTITY"},
+    {"sku":"2271275793","query":"бусина знак скорпион","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271285786","query":"антена на рроп стрелец","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE_OR_ENTITY"},
+    {"sku":"2271285786","query":"брошь стрелец","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271285786","query":"дневник знака зодиака стрелец ♐","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271285786","query":"знак зодиака стрелец подвеска мужская в машину","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2271285786","query":"знак стрелец светодиодная в машину 99","decision":"REJECT","reason_code":"UNSUPPORTED_LIGHTING_VARIANT"},
+    {"sku":"2271285786","query":"кролик стрелец и","decision":"REJECT","reason_code":"DIFFERENT_ENTITY_OR_MOTIF"},
+    {"sku":"2271285786","query":"магазин \"стрелец","decision":"REJECT","reason_code":"NAVIGATIONAL_OR_OTHER_ENTITY"},
+    {"sku":"2271285786","query":"подвеска в машину авторская стрелец","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2271285786","query":"подвеска стрелец позолота","decision":"REJECT","reason_code":"MATERIAL_OR_FINISH_MISMATCH"},
+    {"sku":"2271285786","query":"расческа стрелец","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"}
+  ]
+}
