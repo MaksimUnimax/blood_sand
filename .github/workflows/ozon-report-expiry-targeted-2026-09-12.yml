@@ -1,0 +1,96 @@
+name: Ozon report expiry targeted materialization
+on:
+  push:
+    branches: [repair/ozon-report-file-expiry-2026-09-12]
+    paths: [.github/workflows/ozon-report-expiry-targeted-2026-09-12.yml]
+permissions:
+  contents: write
+concurrency:
+  group: ozon-report-expiry-targeted
+  cancel-in-progress: false
+env:
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/report-file-expiry-v1
+  BRANCH: repair/ozon-report-file-expiry-2026-09-12
+jobs:
+  targeted:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Verify transport hashes and restore readable test authorities
+        shell: python
+        run: |
+          import base64,hashlib,json,lzma,pathlib,subprocess
+          root=pathlib.Path('tooling/llm-api-bridges/ozon-seller');gate=root/'validation/report-file-expiry-v1'
+          encoded=''.join((gate/'transport'/f'part-{i:02}.b64').read_text().strip() for i in range(3))
+          data=base64.b64decode(encoded,validate=True)
+          assert hashlib.sha256(data).hexdigest()=='4fb86ef1ca3bf6ba37de2a96b047ea86ba9ca9bef5a32e199c2c29afb0a458d5','Carrier corrupted; no source applied'
+          files=json.loads(lzma.decompress(data));assert len(files)==13
+          for name,content in files.items():
+            p=pathlib.PurePosixPath(name)
+            assert '..' not in p.parts and not p.is_absolute()
+            assert name.startswith(str(gate)+'/') or name==str(root/'validation/llm-output-report-workflow-v1/run_secondary_dependency_sweep.mjs')
+            dest=pathlib.Path(name);dest.parent.mkdir(parents=True,exist_ok=True);dest.write_text(content,encoding='utf-8',newline='')
+          manifest=json.loads((gate/'candidate_manifest.json').read_text());assert len(manifest['changes'])==2
+          for row in manifest['changes']:
+            assert hashlib.sha256(pathlib.Path(row['path']).read_bytes()).hexdigest()==row['base_sha256']
+          subprocess.run(['git','apply','--check',str(gate/'production.patch')],check=True)
+          subprocess.run(['git','apply',str(gate/'production.patch')],check=True)
+          for row in manifest['changes']:
+            assert hashlib.sha256(pathlib.Path(row['path']).read_bytes()).hexdigest()==row['candidate_sha256']
+      - name: Baseline RED and full ephemeral candidate Linux regression
+        run: python "$GATE/run_suite.py" targeted
+      - name: Real Chrome worker termination, session deadline and captured bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" -o "$RUNNER_TEMP/chrome.zip"
+          unzip -q "$RUNNER_TEMP/chrome.zip" -d "$RUNNER_TEMP/chrome"
+          "$RUNNER_TEMP/chrome/chrome-linux64/chrome" --version | tee "$RUNNER_TEMP/expiry-evidence/targeted/chrome-version.log"
+          sha256sum "$RUNNER_TEMP/chrome.zip" > "$RUNNER_TEMP/expiry-evidence/targeted/chrome-archive.sha256"
+          export OZON_BROWSER_EXPIRY_REPORT="$RUNNER_TEMP/expiry-evidence/targeted/browser-expiry.json"
+          xvfb-run -a node "$GATE/run_browser_expiry.mjs" "$RUNNER_TEMP/chrome/chrome-linux64/chrome" "$ROOT/dist-step7-candidate" 2>&1 | tee "$RUNNER_TEMP/expiry-evidence/targeted/browser-expiry.log"
+      - name: Materialize only identical GREEN production and freeze executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          find "$GATE" -type d -name __pycache__ -prune -exec rm -rf '{}' +
+          git add "$GATE" "$ROOT/validation/llm-output-report-workflow-v1/run_secondary_dependency_sweep.mjs"
+          git diff --cached --check
+          test -z "$(git diff --cached --name-only -- "$ROOT/dist-step7-candidate")"
+          git commit -m 'test(ozon): materialize report expiry RED GREEN and dependency authorities'
+          python - <<'PY'
+          import pathlib,json,hashlib,subprocess
+          gate=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/report-file-expiry-v1')
+          m=json.loads((gate/'candidate_manifest.json').read_text())
+          changed=subprocess.check_output(['git','diff','--name-only','--','tooling/llm-api-bridges/ozon-seller/dist-step7-candidate']).decode().splitlines()
+          assert set(changed)=={r['path'] for r in m['changes']}
+          for r in m['changes']:assert hashlib.sha256(pathlib.Path(r['path']).read_bytes()).hexdigest()==r['candidate_sha256']
+          subprocess.run(['git','add',*changed],check=True)
+          PY
+          git diff --cached --check
+          git commit -m 'fix(ozon): enforce provider report deadlines through session and output lifecycle'
+          python - <<'PY'
+          import pathlib,json,subprocess,os
+          gate=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/report-file-expiry-v1')
+          data={'executable':subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),'tree':subprocess.check_output(['git','rev-parse','HEAD^{tree}']).decode().strip(),'baseline':'0cc968ee4b76d41e9c0361a905812fe49f313585','targeted_ci_run':os.environ['GITHUB_RUN_ID'],'provider_calls':0,'status':'CODE_FIXED_TARGETED_GREEN_NOT_FINAL_HANDOFF'}
+          (gate/'EXECUTABLE.json').write_text(json.dumps(data,indent=2)+'\n')
+          PY
+          git add "$GATE/EXECUTABLE.json"
+          git commit -m 'docs(ozon): freeze exact expiry executable after real MV3 targeted GREEN'
+          git push origin "HEAD:refs/heads/$BRANCH"
+          cp "$GATE/EXECUTABLE.json" "$RUNNER_TEMP/expiry-evidence/targeted/"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-report-expiry-targeted-evidence
+          path: ${{ runner.temp }}/expiry-evidence/targeted
+          retention-days: 30
