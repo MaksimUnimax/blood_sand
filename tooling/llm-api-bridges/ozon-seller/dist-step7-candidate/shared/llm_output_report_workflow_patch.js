@@ -154,6 +154,19 @@
 
   function continuationFromEnvelope(envelope, resultIndex) {
     const operation = String(envelope?.operation || "");
+    const local = envelope?.result?.delivery;
+    if (operation && envelope?.http_status === 0 && envelope?.request_meta?.provider === "bridge_local"
+      && envelope.request_meta.external_request_executed === false && plain(local)) {
+      // Local deferral/retained text is not a provider error or HTTP success.
+      // Validate the actual stored next command; never guess its opaque fields.
+      let next = null;
+      if (["deferred", "text_retained"].includes(local.state) && plain(local.next_command)) {
+        try { next = globalThis.OzonContract.normalizeCommand(local.next_command); } catch (_) {}
+      }
+      return Object.freeze({ source_result_index: resultIndex, source_operation: operation,
+        kind: "file_delivery", state: String(local.state || "blocked"), reason: local.reason || null,
+        next_command: next ? Object.freeze(next) : null, automatic_continuation: false });
+    }
     if (!operation || !successfulEnvelope(envelope)) return null;
     const result = plain(envelope?.result) ? envelope.result : {};
     const generatedInline = findFirstField(result, "generated_file_inline") === true;

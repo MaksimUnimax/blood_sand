@@ -329,7 +329,8 @@
 
   async function failDelivery(recovery, error) {
     const response = await request("OZ_ATTACHMENT_FAIL", { ...ownerPayload(recovery), code: String(error?.code || "ATTACHMENT_DELIVERY_FAILED"), error: String(error?.message || error || "Attachment delivery failed.") });
-    status(`Ozon: доставка файла остановлена безопасно — ${error?.message || error}`, "error", 0);
+    if (response?.text_fallback) status("Ozon: файл не прикреплён; модели передаётся объяснение и результаты без повторного запроса к Ozon.", "info", 7000);
+    else status(`Ozon: доставка файла остановлена безопасно — ${error?.message || error}`, "error", 0);
     return response;
   }
 

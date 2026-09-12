@@ -455,7 +455,75 @@
     }
   }
 
-  function markerForDelivery(delivery, records) {
+  // Object member order is not command semantics; arrays and values are.
+  // This private scope key deliberately does not replace request fingerprints.
+  async function localCommandKey(command) {
+    const normalized = JSON.parse(JSON.stringify(OzonContract.normalizeCommand(command)));
+    function canonical(value) {
+      if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+      if (value && typeof value === "object") return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}`;
+      return JSON.stringify(value);
+    }
+    return sha256Hex(new TextEncoder().encode(canonical(normalized)));
+  }
+
+  async function readRetainedText(owner, command) {
+    if (command?.operation !== "report_file_get") return null;
+    const ref = String(command.params?.file_ref || "");
+    // Reserved opaque subtype inside the existing rpf grammar. Ordinary Ozon
+    // refs (including all prior ChatGPT cases) keep their original execution path.
+    if (!/^rpf_[sp]_local_[A-Za-z0-9_-]+$/.test(ref)) return null;
+    const record = await getArtifact(`provider:${ref}`);
+    if (!record?.local_delivery) throw Object.assign(new Error("Retained text is missing."), { code: "LOCAL_DELIVERY_NOT_FOUND" });
+    const scope = record.local_delivery;
+    const settings = await getSettings();
+    const reject = (code) => { throw Object.assign(new Error("Retained delivery text failed its scope/integrity check."), { code }); };
+    if (scope.version !== 1 || scope.conversation_key !== normalizeKey(owner?.conversation_key)
+      || scope.origin !== normalizeKey(owner?.origin) || scope.credential_revision !== await deliveryCredentialRevision(settings)) reject("LOCAL_DELIVERY_SCOPE_MISMATCH");
+    if (scope.personal_data_required && settings.personalDataEnabled !== true) reject("OPERATION_DISABLED_BY_USER");
+    if (scope.command_key !== await localCommandKey(command)) reject("LOCAL_DELIVERY_COMMAND_MISMATCH");
+    if (record.source_kind !== "generated_bridge_text" || record.extension !== "txt" || record.mime_type !== "text/plain;charset=utf-8") reject("LOCAL_DELIVERY_TYPE_MISMATCH");
+    if (!Number.isSafeInteger(record.expires_at_ms) || record.expires_at_ms <= nowMs()) reject("LOCAL_DELIVERY_EXPIRED");
+    const source = asBytes(record.bytes);
+    if (source.byteLength !== record.byte_length || await sha256Hex(source) !== record.sha256) reject("LOCAL_DELIVERY_INTEGRITY_MISMATCH");
+    return { state: "local_file_ready", source_kind: "generated_bridge_text", file_ref: ref,
+      byte_length: record.byte_length, sha256: record.sha256,
+      message: "Полный сохранённый текст результата получен из локального хранилища Bridge; новых запросов к Ozon нет.", next_command: null, automatic_continuation: false };
+  }
+
+  async function retainCompleteText(owner, text) {
+    const delivery = owner.delivery;
+    const ref = String(delivery.retained_text_ref || "");
+    if (!/^rpf_[sp]_[A-Za-z0-9_-]+$/.test(ref)) throw Object.assign(new Error("Retained-text ref missing."), { code: "LOCAL_DELIVERY_REF_MISSING" });
+    const currentRevision = await deliveryCredentialRevision();
+    const revision = owner?.batch?.file_delivery_credential_revision;
+    if (!revision || currentRevision !== revision) throw Object.assign(new Error("Delivery credentials changed."), { code: "LOCAL_DELIVERY_SCOPE_MISMATCH" });
+    const command = OzonContract.normalizeCommand({ operation: "report_file_get", params: { file_ref: ref, offset: 0, limit: 200 } });
+    const source = new TextEncoder().encode(String(text));
+    const key = `provider:${ref}`;
+    const old = await getArtifact(key);
+    const digest = await sha256Hex(source);
+    if (old) {
+      // Idempotent materialization after MV3 recreation does not renew its TTL.
+      if (old.sha256 !== digest || old.byte_length !== source.byteLength || await sha256Hex(asBytes(old.bytes)) !== digest || old.local_delivery?.conversation_key !== normalizeKey(owner.conversation_key)
+        || old.local_delivery?.credential_revision !== revision || old.expires_at_ms <= nowMs()) throw Object.assign(new Error("Retained-text state changed."), { code: "LOCAL_DELIVERY_STATE_MISMATCH" });
+    } else {
+      const created = Date.parse(delivery.claimed_at);
+      if (!Number.isSafeInteger(created) || created > nowMs() || created + ARTIFACT_TTL_MS <= nowMs()) throw Object.assign(new Error("Retained text window expired."), { code: "LOCAL_DELIVERY_EXPIRED" });
+      await putArtifact({ artifact_key: key, source_kind: "generated_bridge_text",
+        filename: `ozon-bridge-complete-result-${ref}.txt`, mime_type: "text/plain;charset=utf-8", extension: "txt",
+        bytes: bufferCopy(source), byte_length: source.byteLength, sha256: digest, created_at_ms: created, expires_at_ms: created + ARTIFACT_TTL_MS,
+        local_delivery: { version: 1, conversation_key: normalizeKey(owner.conversation_key), origin: normalizeKey(owner.origin), credential_revision: revision,
+          personal_data_required: ref.startsWith("rpf_p_"), command_key: await localCommandKey(command) }
+      });
+    }
+    const notice = localFileDeliveryResult(command, { state: "text_retained", reason: "TARGET_AI_TEXT_CAPACITY",
+      message: "Полный текст результатов не помещается в это сообщение Алисы и сохранён без сокращений локально, не дольше одного часа от подготовки доставки. Получите TXT отдельной следующей командой; она не повторяет запросы к Ozon.",
+      next_command: command, automatic_continuation: false });
+    return globalThis.OzonLlmOutputReportWorkflowPatch.appendInstructionTail(notice.report_text);
+  }
+
+  function markerForDelivery(delivery, records, extra = {}) {
     const generated = records.some((item) => item.source_kind === "generated_bridge_text");
     const providerCount = records.filter((item) => item.source_kind === "original_provider_file").length;
     const representation = generated && providerCount ? "ATTACHED_DOCUMENT_BUNDLE" : (generated ? "ATTACHED_COMPLETE_TEXT_DOCUMENT" : "ATTACHED_ORIGINAL_PROVIDER_FILE");
@@ -463,6 +531,7 @@
       delivery_representation: representation,
       delivery_id: String(delivery.delivery_id || ""),
       complete: true,
+      ...extra,
       attachments: records.map((item) => ({ filename: item.filename, mime_type: item.mime_type, byte_length: Number(item.byte_length || 0), sha256: item.sha256, source_kind: item.source_kind }))
     })}`;
   }
@@ -511,10 +580,32 @@
     if ([PHASES.READY, PHASES.SEND_COMMITTED, PHASES.CONFIRMED].includes(phase)) return { ok: true, committed: true, attach_allowed: false, already_attached: true, recovery: recoveryPayload(found.kind, found.owner) };
     if (phase !== PHASES.CLAIMED) throw Object.assign(new Error("Attachment delivery is not claimable."), { code: "ATTACHMENT_DELIVERY_NOT_CLAIMED" });
 
+    for (const ref of found.owner.delivery.provider_file_refs || []) {
+      if (/^rpf_[sp]_local_/.test(ref)) {
+        const entry = found.owner.batch?.entries?.find((item) => item.local_file_ref === ref);
+        if (!entry) throw Object.assign(new Error("Retained file has no owning entry."), { code: "LOCAL_DELIVERY_ENTRY_MISSING" });
+        await readRetainedText(found.owner, entry.command);
+      }
+    }
     const records = await ensureArtifactsForDelivery(found.owner.delivery);
     adapterCanAttach(found.owner.delivery, records);
     const descriptors = records.map(descriptorFromRecord);
-    const marker = markerForDelivery(found.owner.delivery, records);
+    const deferredCount = Number(found.owner.delivery.deferred_file_count || 0);
+    const receipt = deferredCount ? { complete: false, attachments_complete: true, deferred_file_count: deferredCount } : {};
+    let marker = markerForDelivery(found.owner.delivery, records, receipt);
+    let prefixDelivered = found.owner.delivery.report_prefix_applied === true;
+    const inlineText = found.owner.delivery.inline_result_text;
+    if (typeof inlineText === "string") {
+      const fullMessage = `${marker}\n\n${inlineText}`;
+      if (OzonAIDeliveryCapabilities.generatedTextDecision(found.owner.delivery.adapter_id, fullMessage).representation === "plain_text") marker = fullMessage;
+      else {
+        const textReceipt = await retainCompleteText(found.owner, inlineText);
+        prefixDelivered = false;
+        marker = `${markerForDelivery(found.owner.delivery, records, { ...receipt, complete: false, attachments_complete: true, full_text_deferred: true })}\n\n${textReceipt}`;
+      }
+      // Include marker overhead; a just-below-threshold result is not safe by itself.
+      if (OzonAIDeliveryCapabilities.generatedTextDecision(found.owner.delivery.adapter_id, marker).representation !== "plain_text") throw Object.assign(new Error("Delivery receipt does not fit target text capacity."), { code: "TARGET_AI_RECEIPT_TOO_LARGE" });
+    }
     const actorId = String(message.actor_id || "").slice(0, 240);
     let granted = false;
     const next = await mutateOwner(found.key, found.kind, ownerId(found.owner, found.kind), (current) => {
@@ -529,6 +620,8 @@
           attachment_committed_at: nowIso(),
           artifact_descriptors: descriptors,
           artifact_text: null,
+          inline_result_text: null,
+          report_prefix_applied: prefixDelivered,
           outgoing_text: marker
         }
       };
@@ -642,8 +735,43 @@
     return { ok: true, confirmed: true, owner_kind: found.kind };
   }
 
+  async function fallbackBeforeAttachment(found, code) {
+    if (found.owner.delivery?.adapter_id !== "alice" || found.owner.delivery?.phase !== PHASES.CLAIMED) return null;
+    const deliveryId = found.owner.delivery.delivery_id;
+    const safeCode = /^[A-Z0-9_]{1,120}$/.test(String(code || "")) ? String(code) : "ATTACHMENT_DELIVERY_FAILED";
+    const completeText = String(found.owner.delivery.inline_result_text ?? found.owner.delivery.artifact_text ?? found.owner.delivery.outgoing_text ?? "");
+    const notice = `OZON_BATCH_RESULT_V1\n${JSON.stringify({ delivery_id: deliveryId, delivery_representation: "TEXT_DELIVERY_FAILURE_RECEIPT", complete: false,
+      delivery_error: { source: "bridge", code: safeCode, message: "Данные получены, но файл не прикреплён. Это ошибка доставки, не ошибка Ozon. Автоматический повтор запросов не выполняется." } })}`;
+    let text = `${notice}\n\n${completeText}`;
+    let withheld = null;
+    let prefixDelivered = found.owner.delivery.report_prefix_applied === true;
+    if (OzonAIDeliveryCapabilities.generatedTextDecision("alice", text).representation !== "plain_text") {
+      prefixDelivered = false;
+      // Preserve all data in the durable owner on storage failure. Do not claim
+      // the compact failure receipt contains the complete original result.
+      try { text = `${notice}\n\n${await retainCompleteText(found.owner, completeText)}`; }
+      catch (_) { text = `${notice}\n\nПолный текст сохранён в состоянии этой операции, но его файловая передача сейчас недоступна. Не повторяйте выполненные Ozon-запросы автоматически.`; withheld = completeText; }
+    }
+    let changed = false;
+    const next = await mutateOwner(found.key, found.kind, ownerId(found.owner, found.kind), (current) => {
+      if (current?.delivery?.mode !== ATTACHMENT_MODE || current.delivery.phase !== PHASES.CLAIMED || current.delivery.delivery_id !== deliveryId) return current;
+      changed = true;
+      return { ...current, retained_delivery_failure: withheld ? { delivery_id: deliveryId, text: withheld, code: safeCode } : null,
+        delivery: { delivery_id: deliveryId, mode: "batch_watch_v1", phase: BridgeAutorunModel.DELIVERY_PHASES.CLAIMED,
+          request_id: current.delivery.request_id || "", outgoing_text: text, outgoing_hash: "", report_prefix_applied: prefixDelivered,
+          baseline_user_turn_ids: [], baseline_assistant_turn_ids: [], commit_actor_id: null, claimed_at: nowIso() } };
+    });
+    if (!changed) return null;
+    await diagnostic("ATTACHMENT_PRECOMMIT_TEXT_FALLBACK", { owner_kind: found.kind, owner_id: ownerId(next, found.kind), delivery_id: deliveryId, code: safeCode, provider_retry: false }, { level: "warning" });
+    if (found.kind === "manual") await attemptManualBatchDelivery(found.key, ownerId(next, found.kind));
+    else await attemptAutoDelivery(found.key, ownerId(next, found.kind));
+    return { ok: true, text_fallback: true, code: safeCode };
+  }
+
   async function failAttachmentDelivery(message, sender) {
     const found = await ownerForMessage(message, sender);
+    const fallback = await fallbackBeforeAttachment(found, message.code);
+    if (fallback) return fallback;
     const preservedDelivery = found.owner.delivery;
     const code = String(message.code || "ATTACHMENT_DELIVERY_FAILED").slice(0, 120);
     const text = String(message.error || "Attachment delivery failed.").slice(0, 800);
@@ -737,6 +865,7 @@
     ATTACHMENT_MODE,
     PORT_NAME,
     MAX_CHUNK_BYTES,
-    cleanupExpiredArtifacts
+    cleanupExpiredArtifacts,
+    readRetainedText
   });
 })();

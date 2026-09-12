@@ -3013,6 +3013,31 @@ function commandRequiresPersonalDataPolicy(command) {
   return refPolicy?.known === true && refPolicy.personal_data_required === true;
 }
 
+// Credential revision is a private scope key, never an AI-output field.
+async function deliveryCredentialRevision(settings = null) {
+  const current = settings || await getSettings();
+  const seller = current.sellerCredentials || {};
+  const performance = current.performanceCredentials || {};
+  const source = JSON.stringify(["local-delivery-v1", seller.clientId || "", seller.apiKey || "", performance.clientId || "", performance.clientSecret || ""]);
+  return bytesToHex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(source)));
+}
+
+function localFileDeliveryResult(command, delivery) {
+  const normalized = OzonContract.normalizeCommand(command);
+  const requestId = `local-delivery-${crypto.randomUUID()}`;
+  const envelope = {
+    bridge: "ozon-llm-api-bridge", version: VERSION, request_id: requestId,
+    operation: normalized.operation,
+    command: { operation: normalized.operation, fingerprint: OzonContract.commandFingerprint(normalized) },
+    request_meta: { provider: "bridge_local", external_request_executed: false },
+    http_status: 0, physical_business_request_count: 0,
+    result: { delivery }
+  };
+  return { request_id: requestId, http_status: 0, external_request_executed: false,
+    local_file_ref: delivery.state === "local_file_ready" ? delivery.file_ref : null,
+    report_text: `OZON_RESULT_V1\n${JSON.stringify(envelope, null, 2)}` };
+}
+
 async function ensureBatchLocalPolicy({ ownerKind, ownerId, getOwner, mutateOwner, ownerMatches, isCollecting, failOwner }) {
   let owner = await getOwner();
   if (!owner || !ownerMatches(owner)) return { ok: false, code: "BATCH_OWNER_NOT_ACTIVE" };
@@ -3024,6 +3049,8 @@ async function ensureBatchLocalPolicy({ ownerKind, ownerId, getOwner, mutateOwne
   }
   const settings = await getSettings();
   const personalDataEnabled = settings.personalDataEnabled === true;
+  const fileDeliveryRevision = globalThis.BridgeAutorunModel.aliceFileBudget?.(owner) !== null
+    ? await deliveryCredentialRevision(settings) : null;
   const nextEntries = (owner.batch.entries || []).map((entry) => {
     if (!entry || entry.kind !== "command" || !entry.command) return entry;
     if (!commandRequiresPersonalDataPolicy(entry.command) || personalDataEnabled) return entry;
@@ -3045,7 +3072,7 @@ async function ensureBatchLocalPolicy({ ownerKind, ownerId, getOwner, mutateOwne
     if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch || current.batch.policy_state === "complete") return current;
     if (Math.max(0, Number(current.batch.next_index || 0)) !== 0 || current.batch.request_state !== "idle") return current;
     stored = true;
-    return { ...current, batch: { ...current.batch, entries: nextEntries, policy_state: "complete", policy_personal_data_enabled: personalDataEnabled, policy_completed_at: new Date().toISOString() } };
+    return { ...current, batch: { ...current.batch, entries: nextEntries, policy_state: "complete", policy_personal_data_enabled: personalDataEnabled, file_delivery_credential_revision: fileDeliveryRevision, policy_completed_at: new Date().toISOString() } };
   });
   if (!stored) {
     await failOwner("BATCH_POLICY_STORE_RACE", "Personal-data policy не удалось сохранить до provider execution; business requests запрещены.");
@@ -3804,6 +3831,40 @@ function processBatchQueue({
           owner_kind: ownerKind, owner_id: ownerId, queue_index: nextIndex, operation: entry.operation, code: entry.error?.code || "CAPABILITY_PLANNING_REJECTED", external_request_executed: false
         }, { level: "warning" });
         continue;
+      }
+
+      // Admission depends on completed durable results, not process memory. It
+      // runs AFTER privacy/entitlement rejection and BEFORE any business fetch.
+      if (entry.kind === "command") {
+        const decision = BridgeAutorunModel.fileBudgetDecision?.(owner, entry);
+        let local = decision ? localFileDeliveryResult(entry.command, decision) : null;
+        if (!local && entry.command?.operation === "report_file_get") {
+          try {
+            const receipt = await globalThis.OzonFileDeliveryWorker?.readRetainedText?.(owner, entry.command);
+            if (receipt) local = localFileDeliveryResult(entry.command, receipt);
+          } catch (error) {
+            // Storage/scope/integrity failures never fall through to transport.
+            local = localFileDeliveryResult(entry.command, {
+              state: "blocked", reason: error?.code || "LOCAL_DELIVERY_READ_FAILED",
+              message: "Сохранённый результат недоступен, истёк либо не принадлежит этому диалогу/настройкам. Запрос к Ozon не выполнялся.",
+              next_command: null, automatic_continuation: false
+            });
+          }
+        }
+        if (local) {
+          let stored = false;
+          await mutateOwner((current) => {
+            if (!current || !ownerMatches(current) || !isCollecting(current) || !current.batch || Number(current.batch.next_index || 0) !== nextIndex) return current;
+            const currentEntries = [...(current.batch.entries || [])];
+            if (currentEntries[nextIndex]?.status !== "pending") return current;
+            currentEntries[nextIndex] = { ...currentEntries[nextIndex], ...local, status: "complete", executed_command_fingerprint: null, request_completed_at: new Date().toISOString() };
+            stored = true;
+            return { ...current, batch: { ...current.batch, entries: currentEntries, next_index: nextIndex + 1, request_state: "idle", request_worker_session_id: null } };
+          });
+          if (!stored) return { ok: false, code: "BATCH_LOCAL_DELIVERY_STORE_RACE" };
+          await diagnostic("BATCH_LOCAL_DELIVERY_RESULT_STORED", { owner_kind: ownerKind, owner_id: ownerId, queue_index: nextIndex, operation: entry.operation, code: decision?.reason || "LOCAL_FILE_RESULT", external_request_executed: false });
+          continue;
+        }
       }
 
       if (entry.kind === "command" && entry.query_group_id) {

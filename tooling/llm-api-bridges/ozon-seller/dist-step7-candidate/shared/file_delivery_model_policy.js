@@ -6,6 +6,8 @@
   if (!BASE || typeof BASE.claimDelivery !== "function") throw new Error("BridgeAutorunModel is required before file delivery policy.");
 
   function successfulReportFileRef(entry) {
+    const localRef = BASE.localFileRefFromEntry?.(entry);
+    if (localRef) return localRef;
     if (!entry || entry.status !== "complete") return null;
     const httpStatus = Number(entry.http_status || 0);
     if (!(httpStatus >= 200 && httpStatus < 300)) return null;
@@ -64,6 +66,52 @@
     return Boolean(profile?.status === "implemented" && ["file_input_v1", "drag_drop_v1"].includes(strategy));
   }
 
+  function aliceFileBudget(owner) {
+    const caps = globalThis.OzonAIDeliveryCapabilities;
+    const adapter = caps?.adapterIdForOrigin?.(owner?.origin);
+    const maximum = caps?.profile?.(adapter)?.max_files_per_turn;
+    return adapter === "alice" && Number.isInteger(maximum) && maximum > 0 ? maximum : null;
+  }
+
+  function fileProducingCommand(command) {
+    return command?.operation === "report_file_get"
+      || globalThis.OzonOperationRegistry?.operation?.(command?.operation)?.response_style === "binary";
+  }
+
+  function completedFileAcquisitionKey(entry) {
+    const local = BASE.localFileRefFromEntry?.(entry);
+    if (local) return local;
+    if (entry?.status !== "complete" || !(Number(entry.http_status) >= 200 && Number(entry.http_status) < 300) || !fileProducingCommand(entry.command)) return null;
+    try {
+      const text = String(entry.report_text || "");
+      if (!text.startsWith("OZON_RESULT_V1\n")) return null;
+      const envelope = JSON.parse(text.slice("OZON_RESULT_V1\n".length));
+      if (envelope.operation !== entry.command.operation || envelope.result?.error) return null;
+      const attachedRef = successfulReportFileRef(entry);
+      if (attachedRef) return attachedRef;
+      // Some existing direct-PDF routes persist inline bytes and deliberately
+      // expose a separate report_file_get step. Reserve their acquired-file
+      // slot too, without changing that existing explicit workflow.
+      const result = envelope.result;
+      const ref = String(result?.generated_file_ref || "");
+      return result?.content_type === "application/pdf" && Number(result.byte_length) > 0
+        && /^rpf_[sp]_[A-Za-z0-9_-]+$/.test(ref) ? ref : null;
+    } catch (_) { return null; }
+  }
+
+  function fileBudgetDecision(owner, entry) {
+    const maximum = aliceFileBudget(owner);
+    if (maximum === null || !fileProducingCommand(entry?.command)) return null;
+    const completedFiles = new Set((owner?.batch?.entries || []).map(completedFileAcquisitionKey).filter(Boolean));
+    if (completedFiles.size < maximum) return null;
+    return Object.freeze({
+      state: "deferred", reason: "TARGET_AI_FILE_LIMIT", target_ai: "alice",
+      max_files_per_turn: maximum, external_request_executed: false,
+      message: "Алиса принимает не более одного файла за одно сообщение. Эта файловая команда отложена до следующего сообщения; запрос к Ozon не выполнялся.",
+      next_command: JSON.parse(JSON.stringify(entry.command)), automatic_continuation: false
+    });
+  }
+
   function claimDelivery(run, payload = {}) {
     const next = BASE.claimDelivery(run, payload);
     if (!next?.delivery || next.delivery.mode !== "attachment_watch_v1") return next;
@@ -74,6 +122,22 @@
     }
 
     const providerFileRefs = Array.isArray(next.delivery.provider_file_refs) ? next.delivery.provider_file_refs : [];
+    if (providerFileRefs.length && aliceFileBudget(run) !== null) {
+      // Preserve the complete text next to the original file. The worker checks
+      // the FINAL marker+text size and, only on real overflow, saves a separate
+      // scoped local TXT for an explicit next turn. Never allocate a second
+      // attachment just because the batch contains JSON or guidance.
+      return { ...next, delivery: {
+        ...next.delivery,
+        generated_text_document: null, artifact_text: null,
+        inline_result_text: String(payload.outgoingText || ""),
+        deferred_file_count: (run?.batch?.entries || []).filter((entry) => {
+          try { return JSON.parse(String(entry.report_text || "").slice("OZON_RESULT_V1\n".length))?.result?.delivery?.state === "deferred"; } catch (_) { return false; }
+        }).length,
+        outgoing_text: String(payload.outgoingText || ""),
+        retained_text_ref: `rpf_${run?.batch?.policy_personal_data_enabled === true || providerFileRefs.some((ref) => ref.startsWith("rpf_p_")) ? "p" : "s"}_local_${crypto.randomUUID()}`
+      } };
+    }
     if (!providerFileRefs.length || next.delivery.generated_text_document) return next;
     if (!needsCompleteTextCompanion(run, payload, providerFileRefs)) return next;
 
@@ -93,6 +157,10 @@
     claimDelivery,
     successfulReportFileRef,
     needsCompleteTextCompanion,
-    hasLiveAttachmentStrategy
+    hasLiveAttachmentStrategy,
+    aliceFileBudget,
+    fileProducingCommand,
+    fileBudgetDecision,
+    completedFileAcquisitionKey
   });
 })();
