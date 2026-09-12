@@ -1,0 +1,63 @@
+name: Ozon Work restart staged payload byte repair
+run-name: Ozon Work gate payload repair · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-global-toast-work-restart-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-work-restart-payload-repair-2026-09-12.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  SOURCE: tooling/llm-api-bridges/ozon-seller/validation/global-toast-work-restart-v1/run_work_restart_extended.mjs.gz.b64
+  EXPECTED_JS_SHA256: 0a564b28a1bdf102042716247984594867aef6262bbfc18b0ea472a6a43aa883
+  EXPECTED_PAYLOAD_SHA256: 900e5d499897f74cc9e35391712c5e44dd8e8b40fcf88e8828e7212ac33ccb4e
+
+jobs:
+  exact-validation-payload-repair:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Apply the uniquely-proven missing-symbol repair and verify exact recovered bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$SOURCE" "$EXPECTED_JS_SHA256" "$EXPECTED_PAYLOAD_SHA256" <<'PY'
+          import base64, gzip, hashlib, pathlib, sys
+          p = pathlib.Path(sys.argv[1]); expected_js = sys.argv[2]; expected_payload = sys.argv[3]
+          raw = b''.join(p.read_bytes().split())
+          if len(raw) != 5439 or len(raw) % 4 != 3:
+              raise SystemExit(f'PAYLOAD_REPAIR_PRECONDITION_FAIL chars={len(raw)} mod4={len(raw)%4}')
+          repaired = raw[:4633] + b'c' + raw[4633:]
+          if len(repaired) != 5440:
+              raise SystemExit('PAYLOAD_REPAIR_LENGTH_FAIL')
+          compressed = base64.b64decode(repaired, validate=True)
+          decoded = gzip.decompress(compressed)
+          decoded.decode('utf-8')
+          js_sha = hashlib.sha256(decoded).hexdigest()
+          payload_sha = hashlib.sha256(repaired).hexdigest()
+          if js_sha != expected_js or payload_sha != expected_payload:
+              raise SystemExit(f'PAYLOAD_REPAIR_IDENTITY_FAIL js={js_sha} payload={payload_sha}')
+          required = [b'OZ_WORK_START', b'OZ_WORK_FINISH', b'WORK_START_SERVICE_WORKER_RECREATION_DURABLE_NO_DUPLICATE_PASS', b'provider_calls_during_test=0']
+          if not all(token in decoded for token in required):
+              raise SystemExit('PAYLOAD_REPAIR_SEMANTIC_MARKER_FAIL')
+          p.write_bytes(repaired + b'\n')
+          print(f'WORK_RESTART_PAYLOAD_REPAIR=PASS position=4633 char=c js_bytes={len(decoded)} js_sha256={js_sha}')
+          PY
+          git diff --check
+          test "$(git diff --name-only | wc -l)" -eq 1
+          test "$(git diff --name-only)" = "$SOURCE"
+          git diff -- "$SOURCE"
+      - name: Commit exact validation-only payload repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$SOURCE"
+          git commit -m 'test(ozon): restore exact Work restart behavioral gate payload'
+          git push origin HEAD:repair/ozon-global-toast-work-restart-2026-09-11
