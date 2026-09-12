@@ -1,0 +1,4 @@
+sku	product_id	query	remaining_hold_reason	what_is_missing_for_resolution
+1636048691	1119965443	печать велеса медвежья лапа в машину	PRODUCT_VARIANT_NOT_PROVEN	Need product-specific proof that this exact SKU depicts the bear-paw rather than wolf-paw / generic Veles variant, ideally explicit current attribute or verified product image.
+1640251697	1124658338	звезда сварога подвеска	CONFLICTING_SYMBOL_NOMENCLATURE	Need an authoritative product-specific naming decision because external sources conflict on whether «Звезда Сварога» is the same as this «Алатырь (Крест Сварога)» or a distinct symbol.
+2184234912	1831506538	амулет звезда руси	CONFLICTING_SYMBOL_NOMENCLATURE	Need an authoritative product-specific naming decision because external sources conflict on whether «Звезда Руси» and «Звезда Лады» are synonyms or distinct symbols.
