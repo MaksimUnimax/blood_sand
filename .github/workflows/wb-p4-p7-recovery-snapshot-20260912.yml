@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 17cfde800789699d8851a8e13130942a7bed2a74
+          ref: 81b9e3556a5172e46e192b492a39a983e06065ef
           path: wb_saved
           persist-credentials: false
           sparse-checkout: tooling/llm-api-bridges/wildberries
@@ -35,17 +35,18 @@ jobs:
           oz = Path('ozon_reference/tooling/llm-api-bridges/ozon-seller')
           entries=[]
           text_suffixes={'.md','.js','.mjs','.cjs','.py','.json','.jsonl','.html','.css','.yml','.yaml','.txt'}
+          exact_binary='artifacts/OZON_BRIDGE_v0.1.19_GLOBAL_IDLE_WORK_RESTART_20260912.zip'
           for p in sorted(oz.rglob('*')):
               if not p.is_file(): continue
               rel=p.relative_to(oz)
               entries.append({'path':str(rel),'bytes':p.stat().st_size})
-              if p.suffix.lower() in text_suffixes and p.stat().st_size <= 8000000:
+              if (p.suffix.lower() in text_suffixes and p.stat().st_size <= 8000000) or str(rel)==exact_binary:
                   dest=out/'ozon-seller'/rel
                   dest.parent.mkdir(parents=True,exist_ok=True)
                   shutil.copyfile(p,dest)
           (out/'OZON_ALL_PATHS.json').write_text(json.dumps(entries,indent=2),encoding='utf-8')
           manifest={str(p.relative_to(out)):{'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(out.rglob('*')) if p.is_file()}
-          (out/'SNAPSHOT_MANIFEST.json').write_text(json.dumps({'wb_ref':'17cfde800789699d8851a8e13130942a7bed2a74','ozon_ref':'97f1abc0ecaa04c6e24d0c32f8525b126b05d0e1','scope':'COPY_SAVED_BYTES_ONLY_NOT_REBUILT_NOT_TESTED_NO_MARKETPLACE_CALLS','files':manifest},indent=2),encoding='utf-8')
+          (out/'SNAPSHOT_MANIFEST.json').write_text(json.dumps({'wb_ref':'81b9e3556a5172e46e192b492a39a983e06065ef','ozon_ref':'97f1abc0ecaa04c6e24d0c32f8525b126b05d0e1','scope':'COPY_SAVED_BYTES_ONLY_NOT_REBUILT_NOT_TESTED_NO_MARKETPLACE_CALLS','files':manifest},indent=2),encoding='utf-8')
           print(json.dumps({'files':len(manifest),'bytes':sum(x['bytes'] for x in manifest.values()),'marketplace_calls':0}))
           PY
       - uses: actions/upload-artifact@v4
