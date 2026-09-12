@@ -2,7 +2,10 @@ name: Ozon Autorun HELP V2 final pre-handoff
 on:
   push:
     branches: [repair/ozon-autorun-help-v2-marker-2026-09-12]
-    paths: ['.github/workflows/ozon-autorun-help-v2-final-prehandoff-2026-09-12.yml']
+    paths:
+      - '.github/workflows/ozon-autorun-help-v2-final-prehandoff-2026-09-12.yml'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/autorun-help-v2-marker-v1/run_final_suite.py'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/autorun-help-v2-marker-v1/finalize_prehandoff.py'
 permissions:
   contents: read
 concurrency:
