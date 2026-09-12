@@ -1,463 +1,136 @@
 # Alice — Ozon Seller Bridge business regression suite
 
-Status: TEST DEFINITION COMPLETE / ALICE EXECUTION NOT YET ACCOUNTED
+Status: TEST DEFINITION COMPLETE / ALICE 44-ROW EXECUTION NOT YET ACCOUNTED
 Date: 2026-09-12
 Target: ordinary Alice chat + Ozon Seller Bridge
-Canonical baseline: final Sol/GPT 44-row business gate
+Canonical source: `research/product/OZON_AI_WORKER_PRIMARY_GATE_LIVE_RESULTS_TABLE_2026-09-02.md`
+Canonical source state: `Updated: 2026-09-06` / `AUTHORITATIVE_TERMINAL_SOL_RESULTS__44_OF_44_ROWS_COMPLETE`
+Supporting source: `research/product/OZON_AI_WORKER_SOL_44_CONSOLIDATED_ROOT_CAUSE_GAP_LEDGER_2026-09-06.md`
 
 ## Current accounting
 
 - Canonical tests defined: **44/44**
 - STD tests: **20/20 defined**
 - CAP tests: **24/24 defined**
-- Alice transcript-backed executions recorded in this document: **0/44**
-- Alice live certification: **NOT CLAIMED**
+- Alice transcript-backed canonical executions recorded here: **0/44**
 - Raw Alice dialogue imports: **0**
+- Alice live certification: **NOT CLAIMED**
 
-`NOT_RUN` means exactly that: the canonical test exists, but no supplied Alice transcript has yet been admitted as evidence for that row.
+`NOT_RUN` means the test definition exists but no supplied Alice dialogue has yet been admitted as evidence for that row.
 
-## What constitutes a correct Alice result
+## How this suite is used
 
-These invariants apply to every row unless a row adds stricter requirements:
+For each row Alice receives the canonical business prompt. The required result is semantic: current seller values may differ from the historical Sol/GPT run, but the answer must preserve the same evidence, provenance, completeness, arithmetic, attribution and safety boundaries.
 
-1. Use actual seller/provider evidence. Do not invent seller values, search positions, competitors, stock, orders, finance, or advertising attribution.
-2. Missing provider row is not zero.
-3. `null` is not zero, absence, or failure unless the provider contract proves that meaning.
-4. State provider/API/queryability/coverage limits explicitly.
-5. Preserve attribution boundaries: CPC vs CPO, finance rows, supplies, competitor discovery, historical advertising, and warehouse semantics.
-6. Validate a user premise before explaining it; if evidence disproves it, say so.
-7. If a complete list is claimed, terminal pagination/completeness must be established where relevant.
-8. Do not rely on hidden retry, pagination, polling, fan-out, refetch, resend, or silent provider calls.
+These prompts are canonical regression prompts derived from the terminal 44 business questions. They are not claimed to be byte-for-byte historical user wording unless a preserved transcript proves exact wording.
+
+## Global pass invariants
+
+1. Use real seller/provider evidence; never invent seller values, positions, competitors, stock, orders, finance or advertising attribution.
+2. Missing provider row is **not zero**.
+3. `null` is **not** zero, absence, rank 0 or failure unless the provider contract proves that meaning.
+4. State provider/API/queryability/entitlement/data-readiness/coverage limits explicitly.
+5. Preserve FBO/FBS, warehouse-ID, CPC/CPO, finance, supply-provenance and historical-attribution semantics.
+6. Check the user's premise before explaining it; reject a premise when evidence disproves it.
+7. A complete list requires terminal pagination/completeness evidence where applicable.
+8. No hidden retry, pagination, polling, fan-out, refetch or resend.
 9. Keep private seller evidence separate from public/external evidence.
-10. Arithmetic must reconcile.
-11. Dynamic values may differ from the historical Sol/GPT run. Passing means matching the required business semantics and evidence rules, not reproducing stale numbers.
-12. The answer must solve the business question. A raw API payload alone is not sufficient.
-
-## Canonical tests
-
-### STD-01 — Sales for one day
-**Prompt:** `Покажи продажи за [день]: выручку и количество заказанных единиц.`
-
-**Required result:** Return the requested day's actual revenue and ordered-unit count, identify the period/date and evidence source, and never fabricate values if the provider fails or omits data.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-02 — Daily sales with best/worst days
-**Prompt:** `Покажи продажи по дням за [период] и назови 3 лучших и 3 худших дня по выручке.`
-
-**Required result:** Return daily rows for the requested period and an exact revenue-sorted top 3 and bottom 3. Ties/order and arithmetic must be defensible from the returned rows.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-03 — Top 20 products by revenue
-**Prompt:** `Покажи топ-20 товаров по выручке за [период].`
-
-**Required result:** Return exactly the top 20 by revenue when at least 20 supported rows exist; if fewer exist, return all supported rows and explicitly state that the source contains fewer than 20.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-04 — Period comparison
-**Prompt:** `Сравни [период A] и [период B]: выручка, заказанные единицы и процент изменения.`
-
-**Required result:** Show A and B revenue and ordered units plus absolute/percentage changes. Verify arithmetic and make zero-denominator cases explicit rather than inventing a percentage.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-05 — Explain a sharp sales decline
-**Prompt:** `Объясни, почему продажи резко упали в [период/день].`
-
-**Required result:** Produce an evidence-led diagnosis. Clearly separate proven contributing factors from hypotheses and from unavailable search/market evidence. Do not turn correlation into causation.
-
-**Sol/GPT baseline:** `PASS_WITH_LIMITS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-06 — Manager priority audit
-**Prompt:** `Что сегодня в моём Ozon-магазине требует внимания в первую очередь?`
-
-**Required result:** Produce a prioritized action list grounded in current catalog, stock, orders, advertising and finance evidence where available. Each priority needs a reason/severity, not a generic checklist.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-07 — Stockout, slow stock, replenishment
-**Prompt:** `Какие товары скоро закончатся, какие лежат медленно и что нужно пополнить?`
-
-**Required result:** Separate near-stockout, slow-moving and replenishment candidates using the necessary stock/turnover surfaces. Do not pretend a single stock endpoint proves all three classifications.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-08 — Current stock by warehouse
-**Prompt:** `Покажи текущие остатки по складам.`
-
-**Required result:** Return current warehouse-level stock with FBO/FBS semantics preserved and completeness/pagination made explicit. Do not mix warehouse IDs from incompatible domains.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-09 — Yesterday sales by warehouse
-**Prompt:** `Покажи вчерашние продажи по складам и сведи FBO и FBS в общий итог.`
-
-**Required result:** Return warehouse-level yesterday sales, separate FBO and FBS subtotals, and a reconciled combined total. Respect privacy/personal-data constraints for buyer-sensitive FBS detail.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-10 — SKU warehouse history
-**Prompt:** `Покажи складскую историю по товару [SKU] и объясни, что с ним происходило.`
-
-**Required result:** Build an evidence-backed chronology/history for the requested SKU and distinguish observed events/states from unsupported causal explanations.
-
-**Sol/GPT baseline:** `PASS_REAL_EXTERNAL_INCIDENT`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-11 — Missing FBO unit without sale
-**Prompt:** `Куда делась конкретная FBO-единица товара [SKU], если продажи по ней не было?`
-
-**Required result:** Locate the unit/state as far as evidence permits (for example reserved, if actually proven). Distinguish what FBO evidence proves from what FBS or provider data cannot prove.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-12 — All active supplies
-**Prompt:** `Покажи все активные поставки и их текущие стадии.`
-
-**Required result:** Return all active supplies and current stages. If the source is paginated, prove terminal pagination before claiming completeness.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-13 — Supply arrived but goods not accepted/selling
-**Prompt:** `Поставка приехала, но товар не принят или не продаётся. Что происходит?`
-
-**Required result:** Diagnose using supply status plus current stock/product state. Do not attribute current inventory to a specific supply unless the evidence contains that provenance link.
-
-**Sol/GPT baseline:** `PASS_WITH_EXPLICIT_PROVENANCE_LIMIT`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-14 — Stock exists but item invisible/undeliverable
-**Prompt:** `Найди товары, у которых есть остаток, но они невидимы или доставка недоступна.`
-
-**Required result:** Return concrete evidence-backed cases. If no current case is found, explicitly state that none was found in the checked scope instead of manufacturing an example.
-
-**Sol/GPT baseline:** `PASS_NO_CURRENT_CASE_FOUND`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-15 — Delivery restrictions
-**Prompt:** `Покажи товары или склады, где сейчас есть ограничения доставки.`
-
-**Required result:** Return current restrictions and their scope. If the relevant provider surface returns no restricted warehouses/items, report current zero within that scope, not a universal claim.
-
-**Sol/GPT baseline:** `PASS_CURRENT_ZERO`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-16 — Advertising spend for seven days
-**Prompt:** `Сколько потрачено на рекламу за последние 7 дней и какие кампании самые дорогие?`
-
-**Required result:** Return total advertising spend for the requested seven-day window and rank campaigns by spend using consistent units/semantics.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-17 — Wasted advertising budget
-**Prompt:** `Какие кампании или товары впустую тратят рекламный бюджет?`
-
-**Required result:** Identify waste only from available advertising/sales evidence. Preserve CPC/CPO semantics and do not distribute campaign-level CPO spend to SKU without proven attribution.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-18 — Advertising on low/out-of-stock products
-**Prompt:** `Есть ли реклама на товары, которые заканчиваются или отсутствуют на нужных складах?`
-
-**Required result:** Intersect active advertising with stock. Distinguish FBO/Ozon low or zero stock from a true total FBO+FBS stockout.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-19 — Advertising on weak/invisible cards
-**Prompt:** `Есть ли реклама на слабые, проблемные или невидимые карточки?`
-
-**Required result:** Intersect advertising with card visibility/update/content-quality evidence and name only evidence-backed problems; separate item-specific failures from common content gaps.
-
-**Sol/GPT baseline:** `PASS_WITH_TWO_ADVERTISED_FAILED_UPDATE_WARNINGS_AND_UNIFORM_RICH_CONTENT_GAP`
-
-**Alice latest:** `NOT_RUN`
-
-### STD-20 — Why DRR increased
-**Prompt:** `Почему вырос ДРР? Сопоставь рекламные расходы и продажи и проверь, действительно ли ДРР вырос.`
-
-**Required result:** First test the premise using comparable advertising-spend and sales periods, then compute/compare DRR. If DRR did not increase, explicitly reject the premise rather than explaining a nonexistent rise.
-
-**Sol/GPT baseline:** `PASS_WITH_RECORDED_TRANSIENT_ANALYTICS_429_RECOVERY`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-01 — Catalog inventory
-**Prompt:** `Покажи, какие товары сейчас есть в моём каталоге Ozon.`
-
-**Required result:** Return the current assortment/catalog inventory within API scope with the IDs/statuses needed for seller work and explicit completeness limits.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-02 — Offer/product visibility
-**Prompt:** `Какие мои товары сейчас видимы/невидимы или имеют проблемы с показом/предложением?`
-
-**Required result:** Identify current visible, invisible or problematic offers using explicit status evidence; do not infer visibility from unrelated absence.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-03 — Card/content quality
-**Prompt:** `Оцени качество контента моих карточек: названия, атрибуты, описания и заметные пробелы.`
-
-**Required result:** Evaluate actual card information/attributes and report concrete per-card or common content gaps without inventing missing fields that were not inspected.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-04 — Stock by warehouses
-**Prompt:** `Покажи остатки товаров по складам с корректным разделением FBO и FBS.`
-
-**Required result:** Return current warehouse stock while preserving FBO/FBS identity and warehouse-ID semantics; do not merge incompatible identifiers.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-05 — Turnover/stock analytics
-**Prompt:** `Оцени оборачиваемость и stock-analytics по ассортименту; отдельно укажи, если провайдер пропускает SKU.`
-
-**Required result:** Return supported turnover/stock analytics and explicitly identify omitted SKUs as provider omissions/unknowns, never as zero metrics.
-
-**Sol/GPT baseline:** `PASS_WITH_PROVIDER_OMISSION_LIMIT`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-06 — FBO orders
-**Prompt:** `Покажи текущие FBO-заказы и сведи их с доступными идентификаторами без смешивания несовместимых ID.`
-
-**Required result:** Return current FBO orders and perform only evidence-supported reconciliation across identifiers. Never merge IDs merely because values look similar.
-
-**Sol/GPT baseline:** `PASS_WITH_EXPLICIT_RECONCILIATION_LIMIT`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-07 — FBS orders
-**Prompt:** `Покажи текущие FBS-заказы/отправления.`
-
-**Required result:** Return current FBS orders/postings available through the read-only Bridge with correct statuses and data/privacy boundaries.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-08 — Supplies
-**Prompt:** `Покажи мои поставки и что по ним сейчас известно.`
-
-**Required result:** Return supply list/status and explicitly call out provider irregularities or missing fields rather than silently filling them.
-
-**Sol/GPT baseline:** `PASS_WITH_PROVIDER_DATA_GAP`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-09 — Returns and cancellations
-**Prompt:** `Покажи возвраты и причины отмен/возвратов за актуальный период.`
-
-**Required result:** Return supported return/cancellation evidence for the period. If no recent rows are available, say that no rows were returned within the checked scope rather than asserting zero lifetime returns.
-
-**Sol/GPT baseline:** `PASS_WITH_EXPLICIT_NO_RECENT_ROWS_BOUNDARY`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-10 — Finance/accruals
-**Prompt:** `Покажи финансовые начисления по магазину и, где возможно, привяжи их к отправлениям/операциям.`
-
-**Required result:** Return finance/accrual rows and types and attribute them to shipments/operations only where source identifiers support the link.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-11 — Commissions, services, logistics
-**Prompt:** `Покажи комиссии, услуги и логистические расходы; отдели фактические списания от справочных тарифов.`
-
-**Required result:** Separate actual current charges from tariff/reference pricing and state the temporal/data boundary of the evidence.
-
-**Sol/GPT baseline:** `PASS_WITH_CURRENT_DATA_BOUNDARY`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-12 — Advertising campaigns
-**Prompt:** `Покажи рекламные кампании и их текущие состояния.`
-
-**Required result:** Return current campaigns with evidence-backed states/statuses and relevant start/stop information where provided.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-13 — Advertising spend semantics
-**Prompt:** `Покажи рекламные расходы и правильно раздели семантику CPC и CPO.`
-
-**Required result:** Return advertising spend while preserving CPC/CPO semantic and attribution differences. Do not make unsupported cross-model allocations.
-
-**Sol/GPT baseline:** `PASS_WITH_EXPLICIT_ATTRIBUTION_RULE`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-14 — SKU inside campaigns
-**Prompt:** `Покажи, какие SKU входят в рекламные кампании; не приписывай CPO-расход конкретному SKU без доказанной атрибуции.`
-
-**Required result:** Return evidenced campaign-SKU membership. SKU-level CPC membership may be shown where supported; campaign-level CPO spend must not be assigned to a SKU without evidence.
-
-**Sol/GPT baseline:** `PASS_WITH_EXPLICIT_ATTRIBUTION_RULE`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-15 — Search queries/analytics
-**Prompt:** `Покажи доступную аналитику по поисковым запросам; если каких-то search rows нет у продавца, скажи об этом прямо.`
-
-**Required result:** Return available query/search analytics and explicitly state seller-side search-row/queryability limitations. Do not fabricate missing query rows.
-
-**Sol/GPT baseline:** `PASS_WITH_SEARCH_CONTRACT_LIMIT`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-16 — Categories/taxonomy
-**Prompt:** `Покажи доступную категорийную/taxonomy информацию по моим товарам и границы того, что реально можно запросить.`
-
-**Required result:** Return available category/taxonomy evidence and its queryability boundary. Do not present a limited/root-category surface as a complete generic taxonomy crawl.
-
-**Sol/GPT baseline:** `PASS_WITH_QUERYABILITY_BOUNDARY`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-17 — Category/product attributes
-**Prompt:** `Покажи атрибуты категорий/товаров, доступные для текущих seller-задач, и не притворяйся, что есть полный generic category crawl, если его нет.`
-
-**Required result:** Return usable current attributes for seller tasks and clearly state the runtime/generic-discovery scope boundary.
-
-**Sol/GPT baseline:** `PASS_WITH_RUNTIME_SCOPE_BOUNDARY`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-18 — Tariffs, limits, quotas
-**Prompt:** `Какие у API/Bridge есть тарифы, лимиты и квоты, важные для этой задачи?`
-
-**Required result:** Return relevant limits/quotas only from documented Help/contract/provider evidence. Do not invent numerical limits or infer a rate limit solely from an error such as HTTP 403.
-
-**Sol/GPT baseline:** `PASS_WITH_DOCUMENTED_BOUNDARIES`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-19 — Help/operation discovery
-**Prompt:** `Какие операции Ozon Bridge доступны для решения [задачи] и как их найти через Help?`
-
-**Required result:** Discover the appropriate operations through Help and provide an executable operation route/guidance for the task rather than hallucinating aliases.
-
-**Sol/GPT baseline:** `PASS`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-20 — Seller-private + external-world investigation
-**Prompt:** `Расследуй [бизнес-проблему] с данными моего продавца и внешним публичным контекстом; чётко раздели private seller evidence и public evidence.`
-
-**Required result:** Combine evidence only with provenance labels. Private seller facts and public/external context must remain distinguishable and conclusions must not launder one source into the other.
-
-**Sol/GPT baseline:** `PASS_WITH_TRANSIENT_PROVIDER_RATE_LIMIT_RECOVERY`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-21 — SEO/semantic core for own card
-**Prompt:** `Собери SEO/семантическое ядро для моей карточки [SKU] на основе доступных данных; не выдумывай рыночные запросы или позиции, которых нет в evidence.`
-
-**Required result:** Produce semantic/SEO recommendations grounded in own-card/search evidence actually available. Missing market-query/rank evidence remains a data-readiness boundary, not invented keywords/positions presented as observed facts.
-
-**Sol/GPT baseline:** `PASS_WITH_RECOVERY_AND_DATA_READINESS_GUIDANCE_GAP`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-22 — Competitor positioning
-**Prompt:** `Сравни позиционирование моей карточки [SKU] с конкурентами; используй только доказанный набор конкурентов и явно укажи coverage boundary.`
-
-**Required result:** Compare only a proven competitor set. If target-specific competitor discovery is incomplete, mark the analysis partial and state the coverage boundary rather than manufacturing competitors.
-
-**Sol/GPT baseline:** `PARTIAL_WITH_COMPETITOR_DISCOVERY_COVERAGE_BOUNDARY`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-23 — Category/search position
-**Prompt:** `Покажи позицию товара [SKU] в категории/поиске и границы покрытия; null не превращай в ноль или “товара нет”.`
-
-**Required result:** Return supported position/category/search evidence and coverage limits. Preserve `null`/unknown exactly as unknown/not supplied, never as rank 0 or confirmed absence.
-
-**Sol/GPT baseline:** `PASS_WITH_SEARCH_POSITION_AND_CATEGORY_COVERAGE_BOUNDARIES`
-
-**Alice latest:** `NOT_RUN`
-
-### CAP-24 — Monthly SKU unit economics
-**Prompt:** `Рассчитай месячную unit economics по SKU [SKU]: продажи/выручка, расходы/начисления, реклама и итог; отдельно укажи, где атрибуция исторической рекламы/placement неполна.`
-
-**Required result:** Reconcile supported monthly SKU sales/revenue with finance charges and advertising where attribution is actually available. Quantify or clearly flag any non-attributable historical advertising/placement boundary rather than allocating it by assumption.
-
-**Sol/GPT baseline:** `PASS_WITH_ATTRIBUTION_COVERAGE_BOUNDARY`
-
-**Alice latest:** `NOT_RUN`
+10. Arithmetic/reconciliation must be internally consistent.
+11. A raw API dump without solving the business question is not a PASS.
+12. Provider/Bridge/UI failures must be classified separately from Alice reasoning failures.
+
+## Canonical 44 tests for Alice
+
+| # | ID | Canonical Alice test prompt | Required result / acceptance target | Sol/GPT terminal baseline | Alice latest |
+|---:|---|---|---|---|---|
+| 1 | STD-01 | **Покажи продажи за вчера: выручку и количество заказанных единиц.** | Return actual day revenue + ordered units for the requested date. If analytics transiently fails, do not invent/zero the result and do not hide retry. | `PASS` | `NOT_RUN` |
+| 2 | STD-02 | **Покажи продажи по дням за последние 7 дней и назови 3 лучших и 3 худших дня по выручке.** | Return day rows for the period and exact top-3/bottom-3 by revenue; totals/order must be derivable from evidence. | `PASS` | `NOT_RUN` |
+| 3 | STD-03 | **Покажи топ-20 товаров по выручке за последние 30 дней.** | Rank supported products by revenue; return 20 if at least 20 exist, otherwise explicitly state the smaller supported set. | `PASS` | `NOT_RUN` |
+| 4 | STD-04 | **Сравни последние 7 дней с предыдущими 7 днями: выручка, заказанные единицы и процент изменения.** | Show both periods, absolute values and percentage changes; handle zero denominator explicitly. | `PASS` | `NOT_RUN` |
+| 5 | STD-05 | **Продажи резко упали. Проверь, действительно ли это так, и объясни возможные причины по доступным данным.** | First verify the drop; then produce evidence-led multi-factor diagnosis. Separate proven contributors from hypotheses and search/query freshness limits. | `PASS_WITH_LIMITS` | `NOT_RUN` |
+| 6 | STD-06 | **Что сегодня в моём магазине Ozon требует внимания в первую очередь?** | Produce a prioritized manager audit from relevant current surfaces; every priority needs evidence/reason/severity, not generic advice. | `PASS` | `NOT_RUN` |
+| 7 | STD-07 | **Какие товары скоро закончатся, какие лежат медленно и что нужно пополнить?** | Distinguish near-stockout, slow stock and replenishment candidates using the necessary stock/turnover evidence; no one-surface shortcut. | `PASS` | `NOT_RUN` |
+| 8 | STD-08 | **Покажи текущие остатки по складам.** | Return current warehouse-level stock with correct warehouse/channel semantics and explicit completeness/pagination status. | `PASS` | `NOT_RUN` |
+| 9 | STD-09 | **Покажи вчерашние продажи по складам и сведи FBO и FBS, не смешивая их семантику.** | Return warehouse sales with FBO/FBS provenance and reconciled total where valid; preserve privacy boundaries. | `PASS` | `NOT_RUN` |
+| 10 | STD-10 | **На складе был инцидент/пожар. Проверь, был ли там мой товар и что можно доказать по доступным данным.** | Establish seller-stock exposure only from evidence. Do not claim incident causality or a historical snapshot that the data cannot prove; preserve selector/contract limitations. | `PASS_WITH_EXPLICIT_INCIDENT_CAUSALITY_AND_HISTORICAL_SNAPSHOT_LIMITS` | `NOT_RUN` |
+| 11 | STD-11 | **FBO-единица товара исчезла без продажи. Куда она делась?** | Explain the disappearance only to the level supported by FBO evidence (e.g. reservation if proven); do not invent loss/sale/movement. | `PASS` | `NOT_RUN` |
+| 12 | STD-12 | **Какие поставки сейчас активны и что происходит с каждой?** | Return the complete active set with lifecycle/status for each; prove terminal pagination such as terminal `last_id` before claiming all. | `PASS` | `NOT_RUN` |
+| 13 | STD-13 | **Поставка приехала, но товар не принят или не продаётся. Разбери, что происходит.** | Diagnose supply status plus current sellability/stock; do not attribute current stock to a specific supply without provenance evidence. | `PASS_WITH_EXPLICIT_PROVENANCE_LIMIT` | `NOT_RUN` |
+| 14 | STD-14 | **Найди товары, у которых есть остаток, но карточка невидима или доставка недоступна.** | Return concrete current cases if found; if none are found, say so within the checked scope. Do not manufacture an example. | `PASS_NO_CURRENT_CASE_FOUND` | `NOT_RUN` |
+| 15 | STD-15 | **Покажи товары или склады, где сейчас есть ограничения доставки.** | Return current affected warehouses/items. A zero result is only a current scoped zero, not a universal historical claim. | `PASS_CURRENT_ZERO` | `NOT_RUN` |
+| 16 | STD-16 | **Сколько потрачено на рекламу за последние 7 дней и какие кампании самые дорогие?** | Return exact supported spend for the 7-day window and rank campaigns by spend with consistent units. | `PASS` | `NOT_RUN` |
+| 17 | STD-17 | **Какие кампании или товары впустую тратят рекламный бюджет?** | Identify waste from advertising + sales evidence. Preserve CPC/CPO semantics; never smear campaign-level CPO spend across SKU without attribution. | `PASS` | `NOT_RUN` |
+| 18 | STD-18 | **Есть ли реклама на товары, которые заканчиваются или отсутствуют на нужных складах?** | Intersect paid advertising with stock; distinguish FBO/Ozon low/zero from a true total FBO+FBS stockout. | `PASS` | `NOT_RUN` |
+| 19 | STD-19 | **Есть ли реклама на слабые, проблемные или невидимые карточки?** | Join paid ads with visibility/update/content-quality evidence; separate item-specific failures from common content gaps and do not fabricate invisibility. | `PASS_WITH_TWO_ADVERTISED_FAILED_UPDATE_WARNINGS_AND_UNIFORM_RICH_CONTENT_GAP` | `NOT_RUN` |
+| 20 | STD-20 | **Почему вырос ДРР? Сопоставь рекламные расходы и продажи и сначала проверь, действительно ли ДРР вырос.** | Compare compatible periods/metrics and compute DRR. If evidence disproves the claimed rise, explicitly reject the premise instead of inventing causes. | `PASS_WITH_RECORDED_TRANSIENT_ANALYTICS_429_RECOVERY` | `NOT_RUN` |
+| 21 | CAP-01 | **Покажи, какие товары сейчас есть в моём каталоге Ozon.** | Discover current catalog/product inventory without operator enumeration; include usable IDs/statuses and completeness boundary. | `PASS` | `NOT_RUN` |
+| 22 | CAP-02 | **Какие товары сейчас видимы и невидимы на Ozon?** | Use the dedicated visibility evidence for the current catalog; never infer visibility from unrelated missing rows. | `PASS` | `NOT_RUN` |
+| 23 | CAP-03 | **Оцени качество контента моих карточек и найди самые проблемные.** | Use actual content/card-quality evidence; identify deterministic worst-card/content gaps without inventing uninspected fields. | `PASS` | `NOT_RUN` |
+| 24 | CAP-04 | **Покажи текущие остатки по складам с корректным разделением FBO и FBS.** | Return current stock while preserving FBO/FBS identifiers and warehouse-stock semantics; transport normalization must not corrupt provenance. | `PASS` | `NOT_RUN` |
+| 25 | CAP-05 | **Оцени оборачиваемость и stock analytics по ассортименту. Если провайдер не вернул отдельные SKU, покажи это как unknown/omitted, а не как ноль.** | Return supported turnover analytics and explicitly classify omitted SKUs as not returned/unknown. | `PASS_WITH_PROVIDER_OMISSION_LIMIT` | `NOT_RUN` |
+| 26 | CAP-06 | **Покажи склады, кластеры и логистическую географию, доступную по моим товарам/заказам.** | Return supported geography and keep FBO fulfillment warehouse IDs distinct from seller-warehouse IDs; no false ID reconciliation. | `PASS` | `NOT_RUN` |
+| 27 | CAP-07 | **Покажи список поставок и их текущие статусы.** | Return current supply-order inventory/status and preserve lifecycle progression/completeness. | `PASS` | `NOT_RUN` |
+| 28 | CAP-08 | **Возьми конкретную поставку и покажи детали приёмки и вложенные статусы.** | Drill into supply details; distinguish nested supply/acceptance state from broader parent-order state. | `PASS` | `NOT_RUN` |
+| 29 | CAP-09 | **Покажи FBO postings/orders и, где нужно, дополни их доступной аналитикой склада.** | Return posting evidence; enrich warehouse fields only from a supported analytics source and preserve provenance. | `PASS` | `NOT_RUN` |
+| 30 | CAP-10 | **Покажи цены и доступные детали цен по товарам.** | Return all-account price evidence available to the seller; if Premium/Pro detail is unavailable, mark entitlement boundary instead of fabricating details. | `PASS_WITH_ENTITLEMENT_BOUNDARY` | `NOT_RUN` |
+| 31 | CAP-11 | **Покажи акции/promotions и участие моих товаров в них.** | Use dedicated action + product-participation evidence rather than assuming promotions solely from price metadata. | `PASS` | `NOT_RUN` |
+| 32 | CAP-12 | **Покажи возвраты и отмены; отдельно фактические события и справочник причин.** | Return actual return/cancellation rows with explicit continuation to completeness where needed; keep event rows distinct from reason dictionary. | `PASS` | `NOT_RUN` |
+| 33 | CAP-13 | **Покажи финансовый баланс и начисления и сверь, сходится ли баланс.** | Reconcile the supported balance identity; do not mislabel sales flow as payout/balance and do not double-count. | `PASS` | `NOT_RUN` |
+| 34 | CAP-14 | **Покажи финансовые транзакции и сделай reconciliation по типам начислений/операций.** | Return transaction evidence with correct type semantics; provider rate-limit/transient failures must remain explicit and no hidden retry is allowed. | `PASS_WITH_TRANSIENT_PROVIDER_RATE_LIMIT_RECOVERY` | `NOT_RUN` |
+| 35 | CAP-15 | **Покажи рейтинг/индекс ошибок FBS и связанные проблемные отправления.** | Separate aggregate/current index from historical affected postings; do not present historical postings as current index state. | `PASS` | `NOT_RUN` |
+| 36 | CAP-16 | **Покажи aggregate по отзывам/вопросам. Если доступ запрещён, не превращай 403 в нулевое количество.** | Return supported aggregate if accessible; otherwise preserve entitlement/permission boundary and classify 403 honestly, never as zero reviews/questions. | `PASS_WITH_ENTITLEMENT_BOUNDARIES_AND_REVIEW_ENTITLEMENT_GUIDANCE_GAP` | `NOT_RUN` |
+| 37 | CAP-17 | **Покажи все рекламные кампании и их текущие состояния.** | Return campaign inventory with explicit pagination until terminal completeness; no hidden autopagination. Dynamic campaign count need not equal the historical 1128. | `PASS` | `NOT_RUN` |
+| 38 | CAP-18 | **Покажи рекламную статистику и объясни границы product-level покрытия.** | Return supported Performance metrics and explicitly state product-level/attribution/guidance coverage limits; no metric substitution. | `PASS_WITH_PRODUCT_LEVEL_COVERAGE_AND_GUIDANCE_GAP` | `NOT_RUN` |
+| 39 | CAP-19 | **Свяжи рекламу и остатки и найди проблемные сочетания.** | Perform cross-surface ad→stock join; an absent stock row remains omitted/unknown, never stock=0. | `PASS_WITH_STOCK_PROVIDER_OMISSION_LIMIT` | `NOT_RUN` |
+| 40 | CAP-20 | **Расследуй бизнес-проблему, используя мои private seller-данные и внешний публичный контекст; раздели источники.** | Combine private Seller evidence and public context with explicit provenance; never launder public inference into private fact or vice versa. | `PASS_WITH_TRANSIENT_PROVIDER_RATE_LIMIT_RECOVERY` | `NOT_RUN` |
+| 41 | CAP-21 | **Собери SEO/семантическое ядро для моей карточки [SKU] на основе доступных данных. Не выдумывай рыночные запросы или позиции.** | Use factual own-card/query evidence; missing current search/query readiness remains a boundary, not invented market demand/rank. | `PASS_WITH_RECOVERY_AND_DATA_READINESS_GUIDANCE_GAP` | `NOT_RUN` |
+| 42 | CAP-22 | **Сравни SEO/позиционирование моей карточки [SKU] с конкурентами. Используй только доказанно найденных конкурентов.** | If a defensibly linked target-specific competitor set is unavailable, keep the result partial and state the discovery coverage boundary; never hand-pick a competitor and call it provider-discovered. | `PARTIAL_WITH_COMPETITOR_DISCOVERY_COVERAGE_BOUNDARY` | `NOT_RUN` |
+| 43 | CAP-23 | **Покажи позицию товара [SKU] в категории/поиске и границы покрытия. `position=null` не превращай в 0 или «товара нет».** | Return supported category/search-position evidence and explicit Premium/Bridge/category coverage boundary; preserve null as unknown/not supplied. | `PASS_WITH_SEARCH_POSITION_AND_CATEGORY_COVERAGE_BOUNDARIES` | `NOT_RUN` |
+| 44 | CAP-24 | **Рассчитай месячную unit economics по SKU [SKU]: продажи/выручка, финансы/начисления, реклама и итог; отдельно покажи неполную историческую атрибуцию.** | Reconcile exact supported finance/sales core. Historical Performance SKU membership and placement/ad attribution stay explicit coverage boundaries; do not allocate unproven account/campaign costs to SKU. | `PASS_WITH_ATTRIBUTION_COVERAGE_BOUNDARY` | `NOT_RUN` |
 
 ## Alice run ledger
 
-No transcript-backed Alice runs have yet been imported into this document.
+No transcript-backed Alice canonical runs have yet been imported into this document.
 
-| Run | Date | Source MD | SHA-256 | Bridge build/version | Covered IDs | Verdict summary | Regression delta |
-|---|---|---|---|---|---|---|---|
-| — | — | — | — | — | — | — | — |
+| Run | Date | Source MD | Source SHA-256 | Bridge build/version | Covered IDs | Verdict summary | Delta vs previous Alice run | Delta vs Sol/GPT |
+|---|---|---|---|---|---|---|---|---|
+| — | — | — | — | — | — | — | — | — |
 
-## Raw dialogue evidence — append-only
+## Transcript import and regression-control protocol
 
-When the operator supplies an Alice MD dialogue, append a new section in this form. The transcript is evidence and must be preserved verbatim; analysis goes outside the raw block.
+Every MD dialogue supplied by the operator becomes append-only evidence. It is not replaced by a cleaned summary.
+
+For every import:
+
+- preserve source filename;
+- calculate/preserve SHA-256 when original file bytes are available;
+- record known Bridge build/version or `UNKNOWN`;
+- map the dialogue to canonical IDs;
+- assign a per-test verdict;
+- classify failures as `LLM / BRIDGE / PROVIDER / TARGET_UI / INVALID_RUN` where applicable;
+- record delta against the previous Alice run;
+- record delta against the Sol/GPT terminal baseline;
+- append the complete raw MD transcript verbatim.
+
+A new run never overwrites an earlier run. `OZON_LLM_BUSINESS_REGRESSION_MATRIX.md` shows only the latest supported Alice state; this file preserves the regression history.
+
+## Raw dialogue evidence — append-only template
 
 ### RUN-ALICE-XXXX
 
 - Date: `YYYY-MM-DD`
 - Source file: `<filename>.md`
-- Source SHA-256: `<sha256>`
-- Bridge build/version: `<known value or UNKNOWN>`
+- Source SHA-256: `<sha256 or UNKNOWN>`
+- Bridge build/version: `<value or UNKNOWN>`
 - Covered canonical IDs: `<STD/CAP IDs>`
 - Per-test verdicts: `<verdicts>`
+- Failure classification: `<LLM / BRIDGE / PROVIDER / TARGET_UI / INVALID_RUN>`
 - Regression delta vs previous Alice run: `<delta>`
-- Regression delta vs Sol/GPT baseline: `<delta>`
-- Classification of failures: `LLM / BRIDGE / PROVIDER / TARGET_UI / INVALID_RUN`
+- Regression delta vs Sol/GPT: `<delta>`
 
 #### Analyst notes
 
-Add only evidence-backed interpretation here. Do not edit the transcript to make it cleaner.
+Evidence-backed interpretation only. Do not alter the transcript to make the run look cleaner.
 
 #### Raw MD transcript — verbatim
 
@@ -465,6 +138,10 @@ Add only evidence-backed interpretation here. Do not edit the transcript to make
 <full supplied MD dialogue verbatim>
 ```
 
-## Regression-control rule
+## Current verdict
 
-A later Alice dialogue never overwrites an earlier one. Each supplied dialogue becomes an append-only run. The compact cross-LLM matrix is updated to the latest supported verdict, while this document retains the history needed to detect both improvements and regressions.
+`ALICE_CANONICAL_44_DEFINED = 44/44`
+
+`ALICE_CANONICAL_44_EVIDENCED = 0/44`
+
+`ALICE_LIVE_CERTIFICATION = NOT_CLAIMED`
