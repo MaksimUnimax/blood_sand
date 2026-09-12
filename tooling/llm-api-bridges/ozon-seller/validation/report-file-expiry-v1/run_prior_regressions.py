@@ -16,7 +16,7 @@ def run(label,args):
     if p.returncode:
         print(p.stdout.decode('utf-8',errors='replace')[-15000:]);raise SystemExit(p.returncode)
 decoded=[]
-for name,expected in [('run_attachment_idle_behavior.mjs','29cf98971296ba529d636e284f7066585c7e9e2cebe49121b41277ea18b8e71e'),('run_work_restart_extended.mjs','0a564b28a1bdf102042716247984594867aef6262bbfc18b0ea472a6a43aa883')]:
+for name,expected in [('run_attachment_idle_behavior_v2.mjs','b249dca808353fa5474f0cfcc7e620fc75cf85bfce32bbb4bbfc336cee0cb82a'),('run_work_restart_extended.mjs','0a564b28a1bdf102042716247984594867aef6262bbfc18b0ea472a6a43aa883')]:
     encoded=b''.join((ROOT/'validation/global-toast-work-restart-v1'/(name+'.gz.b64')).read_bytes().split())
     assert len(encoded)%4!=1
     decoded_bytes=gzip.decompress(base64.b64decode(encoded+b'='*((-len(encoded))%4),validate=True))

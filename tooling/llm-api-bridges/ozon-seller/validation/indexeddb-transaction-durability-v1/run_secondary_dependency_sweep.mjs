@@ -92,7 +92,8 @@ for (const producer of ['storeProviderArtifactForRef', 'materializeInlineProvide
   assert.match(block, /await putArtifact\(/, `${producer}: must await durable artifact write`);
 }
 
-assert.match(worker, /try \{ await storeProviderArtifactForRef\(ref, captured\); \} catch \(_\) \{\}/, 'trusted report capture storage-failure semantics changed unexpectedly');
+assert.match(worker, /try \{ await storeProviderArtifactForRef\(ref, captured, result\?\.parsed \|\| null\); \} catch \(_\) \{\}/, 'trusted report capture storage-failure semantics changed unexpectedly');
+assert.match(worker, /canonicalProviderArtifactType\(captured, parsed\)/, 'parser-proven report format must reach provider artifact classification without refetch');
 assert.match(worker, /REPORT_FILE_ARTIFACT_NOT_CAPTURED/, 'missing captured provider artifact must fail closed without re-download');
 assert.match(worker, /fetchCalls !== 1/, 'trusted report file transport must retain exactly-one fetch guard');
 

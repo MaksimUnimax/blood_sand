@@ -115,6 +115,7 @@
     return ({
       "application/pdf": "pdf",
       "text/csv": "csv",
+      "application/csv": "csv",
       "text/plain": "txt",
       "application/vnd.ms-excel": "xls",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
@@ -134,6 +135,40 @@
       if (base && /\.[A-Za-z0-9]{1,10}$/.test(base)) return sanitizeFilename(base, fallback);
     } catch (_) {}
     return sanitizeFilename(fallback);
+  }
+
+  const PARSED_REPORT_FILE_TYPES = Object.freeze({
+    xlsx: Object.freeze({ extension: "xlsx", mime_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+    csv: Object.freeze({ extension: "csv", mime_type: "text/csv" }),
+    zip_csv: Object.freeze({ extension: "zip", mime_type: "application/zip" }),
+    pdf: Object.freeze({ extension: "pdf", mime_type: "application/pdf" })
+  });
+
+  function canonicalProviderArtifactType(captured, parsed) {
+    const rawMime = String(captured?.content_type || "application/octet-stream").split(";", 1)[0].trim().toLowerCase() || "application/octet-stream";
+    const rawExtension = extensionForContentType(rawMime);
+    const parsedFormat = String(parsed?.format || "").trim().toLowerCase();
+    const parsedType = PARSED_REPORT_FILE_TYPES[parsedFormat] || null;
+    // A successfully parsed OOXML workbook is stronger evidence than an opaque
+    // octet-stream/ZIP transport label. For already concrete non-container MIME
+    // types, preserve the provider representation instead of gratuitously
+    // renaming text/plain to CSV.
+    if (parsedFormat === "xlsx" && parsedType) return parsedType;
+    if (rawMime !== "application/octet-stream" && rawMime !== "application/zip" && rawExtension !== "bin") {
+      return Object.freeze({ extension: rawExtension, mime_type: rawMime });
+    }
+    if (parsedType) return parsedType;
+    return Object.freeze({ extension: rawExtension, mime_type: rawMime });
+  }
+
+  function filenameWithCanonicalExtension(filename, extension, fallbackBase = "ozon-report-file") {
+    const ext = String(extension || "bin").replace(/[^A-Za-z0-9]/g, "").toLowerCase() || "bin";
+    const safe = sanitizeFilename(filename, `${fallbackBase}.${ext}`);
+    const current = OzonAIDeliveryCapabilities.extensionFromFilename(safe);
+    if (current === ext) return safe;
+    const dot = safe.lastIndexOf(".");
+    const stem = sanitizeFilename(dot > 0 ? safe.slice(0, dot) : safe, fallbackBase).replace(/\.$/, "") || fallbackBase;
+    return sanitizeFilename(`${stem}.${ext}`, `${fallbackBase}.${ext}`);
   }
 
   async function sha256Hex(bytes) {
@@ -175,17 +210,19 @@
     return refs;
   }
 
-  async function storeProviderArtifactForRef(fileRef, captured) {
+  async function storeProviderArtifactForRef(fileRef, captured, parsed = null) {
     const bytes = asBytes(captured.bytes);
-    const contentType = String(captured.content_type || "application/octet-stream").split(";", 1)[0].trim().toLowerCase() || "application/octet-stream";
-    const filename = safeFilenameForResponse(captured.url, captured.headers, contentType, fileRef);
-    const extension = OzonAIDeliveryCapabilities.extensionFromFilename(filename) || extensionForContentType(contentType);
+    const rawContentType = String(captured.content_type || "application/octet-stream").split(";", 1)[0].trim().toLowerCase() || "application/octet-stream";
+    const canonicalType = canonicalProviderArtifactType(captured, parsed);
+    const rawFilename = safeFilenameForResponse(captured.url, captured.headers, rawContentType, fileRef);
+    const filename = filenameWithCanonicalExtension(rawFilename, canonicalType.extension, `ozon-report-${fileRef || "file"}`);
+    const extension = canonicalType.extension;
     const created = nowMs();
     const record = {
       artifact_key: `provider:${fileRef}`,
       source_kind: "original_provider_file",
       filename,
-      mime_type: contentType,
+      mime_type: canonicalType.mime_type,
       extension,
       byte_length: bytes.byteLength,
       sha256: await sha256Hex(bytes),
@@ -232,7 +269,7 @@
       if (Number(result.byteLength || 0) !== captured.bytes.byteLength) return result;
       const refs = await reportRefsForTrustedUrl(trustedUrl);
       for (const ref of refs) {
-        try { await storeProviderArtifactForRef(ref, captured); } catch (_) {}
+        try { await storeProviderArtifactForRef(ref, captured, result?.parsed || null); } catch (_) {}
       }
     } catch (_) {}
     return result;

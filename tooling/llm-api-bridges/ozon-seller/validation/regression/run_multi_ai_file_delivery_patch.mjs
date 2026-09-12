@@ -96,9 +96,10 @@ pass("REG_FAILED_REPORT_FILE_STAYS_TEXT_ERROR");
 
 const alice = { ...base, origin:"https://alice.yandex.ru" };
 const aliceLarge = model.claimDelivery(alice,{deliveryId:"alice",mode:"batch_watch_v1",outgoingText:aboveText});
-assert.equal(aliceLarge.delivery.mode,"batch_watch_v1");
-assert.equal(capabilities.generatedTextDecision("alice",aboveText).threshold_status,"pending_live_calibration");
-pass("REG_OTHER_AI_THRESHOLD_NOT_INHERITED");
+assert.equal(aliceLarge.delivery.mode,"attachment_watch_v1");
+assert.equal(capabilities.generatedTextDecision("alice",aboveText).threshold_status,"calibrated");
+assert.equal(capabilities.generatedTextDecision("alice",aboveText).threshold,90_000);
+pass("REG_ALICE_CALIBRATED_THRESHOLD_NOT_CHATGPT_INHERITANCE");
 
 const portWorker = source("shared/file_delivery_port_worker.js");
 assert(portWorker.includes('const PORT_NAME = "ozon-attachment-delivery-v1"'));
@@ -120,7 +121,7 @@ assert(portContent.includes("chrome.runtime.connect"));
 assert.equal(portContent.includes("chrome.runtime.sendMessage"),false);
 const recoveryExportToken = "runtime.recoverCurrent = recoverCurrent;";
 assert.equal(portContent.split(recoveryExportToken).length - 1, 1, "recoverCurrent must have exactly one runtime export");
-const recoverDefinitionIndex = portContent.indexOf("async function recoverCurrent()");
+const recoverDefinitionIndex = portContent.indexOf("async function recoverCurrent(");
 const recoverExportIndex = portContent.indexOf(recoveryExportToken);
 const normalStartupPortIndex = portContent.indexOf("\n  ensurePort();", recoverExportIndex);
 const reconnectStart = portContent.indexOf("function scheduleReconnect()");

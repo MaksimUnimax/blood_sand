@@ -28,7 +28,12 @@ identity={'phase':PHASE,'provider_calls':0,'workflow_head':os.environ.get('GITHU
 # Windows checkout may normalize line endings; only Git blobs authorize final bytes.
 frozen=json.loads((GATE/'EXECUTABLE.json').read_text(encoding='utf-8')) if PHASE!='targeted' else None
 raw=canonical(frozen['executable']) if frozen else {p.relative_to(DIST).as_posix():p.read_bytes() for p in DIST.rglob('*') if p.is_file()}
-expected={'shared/ozon_provider.js','shared/llm_output_report_workflow_patch.js'}
+expected={
+ 'shared/ozon_provider.js',
+ 'shared/llm_output_report_workflow_patch.js',
+ 'shared/file_delivery_port_worker.js',
+ 'attachment_delivery_port_content.js'
+}
 assert set(raw)==set(base) and {n for n in raw if raw[n]!=base[n]}==expected
 save('production-members.json',[{'file':n,'sha256':sha(raw[n]),'baseline_sha256':sha(base[n]),'changed':raw[n]!=base[n]} for n in sorted(raw)])
 if PHASE!='targeted':
@@ -49,7 +54,7 @@ if PHASE!='targeted':
   assert all(z.read(n)==b for n,b in raw.items());z.extractall(extract)
  assert {p.relative_to(extract).as_posix():p.read_bytes() for p in extract.rglob('*') if p.is_file()}==raw
  shutil.rmtree(DIST);shutil.copytree(extract,DIST)
- identity.update({'executable':exact,'tree':tree,'package':NAME,'bytes':archive.stat().st_size,'sha256':sha(archive.read_bytes()),'production_files':32,'unchanged_files':30,'canonical_git_blob_parity':'PASS'})
+ identity.update({'executable':exact,'tree':tree,'package':NAME,'bytes':archive.stat().st_size,'sha256':sha(archive.read_bytes()),'production_files':32,'unchanged_files':28,'canonical_git_blob_parity':'PASS'})
 else:extract=DIST
 save('identity.json',identity)
 if PHASE!='browser':

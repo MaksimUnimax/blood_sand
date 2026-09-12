@@ -65,18 +65,42 @@
       conversationKey() === String(recovery?.conversation_key || "").toLowerCase());
   }
 
+  function createStatusPlate() {
+    const root = document.createElement("div");
+    root.id = "ozon-attachment-delivery-status";
+    Object.assign(root.style, { position: "fixed", right: "18px", top: "82px", zIndex: "2147483646", maxWidth: "460px", whiteSpace: "pre-wrap", padding: "10px 38px 10px 12px", borderRadius: "10px", font: "13px/1.4 system-ui, sans-serif", boxShadow: "0 8px 24px rgba(15,23,42,.18)", pointerEvents: "auto" });
+    const text = document.createElement("span");
+    text.setAttribute("data-ozon-attachment-status-text", "1");
+    root.appendChild(text);
+    const close = document.createElement("button");
+    close.setAttribute("type", "button");
+    close.setAttribute("aria-label", "Закрыть");
+    close.setAttribute("title", "Закрыть");
+    close.setAttribute("data-ozon-attachment-status-close", "1");
+    close.textContent = "×";
+    Object.assign(close.style, { position: "absolute", right: "8px", top: "6px", width: "24px", height: "24px", padding: "0", border: "0", borderRadius: "6px", background: "transparent", color: "inherit", font: "700 20px/24px system-ui, sans-serif", textAlign: "center", cursor: "pointer", opacity: "0.72" });
+    close.addEventListener("click", (event) => {
+      try { event.preventDefault(); event.stopPropagation(); } catch (_) {}
+      try { root.remove(); } catch (_) {}
+    });
+    root.appendChild(close);
+    document.documentElement.appendChild(root);
+    return root;
+  }
+
   function status(message, tone = "info", timeout = 7000) {
     let root = document.getElementById("ozon-attachment-delivery-status");
-    if (!(root instanceof HTMLElement)) {
-      root = document.createElement("div");
-      root.id = "ozon-attachment-delivery-status";
-      Object.assign(root.style, { position: "fixed", right: "18px", top: "82px", zIndex: "2147483646", maxWidth: "460px", whiteSpace: "pre-wrap", padding: "10px 12px", borderRadius: "10px", font: "13px/1.4 system-ui, sans-serif", boxShadow: "0 8px 24px rgba(15,23,42,.18)", pointerEvents: "none" });
-      document.documentElement.appendChild(root);
+    if (!(root instanceof HTMLElement) || !(root.querySelector('[data-ozon-attachment-status-text="1"]') instanceof HTMLElement) || !(root.querySelector('[data-ozon-attachment-status-close="1"]') instanceof HTMLButtonElement)) {
+      try { root?.remove?.(); } catch (_) {}
+      root = createStatusPlate();
     }
-    root.textContent = String(message || "");
+    const text = root.querySelector('[data-ozon-attachment-status-text="1"]');
+    text.textContent = String(message || "");
+    const token = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    root.dataset.ozonAttachmentStatusToken = token;
     root.style.background = tone === "error" ? "#fee2e2" : tone === "success" ? "#dcfce7" : "#e0f2fe";
     root.style.color = tone === "error" ? "#7f1d1d" : "#0f172a";
-    if (timeout > 0) setTimeout(() => { if (root?.isConnected && root.textContent === String(message || "")) root.remove(); }, timeout);
+    if (timeout > 0) setTimeout(() => { if (root?.isConnected && root.dataset.ozonAttachmentStatusToken === token) root.remove(); }, timeout);
   }
 
   function failPending(code, error) {
