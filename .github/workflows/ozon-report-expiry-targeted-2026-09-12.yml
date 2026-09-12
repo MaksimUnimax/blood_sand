@@ -43,6 +43,11 @@ jobs:
           subprocess.run(['git','apply',str(gate/'production.patch')],check=True)
           for row in manifest['changes']:
             assert hashlib.sha256(pathlib.Path(row['path']).read_bytes()).hexdigest()==row['candidate_sha256']
+          # A unified patch encodes empty context as a one-space line. Store its
+          # canonical zero-context equivalent rather than waiving whitespace QA.
+          diff=subprocess.check_output(['git','diff','--unified=0','--no-ext-diff','--',str(root/'dist-step7-candidate')])
+          (gate/'production.patch').write_bytes(diff)
+          subprocess.run(['git','apply','--reverse','--check','--unidiff-zero',str(gate/'production.patch')],check=True)
       - name: Baseline RED and full ephemeral candidate Linux regression
         run: python "$GATE/run_suite.py" targeted
       - name: Real Chrome worker termination, session deadline and captured bytes
