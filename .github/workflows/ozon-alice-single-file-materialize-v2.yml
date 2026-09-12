@@ -1,0 +1,69 @@
+name: Ozon Alice single-file materialization v2
+on:
+  push:
+    branches: [repair/ozon-alice-single-file-delivery-2026-09-12]
+    paths: [.github/workflows/ozon-alice-single-file-materialize-v2.yml]
+permissions:
+  contents: read
+concurrency:
+  group: ozon-alice-single-file-materialization-v2
+  cancel-in-progress: false
+jobs:
+  prove:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Recover exact stage plus semantic correction and prove stage1 RED
+        shell: bash
+        run: python tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-transport-v1/prepare_v2.py "$RUNNER_TEMP/proof"
+      - name: Entire deterministic targeted and prior regression cycle
+        shell: bash
+        run: |
+          set -euo pipefail
+          export OZON_PHASE_OUT="$RUNNER_TEMP/proof"
+          python tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-v1/run.py targeted
+      - name: Real Chrome Port IndexedDB and forced worker recreation
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error 'https://storage.googleapis.com/chrome-for-testing-public/152.0.7977.82/linux64/chrome-linux64.zip' -o "$RUNNER_TEMP/chrome.zip"
+          echo "0704631fb3e4f741092e08f55272f90abc3e307f991f05f332924364415b02e0  $RUNNER_TEMP/chrome.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/chrome.zip" -d "$RUNNER_TEMP/chrome"
+          export OZON_SINGLE_BROWSER_REPORT="$RUNNER_TEMP/proof/single-browser.json"
+          xvfb-run -a node tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-v1/browser.mjs "$RUNNER_TEMP/chrome/chrome-linux64/chrome" tooling/llm-api-bridges/ozon-seller/dist-step7-candidate | tee "$RUNNER_TEMP/proof/single-browser.log"
+          git diff --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-single-file-v2-prematerialization
+          path: ${{ runner.temp }}/proof
+          retention-days: 30
+  materialize:
+    needs: prove
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-single-file-v2-prematerialization
+          path: ${{ runner.temp }}/proof
+      - name: Verify same-run proof and publish exact reviewed paths without force
+        shell: bash
+        run: python tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-transport-v1/materialize_v2.py "$RUNNER_TEMP/proof"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-single-file-v2-materialization-identity
+          path: ${{ runner.temp }}/proof/MATERIALIZED_EXECUTABLE.json
+          retention-days: 30
