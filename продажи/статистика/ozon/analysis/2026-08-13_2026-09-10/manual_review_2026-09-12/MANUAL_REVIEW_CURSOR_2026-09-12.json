@@ -4,29 +4,29 @@
   "review_scope": "321 READY_CANDIDATE rows across 63 SKUs",
   "block_size_policy": "8 SKUs per block except final block",
   "total_blocks": 8,
-  "completed_blocks": [1, 2, 3, 4],
-  "current_block_completed": 4,
-  "reviewed_sku_count": 32,
+  "completed_blocks": [1, 2, 3, 4, 5],
+  "current_block_completed": 5,
+  "reviewed_sku_count": 40,
   "total_ready_sku_count": 63,
-  "reviewed_candidate_count": 149,
+  "reviewed_candidate_count": 187,
   "total_ready_candidate_count": 321,
   "cumulative_decisions": {
     "APPROVE": 0,
-    "REJECT": 142,
-    "HOLD": 7
+    "REJECT": 178,
+    "HOLD": 9
   },
-  "next_block": 5,
+  "next_block": 6,
   "next_skus": [
-    "2184168890",
-    "2184199958",
-    "2184234912",
-    "2184932293",
-    "2186766628",
-    "2186796339",
-    "2186802133",
-    "2186836116"
+    "2186839757",
+    "2186843798",
+    "2186846833",
+    "2186848313",
+    "2186850644",
+    "2186852750",
+    "2186856503",
+    "2186857668"
   ],
-  "status": "IN_PROGRESS__BLOCK_04_REMOTE_PERSISTED",
+  "status": "IN_PROGRESS__BLOCK_05_REMOTE_PERSISTED",
   "card_mutations_performed": false,
   "provider_calls_performed": false
 }
