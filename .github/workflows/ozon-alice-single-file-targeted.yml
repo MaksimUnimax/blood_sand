@@ -1,0 +1,50 @@
+name: Ozon Alice single-file ephemeral gate
+on:
+  push:
+    branches: [repair/ozon-alice-single-file-delivery-2026-09-12]
+    paths: [.github/workflows/ozon-alice-single-file-targeted.yml]
+permissions:
+  contents: read
+concurrency:
+  group: ozon-alice-single-file-targeted
+  cancel-in-progress: false
+jobs:
+  targeted:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Verify frozen baseline and recover exact ephemeral candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only 06ec1af2a1d90e2ff192e749b5bf90129963dd05 HEAD -- tooling/llm-api-bridges/ozon-seller/dist-step7-candidate)"
+          python - <<'PY'
+          import pathlib,base64,lzma,hashlib,subprocess,os
+          d=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-transport-v1')
+          raw=base64.b64decode(''.join((d/f'part{i}.b64').read_text().strip() for i in [1,2,3]),validate=True)
+          assert len(raw)==40156 and hashlib.sha256(raw).hexdigest()=='5029b9a54f37d49b3fff559f6acfd0a776ac02a4f1930c0c1ef2a3c2725012bb'
+          patch=lzma.decompress(raw)
+          assert len(patch)==155947 and hashlib.sha256(patch).hexdigest()=='cebd23e60583c6d669beac49733d078a90e6ecf972f57ab6ee5754e5843144d6'
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'candidate.patch';p.write_bytes(patch)
+          subprocess.run(['git','apply','--check',str(p)],check=True)
+          subprocess.run(['git','apply',str(p)],check=True)
+          PY
+      - name: Reproduce RED and run full candidate proof without production publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          export OZON_PHASE_OUT="$RUNNER_TEMP/single-evidence/targeted"
+          python tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-v1/run.py targeted
+          git diff --stat
+          git diff --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-alice-single-file-ephemeral-evidence
+          path: ${{ runner.temp }}/single-evidence/targeted
+          retention-days: 30
