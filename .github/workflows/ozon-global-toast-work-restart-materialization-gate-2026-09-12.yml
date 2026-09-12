@@ -40,10 +40,17 @@ jobs:
           for source, target in pairs:
               raw = pathlib.Path(source).read_bytes()
               normalized = b''.join(raw.split())
-              print(f'PAYLOAD source={source} raw_chars={len(raw)} normalized_chars={len(normalized)} mod4={len(normalized)%4}')
+              remainder = len(normalized) % 4
+              print(f'PAYLOAD source={source} raw_chars={len(raw)} normalized_chars={len(normalized)} mod4={remainder}')
               if not allowed.fullmatch(normalized):
                   bad = sorted(set(re.sub(rb'[A-Za-z0-9+/=]', b'', normalized)))
                   raise SystemExit(f'PAYLOAD_INVALID_NONWHITESPACE source={source} bad={bad!r}')
+              if remainder == 1:
+                  raise SystemExit(f'PAYLOAD_IMPOSSIBLE_BASE64_LENGTH source={source} chars={len(normalized)}')
+              if remainder in (2, 3):
+                  pad = 4 - remainder
+                  normalized += b'=' * pad
+                  print(f'PAYLOAD_PADDING_NORMALIZED source={source} added={pad}')
               try:
                   compressed = base64.b64decode(normalized, validate=True)
               except Exception as exc:
