@@ -19,6 +19,23 @@ function transactionLifecycle({ outcome = 'abort', result = 'synthetic-key' } = 
     transaction_complete_fired: false,
     durable_record_committed: false
   };
+  let outcomeReleased = false;
+  let notifyRequestSuccess;
+  const requestSuccess = new Promise((resolve) => { notifyRequestSuccess = resolve; });
+  function finishTransaction() {
+    assert.equal(state.request_success_fired, true, 'request success must precede transaction outcome');
+    assert.equal(outcomeReleased, false, 'transaction outcome must be emitted only once');
+    outcomeReleased = true;
+    if (outcome === 'complete') {
+      state.durable_record_committed = true;
+      state.transaction_complete_fired = true;
+      tx.oncomplete?.({ target: tx });
+    } else {
+      state.transaction_abort_fired = true;
+      tx.error = new Error('synthetic transaction abort after request success');
+      tx.onabort?.({ target: tx });
+    }
+  }
   const tx = {
     error: null,
     onabort: null,
@@ -31,17 +48,7 @@ function transactionLifecycle({ outcome = 'abort', result = 'synthetic-key' } = 
           setTimeout(() => {
             state.request_success_fired = true;
             request.onsuccess?.({ target: request });
-            setTimeout(() => {
-              if (outcome === 'complete') {
-                state.durable_record_committed = true;
-                state.transaction_complete_fired = true;
-                tx.oncomplete?.({ target: tx });
-              } else {
-                state.transaction_abort_fired = true;
-                tx.error = new Error('synthetic transaction abort after request success');
-                tx.onabort?.({ target: tx });
-              }
-            }, 20);
+            notifyRequestSuccess();
           }, 0);
           return request;
         },
@@ -52,7 +59,7 @@ function transactionLifecycle({ outcome = 'abort', result = 'synthetic-key' } = 
     }
   };
   const db = { transaction() { return tx; }, close() {} };
-  return { db, state };
+  return { db, state, requestSuccess, finishTransaction };
 }
 
 function fakeIndexedDb(lifecycle) {
@@ -119,9 +126,19 @@ function directBinaryContext(lifecycle, counter) {
   return context;
 }
 
-async function waitFor(state, field, message) {
-  for (let i = 0; i < 100 && state[field] !== true; i += 1) await delay(2);
-  assert.equal(state[field], true, message);
+async function waitForRequest(lifecycle) {
+  // Timer is only a deadlock watchdog. Transaction outcome cannot occur until
+  // the test explicitly releases it, regardless of host timer granularity/load.
+  let watchdog;
+  try {
+    await Promise.race([
+      lifecycle.requestSuccess,
+      new Promise((_, reject) => { watchdog = setTimeout(() => reject(new Error('request-success watchdog')), 5000); })
+    ]);
+  } finally { clearTimeout(watchdog); }
+  await delay(0); // Flush promise chains; does not release transaction outcome.
+  assert.equal(lifecycle.state.transaction_abort_fired, false);
+  assert.equal(lifecycle.state.transaction_complete_fired, false);
 }
 
 async function directAbortCase() {
@@ -133,12 +150,11 @@ async function directAbortCase() {
   let error = null;
   const promise = context.OzonProvider.executeCommandObject({ operation: 'performance_daily_csv', params: {} }, {}, {});
   promise.then((next) => { settled = true; value = next; }, (next) => { settled = true; error = next; });
-  await waitFor(lifecycle.state, 'request_success_fired', 'direct request success did not fire');
-  await delay(5);
+  await waitForRequest(lifecycle);
   assert.equal(settled, false, 'direct writer must remain pending after request success until transaction outcome');
   assert.equal(value?.result?.generated_file_ref || null, null, 'direct writer must not publish a ref before transaction commit');
-  await waitFor(lifecycle.state, 'transaction_abort_fired', 'direct transaction abort did not fire');
-  await delay(5);
+  lifecycle.finishTransaction();
+  await promise.catch(() => null);
   assert.equal(Boolean(error), true, 'direct transaction abort must reject the write');
   assert.equal(lifecycle.state.durable_record_committed, false);
   assert.equal(counter.count, 1, 'direct abort path must not retry provider request');
@@ -154,11 +170,10 @@ async function directCommitCase() {
   let error = null;
   const promise = context.OzonProvider.executeCommandObject({ operation: 'performance_daily_csv', params: {} }, {}, {});
   promise.then((next) => { settled = true; value = next; }, (next) => { settled = true; error = next; });
-  await waitFor(lifecycle.state, 'request_success_fired', 'direct positive request success did not fire');
-  await delay(5);
+  await waitForRequest(lifecycle);
   assert.equal(settled, false, 'direct writer must not resolve on request success alone');
-  await waitFor(lifecycle.state, 'transaction_complete_fired', 'direct transaction complete did not fire');
-  await delay(5);
+  lifecycle.finishTransaction();
+  await promise.catch(() => null);
   assert.equal(Boolean(error), false);
   assert.equal(settled, true, 'direct writer must resolve after transaction complete');
   assert.match(String(value?.result?.generated_file_ref || ''), /^rpf_s_/);
@@ -191,19 +206,16 @@ async function genericCase(outcome) {
   let error = null;
   const promise = context.__idbRequest('readwrite', (store) => store.put({ artifact_key: 'generic' }));
   promise.then((next) => { settled = true; value = next; }, (next) => { settled = true; error = next; });
-  await waitFor(lifecycle.state, 'request_success_fired', 'generic request success did not fire');
-  await delay(5);
+  await waitForRequest(lifecycle);
   assert.equal(settled, false, 'generic idbRequest must remain pending after request success');
 
+  lifecycle.finishTransaction();
+  await promise.catch(() => null);
   if (outcome === 'abort') {
-    await waitFor(lifecycle.state, 'transaction_abort_fired', 'generic transaction abort did not fire');
-    await delay(5);
     assert.equal(Boolean(error), true, 'generic transaction abort must reject');
     assert.equal(value, null);
     assert.equal(lifecycle.state.durable_record_committed, false);
   } else {
-    await waitFor(lifecycle.state, 'transaction_complete_fired', 'generic transaction complete did not fire');
-    await delay(5);
     assert.equal(Boolean(error), false);
     assert.equal(settled, true, 'generic idbRequest must resolve after transaction complete');
     assert.equal(value, 'generic-result');
