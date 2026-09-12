@@ -28,7 +28,7 @@ assert.equal(alice.plain_text_max_chars, 90_000);
 assert.equal(alice.plain_text_length_metric, 'utf16_code_units');
 assert.equal(alice.max_files_per_turn, 1);
 assert.equal(alice.max_file_bytes, 100 * 1024 * 1024);
-assert.deepEqual(Array.from(alice.accepted_extensions), ['txt', 'pdf', 'doc', 'docx']);
+assert.deepEqual(Array.from(alice.accepted_extensions), ['txt', 'pdf', 'doc', 'docx', 'xlsx']);
 assert.equal(chatgpt.attachment_strategy, 'file_input_v1');
 assert.equal(chatgpt.plain_text_max_chars, 1_048_000);
 assert.equal(chatgpt.plain_text_length_metric, 'unicode_code_points');
