@@ -1,0 +1,123 @@
+name: Ozon single-file gated materialization
+on:
+  push:
+    branches: [repair/ozon-alice-single-file-delivery-2026-09-12]
+    paths: [.github/workflows/ozon-alice-single-file-materialize.yml]
+permissions:
+  contents: read
+concurrency:
+  group: ozon-single-file-materialize
+  cancel-in-progress: false
+jobs:
+  prove-ephemeral:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Restore exact candidate without production publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only 06ec1af2a1d90e2ff192e749b5bf90129963dd05 HEAD -- tooling/llm-api-bridges/ozon-seller/dist-step7-candidate)"
+          python - <<'PY'
+          import pathlib,base64,lzma,hashlib,subprocess,os
+          d=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-transport-v1')
+          raw=base64.b64decode(''.join((d/f'part{i}.b64').read_text().strip() for i in [1,2,3]),validate=True)
+          assert len(raw)==40156 and hashlib.sha256(raw).hexdigest()=='5029b9a54f37d49b3fff559f6acfd0a776ac02a4f1930c0c1ef2a3c2725012bb'
+          patch=lzma.decompress(raw)
+          assert len(patch)==155947 and hashlib.sha256(patch).hexdigest()=='cebd23e60583c6d669beac49733d078a90e6ecf972f57ab6ee5754e5843144d6'
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'candidate.patch';p.write_bytes(patch)
+          subprocess.run(['git','apply','--check',str(p)],check=True);subprocess.run(['git','apply',str(p)],check=True)
+          PY
+      - name: Full targeted and prior regression gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          export OZON_PHASE_OUT="$RUNNER_TEMP/single-evidence/targeted"
+          python tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-v1/run.py targeted
+          python - <<'PY'
+          import tempfile,pathlib,shutil,subprocess,os
+          root=pathlib.Path('tooling/llm-api-bridges/ozon-seller');out=pathlib.Path(os.environ['OZON_PHASE_OUT'])
+          with tempfile.TemporaryDirectory() as td:
+            dist=pathlib.Path(td)/'dist';shutil.copytree(root/'dist-step7-candidate',dist)
+            (dist/'unclassified_consumer.js').write_text('const REPORT_FILE_EXPIRED = true;\n')
+            p=subprocess.run(['python',str(root/'validation/report-file-expiry-v1/run_secondary_sweep.py'),str(dist),str(out/'unexpected-consumer.json')],capture_output=True)
+            assert p.returncode!=0 and b'Unclassified/removed report-file consumers' in p.stderr
+            (out/'unexpected-consumer-negative.log').write_bytes(p.stdout+p.stderr+b'\nUNEXPECTED_CONSUMER_CORRECTLY_REJECTED\n')
+          PY
+      - name: Real Chrome queue Port storage and worker recreation before materialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" -o "$RUNNER_TEMP/chrome.zip"
+          echo "0704631fb3e4f741092e08f55272f90abc3e307f991f05f332924364415b02e0  $RUNNER_TEMP/chrome.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/chrome.zip" -d "$RUNNER_TEMP/chrome"
+          export OZON_SINGLE_BROWSER_REPORT="$RUNNER_TEMP/single-evidence/targeted/single-browser.json"
+          xvfb-run -a node tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-v1/browser.mjs "$RUNNER_TEMP/chrome/chrome-linux64/chrome" tooling/llm-api-bridges/ozon-seller/dist-step7-candidate | tee "$RUNNER_TEMP/single-evidence/targeted/single-browser.log"
+          git diff --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-single-file-prematerialization-proof
+          path: ${{ runner.temp }}/single-evidence/targeted
+          retention-days: 30
+  materialize-after-pass:
+    needs: prove-ephemeral
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-single-file-prematerialization-proof
+          path: ${{ runner.temp }}/proof
+      - name: Verify proof hashes and materialize only reviewed paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import pathlib,base64,lzma,hashlib,subprocess,json,os
+          root=pathlib.Path('tooling/llm-api-bridges/ozon-seller');d=root/'validation/alice-single-file-transport-v1';proof=pathlib.Path(os.environ['RUNNER_TEMP'])/'proof'
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          summary=json.loads((proof/'summary.json').read_text());assert summary['status']=='PASS' and summary['identity']['workflow_head']==os.environ['GITHUB_SHA'] and summary['identity']['run_id']==os.environ['GITHUB_RUN_ID']
+          for r in summary['results']:assert r['status']=='PASS' and sha((proof/(r['id']+'.log')).read_bytes())==r['log_sha256']
+          browser=json.loads((proof/'single-browser.json').read_text());assert browser['status']=='PASS' and browser['worker_recreated'] and browser['provider_calls']==0 and len(browser['cases'])==6
+          raw=base64.b64decode(''.join((d/f'part{i}.b64').read_text().strip() for i in [1,2,3]),validate=True);assert sha(raw)=='5029b9a54f37d49b3fff559f6acfd0a776ac02a4f1930c0c1ef2a3c2725012bb'
+          patch=lzma.decompress(raw);assert sha(patch)=='cebd23e60583c6d669beac49733d078a90e6ecf972f57ab6ee5754e5843144d6';p=proof/'candidate.patch';p.write_bytes(patch)
+          subprocess.run(['git','apply','--check',str(p)],check=True);subprocess.run(['git','apply',str(p)],check=True)
+          names=[line.split('\t')[-1] for line in subprocess.check_output(['git','apply','--numstat',str(p)]).decode().splitlines()];assert len(names)==19
+          runtime=[str(root/'dist-step7-candidate'/n) for n in ['attachment_delivery_port_content.js','service_worker.js','shared/bridge_autorun_model.js','shared/file_delivery_model_policy.js','shared/file_delivery_port_worker.js','shared/llm_output_report_workflow_patch.js']]
+          assert set(n for n in names if '/dist-step7-candidate/' in n)==set(runtime)
+          inventory=json.loads((proof/'dependency-inventory.json').read_text())
+          for n,h in inventory['file_hashes'].items():assert sha((root/'dist-step7-candidate'/n).read_bytes())==h
+          branch='repair/ozon-alice-single-file-delivery-2026-09-12'
+          remote=subprocess.check_output(['git','ls-remote','origin','refs/heads/'+branch]).decode().split()[0];assert remote==os.environ['GITHUB_SHA'],'concurrent remote change; no overwrite'
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True);subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          subprocess.run(['git','add','--',*runtime],check=True);subprocess.run(['git','diff','--cached','--check'],check=True)
+          subprocess.run(['git','commit','-m','fix(ozon): enforce Alice single-file budget and deliver mixed results truthfully'],check=True)
+          exe=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip();tree=subprocess.check_output(['git','rev-parse','HEAD^{tree}']).decode().strip()
+          info={'executable':exe,'tree':tree,'prematerialization_run':os.environ['GITHUB_RUN_ID'],'base':'06ec1af2a1d90e2ff192e749b5bf90129963dd05'}
+          (root/'validation/alice-single-file-v1/EXECUTABLE.json').write_text(json.dumps(info,indent=2)+'\n')
+          note=root/'PATCH_ALICE_SINGLE_FILE_EXECUTION_NOTES_2026-09-12.md'
+          note.write_text(note.read_text()+'\n## Recovery and complete pre-materialization verification\nRecovered interrupted stage with exact SHA256; baseline RED3 and candidate55/mutants8 rerun. Run34697032376 stopped at newly affected report-ref consumer missing from old inventory. Run34697266876 stopped at an incorrect test field name report_file_refs (actual provider_file_refs). Both were test-inventory defects, corrected without altering candidate executable or removing guards. Unexpected-consumer mutation still fails. Full successful targeted/prior31 and real Chrome stopWorker gate precede this materialization. Final exact-package Linux/Chrome/Windows certification remains pending.\n')
+          dep=root/'PATCH_ALICE_SINGLE_FILE_DEPENDENCIES_2026-09-12.md';dep.write_text(dep.read_text()+'\nReport-expiry legacy sweep now classifies nine files including the reviewed acquired-file reader file_delivery_model_policy.js. Exact-set comparison remains enabled and unexpected-consumer mutation is rejected. This inventory has a different symbol scope from the new eight-file single-delivery inventory.\n')
+          cp=d/'CHECKPOINT_04_MATERIALIZED.json';cp.write_text(json.dumps({**info,'status':'MATERIALIZED_NOT_PRE_HANDOFF','next':'full exact ZIP Linux -> Chrome -> Windows -> final evidence','provider_calls':0},indent=2)+'\n')
+          subprocess.run(['git','add','--',*[n for n in names if n not in runtime],str(root/'validation/alice-single-file-v1/EXECUTABLE.json'),str(cp)],check=True)
+          subprocess.run(['git','diff','--cached','--check'],check=True);subprocess.run(['git','commit','-m','test(ozon): persist single-file proof suite and frozen executable checkpoint'],check=True)
+          subprocess.run(['git','push','origin','HEAD:refs/heads/'+branch],check=True)
+          (proof/'MATERIALIZED_EXECUTABLE.json').write_text(json.dumps(info,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-single-file-materialization-identity
+          path: ${{ runner.temp }}/proof/MATERIALIZED_EXECUTABLE.json
+          retention-days: 30
