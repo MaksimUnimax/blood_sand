@@ -117,11 +117,16 @@ Live batch `BY_SEARCHES / ASCENDING` от 2026-09-11 доказал, что от
 `marketing/data/normalized/marketplace/ozon/20260826__ozon__product-master__fresh-current76.csv`.
 
 Текущий статус:
-- ранний `BY_SEARCHES / DESCENDING` global page sweep — сохранён полностью как historical raw, но его прежний deterministic-complete статус **снят до chunked validation/recollection**;
-- `BY_SEARCHES / ASCENDING` global page sweep — технически выполнен, но **REJECTED_UNSTABLE_PAGINATION** как completeness authority;
-- corrected chunked no-pagination collection — **IN PROGRESS**;
-- `BY_GMV` собирается тем же chunked способом;
-- никакой SEO-аналитики до закрытия raw collection не выполняем.
+- ранний `BY_SEARCHES / DESCENDING` global page sweep сохранён только как historical raw; completeness authority — исправленный chunked capture;
+- `BY_SEARCHES / ASCENDING` global page sweep имеет статус **REJECTED_UNSTABLE_PAGINATION** как completeness authority;
+- corrected chunked no-pagination collection — **COMPLETE: 76/76 target SKU по всем четырём доступным срезам**;
+- `BY_SEARCHES / DESCENDING` — COMPLETE;
+- `BY_SEARCHES / ASCENDING` — COMPLETE;
+- `BY_GMV / DESCENDING` — COMPLETE;
+- `BY_GMV / ASCENDING` — COMPLETE;
+- последний закрывающий successful response: `request_id=37be53b0-a92c-4b08-8369-302658063799`, SKU `2186850644`;
+- канонический manifest после закрытия: `raw/2026-08-13_2026-09-10/canonical_chunk_collection_manifest.tsv`;
+- raw collection первого месячного цикла закрыт; дальнейшая SEO/семантическая аналитика должна выполняться отдельно от raw/evidence layer.
 
 ## Ежемесячное правило
 
