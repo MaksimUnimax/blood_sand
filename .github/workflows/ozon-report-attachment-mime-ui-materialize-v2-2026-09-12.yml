@@ -42,11 +42,22 @@ jobs:
           test "$(sha256sum "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" | awk '{print $1}')" = f265057db3ddcdd5f40a6d392515a7973c978d77e25e02bfc1404dec309fe6a8
           git apply --check "$GATE/combined-production-scope-authority.patch"
           git apply "$GATE/combined-production-scope-authority.patch"
+          git apply --check "$GATE/prior-idle-v2-authority.patch"
+          git apply "$GATE/prior-idle-v2-authority.patch"
+          python - <<'PY'
+          from pathlib import Path
+          import base64,gzip,hashlib
+          p=Path('tooling/llm-api-bridges/ozon-seller/validation/global-toast-work-restart-v1/run_attachment_idle_behavior_v2.mjs.gz.b64')
+          e=b''.join(p.read_bytes().split()); e+=b'='*((-len(e))%4)
+          d=gzip.decompress(base64.b64decode(e,validate=True))
+          assert hashlib.sha256(d).hexdigest()=='b249dca808353fa5474f0cfcc7e620fc75cf85bfce32bbb4bbfc336cee0cb82a'
+          print('DOM_COMPLETE_IDLE_V2_AUTHORITY_PASS')
+          PY
           git diff --check
           grep -Fn 'storeProviderArtifactForRef(ref, captured, result?.parsed || null)' "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js"
           grep -Fn 'data-ozon-attachment-status-close' "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js"
           grep -Fn "'shared/file_delivery_port_worker.js'" "$ROOT/validation/report-file-expiry-v1/run_suite.py"
-          grep -Fn "'attachment_delivery_port_content.js'" "$ROOT/validation/report-file-expiry-v1/run_suite.py"
+          grep -Fn "run_attachment_idle_behavior_v2.mjs" "$ROOT/validation/report-file-expiry-v1/run_prior_regressions.py"
       - name: Run combined target gates and prove fifth-file scope rejection
         shell: bash
         run: |
@@ -80,13 +91,7 @@ jobs:
           grep -q 'AssertionError' "$RUNNER_TEMP/fifth-file-scope.log"
           cp "$RUNNER_TEMP/popup.js.authorized" "$ROOT/dist-step7-candidate/popup.js"
           cmp -s "$RUNNER_TEMP/popup.js.authorized" "$ROOT/dist-step7-candidate/popup.js"
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib
-          root=Path('tooling/llm-api-bridges/ozon-seller/dist-step7-candidate')
-          print('FIFTH_FILE_SCOPE_NEGATIVE_CONTROL_PASS')
-          print('popup_sha256',hashlib.sha256((root/'popup.js').read_bytes()).hexdigest())
-          PY
+          echo FIFTH_FILE_SCOPE_NEGATIVE_CONTROL_PASS
           echo ATTACHMENT_MIME_UI_TARGETED_GREEN_PASS
           echo PROVIDER_CALLS_DURING_GATE=0
       - name: Commit exact tested executable and test authorities
@@ -99,9 +104,10 @@ jobs:
           git add "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js" \
                   "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js" \
                   "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" \
-                  "$ROOT/validation/report-file-expiry-v1/run_suite.py"
+                  "$ROOT/validation/report-file-expiry-v1/run_suite.py" \
+                  "$ROOT/validation/report-file-expiry-v1/run_prior_regressions.py"
           git diff --cached --check
-          test "$(git diff --cached --name-only | wc -l)" -eq 4
+          test "$(git diff --cached --name-only | wc -l)" -eq 5
           test -z "$(git diff --name-only -- "$ROOT/dist-step7-candidate" | grep -v -E '^(tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/(shared/file_delivery_port_worker.js|attachment_delivery_port_content.js))$' || true)"
           git commit -m 'fix(ozon): preserve report XLSX type and make attachment status closable'
           git push origin HEAD:refs/heads/repair/ozon-report-file-expiry-2026-09-12
