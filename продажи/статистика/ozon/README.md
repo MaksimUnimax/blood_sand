@@ -15,10 +15,12 @@
 - **главная цель — минимально возможное число пользовательских/диалоговых шагов**;
 - все независимые команды текущего этапа группировать в **один command block / одно нажатие Ozon**;
 - не собирать штатно по одному SKU, если независимые SKU можно собрать пачкой;
-- после каждого `OZON_RESULT_V1` / `OZON_BATCH_RESULT_V1` **сразу записать весь полученный результат в raw + manifest**;
-- **запрещено формировать следующий provider batch до фиксации предыдущего результата в GitHub**;
+- после каждого `OZON_RESULT_V1` / `OZON_BATCH_RESULT_V1` **сразу записывать только успешные HTTP 200 данные и подтверждённые HTTP 200 zero-results**;
+- **429, 4xx/5xx, parser/guidance failures и failed-attempt статусы в raw/manifest/statistics не записывать**;
+- канонический manifest хранит только полезные `PERSISTED` / `PERSISTED_ZERO` evidence rows;
+- **запрещено формировать следующий provider batch до фиксации успешного результата предыдущего batch в GitHub**;
 - предпочитать bulk/report/file workflow, если он даёт тот же объём evidence за меньшее число шагов;
-- 429/partial накапливать и закрывать grouped rescue batch, а не серией одиночных запросов.
+- 429/partial использовать только как временный сигнал и закрывать grouped rescue batch, а не серией одиночных запросов.
 
 Если дальнейший ход работы противоречит `COLLECTION_EXECUTION_RULES.md`, нужно остановить такой ход и следовать правилам файла.
 
@@ -85,8 +87,9 @@ Live batch `BY_SEARCHES / ASCENDING` от 2026-09-11 доказал, что от
 - **все доступные независимые команды одного этапа нужно по возможности группировать в один command block, чтобы минимизировать число пользовательских шагов**;
 - скрытые retry, pagination-loop и fan-out запрещены;
 - при ошибке request не повторяется автоматически;
-- сохраняем точный `request_id`, период, sort/chunk и фактически возвращённые строки;
-- **после каждого Bridge result сначала обязательная фиксация raw + manifest, и только затем следующий provider batch**.
+- **ошибки не персистятся: 429/4xx/5xx/parser/guidance — только временный сигнал для rescue, не данные**;
+- сохраняем точный `request_id`, период, sort/chunk и фактически возвращённые строки только для успешного HTTP 200 evidence;
+- **после каждого Bridge result сначала обязательная фиксация полезных HTTP 200 данных/zero-evidence, и только затем следующий provider batch**.
 
 ## Хранилище
 
@@ -99,6 +102,8 @@ Live batch `BY_SEARCHES / ASCENDING` от 2026-09-11 доказал, что от
 `raw/<period>/product_queries_details_*.tsv|txt` — ранее сохранённые page-level evidence-файлы; они не удаляются.
 
 Новый authoritative monthly capture строится chunk-level, без межстраничной пагинации.
+
+Канонический `canonical_chunk_collection_manifest.tsv` хранит только успешно сохранённые evidence-записи (`PERSISTED`) и подтверждённые HTTP 200 пустые ответы (`PERSISTED_ZERO`). Failed attempts в него не входят.
 
 `monthly_search_queries.tsv` — ранний пилотный накопительный файл; он не является completeness authority первого месяца.
 
@@ -115,7 +120,7 @@ Live batch `BY_SEARCHES / ASCENDING` от 2026-09-11 доказал, что от
 - ранний `BY_SEARCHES / DESCENDING` global page sweep — сохранён полностью как historical raw, но его прежний deterministic-complete статус **снят до chunked validation/recollection**;
 - `BY_SEARCHES / ASCENDING` global page sweep — технически выполнен, но **REJECTED_UNSTABLE_PAGINATION** как completeness authority;
 - corrected chunked no-pagination collection — **IN PROGRESS**;
-- `BY_GMV` будет собираться тем же chunked способом;
+- `BY_GMV` собирается тем же chunked способом;
 - никакой SEO-аналитики до закрытия raw collection не выполняем.
 
 ## Ежемесячное правило
@@ -124,7 +129,8 @@ Live batch `BY_SEARCHES / ASCENDING` от 2026-09-11 доказал, что от
 2. Использовать доступное непремиальное месячное окно.
 3. Разбить SKU на чанки максимум по 6 при `limit_by_sku=15`, `page_size=100`.
 4. Для каждого из четырёх разрешённых срезов выполнить `page=0` для каждого чанка отдельной явной командой; все независимые команды этапа группировать в минимально возможное число command blocks.
-5. После каждого Bridge batch **до следующего API-вызова** сохранить каждый успешный chunk response с точным `request_id`, периодом, sort и составом SKU и обновить manifest.
-6. Не удалять старые периоды и не переписывать historical raw задним числом.
-7. Новые месяцы только добавлять.
-8. Аналитические производные хранить отдельно от raw/evidence журнала.
+5. После каждого Bridge batch **до следующего API-вызова** сохранить только каждый успешный HTTP 200 chunk response с точным `request_id`, периодом, sort и составом SKU; HTTP 200 empty сохранить как `PERSISTED_ZERO`.
+6. 429/4xx/5xx/parser/guidance failures **не записывать**; временно держать только unresolved SKU/chunks до grouped rescue.
+7. Не удалять старые периоды и не переписывать historical raw задним числом, кроме удаления служебных failed-attempt строк из канонического manifest при переходе на это правило.
+8. Новые месяцы только добавлять.
+9. Аналитические производные хранить отдельно от raw/evidence журнала.
