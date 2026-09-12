@@ -237,3 +237,31 @@ six states, six levels, and thirteen contours; H0 accepted; provider calls
 
 No implementation, test, lockfile, or ADR change was made by this final gate.
 Commit: `NO`. Push: `NO`.
+
+## P8.1 publication and remote-acceptance materialization
+
+`FINAL_LOCAL_TREE = 439952da686540ea831cdc56c96bf9c37533ab79`
+
+`PUBLICATION_COMMIT = 19855e2897807fcff81b2488195520ce54919325`
+
+`PUBLICATION_REMOTE_READBACK = PASS`
+
+`PUBLICATION_SERVER_CI = PASS`
+
+`PUBLICATION_CI_RUN = 34697457918`
+
+`PUBLICATION_CI_JOB = 103563280746`
+
+`PUBLICATION_CI_EVENT = push`
+
+`PUBLICATION_CI_EXACT_SHA = YES`
+
+`PUBLICATION_CI_MANDATORY_STEPS = ALL PASS`
+
+`REMOTE_ACCEPTANCE_MATERIALIZATION = IN PROGRESS / DOCS-ONLY CANDIDATE`
+
+`P8_2_STARTED = NO`
+
+The publication commit remains the exact accepted product tree. This appended
+section records the start of the docs-only remote-acceptance materialization;
+it does not claim the future docs-only commit's Server CI result.

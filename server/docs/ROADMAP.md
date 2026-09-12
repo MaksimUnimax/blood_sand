@@ -268,7 +268,7 @@ Exit examples:
 
 P8 execution decomposition (frozen by ADR-0036):
 
-- P8.1 `[ACTIVE / LOCAL ACCEPTED / REMOTE ACCEPTANCE PENDING]` health domain,
+- P8.1 `[DONE / REMOTE ACCEPTED]` health domain,
   deterministic classifier, suite registry, and H0 profile-candidate boundary.
 - P8.2 `[PLANNED]` persistence.
 - P8.3 `[PLANNED]` BrowserDriver and controlled Chrome H2.
