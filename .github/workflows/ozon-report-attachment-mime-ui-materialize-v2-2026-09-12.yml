@@ -29,15 +29,15 @@ jobs:
           GATE="$ROOT/validation/report-file-attachment-mime-ui-v1"
           test "$(sha256sum "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js" | awk '{print $1}')" = c9b5fdbc8661828c17145519395bde1a2eab1af9b434b99ae13c1d8ccda0c6dd
           test "$(sha256sum "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js" | awk '{print $1}')" = f244e0bac2f9bed953a50058259beff89efbf765f5f54c664f11ffe1dbc4977a
-          test "$(sha256sum "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" | awk '{print $1}')" = d6ff7d68396abfbfcca69c4212df746b091aed9c
+          test "$(sha256sum "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" | awk '{print $1}')" = 6f405c5a0c3bfe12f082b2db33f8e1fc61577eb3373926babc4486643ea5b05b
           git apply --check "$GATE/production-v2.patch"
           git apply "$GATE/production-v2.patch"
           test "$(sha256sum "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js" | awk '{print $1}')" = b1ef39d159b24cdec9e4b686b83eeffb7be5c404e4397f1d6cf109a53140ae71
           test "$(sha256sum "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js" | awk '{print $1}')" = c84fcf59af47ebbea27e49e0be9c90627fbd79dc01fa0d59b7e3f526dfcaa0b9
           test "$(sha256sum "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" | awk '{print $1}')" = 3832ca2b6f6877c3067723fc037b206eb113f839f6aa3780b319a968c7e59122
           git diff --check
-          grep -n 'storeProviderArtifactForRef(ref, captured, result?.parsed || null)' "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js"
-          grep -n 'data-ozon-attachment-status-close' "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js"
+          grep -Fn 'storeProviderArtifactForRef(ref, captured, result?.parsed || null)' "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js"
+          grep -Fn 'data-ozon-attachment-status-close' "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js"
       - name: Run new gates twice and related regression sweep
         shell: bash
         run: |
