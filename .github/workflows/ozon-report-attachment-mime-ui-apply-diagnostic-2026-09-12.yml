@@ -1,0 +1,36 @@
+name: Ozon report attachment exact apply diagnostic
+on:
+  push:
+    branches: [repair/ozon-report-file-expiry-2026-09-12]
+    paths: [.github/workflows/ozon-report-attachment-mime-ui-apply-diagnostic-2026-09-12.yml]
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: 24.12.0}
+      - name: Apply pinned diff and expose every guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='tooling/llm-api-bridges/ozon-seller'
+          GATE="$ROOT/validation/report-file-attachment-mime-ui-v1"
+          echo BASE_WORKER=$(sha256sum "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js" | awk '{print $1}')
+          echo BASE_CONTENT=$(sha256sum "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js" | awk '{print $1}')
+          echo BASE_STALE=$(sha256sum "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" | awk '{print $1}')
+          git apply --check "$GATE/production-v2.patch"
+          git apply "$GATE/production-v2.patch"
+          echo NEW_WORKER=$(sha256sum "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js" | awk '{print $1}')
+          echo NEW_CONTENT=$(sha256sum "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js" | awk '{print $1}')
+          echo NEW_STALE=$(sha256sum "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" | awk '{print $1}')
+          git diff --check
+          grep -Fn 'storeProviderArtifactForRef(ref, captured, result?.parsed || null)' "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js"
+          grep -Fn 'data-ozon-attachment-status-close' "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js"
+          node "$GATE/run_report_attachment_type_gate.mjs" "$ROOT/dist-step7-candidate"
+          node "$GATE/run_status_plate_close_gate.mjs" "$ROOT/dist-step7-candidate"
+          echo EXACT_APPLY_DIAGNOSTIC_PASS
+          echo PROVIDER_CALLS_DURING_GATE=0
