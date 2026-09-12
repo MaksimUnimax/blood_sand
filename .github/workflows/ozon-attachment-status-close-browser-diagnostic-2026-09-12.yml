@@ -1,0 +1,30 @@
+name: Ozon attachment status close browser diagnostic
+on:
+  push:
+    branches: [repair/ozon-report-file-expiry-2026-09-12]
+    paths: [.github/workflows/ozon-attachment-status-close-browser-diagnostic-2026-09-12.yml]
+permissions:
+  contents: read
+jobs:
+  chrome-close:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Run actual production status renderer and click close
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" -o "$RUNNER_TEMP/chrome.zip"
+          echo "0704631fb3e4f741092e08f55272f90abc3e307f991f05f332924364415b02e0  $RUNNER_TEMP/chrome.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/chrome.zip" -d "$RUNNER_TEMP/chrome"
+          CHROME="$RUNNER_TEMP/chrome/chrome-linux64/chrome"
+          FIXTURE='tooling/llm-api-bridges/ozon-seller/validation/report-file-attachment-mime-ui-v1/attachment_status_close_browser_fixture.html'
+          URI="$(python -c "from pathlib import Path;print(Path('$FIXTURE').resolve().as_uri())")"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --allow-file-access-from-files --virtual-time-budget=2200 --dump-dom "$URI" > "$RUNNER_TEMP/dom.log"
+          cat "$RUNNER_TEMP/dom.log"
+          grep -F '<title>ATTACHMENT_STATUS_CLOSE_REAL_CHROME_PASS</title>' "$RUNNER_TEMP/dom.log"
+          ! grep -F '<title>FAIL:' "$RUNNER_TEMP/dom.log"
+          echo ATTACHMENT_STATUS_CLOSE_REAL_CHROME_PASS
+          echo PROVIDER_CALLS_DURING_GATE=0
