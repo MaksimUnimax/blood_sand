@@ -1,6 +1,6 @@
 # ADR-0034: P7 admin AI API and RBAC
 
-Status: Implemented; post-acceptance correction locally accepted; correction remote acceptance pending
+Status: Implemented; post-acceptance correction remotely accepted
 
 Date: 2026-09-11
 
