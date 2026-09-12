@@ -1,0 +1,33 @@
+name: Ozon single-file recovery export
+on:
+  push:
+    branches: [repair/ozon-alice-single-file-delivery-2026-09-12]
+    paths: [.github/workflows/ozon-alice-single-file-recovery-export.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 4b93817b304ad95b0e1db6f0530ae59fd8d0177a
+          persist-credentials: false
+      - name: Export staged work without executing it
+        run: |
+          mkdir -p /tmp/recovery
+          python - <<'PY'
+          import pathlib,zipfile,hashlib,json
+          root=pathlib.Path('tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-transport-v1')
+          rows=[]
+          with zipfile.ZipFile('/tmp/recovery/staged.zip','w',zipfile.ZIP_DEFLATED) as z:
+            for p in sorted(root.rglob('*')):
+              if p.is_file():
+                b=p.read_bytes();z.writestr(str(p),b);rows.append({'path':str(p),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+          pathlib.Path('/tmp/recovery/manifest.json').write_text(json.dumps(rows,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-single-file-recovered-stage
+          path: /tmp/recovery/*
+          retention-days: 14
