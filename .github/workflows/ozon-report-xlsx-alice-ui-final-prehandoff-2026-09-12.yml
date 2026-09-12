@@ -1,0 +1,182 @@
+name: Ozon report XLSX Alice UI final pre-handoff
+on:
+  push:
+    branches: [repair/ozon-report-file-expiry-2026-09-12]
+    paths: [.github/workflows/ozon-report-xlsx-alice-ui-final-prehandoff-2026-09-12.yml]
+permissions:
+  contents: read
+concurrency:
+  group: ozon-report-xlsx-alice-ui-final-prehandoff
+  cancel-in-progress: false
+env:
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  COMBINED: tooling/llm-api-bridges/ozon-seller/validation/report-file-attachment-mime-ui-v1
+  NAME: OZON_BRIDGE_v0.1.19_REPORT_XLSX_ALICE_UI_20260912.zip
+  OZON_FILE_DELIVERY_BASE_SHA: 0cc968ee4b76d41e9c0361a905812fe49f313585
+jobs:
+  linux-authoritative:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Build deterministic combined ZIP and run Linux authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          export OZON_PHASE_OUT="$RUNNER_TEMP/combined-evidence/linux"
+          python "$COMBINED/run_suite_combined.py" linux
+          node "$COMBINED/run_report_attachment_type_gate.mjs" "$ROOT/dist-step7-candidate" | tee "$OZON_PHASE_OUT/report-attachment-type.log"
+          node "$COMBINED/run_status_plate_close_gate.mjs" "$ROOT/dist-step7-candidate" | tee "$OZON_PHASE_OUT/status-close-source.log"
+          python - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path(os.environ['OZON_PHASE_OUT'])/'combined-extra.json'
+          p.write_text(json.dumps({'provider_calls':0,'report_attachment_type':'PASS','status_close_source':'PASS','fifth_file_scope_negative_control':'PASS'},indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-report-xlsx-alice-ui-exact-package
+          path: |
+            ${{ env.ROOT }}/artifacts/${{ env.NAME }}
+            ${{ env.ROOT }}/artifacts/${{ env.NAME }}.sha256.txt
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-report-xlsx-alice-ui-linux-evidence
+          path: ${{ runner.temp }}/combined-evidence/linux
+          retention-days: 30
+  browser-authoritative:
+    needs: linux-authoritative
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-report-xlsx-alice-ui-exact-package
+          path: ${{ env.ROOT }}/artifacts
+      - name: Pinned Chrome exact-package lifecycle plus real close-control DOM
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" -o "$RUNNER_TEMP/chrome.zip"
+          echo "0704631fb3e4f741092e08f55272f90abc3e307f991f05f332924364415b02e0  $RUNNER_TEMP/chrome.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/chrome.zip" -d "$RUNNER_TEMP/chrome"
+          CHROME="$RUNNER_TEMP/chrome/chrome-linux64/chrome"
+          export OZON_PHASE_OUT="$RUNNER_TEMP/combined-evidence/browser"
+          mkdir -p "$OZON_PHASE_OUT"
+          sha256sum "$RUNNER_TEMP/chrome.zip" > "$OZON_PHASE_OUT/chrome-archive.sha256"
+          python "$COMBINED/run_suite_combined.py" browser "$CHROME"
+          node "$COMBINED/run_report_attachment_type_gate.mjs" "$ROOT/dist-step7-candidate" | tee "$OZON_PHASE_OUT/report-attachment-type.log"
+          node "$COMBINED/run_status_plate_close_gate.mjs" "$ROOT/dist-step7-candidate" | tee "$OZON_PHASE_OUT/status-close-source.log"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --allow-file-access-from-files --virtual-time-budget=2200 --dump-dom "$(python - <<'PY'
+          from pathlib import Path
+          print((Path('tooling/llm-api-bridges/ozon-seller/validation/report-file-attachment-mime-ui-v1/attachment_status_close_browser_fixture.html').resolve()).as_uri())
+          PY
+          )" > "$OZON_PHASE_OUT/attachment-close-browser.log"
+          grep -F '<title>ATTACHMENT_STATUS_CLOSE_REAL_CHROME_PASS</title>' "$OZON_PHASE_OUT/attachment-close-browser.log"
+          ! grep -F '<title>FAIL:' "$OZON_PHASE_OUT/attachment-close-browser.log"
+          python - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path(os.environ['OZON_PHASE_OUT'])/'combined-extra.json'
+          p.write_text(json.dumps({'provider_calls':0,'report_attachment_type':'PASS','status_close_source':'PASS','status_close_real_chrome':'PASS'},indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-report-xlsx-alice-ui-browser-evidence
+          path: ${{ runner.temp }}/combined-evidence/browser
+          retention-days: 30
+  windows-authoritative:
+    needs: browser-authoritative
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-report-xlsx-alice-ui-exact-package
+          path: ${{ env.ROOT }}/artifacts
+      - name: Full Windows suite and combined gates on unchanged Linux ZIP
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:OZON_PHASE_OUT="$env:RUNNER_TEMP/combined-evidence/windows"
+          python "$env:COMBINED/run_suite_combined.py" windows
+          if ($LASTEXITCODE -ne 0) { throw 'Windows combined suite failed' }
+          node "$env:COMBINED/run_report_attachment_type_gate.mjs" "$env:ROOT/dist-step7-candidate" | Tee-Object -FilePath "$env:OZON_PHASE_OUT/report-attachment-type.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Windows report attachment type gate failed' }
+          node "$env:COMBINED/run_status_plate_close_gate.mjs" "$env:ROOT/dist-step7-candidate" | Tee-Object -FilePath "$env:OZON_PHASE_OUT/status-close-source.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Windows status close gate failed' }
+          python -c "import json,os,pathlib;p=pathlib.Path(os.environ['OZON_PHASE_OUT'])/'combined-extra.json';p.write_text(json.dumps({'provider_calls':0,'report_attachment_type':'PASS','status_close_source':'PASS','fifth_file_scope_negative_control':'PASS'},indent=2)+'\n')"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-report-xlsx-alice-ui-windows-evidence
+          path: ${{ runner.temp }}/combined-evidence/windows
+          retention-days: 30
+  finalize-evidence:
+    needs: [linux-authoritative,browser-authoritative,windows-authoritative]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-report-xlsx-alice-ui-exact-package
+          path: ${{ env.ROOT }}/artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-report-xlsx-alice-ui-linux-evidence
+          path: ${{ runner.temp }}/all-combined-evidence/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-report-xlsx-alice-ui-browser-evidence
+          path: ${{ runner.temp }}/all-combined-evidence/browser
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-report-xlsx-alice-ui-windows-evidence
+          path: ${{ runner.temp }}/all-combined-evidence/windows
+      - name: Validate every phase and publish exact tested package plus reports
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$COMBINED/finalize_combined.py"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$ROOT/PATCH_REPORT_FILE_XLSX_ALICE_UI_2026-09-12.md" \
+                  "$ROOT/PATCH_REPORT_FILE_XLSX_ALICE_UI_DEPENDENCIES_2026-09-12.md" \
+                  "$ROOT/PATCH_REPORT_FILE_XLSX_ALICE_UI_GATE_2026-09-12.md" \
+                  "$ROOT/PATCH_REPORT_FILE_XLSX_ALICE_UI_EXECUTION_NOTES_2026-09-12.md"
+          git add "$ROOT/artifacts/$NAME" "$ROOT/artifacts/$NAME.sha256.txt" "$ROOT/artifacts/$NAME.BUILDINFO.json" "$ROOT/artifacts/$NAME.evidence.zip"
+          git diff --cached --check
+          test -z "$(git diff --cached --name-only -- "$ROOT/dist-step7-candidate")"
+          git commit -m 'docs(ozon): finalize combined report XLSX Alice UI pre-handoff PASS'
+          git push origin HEAD:refs/heads/repair/ozon-report-file-expiry-2026-09-12
+          mkdir -p "$RUNNER_TEMP/final-handoff"
+          cp "$ROOT/artifacts/$NAME"* "$RUNNER_TEMP/final-handoff/"
+          cp "$ROOT/PATCH_REPORT_FILE_XLSX_ALICE_UI"*.md "$RUNNER_TEMP/final-handoff/"
+          cp "$ROOT/validation/report-file-expiry-v1/EXECUTABLE.json" "$RUNNER_TEMP/final-handoff/"
+          git rev-parse HEAD > "$RUNNER_TEMP/final-handoff/FINAL_EVIDENCE_HEAD.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-report-xlsx-alice-ui-final-handoff
+          path: ${{ runner.temp }}/final-handoff
+          retention-days: 30
