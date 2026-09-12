@@ -1,0 +1,85 @@
+name: Ozon manual semantic review finalize 2026-09-12
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ozon-manual-review-finalize-2026-09-12.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Aggregate persisted review blocks
+        id: aggregate
+        shell: bash
+        run: |
+          set +e
+          python "продажи/статистика/ozon/tools/aggregate_manual_review_2026_09_12.py" > >(tee /tmp/manual-review-finalize.log) 2> >(tee -a /tmp/manual-review-finalize.log >&2)
+          RC=$?
+          echo "exit_code=${RC}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Verify final manual-review QA
+        if: steps.aggregate.outputs.exit_code == '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          A="продажи/статистика/ozon/analysis/2026-08-13_2026-09-10"
+          grep -q '"QA_STATUS": "PASS"' "$A/MANUAL_REVIEW_FINAL_STATUS_2026-09-12.json"
+          test "$(wc -l < "$A/13_MANUAL_REVIEW_MASTER.tsv")" -eq 322
+          test "$(wc -l < "$A/14_APPROVED_CHANGE_SET.tsv")" -eq 1
+          test "$(wc -l < "$A/15_MANUAL_REVIEW_HOLD_QUEUE.tsv")" -eq 10
+          cat "$A/MANUAL_REVIEW_FINAL_STATUS_2026-09-12.json"
+
+      - name: Persist aggregation failure evidence
+        if: steps.aggregate.outputs.exit_code != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          A="продажи/статистика/ozon/analysis/2026-08-13_2026-09-10"
+          cp /tmp/manual-review-finalize.log "$A/MANUAL_REVIEW_AGGREGATION_FAILURE_2026-09-12.log"
+
+      - name: Commit final authorities or failure evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          A="продажи/статистика/ozon/analysis/2026-08-13_2026-09-10"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "$A/"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            if [ "${{ steps.aggregate.outputs.exit_code }}" = "0" ]; then
+              git commit -m "analysis(ozon): publish final manual semantic review authority"
+            else
+              git commit -m "analysis(ozon): persist manual review aggregation failure evidence"
+            fi
+            git push origin HEAD:main
+          fi
+
+      - name: Fail when aggregation failed
+        if: steps.aggregate.outputs.exit_code != '0'
+        shell: bash
+        run: |
+          echo "Manual-review aggregation failed with exit code ${{ steps.aggregate.outputs.exit_code }}"
+          exit 1
