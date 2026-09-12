@@ -1,0 +1,241 @@
+cluster_id	cluster_name	cluster_type	representative_queries	query_count	sku_count	candidate_primary_skus	family_scope	notes
+CLASS::amulet_pendant	Амулет/талисман/подвеска	product_class	12 з подвеска || 200 шт подвески звезды || акриловые звезды подвески || аксессуары вел || аксессуары для овна || аксессуары для стрел || аксессуары самурая || амулет	110	67		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+CLASS::beads	Чётки/талисман	product_class	деревянные качественные четки эзотерика || качественные четки || кулон четки || магические четки || на четки подвеска || набор для четки || подвеска четки || черная магия четки	21	24		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+FAMILY::religious	Православные обереги	family	баннер православный || большой крест в машину на зеркало православный || крест в машину освященный православный на зеркало || молитвой деревянный православный || молитвы о детях православные даниленко || оберег в машину православный || оберег в машину православный мал || оберег на ркккмужской православный освященны	9	4	1943215793;2326866320	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+FAMILY::slavic	Славянские обереги	family	аксессуары славян || аксессуары славянские || алтырь славянских богов || амулет в машину славянский || амулет в машину славянский на зеркало || амулет крес славян || амулет на удачу славянский || амулет на шею мужской славянский оберег	192	40		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+FAMILY::zodiac	Знаки зодиака	family	10 шилингов знаки зодиака || авторучка шариковая знаки зодиака || адамас золото знак зодиака || амулет доч знака зодиака змееносец || брелок знак зодиака набор || брелок знаки зодиака || бусина знак зодиака || бусина знаки зодиака	53	33		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::01e0ef7aac	Неясный запрос	unclear	коловрат брелок	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::031d317c83	Неясный запрос	unclear	амлеты	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::057de70670	Неясный запрос	unclear	taccardi для дев	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::08acad7e76	Неясный запрос	unclear	богиня лада из дерева	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::09549a5431	Неясный запрос	unclear	брелок козе	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::099dd10930	Неясный запрос	unclear	бусины акрил с рунами	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::0af3e6e132	Неясный запрос	unclear	самурай	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::0b1ee2c2f7	Неясный запрос	unclear	бог омулет	1	6		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::0d5a673d2b	Неясный запрос	unclear	кулон с рыбами	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::0e1e4f77b8	Неясный запрос	unclear	подвнска в мсшине зерколо	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::0f7c024794	Неясный запрос	unclear	руна крест	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::1279bfd1ef	Неясный запрос	unclear	бусины акриловые народные	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::1360c07194	Неясный запрос	unclear	самурая на голову	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::16344e1644	Неясный запрос	unclear	купить знак рака	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::17ad9057be	Неясный запрос	unclear	семагл	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::18a80038ed	Неясный запрос	unclear	cerave	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::1989d474df	Неясный запрос	unclear	руны обкрег	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::1b988bb172	Неясный запрос	unclear	наклейка чур	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::1cbfe75e6f	Неясный запрос	unclear	защелка на нагрудный знак	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::1d7382cf90	Неясный запрос	unclear	коробочки 12 см дерево	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::202dd7d36c	Неясный запрос	unclear	велес	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::22ebf22fdf	Неясный запрос	unclear	для любителя энергетикво	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::248739d555	Неясный запрос	unclear	валькнут	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::25f06e5702	Неясный запрос	unclear	брелок каловрат	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::2627194dcc	Неясный запрос	unclear	красный самурайский	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::271415feb8	Неясный запрос	unclear	для эзотерика предметы	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::2961238148	Неясный запрос	unclear	коловрат браслет	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::2e4001397f	Неясный запрос	unclear	кепка мужская стре	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::2fcdb9d858	Неясный запрос	unclear	сила	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::302173bfeb	Неясный запрос	unclear	ведические	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::38d7351727	Неясный запрос	unclear	сковорода гугнир	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::38ea3863b2	Неясный запрос	unclear	коловрат	1	16		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::3c0b493514	Неясный запрос	unclear	брелок слпвянск	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::3f5745d5a1	Неясный запрос	unclear	браслет' обеоег для водолея	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::403926033d	Неясный запрос	unclear	lol	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::41706cb735	Неясный запрос	unclear	богиня кали	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::4192f3f8a2	Неясный запрос	unclear	знаки вес классность	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::467b4c988c	Неясный запрос	unclear	дев	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::46b07ca137	Неясный запрос	unclear	из дерева	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::46fc16be1b	Неясный запрос	unclear	чур	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::48140aeebc	Неясный запрос	unclear	самурайский стиль	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::486fcd2cd0	Неясный запрос	unclear	коз брелок	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::48b4237561	Неясный запрос	unclear	йогиня	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::49b094eebb	Неясный запрос	unclear	талимсаны	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::4a02d2eb73	Неясный запрос	unclear	семургл	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::4b22cf88a2	Неясный запрос	unclear	толстовка велес	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::4b87cb64f4	Неясный запрос	unclear	кулон семергал	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::4ea3c05541	Неясный запрос	unclear	знак атлантов	1	3		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::4f7810dab2	Неясный запрос	unclear	jubyz ; bdf	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::50d7339448	Неясный запрос	unclear	набор для творчества на дев	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::51236eb19a	Неясный запрос	unclear	браслет каловрат	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::51885c4026	Неясный запрос	unclear	аум сенерик	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::528df0b1e8	Неясный запрос	unclear	омулеты	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::53f39e979a	Неясный запрос	unclear	браслет старо словянский	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::5753801ceb	Неясный запрос	unclear	флаг гугнир	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::580e0aa28c	Неясный запрос	unclear	военная атрибутика для мужчины	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::58689c1d67	Неясный запрос	unclear	вибратор для песка	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::5a2238a060	Неясный запрос	unclear	алтырь деревянный большой	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::5e1453983a	Неясный запрос	unclear	бусины деревянные	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::5e9e2089e3	Неясный запрос	unclear	bimbo twins	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::5f31695ad1	Неясный запрос	unclear	энергетик	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::6248f92291	Неясный запрос	unclear	для овна мужской	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::627d6b961a	Неясный запрос	unclear	символ чернобог	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::6300f80861	Неясный запрос	unclear	распродажа	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::66ac86beae	Неясный запрос	unclear	эзотерика	1	3		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::66b69487f2	Неясный запрос	unclear	магические атрибуты	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::6aaaca4c36	Неясный запрос	unclear	бусы японские мужские браслет	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::6b5297fb6c	Неясный запрос	unclear	набор	1	7		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::6b799541dd	Неясный запрос	unclear	козаки	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::6b9ea9e826	Неясный запрос	unclear	кулон близнец	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::6c92d4e630	Неясный запрос	unclear	коловратка	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::6d0ad48210	Неясный запрос	unclear	цепочка надежная для кулона	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::6ed97afb5d	Неясный запрос	unclear	кулоны близницы	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::6f884ca63a	Неясный запрос	unclear	береза бусина 8 мм	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::6fbfc0a85d	Неясный запрос	unclear	духи	1	3		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::7146f59841	Неясный запрос	unclear	раки	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::716b489fe6	Неясный запрос	unclear	талесман для рака	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::71b653c23e	Неясный запрос	unclear	валькнут кулон	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::72dab1fec3	Неясный запрос	unclear	платье старосла	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::75a80f4c6f	Неясный запрос	unclear	бусина закон	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::75ced707ad	Неясный запрос	unclear	{value}	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::75ddbf0230	Неясный запрос	unclear	калаврат	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::7690264902	Неясный запрос	unclear	рака ловки	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::7793eb4275	Неясный запрос	unclear	комплект	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::79926c83dc	Неясный запрос	unclear	коловрат cd	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::7c7d6bf8d3	Неясный запрос	unclear	брелок перу	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::83914629f5	Неясный запрос	unclear	набор для творчества	1	6		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::851e930e67	Неясный запрос	unclear	браслет в старо словянский	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::85d1cd38d3	Неясный запрос	unclear	крона	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::86b31beff9	Неясный запрос	unclear	набор декоративных кисточек с бусинами	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::87cae55c26	Неясный запрос	unclear	чернобог	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::8bb1121a22	Неясный запрос	unclear	для для раков	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::8c3f0ba392	Неясный запрос	unclear	браслет на руку водолея	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::8f1b5a9423	Неясный запрос	unclear	русич	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::8f45a1a4f8	Неясный запрос	unclear	копъе	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::8f988b4ea3	Неясный запрос	unclear	берег бог	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::8fb7751c00	Неясный запрос	unclear	бусы для стрельца	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::93fa05c75a	Неясный запрос	unclear	хобби	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::94537ef79f	Неясный запрос	unclear	podveska na salon	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::96869e4e1c	Неясный запрос	unclear	руны	1	9		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::9a02ac340e	Неясный запрос	unclear	сварог зн	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::9a95bf2147	Неясный запрос	unclear	что - то для девы	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::9b7f5f708c	Неясный запрос	unclear	атрибуты с российской символикой	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::9bef575f7d	Неясный запрос	unclear	бусины для терм	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::9c1cfb46c5	Неясный запрос	unclear	атрибуты дерево природа	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::9c91ad164b	Неясный запрос	unclear	бусы знак	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::9db82dd755	Неясный запрос	unclear	браслет самурай	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::9e83b7b92e	Неясный запрос	unclear	кулон коловрат	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::9efdfb8855	Неясный запрос	unclear	бог	1	6		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::9f93863554	Неясный запрос	unclear	вибратор	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::a004caad8d	Неясный запрос	unclear	термонаклейка блищнецы	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::a01c2e254d	Неясный запрос	unclear	рыба	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::a13ec43f20	Неясный запрос	unclear	брелок коло	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::a153db22af	Неясный запрос	unclear	день рождения для девы	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::a183695769	Неясный запрос	unclear	знак зодика деревянный	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::a32ed50ff3	Неясный запрос	unclear	для девы из дерева	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::a74c8d357c	Неясный запрос	unclear	копья деревянные	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::a968162a98	Неясный запрос	unclear	брелок козерошки	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::a9f29df0a1	Неясный запрос	unclear	задиака знаки	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::aa3ddb0cf7	Неясный запрос	unclear	магия	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::aa669e0529	Неясный запрос	unclear	бог и богиня	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::ab0deec936	Неясный запрос	unclear	подставка близнец	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::ab906b4944	Неясный запрос	unclear	молитвы	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::abf9890bf2	Неясный запрос	unclear	деревянное повеска для мужчин	1	4		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::ae81bc5b12	Неясный запрос	unclear	бусина знаки	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::b13b2bccb9	Неясный запрос	unclear	бусы на зерколо	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::b2e5942dcd	Неясный запрос	unclear	бусины диаметр 1 см	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::b8a7adaa98	Неясный запрос	unclear	мужчине на день рождения	1	8		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::ba1b57d587	Неясный запрос	unclear	вегвезир	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::bbb1f34c63	Неясный запрос	unclear	аум знак	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::c0bf432c1c	Неясный запрос	unclear	картина стрибо	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::c2cb878802	Неясный запрос	unclear	значок всеслав	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::c41cea9f0f	Неясный запрос	unclear	книга чернобог	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::c49b37672e	Неясный запрос	unclear	камень для близнецов	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::c5f3d2a6d3	Неясный запрос	unclear	знак задиака девы на торт	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::c63993b838	Неясный запрос	unclear	набор для близнеца	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::c8e2d3c66e	Неясный запрос	unclear	игрушка лиса инь - ян	1	1	1629553898	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::ce29905966	Неясный запрос	unclear	мужской кулон рыба	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::cf6515ae0d	Неясный запрос	unclear	браслет для водолея женский	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::cfddf56f10	Неясный запрос	unclear	коза полвеска	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::d0302ca2c9	Неясный запрос	unclear	для гадания на песке	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::d07840e824	Неясный запрос	unclear	кофта с коловратом	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::d136d72f64	Неясный запрос	unclear	по правую руку бога	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::d656990b49	Неясный запрос	unclear	бусы коловрат	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::d6cc23e3b7	Неясный запрос	unclear	cosaque	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::d707ef180b	Неясный запрос	unclear	бусина сила веры	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::d8e0a3f3e6	Неясный запрос	unclear	водоклей	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::da4941eeb7	Неясный запрос	unclear	деревянный амуле	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::dce42a36d8	Неясный запрос	unclear	купить раков	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::de73134950	Неясный запрос	unclear	богиня лада бусина	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::e0c98e992d	Неясный запрос	unclear	бусины символ дерева 8 мм	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::e34a1b8c2f	Неясный запрос	unclear	семейный очаг песок	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::e37255c2ae	Неясный запрос	unclear	перук	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::e39ad6111d	Неясный запрос	unclear	все для близнецов	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::e49a19689f	Неясный запрос	unclear	кольцо чернобога	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::e7e910ec3f	Неясный запрос	unclear	сварочник сварог	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::e87080a47b	Неясный запрос	unclear	брелок гром и	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::e88919b9ed	Неясный запрос	unclear	брелок коза	1	3		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::e9a366ab46	Неясный запрос	unclear	браслет мужской дажьбог	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::ec66302456	Неясный запрос	unclear	для тельцов	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::ed1874bb32	Неясный запрос	unclear	богиня	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::efe125fc90	Неясный запрос	unclear	магические	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::f0c23a812f	Неясный запрос	unclear	браслет из перу	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::f0e41f0eed	Неясный запрос	unclear	dtlmvbyf gjldtcrf	1	4		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::f1158b4ee0	Неясный запрос	unclear	перун	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::f27acc5211	Неясный запрос	unclear	бусины руны	1	2		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::f2f2c15810	Неясный запрос	unclear	песок для благ	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::f437be9c5f	Неясный запрос	unclear	кружка для близнеца	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::f5f0a8b9b4	Неясный запрос	unclear	браслет женский для водолея	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::f8fd3b1d99	Неясный запрос	unclear	сито для муки	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::fcd1b0edf4	Неясный запрос	unclear	браслет мужской для близнеца	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+UNCLEAR::fe55794c10	Неясный запрос	unclear	брелок аудра	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+USE::car_mirror	Подвеска/талисман в автомобиль на зеркало	use_case	3d подвеска в машину на зеркало || 3д подвеска в машину на зеркало || enjoy the silence подвеска в машину || forza кимоно подвеска в машину || fox racing подвеска на зеркало || mirroreffect брелок оберег с зеркалом || monster energy подвеска на зеркало в машину || no pasaran подвеска в машину	995	74		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+USE::gift	Подарочный запрос	use_case	деревянная коробка для подарка мужчине || дорожный набор подарочный для мужчин || подарок || подарок для девушки || подарок для девы || подарок для девы мужчины || подарок женщине || подарок знак	17	21		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+USE::protection	Защита/оберег/талисман	use_case	амулет для защиты || амулет оберег || амулет оберег бык || амулет от сглаза || амулет подвеска талисман || амулет талисман мужской || амулеты и обереги || амулеты и обереги набор	157	74		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::алатырь	алатырь	variant_specific	алатырь || алатырь агат || алатырь амулет мужской || алатырь бляшка || алатырь большой || алатырь в машину || алатырь в солнце || алатырь закладка	17	1	1640251697	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::белобог	белобог	variant_specific	белобог чернобог футболка || молд белобог	2	1	1630033296	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::валькнут	валькнут	variant_specific	валькнут || валькнут коврик на пол || валькнут подвеска в машину || майка валькнут || трафарет узел валькнутв	5	1	1611695246	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::вегвизир	вегвизир	variant_specific	вегвизир в машину || компас вегвизир	2	1	1602722942	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::велес	велес	variant_specific	амулет велеса браслет || амулет знак велеса серебро || амулеты дерева печать велеса || велес || велес оберег волк || велес. красная кровь || оберег велеса	7	1	1636041142	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::герб	герб	variant_specific	аксессуары на машину герб || герб || герб рости наклека на машину || подвеска в машину герб || подвеска герб в машину	5	2	2559748332;2559817779	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::герб россии	герб россии	variant_specific	шифрондля школы герб россии	1	1	2559817779	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::громовик	громовик	variant_specific	брелок громовик || громовик колесо || громовик оберег с	3	1	1640330072	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::гунгнир	гунгнир	variant_specific	гунгнир копье не || гунгнир копьем одиума || доска гунгнир || коп гунгнир один || руна гунгнира футболка	5	1	1611643847	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::даждьбог	даждьбог	variant_specific	аметист даждьбог || даждьбог || даждьбог бусина	3	1	2184932293	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::древо	древо	variant_specific	подвеска в машину на зеркало из камня с древом || подвеска в машину на зеркало из камня с древом жизни	2	1	1623753672	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::древо жизни	древо жизни	variant_specific	древо жизни || древо жизни кресты || подвеска на зеркало в машину древо жизни	3	1	1623753672	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::жива	жива	variant_specific	богиня жива амулет || жива || жива кулон || славянские смулетв жива	4	1	2183808182	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::жизни	жизни	variant_specific	дерево жизни || дерево жизни валькнут || доево жизни || подвеска дерево жизни на зеркале	4	1	1623753672	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::звезда	звезда	variant_specific	амулет звезда руси || амулет тзвезда	2	1	2184234912	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::звезда лады	звезда лады	variant_specific	амулет звезда лады || звезда лады в машину подвеска	2	1	2184234912	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::златоуст	златоуст	variant_specific	златоуст	1	1	1943215793	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::знич	знич	variant_specific	славянские обереги знич	1	1	1640326230	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::инь и ян	инь и ян	variant_specific	ботинки инь и ян	1	1	1629553898	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::инь ян	инь ян	variant_specific	инь ян || инь ян конверт || инь ян свечи || инь ян ткань || инь янь || инь янь на машину || инь янь эмблема || кольцо инь ян	13	1	1629553898	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::иоанн	иоанн	variant_specific	иоанн хозевит	1	1	1943215793	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::козерог	козерог	variant_specific	брошь оберег для козерога || знак козерога подст || знак козерога серебро || подарок для козерога || серьги с козерогом	5	3		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::колядник	колядник	variant_specific	колядник оберег || славянский оберег колядник	2	1	1640326205	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::компас	компас	variant_specific	акомпас в тысячных	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::копье	копье	variant_specific	копье || копье 1/12 || копье бога || копье дерева 200 см || копье ммг	5	1	1611643847	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::крест	крест	variant_specific	акриловые крест || армянский кругдый крест аревахач в машину на зеркало || крестик деревянный в машину	3	1	1640251697	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::макошь	макошь	variant_specific	деревянная бусина с стмволом макошь || макошь || макошь доска || макошь оберег || макошь славянский оберег || молд берегиня макошь	6	1	2184133137	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::мара	мара	variant_specific	богиня мара || картина богиня мара || мара	3	1	2184199958	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::молвинец	молвинец	variant_specific	брелок для ключей молвинец || магический амулет , молвинец оберег || молвинец в || молвинец золотой || молвинец оберег	5	1	1640306007	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::молитва	молитва	variant_specific	келейная книжица иоанна крестьянина молитва || молитва || молитва оберег в дом	3	1	1943215793	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::овен	овен	variant_specific	домовенок в тележке оберег	1	1		SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::перун	перун	variant_specific	брелок для ключей с перун || гобелен перун || кружка перун || кумит бога перуна || перун || свеча перун	6	1	2183985513	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::печать велеса	печать велеса	variant_specific	печать велеса || печать велеса медвежья лапа в машину || печать велеса на шею || печать велеса подвеска в автомобиль || печать велеса серебро	5	1	1636048691	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::ратиборец	ратиборец	variant_specific	кольцо ратиборец	1	1	1640276582	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::россии	россии	variant_specific	флаги россии маленькие на присоске в машину	1	1	2559817779	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::рунический	рунический	variant_specific	рунический амулет	1	1	1602722942	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::сварог	сварог	variant_specific	1600013 сварог || бесболка сварог || молот сварога подвеска	3	1	2183921966	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::сварога	сварога	variant_specific	звезда сварога подвеска || оберег сварога	2	1	1640251697	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::семаргл	семаргл	variant_specific	деревянная семаргл || оберег семаргл || оберег семаргла || ооо семаргл || славянский бог семаргл магнит на холодильник	5	1	2184153852	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::скорпион	скорпион	variant_specific	амулеты , обереги для скорпиона женский || камень скорпиона подвеска || камни талисманы скорпионы || колонки в машину скорпионы || оберег для мужчины скорпиона	5	3		MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::спаси и сохрани	спаси и сохрани	variant_specific	адидас спаси и сохрани коыту || брелокмтамара спаси и сохрани || брслет охранный спаси и сохрани || спаси и сохрани в машину с подсветкой	4	1	2326866320	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::спаси сохрани	спаси сохрани	variant_specific	иконка спаси сохрани	1	1	2326866320	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::триглав	триглав	variant_specific	вто триглав || триглав	2	1	1640264403	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::ужаса	ужаса	variant_specific	браслет мужской с шлем ужаса || браслет шлем ужаса серебро || бусина шлем ужаса || шлем ужаса || шлем ужаса подвеска || шлем ужаса серебро || шлем ужаса шарм	7	1	1602717077	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::узел	узел	variant_specific	подвеска узел || узел анама кара подвеска || узел подвеска в машину	3	1	1611695246	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::хорс	хорс	variant_specific	в машине хобби хорс || посуда хорс || символ хорса	3	1	2184168890	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::чернобог	чернобог	variant_specific	бусина чернобог || джокер чернобога || чернобог	3	1	1630040194	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+VARIANT::шлем	шлем	variant_specific	зеркало на шлем || зеркальце на шлем || кому в шлем || шлем || шлем брелок на	5	1	1602717077	SINGLE_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+ZODIAC_SIGN::близнецы	Знак зодиака: близнецы	zodiac_specific	амулет близнецы в машин || амулет близнецы в машину подвеска || близнецы || близнецы бусина || близнецы в машину подвеска в салон || близнецы для рукоделия || близнецы драконы || близнецы мужчина	21	3	1720131759;2271210394;2186856503	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+ZODIAC_SIGN::весы	Знак зодиака: весы	zodiac_specific	автобильные весы || автомобильные весы || амулет весы || амулеты обереги и талисманы по знаку зодиака весы || блюдо весы знак зодиака || брилки с знаком зодиака весы || брошка знак зодиака весы || бусина знак зодиака весы	33	5	2186802133;2271219774;1720137256	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+ZODIAC_SIGN::водолей	Знак зодиака: водолей	zodiac_specific	аквамарин подвеска водолей ровновесие || блакнот водолей || брелок водолей телефон || в машину фигурка водолей || витрина водолей || водолей || водолей в машину || водолей знак зодиака камееь	24	3	2186846833;1720141903;2271234726	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+ZODIAC_SIGN::дева	Знак зодиака: дева	zodiac_specific	брелок в машину знак зодиака дева || брелок дева || брелок дева знак зодиака || брелок знак зодиака дева дева || брелок подвеска дева || в машину женская дева || все для знака зодиака дева || горшок дева знак зодиака	51	7	2186843798;2186865070;1720144370;2271240621	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+ZODIAC_SIGN::козерог	Знак зодиака: козерог	zodiac_specific	амулет козерог и клевер || брелок козерог мягкий || брелок со знаком зодиака козерог || брелок талисман козерог || гексаграмма козерог || декоративный элемент козерог || денежная карта талисман козерог || зназодиака козерог	33	3	2271246783;2186852750;1720147059	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+ZODIAC_SIGN::лев	Знак зодиака: лев	zodiac_specific	94049007 подвеска лев || браслет по знаку зодиака лев || брелок знаки зодиака лев || брелок талисман лев в машину || бусина лев знак зодиака оберег || в машину подвеска лев || висюльки для авто на зеркало знак зодиака лев || для машины лев	24	5	1720151850;2186857668;2271188511	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+ZODIAC_SIGN::овен	Знак зодиака: овен	zodiac_specific	брелок черный овен || брилок овен || бусина овен || бусинка знак зодиака овен || в машину овен || знак овен женский || игрушка в машину овен || маленький кулон овен	17	4	2186850644;2271251938;1720148880	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+ZODIAC_SIGN::рак	Знак зодиака: рак	zodiac_specific	амулеты для знака зодиака рак || амулеты на шею рак мужские || амулеты обереги и талисманы рак || знак зодиака рак || знак зодиака рак подвеска шарм || знак рак || знаки зодиака фигурки рак || карманные календари знак зодиак рак	22	5	2186796339;2271262133;1720153914	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+ZODIAC_SIGN::рыбы	Знак зодиака: рыбы	zodiac_specific	амулет рыбы || ежедневник знак зодиака рыбы 2027 || знак зодиака рыбы большой || знак зодиака рыбы серебро мужская || знакак зодиака рыбы || знаки зодиака рыбы фигурки || кулон мужской рыбы || ловец снов рыбы	13	3	1720155616;2186848313;2271270261	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+ZODIAC_SIGN::скорпион	Знак зодиака: скорпион	zodiac_specific	yamasaki скорпион || аксессуары в машину подвеска на зеркало скорпион || амулет мужской на шею скорпион || амулет скорпион || амулет скорпион на || амулет скорпион на шею талисман || аодвеска скорпион || бусина знак скорпион	33	13	1720160556;2186836116;2271275793	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+ZODIAC_SIGN::стрелец	Знак зодиака: стрелец	zodiac_specific	антена на рроп стрелец || брошь стрелец || висюльки в машину на зеркало знак диака стрелец || дневник знака зодиака стрелец ♐ || железный стрелец || знак зодиака стрелец подвеска мужская в машину || знак стрелец светодиодная в машину 99 || колокольчик оберег в машину стрелец	25	3	2271285786;1720124782;2186839757	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
+ZODIAC_SIGN::телец	Знак зодиака: телец	zodiac_specific	my jewelry телец || аромадиффузор в машину телец || брелок знак зодиака телец || брелок мягкий телец || брелок телец деревянный || брелок телец и || брошь телец || бусы мужские черные телец	30	3	2271292556;2186766628;1720161841	MULTI_SKU	Deterministic evidence-derived primary concept; ambiguous queries retain UNCLEAR clusters.
