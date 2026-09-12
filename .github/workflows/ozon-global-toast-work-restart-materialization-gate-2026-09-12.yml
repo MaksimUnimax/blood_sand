@@ -1,4 +1,4 @@
-# authoritative targeted gate after exact Work restart payload recovery and four-file dependency audit
+# authoritative targeted gate after exact Work restart payload recovery, four-file dependency audit, and legacy verifier ownership correction
 name: Ozon global plaque + repeated Work Start materialization gate
 run-name: Ozon targeted materialization · ${{ github.ref_name }} · ${{ github.sha }}
 
@@ -33,6 +33,8 @@ jobs:
           PATCH="$RUNNER_TEMP/production.patch"
           IDLE="$RUNNER_TEMP/run_attachment_idle_behavior.mjs"
           WORK="$RUNNER_TEMP/run_work_restart_extended.mjs"
+          OLD_WORK_GATE="$(find "$ROOT/validation" -type f -name 'WORK_SESSION_PENDING_START_REGRESSION_2026-08-21.mjs' -print -quit)"
+          test -n "$OLD_WORK_GATE"
 
           python3 - "$GATE/production.patch.gz.b64" "$PATCH" "$GATE/run_attachment_idle_behavior.mjs.gz.b64" "$IDLE" "$GATE/run_work_restart_extended.mjs.gz.b64" "$WORK" <<'PY'
           import base64, gzip, pathlib, re, sys
@@ -52,14 +54,8 @@ jobs:
                   pad = 4 - remainder
                   normalized += b'=' * pad
                   print(f'PAYLOAD_PADDING_NORMALIZED source={source} added={pad}')
-              try:
-                  compressed = base64.b64decode(normalized, validate=True)
-              except Exception as exc:
-                  raise SystemExit(f'PAYLOAD_BASE64_INVALID source={source}: {exc}')
-              try:
-                  decoded = gzip.decompress(compressed)
-              except Exception as exc:
-                  raise SystemExit(f'PAYLOAD_GZIP_INVALID source={source}: {exc}')
+              compressed = base64.b64decode(normalized, validate=True)
+              decoded = gzip.decompress(compressed)
               pathlib.Path(target).write_bytes(decoded)
               print(f'PAYLOAD_DECODE_PASS source={source} decoded_bytes={len(decoded)}')
           PY
@@ -77,8 +73,12 @@ jobs:
           diff -u "$RUNNER_TEMP/expected_patch_paths.txt" "$RUNNER_TEMP/patch_paths.txt"
           test "$(wc -l < "$RUNNER_TEMP/patch_paths.txt")" -eq 4
 
-          # No production drift is allowed before the ephemeral apply.
+          # Exact branch production must still be byte-identical to the accepted executable before ephemeral apply.
           test -z "$(git diff --name-only "$BASE_EXECUTABLE_SHA"..HEAD -- "$DIST")"
+          echo '--- LEGACY WORK GATE ON UNPATCHED BASELINE ---'
+          node "$OLD_WORK_GATE" "$DIST"
+          echo 'LEGACY_WORK_GATE_BASELINE_PASS'
+
           git -C "$DIST" apply --check "$PATCH"
           git -C "$DIST" apply "$PATCH"
 
@@ -114,11 +114,9 @@ jobs:
           node "$IDLE" "$DIST" | tee "$RUNNER_TEMP/idle.log"
           echo '--- POSTFIX REPEATED WORK START BEHAVIOR ---'
           node "$WORK" "$DIST" | tee "$RUNNER_TEMP/work.log"
-
-          # Re-run the old durable pending-start regression against the corrected ephemeral tree.
-          OLD_WORK_GATE="$(find "$ROOT/validation" -type f -name 'WORK_SESSION_PENDING_START_REGRESSION_2026-08-21.mjs' -print -quit)"
-          test -n "$OLD_WORK_GATE"
+          echo '--- LEGACY WORK GATE ON CORRECTED TREE ---'
           node "$OLD_WORK_GATE" "$DIST"
+          echo 'LEGACY_WORK_GATE_CORRECTED_TREE_PASS'
 
           echo 'TARGETED_MATERIALIZATION_SCOPE=PASS'
           echo 'TARGETED_BEHAVIORAL_GATES=PASS'
