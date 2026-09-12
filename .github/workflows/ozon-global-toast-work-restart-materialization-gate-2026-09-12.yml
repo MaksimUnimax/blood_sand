@@ -66,30 +66,41 @@ jobs:
 
           echo '--- PATCH STAT ---'
           git -C "$DIST" apply --stat "$PATCH"
-          echo '--- PATCH PATHS ---'
+          echo '--- PATCH-LOCAL PATHS ---'
           sed -n 's#^+++ b/##p' "$PATCH" | sort -u | tee "$RUNNER_TEMP/patch_paths.txt"
-          cat > "$RUNNER_TEMP/expected_paths.txt" <<'EOF'
+          cat > "$RUNNER_TEMP/expected_patch_paths.txt" <<'EOF'
           attachment_delivery_port_content.js
           attachment_delivery_wake_content.js
           content_script.js
           service_worker.js
           EOF
-          diff -u "$RUNNER_TEMP/expected_paths.txt" "$RUNNER_TEMP/patch_paths.txt"
+          diff -u "$RUNNER_TEMP/expected_patch_paths.txt" "$RUNNER_TEMP/patch_paths.txt"
           test "$(wc -l < "$RUNNER_TEMP/patch_paths.txt")" -eq 4
 
           # No production drift is allowed before the ephemeral apply.
           test -z "$(git diff --name-only "$BASE_EXECUTABLE_SHA"..HEAD -- "$DIST")"
           git -C "$DIST" apply --check "$PATCH"
           git -C "$DIST" apply "$PATCH"
-          diff -u "$RUNNER_TEMP/expected_paths.txt" <(git -C "$DIST" diff --name-only -- . | sort)
-          git -C "$DIST" diff --check
+
+          echo '--- REPO-RELATIVE CHANGED PATHS ---'
+          cat > "$RUNNER_TEMP/expected_repo_paths.txt" <<'EOF'
+          tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/attachment_delivery_port_content.js
+          tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/attachment_delivery_wake_content.js
+          tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/content_script.js
+          tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/service_worker.js
+          EOF
+          git diff --name-only -- "$DIST" | sort | tee "$RUNNER_TEMP/actual_repo_paths.txt"
+          diff -u "$RUNNER_TEMP/expected_repo_paths.txt" "$RUNNER_TEMP/actual_repo_paths.txt"
+          test "$(wc -l < "$RUNNER_TEMP/actual_repo_paths.txt")" -eq 4
+
+          git diff --check
           node --check "$DIST/attachment_delivery_port_content.js"
           node --check "$DIST/attachment_delivery_wake_content.js"
           node --check "$DIST/content_script.js"
           node --check "$DIST/service_worker.js"
 
           # No provider/network semantics or hidden automatic provider loops may be added.
-          git -C "$DIST" diff -U0 -- . | grep '^+' | grep -v '^+++' > "$RUNNER_TEMP/added_lines.txt" || true
+          git diff -U0 -- "$DIST" | grep '^+' | grep -v '^+++' > "$RUNNER_TEMP/added_lines.txt" || true
           if grep -E '(fetch\(|XMLHttpRequest|report_file_get|OZON_API_V1)' "$RUNNER_TEMP/added_lines.txt"; then
             echo 'FORBIDDEN_PROVIDER_NETWORK_ADDITION=YES' >&2
             exit 1
