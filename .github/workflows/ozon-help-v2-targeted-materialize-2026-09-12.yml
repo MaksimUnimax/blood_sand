@@ -1,0 +1,111 @@
+name: Ozon HELP V2 targeted materialization
+on:
+  push:
+    branches: [repair/ozon-autorun-help-v2-marker-2026-09-12]
+    paths: ['.github/workflows/ozon-help-v2-targeted-materialize-2026-09-12.yml']
+permissions:
+  contents: write
+concurrency:
+  group: ozon-help-v2-targeted
+  cancel-in-progress: false
+env:
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/autorun-help-v2-marker-v1
+  BRANCH: repair/ozon-autorun-help-v2-marker-2026-09-12
+  BASE: ee80e80443ac10f733cdd58884cfd2dbf12bbefb
+jobs:
+  targeted:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Decode exact locally verified sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/evidence"
+          cp "$GATE/targeted_sources.json.gz.b64" "$RUNNER_TEMP/evidence/transport.b64"
+          python3 - <<'PY'
+          import os,pathlib,base64,gzip,hashlib,json
+          gate=pathlib.Path(os.environ['GATE'])
+          raw=gzip.decompress(base64.b64decode(''.join((gate/'targeted_sources.json.gz.b64').read_text().split()),validate=True))
+          assert hashlib.sha256(raw).hexdigest()=='60b7bae54ae90a3616289e39c71dfbe471ee23bb161adf129e1f1681bae5286d','transport SHA mismatch'
+          files=json.loads(raw)
+          assert set(files)=={'apply_autorun_help_v2.py','run_autorun_behavioral.mjs','run_secondary_sweep.mjs','build_browser_fixture.py'}
+          for name,text in files.items():
+              p=gate/name
+              assert not p.exists(),name
+              p.write_bytes(text.encode('utf-8'))
+              print(name,hashlib.sha256(p.read_bytes()).hexdigest())
+          PY
+      - name: Behavioral pre-fix and minimal ephemeral candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          git merge-base --is-ancestor "$BASE" HEAD
+          test -z "$(git diff --name-only "$BASE" HEAD -- "$DIST")"
+          export NODE_OPTIONS="--require=$GITHUB_WORKSPACE/$ROOT/validation/step7-regression-v1/network_guard.cjs"
+          node "$GATE/run_autorun_behavioral.mjs" "$DIST" --expect-red | tee "$RUNNER_TEMP/evidence/behavioral-red.log"
+          cp -a "$DIST" "$RUNNER_TEMP/ephemeral"
+          python3 "$GATE/apply_autorun_help_v2.py" "$RUNNER_TEMP/ephemeral" | tee "$RUNNER_TEMP/evidence/exact-diff.log"
+          test "$(sha256sum "$RUNNER_TEMP/ephemeral/content_script.js" | cut -d' ' -f1)" = '3df6baa6bcbfb147f653f4c55275d5a5d7d7794af3ae9ae71c088cde91a4074c'
+          node "$GATE/run_autorun_help_v2_marker_gate.mjs" "$RUNNER_TEMP/ephemeral" | tee "$RUNNER_TEMP/evidence/targeted.log"
+          OZON_TEST_REPORT="$RUNNER_TEMP/evidence/behavioral-green.json" node "$GATE/run_autorun_behavioral.mjs" "$RUNNER_TEMP/ephemeral" | tee "$RUNNER_TEMP/evidence/behavioral-green.log"
+          OZON_SWEEP_REPORT="$RUNNER_TEMP/evidence/marker-dependencies.json" node "$GATE/run_secondary_sweep.mjs" "$RUNNER_TEMP/ephemeral"
+          python3 - <<'PY'
+          import os,pathlib,subprocess,hashlib,json
+          dist=pathlib.Path(os.environ['DIST']);ep=pathlib.Path(os.environ['RUNNER_TEMP'])/'ephemeral'
+          rows=[]
+          for p in sorted(dist.rglob('*')):
+              if not p.is_file():continue
+              rel=p.relative_to(dist).as_posix();old=p.read_bytes();new=(ep/rel).read_bytes()
+              assert old==subprocess.check_output(['git','show',os.environ['BASE']+':'+p.as_posix()])
+              if rel!='content_script.js':assert old==new,rel
+              rows.append({'file':rel,'baseline_sha256':hashlib.sha256(old).hexdigest(),'candidate_sha256':hashlib.sha256(new).hexdigest(),'changed':old!=new})
+          assert len(rows)==32 and sum(r['changed'] for r in rows)==1
+          (pathlib.Path(os.environ['RUNNER_TEMP'])/'evidence'/'production-parity.json').write_text(json.dumps(rows,indent=2)+'\n')
+          PY
+      - name: Real Chrome DOM using both production AI adapters
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" -o "$RUNNER_TEMP/chrome.zip"
+          unzip -q "$RUNNER_TEMP/chrome.zip" -d "$RUNNER_TEMP/chrome"
+          CHROME="$RUNNER_TEMP/chrome/chrome-linux64/chrome"
+          "$CHROME" --version | grep -F "$VER"
+          python3 "$GATE/build_browser_fixture.py" "$RUNNER_TEMP/ephemeral" "$RUNNER_TEMP/autorun_fixture.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --allow-file-access-from-files --virtual-time-budget=2500 --dump-dom "file://$RUNNER_TEMP/autorun_fixture.html" > "$RUNNER_TEMP/evidence/browser.html"
+          ! grep -F '<title>FAIL:' "$RUNNER_TEMP/evidence/browser.html"
+          grep -F '<title>AUTORUN_HELP_V2_REAL_DOM_BROWSER_PASS</title>' "$RUNNER_TEMP/evidence/browser.html"
+      - name: Materialize only tested bytes after all targeted checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$GATE/apply_autorun_help_v2.py" "$GATE/run_autorun_behavioral.mjs" "$GATE/run_secondary_sweep.mjs" "$GATE/build_browser_fixture.py"
+          git diff --cached --check
+          git commit -m 'test(ozon): materialize verified HELP_V2 behavioral and browser authorities'
+          cp "$RUNNER_TEMP/ephemeral/content_script.js" "$DIST/content_script.js"
+          git add "$DIST/content_script.js"
+          test "$(git diff --cached --name-only | wc -l)" -eq 1
+          test "$(git diff --cached --name-only)" = "$DIST/content_script.js"
+          git diff --cached --check
+          git commit -m 'fix(ozon): recognize HELP_V2 at both Autorun ingress guards'
+          echo "EXACT_EXECUTABLE_SHA=$(git rev-parse HEAD)" | tee "$RUNNER_TEMP/evidence/executable.env"
+          echo "EXACT_EXECUTABLE_TREE=$(git rev-parse HEAD^{tree})" | tee -a "$RUNNER_TEMP/evidence/executable.env"
+          git push origin "HEAD:refs/heads/$BRANCH"
+          echo 'TARGETED_GREEN_NOT_PREHANDOFF=PASS'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-help-v2-targeted-evidence
+          path: ${{ runner.temp }}/evidence
+          retention-days: 30
