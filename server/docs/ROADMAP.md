@@ -240,7 +240,7 @@ P7 execution decomposition (frozen by ADR-0031):
 - P7.5 [DONE / REMOTE ACCEPTED] admin portal AI adapter/profile operations UX.
 - P7.6 [DONE / REMOTE ACCEPTED] P7 security, architecture, full regression, and final acceptance.
 
-## P8 — AI Compatibility Health v1 `[PLANNED]`
+## P8 — AI Compatibility Health v1 `[ACTIVE]`
 
 Goal: detect AI UI changes before widespread user breakage.
 
@@ -265,6 +265,19 @@ Exit examples:
 - core contour fail => BROKEN;
 - expired health account => UNKNOWN;
 - candidate profile fixes incident without regression.
+
+P8 execution decomposition (frozen by ADR-0036):
+
+- P8.1 `[ACTIVE / LOCAL ACCEPTED / REMOTE ACCEPTANCE PENDING]` health domain,
+  deterministic classifier, suite registry, and H0 profile-candidate boundary.
+- P8.2 `[PLANNED]` persistence.
+- P8.3 `[PLANNED]` BrowserDriver and controlled Chrome H2.
+- P8.4 `[PLANNED]` ChatGPT Standard/Work H3 and sanitized evidence.
+- P8.5 `[PLANNED]` scheduling, orchestration, and health incidents.
+- P8.6 `[PLANNED]` H4/H5, P7 availability-restriction hooks, and minimal
+  Health admin API/UI.
+- P8.7 `[PLANNED]` whole-P8 security, privacy, architecture, regression, and
+  final acceptance.
 
 ## P9 — Diagnostics, notifications and operational visibility `[PLANNED]`
 
