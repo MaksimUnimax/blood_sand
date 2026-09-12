@@ -18,17 +18,43 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Download exact official Swagger candidates
+      - name: Fetch exact official Swagger candidates in browser
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p /tmp/ozon-swagger
-          curl -L --fail --silent --show-error --retry 0 -A 'Mozilla/5.0' \
-            'https://docs.ozon.ru/api/performance/swagger.json' \
-            -o /tmp/ozon-swagger/performance.json
-          curl -L --fail --silent --show-error --retry 0 -A 'Mozilla/5.0' \
-            'https://docs.ozon.ru/api/seller/swagger.json' \
-            -o /tmp/ozon-swagger/seller.json
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$chrome"
+          npm install --no-save puppeteer-core@24 >/dev/null 2>&1
+          cat > /tmp/fetch-ozon-swagger.mjs <<'JS'
+          import fs from 'fs';
+          import puppeteer from 'puppeteer-core';
+          const browser = await puppeteer.launch({
+            executablePath: process.env.CHROME_BIN,
+            headless: false,
+            args: ['--no-sandbox','--disable-dev-shm-usage'],
+          });
+          const targets = [
+            ['performance','https://docs.ozon.ru/api/performance/','https://docs.ozon.ru/api/performance/swagger.json','/tmp/ozon-swagger/performance.json'],
+            ['seller','https://docs.ozon.ru/api/seller/','https://docs.ozon.ru/api/seller/swagger.json','/tmp/ozon-swagger/seller.json'],
+          ];
+          try {
+            for (const [kind,root,spec,out] of targets) {
+              const page = await browser.newPage();
+              await page.setExtraHTTPHeaders({'Accept-Language':'ru-RU,ru;q=0.9,en;q=0.8'});
+              try { await page.goto(root,{waitUntil:'networkidle2',timeout:60000}); } catch (e) { console.log(kind,'root',String(e)); }
+              await new Promise(r=>setTimeout(r,2500));
+              const response = await page.goto(spec,{waitUntil:'networkidle2',timeout:60000});
+              if (!response) throw new Error(`${kind}: no response`);
+              const buf = await response.buffer();
+              JSON.parse(buf.toString('utf8'));
+              fs.writeFileSync(out,buf);
+              console.log(kind,'status',response.status(),'final',page.url(),'bytes',buf.length);
+              await page.close();
+            }
+          } finally { await browser.close(); }
+          JS
+          CHROME_BIN="$chrome" xvfb-run -a node /tmp/fetch-ozon-swagger.mjs
           test "$(sha256sum /tmp/ozon-swagger/performance.json | awk '{print $1}')" = 'ec1adb41f16d145b9a7487b7c7e0995a0db37f54cefed1933d6ad789dd5c2405'
           test "$(sha256sum /tmp/ozon-swagger/seller.json | awk '{print $1}')" = '87f9a1e99fa35c06e3d15567409d688849f6647420ceee5710c7b72769a41d33'
 
@@ -57,8 +83,7 @@ jobs:
               ops=sum(1 for item in d['paths'].values() for m in item if m.lower() in HTTP)
               assert ops==ops_n,(name,ops)
           perf=json.loads(Path('/tmp/ozon-swagger/performance.json').read_bytes())
-          assert '/api/client/statistics/phrases' in perf['paths']
-          assert 'post' in perf['paths']['/api/client/statistics/phrases']
+          assert '/api/client/statistics/phrases' in perf['paths'] and 'post' in perf['paths']['/api/client/statistics/phrases']
           print('SOURCE_IDENTITY_PASS')
           PY
 
@@ -67,76 +92,47 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json, hashlib, os, re, shutil, subprocess
+          import json, hashlib, re, shutil, subprocess
           from pathlib import Path
-
           root=Path('tooling/llm-api-bridges/ozon-seller')
           auth=root/'swagger-authority'/'2026-09-12'
           auth.mkdir(parents=True,exist_ok=True)
-          perf_src=Path('/tmp/ozon-swagger/performance.json')
-          seller_src=Path('/tmp/ozon-swagger/seller.json')
-          perf_dst=auth/'OZON_PERFORMANCE_SWAGGER_2026-09-12.json'
-          seller_dst=auth/'OZON_SELLER_SWAGGER_2026-09-12.json'
-          shutil.copyfile(perf_src,perf_dst)
-          shutil.copyfile(seller_src,seller_dst)
+          perf_src=Path('/tmp/ozon-swagger/performance.json'); seller_src=Path('/tmp/ozon-swagger/seller.json')
+          perf_dst=auth/'OZON_PERFORMANCE_SWAGGER_2026-09-12.json'; seller_dst=auth/'OZON_SELLER_SWAGGER_2026-09-12.json'
+          shutil.copyfile(perf_src,perf_dst); shutil.copyfile(seller_src,seller_dst)
 
-          # Remove only competing RAW Swagger source snapshots/transports in current main.
-          # Historical matrices/reports/acceptance evidence are intentionally preserved.
           tracked=subprocess.check_output(['git','ls-files'],text=True).splitlines()
-          removed=[]
-          new_prefix=str(auth).replace('\\','/')+'/'
+          removed=[]; prefix=str(auth).replace('\\','/')+'/'
           raw_patterns=[
-              re.compile(r'(?i)OZON_.*EXACT_SWAGGER.*(?:json|xz|b64|manifest|transport|\.py)$'),
-              re.compile(r'(?i)(?:^|/)swagger[^/]*\.json(?:\..*)?$'),
-              re.compile(r'(?i)(?:^|/).*swagger.*\.json\.(?:xz|gz|b64)(?:\..*)?$'),
+            re.compile(r'(?i)OZON_.*EXACT_SWAGGER.*(?:json|xz|b64|manifest|transport|\.py)$'),
+            re.compile(r'(?i)(?:^|/)swagger[^/]*\.json(?:\..*)?$'),
+            re.compile(r'(?i)(?:^|/).*swagger.*\.json\.(?:xz|gz|b64)(?:\..*)?$'),
           ]
           for rel in tracked:
               norm=rel.replace('\\','/')
-              if norm.startswith(new_prefix):
-                  continue
-              if norm.endswith('OZON_SWAGGER_FULL_REAUDIT_AND_PROGRESS_RULE_2026-09-12.md'):
-                  continue
-              if norm.endswith('.github/workflows/ozon-swagger-authority-infra-2026-09-12.yml'):
-                  continue
-              # Only operate inside Ozon bridge source area, not unrelated projects.
-              if not norm.startswith(str(root).replace('\\','/')+'/'):
-                  continue
-              base=Path(norm).name
-              if any(p.search(norm) or p.search(base) for p in raw_patterns):
+              if norm.startswith(prefix) or not norm.startswith(str(root).replace('\\','/')+'/'): continue
+              if norm.endswith('OZON_SWAGGER_FULL_REAUDIT_AND_PROGRESS_RULE_2026-09-12.md'): continue
+              if any(p.search(norm) or p.search(Path(norm).name) for p in raw_patterns):
                   p=Path(norm)
-                  if p.exists():
-                      p.unlink()
-                      removed.append(norm)
+                  if p.exists(): p.unlink(); removed.append(norm)
 
           def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
           manifest={
-            'authority_date':'2026-09-12',
-            'status':'CANONICAL_SOURCE_AUTHORITY__AUDIT_NOT_STARTED',
+            'authority_date':'2026-09-12','status':'CANONICAL_SOURCE_AUTHORITY__AUDIT_NOT_STARTED',
             'rule_document':str(root/'OZON_SWAGGER_FULL_REAUDIT_AND_PROGRESS_RULE_2026-09-12.md'),
-            'audit_started':False,
-            'bridge_modified':False,
-            'provider_calls_made':False,
+            'audit_started':False,'bridge_modified':False,'provider_calls_made':False,
             'sources':{
-              'performance':{
-                'filename':perf_dst.name,'raw_bytes':perf_dst.stat().st_size,'raw_sha256':sha(perf_dst),
-                'openapi':'3.0.0','api_version':'2.0','expected_host':'api-performance.ozon.ru',
-                'path_count':47,'operation_count':48,'user_upload_name':'swagger.json'
-              },
-              'seller':{
-                'filename':seller_dst.name,'raw_bytes':seller_dst.stat().st_size,'raw_sha256':sha(seller_dst),
-                'openapi':'3.0.0','api_version':'2.1','expected_host':'api-seller.ozon.ru',
-                'path_count':466,'operation_count':466,'user_upload_name':'swagger (1).json'
-              }
+              'performance':{'filename':perf_dst.name,'raw_bytes':perf_dst.stat().st_size,'raw_sha256':sha(perf_dst),'openapi':'3.0.0','api_version':'2.0','expected_host':'api-performance.ozon.ru','path_count':47,'operation_count':48,'user_upload_name':'swagger.json'},
+              'seller':{'filename':seller_dst.name,'raw_bytes':seller_dst.stat().st_size,'raw_sha256':sha(seller_dst),'openapi':'3.0.0','api_version':'2.1','expected_host':'api-seller.ozon.ru','path_count':466,'operation_count':466,'user_upload_name':'swagger (1).json'}
             },
             'competing_raw_swagger_removed_from_main':removed,
-            'historical_derived_evidence_policy':'PRESERVE_FOR_COMPARISON__NOT_SOURCE_AUTHORITY'
+            'historical_derived_evidence_policy':'PRESERVE_FOR_COMPARISON__NOT_SOURCE_AUTHORITY',
+            'historical_branches_policy':'DO_NOT_REWRITE_FORENSIC_HISTORY'
           }
           (auth/'SWAGGER_AUTHORITY_MANIFEST_2026-09-12.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-
-          (auth/'README.md').write_text('''# Ozon Swagger authority — 2026-09-12\n\nStatus: **CANONICAL SOURCE AUTHORITY / AUDIT NOT STARTED**\n\nThis directory is the sole current raw OpenAPI authority for the next full Ozon Bridge reaudit.\n\n- `OZON_PERFORMANCE_SWAGGER_2026-09-12.json` — exact bytes matching the owner-provided `swagger.json`.\n- `OZON_SELLER_SWAGGER_2026-09-12.json` — exact bytes matching the owner-provided `swagger (1).json`.\n- `SWAGGER_AUTHORITY_MANIFEST_2026-09-12.json` — hashes, counts and provenance.\n- `verify_swagger_authority.py` — source-integrity verifier only.\n\nHistorical matrices/reports elsewhere are comparison evidence only. No endpoint safety audit has started yet.\n\nMandatory recovery/execution rule: `../../OZON_SWAGGER_FULL_REAUDIT_AND_PROGRESS_RULE_2026-09-12.md`.\n''',encoding='utf-8')
-
-          cleanup='''# Legacy raw Swagger cleanup — 2026-09-12\n\nThis report covers **current `main` only**. Historical commits/branches are forensic history and are not rewritten.\n\nFresh canonical authority now lives only in `swagger-authority/2026-09-12/`. Historical derived matrices/reports remain intentionally preserved for delta/regression comparison.\n\n## Competing raw Swagger files removed from current main\n\n'''
-          cleanup += ('\n'.join('- `'+x+'`' for x in removed) if removed else '_None were tracked on current main at cleanup time; the older raw Swagger transport found during earlier work existed only on a historical repair branch, not current main._')+'\n'
+          (auth/'README.md').write_text('''# Ozon Swagger authority — 2026-09-12\n\nStatus: **CANONICAL SOURCE AUTHORITY / AUDIT NOT STARTED**\n\nThis directory is the sole current raw OpenAPI authority for the next full Ozon Bridge reaudit.\n\n- `OZON_PERFORMANCE_SWAGGER_2026-09-12.json` — exact bytes matching owner-provided `swagger.json`.\n- `OZON_SELLER_SWAGGER_2026-09-12.json` — exact bytes matching owner-provided `swagger (1).json`.\n- `SWAGGER_AUTHORITY_MANIFEST_2026-09-12.json` — hashes, counts and provenance.\n- `verify_swagger_authority.py` — source-integrity verifier only.\n\nHistorical matrices/reports elsewhere are comparison evidence only. No endpoint safety audit has started.\n\nMandatory rule: `../../OZON_SWAGGER_FULL_REAUDIT_AND_PROGRESS_RULE_2026-09-12.md`.\n''',encoding='utf-8')
+          cleanup='''# Legacy raw Swagger cleanup — 2026-09-12\n\nScope: **current `main` only**. Historical commits/branches are forensic history and are not rewritten.\n\nFresh canonical authority now lives only in `swagger-authority/2026-09-12/`. Historical derived matrices/reports remain intentionally preserved for delta/regression comparison and are not source authority.\n\n## Competing raw Swagger files removed from current main\n\n'''
+          cleanup += ('\n'.join('- `'+x+'`' for x in removed) if removed else '_None were tracked on current main at cleanup time. Older raw Swagger transports found previously exist only on historical branches and cannot be confused with current main authority._')+'\n'
           (auth/'LEGACY_RAW_SWAGGER_CLEANUP_2026-09-12.md').write_text(cleanup,encoding='utf-8')
           PY
 
@@ -146,99 +142,131 @@ jobs:
           set -euo pipefail
           cat > tooling/llm-api-bridges/ozon-seller/swagger-authority/2026-09-12/verify_swagger_authority.py <<'PY'
           #!/usr/bin/env python3
-          import hashlib, json
+          import hashlib,json
           from pathlib import Path
-          HERE=Path(__file__).resolve().parent
-          HTTP={'get','post','put','patch','delete','head','options','trace'}
-          manifest=json.loads((HERE/'SWAGGER_AUTHORITY_MANIFEST_2026-09-12.json').read_text(encoding='utf-8'))
-          for name,s in manifest['sources'].items():
+          HERE=Path(__file__).resolve().parent; HTTP={'get','post','put','patch','delete','head','options','trace'}
+          m=json.loads((HERE/'SWAGGER_AUTHORITY_MANIFEST_2026-09-12.json').read_text(encoding='utf-8'))
+          for _,s in m['sources'].items():
               p=HERE/s['filename']; raw=p.read_bytes(); d=json.loads(raw)
-              assert len(raw)==s['raw_bytes']
-              assert hashlib.sha256(raw).hexdigest()==s['raw_sha256']
-              assert d.get('openapi')==s['openapi']
-              assert str(d.get('info',{}).get('version'))==str(s['api_version'])
+              assert len(raw)==s['raw_bytes']; assert hashlib.sha256(raw).hexdigest()==s['raw_sha256']
+              assert d.get('openapi')==s['openapi']; assert str(d.get('info',{}).get('version'))==str(s['api_version'])
               hosts=[x.get('url','').replace('https://','').replace('http://','').lstrip('/').split('/')[0].split(':')[0] for x in d.get('servers',[])]
-              assert s['expected_host'] in hosts
-              assert len(d.get('paths',{}))==s['path_count']
-              ops=sum(1 for item in d['paths'].values() for m in item if m.lower() in HTTP)
-              assert ops==s['operation_count']
+              assert s['expected_host'] in hosts; assert len(d.get('paths',{}))==s['path_count']
+              assert sum(1 for item in d['paths'].values() for method in item if method.lower() in HTTP)==s['operation_count']
           print('SWAGGER_SOURCE_AUTHORITY_PASS')
           PY
           chmod +x tooling/llm-api-bridges/ozon-seller/swagger-authority/2026-09-12/verify_swagger_authority.py
-
           python - <<'PY'
           import json
           from pathlib import Path
           p=Path('tooling/llm-api-bridges/ozon-seller/SWAGGER_REAUDIT_CURSOR_2026-09-12.json')
-          cursor={
-            'date':'2026-09-12','status':'READY_FOR_BLOCK_B__AUDIT_NOT_STARTED',
-            'source_authority_date':'2026-09-12',
-            'seller_raw_sha256':'87f9a1e99fa35c06e3d15567409d688849f6647420ceee5710c7b72769a41d33',
-            'performance_raw_sha256':'ec1adb41f16d145b9a7487b7c7e0995a0db37f54cefed1933d6ad789dd5c2405',
-            'current_macro_block':'B_CANONICAL_OPERATION_INVENTORY',
-            'completed_macro_blocks':['A_SOURCE_AUTHORITY_AND_INFRASTRUCTURE'],
-            'current_window':None,
-            'seller_operations_total':466,'seller_operations_processed':0,
-            'performance_operations_total':48,'performance_operations_processed':0,
-            'last_canonical_operation_key':None,'current_output_files':[],
-            'last_checkpoint_commit':None,'qa_missing':None,'qa_duplicates':None,'holds':0,
-            'audit_started':False,'bridge_modified':False,'provider_calls_made':False,
-            'next_action':'When owner explicitly starts work: Block B only — build complete mechanical 514-operation inventory before any safety classification.'
-          }
-          p.write_text(json.dumps(cursor,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          d={'date':'2026-09-12','status':'READY_FOR_BLOCK_B__AUDIT_NOT_STARTED','source_authority_date':'2026-09-12','seller_raw_sha256':'87f9a1e99fa35c06e3d15567409d688849f6647420ceee5710c7b72769a41d33','performance_raw_sha256':'ec1adb41f16d145b9a7487b7c7e0995a0db37f54cefed1933d6ad789dd5c2405','current_macro_block':'B_CANONICAL_OPERATION_INVENTORY','completed_macro_blocks':['A_SOURCE_AUTHORITY_AND_INFRASTRUCTURE'],'current_window':None,'seller_operations_total':466,'seller_operations_processed':0,'performance_operations_total':48,'performance_operations_processed':0,'last_canonical_operation_key':None,'current_output_files':[],'last_checkpoint_commit':None,'qa_missing':None,'qa_duplicates':None,'holds':0,'audit_started':False,'bridge_modified':False,'provider_calls_made':False,'next_action':'When owner explicitly starts work: Block B only — build complete mechanical 514-operation inventory before any safety classification.'}
+          p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           PY
 
-      - name: Update rule document and README authority override
+      - name: Expand recovery rule and mark current authority
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
           rule=Path('tooling/llm-api-bridges/ozon-seller/OZON_SWAGGER_FULL_REAUDIT_AND_PROGRESS_RULE_2026-09-12.md')
-          text=rule.read_text(encoding='utf-8')
-          text=text.replace('Текущий execution state: **DOCUMENTATION_CREATED__SWAGGER_WORK_NOT_STARTED**','Текущий execution state: **READY_FOR_BLOCK_B__AUDIT_NOT_STARTED**')
+          text=rule.read_text(encoding='utf-8').replace('Текущий execution state: **DOCUMENTATION_CREATED__SWAGGER_WORK_NOT_STARTED**','Текущий execution state: **READY_FOR_BLOCK_B__AUDIT_NOT_STARTED**')
           marker='## 21. 2026-09-12 authoritative infrastructure completion addendum'
           if marker not in text:
-              text += '''\n\n---\n\n## 21. 2026-09-12 authoritative infrastructure completion addendum\n\nThis section supersedes any earlier wording in this document that says source replacement itself is still pending. **Only infrastructure/source preparation is complete; the operation audit is not started.**\n\nCurrent sole raw-source authority: `swagger-authority/2026-09-12/`. Performance raw SHA-256: `ec1adb41f16d145b9a7487b7c7e0995a0db37f54cefed1933d6ad789dd5c2405` (47 paths / 48 operations). Seller raw SHA-256: `87f9a1e99fa35c06e3d15567409d688849f6647420ceee5710c7b72769a41d33` (466 paths / 466 operations). Total future inventory gate: **514 operations**.\n\nThe future work is fixed to eight macroblocks: **A Source Authority & Infrastructure; B Canonical Operation Inventory; C Seller Business-Effect Classification; D Performance Business-Effect Classification; E Bridge Crosswalk; F Remediation; G Regression/Coverage QA & candidate build; H Safe Live Validation & Release Acceptance.** Block A is complete. Blocks B–H are not started.\n\nThe first future action is Block B only: extract all 514 operations mechanically from fresh Swagger and prove `466 + 48`, missing=0, duplicates=0. Old allowlists/matrices must not filter this inventory. Safety classification cannot begin before that gate passes.\n\nDuring C/D every operation receives an independent fresh decision based on business effect, not HTTP verb. `POST` is not automatically mutation; `GET` is not automatically safe. Read-only async report jobs are evaluated as report lifecycle operations (`START -> STATUS -> DOWNLOAD`) rather than blocked merely because a server-side job is created. Ambiguity becomes `UNRESOLVED_HOLD`, never a guess.\n\nOnly after C+D are complete may Block E compare fresh truth with current Bridge aliases, routes, schemas and entitlements. Old matrices are then used only to identify deltas/regressions. Block F may patch the Bridge only from the accepted crosswalk. Block G must prove full coverage and no mutation leakage. Block H is the first stage where safe live Ozon calls may be made; there must be no hidden polling, retries, pagination or fan-out.\n\nCheckpoint rule remains Adaptive Checkpoint Window: normally one coherent family or ~40–80 manually reviewed operations / ~30–60 minutes; deterministic reproducible work may use larger windows; ambiguous/security-sensitive work uses smaller windows. Every window materializes output, updates cursor, commits, remote-readbacks, then continues without waiting unless an owner decision is genuinely required.\n\nRecovery order after interruption: read this rule -> read cursor -> fetch remote HEAD -> verify source hashes -> read last committed window -> resume only unfinished work. Never restart accepted windows from memory.\n'''
+              text += r'''
+
+---
+
+## 21. 2026-09-12 authoritative infrastructure completion addendum
+
+This section supersedes earlier wording that says source replacement itself is still pending. **Only source/infrastructure preparation is complete; the operation audit is not started.**
+
+The sole current raw-source authority is `swagger-authority/2026-09-12/`. Performance SHA-256 is `ec1adb41f16d145b9a7487b7c7e0995a0db37f54cefed1933d6ad789dd5c2405` (47 paths / 48 operations). Seller SHA-256 is `87f9a1e99fa35c06e3d15567409d688849f6647420ceee5710c7b72769a41d33` (466 paths / 466 operations). The future full inventory gate is **514 operations**.
+
+### Fixed eight macroblocks
+
+**A — Source Authority & Infrastructure.** Validate exact fresh owner-provided sources, pin hashes, materialize sole current authority, remove competing raw source copies from current main, preserve historical derived evidence, create verifier + cursor + README authority override, and remote-readback. No endpoint decisions. **A is complete when this addendum exists together with PASS source verifier and cursor state `READY_FOR_BLOCK_B__AUDIT_NOT_STARTED`.**
+
+**B — Canonical Operation Inventory.** Parse fresh Swagger only. Materialize every operation as canonical `API + METHOD + PATH`, plus operationId, tags, summary, request/response references, deprecation markers and source pointer. Gate: Seller 466 + Performance 48 = 514; missing 0; duplicate canonical keys 0. No safety classification is permitted before this gate.
+
+**C — Seller Business-Effect Classification.** Review all 466 Seller operations independently from fresh OpenAPI. Assign exactly one safety class and an evidence-based reason. A POST is not automatically mutation; a GET is not automatically safe. Reads with privacy or conditional side effects get dedicated classes. Ambiguous cases go to `UNRESOLVED_HOLD`, never guessed. Old matrices are consulted only after the fresh decision is persisted.
+
+**D — Performance Business-Effect Classification.** Review all 48 Performance operations independently. Pay special attention to campaign activation/deactivation, bids, budgets, product membership, statistics/report generation, authentication and vendor analytics. Report generation is assessed as a lifecycle (`START -> STATUS -> DOWNLOAD`), so read-only report jobs are not blocked merely because they create temporary server-side report state. `POST /api/client/statistics/phrases` is a mandatory known-regression case.
+
+**E — Bridge Crosswalk.** Only after C+D are complete, map each fresh operation to current `OzonOperationRegistry` aliases, host/path/version, request normalization, provider routing and entitlement. Produce separate defect classes: safe-but-missing, false-blocked-safe, wrong-path/version, wrong-schema, incomplete report lifecycle, mutation-exposed-as-read, deprecated/stale target, alias collision, and implemented-but-no-longer-in-Swagger.
+
+**F — Remediation.** Patch only defects proven by E. Add exact read-safe aliases/contracts, fix false blocks, implement explicit report lifecycle operations, and keep mutation gates fail-closed. Do not broaden wildcard access. Do not introduce hidden polling, automatic retry, hidden pagination or fan-out. Any behavior not proven by Swagger/evidence remains HOLD.
+
+**G — Regression/Coverage QA & Candidate Build.** Machine-gate all 514 canonical operations against the new classification and Bridge crosswalk. Required zeroes: unclassified, missing canonical operations, duplicate canonical keys, mutation-as-read leakage, deprecated targets, wrong method/path pairs, unresolved implementation drift. Pin source hashes in QA. Build candidate only after gates pass.
+
+**H — Safe Live Validation & Release Acceptance.** This is the first block where account/provider calls may be made. Use only operations already classified read-safe/conditional-safe under their gates. No mutation probe without explicit owner approval. Persist raw live evidence and rate/access behavior. Final release requires exact artifact identity, remote readback and final cursor.
+
+### Mandatory order and why
+
+The sequence is deliberately one-way: **fresh source -> complete inventory -> fresh semantic safety truth -> Bridge comparison -> remediation -> QA -> live validation**. Reversing it recreates the first historical error, because current Bridge behavior would contaminate what we believe the API contains. Comparing to old matrices before C/D are fixed would also recreate the same error.
+
+The safety decision is deliberately separated from implementation. During C/D do not ask “can the Bridge already do this?”; ask only “what does this endpoint actually do to business state according to current evidence?”. This prevents the second historical error where technical form (`POST`, async job) replaced business-effect reasoning.
+
+### Checkpoint protocol during B–H
+
+Use Adaptive Checkpoint Window (ACW), not a fixed number of commits. Default checkpoint is one coherent API family or roughly 40–80 manually reviewed operations / 30–60 minutes, whichever gives a recoverable semantic unit first. Deterministic script-generated work can use larger windows (~120–200 operations) because it is cheap to reproduce. Ambiguous safety/privacy/report work must use smaller windows (~15–50 operations). On network instability, new failure class, contract conflict, owner-decision gate, or before destructive/refactor work, checkpoint immediately.
+
+Every checkpoint must occur in this order: **materialize output -> run local/block QA -> update cursor -> commit -> remote readback -> continue immediately**. Do not stop merely because a checkpoint was written. Do not hold completed reasoning only in chat memory. If a block requires several files, write the result first and cursor last so the cursor never claims work that is not materialized.
+
+### Recovery protocol after interruption
+
+Always recover from Git, never from recollection: read this rule -> read `SWAGGER_REAUDIT_CURSOR_2026-09-12.json` -> fetch current remote HEAD -> run `swagger-authority/2026-09-12/verify_swagger_authority.py` -> inspect last committed window/output -> resume only the unfinished unit. Completed windows are immutable input to continuation unless a later QA explicitly opens a corrective rework block.
+
+### Hard stop conditions
+
+Do not silently proceed if source hashes differ, source operation totals differ from 466/48, canonical inventory has missing/duplicates, an endpoint business effect cannot be established, or current Bridge code conflicts with the fresh schema. Persist the discrepancy as a checkpoint/HOLD and resolve it before downstream implementation.
+
+### Things that are not evidence
+
+HTTP verb alone, path wording alone, old allowlist membership, current alias existence, previous “PASS” matrices, and the fact that an endpoint creates a temporary report job are not sufficient evidence of mutation/read safety. Current OpenAPI plus explicit lifecycle/business-effect evidence governs the fresh classification.
+'''
           rule.write_text(text,encoding='utf-8')
 
-          readme=Path('tooling/llm-api-bridges/ozon-seller/README.md')
-          body=readme.read_text(encoding='utf-8')
-          header='''# 2026-09-12 CURRENT SWAGGER AUTHORITY OVERRIDE\n\nThe current raw OpenAPI authority is `swagger-authority/2026-09-12/`, backed by exact owner-provided Swagger byte hashes and source-integrity verification. Before any Swagger/coverage work, read `OZON_SWAGGER_FULL_REAUDIT_AND_PROGRESS_RULE_2026-09-12.md` and `SWAGGER_REAUDIT_CURSOR_2026-09-12.json`.\n\nCurrent state: **READY_FOR_BLOCK_B__AUDIT_NOT_STARTED**. Historical research below is retained for evidence, but stale statements about Swagger unavailability or old coverage are not current source authority.\n\n---\n\n'''
-          if not body.startswith('# 2026-09-12 CURRENT SWAGGER AUTHORITY OVERRIDE'):
-              readme.write_text(header+body,encoding='utf-8')
+          readme=Path('tooling/llm-api-bridges/ozon-seller/README.md'); body=readme.read_text(encoding='utf-8')
+          header='''# 2026-09-12 CURRENT SWAGGER AUTHORITY OVERRIDE
+
+Current raw OpenAPI authority is `swagger-authority/2026-09-12/`, backed by exact owner-provided Swagger hashes and source-integrity verification. Before any Swagger/coverage work, read `OZON_SWAGGER_FULL_REAUDIT_AND_PROGRESS_RULE_2026-09-12.md` and `SWAGGER_REAUDIT_CURSOR_2026-09-12.json`.
+
+Current state: **READY_FOR_BLOCK_B__AUDIT_NOT_STARTED**. Historical research below remains evidence, but stale statements about Swagger availability or old coverage are not current source authority.
+
+---
+
+'''
+          if not body.startswith('# 2026-09-12 CURRENT SWAGGER AUTHORITY OVERRIDE'): readme.write_text(header+body,encoding='utf-8')
           PY
 
       - name: Source integrity verifier
         run: python tooling/llm-api-bridges/ozon-seller/swagger-authority/2026-09-12/verify_swagger_authority.py
 
-      - name: Commit infrastructure checkpoint
+      - name: Commit source/infrastructure checkpoint
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config user.name 'github-actions[bot]'; git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
           git status --short
-          git commit -m 'infra(ozon): install 2026-09-12 Swagger source authority'
+          git commit -m 'infra(ozon): install exact 2026-09-12 Swagger authority'
           git push origin HEAD:main
           echo "SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
-      - name: Persist final cursor checkpoint commit
+      - name: Persist final cursor checkpoint
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json, os
+          import json,os
           from pathlib import Path
-          p=Path('tooling/llm-api-bridges/ozon-seller/SWAGGER_REAUDIT_CURSOR_2026-09-12.json')
-          d=json.loads(p.read_text(encoding='utf-8'))
-          d['last_checkpoint_commit']=os.environ['SOURCE_COMMIT']
-          d['status']='READY_FOR_BLOCK_B__AUDIT_NOT_STARTED'
-          p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          p=Path('tooling/llm-api-bridges/ozon-seller/SWAGGER_REAUDIT_CURSOR_2026-09-12.json'); d=json.loads(p.read_text())
+          d['last_checkpoint_commit']=os.environ['SOURCE_COMMIT']; p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
           PY
           git add tooling/llm-api-bridges/ozon-seller/SWAGGER_REAUDIT_CURSOR_2026-09-12.json
-          git commit -m 'infra(ozon): checkpoint Swagger reaudit ready state'
+          git commit -m 'infra(ozon): checkpoint reaudit ready state'
           git push origin HEAD:main
 
       - name: Assert audit did not start
@@ -249,10 +277,8 @@ jobs:
           import json
           from pathlib import Path
           d=json.loads(Path('tooling/llm-api-bridges/ozon-seller/SWAGGER_REAUDIT_CURSOR_2026-09-12.json').read_text())
-          assert d['audit_started'] is False
-          assert d['bridge_modified'] is False
-          assert d['provider_calls_made'] is False
-          assert d['seller_operations_processed']==0
-          assert d['performance_operations_processed']==0
+          assert d['status']=='READY_FOR_BLOCK_B__AUDIT_NOT_STARTED'
+          assert d['audit_started'] is False and d['bridge_modified'] is False and d['provider_calls_made'] is False
+          assert d['seller_operations_processed']==0 and d['performance_operations_processed']==0
           print('INFRA_READY__AUDIT_NOT_STARTED')
           PY
