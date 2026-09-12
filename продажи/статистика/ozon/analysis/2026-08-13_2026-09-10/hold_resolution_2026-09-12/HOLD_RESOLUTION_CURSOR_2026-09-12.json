@@ -4,16 +4,22 @@
   "source_hold_count": 9,
   "block_policy": "3 HOLD rows per block",
   "completed_blocks": ["H01", "H02", "H03"],
-  "resolved_rows": 9,
-  "remaining_rows": 0,
-  "cumulative_decisions": {
+  "reviewed_rows": 9,
+  "final_decisions": {
     "APPROVE": 1,
     "REJECT": 5,
     "KEEP_HOLD": 3
   },
   "next_block": null,
   "next_queries": [],
-  "status": "COMPLETE__HOLD_RESOLUTION_BLOCKS_REMOTE_PERSISTED",
+  "status": "COMPLETE__HOLD_RESOLUTION_QA_PASS",
+  "final_outputs": [
+    "17_HOLD_RESOLUTION_MASTER.tsv",
+    "18_POST_HOLD_APPROVED_CHANGE_SET.tsv",
+    "19_REMAINING_HOLD_QUEUE.tsv",
+    "20_HOLD_RESOLUTION_FINAL_REPORT.md",
+    "HOLD_RESOLUTION_FINAL_STATUS_2026-09-12.json"
+  ],
   "card_mutations_performed": false,
   "ozon_provider_calls_performed": false
 }
