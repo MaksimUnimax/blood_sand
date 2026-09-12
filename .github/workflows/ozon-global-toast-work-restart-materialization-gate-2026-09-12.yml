@@ -32,9 +32,29 @@ jobs:
           PATCH="$RUNNER_TEMP/production.patch"
           IDLE="$RUNNER_TEMP/run_attachment_idle_behavior.mjs"
           WORK="$RUNNER_TEMP/run_work_restart_extended.mjs"
-          base64 -d "$GATE/production.patch.gz.b64" | gzip -dc > "$PATCH"
-          base64 -d "$GATE/run_attachment_idle_behavior.mjs.gz.b64" | gzip -dc > "$IDLE"
-          base64 -d "$GATE/run_work_restart_extended.mjs.gz.b64" | gzip -dc > "$WORK"
+
+          python3 - "$GATE/production.patch.gz.b64" "$PATCH" "$GATE/run_attachment_idle_behavior.mjs.gz.b64" "$IDLE" "$GATE/run_work_restart_extended.mjs.gz.b64" "$WORK" <<'PY'
+          import base64, gzip, pathlib, re, sys
+          pairs = list(zip(sys.argv[1::2], sys.argv[2::2]))
+          allowed = re.compile(rb'^[A-Za-z0-9+/]*={0,2}$')
+          for source, target in pairs:
+              raw = pathlib.Path(source).read_bytes()
+              normalized = b''.join(raw.split())
+              print(f'PAYLOAD source={source} raw_chars={len(raw)} normalized_chars={len(normalized)} mod4={len(normalized)%4}')
+              if not allowed.fullmatch(normalized):
+                  bad = sorted(set(re.sub(rb'[A-Za-z0-9+/=]', b'', normalized)))
+                  raise SystemExit(f'PAYLOAD_INVALID_NONWHITESPACE source={source} bad={bad!r}')
+              try:
+                  compressed = base64.b64decode(normalized, validate=True)
+              except Exception as exc:
+                  raise SystemExit(f'PAYLOAD_BASE64_INVALID source={source}: {exc}')
+              try:
+                  decoded = gzip.decompress(compressed)
+              except Exception as exc:
+                  raise SystemExit(f'PAYLOAD_GZIP_INVALID source={source}: {exc}')
+              pathlib.Path(target).write_bytes(decoded)
+              print(f'PAYLOAD_DECODE_PASS source={source} decoded_bytes={len(decoded)}')
+          PY
 
           echo '--- PATCH STAT ---'
           git apply --stat "$PATCH"
