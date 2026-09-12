@@ -1,0 +1,23 @@
+{
+  "review_date": "2026-09-12",
+  "source_hold_queue": "15_MANUAL_REVIEW_HOLD_QUEUE.tsv",
+  "source_hold_count": 9,
+  "block_policy": "3 HOLD rows per block",
+  "completed_blocks": ["H01"],
+  "resolved_rows": 3,
+  "remaining_rows": 6,
+  "cumulative_decisions": {
+    "APPROVE": 0,
+    "REJECT": 3,
+    "KEEP_HOLD": 0
+  },
+  "next_block": "H02",
+  "next_queries": [
+    "печать велеса медвежья лапа в машину",
+    "звезда сварога подвеска",
+    "громовик колесо"
+  ],
+  "status": "IN_PROGRESS__H01_REMOTE_PERSISTED",
+  "card_mutations_performed": false,
+  "ozon_provider_calls_performed": false
+}
