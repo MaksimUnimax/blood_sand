@@ -6,6 +6,8 @@ on:
     branches: [repair/ozon-alice-xlsx-live-capability-2026-09-12]
     paths:
       - '.github/workflows/ozon-alice-xlsx-live-capability-targeted-2026-09-12.yml'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/alice-xlsx-live-capability-v2/**'
+      - 'tooling/llm-api-bridges/ozon-seller/validation/alice-drag-drop-v1/run_alice_drag_drop_runtime_gate.mjs'
   workflow_dispatch:
 
 permissions:
