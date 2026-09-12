@@ -20,7 +20,7 @@ def save(name, value): (OUT/name).write_text(json.dumps(value,ensure_ascii=False
 def run(label, args, guard=True, timeout=180):
     env = dict(os.environ)
     if guard and str(args[0])=='node':
-        env['NODE_OPTIONS']='--require="'+str((ROOT/'validation/step7-regression-v1/network_guard.cjs').resolve())+'"'
+        env['NODE_OPTIONS']='--require="'+(ROOT/'validation/step7-regression-v1/network_guard.cjs').resolve().as_posix()+'"'
     args = list(map(str,args))
     p = subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=env,timeout=timeout)
     (OUT/(label+'.log')).write_bytes(p.stdout)
