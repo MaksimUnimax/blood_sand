@@ -1,8 +1,11 @@
 {
-  "executable": "3f543bde2f8b4c0a561ecb50aeba111ff108751a",
-  "tree": "eac9f8849e2b73dcee6e6cc5b795e879a481ee9f",
+  "executable": "aafd23cca6cb657ed8c453c54c6a0b70b5bf21f3",
+  "tree": "550e5881534563f7482b49eca6cb20517bed73f8",
   "baseline": "0cc968ee4b76d41e9c0361a905812fe49f313585",
-  "targeted_ci_run": "34687308933",
+  "targeted_ci_run": "34689839528",
   "provider_calls": 0,
-  "status": "CODE_FIXED_TARGETED_GREEN_NOT_FINAL_HANDOFF"
+  "status": "CODE_FIXED_TARGETED_GREEN_NOT_FINAL_HANDOFF",
+  "production_files": 32,
+  "changed_files": 4,
+  "unchanged_files": 28
 }
