@@ -49,7 +49,14 @@ export async function resetE2eDatabase(): Promise<void> {
             config_release_compatibility_policies, config_releases,
             signing_key_events, compatibility_policy_blocked_versions,
             compatibility_policy_revisions, extension_release_browsers,
-            extension_release_contracts, extension_releases
+            extension_release_contracts, extension_releases,
+            adapter_profile_assignment_revisions,
+            adapter_profile_assignments,
+            adapter_profile_revisions,
+            adapter_profiles,
+            ai_variants,
+            ai_surfaces,
+            ai_adapters
           RESTART IDENTITY CASCADE`);
         break;
       } catch (error) {

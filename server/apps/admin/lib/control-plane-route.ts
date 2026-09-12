@@ -52,6 +52,41 @@ export const ADMIN_ALLOWED_TUPLES = [
   "POST /v1/admin/principals/{principal_id}/roles/{role}/revoke",
   "POST /v1/admin/principals/{principal_id}/suspend",
   "POST /v1/admin/session",
+  "GET /v1/admin/ai/registry/adapters",
+  "GET /v1/admin/ai/registry/adapters/{adapter_id}/surfaces",
+  "GET /v1/admin/ai/registry/surfaces/{surface_id}/variants",
+  "GET /v1/admin/ai/profiles",
+  "GET /v1/admin/ai/profiles/{profile_id}",
+  "GET /v1/admin/ai/profiles/{profile_id}/revisions",
+  "GET /v1/admin/ai/profiles/{profile_id}/revisions/{revision}",
+  "GET /v1/admin/ai/assignments",
+  "GET /v1/admin/ai/assignments/{assignment_id}",
+  "GET /v1/admin/ai/assignments/{assignment_id}/revisions",
+  "POST /v1/admin/ai/registry/adapters",
+  "POST /v1/admin/ai/registry/surfaces",
+  "POST /v1/admin/ai/registry/variants",
+  "POST /v1/admin/ai/profiles",
+  "POST /v1/admin/ai/registry/adapters/{adapter_id}/metadata",
+  "POST /v1/admin/ai/registry/adapters/{adapter_id}/status",
+  "POST /v1/admin/ai/registry/surfaces/{surface_id}/metadata",
+  "POST /v1/admin/ai/registry/surfaces/{surface_id}/status",
+  "POST /v1/admin/ai/registry/variants/{variant_id}/metadata",
+  "POST /v1/admin/ai/registry/variants/{variant_id}/status",
+  "POST /v1/admin/ai/profiles/{profile_id}/metadata",
+  "POST /v1/admin/ai/profiles/{profile_id}/status",
+  "POST /v1/admin/ai/profiles/{profile_id}/revisions",
+  "POST /v1/admin/ai/profiles/{profile_id}/revisions/{revision}/replace",
+  "POST /v1/admin/ai/profiles/{profile_id}/revisions/{revision}/candidate",
+  "POST /v1/admin/ai/profiles/{profile_id}/revisions/{revision}/publish",
+  "POST /v1/admin/ai/profiles/{profile_id}/revisions/{revision}/retire",
+  "POST /v1/admin/ai/assignments",
+  "POST /v1/admin/ai/assignments/{assignment_id}/direct",
+  "POST /v1/admin/ai/assignments/{assignment_id}/rollout",
+  "POST /v1/admin/ai/assignments/{assignment_id}/percentage",
+  "POST /v1/admin/ai/assignments/{assignment_id}/pause",
+  "POST /v1/admin/ai/assignments/{assignment_id}/resume",
+  "POST /v1/admin/ai/assignments/{assignment_id}/complete",
+  "POST /v1/admin/ai/assignments/{assignment_id}/rollback",
 ] as const;
 
 export const OTP_ALLOWED_TUPLES = [
@@ -72,6 +107,15 @@ const segmentPattern = (segment: string): string => {
     segment === "{principal_id}"
   )
     return UUID;
+  if (
+    segment === "{adapter_id}" ||
+    segment === "{surface_id}" ||
+    segment === "{variant_id}" ||
+    segment === "{profile_id}" ||
+    segment === "{assignment_id}"
+  )
+    return UUID;
+  if (segment === "{revision}") return "[1-9][0-9]*";
   if (
     segment === "{entitlement_key}" ||
     segment === "{policy_key}" ||

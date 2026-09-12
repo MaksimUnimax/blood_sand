@@ -69,6 +69,21 @@ button {
   color: #fff;
   background: #263449;
 }
+.nav-group {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #334155;
+}
+.nav-group-title {
+  padding: 0 10px 4px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
 .main {
   min-width: 0;
   padding: 24px clamp(16px, 4vw, 48px);
@@ -141,6 +156,16 @@ textarea {
 textarea {
   min-height: 84px;
   resize: vertical;
+}
+pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .actions {
   display: flex;

@@ -106,7 +106,7 @@ export function safeError(error: unknown): string {
       return "Your elevation has expired. Re-authenticate to continue.";
     if (error.code === "ADMIN_UNAUTHORIZED")
       return "Your admin session has ended.";
-    return error.message;
+    return "The administrative operation could not be completed.";
   }
   return "The control plane is temporarily unavailable.";
 }
@@ -165,7 +165,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   );
 }
 
-function useAdmin() {
+export function useAdmin() {
   return useContext(AdminContext);
 }
 export function has(me: Me | null, permission: string) {
@@ -228,7 +228,19 @@ const nav = [
   ["Compatibility", "/compatibility", "compatibility.read"],
 ] as const;
 
-function Shell({ children, title }: { children: ReactNode; title: string }) {
+const aiNav = [
+  ["Registry", "/ai/registry", "ai.registry.read"],
+  ["Profiles", "/ai/profiles", "ai.profile.read"],
+  ["Assignments", "/ai/assignments", "ai.assignment.read"],
+] as const;
+
+export function Shell({
+  children,
+  title,
+}: {
+  children: ReactNode;
+  title: string;
+}) {
   const { me, loading, notice, signOut } = useAdmin();
   const pathname = usePathname();
   const router = useRouter();
@@ -260,6 +272,24 @@ function Shell({ children, title }: { children: ReactNode; title: string }) {
                 {label}
               </Link>
             ))}
+          {aiNav.some(([, , permission]) => has(me, permission)) && (
+            <div className="nav-group">
+              <span className="nav-group-title">AI adapters</span>
+              {aiNav
+                .filter(([, , permission]) => has(me, permission))
+                .map(([label, href]) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    aria-current={
+                      pathname.startsWith(href) ? "page" : undefined
+                    }
+                  >
+                    {label}
+                  </Link>
+                ))}
+            </div>
+          )}
         </nav>
       </aside>
       <main className="main">
@@ -450,7 +480,7 @@ export function LoginPage() {
   );
 }
 
-function useData<T>(path: string | null) {
+export function useData<T>(path: string | null) {
   const [data, setData] = useState<T | null>(null);
   const [busy, setBusy] = useState(Boolean(path));
   const [error, setError] = useState<unknown>(null);
@@ -483,13 +513,15 @@ function useData<T>(path: string | null) {
   return { data, busy, error, load };
 }
 
-function Mutation({
+export function Mutation({
   permission,
   action,
   path,
   body,
   confirm,
   onDone,
+  onSuccess,
+  disabled = false,
   children,
 }: {
   permission: string;
@@ -498,6 +530,8 @@ function Mutation({
   body: Record<string, unknown>;
   confirm?: string;
   onDone?: () => Promise<void> | void;
+  onSuccess?: (value: unknown) => void;
+  disabled?: boolean;
   children?: ReactNode;
 }) {
   const { me, setNotice, refresh } = useAdmin();
@@ -534,11 +568,12 @@ function Mutation({
     busyRef.current = true;
     setBusy(true);
     try {
-      await controlPlane(path, {
+      const value = await controlPlane(path, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...body, reason: reason.trim() }),
       });
+      onSuccess?.(value);
       setReason("");
       setReview(false);
       setNotice({ kind: "success", text: `${action} completed.` });
@@ -581,7 +616,11 @@ function Mutation({
     <div className="panel">
       <div className="actions">
         {children}
-        <button type="button" disabled={busy} onClick={() => setReview(true)}>
+        <button
+          type="button"
+          disabled={busy || disabled}
+          onClick={() => setReview(true)}
+        >
           {busy ? "Working…" : action}
         </button>
       </div>
@@ -623,7 +662,13 @@ function Mutation({
   );
 }
 
-function Table({ headers, rows }: { headers: string[]; rows: ReactNode[][] }) {
+export function Table({
+  headers,
+  rows,
+}: {
+  headers: string[];
+  rows: ReactNode[][];
+}) {
   return (
     <div className="table-wrap">
       <table>
@@ -647,7 +692,7 @@ function Table({ headers, rows }: { headers: string[]; rows: ReactNode[][] }) {
     </div>
   );
 }
-function LoadState({ busy, error }: { busy: boolean; error: unknown }) {
+export function LoadState({ busy, error }: { busy: boolean; error: unknown }) {
   if (busy) return <p role="status">Loading…</p>;
   if (error)
     return (
@@ -657,7 +702,7 @@ function LoadState({ busy, error }: { busy: boolean; error: unknown }) {
     );
   return null;
 }
-function Cursor({
+export function Cursor({
   cursor,
   onNext,
 }: {

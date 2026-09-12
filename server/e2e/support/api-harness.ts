@@ -20,12 +20,17 @@ import {
   createP5CommercialPortalRepository,
   createP5SubscriptionAccessResolver,
   createP5SubscriptionRepository,
+  createP7AdminAiReadRepository,
+  createP7AdminAiCommandRepository,
+  createProfileLifecycleRepository,
+  authorizeAdminMutationInTransaction,
 } from "@product/db";
 import { AuthService, deriveAuthKeys } from "@product/auth";
 import { AdminAuthService, deriveAdminAuthKeys } from "@product/admin-auth";
 import { AdminOpsService } from "@product/admin-ops";
 import { AdminBillingService } from "@product/admin-billing";
 import { createAdminCommercialService } from "@product/admin-commercial";
+import { AdminAiService } from "@product/admin-ai";
 import {
   DeviceAuthorizationService,
   deriveDeviceAuthKeys,
@@ -175,6 +180,13 @@ async function main(): Promise<void> {
           overrides: createP6AdminEntitlementCommandAdapter(database),
           compatibility: createP6AdminCompatibilityCommandAdapter(database),
         },
+      ),
+      adminAiService: new AdminAiService(
+        createP7AdminAiReadRepository(database),
+        createP7AdminAiCommandRepository(database),
+        createProfileLifecycleRepository(database, {
+          beforeMutation: authorizeAdminMutationInTransaction,
+        }),
       ),
     });
     await app.listen({ host: "127.0.0.1", port: 3100 });

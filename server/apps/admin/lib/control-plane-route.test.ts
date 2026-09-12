@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import {
   ADMIN_ALLOWED_TUPLES,
+  BFF_ALLOWED_TUPLE_COUNT,
   OTP_ALLOWED_TUPLES,
   allowedRoute,
   controlPlaneOrigin,
@@ -19,12 +20,24 @@ function materialize(template: string) {
     .replaceAll("{price_id}", uuid)
     .replaceAll("{price_revision_id}", uuid)
     .replaceAll("{principal_id}", uuid)
+    .replaceAll("{adapter_id}", uuid)
+    .replaceAll("{surface_id}", uuid)
+    .replaceAll("{variant_id}", uuid)
+    .replaceAll("{profile_id}", uuid)
+    .replaceAll("{assignment_id}", uuid)
+    .replaceAll("{revision}", "7")
     .replaceAll("{entitlement_key}", "feature.export")
     .replaceAll("{policy_key}", "global")
     .replaceAll("{role}", "ADMIN_OPS");
 }
 
 describe("admin BFF exact route boundary", () => {
+  it("keeps the exact accepted tuple arithmetic", () => {
+    expect(ADMIN_ALLOWED_TUPLES.length).toBe(84);
+    expect(OTP_ALLOWED_TUPLES.length).toBe(2);
+    expect(ADMIN_ALLOWED_TUPLES.length + OTP_ALLOWED_TUPLES.length).toBe(86);
+    expect(BFF_ALLOWED_TUPLE_COUNT).toBe(86);
+  });
   it.each(ADMIN_ALLOWED_TUPLES)("allows accepted admin tuple %s", (tuple) => {
     const separator = tuple.indexOf(" ");
     const method = tuple.slice(0, separator);
@@ -48,12 +61,40 @@ describe("admin BFF exact route boundary", () => {
     ["GET", "/v1/admin/accounts/%2Fdevices"],
     ["GET", "/v1/admin/accounts/%2e%2e/users"],
     [
+      "GET",
+      "/v1/admin/ai/profiles/123e4567-e89b-42d3-a456-426614174000/revisions/0",
+    ],
+    [
+      "GET",
+      "/v1/admin/ai/profiles/123e4567-e89b-42d3-a456-426614174000/revisions/-1",
+    ],
+    [
+      "GET",
+      "/v1/admin/ai/profiles/123e4567-e89b-42d3-a456-426614174000/revisions/nope",
+    ],
+    ["GET", "/v1/admin/ai/profiles/not-a-uuid"],
+    ["GET", "/v1/admin/ai/assignments/not-a-uuid"],
+    [
+      "GET",
+      "/v1/admin/ai/profiles/123e4567-e89b-42d3-a456-426614174000/revisions/%2e%2e",
+    ],
+    [
       "POST",
       "/v1/admin/accounts/123e4567-e89b-42d3-a456-426614174000/devices/123e4567-e89b-42d3-a456-426614174000/revoke/extra",
     ],
     ["PATCH", "/v1/admin/session"],
   ])("rejects non-accepted route %s %s", (method, path) =>
     expect(allowedRoute(method, path)).toBeUndefined(),
+  );
+  it.each([
+    "rollout/percentage",
+    "rollout/pause",
+    "rollout/resume",
+    "rollout/complete",
+  ])("rejects stale nested assignment route %s", (suffix) =>
+    expect(
+      allowedRoute("POST", `/v1/admin/ai/assignments/${uuid}/${suffix}`),
+    ).toBeUndefined(),
   );
   it.each([
     "file:///x",
