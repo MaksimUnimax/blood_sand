@@ -44,20 +44,37 @@ jobs:
           python -m py_compile /tmp/run_semantic_analysis_full.py
 
       - name: Run full-volume Phase B-L analysis
+        id: analysis
         shell: bash
         run: |
-          set -euo pipefail
-          python /tmp/run_semantic_analysis_full.py | tee /tmp/semantic-analysis-status.json
-          grep -q '"QA_STATUS": "PASS"' /tmp/semantic-analysis-status.json
+          set +e
+          python /tmp/run_semantic_analysis_full.py > >(tee /tmp/semantic-analysis-run.log) 2> >(tee -a /tmp/semantic-analysis-run.log >&2)
+          RC=$?
+          echo "exit_code=${RC}" >> "$GITHUB_OUTPUT"
+          exit 0
 
-      - name: Show QA authorities
+      - name: Persist processor failure log
+        if: steps.analysis.outputs.exit_code != '0'
         shell: bash
         run: |
           set -euo pipefail
-          cat "продажи/статистика/ozon/analysis/2026-08-13_2026-09-10/SEMANTIC_ANALYSIS_STATUS_2026-09-12.json"
+          OUT="продажи/статистика/ozon/analysis/2026-08-13_2026-09-10"
+          mkdir -p "$OUT"
+          cp /tmp/semantic-analysis-run.log "$OUT/PROCESSOR_RUN_FAILURE_2026-09-12.log"
+          printf '{\n  "QA_STATUS": "PROCESSOR_FAILED",\n  "processor_exit_code": %s\n}\n' "${{ steps.analysis.outputs.exit_code }}" > "$OUT/SEMANTIC_ANALYSIS_STATUS_2026-09-12.json"
+
+      - name: Verify successful QA
+        if: steps.analysis.outputs.exit_code == '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          STATUS="продажи/статистика/ozon/analysis/2026-08-13_2026-09-10/SEMANTIC_ANALYSIS_STATUS_2026-09-12.json"
+          grep -q '"QA_STATUS": "PASS"' "$STATUS"
+          cat "$STATUS"
           cat "продажи/статистика/ozon/analysis/2026-08-13_2026-09-10/12_QA_REPORT.md"
 
       - name: Upload analytical artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ozon-semantic-analysis-2026-09-12
@@ -65,7 +82,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Commit derived analytical outputs
+      - name: Commit derived analytical outputs or failure evidence
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
@@ -74,7 +92,18 @@ jobs:
           git add -- "продажи/статистика/ozon/analysis/2026-08-13_2026-09-10/"
           if git diff --cached --quiet; then
             echo "No analytical changes to commit"
-            exit 0
+          else
+            if [ "${{ steps.analysis.outputs.exit_code }}" = "0" ]; then
+              git commit -m "analysis(ozon): publish full semantic analysis phases B-L"
+            else
+              git commit -m "analysis(ozon): persist semantic processor failure evidence"
+            fi
+            git push origin HEAD:main
           fi
-          git commit -m "analysis(ozon): publish full semantic analysis phases B-L"
-          git push origin HEAD:main
+
+      - name: Fail job when processor failed
+        if: steps.analysis.outputs.exit_code != '0'
+        shell: bash
+        run: |
+          echo "Processor failed with exit code ${{ steps.analysis.outputs.exit_code }}"
+          exit 1
