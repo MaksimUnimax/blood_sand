@@ -1,0 +1,20 @@
+name: Ozon global idle + Work restart final redispatch
+on:
+  push:
+    branches: [repair/ozon-global-toast-work-restart-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-global-toast-work-restart-final-redispatch-2026-09-12.yml'
+permissions:
+  actions: write
+  contents: read
+jobs:
+  redispatch:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Dispatch authoritative final workflow at current branch head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run ozon-global-toast-work-restart-final-prehandoff-2026-09-12.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"
+          echo FINAL_REDISPATCH_REQUESTED=YES
