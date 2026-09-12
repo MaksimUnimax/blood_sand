@@ -1,0 +1,33 @@
+name: WB offline final reconstruction
+on:
+  push:
+    branches: [stage06-wb-terminal-2026-09-08]
+    paths:
+      - '.github/workflows/wb-offline-final.yml'
+      - 'tooling/llm-api-bridges/wildberries/progress/phase1/block010_final/**'
+permissions:
+  contents: read
+concurrency:
+  group: wb-offline-final-reconstruction
+  cancel-in-progress: false
+jobs:
+  reconstruct:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Restore pinned source and record bounded checks
+        env:
+          PYTHONUTF8: '1'
+        run: python3 tooling/llm-api-bridges/wildberries/progress/phase1/block010_final/reconstruct.py
+      - name: Preserve actual source, recipes and all available logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wb-offline-reconstructed-${{ github.sha }}
+          path: wb-build-output/
+          if-no-files-found: error
+          retention-days: 30
+          include-hidden-files: false
