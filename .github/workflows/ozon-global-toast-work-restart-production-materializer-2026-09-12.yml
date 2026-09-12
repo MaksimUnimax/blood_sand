@@ -1,0 +1,129 @@
+name: Ozon global plaque + repeated Work Start guarded production materializer
+run-name: Ozon guarded production materialization · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-global-toast-work-restart-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-global-toast-work-restart-production-materializer-2026-09-12.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/global-toast-work-restart-v1
+  BASE_EXECUTABLE_SHA: 4fb9c1a859ce7245101e47ffa6e189026e386d8f
+  EXPECTED_PATCH_SHA256: a03a48b84b440638f3daed3dfa5279e0ff48463e39f725d53e00380f3f15dbfb
+  EXPECTED_WORK_GATE_SHA256: 0a564b28a1bdf102042716247984594867aef6262bbfc18b0ea472a6a43aa883
+
+jobs:
+  materialize-exact-four-file-production-fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Verify exact staged authorities, apply and test before commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          PATCH="$RUNNER_TEMP/production.patch"
+          IDLE="$RUNNER_TEMP/run_attachment_idle_behavior.mjs"
+          WORK="$RUNNER_TEMP/run_work_restart_extended.mjs"
+          OLD_WORK_GATE="$(find "$ROOT/validation" -type f -name 'WORK_SESSION_PENDING_START_REGRESSION_2026-08-21.mjs' -print -quit)"
+          test -n "$OLD_WORK_GATE"
+
+          python3 - "$GATE/production.patch.gz.b64" "$PATCH" "$GATE/run_attachment_idle_behavior.mjs.gz.b64" "$IDLE" "$GATE/run_work_restart_extended.mjs.gz.b64" "$WORK" "$EXPECTED_PATCH_SHA256" "$EXPECTED_WORK_GATE_SHA256" <<'PY'
+          import base64, gzip, hashlib, pathlib, sys
+          pairs = list(zip(sys.argv[1:7:2], sys.argv[2:7:2]))
+          expected_patch, expected_work = sys.argv[7], sys.argv[8]
+          decoded = {}
+          for source, target in pairs:
+              raw = b''.join(pathlib.Path(source).read_bytes().split())
+              remainder = len(raw) % 4
+              if remainder == 1:
+                  raise SystemExit(f'IMPOSSIBLE_BASE64_LENGTH source={source}')
+              if remainder in (2, 3): raw += b'=' * (4 - remainder)
+              data = gzip.decompress(base64.b64decode(raw, validate=True))
+              pathlib.Path(target).write_bytes(data)
+              decoded[target] = data
+              print(f'DECODE_PASS source={source} bytes={len(data)} sha256={hashlib.sha256(data).hexdigest()}')
+          patch_sha = hashlib.sha256(decoded[str(pathlib.Path(sys.argv[2]))]).hexdigest()
+          work_sha = hashlib.sha256(decoded[str(pathlib.Path(sys.argv[6]))]).hexdigest()
+          if patch_sha != expected_patch: raise SystemExit(f'PATCH_SHA_MISMATCH {patch_sha}')
+          if work_sha != expected_work: raise SystemExit(f'WORK_GATE_SHA_MISMATCH {work_sha}')
+          print('STAGED_AUTHORITY_IDENTITY=PASS')
+          PY
+
+          cat > "$RUNNER_TEMP/expected_patch_paths.txt" <<'EOF'
+          attachment_delivery_port_content.js
+          attachment_delivery_wake_content.js
+          content_script.js
+          service_worker.js
+          EOF
+          sed -n 's#^+++ b/##p' "$PATCH" | sort -u > "$RUNNER_TEMP/actual_patch_paths.txt"
+          diff -u "$RUNNER_TEMP/expected_patch_paths.txt" "$RUNNER_TEMP/actual_patch_paths.txt"
+
+          cat > "$RUNNER_TEMP/expected_repo_paths.txt" <<'EOF'
+          tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/attachment_delivery_port_content.js
+          tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/attachment_delivery_wake_content.js
+          tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/content_script.js
+          tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/service_worker.js
+          EOF
+
+          # Production must still be exactly the accepted executable before applying this patch.
+          test -z "$(git diff --name-only "$BASE_EXECUTABLE_SHA"..HEAD -- "$DIST")"
+          node "$OLD_WORK_GATE" "$DIST"
+
+          git -C "$DIST" apply --check "$PATCH"
+          git -C "$DIST" apply "$PATCH"
+          git diff --name-only -- "$DIST" | sort > "$RUNNER_TEMP/actual_repo_paths.txt"
+          diff -u "$RUNNER_TEMP/expected_repo_paths.txt" "$RUNNER_TEMP/actual_repo_paths.txt"
+          test "$(wc -l < "$RUNNER_TEMP/actual_repo_paths.txt")" -eq 4
+          git diff --check
+          node --check "$DIST/attachment_delivery_port_content.js"
+          node --check "$DIST/attachment_delivery_wake_content.js"
+          node --check "$DIST/content_script.js"
+          node --check "$DIST/service_worker.js"
+
+          git diff -U0 -- "$DIST" | grep '^+' | grep -v '^+++' > "$RUNNER_TEMP/added_lines.txt" || true
+          if grep -E '(fetch\(|XMLHttpRequest|report_file_get|OZON_API_V1)' "$RUNNER_TEMP/added_lines.txt"; then
+            echo 'FORBIDDEN_PROVIDER_NETWORK_ADDITION=YES' >&2; exit 1
+          fi
+          if grep -Ei '(retry|refetch|resend|paginate|pagination|fan.?out)[[:space:]]*\(' "$RUNNER_TEMP/added_lines.txt"; then
+            echo 'FORBIDDEN_HIDDEN_AUTOMATION_CALL_ADDITION=YES' >&2; exit 1
+          fi
+
+          node "$IDLE" "$DIST"
+          node "$WORK" "$DIST"
+          node "$OLD_WORK_GATE" "$DIST"
+          echo 'PRECOMMIT_BEHAVIORAL_GATES=PASS'
+          echo 'provider_calls_during_patch_gate=0'
+
+          git add -- \
+            "$DIST/attachment_delivery_port_content.js" \
+            "$DIST/attachment_delivery_wake_content.js" \
+            "$DIST/content_script.js" \
+            "$DIST/service_worker.js"
+          git diff --cached --name-only | sort > "$RUNNER_TEMP/staged_paths.txt"
+          diff -u "$RUNNER_TEMP/expected_repo_paths.txt" "$RUNNER_TEMP/staged_paths.txt"
+          test "$(wc -l < "$RUNNER_TEMP/staged_paths.txt")" -eq 4
+          git diff --cached --check
+          echo 'EXACT_PRODUCTION_STAGE_SCOPE=PASS'
+
+      - name: Commit and push exact tested production bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(ozon): isolate idle attachment recovery and harden repeated Work Start'
+          NEW_SHA="$(git rev-parse HEAD)"
+          NEW_TREE="$(git rev-parse HEAD^{tree})"
+          echo "EXACT_EXECUTABLE_SHA=$NEW_SHA"
+          echo "EXACT_EXECUTABLE_TREE=$NEW_TREE"
+          git push origin HEAD:repair/ozon-global-toast-work-restart-2026-09-11
