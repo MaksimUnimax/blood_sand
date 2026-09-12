@@ -35,9 +35,13 @@ jobs:
           test "$(sha256sum "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js" | awk '{print $1}')" = b1ef39d159b24cdec9e4b686b83eeffb7be5c404e4397f1d6cf109a53140ae71
           test "$(sha256sum "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js" | awk '{print $1}')" = c84fcf59af47ebbea27e49e0be9c90627fbd79dc01fa0d59b7e3f526dfcaa0b9
           test "$(sha256sum "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" | awk '{print $1}')" = 3832ca2b6f6877c3067723fc037b206eb113f839f6aa3780b319a968c7e59122
+          git apply --check "$GATE/stale-regression-authority-fix.patch"
+          git apply "$GATE/stale-regression-authority-fix.patch"
+          test "$(sha256sum "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" | awk '{print $1}')" = f265057db3ddcdd5f40a6d392515a7973c978d77e25e02bfc1404dec309fe6a8
           git diff --check
           grep -Fn 'storeProviderArtifactForRef(ref, captured, result?.parsed || null)' "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js"
           grep -Fn 'data-ozon-attachment-status-close' "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js"
+          grep -Fn 'portContent.indexOf("async function recoverCurrent(")' "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs"
       - name: Run new gates twice and related regression sweep
         shell: bash
         run: |
