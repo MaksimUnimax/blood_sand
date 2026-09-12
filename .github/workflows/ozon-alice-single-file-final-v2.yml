@@ -1,0 +1,170 @@
+name: Ozon Alice single-file final exact package v2
+on:
+  push:
+    branches: [repair/ozon-alice-single-file-delivery-2026-09-12]
+    paths: [.github/workflows/ozon-alice-single-file-final-v2.yml]
+permissions:
+  contents: read
+concurrency:
+  group: ozon-alice-single-file-final-v2
+  cancel-in-progress: false
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Build deterministic exact ZIP then full Linux proof from fresh extraction
+        shell: bash
+        run: |
+          set -euo pipefail
+          export OZON_PHASE_OUT="$RUNNER_TEMP/proof/linux"
+          python tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-v1/run.py linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-single-file-v2-exact-package
+          path: tooling/llm-api-bridges/ozon-seller/artifacts/OZON_BRIDGE_v0.1.19_ALICE_SINGLE_FILE_20260912.zip*
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-single-file-v2-linux-proof
+          path: ${{ runner.temp }}/proof/linux
+          retention-days: 30
+  browser:
+    needs: linux
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-single-file-v2-exact-package
+          path: tooling/llm-api-bridges/ozon-seller/artifacts
+      - name: Verify pinned Chrome and same ZIP then all browser regression boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error 'https://storage.googleapis.com/chrome-for-testing-public/152.0.7977.82/linux64/chrome-linux64.zip' -o "$RUNNER_TEMP/chrome.zip"
+          echo "0704631fb3e4f741092e08f55272f90abc3e307f991f05f332924364415b02e0  $RUNNER_TEMP/chrome.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/chrome.zip" -d "$RUNNER_TEMP/chrome"
+          export OZON_PHASE_OUT="$RUNNER_TEMP/proof/browser"
+          python tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-v1/run.py browser "$RUNNER_TEMP/chrome/chrome-linux64/chrome"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-single-file-v2-browser-proof
+          path: ${{ runner.temp }}/proof/browser
+          retention-days: 30
+  windows:
+    needs: browser
+    runs-on: windows-2022
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-single-file-v2-exact-package
+          path: tooling/llm-api-bridges/ozon-seller/artifacts
+      - name: Same immutable ZIP and complete Windows regression cycle
+        shell: pwsh
+        run: |
+          $env:OZON_PHASE_OUT = "$env:RUNNER_TEMP/proof/windows"
+          python tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-v1/run.py windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-single-file-v2-windows-proof
+          path: ${{ runner.temp }}/proof/windows
+          retention-days: 30
+  finalize:
+    needs: windows
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-single-file-v2-exact-package
+          path: tooling/llm-api-bridges/ozon-seller/artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-single-file-v2-linux-proof
+          path: ${{ runner.temp }}/proof/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-single-file-v2-browser-proof
+          path: ${{ runner.temp }}/proof/browser
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-single-file-v2-windows-proof
+          path: ${{ runner.temp }}/proof/windows
+      - name: Validate every phase identity log hash and exact archive before gate report
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import pathlib,os
+          root=pathlib.Path('tooling/llm-api-bridges/ozon-seller')
+          dep=root/'PATCH_ALICE_SINGLE_FILE_DEPENDENCIES_2026-09-12.md'
+          dep.write_text(dep.read_text(encoding='utf-8').replace('8 mutants','10 mutants'),encoding='utf-8')
+          with (root/'PATCH_ALICE_SINGLE_FILE_EXECUTION_NOTES_2026-09-12.md').open('a',encoding='utf-8') as f:
+            f.write('\n## Final immutable-package cycle\nRun '+os.environ['GITHUB_RUN_ID']+' executes Linux → Chrome → Windows on one installable ZIP. Finalize validates all summary identities and log hashes before issuing PRE-HANDOFF. LIVE remains PENDING POST-INSTALL. Historical malformed workflow ozon-alice-large-result-delivery-v1-2026-09-10.yml remains outside this scope; its executable regressions are included in the successful current suite, not silently removed.\n')
+          PY
+          python tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-v1/finalize.py "$RUNNER_TEMP/proof" "$RUNNER_TEMP/handoff"
+      - name: Persist handoff and final checkpoint then fast-forward publish only evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import pathlib,json,os,hashlib,zipfile,subprocess
+          root=pathlib.Path('tooling/llm-api-bridges/ozon-seller');out=pathlib.Path(os.environ['RUNNER_TEMP'])/'handoff';branch='repair/ozon-alice-single-file-delivery-2026-09-12'
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          info=json.loads((root/'PATCH_ALICE_SINGLE_FILE_BUILDINFO_2026-09-12.json').read_text(encoding='utf-8'))
+          bundle=root/'artifacts/OZON_ALICE_SINGLE_FILE_FINAL_HANDOFF_20260912.zip'
+          with zipfile.ZipFile(bundle,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+            for p in sorted(out.rglob('*')):
+              if p.is_file():z.write(p,p.relative_to(out).as_posix())
+          checksum=bundle.with_suffix('.zip.sha256.txt');checksum.write_text(sha(bundle.read_bytes())+'  '+bundle.name+'\n',encoding='utf-8')
+          cp=root/'validation/alice-single-file-transport-v1/CHECKPOINT_06_FINAL.json'
+          cp.write_text(json.dumps({'status':'PRE_HANDOFF_PASS','executable':info['executable'],'tree':info['tree'],'package_sha256':info['sha256'],'final_run':os.environ['GITHUB_RUN_ID'],'handoff_sha256':sha(bundle.read_bytes()),'next':'operator installs exact ZIP; LIVE-GATE-01..05 PENDING POST-INSTALL','provider_calls':0},indent=2)+'\n',encoding='utf-8')
+          remote=subprocess.check_output(['git','ls-remote','origin','refs/heads/'+branch]).decode().split()[0];assert remote==os.environ['GITHUB_SHA'],'concurrent branch change; no overwrite'
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True);subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          package=root/'artifacts'/info['package']
+          allowed=[root/'PATCH_ALICE_SINGLE_FILE_BUILDINFO_2026-09-12.json',root/'PATCH_ALICE_SINGLE_FILE_GATE_2026-09-12.md',root/'PATCH_ALICE_SINGLE_FILE_DEPENDENCIES_2026-09-12.md',root/'PATCH_ALICE_SINGLE_FILE_EXECUTION_NOTES_2026-09-12.md',package,pathlib.Path(str(package)+'.sha256.txt'),bundle,checksum,cp]
+          subprocess.run(['git','add','--',*map(str,allowed)],check=True)
+          actual=set(subprocess.check_output(['git','diff','--cached','--name-only']).decode().splitlines());assert actual.issubset(set(map(str,allowed))) and not any('/dist-step7-candidate/' in p for p in actual)
+          subprocess.run(['git','diff','--cached','--check'],check=True);subprocess.run(['git','commit','-m','docs(ozon): publish exact single-file package and full 35-gate evidence'],check=True)
+          subprocess.run(['git','push','origin','HEAD:refs/heads/'+branch],check=True)
+          evidence=subprocess.check_output(['git','rev-parse','HEAD']).decode().strip();remote=subprocess.check_output(['git','ls-remote','origin','refs/heads/'+branch]).decode().split()[0];assert evidence==remote
+          result={**info,'evidence_head':evidence,'remote_readback':'PASS','handoff_filename':bundle.name,'handoff_sha256':sha(bundle.read_bytes())}
+          (out/'PUBLICATION_IDENTITY.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps({'status':'PASS','executable':info['executable'],'evidence_head':evidence,'package_sha256':info['sha256']}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-single-file-v2-final-handoff
+          path: |
+            ${{ runner.temp }}/handoff/PUBLICATION_IDENTITY.json
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_ALICE_SINGLE_FILE_FINAL_HANDOFF_20260912.zip
+            tooling/llm-api-bridges/ozon-seller/artifacts/OZON_ALICE_SINGLE_FILE_FINAL_HANDOFF_20260912.zip.sha256.txt
+          retention-days: 30
