@@ -1,0 +1,33 @@
+name: Ozon report expiry source snapshot
+on:
+  push:
+    branches: [repair/ozon-report-file-expiry-2026-09-12]
+    paths: [.github/workflows/ozon-report-expiry-source-snapshot-2026-09-12.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Export pinned source, rules and regression harnesses
+        shell: python
+        run: |
+          import hashlib,json,pathlib,subprocess,zipfile
+          base='0aa8f53528e304a91530f663060445e85e2af60b'
+          names=subprocess.check_output(['git','ls-tree','-r','--name-only',base]).decode().splitlines()
+          selected=[p for p in names if (p.startswith('tooling/llm-api-bridges/ozon-seller/') or p.startswith('.github/workflows/') or p.endswith('AGENTS.md')) and '/artifacts/' not in p and not p.endswith(('.zip','.gz','.pdf','.xlsx','.png','.jpg'))]
+          out=pathlib.Path('source-evidence');out.mkdir()
+          records=[]
+          with zipfile.ZipFile(out/'sources.zip','w',zipfile.ZIP_DEFLATED) as z:
+            for p in selected:
+              data=subprocess.check_output(['git','show',base+':'+p]);z.writestr(p,data)
+              records.append({'path':p,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()})
+          (out/'manifest.json').write_text(json.dumps({'base':base,'tree':subprocess.check_output(['git','rev-parse',base+'^{tree}']).decode().strip(),'files':records,'provider_calls':0},indent=2)+'\n')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-report-expiry-pinned-sources
+          path: source-evidence/
+          retention-days: 30
