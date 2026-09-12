@@ -1,0 +1,80 @@
+name: Ozon semantic analysis 2026-09-12
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ozon-semantic-analysis-2026-09-12.yml"
+      - "продажи/статистика/ozon/tools/run_semantic_analysis_full.py.gz.b64.part01"
+      - "продажи/статистика/ozon/tools/run_semantic_analysis_full.py.gz.b64.part02"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Rebuild and verify processor
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat \
+            "продажи/статистика/ozon/tools/run_semantic_analysis_full.py.gz.b64.part01" \
+            "продажи/статистика/ozon/tools/run_semantic_analysis_full.py.gz.b64.part02" \
+            | base64 -d | gzip -d > /tmp/run_semantic_analysis_full.py
+          ACTUAL_SHA="$(sha256sum /tmp/run_semantic_analysis_full.py | cut -d' ' -f1)"
+          EXPECTED_SHA="a0a42af85f6624e0047b49156b8b7759703ca9cc4bde48a4544bce6e1848b5c5"
+          echo "processor_sha256=${ACTUAL_SHA}"
+          test "${ACTUAL_SHA}" = "${EXPECTED_SHA}"
+          python -m py_compile /tmp/run_semantic_analysis_full.py
+
+      - name: Run full-volume Phase B-L analysis
+        shell: bash
+        run: |
+          set -euo pipefail
+          python /tmp/run_semantic_analysis_full.py | tee /tmp/semantic-analysis-status.json
+          grep -q '"QA_STATUS": "PASS"' /tmp/semantic-analysis-status.json
+
+      - name: Show QA authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat "продажи/статистика/ozon/analysis/2026-08-13_2026-09-10/SEMANTIC_ANALYSIS_STATUS_2026-09-12.json"
+          cat "продажи/статистика/ozon/analysis/2026-08-13_2026-09-10/12_QA_REPORT.md"
+
+      - name: Upload analytical artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ozon-semantic-analysis-2026-09-12
+          path: продажи/статистика/ozon/analysis/2026-08-13_2026-09-10/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Commit derived analytical outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "продажи/статистика/ozon/analysis/2026-08-13_2026-09-10/"
+          if git diff --cached --quiet; then
+            echo "No analytical changes to commit"
+            exit 0
+          fi
+          git commit -m "analysis(ozon): publish full semantic analysis phases B-L"
+          git push origin HEAD:main
