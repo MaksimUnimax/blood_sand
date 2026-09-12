@@ -3,21 +3,21 @@
   "source_hold_queue": "15_MANUAL_REVIEW_HOLD_QUEUE.tsv",
   "source_hold_count": 9,
   "block_policy": "3 HOLD rows per block",
-  "completed_blocks": ["H01"],
-  "resolved_rows": 3,
-  "remaining_rows": 6,
+  "completed_blocks": ["H01", "H02"],
+  "resolved_rows": 6,
+  "remaining_rows": 3,
   "cumulative_decisions": {
-    "APPROVE": 0,
+    "APPROVE": 1,
     "REJECT": 3,
-    "KEEP_HOLD": 0
+    "KEEP_HOLD": 2
   },
-  "next_block": "H02",
+  "next_block": "H03",
   "next_queries": [
-    "печать велеса медвежья лапа в машину",
-    "звезда сварога подвеска",
-    "громовик колесо"
+    "для машины лев",
+    "амулет звезда руси",
+    "весы в машину лексус"
   ],
-  "status": "IN_PROGRESS__H01_REMOTE_PERSISTED",
+  "status": "IN_PROGRESS__H02_REMOTE_PERSISTED",
   "card_mutations_performed": false,
   "ozon_provider_calls_performed": false
 }
