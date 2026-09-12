@@ -1,0 +1,137 @@
+diff --git a/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/llm_output_report_workflow_patch.js b/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/llm_output_report_workflow_patch.js
+index e10b0933..40482792 100644
+--- a/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/llm_output_report_workflow_patch.js
++++ b/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/llm_output_report_workflow_patch.js
+@@ -166,0 +167,21 @@
++    // The provider supplies a safe absolute deadline, not a signed URL. Recheck
++    // when formatting delivery: a queued result can outlive its download window.
++    // Already downloaded inline bytes above have a separate artifact lifetime.
++    const availability = result.file_availability;
++    if (availability !== undefined) {
++      const expiresAt = plain(availability) && typeof availability.expires_at === "string" ? Date.parse(availability.expires_at) : NaN;
++      const invalid = !plain(availability) || availability.state === "invalid_expiry" || !Number.isFinite(expiresAt) || !["ready", "expired"].includes(availability.state);
++      if (invalid || availability.state === "expired" || Date.now() >= expiresAt) {
++        return Object.freeze({
++          source_result_index: resultIndex,
++          source_operation: operation,
++          kind: operation === "report_info" ? "report_download" : "generated_document",
++          state: invalid ? "blocked_invalid_file_expiry" : "blocked_file_expired",
++          reason: invalid ? "REPORT_FILE_EXPIRY_INVALID" : "REPORT_FILE_EXPIRED",
++          next_command: null,
++          recovery: operation === "report_info" ? "new_explicit_report_workflow_required" : "new_explicit_document_resolution_required",
++          automatic_continuation: false
++        });
++      }
++    }
++
+diff --git a/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_provider.js b/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_provider.js
+index 995866e4..3780310a 100644
+--- a/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_provider.js
++++ b/tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_provider.js
+@@ -42 +42 @@
+-  const REPORT_SESSION_SCHEMA_VERSION = 1;
++  const REPORT_SESSION_SCHEMA_VERSION = 2;
+@@ -46,0 +47,48 @@
++  // Report URLs, provenance facts and downloaded bytes have different lifetimes.
++  // Ozon Reportinfo: expires_at can be empty for legacy reports; SELLER_RETURNS
++  // links are valid for five minutes after the explicit report_info request.
++  const RETURNS_FILE_URL_TTL_MS = 5 * 60 * 1000;
++
++  function parseReportExpiry(value) {
++    if (value === null || value === undefined || (typeof value === "string" && !value.trim())) {
++      return { valid: true, at_ms: null };
++    }
++    if (typeof value !== "string") return { valid: false, at_ms: null };
++    const text = value.trim();
++    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/i.exec(text);
++    if (!match) return { valid: false, at_ms: null };
++    const [, y, m, d, h, minute, second, zone] = match;
++    const year = Number(y), month = Number(m), day = Number(d);
++    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
++    const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
++    // Date.parse alone silently normalizes invalid calendar dates (e.g. Feb 30).
++    if (month < 1 || month > 12 || day < 1 || day > days[month - 1] || Number(h) > 23 || Number(minute) > 59 || Number(second) > 59) return { valid: false, at_ms: null };
++    if (zone.toUpperCase() !== "Z" && (Number(zone.slice(1, 3)) > 23 || Number(zone.slice(4)) > 59)) return { valid: false, at_ms: null };
++    const at = Date.parse(text);
++    return { valid: Number.isFinite(at), at_ms: Number.isFinite(at) ? at : null };
++  }
++
++  function reportFileLifetime(rawExpiry, reportType, observedAt, registeredAt) {
++    const provider = parseReportExpiry(rawExpiry);
++    if (!provider.valid) return { state: "invalid_expiry", expires_at_ms: null, provider_expires_at_ms: null };
++    let deadline = registeredAt + REPORT_FILE_REF_TTL_MS;
++    if (provider.at_ms !== null) deadline = Math.min(deadline, provider.at_ms);
++    if (String(reportType || "").trim().toUpperCase() === "SELLER_RETURNS") deadline = Math.min(deadline, observedAt + RETURNS_FILE_URL_TTL_MS);
++    return { state: registeredAt >= deadline ? "expired" : "ready", expires_at_ms: deadline, provider_expires_at_ms: provider.at_ms };
++  }
++
++  function fileAvailability(lifetime, currentMs) {
++    return Object.freeze({
++      state: lifetime.state === "invalid_expiry" ? "invalid_expiry" : (currentMs >= lifetime.expires_at_ms ? "expired" : "ready"),
++      expires_at: lifetime.expires_at_ms === null ? null : new Date(lifetime.expires_at_ms).toISOString(),
++      provider_expires_at: lifetime.provider_expires_at_ms === null ? null : new Date(lifetime.provider_expires_at_ms).toISOString()
++    });
++  }
++
++  function reportInfoRecord(payload) {
++    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return {};
++    // These fields must describe the SAME report, never a nested additional_data item.
++    const record = payload.result;
++    return record && typeof record === "object" && !Array.isArray(record) ? record : payload;
++  }
++
+@@ -88 +136 @@
+-    if (!raw || typeof raw !== "object" || Array.isArray(raw) || Number(raw.schema_version) !== REPORT_SESSION_SCHEMA_VERSION) return emptyReportSessionState();
++    if (!raw || typeof raw !== "object" || Array.isArray(raw) || ![1, REPORT_SESSION_SCHEMA_VERSION].includes(raw.schema_version)) return emptyReportSessionState();
+@@ -112,0 +161,8 @@
++          // Version 1 did not retain provider expiry. Never bless those URLs with
++          // a new TTL on upgrade; explicit resolution is required. Inline bytes and
++          // still-valid provenance facts are independently migrated below/above.
++          if (raw.schema_version !== REPORT_SESSION_SCHEMA_VERSION) continue;
++          const expiresAt = rawRecord.expires_at_ms;
++          const providerExpiresAt = rawRecord.provider_expires_at_ms;
++          if (!Number.isSafeInteger(expiresAt) || expiresAt <= 0 || expiresAt > createdAt + REPORT_FILE_REF_TTL_MS) continue;
++          if (providerExpiresAt !== null && (!Number.isSafeInteger(providerExpiresAt) || providerExpiresAt <= 0 || expiresAt > providerExpiresAt)) continue;
+@@ -114 +170 @@
+-          fileRefs.push([ref, { url: trustedUrl, personal_data_required: personalDataRequired, created_at_ms: createdAt }]);
++          fileRefs.push([ref, { url: trustedUrl, personal_data_required: personalDataRequired, created_at_ms: createdAt, expires_at_ms: expiresAt, provider_expires_at_ms: providerExpiresAt }]);
+@@ -204 +260 @@
+-    async function registerReportFile(rawUrl, { personalDataRequired = true } = {}) {
++    async function registerReportFile(rawUrl, { personalDataRequired = true, expiresAt = null, reportType = "", observedAt = Number(now()) } = {}) {
+@@ -205,0 +262,4 @@
++      const registeredAt = Number(now());
++      const lifetime = reportFileLifetime(expiresAt, reportType, observedAt, registeredAt);
++      let availability = fileAvailability(lifetime, registeredAt);
++      if (availability.state !== "ready") return { ref: null, availability };
+@@ -208 +268,3 @@
+-        state.report_file_refs[ref] = { url: trustedUrl, personal_data_required: personalDataRequired === true, created_at_ms: Number(now()) };
++        // Recheck after asynchronous storage/lock acquisition without extending time.
++        if (Number(now()) >= lifetime.expires_at_ms) return;
++        state.report_file_refs[ref] = { url: trustedUrl, personal_data_required: personalDataRequired === true, created_at_ms: registeredAt, expires_at_ms: lifetime.expires_at_ms, provider_expires_at_ms: lifetime.provider_expires_at_ms };
+@@ -210 +272,2 @@
+-      return ref;
++      availability = fileAvailability(lifetime, Number(now()));
++      return { ref: availability.state === "ready" ? ref : null, availability };
+@@ -239,0 +303,4 @@
++      // Last synchronous check before the single transport call, also after MV3 recreation.
++      if (Number(now()) >= record.expires_at_ms) {
++        throw reportStateError("REPORT_FILE_EXPIRED", "Срок доступа к файлу истёк. Для отчёта создайте новый отчёт отдельной командой; старый file_ref не продлевает ссылку.", { externalRequestExecuted: false });
++      }
+@@ -379,0 +447 @@
++      const requestStartedAt = Number(now());
+@@ -422,2 +490,3 @@
+-          const rawFile = findFirstField(response.parsed, "file");
+-          if (typeof rawFile === "string" && rawFile.trim()) {
++          const report = reportInfoRecord(response.parsed);
++          const rawFile = report.file;
++          if (String(report.status || "").trim().toLowerCase() === "success" && typeof rawFile === "string" && rawFile.trim()) {
+@@ -425,2 +494,2 @@
+-            const fileRef = await registerReportFile(rawFile.trim(), { personalDataRequired });
+-            result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), report_file_ref: fileRef });
++            const registered = await registerReportFile(rawFile.trim(), { personalDataRequired, expiresAt: report.expires_at, reportType: report.report_type, observedAt: requestStartedAt });
++            result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), ...(registered.ref ? { report_file_ref: registered.ref } : {}), file_availability: registered.availability });
+@@ -434,2 +503,2 @@
+-            const generatedRef = await registerReportFile(rawGeneratedUrl.trim(), { personalDataRequired: operationRequiresPersonalData(command.operation) });
+-            result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), generated_file_ref: generatedRef });
++            const registered = await registerReportFile(rawGeneratedUrl.trim(), { personalDataRequired: operationRequiresPersonalData(command.operation) });
++            result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), ...(registered.ref ? { generated_file_ref: registered.ref } : {}), file_availability: registered.availability });

@@ -46,7 +46,10 @@ for (const [createOperation, workflow] of Object.entries(Patch.GENERATED_DOCUMEN
 assert.equal(Registry.OPERATIONS.report_info?.path, '/v1/report/info');
 assert.equal(Registry.OPERATIONS.report_file_get?.provider, 'report_file');
 assert.equal(Registry.OPERATIONS.report_file_get?.request_style, 'opaque_file_ref');
-assert.match(providerSource, /report_file_ref:\s*fileRef/);
+// A ready ref is now conditional on the provider lifetime check, not just URL presence.
+assert.match(providerSource, /registered\.ref \? \{ report_file_ref: registered\.ref \}/);
+assert.match(providerSource, /file_availability:\s*registered\.availability/);
+assert.match(providerSource, /expiresAt:\s*report\.expires_at/);
 assert.match(providerSource, /shouldRedactResultField|sanitizeResult/);
 assert.doesNotMatch(read('shared/llm_output_report_workflow_patch.js'), /https?:\/\//i, 'workflow patch must not embed provider URLs');
 assert.doesNotMatch(read('shared/llm_output_report_workflow_patch.js'), /\bfetch\s*\(/, 'workflow patch must never perform provider/file fetch');

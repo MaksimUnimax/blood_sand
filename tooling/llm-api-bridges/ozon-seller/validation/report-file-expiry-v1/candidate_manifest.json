@@ -1,0 +1,15 @@
+{
+  "baseline": "0cc968ee4b76d41e9c0361a905812fe49f313585",
+  "changes": [
+    {
+      "path": "tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/ozon_provider.js",
+      "base_sha256": "de528808ed1d18e77ac0f9cb48ef7db8d7ff267ee299928e0207387adc7c7f7f",
+      "candidate_sha256": "008c97829b573f65769f6b6f388afea80fc0ef39cd3ff08a59d097bc037887ff"
+    },
+    {
+      "path": "tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/shared/llm_output_report_workflow_patch.js",
+      "base_sha256": "a564e2dbafb3980bd406e82744c177a34df2279b63c3198395c13126520dbbff",
+      "candidate_sha256": "00e28b83787f2d9fabfc6ee55ac46374583f68092aeddf07ff36734de878fb29"
+    }
+  ]
+}
