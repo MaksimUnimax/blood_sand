@@ -34,7 +34,8 @@ assert(worker.includes("chrome.tabs.onRemoved.addListener") && worker.includes("
 console.log("WORK_SESSION_PROMPT_FAILURE_TERMINAL_ERROR_PASS");
 console.log("WORK_SESSION_TAB_CLOSE_AND_DELAYED_EVENT_FAIL_CLOSED_PASS");
 
-assert(worker.includes("OZ_WORK_SHOW") && worker.includes("OZ_WORK_HIDE") && worker.includes("OZ_APPLY_MANUAL_MODE"), "show/hide UI lifecycle route missing");
+// Current lifecycle ownership: SHOW/HIDE are worker routes; applying Manual UI state is a content route.
+assert(worker.includes("OZ_WORK_SHOW") && worker.includes("OZ_WORK_HIDE") && content.includes("OZ_APPLY_MANUAL_MODE"), "show/hide UI lifecycle route ownership missing");
 assert(!worker.includes("OZ_WORK_SHOW", worker.indexOf("OZ_WORK_SHOW") + 1) || true, "route ambiguity");
 assert(content.includes("record.destroyed") && content.includes("manual_ui_disabled"), "local button lifecycle / explicit-off contract missing");
 console.log("WORK_SESSION_HIDE_SHOW_UI_ONLY_CONTRACT_PASS");
