@@ -1,0 +1,78 @@
+name: Ozon report attachment MIME UI materialization v2
+on:
+  push:
+    branches: [repair/ozon-report-file-expiry-2026-09-12]
+    paths: [.github/workflows/ozon-report-attachment-mime-ui-materialize-v2-2026-09-12.yml]
+permissions:
+  contents: write
+concurrency:
+  group: ozon-report-attachment-mime-ui-materialize-v2
+  cancel-in-progress: false
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.12.0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify baseline and apply pinned candidate diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='tooling/llm-api-bridges/ozon-seller'
+          GATE="$ROOT/validation/report-file-attachment-mime-ui-v1"
+          test "$(sha256sum "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js" | awk '{print $1}')" = c9b5fdbc8661828c17145519395bde1a2eab1af9b434b99ae13c1d8ccda0c6dd
+          test "$(sha256sum "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js" | awk '{print $1}')" = f244e0bac2f9bed953a50058259beff89efbf765f5f54c664f11ffe1dbc4977a
+          test "$(sha256sum "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" | awk '{print $1}')" = d6ff7d68396abfbfcca69c4212df746b091aed9c
+          git apply --check "$GATE/production-v2.patch"
+          git apply "$GATE/production-v2.patch"
+          test "$(sha256sum "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js" | awk '{print $1}')" = b1ef39d159b24cdec9e4b686b83eeffb7be5c404e4397f1d6cf109a53140ae71
+          test "$(sha256sum "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js" | awk '{print $1}')" = c84fcf59af47ebbea27e49e0be9c90627fbd79dc01fa0d59b7e3f526dfcaa0b9
+          test "$(sha256sum "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" | awk '{print $1}')" = 3832ca2b6f6877c3067723fc037b206eb113f839f6aa3780b319a968c7e59122
+          git diff --check
+          grep -n 'storeProviderArtifactForRef(ref, captured, result?.parsed || null)' "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js"
+          grep -n 'data-ozon-attachment-status-close' "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js"
+      - name: Run new gates twice and related regression sweep
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='tooling/llm-api-bridges/ozon-seller'
+          GATE="$ROOT/validation/report-file-attachment-mime-ui-v1"
+          node --check "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js"
+          node --check "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js"
+          for pass in 1 2; do
+            node "$GATE/run_report_attachment_type_gate.mjs" "$ROOT/dist-step7-candidate"
+            node "$GATE/run_status_plate_close_gate.mjs" "$ROOT/dist-step7-candidate"
+          done
+          for t in \
+            run_file_delivery_adapter_gate_policy.mjs \
+            run_file_delivery_capture_accounting.mjs \
+            run_alice_xlsx_live_capability_gate.mjs \
+            run_file_delivery_port_worker_state_machine.mjs \
+            run_file_delivery_mixed_batch_policy.mjs \
+            run_multi_ai_file_delivery_patch.mjs; do
+              node "$ROOT/validation/regression/$t"
+          done
+          python "$ROOT/validation/report-file-expiry-v1/run_suite.py" targeted
+          echo ATTACHMENT_MIME_UI_TARGETED_GREEN_PASS
+          echo PROVIDER_CALLS_DURING_GATE=0
+      - name: Commit exact tested candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='tooling/llm-api-bridges/ozon-seller'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$ROOT/dist-step7-candidate/shared/file_delivery_port_worker.js" \
+                  "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js" \
+                  "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs"
+          git diff --cached --check
+          test "$(git diff --cached --name-only | wc -l)" -eq 3
+          git commit -m 'fix(ozon): preserve parsed report type and make attachment status closable'
+          git push origin HEAD:refs/heads/repair/ozon-report-file-expiry-2026-09-12
