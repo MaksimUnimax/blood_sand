@@ -45,12 +45,17 @@ jobs:
           p.write_text(s+'\n')
           files=json.loads(raw)
           assert set(files)=={'apply_autorun_help_v2.py','run_autorun_behavioral.mjs','run_secondary_sweep.mjs','build_browser_fixture.py'}
+          # Browser fixture correction only: normal-flow text collapses command newlines.
+          a="node.textContent=texts[kind];document.getElementById('messages').appendChild(node);"
+          b="const pre=document.createElement('pre'),code=document.createElement('code');code.textContent=texts[kind];pre.appendChild(code);node.appendChild(pre);document.getElementById('messages').appendChild(node);"
+          assert files['build_browser_fixture.py'].count(a)==1
+          files['build_browser_fixture.py']=files['build_browser_fixture.py'].replace(a,b)
           for name,text in files.items():
               dst=gate/name
               if dst.exists():assert dst.read_bytes()==text.encode(),name
               else:dst.write_bytes(text.encode())
               print(name,hashlib.sha256(dst.read_bytes()).hexdigest())
-          (pathlib.Path(os.environ['RUNNER_TEMP'])/'evidence'/'source-transport.json').write_text(json.dumps({'corrected_encoded_sha256':good,'decoded_sha256':hashlib.sha256(raw).hexdigest(),'provider_calls':0})+'\n')
+          (pathlib.Path(os.environ['RUNNER_TEMP'])/'evidence'/'source-transport.json').write_text(json.dumps({'corrected_encoded_sha256':good,'decoded_sha256':hashlib.sha256(raw).hexdigest(),'browser_fixture_correction':'real pre/code instead of normal-flow raw text','provider_calls':0})+'\n')
           PY
       - name: Actual pre-fix behavior then ephemeral GREEN and dependency sweep
         shell: bash
