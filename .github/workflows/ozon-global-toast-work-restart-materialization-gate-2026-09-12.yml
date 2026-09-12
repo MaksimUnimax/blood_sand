@@ -1,4 +1,4 @@
-# retrigger: exact Work restart behavioral payload restored at 49a91c47
+# authoritative targeted gate after exact Work restart payload recovery and four-file dependency audit
 name: Ozon global plaque + repeated Work Start materialization gate
 run-name: Ozon targeted materialization · ${{ github.ref_name }} · ${{ github.sha }}
 
@@ -26,7 +26,7 @@ jobs:
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '24.12.0'}
-      - name: Decode, scope-audit, apply in ephemeral tree, and run behavioral gates
+      - name: Decode, scope-audit, apply in ephemeral dist tree, and run behavioral gates
         shell: bash
         run: |
           set -euo pipefail
@@ -65,29 +65,37 @@ jobs:
           PY
 
           echo '--- PATCH STAT ---'
-          git apply --stat "$PATCH"
+          git -C "$DIST" apply --stat "$PATCH"
           echo '--- PATCH PATHS ---'
           sed -n 's#^+++ b/##p' "$PATCH" | sort -u | tee "$RUNNER_TEMP/patch_paths.txt"
           cat > "$RUNNER_TEMP/expected_paths.txt" <<'EOF'
-          tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/attachment_delivery_port_content.js
-          tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/service_worker.js
+          attachment_delivery_port_content.js
+          attachment_delivery_wake_content.js
+          content_script.js
+          service_worker.js
           EOF
-          sort -o "$RUNNER_TEMP/expected_paths.txt" "$RUNNER_TEMP/expected_paths.txt"
           diff -u "$RUNNER_TEMP/expected_paths.txt" "$RUNNER_TEMP/patch_paths.txt"
-          test "$(wc -l < "$RUNNER_TEMP/patch_paths.txt")" -eq 2
+          test "$(wc -l < "$RUNNER_TEMP/patch_paths.txt")" -eq 4
 
-          # The branch must still contain no production drift before this ephemeral apply.
+          # No production drift is allowed before the ephemeral apply.
           test -z "$(git diff --name-only "$BASE_EXECUTABLE_SHA"..HEAD -- "$DIST")"
-          git apply --check "$PATCH"
-          git apply "$PATCH"
-          diff -u "$RUNNER_TEMP/expected_paths.txt" <(git diff --name-only -- "$DIST" | sort)
-          git diff --check
+          git -C "$DIST" apply --check "$PATCH"
+          git -C "$DIST" apply "$PATCH"
+          diff -u "$RUNNER_TEMP/expected_paths.txt" <(git -C "$DIST" diff --name-only -- . | sort)
+          git -C "$DIST" diff --check
           node --check "$DIST/attachment_delivery_port_content.js"
+          node --check "$DIST/attachment_delivery_wake_content.js"
+          node --check "$DIST/content_script.js"
           node --check "$DIST/service_worker.js"
 
-          # No provider/network semantics may be added by this corrective diff.
-          if git diff -U0 -- "$DIST" | grep -E '^\+.*(fetch\(|XMLHttpRequest|report_file_get|OZON_API_V1|retry|refetch|resend|pagination|fan.?out)' ; then
-            echo 'FORBIDDEN_PROVIDER_OR_HIDDEN_AUTOMATION_ADDITION=YES' >&2
+          # No provider/network semantics or hidden automatic provider loops may be added.
+          git -C "$DIST" diff -U0 -- . | grep '^+' | grep -v '^+++' > "$RUNNER_TEMP/added_lines.txt" || true
+          if grep -E '(fetch\(|XMLHttpRequest|report_file_get|OZON_API_V1)' "$RUNNER_TEMP/added_lines.txt"; then
+            echo 'FORBIDDEN_PROVIDER_NETWORK_ADDITION=YES' >&2
+            exit 1
+          fi
+          if grep -Ei '(retry|refetch|resend|paginate|pagination|fan.?out)[[:space:]]*\(' "$RUNNER_TEMP/added_lines.txt"; then
+            echo 'FORBIDDEN_HIDDEN_AUTOMATION_CALL_ADDITION=YES' >&2
             exit 1
           fi
 
@@ -96,7 +104,7 @@ jobs:
           echo '--- POSTFIX REPEATED WORK START BEHAVIOR ---'
           node "$WORK" "$DIST" | tee "$RUNNER_TEMP/work.log"
 
-          # Re-run the old durable pending-start regression against the corrected tree.
+          # Re-run the old durable pending-start regression against the corrected ephemeral tree.
           OLD_WORK_GATE="$(find "$ROOT/validation" -type f -name 'WORK_SESSION_PENDING_START_REGRESSION_2026-08-21.mjs' -print -quit)"
           test -n "$OLD_WORK_GATE"
           node "$OLD_WORK_GATE" "$DIST"
