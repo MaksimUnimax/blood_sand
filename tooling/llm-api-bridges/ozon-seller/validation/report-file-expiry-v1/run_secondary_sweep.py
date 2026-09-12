@@ -2,7 +2,7 @@
 import hashlib,json,pathlib,re,sys
 root=pathlib.Path(sys.argv[1] if len(sys.argv)>1 else 'tooling/llm-api-bridges/ozon-seller/dist-step7-candidate')
 output=pathlib.Path(sys.argv[2] if len(sys.argv)>2 else 'report-expiry-source-inventory.json')
-approved={'shared/bridge_autorun_model.js','shared/direct_binary_file_delivery_patch.js','shared/file_delivery_port_worker.js','shared/llm_output_report_workflow_patch.js','shared/ozon_contract.js','shared/ozon_provider.js','shared/provider_transport_core.js','shared/runtime_names.js'}
+approved={'shared/bridge_autorun_model.js','shared/direct_binary_file_delivery_patch.js','shared/file_delivery_port_worker.js','shared/file_delivery_model_policy.js','shared/llm_output_report_workflow_patch.js','shared/ozon_contract.js','shared/ozon_provider.js','shared/provider_transport_core.js','shared/runtime_names.js'}
 pattern=re.compile(r'report_file_ref|generated_file_ref|REPORT_FILE_SESSION_STATE|report_code_policies|registerReportFile|file_availability|REPORT_SESSION_SCHEMA_VERSION|REPORT_FILE_REF_TTL_MS|executeTrustedReportFileOnce|REPORT_FILE_EXPIRED')
 found={}
 for path in sorted(root.rglob('*')):
@@ -25,6 +25,14 @@ assert w.index('const availability = result.file_availability')<w.index('const r
 assert w.index('if (generatedInline)')<w.index('const availability = result.file_availability')
 assert not re.search(r'\bfetch\s*\(',w)
 assert 'const ARTIFACT_TTL_MS = 60 * 60 * 1000;' in (root/'shared/file_delivery_port_worker.js').read_text(encoding='utf-8')
+# Alice single-file policy is now a ninth report-ref consumer. It reads acquired
+# PDF refs to budget actual files; it neither extends provider expiry nor fetches.
+# Behavioral proof: alice-single-file-v1/green.mjs (all binary routes, legacy PDF,
+# first failure, restart and exact deferrals); unexpected consumers still fail above.
+policy=(root/'shared/file_delivery_model_policy.js').read_text(encoding='utf-8')
+assert 'function completedFileAcquisitionKey' in policy and 'function fileBudgetDecision' in policy
+assert 'generated_file_ref' in policy and 'report_file_refs' in policy
+assert not re.search(r'\bfetch\s*\(|registerReportFile\s*\(',policy)
 output.parent.mkdir(parents=True,exist_ok=True)
-output.write_text(json.dumps({'status':'PASS','classified_consumer_files':8,'unclassified_consumer_files':0,'files':found},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-print('REPORT_EXPIRY_SECONDARY_SWEEP_PASS classified=8 unclassified=0')
+output.write_text(json.dumps({'status':'PASS','classified_consumer_files':9,'unclassified_consumer_files':0,'files':found},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print('REPORT_EXPIRY_SECONDARY_SWEEP_PASS classified=9 unclassified=0')
