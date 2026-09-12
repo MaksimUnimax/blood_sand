@@ -4,7 +4,16 @@
   "review_scope": "321 READY_CANDIDATE rows across 63 SKUs",
   "block_size_policy": "8 SKUs per block except final block",
   "total_blocks": 8,
-  "completed_blocks": [1, 2, 3, 4, 5, 6, 7, 8],
+  "completed_blocks": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
   "current_block_completed": 8,
   "reviewed_sku_count": 63,
   "total_ready_sku_count": 63,
@@ -17,7 +26,27 @@
   },
   "next_block": null,
   "next_skus": [],
-  "status": "REVIEW_BLOCKS_COMPLETE__FINAL_AGGREGATION_PENDING",
+  "status": "COMPLETE__MANUAL_REVIEW_QA_PASS",
   "card_mutations_performed": false,
-  "provider_calls_performed": false
+  "provider_calls_performed": false,
+  "final_decision_counts": {
+    "APPROVE": 0,
+    "REJECT": 312,
+    "HOLD": 9
+  },
+  "final_outputs": [
+    "13_MANUAL_REVIEW_MASTER.tsv",
+    "14_APPROVED_CHANGE_SET.tsv",
+    "15_MANUAL_REVIEW_HOLD_QUEUE.tsv",
+    "16_MANUAL_REVIEW_FINAL_REPORT.md"
+  ],
+  "final_qa": {
+    "source_ready_rows": 321,
+    "unique_source_keys": 321,
+    "reviewed_keys": 321,
+    "missing_keys": 0,
+    "extra_keys": 0,
+    "approved_rows": 0,
+    "hold_rows": 9
+  }
 }
