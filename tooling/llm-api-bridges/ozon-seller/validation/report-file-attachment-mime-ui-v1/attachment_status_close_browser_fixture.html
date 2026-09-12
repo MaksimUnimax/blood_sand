@@ -11,6 +11,7 @@
     origin:'https://alice.yandex.ru', delivery_id:'fixture-delivery', delivery_phase:'attachment_claimed',
     outgoing_text:'fixture', baseline_user_turn_ids:[], baseline_assistant_turn_ids:[]
   };
+  globalThis.__fixtureRecovery=recovery;
   globalThis.chrome={runtime:{
     lastError:null,
     connect(){return {
@@ -43,20 +44,24 @@
 </script>
 <script src="../../dist-step7-candidate/attachment_delivery_port_content.js"></script>
 <script>
-setTimeout(()=>{
+setTimeout(async()=>{
   try{
+    const runtime=globalThis.__OZON_ATTACHMENT_DELIVERY_PORT_RUNTIME__;
+    if(!runtime || typeof runtime.recoverCurrent!=='function')throw new Error('actual production attachment runtime did not load');
+    const invoked=runtime.recoverCurrent({owner_kind:'manual',owner_id:'fixture-owner',delivery_id:'fixture-delivery',conversation_key:'https://alice.yandex.ru|fixture-conversation'});
+    await new Promise(resolve=>setTimeout(resolve,80));
     const root=document.getElementById('ozon-attachment-delivery-status');
-    if(!(root instanceof HTMLElement))throw new Error('status plate not rendered by actual production script');
+    if(!(root instanceof HTMLElement))throw new Error('status plate not rendered by explicit production recovery');
     const close=root.querySelector('[data-ozon-attachment-status-close="1"]');
     if(!(close instanceof HTMLButtonElement))throw new Error('close button missing');
     if(close.getAttribute('aria-label')!=='Закрыть')throw new Error('close accessibility label missing');
     if(root.style.pointerEvents!=='auto')throw new Error('status plate is not clickable');
-    const before=root.textContent;
-    if(!before.includes('Ozon:'))throw new Error('production status text missing');
+    if(!root.textContent.includes('Ozon:'))throw new Error('production status text missing');
     close.click();
     if(root.isConnected)throw new Error('close click did not remove visual plate');
     document.title='ATTACHMENT_STATUS_CLOSE_REAL_CHROME_PASS';
+    Promise.resolve(invoked).catch(()=>null);
   }catch(error){document.title='FAIL:'+String(error && error.message || error)}
-},700);
+},120);
 </script>
 </body></html>
