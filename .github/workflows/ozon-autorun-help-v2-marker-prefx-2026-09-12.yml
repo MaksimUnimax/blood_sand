@@ -1,0 +1,33 @@
+name: Ozon Autorun HELP_V2 pre-fix RED
+run-name: Ozon Autorun HELP_V2 RED · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-autorun-help-v2-marker-2026-09-12]
+    paths:
+      - '.github/workflows/ozon-autorun-help-v2-marker-prefx-2026-09-12.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  EXACT_BASELINE: ee80e80443ac10f733cdd58884cfd2dbf12bbefb
+
+jobs:
+  prefx-red:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Prove current exact executable rejects HELP_V2 at Autorun ingress
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$EXACT_BASELINE" HEAD
+          test -z "$(git diff --name-only "$EXACT_BASELINE"..HEAD -- "$DIST")"
+          node "$ROOT/validation/autorun-help-v2-marker-v1/run_autorun_help_v2_marker_gate.mjs" "$DIST"
