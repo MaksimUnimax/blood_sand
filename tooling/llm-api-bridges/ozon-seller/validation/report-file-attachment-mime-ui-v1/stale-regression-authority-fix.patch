@@ -1,6 +1,6 @@
 --- a/tooling/llm-api-bridges/ozon-seller/validation/regression/run_multi_ai_file_delivery_patch.mjs
 +++ b/tooling/llm-api-bridges/ozon-seller/validation/regression/run_multi_ai_file_delivery_patch.mjs
-@@ -120,7 +120,7 @@
+@@ -120,6 +120,6 @@
  const recoveryExportToken = "runtime.recoverCurrent = recoverCurrent;";
  assert.equal(portContent.split(recoveryExportToken).length - 1, 1, "recoverCurrent must have exactly one runtime export");
 -const recoverDefinitionIndex = portContent.indexOf("async function recoverCurrent()");
