@@ -17,6 +17,12 @@ import {
 } from "@product/adapter-registry";
 import type { DatabaseQuery, DatabaseRuntime } from "./index.js";
 
+export type P7MutationAuthorizationHook = (
+  tx: DatabaseQuery,
+  actorPrincipalId: string,
+  permission: "ai.profile.manage" | "ai.assignment.manage",
+) => Promise<void>;
+
 type RevisionRow = {
   id: string;
   profileId: string;
@@ -189,8 +195,11 @@ async function mutateAssignment<T>(
     c: ProfileMutationContext,
   ) => Promise<T>,
   c: ProfileMutationContext,
+  beforeMutation?: P7MutationAuthorizationHook,
 ): Promise<T> {
   return runtime.transaction(async (q) => {
+    if (c.actorType === "ADMIN" && c.actorId)
+      await beforeMutation?.(q, c.actorId, "ai.assignment.manage");
     const assignment = await loadAssignment(q, assignmentId);
     const latest = await latestAssignmentRevision(q, assignmentId);
     checkExpected(latest, expected);
@@ -200,7 +209,9 @@ async function mutateAssignment<T>(
 
 export function createProfileLifecycleRepository(
   runtime: DatabaseRuntime,
+  options: { beforeMutation?: P7MutationAuthorizationHook } = {},
 ): ProfileLifecycleRepository {
+  const beforeMutation = options.beforeMutation;
   return {
     async createDraftProfileRevision(input) {
       const c = context(input.context);
@@ -209,6 +220,8 @@ export function createProfileLifecycleRepository(
         compatibility: input.compatibility,
       });
       return runtime.transaction(async (q) => {
+        if (c.actorType === "ADMIN" && c.actorId)
+          await beforeMutation?.(q, c.actorId, "ai.profile.manage");
         const profile = await q.query<{
           id: string;
           adapterId: string;
@@ -262,6 +275,8 @@ export function createProfileLifecycleRepository(
       if (!/^[0-9a-f]{64}$/.test(input.expectedContentSha256))
         throw new Error("P7_INVALID_EXPECTED_FINGERPRINT");
       return runtime.transaction(async (q) => {
+        if (c.actorType === "ADMIN" && c.actorId)
+          await beforeMutation?.(q, c.actorId, "ai.profile.manage");
         const row = await loadRevision(
           q,
           input.profileId,
@@ -306,6 +321,7 @@ export function createProfileLifecycleRepository(
         "CANDIDATE",
         c(input.context),
         "P7_PROFILE_CANDIDATE_FROZEN",
+        beforeMutation,
       );
     },
     async publishProfileRevision(input) {
@@ -316,6 +332,7 @@ export function createProfileLifecycleRepository(
         "PUBLISHED",
         c(input.context),
         "P7_PROFILE_PUBLISHED",
+        beforeMutation,
       );
     },
     async retireProfileRevision(input) {
@@ -326,6 +343,7 @@ export function createProfileLifecycleRepository(
         "RETIRED",
         c(input.context),
         "P7_PROFILE_RETIRED",
+        beforeMutation,
       );
     },
     async createAssignmentScope(input) {
@@ -333,6 +351,8 @@ export function createProfileLifecycleRepository(
       const scope = AssignmentScopeCommandSchema.parse(input.scope);
       const seed = randomBytes(32);
       return runtime.transaction(async (q) => {
+        if (c.actorType === "ADMIN" && c.actorId)
+          await beforeMutation?.(q, c.actorId, "ai.assignment.manage");
         const result = await q.query<{ id: string; cohortSeed: Buffer }>(
           `INSERT INTO adapter_profile_assignments(id,adapter_id,surface_id,variant_id,browser_family,subject_kind,cohort_seed,created_by_admin_principal_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,cohort_seed AS "cohortSeed"`,
           [
@@ -399,6 +419,7 @@ export function createProfileLifecycleRepository(
           return row;
         },
         c,
+        beforeMutation,
       );
     },
     async startRollout(input) {
@@ -440,6 +461,7 @@ export function createProfileLifecycleRepository(
           return row;
         },
         c,
+        beforeMutation,
       );
     },
     async changeRolloutPercentage(input) {
@@ -478,6 +500,7 @@ export function createProfileLifecycleRepository(
           return row;
         },
         c,
+        beforeMutation,
       );
     },
     async pauseProfileRollout(input) {
@@ -518,6 +541,7 @@ export function createProfileLifecycleRepository(
           return row;
         },
         c,
+        beforeMutation,
       );
     },
     async resumeProfileRollout(input) {
@@ -570,6 +594,7 @@ export function createProfileLifecycleRepository(
           return row;
         },
         c,
+        beforeMutation,
       );
     },
     async completeRollout(input) {
@@ -614,6 +639,7 @@ export function createProfileLifecycleRepository(
           return row;
         },
         c,
+        beforeMutation,
       );
     },
     async rollbackProfileAssignment(input) {
@@ -651,6 +677,7 @@ export function createProfileLifecycleRepository(
           return row;
         },
         c,
+        beforeMutation,
       );
     },
   };
@@ -666,8 +693,11 @@ async function transition(
   to: "CANDIDATE" | "PUBLISHED" | "RETIRED",
   ctx: ProfileMutationContext,
   action: string,
+  beforeMutation?: P7MutationAuthorizationHook,
 ) {
   return runtime.transaction(async (q) => {
+    if (ctx.actorType === "ADMIN" && ctx.actorId)
+      await beforeMutation?.(q, ctx.actorId, "ai.profile.manage");
     if (to === "RETIRED") {
       const target = await q.query<{ id: string }>(
         "SELECT id FROM adapter_profile_revisions WHERE profile_id=$1 AND revision=$2",

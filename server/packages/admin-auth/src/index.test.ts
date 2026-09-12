@@ -69,8 +69,15 @@ describe("P6.1 admin crypto and RBAC foundation", () => {
     ]);
   });
   it("defines the frozen permission vocabulary without later domains", () => {
-    expect(ADMIN_PERMISSIONS).toHaveLength(21);
-    expect(ADMIN_PERMISSIONS.some((p) => p.startsWith("ai."))).toBe(false);
+    expect(ADMIN_PERMISSIONS).toHaveLength(27);
+    expect(ADMIN_PERMISSIONS.filter((p) => p.startsWith("ai."))).toEqual([
+      "ai.registry.read",
+      "ai.registry.manage",
+      "ai.profile.read",
+      "ai.profile.manage",
+      "ai.assignment.read",
+      "ai.assignment.manage",
+    ]);
     expect(ADMIN_PERMISSIONS.some((p) => p.startsWith("health."))).toBe(false);
     expect(ADMIN_PERMISSIONS.some((p) => p.startsWith("diagnostic."))).toBe(
       false,
@@ -130,6 +137,45 @@ describe("P6.1 admin crypto and RBAC foundation", () => {
     const permissions = permissionsForRole("ADMIN_OPS");
     expect(permissions).toContain("subscription.grant");
     expect(permissions).toContain("device.revoke");
+  });
+  it("gives owner every P7 permission", () => {
+    expect(permissionsForRole("ADMIN_OWNER")).toEqual(ADMIN_PERMISSIONS);
+  });
+  it("gives ops every P7 permission", () => {
+    expect(permissionsForRole("ADMIN_OPS")).toEqual(
+      expect.arrayContaining([
+        "ai.registry.read",
+        "ai.registry.manage",
+        "ai.profile.read",
+        "ai.profile.manage",
+        "ai.assignment.read",
+        "ai.assignment.manage",
+      ]),
+    );
+  });
+  it("gives support only P7 reads", () => {
+    const permissions = permissionsForRole("ADMIN_SUPPORT");
+    expect(permissions).toEqual(
+      expect.arrayContaining([
+        "ai.registry.read",
+        "ai.profile.read",
+        "ai.assignment.read",
+      ]),
+    );
+    expect(permissions).not.toEqual(
+      expect.arrayContaining([
+        "ai.registry.manage",
+        "ai.profile.manage",
+        "ai.assignment.manage",
+      ]),
+    );
+  });
+  it("gives billing readonly no P7 permission", () => {
+    expect(permissionsForRole("ADMIN_BILLING_READONLY")).not.toEqual(
+      expect.arrayContaining(
+        ADMIN_PERMISSIONS.filter((p) => p.startsWith("ai.")),
+      ),
+    );
   });
   it("keeps ops away from plan mutation", () => {
     expect(permissionsForRole("ADMIN_OPS")).not.toContain("plan.manage");

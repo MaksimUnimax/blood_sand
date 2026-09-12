@@ -1466,7 +1466,7 @@ describe.sequential(
       expect(source).not.toContain("/v1/billing/checkouts");
       expect(source).not.toContain("/v1/webhooks");
     });
-    it("STATIC-71 OpenAPI current repository artifact has 67 operations and exact hash", async () => {
+    it("STATIC-71 OpenAPI current repository artifact has 102 operations and exact hash", async () => {
       const artifact = JSON.parse(await text("openapi/openapi.json")) as {
         paths: Record<string, Record<string, unknown>>;
       };
@@ -1478,7 +1478,7 @@ describe.sequential(
           ).length,
         0,
       );
-      expect(count).toBe(67);
+      expect(count).toBe(102);
       expect(
         createHash("sha256")
           .update(
@@ -1488,7 +1488,7 @@ describe.sequential(
           )
           .digest("hex"),
       ).toBe(
-        "52f43a45720929b45c4350442537320c298f84023b583735f42e3eb1378459f2",
+        "9563c57d622a7eee2197ea9a0508852f7c7a0aef87bbb9dddf5570cc83b50cc7",
       );
     });
     it("STATIC-72 OpenAPI has no checkout, webhook, or fake completion route", async () => {

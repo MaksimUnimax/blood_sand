@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@product/adapter-registry": "workspace:*",
+    "@product/admin-ai": "workspace:*",
     "@product/auth": "workspace:*",
     "@product/admin-auth": "workspace:*",
     "@product/admin-billing": "workspace:*",

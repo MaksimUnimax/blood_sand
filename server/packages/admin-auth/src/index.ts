@@ -38,6 +38,12 @@ export const ADMIN_PERMISSIONS = [
   "entitlement.override",
   "compatibility.read",
   "compatibility.manage",
+  "ai.registry.read",
+  "ai.registry.manage",
+  "ai.profile.read",
+  "ai.profile.manage",
+  "ai.assignment.read",
+  "ai.assignment.manage",
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 
@@ -58,6 +64,12 @@ const rolePermissions: Record<AdminRole, readonly AdminPermission[]> = {
     "billing.read",
     "admin.audit.read",
     "compatibility.read",
+    "ai.registry.read",
+    "ai.registry.manage",
+    "ai.profile.read",
+    "ai.profile.manage",
+    "ai.assignment.read",
+    "ai.assignment.manage",
   ],
   ADMIN_SUPPORT: [
     "account.read",
@@ -67,6 +79,9 @@ const rolePermissions: Record<AdminRole, readonly AdminPermission[]> = {
     "subscription.read",
     "billing.read",
     "admin.audit.read",
+    "ai.registry.read",
+    "ai.profile.read",
+    "ai.assignment.read",
   ],
   ADMIN_BILLING_READONLY: [
     "account.read",

@@ -88,6 +88,9 @@ importers:
       '@fastify/swagger':
         specifier: 9.8.1
         version: 9.8.1
+      '@product/admin-ai':
+        specifier: workspace:*
+        version: link:../../packages/admin-ai
       '@product/admin-auth':
         specifier: workspace:*
         version: link:../../packages/admin-auth
@@ -227,6 +230,15 @@ importers:
       '@product/shared':
         specifier: workspace:*
         version: link:../shared
+      zod:
+        specifier: 4.1.5
+        version: 4.1.5
+
+  packages/admin-ai:
+    dependencies:
+      '@product/adapter-registry':
+        specifier: workspace:*
+        version: link:../adapter-registry
       zod:
         specifier: 4.1.5
         version: 4.1.5
@@ -383,6 +395,9 @@ importers:
       '@product/adapter-registry':
         specifier: workspace:*
         version: link:../adapter-registry
+      '@product/admin-ai':
+        specifier: workspace:*
+        version: link:../admin-ai
       '@product/admin-auth':
         specifier: workspace:*
         version: link:../admin-auth

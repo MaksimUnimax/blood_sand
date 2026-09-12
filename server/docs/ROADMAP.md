@@ -236,7 +236,7 @@ P7 execution decomposition (frozen by ADR-0031):
 - P7.1 [DONE / REMOTE ACCEPTED] AI adapter registry/profile persistence foundation and strict declarative profile schema.
 - P7.2 [DONE / REMOTE ACCEPTED] profile lifecycle commands, deterministic assignment, rollout/pause/rollback authority; exact-SHA Server CI and remote readback passed.
 - P7.3 [DONE / REMOTE ACCEPTED] bootstrap AI resolution, signed wire contract, and simulated-client automatic selection.
-- P7.4 [PLANNED] admin API and P7 RBAC permissions.
+- P7.4 [ACTIVE / LOCAL ACCEPTED / REMOTE ACCEPTANCE PENDING] admin API and P7 RBAC permissions; Attempt2 is implemented and locally accepted pending owner-side remote acceptance.
 - P7.5 [PLANNED] admin portal AI adapter/profile operations UX.
 - P7.6 [PLANNED] P7 security, architecture, full regression, and final acceptance.
 
@@ -450,7 +450,7 @@ Architecture remains:
 - P7.1 [DONE / REMOTE ACCEPTED].
 - P7.2 [DONE / REMOTE ACCEPTED].
 - P7.3 [DONE / REMOTE ACCEPTED].
-- P7.4 [PLANNED].
+- P7.4 [ACTIVE / LOCAL ACCEPTED / REMOTE ACCEPTANCE PENDING].
 - P7.5 [PLANNED].
 - P7.6 [PLANNED].
 

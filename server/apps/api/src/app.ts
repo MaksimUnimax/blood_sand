@@ -60,6 +60,8 @@ import type { AdminBillingService } from "@product/admin-billing";
 import type { AdminCommercialService } from "@product/admin-commercial";
 import { registerAdminCommercialRoutes } from "./admin-commercial-routes.js";
 import { registerAdminBillingRoutes } from "./admin-billing-routes.js";
+import type { AdminAiService } from "@product/admin-ai";
+import { registerAdminAiRoutes } from "./admin-ai-routes.js";
 import { createAdminRouteGuard } from "./admin-route-guard.js";
 
 export class ControlledError extends Error {
@@ -87,6 +89,7 @@ export interface ApiDependencies {
   readonly adminOpsService?: AdminOpsService;
   readonly adminBillingService?: AdminBillingService;
   readonly adminCommercialService?: AdminCommercialService;
+  readonly adminAiService?: AdminAiService;
 }
 
 function correlationId(request: FastifyRequest): string {
@@ -314,6 +317,14 @@ export function createApiApp(
           dependencies.adminAuthService ?? unavailableAdmin,
         ),
         dependencies.adminCommercialService,
+      );
+    if (dependencies.adminAiService)
+      registerAdminAiRoutes(
+        app,
+        createAdminRouteGuard(
+          dependencies.adminAuthService ?? unavailableAdmin,
+        ),
+        dependencies.adminAiService,
       );
   });
   return app;

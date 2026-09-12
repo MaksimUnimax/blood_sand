@@ -440,3 +440,50 @@ P1/P3 will create:
 - contract compatibility tests.
 
 The generated API spec must be checked for drift in CI.
+## P7.4 admin AI API
+
+The P7.4 admin API is available under `/v1/admin/ai/`. It is an explicit,
+session-authenticated API for operating the accepted P7 registry, profile
+revision lifecycle, and assignment/rollout authority. It is not an admin UI.
+
+All reads require the matching exact permission: `ai.registry.read`,
+`ai.profile.read`, or `ai.assignment.read`. All mutations require the matching
+`*.manage` permission, a current `pcp_admin_session`, and the existing admin
+CSRF double-submit/HMAC proof. Mutation actors come only from the authenticated
+admin subject; request bodies cannot provide an actor ID.
+
+The six P7 permissions and role matrix are frozen in ADR-0034. Support has only
+the three read permissions. Billing-readonly has no P7 permission. Owner and
+Ops have all six.
+
+Registry creation is explicit for adapters, surfaces, variants, and stable
+profiles. Identity IDs, machine keys, and hierarchy bindings are immutable;
+there are no delete endpoints. Bounded metadata/status changes use an expected
+`updatedAt` precondition. Existing status semantics are used; P7.4 does not
+invent archive transitions.
+
+Profile revision routes delegate to P7.2 and support only draft creation,
+fingerprint-guarded draft replacement, candidate, publish, and retire. The
+server owns the content fingerprint, timestamps, actor, and accepted
+`adapter_profile_v1` schema. Assignment routes delegate to P7.2 for immutable
+scopes and direct/rollout/pause/resume/percentage/complete/rollback commands.
+The server generates the cohort seed; clients cannot submit or receive it.
+Existing assignment commands require the expected latest assignment revision.
+
+Lists are cursor/limit bounded to a maximum of 100. Safe reads omit cohort
+seeds, stored operator reasons, actor/auth artifacts, credentials, signing keys,
+and raw audit internals. Profile content and compatibility remain validated
+against the strict declarative P7 schemas.
+
+Every P7.4 mutation rechecks the current principal status and non-revoked role
+grant inside the same database transaction as the state change. A role
+revocation or principal suspension after session authentication therefore
+commits neither P7 state nor audit. P7.2 profile and assignment commands own
+their business audit; registry commands append bounded audit metadata
+atomically.
+
+The API uses the existing error envelope and maps failures to stable categories:
+unauthenticated, forbidden, invalid CSRF, not found, stale precondition,
+invalid lifecycle, ineligible assignment target, invalid hierarchy binding,
+invalid input, conflict, and service unavailable. SQL errors, constraint names,
+stack traces, seeds, and stored reasons are not exposed.

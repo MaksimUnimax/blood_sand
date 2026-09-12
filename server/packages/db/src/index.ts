@@ -22,6 +22,10 @@ export { createP6AdminCommercialReadRepository } from "./p6-admin-commercial-rea
 export { createAdapterRegistryCatalogRepository } from "./adapter-registry-repository.js";
 export { createProfileLifecycleRepository } from "./p7-profile-lifecycle-repository.js";
 export { createBootstrapAiResolutionRepository } from "./bootstrap-ai-resolution-repository.js";
+export { createP7AdminAiReadRepository } from "./p7-admin-ai-read-repository.js";
+export { createP7AdminAiCommandRepository } from "./p7-admin-ai-command-repository.js";
+export { authorizeAdminMutationInTransaction } from "./admin-mutation-authorization.js";
+export type { P7MutationAuthorizationHook } from "./p7-profile-lifecycle-repository.js";
 export {
   createP6AdminPlanCommandAdapter,
   createP6AdminPriceCommandAdapter,

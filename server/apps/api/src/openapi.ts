@@ -35,6 +35,7 @@ import type { CommercialPortalRepository } from "@product/commercial-access";
 import { AdminOpsService, type AdminOpsRepository } from "@product/admin-ops";
 import { AdminAuthService } from "@product/admin-auth";
 import type { AdminCommercialService } from "@product/admin-commercial";
+import type { AdminAiService } from "@product/admin-ai";
 
 type JsonPrimitive = boolean | null | number | string;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -288,6 +289,7 @@ export async function generateOpenApiRepresentation(): Promise<string> {
       adminBillingReads,
     ),
     adminCommercialService,
+    adminAiService: {} as AdminAiService,
   });
   try {
     await app.ready();
