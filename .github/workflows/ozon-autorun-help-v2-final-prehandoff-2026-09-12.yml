@@ -1,0 +1,142 @@
+name: Ozon Autorun HELP V2 final pre-handoff
+on:
+  push:
+    branches: [repair/ozon-autorun-help-v2-marker-2026-09-12]
+    paths: ['.github/workflows/ozon-autorun-help-v2-final-prehandoff-2026-09-12.yml']
+permissions:
+  contents: read
+concurrency:
+  group: ozon-help-v2-final-prehandoff
+  cancel-in-progress: false
+env:
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  GATE: tooling/llm-api-bridges/ozon-seller/validation/autorun-help-v2-marker-v1
+  BRANCH: repair/ozon-autorun-help-v2-marker-2026-09-12
+  NAME: OZON_BRIDGE_v0.1.19_AUTORUN_HELP_V2_20260912.zip
+jobs:
+  linux-authoritative:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Build exact deterministic ZIP and run full Linux suite on extracted bytes
+        run: python "$GATE/run_final_suite.py" linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-help-v2-exact-package
+          path: |
+            ${{ env.ROOT }}/artifacts/${{ env.NAME }}
+            ${{ env.ROOT }}/artifacts/${{ env.NAME }}.sha256.txt
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-help-v2-linux-evidence
+          path: ${{ runner.temp }}/help-v2-evidence/linux
+          retention-days: 30
+  browser-authoritative:
+    needs: linux-authoritative
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-help-v2-exact-package
+          path: ${{ env.ROOT }}/artifacts
+      - name: Pinned Chrome and actual MV3 worker on exact extracted ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER='152.0.7977.82'
+          curl --fail --location --silent --show-error "https://storage.googleapis.com/chrome-for-testing-public/${VER}/linux64/chrome-linux64.zip" -o "$RUNNER_TEMP/chrome.zip"
+          unzip -q "$RUNNER_TEMP/chrome.zip" -d "$RUNNER_TEMP/chrome"
+          python "$GATE/run_final_suite.py" browser "$RUNNER_TEMP/chrome/chrome-linux64/chrome"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-help-v2-browser-evidence
+          path: ${{ runner.temp }}/help-v2-evidence/browser
+          retention-days: 30
+  windows-authoritative:
+    needs: browser-authoritative
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-help-v2-exact-package
+          path: ${{ env.ROOT }}/artifacts
+      - name: Full Windows suite and canonical Git-blob parity on identical ZIP
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python "$env:GATE/run_final_suite.py" windows
+          if ($LASTEXITCODE -ne 0) { throw 'Windows authoritative suite failed' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ozon-help-v2-windows-evidence
+          path: ${{ runner.temp }}/help-v2-evidence/windows
+          retention-days: 30
+  finalize-evidence:
+    needs: [linux-authoritative, browser-authoritative, windows-authoritative]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-help-v2-exact-package
+          path: ${{ env.ROOT }}/artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-help-v2-linux-evidence
+          path: ${{ runner.temp }}/all-evidence/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-help-v2-browser-evidence
+          path: ${{ runner.temp }}/all-evidence/browser
+      - uses: actions/download-artifact@v4
+        with:
+          name: ozon-help-v2-windows-evidence
+          path: ${{ runner.temp }}/all-evidence/windows
+      - name: Verify evidence hashes then publish only final reports and exact package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$GATE/finalize_prehandoff.py"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$ROOT/PATCH_AUTORUN_HELP_V2_2026-09-12.md" "$ROOT/PATCH_AUTORUN_HELP_V2_DEPENDENCIES_2026-09-12.md" "$ROOT/PATCH_AUTORUN_HELP_V2_GATE_2026-09-12.md"
+          git add "$ROOT/artifacts/$NAME" "$ROOT/artifacts/$NAME.sha256.txt" "$ROOT/artifacts/$NAME.BUILDINFO.json" "$ROOT/artifacts/$NAME.evidence.zip"
+          git diff --cached --check
+          test -z "$(git diff --cached --name-only -- "$ROOT/dist-step7-candidate")"
+          git commit -m 'docs(ozon): finalize Autorun HELP_V2 exact-package pre-handoff PASS'
+          git push origin "HEAD:refs/heads/$BRANCH"
+          mkdir -p "$RUNNER_TEMP/final-handoff"
+          cp "$ROOT/artifacts/$NAME"* "$RUNNER_TEMP/final-handoff/"
+          cp "$ROOT/PATCH_AUTORUN_HELP_V2"*.md "$RUNNER_TEMP/final-handoff/"
+          git rev-parse HEAD > "$RUNNER_TEMP/final-handoff/FINAL_EVIDENCE_HEAD.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-autorun-help-v2-final-handoff
+          path: ${{ runner.temp }}/final-handoff
+          retention-days: 30
