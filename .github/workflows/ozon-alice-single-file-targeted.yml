@@ -40,6 +40,16 @@ jobs:
           set -euo pipefail
           export OZON_PHASE_OUT="$RUNNER_TEMP/single-evidence/targeted"
           python tooling/llm-api-bridges/ozon-seller/validation/alice-single-file-v1/run.py targeted
+          python - <<'PY'
+          import tempfile,pathlib,shutil,subprocess,os
+          root=pathlib.Path('tooling/llm-api-bridges/ozon-seller'); out=pathlib.Path(os.environ['OZON_PHASE_OUT'])
+          with tempfile.TemporaryDirectory() as td:
+            dist=pathlib.Path(td)/'dist';shutil.copytree(root/'dist-step7-candidate',dist)
+            (dist/'unclassified_consumer.js').write_text('const REPORT_FILE_EXPIRED = true;\n')
+            p=subprocess.run(['python',str(root/'validation/report-file-expiry-v1/run_secondary_sweep.py'),str(dist),str(out/'unexpected-consumer.json')],capture_output=True)
+            assert p.returncode!=0 and b'Unclassified/removed report-file consumers' in p.stderr
+            (out/'unexpected-consumer-negative.log').write_bytes(p.stdout+p.stderr+b'\nUNEXPECTED_CONSUMER_CORRECTLY_REJECTED\n')
+          PY
           git diff --stat
           git diff --check
       - uses: actions/upload-artifact@v4
