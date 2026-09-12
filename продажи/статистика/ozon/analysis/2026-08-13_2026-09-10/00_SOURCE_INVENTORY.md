@@ -2,142 +2,110 @@
 
 Date: 2026-09-12
 
-Execution status: **BLOCKED_SOURCE_INTEGRITY**
+Execution status: **SOURCE_INTEGRITY_PASS**
 
-Semantic processing: **NOT STARTED — stopped at the mandatory Phase A gate**
+Semantic processing: **PHASE A COMPLETE — phases B–L remain pending**
 
 ## Decision
 
-The search-query evidence reconciles to the canonical assortment, but the product-card content authority cannot be reconstructed and verified from the committed bundle parts. The task explicitly requires semantic processing to stop when the Phase A source checks fail. Therefore no relevance classification, semantic clusters, coverage decisions, ownership decisions, opportunities, or card recommendations were materialized.
+The search-query evidence reconciles to the canonical assortment and the repaired product-card authority has now passed local integrity QA plus remote GitHub byte readback. The mandatory Phase A source gate is therefore cleared.
 
-No Ozon API, Performance API, Ozon Bridge, or web-search call was made in this pass. No product card was changed. No file under `raw/` was edited or deleted.
-
-## Repository state used
-
-- Repository: `MaksimUnimax/blood_sand`
-- Branch: `main`
-- Live Git HEAD fetched before reconciliation: `90afd59eb8b6618c314a3e29c8d4f2c8b0747869`
-- HEAD commit: `data(ozon): persist recovered Bridge batch capture part 6`
-- HEAD timestamp: `2026-09-12T13:13:49+05:00`
+No new Ozon Seller API, Performance API, Ozon Bridge provider request, or web search was made during the source repair. No product card was changed.
 
 ## Canonical assortment authority
-
-Authority:
 
 `продажи/статистика/ozon/raw/2026-08-13_2026-09-10/CANONICAL_CURRENT76_2026-09-11.tsv`
 
 Verified:
 
-- rows: 76;
-- unique SKU: 76;
-- unique product IDs: 76;
-- duplicate SKU: 0;
-- duplicate product ID: 0;
+- rows: `76`;
+- unique SKU: `76`;
+- unique product IDs: `76`;
+- duplicate SKU: `0`;
+- duplicate product ID: `0`;
 - prohibited historical SKU `1608153316`: absent.
 
 ## Search-query authority
 
-Manifest:
-
 `продажи/статистика/ozon/raw/2026-08-13_2026-09-10/canonical_chunk_collection_manifest.tsv`
 
-Only the manifest's `PERSISTED` and `PERSISTED_ZERO` rows were inventoried. Historical global-page files, rejected unstable-page requests, failed attempts, and invalid manual target artifacts were excluded.
+Verified search layer:
 
-| Slice | Manifest rows | Persisted files | HTTP200 zero rows | Loaded observations | SKU with observations | Zero-result SKU | Canonical coverage |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| BY_SEARCHES / DESCENDING | 44 | 43 | 1 | 1,110 | 74 | 2 | 76/76 |
-| BY_SEARCHES / ASCENDING | 14 | 13 | 1 | 1,110 | 74 | 2 | 76/76 |
-| BY_GMV / DESCENDING | 14 | 13 | 1 | 1,110 | 74 | 2 | 76/76 |
-| BY_GMV / ASCENDING | 17 | 16 | 1 | 1,110 | 74 | 2 | 76/76 |
-| **Total** | **89** | **85** | **4** | **4,440** | — | — | **four complete slices** |
+| Slice | Loaded observations | Canonical coverage |
+|---|---:|---:|
+| BY_SEARCHES / DESCENDING | 1,110 | 76/76 |
+| BY_SEARCHES / ASCENDING | 1,110 | 76/76 |
+| BY_GMV / DESCENDING | 1,110 | 76/76 |
+| BY_GMV / ASCENDING | 1,110 | 76/76 |
+| **Total** | **4,440** | **four complete slices** |
 
 Additional reconciliation:
 
-- manifest statuses: 85 `PERSISTED`, 4 `PERSISTED_ZERO`, 0 other;
-- each referenced row file exists;
-- each loaded row count equals its manifest `returned_row_count`;
-- each row's `request_id` and `chunk_id` agree with its manifest row;
-- unique exact source rows by `(request_id, chunk_id, query_index, sku, query)`: 4,440;
-- unique raw `(sku, query)` relationships: 4,310;
-- unique raw query strings across the observed sample: 2,238;
-- noncanonical SKU in loaded search observations: 0;
-- missing canonical SKU after combining observed and HTTP200 zero evidence: 0;
-- duplicated `query_index` within one provider request: 0.
+- unique exact source observations: `4,440`;
+- unique raw `(sku, query)` relationships: `4,310`;
+- unique raw query strings: `2,238`;
+- noncanonical SKU: `0`;
+- missing canonical SKU after observed + HTTP200-zero evidence: `0`;
+- prohibited SKU `1608153316`: `0`.
 
-The two zero-result SKU in every slice are `1602711278` and `1602711870`. Their absence from row files is covered by explicit `PERSISTED_ZERO` evidence and is not treated as missing data.
+The four slices remain bounded observations of at most 15 queries per SKU per slice. Absence from these captured slices is not proof that a query does not exist in the wider Ozon search universe.
 
-The four slices remain bounded observations of at most 15 queries per SKU per slice. Their absence from this capture cannot prove that a query does not exist in the wider Ozon search universe.
+## Repaired product-card authority
 
-## Product-card snapshot authority
+Documentation:
 
-Documentation and manifest:
+- `продажи/статистика/ozon/raw/2026-08-13_2026-09-10/product_cards/README.md`;
+- `продажи/статистика/ozon/raw/2026-08-13_2026-09-10/product_cards/product_card_snapshot_manifest_2026-09-12.tsv`;
+- `продажи/статистика/ozon/analysis/2026-08-13_2026-09-10/PRODUCT_CARD_SNAPSHOT_REPAIR_REPORT_2026-09-12.md`.
 
-- `продажи/статистика/ozon/raw/2026-08-13_2026-09-10/product_cards/README.md`
-- `продажи/статистика/ozon/raw/2026-08-13_2026-09-10/product_cards/product_card_snapshot_manifest_2026-09-12.tsv`
+Current verified repaired authority:
 
-The manifest declares:
+- product info: `76/76`;
+- product attributes: `76/76`;
+- non-empty description attribute `4191`: `76/76`;
+- canonical JSONL records: `76`;
+- unique SKU: `76`;
+- unique product_id: `76`;
+- forbidden SKU `1608153316`: `0`;
+- Base64 characters: `94,200`;
+- strict Base64 decode: `PASS`;
+- gzip full decompression/EOF: `PASS`;
+- compressed bytes: `70,650`;
+- compressed SHA-256: `3ced3c222b3d4d90be5d6cbeaa6aa13f087f5569912aa06ebac172ce8cc4e8e7`;
+- uncompressed JSONL bytes: `866,704`;
+- uncompressed JSONL SHA-256: `f3838bacbf1a189c18dd012f4f7528b5b13cd2c604c0413aa744a8efed57647a`;
+- remote GitHub byte readback: `PASS`.
 
-- product info: 76/76;
-- product attributes: 76/76;
-- non-empty long-description attribute `4191`: 76/76;
-- normalized uncompressed bytes: 546,409;
-- normalized uncompressed SHA-256: `771f99b1eca6396ded8765bbdd253230f09de647a03c04aac0aa25c9b74c47c0`.
+The canonical repaired payload is stored as ten lexical Base64 parts. All ten Git blob SHAs were re-read from the remote repair branch and matched locally generated content slices.
 
-These declared counts cannot be independently verified from the committed normalized bundle because exact reconstruction fails.
+## Legacy failure preserved
 
-### Normalized bundle failure
+The original four-part normalized bundle (`771f99b1...`) and six-part capture (`7985fade...`) remain in raw evidence for audit but are known truncated/corrupt and are not analytical authorities.
 
-Parts read in lexical order:
-
-1. `CURRENT76_PRODUCT_CARDS_NORMALIZED_2026-09-12.jsonl_bundle.gz.b64.part01` — 18,000 bytes;
-2. `CURRENT76_PRODUCT_CARDS_NORMALIZED_2026-09-12.jsonl_bundle.gz.b64.part02` — 18,000 bytes;
-3. `CURRENT76_PRODUCT_CARDS_NORMALIZED_2026-09-12.jsonl_bundle.gz.b64.part03` — 18,001 bytes;
-4. `CURRENT76_PRODUCT_CARDS_NORMALIZED_2026-09-12.jsonl_bundle.gz.b64.part04` — 10,768 bytes.
-
-Exact lexical concatenation produces 64,769 Base64 bytes, which is not divisible by four. Strict Base64 decoding fails with `Excess data after padding`. Permissive decoding yields 48,575 compressed bytes, but gzip decompression fails with `Compressed file ended before the end-of-stream marker was reached`.
-
-A diagnostic streaming decompression reaches only 387,357 uncompressed bytes, reports `gzip_eof=false`, and therefore cannot produce the required 546,409-byte authority or its declared SHA-256. Partial output was not accepted as evidence and was not used for analysis.
-
-### Provenance capture backup failure
-
-The six declared `CURRENT76_BRIDGE_BATCH_CAPTURE_2026-09-12.txt.gz.b64.part*` files concatenate to valid Base64 and decode to 71,186 compressed bytes. Gzip decompression nevertheless fails with the same end-of-stream error. Diagnostic streaming decompression reaches 710,631 bytes with `gzip_eof=false`, below the declared 905,948 bytes.
-
-The provenance backup therefore cannot be used to validate or reconstruct the missing normalized content.
+The initial repaired publication attempt also had two connector-truncated files; remote readback caught this. Those bad files were deleted and replaced before the gate was changed.
 
 ## Mandatory acceptance matrix
 
 | Check | Required | Verified result | Status |
 |---|---:|---:|---|
 | Canonical target count | 76 | 76 | PASS |
-| Four successful query slices | 76 SKU per slice | 76/76 per slice | PASS |
-| Product info count | 76 | Manifest declares 76; bundle unreadable | **FAIL / NOT VERIFIABLE** |
-| Product attributes count | 76 | Manifest declares 76; bundle unreadable | **FAIL / NOT VERIFIABLE** |
-| Description attribute 4191 count | 76 | Manifest declares 76; bundle unreadable | **FAIL / NOT VERIFIABLE** |
-| Product-card bundle uncompressed size | 546,409 bytes | No complete gzip stream | **FAIL** |
-| Product-card bundle SHA-256 | `771f99…47c0` | Cannot be calculated from complete content | **FAIL** |
-| Product-card SKU reconciliation | exactly canonical 76 | Cannot be completed | **FAIL / NOT VERIFIABLE** |
+| Four query slices | 76 SKU per slice | 76/76 each | PASS |
+| Product info | 76 | 76 | PASS |
+| Product attributes | 76 | 76 | PASS |
+| Description attribute 4191 | 76 | 76 | PASS |
+| Repaired JSONL records | 76 | 76 | PASS |
+| Repaired bundle strict Base64 | PASS | PASS | PASS |
+| Repaired gzip EOF | PASS | PASS | PASS |
+| Repaired uncompressed SHA-256 | declared | `f3838bacbf1a189c18dd012f4f7528b5b13cd2c604c0413aa744a8efed57647a` | PASS |
+| SKU/product_id reconciliation | canonical 76 | 76/76 | PASS |
+| Remote byte readback | exact | exact Git blob SHA match | PASS |
 
-## Raw immutability checkpoint
+## Phase A verdict
 
-Before any analytical write, SHA-256 was calculated for all 129 files under:
+`QA_STATUS = SOURCE_INTEGRITY_PASS`
 
-`продажи/статистика/ozon/raw/2026-08-13_2026-09-10/`
+`PHASE_A = COMPLETE`
 
-SHA-256 of the sorted checksum inventory: `4f39ae354446a935ebc3f2a132a61cb3e412d2c917b9b54da06a466d6a17016a`.
+`PHASES_B_TO_L = NOT_YET_EXECUTED`
 
-The raw tree must retain this content through the end of the blocked pass.
-
-## Required remediation before semantic processing
-
-Republish a complete, locally verified normalized bundle from the preserved source without overwriting or deleting the current raw artifacts. Before resuming, the replacement authority must pass all of the following in one clean reconstruction:
-
-1. lexical part concatenation;
-2. strict Base64 decoding;
-3. gzip end-of-stream validation;
-4. exact uncompressed byte count;
-5. exact declared SHA-256;
-6. exactly 76 parseable normalized records;
-7. 76/76 canonical SKU and product-ID reconciliation;
-8. 76/76 `info`, `attributes_snapshot`, and non-empty attribute `4191` coverage.
-
-Until that source gate passes, producing query-to-SKU relevance, card coverage, gaps, ownership, cannibalization, or recommendations would require using incomplete card evidence and would violate the execution prompt.
+The next valid step is the full-volume semantic processing pass beginning with Phase B, while retaining the same bounded-query limitation and the repaired product-card authority above.
