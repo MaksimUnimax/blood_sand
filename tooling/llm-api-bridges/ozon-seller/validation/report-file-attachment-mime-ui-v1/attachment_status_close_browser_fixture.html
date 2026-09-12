@@ -1,0 +1,62 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>PENDING</title></head><body>
+<div class="ChatListItem" id="fixture-conversation"><button data-testid="chatlist-item-active" aria-current="page">active</button></div>
+<script>
+(() => {
+  const listeners=[];
+  const disconnect=[];
+  const recovery={
+    owner_kind:'manual', owner_id:'fixture-owner', operation_id:'fixture-owner', run_id:'',
+    conversation_key:'https://alice.yandex.ru|fixture-conversation', conversation_id:'fixture-conversation',
+    origin:'https://alice.yandex.ru', delivery_id:'fixture-delivery', delivery_phase:'attachment_claimed',
+    outgoing_text:'fixture', baseline_user_turn_ids:[], baseline_assistant_turn_ids:[]
+  };
+  globalThis.chrome={runtime:{
+    lastError:null,
+    connect(){return {
+      onMessage:{addListener(fn){listeners.push(fn)}},
+      onDisconnect:{addListener(fn){disconnect.push(fn)}},
+      postMessage(message){setTimeout(()=>{
+        const type=String(message.type||'');
+        const response=type==='OZ_ATTACHMENT_RECOVERY_GET'?{ok:true,recovery}:{ok:false,code:'FIXTURE_STOP',error:'fixture intentionally stops after status render'};
+        for(const fn of listeners)fn({kind:'response',request_id:message.request_id,response});
+      },0)}
+    }}
+  }};
+  globalThis.BB2ConversationIdentity={
+    resolveWithEvidence(){return {status:'confirmed',origin:'https://alice.yandex.ru',conversation_id:'fixture-conversation',ai_id:'alice'}},
+    resolve(){return this.resolveWithEvidence()},
+    providerForOrigin(){return 'alice'},
+    conversationIdFromPath(){return 'fixture-conversation'}
+  };
+  const active={
+    id:'alice',
+    userMessages(){return []},assistantMessages(){return []},messageId(){return ''},messageText(){return ''},
+    composerContext(){return null},readComposerText(){return ''},
+    deliveryCapabilities(){return {max_files_per_turn:1,attachment_strategy:'drag_drop_v1'}}
+  };
+  globalThis.OzonAIAdapters={adapterForLocation(){return active},visible(){return true}};
+  globalThis.OzonAIDeliveryCapabilities={fileDispatchDecision(){return {dispatch_allowed:true}}};
+  globalThis.OzonWebFileAttachment={base64ToBytes(){return new Uint8Array()},createFile(){return null}};
+  globalThis.BB2ComposerSend={};
+})();
+</script>
+<script src="../../dist-step7-candidate/attachment_delivery_port_content.js"></script>
+<script>
+setTimeout(()=>{
+  try{
+    const root=document.getElementById('ozon-attachment-delivery-status');
+    if(!(root instanceof HTMLElement))throw new Error('status plate not rendered by actual production script');
+    const close=root.querySelector('[data-ozon-attachment-status-close="1"]');
+    if(!(close instanceof HTMLButtonElement))throw new Error('close button missing');
+    if(close.getAttribute('aria-label')!=='Закрыть')throw new Error('close accessibility label missing');
+    if(root.style.pointerEvents!=='auto')throw new Error('status plate is not clickable');
+    const before=root.textContent;
+    if(!before.includes('Ozon:'))throw new Error('production status text missing');
+    close.click();
+    if(root.isConnected)throw new Error('close click did not remove visual plate');
+    document.title='ATTACHMENT_STATUS_CLOSE_REAL_CHROME_PASS';
+  }catch(error){document.title='FAIL:'+String(error && error.message || error)}
+},700);
+</script>
+</body></html>
