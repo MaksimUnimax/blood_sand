@@ -70,6 +70,7 @@
   let quotaWaitProbeTimer = null;
   let quotaWaitProbeDeadline = 0;
   let activeQuotaWait = null;
+  const workStartWatches = new Map();
   const QUOTA_WAIT_TOAST_KEY = "provider-quota-wait";
 
   const prior = globalThis[RUNTIME_KEY];
@@ -1746,6 +1747,48 @@
     };
   }
 
+  function stopWorkStartWatch(intentId, revision, reason = "terminal") {
+    const key = `${String(intentId || "")}:${Number(revision || 0)}`;
+    const watch = workStartWatches.get(key);
+    if (!watch) return;
+    clearInterval(watch.timer);
+    workStartWatches.delete(key);
+    recordContentDiagnostic("WORK_START_WATCHER_STOPPED", { intent_id: watch.intent_id, revision: watch.revision, conversation_id: watch.last_conversation_id || null, runtime_generation: workRuntimeGeneration || null, reason });
+  }
+
+  function startWorkStartResponseWatch({ intentId, revision, origin, aiId, assistantBaselineIds }) {
+    const key = `${String(intentId || "")}:${Number(revision || 0)}`;
+    if (workStartWatches.has(key)) return true;
+    stopWorkStartWatch(intentId, revision, "replaced");
+    const watch = { intent_id: String(intentId || ""), revision: Number(revision || 0), origin: String(origin || "").toLowerCase(), ai_id: String(aiId || ""), assistant_baseline_ids: new Set(assistantBaselineIds || []), deadline: Date.now() + 120000, last_conversation_id: null, timer: null };
+    watch.timer = setInterval(() => { void (async () => {
+      if (!current()) { stopWorkStartWatch(watch.intent_id, watch.revision, "runtime_disposed"); return; }
+      if (Date.now() > watch.deadline) {
+        stopWorkStartWatch(watch.intent_id, watch.revision, "response_timeout");
+        await sendRuntime("OZ_WORK_PENDING_TIMEOUT", { intent_id: watch.intent_id, revision: watch.revision });
+        return;
+      }
+      const currentIdentity = conversationIdentity();
+      if (currentIdentity.origin !== watch.origin || currentIdentity.ai_id !== watch.ai_id) {
+        stopWorkStartWatch(watch.intent_id, watch.revision, "identity_mismatch");
+        await sendRuntime("OZ_WORK_PENDING_CANCEL", { intent_id: watch.intent_id, revision: watch.revision, reason: "identity_mismatch" });
+        return;
+      }
+      if (!currentIdentity.conversation_id) return;
+      watch.last_conversation_id = currentIdentity.conversation_id;
+      const newAssistantMessages = assistantMessages().filter((item) => {
+        const id = currentAIAdapter()?.messageId(item);
+        return id && !watch.assistant_baseline_ids.has(id);
+      });
+      const last = newAssistantMessages[newAssistantMessages.length - 1] || null;
+      const complete = Boolean(last && assistantTurnComplete(last));
+      const response = await sendRuntime("OZ_WORK_PENDING_IDENTITY", { intent_id: watch.intent_id, revision: watch.revision, identity: currentIdentity, first_response_complete: complete, runtime_generation: workRuntimeGeneration || null });
+      if (!response?.waiting) stopWorkStartWatch(watch.intent_id, watch.revision, response?.ok ? "active_visible" : response?.code || "worker_rejected");
+    })(); }, 500);
+    workStartWatches.set(key, watch);
+    recordContentDiagnostic("WORK_START_WATCHER_STARTED", { intent_id: watch.intent_id, revision: watch.revision, conversation_id: conversationIdentity().conversation_id || null, runtime_generation: workRuntimeGeneration || null, assistant_baseline_count: watch.assistant_baseline_ids.size });
+  }
+
   async function sendWorkSessionPrompt(messageText, intentId, revision) {
     const context = primaryComposerContext();
     if (!context) throw Object.assign(new Error("Не найден composer текущего AI."), { code: "COMPOSER_NOT_FOUND" });
@@ -1755,34 +1798,26 @@
     if (!existing) setComposerText(context.composer, messageText);
     const target = await waitForStableSendTargetWithRetry({ area: "WORK_START", runId: intentId, expectedText: messageText });
     if (!target) throw Object.assign(new Error("Send control не готов."), { code: "WORK_START_SEND_TARGET_UNAVAILABLE" });
-    const sent = await clickComposerUntilEmpty({ area: "WORK_START", runId: intentId, expectedText: messageText, initialTarget: target, details: { work_session_revision: revision } });
-    const identity = conversationIdentity();
-    if (!identity.conversation_id && sent.composer_empty === true) {
-      const deadline = Date.now() + 120000;
-      const timer = setInterval(() => { void (async () => {
-        const currentIdentity = conversationIdentity();
-        if (Date.now() > deadline) {
-          clearInterval(timer);
-          await sendRuntime("OZ_WORK_PENDING_TIMEOUT", { intent_id: intentId, revision });
-          return;
-        }
-        if (currentIdentity.origin !== identity.origin || currentIdentity.ai_id !== identity.ai_id) {
-          clearInterval(timer);
-          await sendRuntime("OZ_WORK_PENDING_CANCEL", { intent_id: intentId, revision, reason: "identity_mismatch" });
-          return;
-        }
-        if (!currentIdentity.conversation_id) return;
-        const newAssistantMessages = assistantMessages().filter((item) => {
-          const id = currentAIAdapter()?.messageId(item);
-          return id && !assistantBaselineIds.has(id);
-        });
-        const last = newAssistantMessages[newAssistantMessages.length - 1] || null;
-        const complete = Boolean(last && assistantTurnComplete(last));
-        const response = await sendRuntime("OZ_WORK_PENDING_IDENTITY", { intent_id: intentId, revision, identity: currentIdentity, first_response_complete: complete });
-        if (!response?.ok || !response.waiting) clearInterval(timer);
-      })(); }, 500);
+    const identityBefore = conversationIdentity();
+    const commit = await sendRuntime("OZ_WORK_START_COMMIT_REQUEST", { intent_id: intentId, revision, identity: identityBefore, actor_id: runtimeId, runtime_generation: workRuntimeGeneration || null });
+    if (!commit?.ok || commit.committed !== true) throw Object.assign(new Error(commit?.error || "Work Start durable commit rejected."), { code: commit?.code || "WORK_START_COMMIT_REJECTED" });
+    if (commit.click_allowed !== true) {
+      return { ok: true, sent: false, committed_elsewhere: true, intent_id: intentId, revision, identity: identityBefore, assistant_baseline_ids: [...assistantBaselineIds] };
     }
-    return { ok: true, sent: sent.composer_empty === true, identity, assistant_baseline_ids: [...assistantBaselineIds] };
+    let sent;
+    try {
+      sent = await clickComposerUntilEmpty({ area: "WORK_START", runId: intentId, expectedText: messageText, initialTarget: target, details: { work_session_revision: revision, runtime_generation: workRuntimeGeneration || null } });
+    } catch (error) {
+      await sendRuntime("OZ_WORK_START_SEND_OUTCOME", { intent_id: intentId, revision, identity: conversationIdentity(), actor_id: runtimeId, runtime_generation: workRuntimeGeneration || null, click_event_observed: error?.click_event_observed === true, composer_empty: false, assistant_baseline_ids: [...assistantBaselineIds] }).catch(() => null);
+      throw error;
+    }
+    const identity = conversationIdentity();
+    const outcome = await sendRuntime("OZ_WORK_START_SEND_OUTCOME", { intent_id: intentId, revision, identity, actor_id: runtimeId, runtime_generation: workRuntimeGeneration || null, click_event_observed: sent.click_event_observed === true, composer_empty: sent.composer_empty === true, assistant_baseline_ids: [...assistantBaselineIds] });
+    if (!outcome?.ok || outcome.accepted !== true) throw Object.assign(new Error(outcome?.error || "Work Start send outcome acknowledgement failed."), { code: outcome?.code || "WORK_START_SEND_OUTCOME_REJECTED", click_event_observed: sent.click_event_observed === true });
+    recordContentDiagnostic("WORK_START_SEND_OUTCOME", { intent_id: intentId, revision, conversation_id: identity.conversation_id || null, runtime_generation: workRuntimeGeneration || null, click_event_observed: sent.click_event_observed === true, composer_empty: sent.composer_empty === true, send_outcome: outcome.send_outcome || null });
+    if (sent.composer_empty !== true) throw Object.assign(new Error("Work Start click was observed but Send outcome is not confirmed; automatic retry is forbidden."), { code: "WORK_START_SEND_OUTCOME_UNKNOWN_NO_RETRY", click_event_observed: sent.click_event_observed === true });
+    startWorkStartResponseWatch({ intentId, revision, origin: identityBefore.origin, aiId: identityBefore.ai_id, assistantBaselineIds });
+    return { ok: true, sent: true, send_observed: true, composer_empty: true, click_event_observed: sent.click_event_observed === true, intent_id: intentId, revision, identity, assistant_baseline_ids: [...assistantBaselineIds] };
   }
 
   async function currentRecovery(conversationKey, runId) {
@@ -2186,6 +2221,15 @@
     applyManualMode(manualModeEnabled, key);
     setManualBridgeReady(manualModeEnabled && !manualOperationLooksActive(response?.manual_operation), "content_state_sync");
     syncQuotaWaitFromState(response);
+    if (response?.ok && response.work_start_watch?.intent_id) {
+      startWorkStartResponseWatch({
+        intentId: response.work_start_watch.intent_id,
+        revision: response.work_start_watch.revision,
+        origin: response.work_start_watch.origin,
+        aiId: response.work_start_watch.ai_id,
+        assistantBaselineIds: response.work_start_watch.assistant_baseline_ids || []
+      });
+    }
     if (response?.ok && response.auto_watch?.status === "waiting_command") beginAutoWatch(response.auto_watch);
     else stopAutoWatch(response?.owner === false ? "duplicate_non_owner" : "sync_not_waiting");
     if (response?.ok && response.manual_operation_owner !== false && response.manual_recovery) {
@@ -2352,6 +2396,16 @@
       sendResponse({ ok: true, runtime_generation: workRuntimeGeneration, ui_record_generation: `ui-${crypto.randomUUID()}`, identity: conversationIdentity(), applied: contextMatches });
       return false;
     }
+    if (message?.type === "OZ_WORK_START_WATCH") {
+      const here = conversationIdentity();
+      if (here.status !== "confirmed" || here.origin !== String(message.origin || "").toLowerCase() || here.ai_id !== String(message.ai_id || "") || (message.conversation_id && here.conversation_id !== String(message.conversation_id || "").toLowerCase())) {
+        sendResponse({ ok: false, started: false, code: "WORK_START_WATCH_CONTEXT_MISMATCH" });
+        return false;
+      }
+      const started = startWorkStartResponseWatch({ intentId: String(message.intent_id || ""), revision: Number(message.revision || 0), origin: here.origin, aiId: here.ai_id, assistantBaselineIds: Array.isArray(message.assistant_baseline_ids) ? message.assistant_baseline_ids : [] });
+      sendResponse({ ok: true, started: started === true, intent_id: String(message.intent_id || ""), revision: Number(message.revision || 0), runtime_generation: workRuntimeGeneration || null });
+      return false;
+    }
     if (message?.type === "OZ_WORK_SEND_INITIAL_PROMPT") {
       sendWorkSessionPrompt(String(message.prompt_text || ""), String(message.intent_id || ""), Number(message.revision || 0)).then(sendResponse).catch((error) => sendResponse({ ok: false, code: error.code || "WORK_START_SEND_FAILED", error: error.message || String(error) }));
       return true;
@@ -2479,6 +2533,7 @@
     stopManualComposerWait("content_dispose");
     stopManualObserver();
     stopAutoWatch("content_dispose");
+    for (const watch of [...workStartWatches.values()]) stopWorkStartWatch(watch.intent_id, watch.revision, "content_dispose");
     stopDeliveryWatch("content_dispose");
     try { restoreButtonPicker(); } catch (_) {}
     if (identityPollTimer) clearInterval(identityPollTimer);

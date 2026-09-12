@@ -428,23 +428,34 @@
     }
   }
 
-  async function queryRecovery() {
+  async function queryRecovery(expectation = null) {
     const key = conversationKey();
     if (!key) return null;
-    const response = await request("OZ_ATTACHMENT_RECOVERY_GET", { conversation_key: key });
-    if (!response?.ok) throw Object.assign(new Error(response?.error || "Attachment recovery request failed."), { code: response?.code || "ATTACHMENT_RECOVERY_FAILED" });
+    const expected = expectation && String(expectation.conversation_key || "").toLowerCase() === key
+      ? expectation
+      : null;
+    const response = await request("OZ_ATTACHMENT_RECOVERY_GET", {
+      conversation_key: key,
+      ...(expected ? { owner_kind: String(expected.owner_kind || ""), owner_id: String(expected.owner_id || ""), delivery_id: String(expected.delivery_id || "") } : {})
+    });
+    if (!response?.ok) throw Object.assign(new Error(response?.error || "Attachment recovery request failed."), { code: response?.code || "ATTACHMENT_RECOVERY_FAILED", active_delivery_expected: Boolean(expected) });
     return response.recovery || null;
   }
 
-  async function recoverCurrent() {
+  async function recoverCurrent(expectation = null) {
     if (!current()) return { ok: false, code: "ATTACHMENT_RUNTIME_DISPOSED" };
+    const activeExpected = Boolean(expectation && expectation.owner_kind && expectation.owner_id && expectation.delivery_id);
     try {
-      const recovery = await queryRecovery();
+      const recovery = await queryRecovery(expectation);
       if (recovery) return await processRecovery(recovery);
       return { ok: true, recovery: null };
     } catch (error) {
-      status(`Ozon: ошибка проверки доставки файла (${error?.code || "ATTACHMENT_RECOVERY_FAILED"}).`, "error");
-      return { ok: false, code: error?.code || "ATTACHMENT_RECOVERY_FAILED", error: String(error?.message || error) };
+      if (activeExpected || error?.active_delivery_expected === true) {
+        status(`Ozon: ошибка проверки активной доставки файла (${error?.code || "ATTACHMENT_RECOVERY_FAILED"}).`, "error");
+      } else {
+        console.debug(`[Ozon Bridge] idle attachment recovery probe unavailable: ${error?.code || "ATTACHMENT_RECOVERY_FAILED"}`);
+      }
+      return { ok: false, code: error?.code || "ATTACHMENT_RECOVERY_FAILED", error: String(error?.message || error), idle_probe: !activeExpected };
     }
   }
 

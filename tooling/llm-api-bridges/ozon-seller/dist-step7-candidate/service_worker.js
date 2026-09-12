@@ -822,7 +822,7 @@ async function mutateWorkSession(key, expectedRevision, nextState, patch = {}) {
   });
 }
 async function retireWorkSession(key) { return mutateWorkSession(key, null, OzonWorkSessionModel.STATES.FINISHING).then((session) => mutateWorkSession(key, session.revision, OzonWorkSessionModel.STATES.INACTIVE)); }
-async function createPendingWorkStart(tab, identity) {
+async function createPendingWorkStart(tab, identity, options = {}) {
   const pending = await getPendingWorkStarts();
   const slot = String(tab);
   const now = new Date().toISOString();
@@ -833,12 +833,186 @@ async function createPendingWorkStart(tab, identity) {
     if (sameSurface && unexpired) return { duplicate: true, transaction: existing };
     delete pending[slot];
     await storageSet({ [KEYS.PENDING_WORK_STARTS]: pending });
-    await diagnostic("WORK_PENDING_START_STALE_RETIRED", { tab_id: tab, reason: unexpired ? "surface_changed" : "expired", external_request_executed: false });
+    await diagnostic("WORK_PENDING_START_STALE_RETIRED", { tab_id: tab, intent_id: existing.intent_id || null, revision: Number(existing.revision || 0), reason: unexpired ? "surface_changed" : "expired", external_request_executed: false });
   }
-  const transaction = { version: 1, state: OzonWorkSessionModel.STATES.PENDING_IDENTITY, intent_id: `work-start-${crypto.randomUUID()}`, revision: 1, tab_id: tab, origin: identity.origin, ai_id: identity.ai_id, created_at: now, expires_at: new Date(Date.now() + 120000).toISOString(), prompt_delivered: false, observed_conversation_id: null, first_response_complete: false };
+  const revision = Math.max(1, Number(options.revision || 1));
+  const observedConversationId = String(options.observed_conversation_id || identity.conversation_id || "").trim().toLowerCase() || null;
+  const conversationKey = String(options.conversation_key || "").trim().toLowerCase() || null;
+  const expectedSessionRevision = Number.isFinite(Number(options.expected_session_revision)) ? Number(options.expected_session_revision) : null;
+  const transaction = {
+    version: 2,
+    state: OzonWorkSessionModel.STATES.PENDING_IDENTITY,
+    intent_id: String(options.intent_id || "").trim() || `work-start-${crypto.randomUUID()}`,
+    revision,
+    tab_id: tab,
+    origin: identity.origin,
+    ai_id: identity.ai_id,
+    conversation_key: conversationKey,
+    expected_session_revision: expectedSessionRevision,
+    created_at: now,
+    expires_at: new Date(Date.now() + 120000).toISOString(),
+    prompt_delivered: false,
+    observed_conversation_id: observedConversationId,
+    first_response_complete: false,
+    send_commit_actor_id: null,
+    send_committed_at: null,
+    send_outcome: "not_started",
+    assistant_baseline_ids: [],
+    content_runtime_generation: null
+  };
   pending[slot] = transaction;
+  await diagnostic("WORK_START_PENDING_CREATED", { intent_id: transaction.intent_id, revision: transaction.revision, tab_id: tab, conversation_id: observedConversationId, state_before: options.state_before || null, state_after: transaction.state, external_request_executed: false });
   await storageSet({ [KEYS.PENDING_WORK_STARTS]: pending });
-  return { duplicate: false, transaction };
+  await diagnostic("WORK_START_PENDING_PERSISTED", { intent_id: transaction.intent_id, revision: transaction.revision, tab_id: tab, conversation_id: observedConversationId, external_request_executed: false });
+  const readback = (await getPendingWorkStarts())[slot] || null;
+  if (!readback || readback.intent_id !== transaction.intent_id || Number(readback.revision) !== transaction.revision || readback.origin !== transaction.origin || readback.ai_id !== transaction.ai_id) {
+    throw Object.assign(new Error("Pending Work Start transaction was not durably read back before Send."), { code: "WORK_START_PENDING_COMMIT_READBACK_FAILED" });
+  }
+  await diagnostic("WORK_START_PENDING_COMMIT_ACK", { intent_id: transaction.intent_id, revision: transaction.revision, tab_id: tab, conversation_id: observedConversationId, external_request_executed: false });
+  return { duplicate: false, transaction: readback };
+}
+
+async function pendingWorkStartForMessage(message, sender) {
+  const tab = normalizeTabId(sender?.tab?.id || message.tab_id);
+  const starts = await getPendingWorkStarts();
+  const pending = starts[String(tab)] || null;
+  if (!pending || pending.intent_id !== String(message.intent_id || "") || Number(pending.revision) !== Number(message.revision)) {
+    throw Object.assign(new Error("Pending Work Start correlation is stale or invalid."), { code: "WORK_PENDING_STALE_OR_INVALID" });
+  }
+  if (String(pending.expires_at || "") <= new Date().toISOString()) {
+    await clearPendingWorkStart(tab, pending.intent_id, pending.revision, "response_timeout");
+    throw Object.assign(new Error("Pending Work Start expired."), { code: "WORK_PENDING_TIMEOUT" });
+  }
+  const identity = normalizeIdentity(message.identity || {});
+  if (!identity.origin || !identity.ai_id || identity.origin !== pending.origin || identity.ai_id !== pending.ai_id) {
+    throw Object.assign(new Error("Pending Work Start origin/AI correlation mismatch."), { code: "WORK_PENDING_IDENTITY_MISMATCH" });
+  }
+  if (pending.observed_conversation_id && identity.conversation_id && pending.observed_conversation_id !== identity.conversation_id) {
+    throw Object.assign(new Error("Pending Work Start conversation correlation mismatch."), { code: "WORK_PENDING_CONVERSATION_CHANGED" });
+  }
+  return { tab, starts, pending, identity };
+}
+
+async function commitPendingWorkStartSend(message, sender) {
+  return withBindingWrite(async () => {
+    const { tab, starts, pending, identity } = await pendingWorkStartForMessage(message, sender);
+    const slot = String(tab);
+    const actorId = String(message.actor_id || "").trim();
+    if (!actorId) return { ok: false, committed: false, click_allowed: false, code: "WORK_START_ACTOR_REQUIRED" };
+    if (pending.send_commit_actor_id) {
+      return { ok: true, committed: true, click_allowed: false, outcome_unknown: pending.send_outcome !== "sent_acknowledged", code: "WORK_START_ALREADY_COMMITTED_NO_RETRY", pending_start: pending };
+    }
+    const next = { ...pending, send_commit_actor_id: actorId, send_committed_at: new Date().toISOString(), send_outcome: "committed_before_click", content_runtime_generation: String(message.runtime_generation || "") || null, observed_conversation_id: pending.observed_conversation_id || identity.conversation_id || null };
+    starts[slot] = next;
+    await storageSet({ [KEYS.PENDING_WORK_STARTS]: starts });
+    const readback = (await getPendingWorkStarts())[slot] || null;
+    if (!readback || readback.send_commit_actor_id !== actorId || readback.intent_id !== pending.intent_id || Number(readback.revision) !== Number(pending.revision)) {
+      throw Object.assign(new Error("Work Start send commit was not durably acknowledged."), { code: "WORK_START_SEND_COMMIT_READBACK_FAILED" });
+    }
+    await diagnostic("WORK_START_PENDING_COMMIT_ACK", { intent_id: pending.intent_id, revision: pending.revision, tab_id: tab, conversation_id: readback.observed_conversation_id || null, runtime_generation: readback.content_runtime_generation || null, phase: "send_commit", external_request_executed: false });
+    return { ok: true, committed: true, click_allowed: true, intent_id: pending.intent_id, revision: pending.revision };
+  });
+}
+
+function workStartWatchPayload(pending) {
+  return {
+    intent_id: String(pending?.intent_id || ""),
+    revision: Number(pending?.revision || 0),
+    origin: String(pending?.origin || "").toLowerCase(),
+    ai_id: String(pending?.ai_id || ""),
+    conversation_id: String(pending?.observed_conversation_id || "").toLowerCase() || null,
+    assistant_baseline_ids: Array.isArray(pending?.assistant_baseline_ids) ? pending.assistant_baseline_ids.map((id) => String(id)).filter(Boolean) : [],
+    runtime_generation: pending?.content_runtime_generation || null
+  };
+}
+
+async function pushPendingWorkStartWatch(tab, pending, reason = "send_acknowledged") {
+  if (!pending || pending.prompt_delivered !== true || pending.send_outcome !== "sent_acknowledged") return { ok: false, code: "WORK_START_WATCH_NOT_READY" };
+  const payload = workStartWatchPayload(pending);
+  const pushed = await tabMessage(tab, { type: "OZ_WORK_START_WATCH", ...payload });
+  await diagnostic("WORK_START_WATCHER_BOOTSTRAP", {
+    intent_id: pending.intent_id,
+    revision: pending.revision,
+    tab_id: tab,
+    conversation_id: pending.observed_conversation_id || null,
+    runtime_generation: pending.content_runtime_generation || null,
+    reason,
+    ok: pushed?.ok === true && pushed?.started === true,
+    code: pushed?.code || null,
+    external_request_executed: false
+  }, { level: pushed?.ok === true && pushed?.started === true ? "info" : "warning" });
+  return pushed || { ok: false, code: "WORK_START_WATCH_PUSH_NO_RESPONSE" };
+}
+
+async function acknowledgePendingWorkStartSend(message, sender) {
+  return withBindingWrite(async () => {
+    const { tab, starts, pending, identity } = await pendingWorkStartForMessage(message, sender);
+    const slot = String(tab);
+    const actorId = String(message.actor_id || "").trim();
+    if (!pending.send_commit_actor_id || pending.send_commit_actor_id !== actorId) {
+      return { ok: false, accepted: false, code: "WORK_START_SEND_ACTOR_MISMATCH" };
+    }
+    const clickObserved = message.click_event_observed === true;
+    const composerEmpty = message.composer_empty === true;
+    const sendOutcome = clickObserved && composerEmpty ? "sent_acknowledged" : clickObserved ? "outcome_unknown_no_retry" : "failed_before_irreversible_click";
+    const next = {
+      ...pending,
+      prompt_delivered: sendOutcome === "sent_acknowledged",
+      send_outcome: sendOutcome,
+      observed_conversation_id: pending.observed_conversation_id || identity.conversation_id || null,
+      assistant_baseline_ids: Array.isArray(message.assistant_baseline_ids) ? message.assistant_baseline_ids.map((id) => String(id)).filter(Boolean) : [],
+      content_runtime_generation: String(message.runtime_generation || pending.content_runtime_generation || "") || null
+    };
+    starts[slot] = next;
+    await storageSet({ [KEYS.PENDING_WORK_STARTS]: starts });
+    await diagnostic("WORK_START_SEND_OUTCOME", { intent_id: pending.intent_id, revision: pending.revision, tab_id: tab, conversation_id: next.observed_conversation_id || null, runtime_generation: next.content_runtime_generation || null, click_event_observed: clickObserved, composer_empty: composerEmpty, send_outcome: sendOutcome, external_request_executed: false }, { level: sendOutcome === "sent_acknowledged" ? "info" : "warning" });
+    await diagnostic("WORK_START_WORKER_ACK_RECEIVED", { intent_id: pending.intent_id, revision: pending.revision, tab_id: tab, conversation_id: next.observed_conversation_id || null, send_outcome: sendOutcome, external_request_executed: false });
+    let watcherBootstrap = null;
+    if (sendOutcome === "sent_acknowledged") watcherBootstrap = await pushPendingWorkStartWatch(tab, next, "worker_send_outcome_ack");
+    return { ok: true, accepted: true, intent_id: pending.intent_id, revision: pending.revision, send_outcome: sendOutcome, no_retry: sendOutcome !== "failed_before_irreversible_click", watcher_bootstrap: watcherBootstrap };
+  });
+}
+
+async function markKnownWorkStartError(pending, code) {
+  const key = String(pending?.conversation_key || "").trim().toLowerCase();
+  if (!key) return;
+  const session = await workSessionFor(key);
+  if (![OzonWorkSessionModel.STATES.INACTIVE, OzonWorkSessionModel.STATES.ERROR].includes(session.state)) return;
+  if (Number.isFinite(Number(pending.expected_session_revision)) && session.revision !== Number(pending.expected_session_revision)) return;
+  if (session.state === OzonWorkSessionModel.STATES.ERROR) return;
+  await mutateWorkSession(key, session.revision, OzonWorkSessionModel.STATES.ERROR, { error: { code: String(code || "WORK_START_SEND_FAILED") } });
+}
+
+async function dispatchPendingWorkStartPrompt(tab, pending, promptText) {
+  await diagnostic("WORK_START_CONTENT_DISPATCHED", { intent_id: pending.intent_id, revision: pending.revision, tab_id: tab, conversation_id: pending.observed_conversation_id || null, external_request_executed: false });
+  const sent = await tabMessage(tab, {
+    type: "OZ_WORK_SEND_INITIAL_PROMPT",
+    intent_id: pending.intent_id,
+    revision: pending.revision,
+    conversation_key: pending.conversation_key || null,
+    expected_conversation_id: pending.observed_conversation_id || null,
+    prompt_text: String(promptText || DEFAULT_AUTO_START_TEXT)
+  });
+  const latest = (await getPendingWorkStarts())[String(tab)] || null;
+  if (!sent?.ok || sent.sent !== true) {
+    if (latest?.intent_id === pending.intent_id && latest.send_commit_actor_id) {
+      if (latest.send_outcome === "failed_before_irreversible_click") {
+        await clearPendingWorkStart(tab, pending.intent_id, pending.revision, sent?.code || "send_failed_before_irreversible_click");
+        await markKnownWorkStartError(pending, sent?.code || "WORK_START_SEND_FAILED");
+        await diagnostic("WORK_START_SEND_FAILED", { intent_id: pending.intent_id, revision: pending.revision, tab_id: tab, conversation_id: latest.observed_conversation_id || null, send_outcome: latest.send_outcome, code: sent?.code || "WORK_START_SEND_FAILED", external_request_executed: false }, { level: "error" });
+        return;
+      }
+      await diagnostic("WORK_START_CONTENT_RESPONSE_LOST_NO_RETRY", { intent_id: pending.intent_id, revision: pending.revision, tab_id: tab, conversation_id: latest.observed_conversation_id || null, send_outcome: latest.send_outcome || null, code: sent?.code || "WORK_START_CONTENT_RESPONSE_LOST", external_request_executed: false }, { level: "warning" });
+      return;
+    }
+    await clearPendingWorkStart(tab, pending.intent_id, pending.revision, sent?.code || "send_failed_before_commit");
+    await markKnownWorkStartError(pending, sent?.code || "WORK_START_SEND_FAILED");
+    await diagnostic("WORK_START_SEND_FAILED", { intent_id: pending.intent_id, revision: pending.revision, tab_id: tab, conversation_id: pending.observed_conversation_id || null, code: sent?.code || "WORK_START_SEND_FAILED", external_request_executed: false }, { level: "error" });
+    return;
+  }
+  if (String(sent.intent_id || "") !== pending.intent_id || Number(sent.revision) !== Number(pending.revision)) {
+    await diagnostic("WORK_START_CONTENT_ACK_CORRELATION_MISMATCH", { intent_id: pending.intent_id, revision: pending.revision, tab_id: tab, received_intent_id: sent.intent_id || null, received_revision: Number(sent.revision || 0), external_request_executed: false }, { level: "error" });
+  }
 }
 
 async function clearPendingWorkStart(tab, intentId, revision, reason) {
@@ -5130,65 +5304,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       case "OZ_WORK_START": {
         const tab = normalizeTabId(message.tab_id);
-        const startIntentId = String(message.start_intent_id || crypto.randomUUID());
+        const requestedIntentId = String(message.start_intent_id || "").trim() || `work-start-${crypto.randomUUID()}`;
         const live = await tabIdentity(tab);
         if (!live.ai_id || !live.origin) return { ok: false, code: "WORK_START_UNSUPPORTED_PAGE", error: "Текущая вкладка не является поддерживаемым AI-диалогом." };
-
-        if (!live.conversation_id) {
-          const pending = await createPendingWorkStart(tab, live);
-          if (pending.duplicate) return { ok: true, accepted: false, code: "WORK_START_ALREADY_PENDING", pending_start: pending.transaction };
-          const bootstrapPrompt = await getGlobalAutoStartPrompt();
-          const sent = await tabMessage(tab, { type: "OZ_WORK_SEND_INITIAL_PROMPT", intent_id: pending.transaction.intent_id, revision: pending.transaction.revision, prompt_text: String(bootstrapPrompt?.text || DEFAULT_AUTO_START_TEXT) });
-          if (!sent?.ok || sent.sent !== true) {
-            const starts = await getPendingWorkStarts();
-            delete starts[String(tab)];
-            await storageSet({ [KEYS.PENDING_WORK_STARTS]: starts });
-            return { ok: false, code: sent?.code || "WORK_START_SEND_FAILED", error: sent?.error || "Initial prompt не отправлен." };
+        let key = null;
+        let currentSession = null;
+        if (live.conversation_id) {
+          key = await resolveConfirmedConversationKey(live);
+          currentSession = await workSessionFor(key);
+          if ([OzonWorkSessionModel.STATES.ACTIVE_VISIBLE, OzonWorkSessionModel.STATES.ACTIVE_HIDDEN].includes(currentSession.state)) {
+            return { ok: false, accepted: false, code: "WORK_SESSION_ALREADY_ACTIVE", error: "Work-session уже активна; повторный Start не должен отправлять второй bootstrap prompt." };
           }
-          const starts = await getPendingWorkStarts();
-          if (starts[String(tab)]?.intent_id === pending.transaction.intent_id) {
-            starts[String(tab)] = { ...starts[String(tab)], prompt_delivered: true };
-            await storageSet({ [KEYS.PENDING_WORK_STARTS]: starts });
+          if (![OzonWorkSessionModel.STATES.INACTIVE, OzonWorkSessionModel.STATES.ERROR].includes(currentSession.state)) {
+            return { ok: false, accepted: false, code: "WORK_START_ALREADY_IN_PROGRESS", error: `Work-session уже находится в состоянии ${currentSession.state}.` };
           }
-          return { ok: true, accepted: true, pending_start: { ...pending.transaction, prompt_delivered: true } };
         }
-
-        const key = await resolveConfirmedConversationKey(live);
-        const currentSession = await workSessionFor(key);
-        if ([OzonWorkSessionModel.STATES.ACTIVE_VISIBLE, OzonWorkSessionModel.STATES.ACTIVE_HIDDEN].includes(currentSession.state)) {
-          await strictBindingForIdentity(live);
-          const prompt = await getAutoStartPrompt(key);
-          const sent = await tabMessage(tab, { type: "OZ_WORK_SEND_INITIAL_PROMPT", intent_id: startIntentId, revision: currentSession.revision, prompt_text: String(prompt?.text || DEFAULT_AUTO_START_TEXT) });
-          if (!sent?.ok || sent.sent !== true) return { ok: false, code: sent?.code || "WORK_START_SEND_FAILED", error: sent?.error || "Initial prompt не отправлен." };
-          return { ok: true, resent_prompt_only: true, session: currentSession, state: await publicSettingsState(key) };
-        }
-        if (![OzonWorkSessionModel.STATES.INACTIVE, OzonWorkSessionModel.STATES.ERROR].includes(currentSession.state)) {
-          return { ok: false, code: "WORK_START_ALREADY_IN_PROGRESS", error: `Work-session уже находится в состоянии ${currentSession.state}.` };
-        }
-
-        const binding = await bindConversation({ tab_id: tab, origin: live.origin, conversation_id: live.conversation_id }, { work_start_intent_id: startIntentId });
-        const bindingSession = await workSessionFor(key);
-        if (bindingSession.state !== OzonWorkSessionModel.STATES.BINDING) throw Object.assign(new Error("Work-session не вошла в binding после атомарной привязки."), { code: "WORK_START_BINDING_STATE_INVALID" });
-        const visible = await mutateWorkSession(key, bindingSession.revision, OzonWorkSessionModel.STATES.ACTIVE_VISIBLE, { error: null });
-        try {
-          await setWorkSessionCommandAcceptance(key, true);
-          const applied = await tabMessage(tab, { type: "OZ_WORK_APPLY_VISIBILITY", visible: true, conversation_key: key });
-          if (!applied?.ok || applied.applied !== true) throw Object.assign(new Error(applied?.error || "Content script не подтвердил включение кнопки Ozon."), { code: applied?.code || "WORK_START_CONTENT_REJECTED" });
-        } catch (error) {
-          await setWorkSessionCommandAcceptance(key, false);
-          await mutateWorkSession(key, visible.revision, OzonWorkSessionModel.STATES.ERROR, { error: { code: error.code || "WORK_START_CONTENT_REJECTED" } });
-          return { ok: false, code: error.code || "WORK_START_CONTENT_REJECTED", error: error.message || String(error) };
-        }
-        const prompt = await getAutoStartPrompt(key);
-        const sent = await tabMessage(tab, { type: "OZ_WORK_SEND_INITIAL_PROMPT", intent_id: startIntentId, revision: visible.revision, prompt_text: String(prompt?.text || DEFAULT_AUTO_START_TEXT) });
-        if (!sent?.ok || sent.sent !== true) {
-          await setWorkSessionCommandAcceptance(key, false);
-          await tabMessage(tab, { type: "OZ_WORK_APPLY_VISIBILITY", visible: false, conversation_key: key });
-          await mutateWorkSession(key, visible.revision, OzonWorkSessionModel.STATES.ERROR, { error: { code: sent?.code || "WORK_START_SEND_FAILED" } });
-          return { ok: false, code: sent?.code || "WORK_START_SEND_FAILED", error: sent?.error || "Initial prompt не отправлен." };
-        }
-        return { ok: true, binding, session: visible, state: await publicSettingsState(key) };
+        const nextRevision = currentSession ? currentSession.revision + 1 : 1;
+        await diagnostic("WORK_START_REQUESTED", { intent_id: requestedIntentId, revision: nextRevision, tab_id: tab, conversation_id: live.conversation_id || null, state_before: currentSession?.state || OzonWorkSessionModel.STATES.INACTIVE, external_request_executed: false });
+        const pending = await createPendingWorkStart(tab, live, { intent_id: requestedIntentId, revision: nextRevision, observed_conversation_id: live.conversation_id || null, conversation_key: key, expected_session_revision: currentSession?.revision ?? 0, state_before: currentSession?.state || OzonWorkSessionModel.STATES.INACTIVE });
+        if (pending.duplicate) return { ok: true, accepted: false, code: "WORK_START_ALREADY_PENDING", pending_start: pending.transaction };
+        const prompt = key ? await getAutoStartPrompt(key) : await getGlobalAutoStartPrompt();
+        void dispatchPendingWorkStartPrompt(tab, pending.transaction, String(prompt?.text || DEFAULT_AUTO_START_TEXT)).catch((error) => {
+          void diagnostic("WORK_START_ASYNC_DISPATCH_FAILED", { intent_id: pending.transaction.intent_id, revision: pending.transaction.revision, tab_id: tab, code: error?.code || "WORK_START_ASYNC_DISPATCH_FAILED", error: error?.message || String(error), external_request_executed: false }, { level: "error" });
+        });
+        return { ok: true, accepted: true, pending_start: pending.transaction, start_intent_id: pending.transaction.intent_id, revision: pending.transaction.revision };
       }
+      case "OZ_WORK_START_COMMIT_REQUEST":
+        return await commitPendingWorkStartSend(message, sender);
+      case "OZ_WORK_START_SEND_OUTCOME":
+        return await acknowledgePendingWorkStartSend(message, sender);
       case "OZ_WORK_PENDING_IDENTITY": {
         const tab = normalizeTabId(sender?.tab?.id || message.tab_id);
         const starts = await getPendingWorkStarts();
@@ -5207,17 +5351,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           await clearPendingWorkStart(tab, pending.intent_id, pending.revision, "conversation_changed");
           return { ok: false, code: "WORK_PENDING_CONVERSATION_CHANGED" };
         }
+        if (pending.prompt_delivered !== true || pending.send_outcome !== "sent_acknowledged") {
+          return { ok: false, waiting: true, code: pending.send_outcome === "outcome_unknown_no_retry" ? "WORK_START_SEND_OUTCOME_UNKNOWN_NO_RETRY" : "WORK_START_SEND_NOT_ACKNOWLEDGED" };
+        }
         if (message.first_response_complete !== true) {
           starts[String(tab)] = { ...pending, observed_conversation_id: identity.conversation_id, first_response_complete: false };
           await storageSet({ [KEYS.PENDING_WORK_STARTS]: starts });
           return { ok: true, waiting: true };
         }
         try {
+          await diagnostic("WORK_START_CORRELATION_ACCEPTED", { intent_id: pending.intent_id, revision: pending.revision, tab_id: tab, conversation_id: identity.conversation_id, runtime_generation: pending.content_runtime_generation || null, external_request_executed: false });
           const binding = await bindConversation({ tab_id: tab, origin: identity.origin, conversation_id: identity.conversation_id }, { work_start_intent_id: pending.intent_id });
           const key = binding.conversation_key;
           const bindingSession = await workSessionFor(key);
-          if (bindingSession.state !== OzonWorkSessionModel.STATES.BINDING) throw Object.assign(new Error("Pending Start не вошёл в binding."), { code: "WORK_PENDING_BINDING_STATE_INVALID" });
+          if (bindingSession.state !== OzonWorkSessionModel.STATES.BINDING || Number(bindingSession.revision) !== Number(pending.revision) || bindingSession.start_intent_id !== pending.intent_id) throw Object.assign(new Error("Pending Start не вошёл в correlation-safe binding."), { code: "WORK_PENDING_BINDING_STATE_INVALID" });
+          await diagnostic("WORK_START_BINDING", { intent_id: pending.intent_id, revision: bindingSession.revision, tab_id: tab, conversation_id: identity.conversation_id, state_before: OzonWorkSessionModel.STATES.INACTIVE, state_after: bindingSession.state, external_request_executed: false });
           const visible = await mutateWorkSession(key, bindingSession.revision, OzonWorkSessionModel.STATES.ACTIVE_VISIBLE, { error: null });
+          await diagnostic("WORK_START_ACTIVE_VISIBLE", { intent_id: pending.intent_id, revision: visible.revision, tab_id: tab, conversation_id: identity.conversation_id, state_before: bindingSession.state, state_after: visible.state, external_request_executed: false });
           try {
             await setWorkSessionCommandAcceptance(key, true);
             const applied = await tabMessage(tab, { type: "OZ_WORK_APPLY_VISIBILITY", visible: true, conversation_key: key });
@@ -5357,6 +5507,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
           run = await getAutoRun(key) || run;
         }
+        const pendingStarts = await getPendingWorkStarts();
+        const pendingStart = pendingStarts[String(senderTabId)] || null;
+        const workStartWatch = pendingStart && pendingStart.prompt_delivered === true && pendingStart.send_outcome === "sent_acknowledged" &&
+          pendingStart.origin === liveIdentity.origin && pendingStart.ai_id === liveIdentity.ai_id &&
+          (!pendingStart.observed_conversation_id || pendingStart.observed_conversation_id === liveIdentity.conversation_id)
+          ? workStartWatchPayload(pendingStart)
+          : null;
         return {
           ok: true,
           conversation_key: key,
@@ -5372,6 +5529,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           manual_recovery: manualOwner ? manualRecovery : null,
           auto_run: publicRun(run),
           recovery,
+          work_start_watch: workStartWatch,
           auto_watch: owner && run?.status === BridgeAutorunModel.RUN_STATUSES.WAITING_COMMAND ? {
             run_id: run.run_id,
             conversation_key: run.conversation_key,
