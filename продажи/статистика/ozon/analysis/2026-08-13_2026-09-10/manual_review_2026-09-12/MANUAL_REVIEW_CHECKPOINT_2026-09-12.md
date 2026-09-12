@@ -1,4 +1,4 @@
-# Ozon manual semantic review — checkpoint after block 03
+# Ozon manual semantic review — checkpoint after block 04
 
 Date: 2026-09-12
 
@@ -6,27 +6,24 @@ Date: 2026-09-12
 
 - total READY candidates: 321
 - total READY SKUs: 63
-- completed blocks: B01, B02, B03
-- reviewed candidates: 114 / 321
-- reviewed SKUs: 24 / 63
+- completed blocks: B01–B04
+- reviewed candidates: 149 / 321
+- reviewed SKUs: 32 / 63
 - cumulative APPROVE: 0
-- cumulative REJECT: 107
+- cumulative REJECT: 142
 - cumulative HOLD: 7
 
-## Block 03
+## Block 04
 
-- rows reviewed: 43
+- rows reviewed: 35
 - APPROVE: 0
-- REJECT: 42
-- HOLD: 1
+- REJECT: 35
+- HOLD: 0
 
-Block 03 covered zodiac SKUs. Most machine READY rows were false positives caused by the sign name being shared with another product type (`брелок`, `брошка`, `кулон`, `свитшот`, `картина`, `молд`, `фигурка`) or by homonyms (`весы`, `водолей`, `рыбы`, `лев`). Exact zodical intents already present in title/description were rejected as `NO_CHANGE_ALREADY_COVERED`, not promoted into duplicate keyword additions.
-
-HOLD:
-- `для машины лев` → SKU 1720151850 — «Лев» can mean zodiac sign or lion-themed auto decor; query is too ambiguous for safe assignment.
+The block covered Scorpio, Taurus, a Christian prayer SKU and several Slavic-symbol SKUs. High-volume exact tokens such as `телец` and `подвеска телец` were rejected as new changes because the current title already literally covers them. Other rows were different product types, use cases, materials or unrelated entities.
 
 No card mutation and no provider call was performed.
 
 ## Continuation
 
-Next block: B04. Resume from `MANUAL_REVIEW_CURSOR_2026-09-12.json`.
+Next block: B05. Resume from `MANUAL_REVIEW_CURSOR_2026-09-12.json`.
