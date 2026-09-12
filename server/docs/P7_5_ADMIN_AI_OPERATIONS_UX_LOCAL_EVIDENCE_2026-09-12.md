@@ -143,3 +143,80 @@ SAFE_FOR_PUBLICATION = PENDING_MAIN_CHATGPT_ACCEPTANCE
 The prior Review1 witness reported `8,637,632,512` bytes free. This final-local acceptance gate ran with Node `v24.20.0` and pnpm `10.34.5`; its first local reading was `8,637,534,208` bytes, the reading immediately before E2E was `8,636,723,200` bytes, and the reading after exact E2E cleanup was `8,599,728,128` bytes. The hard pre-E2E floor `8,589,934,592` was met. No safe additional disposable resource was removed before E2E. The exact final E2E container and its task-created resources were removed after the run; Docker leftovers for this task are `0` containers and `0` volumes. The inventory and E2E generated `.last-run.json` was removed after evidence capture.
 
 The reviewed candidate tree remained unchanged through E2E. Only the three permitted documentation files were changed after the review: this evidence file, ADR-0035, and ROADMAP. No implementation, test, BFF, OpenAPI, migration, or Bridge file was changed after Review1. No commit or push was performed.
+
+## REMOTE IMPLEMENTATION ACCEPTANCE — 2026-09-12
+
+IMPLEMENTATION_COMMIT = `6a377772b3e8a2ac90f234eb22cb2380fbf26a81`
+
+IMPLEMENTATION_TREE = `f16334a8819d87c8b2d5fd2307367d4cc8015a22`
+
+IMPLEMENTATION_PARENT = `0020be254d399772f0262e5e6fa9b64a826a5674`
+
+IMPLEMENTATION_SUBJECT = `feat(server): complete P7.5 admin AI operations UX`
+
+SERVER_CI_RUN_ID = `34680020529`
+
+SERVER_CI_RUN_NUMBER = `91`
+
+SERVER_CI_JOB_ID = `103516830787`
+
+SERVER_CI_HEAD_SHA = `6a377772b3e8a2ac90f234eb22cb2380fbf26a81`
+
+SERVER_CI_STATUS = `completed`
+
+SERVER_CI_CONCLUSION = `success`
+
+Successful exact-SHA gates:
+
+- lint = PASS
+- format = PASS
+- typecheck = PASS
+- unit = PASS
+- integration = PASS
+- db:migrate = PASS
+- openapi = PASS
+- bridge:guard = PASS
+- build = PASS
+- Chromium installation = PASS
+- E2E = PASS
+
+LOCAL_P7_5_ACCEPTANCE = PASS
+
+INDEPENDENT_REVIEW1 = PASS
+
+FULL_LOCAL_E2E = 72 / 0 / 0
+
+REMOTE_IMPLEMENTATION_PUBLICATION = PASS
+
+REMOTE_IMPLEMENTATION_ACCEPTANCE = PASS
+
+REMOTE_P7_5_ACCEPTANCE = PASS
+
+BFF_FINAL_TUPLES = 86
+
+OPENAPI_OPERATIONS = 102
+
+OPENAPI_SHA256 = `9563c57d622a7eee2197ea9a0508852f7c7a0aef87bbb9dddf5570cc83b50cc7`
+
+MIGRATION_CHANGE = NO
+
+P7_4_BACKEND_CHANGE = NO
+
+P7_3_CHANGE = NO
+
+P7_6_STARTED = NO
+
+P8_STARTED = NO
+
+BRIDGE_CHANGE = NO
+
+PROVIDER_CALLS = 0
+
+LOW_FINDING_COUNT = 1
+
+LOW = historical immutable Attempt1 manifest listed three focused-unit files
+while the actual 152-test run used four.
+
+LOW_BLOCKING = NO
+
+OLD_ATTEMPT1_MANIFEST_REWRITTEN = NO

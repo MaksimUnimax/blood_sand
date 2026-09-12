@@ -1,6 +1,6 @@
 # ADR-0035 — P7.5 Admin AI operations UX
 
-Status: Implemented; locally accepted; remote acceptance pending
+Status: Implemented; remotely accepted
 Date: 2026-09-12
 
 ## Decision
