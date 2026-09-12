@@ -1,0 +1,51 @@
+name: Ozon HELP V2 source audit
+on:
+  push:
+    branches: [repair/ozon-autorun-help-v2-marker-2026-09-12]
+    paths: ['.github/workflows/ozon-help-v2-source-audit-2026-09-12.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 379bf4d621c78551ed225cb84669de5899d02de1
+          fetch-depth: 1
+      - name: Export exact audit inputs; no provider calls or production writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '379bf4d621c78551ed225cb84669de5899d02de1'
+          mkdir -p "$RUNNER_TEMP/ozon-source-audit"
+          git ls-tree -r -l HEAD > "$RUNNER_TEMP/ozon-source-audit/repository-inventory.txt"
+          python3 - <<'PY'
+          import pathlib, subprocess, tarfile, json, hashlib, os
+          root=pathlib.Path('.')
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'ozon-source-audit'
+          names=subprocess.check_output(['git','ls-files','-z','--','tooling/llm-api-bridges/ozon-seller','.github/workflows','AGENTS.md']).decode().split('\0')
+          rows=[]; omitted=[]
+          with tarfile.open(out/'sources.tar.gz','w:gz') as tf:
+              for name in sorted(filter(None,names)):
+                  p=root/name
+                  if not p.is_file():
+                      omitted.append({'path':name,'reason':'not regular file'}); continue
+                  if '/artifacts/' in name or p.suffix.lower()=='.zip' or p.stat().st_size>10000000:
+                      omitted.append({'path':name,'reason':'historical artifact/archive/large input; not audit source','bytes':p.stat().st_size}); continue
+                  data=p.read_bytes()
+                  rows.append({'path':name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()})
+                  tf.add(p,arcname=name,recursive=False)
+          manifest={'commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'tree':subprocess.check_output(['git','rev-parse','HEAD^{tree}'],text=True).strip(),'files':rows,'omitted':omitted,'provider_calls':0}
+          (out/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+          print('AUDIT_SOURCE_FILES='+str(len(rows)))
+          print('AUDIT_SOURCE_BYTES='+str(sum(r['bytes'] for r in rows)))
+          print('AUDIT_OMITTED='+str(len(omitted)))
+          print('PROVIDER_CALLS=0')
+          PY
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-help-v2-pinned-audit-sources
+          path: ${{ runner.temp }}/ozon-source-audit
+          retention-days: 7
