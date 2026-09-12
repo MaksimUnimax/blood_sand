@@ -347,3 +347,76 @@ truthful local state.
 `REMOTE_P7_4_ACCEPTANCE = PENDING`
 
 `SAFE_FOR_REMOTE_PUBLICATION = PENDING_MAIN_CHATGPT_ACCEPTANCE`
+
+## REMOTE IMPLEMENTATION ACCEPTANCE — 2026-09-12
+
+The published implementation commit and exact implementation tree are:
+
+```text
+IMPLEMENTATION_COMMIT =
+5f256cc73af0309178deff6bcb92ad05c27c99bf
+
+IMPLEMENTATION_TREE =
+f329a2440b3830b35bafe6faa5637f2f464cf798
+
+IMPLEMENTATION_PARENT =
+00edb4ec68a9417ec21beb16d7e3db535747e622
+
+IMPLEMENTATION_SUBJECT =
+feat(server): complete P7.4 admin AI API and RBAC
+
+REMOTE_COMPARE_AHEAD_BY = 1
+REMOTE_COMPARE_BEHIND_BY = 0
+REMOTE_COMPARE_TOTAL_COMMITS = 1
+
+SERVER_CI_RUN_ID =
+34666903459
+
+SERVER_CI_RUN_NUMBER =
+87
+
+SERVER_CI_JOB_ID =
+103480534019
+
+SERVER_CI_EVENT =
+push
+
+SERVER_CI_HEAD_SHA =
+5f256cc73af0309178deff6bcb92ad05c27c99bf
+
+SERVER_CI_STATUS =
+completed
+
+SERVER_CI_CONCLUSION =
+success
+```
+
+Exact-SHA Server CI remote gates all passed:
+
+```text
+lint = PASS
+format = PASS
+typecheck = PASS
+unit = PASS
+integration = PASS
+db:migrate = PASS
+openapi = PASS
+bridge:guard = PASS
+build = PASS
+Chromium installation = PASS
+E2E = PASS
+```
+
+The accepted local and review authorities remain:
+
+```text
+LOCAL_P7_4_ACCEPTANCE = PASS
+INDEPENDENT_REVIEW2 = PASS
+REMOTE_IMPLEMENTATION_PUBLICATION = PASS
+REMOTE_IMPLEMENTATION_ACCEPTANCE = PASS
+REMOTE_P7_4_ACCEPTANCE = PASS
+PROVIDER_CALLS = 0
+```
+
+This records remote implementation acceptance only; it does not claim a
+production deployment.
