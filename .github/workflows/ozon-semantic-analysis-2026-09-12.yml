@@ -8,6 +8,7 @@ on:
       - ".github/workflows/ozon-semantic-analysis-2026-09-12.yml"
       - "продажи/статистика/ozon/tools/run_semantic_analysis_full.py.gz.b64.part01"
       - "продажи/статистика/ozon/tools/run_semantic_analysis_full.py.gz.b64.part02"
+      - "продажи/статистика/ozon/tools/patch_semantic_processor_ready_card_evidence_v3.py"
   workflow_dispatch:
 
 permissions:
@@ -29,7 +30,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Rebuild and verify processor
+      - name: Rebuild, patch, and verify processor
         shell: bash
         run: |
           set -euo pipefail
@@ -37,10 +38,15 @@ jobs:
             "продажи/статистика/ozon/tools/run_semantic_analysis_full.py.gz.b64.part01" \
             "продажи/статистика/ozon/tools/run_semantic_analysis_full.py.gz.b64.part02" \
             | base64 -d | gzip -d > /tmp/run_semantic_analysis_full.py
-          ACTUAL_SHA="$(sha256sum /tmp/run_semantic_analysis_full.py | cut -d' ' -f1)"
-          EXPECTED_SHA="a0a42af85f6624e0047b49156b8b7759703ca9cc4bde48a4544bce6e1848b5c5"
-          echo "processor_sha256=${ACTUAL_SHA}"
-          test "${ACTUAL_SHA}" = "${EXPECTED_SHA}"
+          BASE_SHA="$(sha256sum /tmp/run_semantic_analysis_full.py | cut -d' ' -f1)"
+          EXPECTED_BASE_SHA="a0a42af85f6624e0047b49156b8b7759703ca9cc4bde48a4544bce6e1848b5c5"
+          echo "base_processor_sha256=${BASE_SHA}"
+          test "${BASE_SHA}" = "${EXPECTED_BASE_SHA}"
+          python "продажи/статистика/ozon/tools/patch_semantic_processor_ready_card_evidence_v3.py"
+          PATCHED_SHA="$(sha256sum /tmp/run_semantic_analysis_full.py | cut -d' ' -f1)"
+          EXPECTED_PATCHED_SHA="6f0a24fb60ab47dce35589003cc64212d656d2cd746ce56c5bad3a49eb093685"
+          echo "patched_processor_sha256=${PATCHED_SHA}"
+          test "${PATCHED_SHA}" = "${EXPECTED_PATCHED_SHA}"
           python -m py_compile /tmp/run_semantic_analysis_full.py
 
       - name: Run full-volume Phase B-L analysis
