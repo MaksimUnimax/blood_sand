@@ -1,4 +1,5 @@
 name: Ozon attachment status close browser diagnostic
+# recovery fixture includes mandatory attachment_watch_v1 mode
 on:
   push:
     branches: [repair/ozon-report-file-expiry-2026-09-12]
