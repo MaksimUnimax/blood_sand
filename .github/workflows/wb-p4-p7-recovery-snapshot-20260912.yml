@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: cac314e4e2deeec38dd1d4806dbb7fddf03ab9e6
+          ref: 17cfde800789699d8851a8e13130942a7bed2a74
           path: wb_saved
           persist-credentials: false
           sparse-checkout: tooling/llm-api-bridges/wildberries
@@ -45,7 +45,7 @@ jobs:
                   shutil.copyfile(p,dest)
           (out/'OZON_ALL_PATHS.json').write_text(json.dumps(entries,indent=2),encoding='utf-8')
           manifest={str(p.relative_to(out)):{'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(out.rglob('*')) if p.is_file()}
-          (out/'SNAPSHOT_MANIFEST.json').write_text(json.dumps({'wb_ref':'cac314e4e2deeec38dd1d4806dbb7fddf03ab9e6','ozon_ref':'97f1abc0ecaa04c6e24d0c32f8525b126b05d0e1','scope':'COPY_SAVED_BYTES_ONLY_NOT_REBUILT_NOT_TESTED_NO_MARKETPLACE_CALLS','files':manifest},indent=2),encoding='utf-8')
+          (out/'SNAPSHOT_MANIFEST.json').write_text(json.dumps({'wb_ref':'17cfde800789699d8851a8e13130942a7bed2a74','ozon_ref':'97f1abc0ecaa04c6e24d0c32f8525b126b05d0e1','scope':'COPY_SAVED_BYTES_ONLY_NOT_REBUILT_NOT_TESTED_NO_MARKETPLACE_CALLS','files':manifest},indent=2),encoding='utf-8')
           print(json.dumps({'files':len(manifest),'bytes':sum(x['bytes'] for x in manifest.values()),'marketplace_calls':0}))
           PY
       - uses: actions/upload-artifact@v4
