@@ -11,6 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: 0aa8f53528e304a91530f663060445e85e2af60b
           fetch-depth: 1
       - name: Export pinned source, rules and regression harnesses
         shell: python
