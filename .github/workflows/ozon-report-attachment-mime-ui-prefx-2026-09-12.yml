@@ -1,0 +1,42 @@
+name: Ozon report attachment MIME UI pre-fix RED
+on:
+  push:
+    branches: [repair/ozon-report-file-expiry-2026-09-12]
+    paths: [.github/workflows/ozon-report-attachment-mime-ui-prefx-2026-09-12.yml]
+permissions:
+  contents: read
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.12.0
+      - name: Confirm old exact production fails both new regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='tooling/llm-api-bridges/ozon-seller'
+          GATE="$ROOT/validation/report-file-attachment-mime-ui-v1"
+          OLD='3f543bde2f8b4c0a561ecb50aeba111ff108751a'
+          rm -rf "$RUNNER_TEMP/old-ext"
+          mkdir -p "$RUNNER_TEMP/old-ext"
+          git archive "$OLD:$ROOT/dist-step7-candidate" | tar -x -C "$RUNNER_TEMP/old-ext"
+          set +e
+          node "$GATE/run_report_attachment_type_gate.mjs" "$RUNNER_TEMP/old-ext" > "$RUNNER_TEMP/type-red.log" 2>&1
+          type_rc=$?
+          node "$GATE/run_status_plate_close_gate.mjs" "$RUNNER_TEMP/old-ext" > "$RUNNER_TEMP/ui-red.log" 2>&1
+          ui_rc=$?
+          set -e
+          cat "$RUNNER_TEMP/type-red.log"
+          cat "$RUNNER_TEMP/ui-red.log"
+          test "$type_rc" -ne 0
+          test "$ui_rc" -ne 0
+          grep -q 'opaque XLSX must not be stored as .bin' "$RUNNER_TEMP/type-red.log"
+          grep -q 'attachment status must use one central constructor' "$RUNNER_TEMP/ui-red.log"
+          echo REPORT_ATTACHMENT_MIME_PREFX_RED_PASS
+          echo STATUS_PLATE_CLOSE_PREFX_RED_PASS
+          echo PROVIDER_CALLS_DURING_GATE=0
