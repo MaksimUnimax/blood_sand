@@ -1,0 +1,28 @@
+{
+  "block_id": "B06",
+  "part": 2,
+  "rows": [
+    {"sku":"2186848313","query":"кулон мужской рыбы","decision":"REJECT","reason_code":"USE_CASE_OR_PRODUCT_TYPE_MISMATCH"},
+    {"sku":"2186848313","query":"четки для знака зодиака рыбы","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2186850644","query":"игрушка в машину овен","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186850644","query":"оберег в кошелек овен","decision":"REJECT","reason_code":"USE_CASE_MISMATCH"},
+    {"sku":"2186852750","query":"брелок талисман козерог","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186852750","query":"декоративный элемент козерог","decision":"REJECT","reason_code":"TOO_BROAD_NO_CHANGE"},
+    {"sku":"2186852750","query":"зназодиака козерог","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2186852750","query":"картины со знаком зодиака козерог","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186852750","query":"козерог на боковые зеркало","decision":"REJECT","reason_code":"PLACEMENT_OR_PRODUCT_MISMATCH"},
+    {"sku":"2186852750","query":"козерог на зеркало фх","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2186852750","query":"козерог подвеска мериада","decision":"REJECT","reason_code":"OTHER_BRAND_OR_VARIANT"},
+    {"sku":"2186852750","query":"оберег на руку мужской козерог","decision":"REJECT","reason_code":"USE_CASE_MISMATCH"},
+    {"sku":"2186852750","query":"оникс козерог","decision":"REJECT","reason_code":"MATERIAL_MISMATCH"},
+    {"sku":"2186852750","query":"подвеска козерог карабин","decision":"REJECT","reason_code":"HARDWARE_VARIANT_MISMATCH"},
+    {"sku":"2186852750","query":"тарелка козерог","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186856503","query":"близнецы бусина","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186856503","query":"близнецы оберег на машину на стекло из метала","decision":"REJECT","reason_code":"MATERIAL_AND_PLACEMENT_MISMATCH"},
+    {"sku":"2186856503","query":"близнецы одежда","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186857668","query":"94049007 подвеска лев","decision":"REJECT","reason_code":"OTHER_ENTITY_OR_NUMERIC_IDENTIFIER"},
+    {"sku":"2186857668","query":"бусина лев знак зодиака оберег","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186857668","query":"висюльки для авто на зеркало знак зодиака лев","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2186857668","query":"знак зодиака лев муж","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"}
+  ]
+}
