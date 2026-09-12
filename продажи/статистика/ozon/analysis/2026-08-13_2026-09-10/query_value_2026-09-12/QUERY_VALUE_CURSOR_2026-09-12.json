@@ -1,0 +1,36 @@
+{
+  "date": "2026-09-12",
+  "status": "IN_PROGRESS__QV4A_PROVIDER_BLOCK_READY",
+  "completed_blocks": ["QV1", "QV2", "QV3"],
+  "current_block": "QV4A",
+  "qv1": {
+    "status": "COMPLETE__REMOTE_PERSISTED",
+    "monetized_sku_query_pairs": 162,
+    "unique_monetized_phrases": 146,
+    "skus_with_monetized_evidence": 50,
+    "attributed_gmv_rub": 131393.07
+  },
+  "qv2": {
+    "status": "COMPLETE__REMOTE_PERSISTED",
+    "exact_phrase_clicks_possible_from_phrase_report": true,
+    "exact_phrase_spend_exposed": false,
+    "exact_phrase_orders_exposed": false,
+    "exact_phrase_sales_exposed": false,
+    "bridge_phrase_report_generation_exposed": false,
+    "bridge_existing_report_list_download_exposed": true
+  },
+  "qv3": {
+    "status": "COMPLETE__REMOTE_PERSISTED",
+    "primary_semantic_source": "independent marketplace search query universe",
+    "own_sku_queries_role": "secondary monetary and visibility evidence"
+  },
+  "qv4a": {
+    "status": "PROVIDER_BLOCK_READY__AWAITING_RESULTS",
+    "seed_count": 8,
+    "sorts_per_seed": 2,
+    "planned_provider_reads": 16,
+    "hidden_pagination": false,
+    "automatic_retry": false
+  },
+  "next_after_qv4a": "Persist raw responses before QV4B; build named-entity completion only for uncovered motifs."
+}
