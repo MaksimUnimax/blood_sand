@@ -1,4 +1,4 @@
-# Ozon manual semantic review — checkpoint after block 06
+# Ozon manual semantic review — checkpoint after block 07
 
 Date: 2026-09-12
 
@@ -6,24 +6,24 @@ Date: 2026-09-12
 
 - total READY candidates: 321
 - total READY SKUs: 63
-- completed blocks: B01–B06
-- reviewed candidates: 232 / 321
-- reviewed SKUs: 48 / 63
+- completed blocks: B01–B07
+- reviewed candidates: 283 / 321
+- reviewed SKUs: 56 / 63
 - cumulative APPROVE: 0
-- cumulative REJECT: 223
+- cumulative REJECT: 274
 - cumulative HOLD: 9
 
-## Block 06
+## Block 07
 
-- rows reviewed: 45
+- rows reviewed: 51
 - APPROVE: 0
-- REJECT: 45
+- REJECT: 51
 - HOLD: 0
 
-Block 06 was dominated by zodiac-sign token matches against unrelated product forms. Exact automotive intents already present in current titles/descriptions were treated as no-change. Material, placement, hardware and other-brand/variant modifiers were rejected rather than copied into the cards.
+The block covered Virgo, Leo, Gemini, Libra, Aquarius, Capricorn and Aries variants. All machine READY rows were rejected as actual card changes because they were either another product form/use/material/brand/placement, or the exact useful automotive intent was already explicitly covered by the current card. High observed demand alone was not allowed to override product identity.
 
 No card mutation and no provider call was performed.
 
 ## Continuation
 
-Next block: B07. Resume from `MANUAL_REVIEW_CURSOR_2026-09-12.json`.
+Next block: B08 (final block). Resume from `MANUAL_REVIEW_CURSOR_2026-09-12.json`.
