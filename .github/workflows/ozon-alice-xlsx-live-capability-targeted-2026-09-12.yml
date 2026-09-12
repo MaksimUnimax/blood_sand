@@ -1,0 +1,57 @@
+name: Ozon Alice XLSX live capability targeted gate
+run-name: Ozon Alice XLSX targeted · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-alice-xlsx-live-capability-2026-09-12]
+    paths:
+      - '.github/workflows/ozon-alice-xlsx-live-capability-targeted-2026-09-12.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PATCH_BRANCH: repair/ozon-alice-xlsx-live-capability-2026-09-12
+  ROOT: tooling/llm-api-bridges/ozon-seller
+  DIST: tooling/llm-api-bridges/ozon-seller/dist-step7-candidate
+  OLD_PROVIDER_GATE: tooling/llm-api-bridges/ozon-seller/validation/alice-original-provider-runtime-capability-v1
+  BASELINE_SHA: 1b3f0961ff9399430c9e5b3b70a4188f1282429d
+  EXACT_EXECUTABLE_SHA: ee80e80443ac10f733cdd58884cfd2dbf12bbefb
+  EXACT_EXECUTABLE_TREE: 59eda6bee8694603dfc2984a3fafe73175343a08
+
+jobs:
+  targeted:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.12.0'}
+      - name: Exact scope and Alice XLSX regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$PATCH_BRANCH"
+          test "$(git show -s --format=%T "$EXACT_EXECUTABLE_SHA")" = "$EXACT_EXECUTABLE_TREE"
+          git merge-base --is-ancestor "$EXACT_EXECUTABLE_SHA" HEAD
+          test -z "$(git diff --name-only "$EXACT_EXECUTABLE_SHA"..HEAD -- "$DIST")"
+          mapfile -t changed < <(git diff --name-only "$BASELINE_SHA" "$EXACT_EXECUTABLE_SHA" -- "$DIST")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$DIST/shared/ai_delivery_capabilities.js"
+          git diff --check
+          node --check "$DIST/shared/ai_delivery_capabilities.js"
+          node "$ROOT/validation/regression/run_alice_xlsx_live_capability_gate.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_adapter_gate_policy.mjs"
+          node "$OLD_PROVIDER_GATE/run_postfix_original_provider_runtime_capability.mjs" .
+          node "$OLD_PROVIDER_GATE/run_secondary_dependency_sweep.mjs" .
+          node "$ROOT/validation/alice-drag-drop-v1/run_alice_drag_drop_runtime_gate.mjs" . "$DIST"
+          node "$ROOT/validation/regression/run_file_delivery_capture_accounting.mjs"
+          node "$ROOT/validation/regression/run_file_delivery_port_worker_state_machine.mjs"
+          node "$ROOT/validation/llm-output-report-workflow-v1/run_output_contract_gate.mjs" .
+          node "$ROOT/validation/llm-output-report-workflow-v1/run_secondary_dependency_sweep.mjs" .
+          git diff -U0 "$BASELINE_SHA" "$EXACT_EXECUTABLE_SHA" -- "$DIST" | grep '^+' | grep -v '^+++' > "$RUNNER_TEMP/added_production_lines.txt" || true
+          ! grep -E '(fetch\(|XMLHttpRequest|report_file_get|OZON_API_V1)' "$RUNNER_TEMP/added_production_lines.txt"
+          ! grep -Ei '(retry|refetch|resend|paginate|pagination|fan.?out)[[:space:]]*\(' "$RUNNER_TEMP/added_production_lines.txt"
+          echo provider_calls_during_patch_gate=0
+          echo ALICE_XLSX_TARGETED_GATE=PASS
