@@ -1,0 +1,32 @@
+{
+  "date":"2026-09-12",
+  "stage":"EXACT_WIP_RESTORED__P4_START_SOURCE_AUDIT",
+  "wb_base_ref":"3a9085b0f87f3b65ae51fed4b9cefd9d7dc65ae7",
+  "wb_current_source_sha256":{
+    "popup.html":"e1f638d5fb09c62b78250bb7ba100548e80edf51b804e782bcb4aaccc4fa5867",
+    "popup.css":"0ed99ad9d50ce8339f9bbe081906884557ac8bf4be6bbef389546ab9beea1872",
+    "popup.js":"937733bda7ef6e75b5e90fa25f34cce218dc3cb07eb9b731f469874f29bee3a9",
+    "service_worker.js":"f93ffd9250f49e8146091e7c8a6e6d2b119485c21f5bbcd7ad4bb3012f44c46c",
+    "shared/runtime_worker.js":"220f1a08a9c6e33f9153b20a67fc1f21dee41a4c3b9d395b63d6559417fc69fb",
+    "content_script.js":"f83056a6ff604a3315822c7d0da69df0b15f5bf34ab0f5060e1ecd5236e9759b"
+  },
+  "restore_result":"ALL_SIX_TARGET_HASHES_MATCH_CURSOR_V9",
+  "restore_order":["original WB021","INITIAL_ERRORS.patch (before/after hashes)","P1_SURFACE.patch (exact pre-popup hashes)","verified popup capsule_restore.py (before/after hashes)"],
+  "new_runtime_changes":0,
+  "new_product_tests":0,
+  "marketplace_calls":0,
+  "snapshot_run":34687226585,
+  "snapshot_artifact":10295908178,
+  "snapshot_sha256":"841b14f9b1ce9ee916e5f7de59713d6f95d84029715a57e45546f9f0880ecde6",
+  "ozon_reference_artifact":10289311013,
+  "ozon_reference_run":34665593546,
+  "ozon_outer_archive_sha256":"f712fbfcbf5ddf5aa2c39b18b750bedf3518cc7c6d438e4c7e26cbda9c2e85c0",
+  "ozon_expected_inner_sha256":"78ff3b6681759a308e8aac1debfb8832fa04cc28599859a0979341cce3e4e2ac",
+  "ozon_expected_executable_ref":"1b3f0961ff9399430c9e5b3b70a4188f1282429d",
+  "ozon_live_certification":"PENDING_IN_SOURCE_BUILDINFO_NOT_PROMOTED_TO_LIVE_PASS",
+  "reading":{"superseding_authority":"FULL","P1_POPUP_WORK_CHECKPOINT":"FULL","P4_START_ENTRY_CHECKPOINT":"FULL","patch_gate":"read output omitted middle 100-220; read this range next","development_workflow":"remote output truncated; use checked local file next"},
+  "local_root":"/mnt/data/wb_parity_corrective_2026-09-12",
+  "next_action":"Extract and verify inner Ozon package; finish reading patch gate/workflow; read actual Ozon pending-work-start model and handlers, map WB producers/consumers, persist causal comparison and RED tests before production change.",
+  "release":false,
+  "installed_acceptance":"NOT_RUN"
+}
