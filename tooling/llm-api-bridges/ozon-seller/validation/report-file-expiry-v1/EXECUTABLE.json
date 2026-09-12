@@ -1,0 +1,8 @@
+{
+  "executable": "3f543bde2f8b4c0a561ecb50aeba111ff108751a",
+  "tree": "eac9f8849e2b73dcee6e6cc5b795e879a481ee9f",
+  "baseline": "0cc968ee4b76d41e9c0361a905812fe49f313585",
+  "targeted_ci_run": "34687308933",
+  "provider_calls": 0,
+  "status": "CODE_FIXED_TARGETED_GREEN_NOT_FINAL_HANDOFF"
+}
