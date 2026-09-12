@@ -1,0 +1,222 @@
+{
+  "phase": "linux",
+  "workflow_head": "fb3464e59ee2bbd72dff5d8d923aee857f1dfd0a",
+  "run_id": "34698614059",
+  "provider_calls": 0,
+  "executable": "9bf80af6fc5b1ce67a1a41baf5e0c599d5b874cc",
+  "tree": "ee7e58b2462a842d910dcdb75c0bcd8bac4af36d",
+  "prematerialization_run": "34698453048",
+  "base": "06ec1af2a1d90e2ff192e749b5bf90129963dd05",
+  "package": "OZON_BRIDGE_v0.1.19_ALICE_SINGLE_FILE_20260912.zip",
+  "bytes": 268802,
+  "sha256": "512dedb8807761a33d395ff971103e04af99d7b13be4356ed419297856fe008d",
+  "production_files": 32,
+  "changed_files": 6,
+  "unchanged_files": 26,
+  "git_blob_byte_parity": "PASS",
+  "fresh_zip_extraction": "PASS",
+  "branch": "repair/ozon-alice-single-file-delivery-2026-09-12",
+  "final_run": "34698614059",
+  "phase_results": {
+    "linux": "PASS",
+    "browser": "PASS",
+    "windows": "PASS"
+  },
+  "new_behavioral_cases": 56,
+  "new_mutation_controls": 10,
+  "documented_dependency_paths": 24,
+  "gates": {
+    "GATE-01": {
+      "status": "PASS",
+      "requirement": "Прямое разрешение",
+      "evidence": "current user authorization; frozen plan"
+    },
+    "GATE-02": {
+      "status": "PASS",
+      "requirement": "Замороженные дефекты и контроль",
+      "evidence": "3 expected behavioral RED; historical Alice failed batch and ChatGPT two-file live control"
+    },
+    "GATE-03": {
+      "status": "PASS",
+      "requirement": "Точный scope",
+      "evidence": "6 allowed production files/26 byte-identical, explicit extra-file negative"
+    },
+    "GATE-04": {
+      "status": "PASS",
+      "requirement": "Нет скрытых изменений",
+      "evidence": "separate repair branch, no force/reset, immutable source checks"
+    },
+    "GATE-05": {
+      "status": "PASS",
+      "requirement": "Полная ошибочная цепочка",
+      "evidence": "actual parser/worker queue/claim/Port tests; no provider shortcuts"
+    },
+    "GATE-06": {
+      "status": "PASS",
+      "requirement": "Вторичные причины проверены",
+      "evidence": "direct PDF lifecycle, oversized text, failed persistence, local subtype, prefix and TTL"
+    },
+    "GATE-07": {
+      "status": "PASS",
+      "requirement": "Реестр зависимостей",
+      "evidence": "24 documented paths plus machine consumer inventory in all platforms"
+    },
+    "GATE-08": {
+      "status": "PASS",
+      "requirement": "Каждый путь и срок проверены",
+      "evidence": "producer/consumer/storage/output/tests mapping; protected functions byte parity"
+    },
+    "GATE-09": {
+      "status": "PASS",
+      "requirement": "Архитектурные инварианты",
+      "evidence": "existing queue kinds, existing DB, existing sender validation and delivery engine"
+    },
+    "GATE-10": {
+      "status": "PASS",
+      "requirement": "Внешний лимит не отключён",
+      "evidence": "Alice profile unchanged1; ChatGPT branch preserved"
+    },
+    "GATE-11": {
+      "status": "PASS",
+      "requirement": "Состояние между командами",
+      "evidence": "durable completed queue and scoped retained TXT; intentional last-resort limitation disclosed"
+    },
+    "GATE-12": {
+      "status": "PASS",
+      "requirement": "Пересоздание worker",
+      "evidence": "deterministic queue recreation and actual Chrome stopWorker/new target"
+    },
+    "GATE-13": {
+      "status": "PASS",
+      "requirement": "Не только same-instance",
+      "evidence": "fresh-runtime cases plus actual MV3 restart"
+    },
+    "GATE-14": {
+      "status": "PASS",
+      "requirement": "Свежие refs и состояние",
+      "evidence": "synthetic newly generated refs; no customer requery"
+    },
+    "GATE-15": {
+      "status": "PASS",
+      "requirement": "Отрицательные проверки после restart",
+      "evidence": "missing/stale local refs, wrong scope, corrupt URL state; no provider fallback"
+    },
+    "GATE-16": {
+      "status": "PASS",
+      "requirement": "Браузерные границы",
+      "evidence": "real Chrome Port/IDB/worker plus existing adapter/DnD/Send fixtures"
+    },
+    "GATE-17": {
+      "status": "PASS",
+      "requirement": "Manifest и hosts",
+      "evidence": "exact unchanged manifest and trusted transport modules"
+    },
+    "GATE-18": {
+      "status": "PASS",
+      "requirement": "Точный устанавливаемый ZIP",
+      "evidence": "Git blob byte parity; identical SHA Linux/browser/Windows"
+    },
+    "GATE-19": {
+      "status": "PASS",
+      "requirement": "Нет устаревших package proofs",
+      "evidence": "final immutable executable; fresh extraction on each platform"
+    },
+    "GATE-20": {
+      "status": "PASS",
+      "requirement": "Сохранение команд",
+      "evidence": "exact deferred command and fingerprints; no made-up opaque values"
+    },
+    "GATE-21": {
+      "status": "PASS",
+      "requirement": "Правдивый accounting",
+      "evidence": "local HTTP0/externalfalse; genuine provider successes only; complete=false for deferred"
+    },
+    "GATE-22": {
+      "status": "PASS",
+      "requirement": "Нет скрытых повторов",
+      "evidence": "zero live provider calls; mock request counts; no postcommit resend"
+    },
+    "GATE-23": {
+      "status": "PASS",
+      "requirement": "Обе стороны ограничений",
+      "evidence": "56 cases plus10 named mutation controls and extra-file mutation"
+    },
+    "GATE-24": {
+      "status": "PASS",
+      "requirement": "Entitlement сохранён",
+      "evidence": "admission after existing privacy/capability rejection; prior entitlement suite"
+    },
+    "GATE-25": {
+      "status": "PASS",
+      "requirement": "Personal-data OFF",
+      "evidence": "first-file block, local retained private ref and current-setting checks"
+    },
+    "GATE-26": {
+      "status": "PASS",
+      "requirement": "Происхождение и scope",
+      "evidence": "original_provider_file vs generated_bridge_text; credentials revision/origin/conversation"
+    },
+    "GATE-27": {
+      "status": "PASS",
+      "requirement": "Semantic redaction",
+      "evidence": "old31 regression chain on Linux and Windows; raw provider text not inserted into receipt"
+    },
+    "GATE-28": {
+      "status": "PASS",
+      "requirement": "Нет leakage",
+      "evidence": "private credentials revision stays internal; URLs/base64 kept out of local receipts"
+    },
+    "GATE-29": {
+      "status": "PASS",
+      "requirement": "SSRF и trusted host",
+      "evidence": "transport/provider/manifest byte-identical and old negative guards"
+    },
+    "GATE-30": {
+      "status": "PASS",
+      "requirement": "Targeted RED/GREEN",
+      "evidence": "3 original defect proofs,56 candidate cases,10 intentional regressions rejected"
+    },
+    "GATE-31": {
+      "status": "PASS",
+      "requirement": "Прежние исправления",
+      "evidence": "all31 scripts,expiry30/consumer33/worker7/HELP39/type/UI and historical negatives"
+    },
+    "GATE-32": {
+      "status": "PASS",
+      "requirement": "Полный workflow",
+      "evidence": "actual queue→local/provider→durable state→Port→confirmation→new local turn"
+    },
+    "GATE-33": {
+      "status": "PASS",
+      "requirement": "Нет stale/catch-all assumptions",
+      "evidence": "local HTTP0 narrow recognition, reserved local subtype cannot fall through, all11 binary routes"
+    },
+    "GATE-34": {
+      "status": "PASS",
+      "requirement": "Read-only safety",
+      "evidence": "no live Ozon requests and no business mutation"
+    },
+    "GATE-35": {
+      "status": "PASS",
+      "requirement": "Один финальный полный цикл",
+      "evidence": "same run Linux→Chrome→Windows→hash validation; all required evidence PASS"
+    }
+  },
+  "live_gates": {
+    "LIVE-GATE-01": "PENDING POST-INSTALL",
+    "LIVE-GATE-02": "PENDING POST-INSTALL",
+    "LIVE-GATE-03": "PENDING POST-INSTALL",
+    "LIVE-GATE-04": "PENDING POST-INSTALL",
+    "LIVE-GATE-05": "PENDING POST-INSTALL"
+  },
+  "pre_handoff": "PASS",
+  "live_certification": "PENDING POST-INSTALL",
+  "automatic_retry_added": false,
+  "automatic_polling_added": false,
+  "automatic_pagination_added": false,
+  "automatic_fanout_added": false,
+  "automatic_refetch_added": false,
+  "automatic_resend_added": false,
+  "retained_complete_text": "explicit local next command; origin/conversation/credential/privacy/hash/TTL scoped",
+  "last_resort_retention": "current-operation only on simultaneous artifact storage + oversized delivery failure; no false downloadable-ref claim"
+}

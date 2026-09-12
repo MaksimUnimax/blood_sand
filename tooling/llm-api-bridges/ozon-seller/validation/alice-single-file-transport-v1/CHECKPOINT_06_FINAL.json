@@ -1,0 +1,10 @@
+{
+  "status": "PRE_HANDOFF_PASS",
+  "executable": "9bf80af6fc5b1ce67a1a41baf5e0c599d5b874cc",
+  "tree": "ee7e58b2462a842d910dcdb75c0bcd8bac4af36d",
+  "package_sha256": "512dedb8807761a33d395ff971103e04af99d7b13be4356ed419297856fe008d",
+  "final_run": "34698614059",
+  "handoff_sha256": "4dc8d1103605f50c9a1b1cec6ddb023d5d701f03b4aa86c7244bc8e35d7caa73",
+  "next": "operator installs exact ZIP; LIVE-GATE-01..05 PENDING POST-INSTALL",
+  "provider_calls": 0
+}

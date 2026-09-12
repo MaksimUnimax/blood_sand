@@ -30,3 +30,6 @@ After another session interruption only notes/evidence survived locally; the sta
 
 ## Prepublication verification complete
 The whole deterministic gate (56 behavioral cases,10 mutations,old31 plus expiry/consumer/worker/HELP/type/UI) and real Chrome Port/IDB/stopWorker/new target/local next-turn delivery passed before this runtime commit. The semantic ordering RED is independently reproduced against frozen stage1. Previous run34697032376 found missing ninth consumer classification;34697266876 caught an incorrect test field name.34697449141/34697638745 caught the unpublished private command-order defect. No failed run was called a ready build. Final exact-package Linux/Chrome/Windows cycle remains mandatory.
+
+## Final immutable-package cycle
+Run 34698614059 executes Linux → Chrome → Windows on one installable ZIP. Finalize validates all summary identities and log hashes before issuing PRE-HANDOFF. LIVE remains PENDING POST-INSTALL. Historical malformed workflow ozon-alice-large-result-delivery-v1-2026-09-10.yml remains outside this scope; its executable regressions are included in the successful current suite, not silently removed.
