@@ -1,4 +1,5 @@
 name: Ozon report XLSX Alice UI final pre-handoff
+# Full rerun after real Chrome close-control diagnostic 34690389836 PASS.
 on:
   push:
     branches: [repair/ozon-report-file-expiry-2026-09-12]
