@@ -31,7 +31,7 @@ assert 'const ARTIFACT_TTL_MS = 60 * 60 * 1000;' in (root/'shared/file_delivery_
 # first failure, restart and exact deferrals); unexpected consumers still fail above.
 policy=(root/'shared/file_delivery_model_policy.js').read_text(encoding='utf-8')
 assert 'function completedFileAcquisitionKey' in policy and 'function fileBudgetDecision' in policy
-assert 'generated_file_ref' in policy and 'report_file_refs' in policy
+assert 'generated_file_ref' in policy and 'provider_file_refs' in policy
 assert not re.search(r'\bfetch\s*\(|registerReportFile\s*\(',policy)
 output.parent.mkdir(parents=True,exist_ok=True)
 output.write_text(json.dumps({'status':'PASS','classified_consumer_files':9,'unclassified_consumer_files':0,'files':found},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
