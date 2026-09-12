@@ -1,5 +1,5 @@
 name: Ozon report attachment MIME UI materialization v2
-# rerun after stale-regression-authority-fix.patch hunk-count correction
+# regression baseline: accepted HELP_V2 executable for protected legacy delivery files
 on:
   push:
     branches: [repair/ozon-report-file-expiry-2026-09-12]
@@ -12,6 +12,8 @@ concurrency:
 jobs:
   materialize:
     runs-on: ubuntu-latest
+    env:
+      OZON_FILE_DELIVERY_BASE_SHA: 0cc968ee4b76d41e9c0361a905812fe49f313585
     steps:
       - uses: actions/checkout@v4
         with:
