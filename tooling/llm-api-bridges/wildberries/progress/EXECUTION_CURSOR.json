@@ -39,8 +39,30 @@
     "HELP V2/guidance contract absent",
     "file delivery primitives exist but mature transaction parity is incomplete"
   ],
-  "next_action": "Implement one provider-neutral corrective parity patch from SUPERSEDING_PATCH_AUTHORITY_2026-09-12.md. Do not run additional WB post-install tests or any R1-R8 WB provider calls until that patch is built, offline-differentially tested, installed, and accepted.",
+  "next_action": "Resume from the verified interrupted-audit checkpoint. First read SUPERSEDING_PATCH_AUTHORITY_2026-09-12.md in full and the popup-related WB021_PARITY_GAPS section, verify patch rules and exact Ozon/WB source refs, then persist the causal comparison before editing code. Continue the already-authorized provider-neutral corrective parity patch. Do not restart the 171-branch inventory or claim every historical diff/MD was fully read. Do not run additional WB post-install tests or any R1-R8 WB provider calls until the corrective patch satisfies the existing build, differential-test, installation and acceptance gates.",
   "real_wb_requests_in_parity_rework": 0,
   "business_mutations": 0,
-  "persistence": "Keep WB021 source/evidence unchanged as baseline; preserve wrong historical PASS classifications and add explicit corrections rather than deleting history."
+  "persistence": "Keep WB021 source/evidence unchanged as baseline; preserve wrong historical PASS classifications and add explicit corrections rather than deleting history.",
+  "latest_work_checkpoint": "parity_reaudit/CHECKPOINT_2026-09-12_INTERRUPTED_AUDIT.md",
+  "latest_work_checkpoint_commit": "c20d162e4179ed6e605a7bce560b9a6cb28c157c",
+  "latest_work_checkpoint_blob": "429804dcd082dac1ee7a30264e2dd337775851af",
+  "latest_work_checkpoint_readback": "PASS",
+  "checkpoint_recovery_source_head": "589d7c71fd9ade6e519d5ae032c835914e705047",
+  "recovered_summary_log_commit": "28ab7255b276c8c31f37d0fe3e46b1b755862057",
+  "checkpoint_scope": "DOCUMENTATION_AND_PROGRESS_PERSISTENCE_ONLY__NO_NEW_RUNTIME_PATCH_OR_TEST_RUN",
+  "progress_checkpoint_policy": {
+    "authority": "README.md#дополнение-2026-09-12--фиксация-во-время-работы",
+    "after_each_semantic_block": true,
+    "after_each_discovered_defect": true,
+    "after_each_bounded_test_group": true,
+    "before_long_action_or_run_end": true,
+    "max_substantive_read_search_calls_without_checkpoint": 5,
+    "partial_reads_require_path_ref_and_line_cursor": true,
+    "preserve_actual_source_diff_runner_and_test_output": true,
+    "stream_test_results_with_flush_fsync": true,
+    "remote_readback_required": true,
+    "unknown_write_outcome": "READ_REMOTE_BEFORE_RETRY",
+    "historical_log_policy": "APPEND_ONLY__RECOVERED_SUMMARIES_SEPARATE_FROM_NEW_EXECUTION",
+    "force_push": false
+  }
 }
