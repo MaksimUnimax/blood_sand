@@ -44,6 +44,8 @@ jobs:
           git apply "$GATE/combined-production-scope-authority.patch"
           git apply --check "$GATE/prior-idle-v2-authority.patch"
           git apply "$GATE/prior-idle-v2-authority.patch"
+          git apply --check "$GATE/idb-report-artifact-dataflow-authority.patch"
+          git apply "$GATE/idb-report-artifact-dataflow-authority.patch"
           python - <<'PY'
           from pathlib import Path
           import base64,gzip,hashlib
@@ -58,6 +60,7 @@ jobs:
           grep -Fn 'data-ozon-attachment-status-close' "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js"
           grep -Fn "'shared/file_delivery_port_worker.js'" "$ROOT/validation/report-file-expiry-v1/run_suite.py"
           grep -Fn "run_attachment_idle_behavior_v2.mjs" "$ROOT/validation/report-file-expiry-v1/run_prior_regressions.py"
+          grep -Fn 'canonicalProviderArtifactType' "$ROOT/validation/indexeddb-transaction-durability-v1/run_secondary_dependency_sweep.mjs"
       - name: Run combined target gates and prove fifth-file scope rejection
         shell: bash
         run: |
@@ -105,9 +108,10 @@ jobs:
                   "$ROOT/dist-step7-candidate/attachment_delivery_port_content.js" \
                   "$ROOT/validation/regression/run_multi_ai_file_delivery_patch.mjs" \
                   "$ROOT/validation/report-file-expiry-v1/run_suite.py" \
-                  "$ROOT/validation/report-file-expiry-v1/run_prior_regressions.py"
+                  "$ROOT/validation/report-file-expiry-v1/run_prior_regressions.py" \
+                  "$ROOT/validation/indexeddb-transaction-durability-v1/run_secondary_dependency_sweep.mjs"
           git diff --cached --check
-          test "$(git diff --cached --name-only | wc -l)" -eq 5
+          test "$(git diff --cached --name-only | wc -l)" -eq 6
           test -z "$(git diff --name-only -- "$ROOT/dist-step7-candidate" | grep -v -E '^(tooling/llm-api-bridges/ozon-seller/dist-step7-candidate/(shared/file_delivery_port_worker.js|attachment_delivery_port_content.js))$' || true)"
           git commit -m 'fix(ozon): preserve report XLSX type and make attachment status closable'
           git push origin HEAD:refs/heads/repair/ozon-report-file-expiry-2026-09-12
