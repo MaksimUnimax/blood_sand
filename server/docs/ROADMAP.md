@@ -238,7 +238,7 @@ P7 execution decomposition (frozen by ADR-0031):
 - P7.3 [DONE / REMOTE ACCEPTED] bootstrap AI resolution, signed wire contract, and simulated-client automatic selection.
 - P7.4 [DONE / REMOTE ACCEPTED] admin API and P7 RBAC permissions; the post-acceptance contract correction is remotely accepted.
 - P7.5 [DONE / REMOTE ACCEPTED] admin portal AI adapter/profile operations UX.
-- P7.6 [PLANNED] P7 security, architecture, full regression, and final acceptance.
+- P7.6 [ACTIVE / LOCAL PASS / REMOTE ACCEPTANCE PENDING] P7 security, architecture, full regression, and final acceptance.
 
 ## P8 — AI Compatibility Health v1 `[PLANNED]`
 
@@ -452,7 +452,7 @@ Architecture remains:
 - P7.3 [DONE / REMOTE ACCEPTED].
 - P7.4 [DONE / REMOTE ACCEPTED — post-acceptance correction remotely accepted].
 - P7.5 [DONE / REMOTE ACCEPTED].
-- P7.6 [PLANNED].
+- P7.6 [ACTIVE / LOCAL PASS / REMOTE ACCEPTANCE PENDING].
 
 # Parallel Bridge rule
 
