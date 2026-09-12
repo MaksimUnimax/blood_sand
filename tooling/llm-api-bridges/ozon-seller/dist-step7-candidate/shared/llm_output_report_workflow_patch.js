@@ -164,6 +164,27 @@
       return Object.freeze({ source_result_index: resultIndex, source_operation: operation, kind: "generated_document", state: "file_downloaded", next_command: null, automatic_continuation: false });
     }
 
+    // The provider supplies a safe absolute deadline, not a signed URL. Recheck
+    // when formatting delivery: a queued result can outlive its download window.
+    // Already downloaded inline bytes above have a separate artifact lifetime.
+    const availability = result.file_availability;
+    if (availability !== undefined) {
+      const expiresAt = plain(availability) && typeof availability.expires_at === "string" ? Date.parse(availability.expires_at) : NaN;
+      const invalid = !plain(availability) || availability.state === "invalid_expiry" || !Number.isFinite(expiresAt) || !["ready", "expired"].includes(availability.state);
+      if (invalid || availability.state === "expired" || Date.now() >= expiresAt) {
+        return Object.freeze({
+          source_result_index: resultIndex,
+          source_operation: operation,
+          kind: operation === "report_info" ? "report_download" : "generated_document",
+          state: invalid ? "blocked_invalid_file_expiry" : "blocked_file_expired",
+          reason: invalid ? "REPORT_FILE_EXPIRY_INVALID" : "REPORT_FILE_EXPIRED",
+          next_command: null,
+          recovery: operation === "report_info" ? "new_explicit_report_workflow_required" : "new_explicit_document_resolution_required",
+          automatic_continuation: false
+        });
+      }
+    }
+
     const readyRef = generatedFileRef || reportFileRef;
     if (readyRef) {
       return Object.freeze({

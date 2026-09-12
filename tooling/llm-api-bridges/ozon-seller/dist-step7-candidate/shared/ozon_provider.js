@@ -39,10 +39,58 @@
   const REPORT_FILE_REF_TTL_MS = 30 * 60 * 1000;
   const REPORT_FILE_REF_MAX = 128;
   const REPORT_CODE_POLICY_MAX = 256;
-  const REPORT_SESSION_SCHEMA_VERSION = 1;
+  const REPORT_SESSION_SCHEMA_VERSION = 2;
   const REPORT_SESSION_STATE_KEY = globalThis.OzonRuntime?.STORAGE_KEYS?.REPORT_FILE_SESSION_STATE || "ozmb_report_file_session_state_v1";
   let fallbackReportSessionState = null;
   let reportSessionWriteLock = Promise.resolve();
+
+  // Report URLs, provenance facts and downloaded bytes have different lifetimes.
+  // Ozon Reportinfo: expires_at can be empty for legacy reports; SELLER_RETURNS
+  // links are valid for five minutes after the explicit report_info request.
+  const RETURNS_FILE_URL_TTL_MS = 5 * 60 * 1000;
+
+  function parseReportExpiry(value) {
+    if (value === null || value === undefined || (typeof value === "string" && !value.trim())) {
+      return { valid: true, at_ms: null };
+    }
+    if (typeof value !== "string") return { valid: false, at_ms: null };
+    const text = value.trim();
+    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/i.exec(text);
+    if (!match) return { valid: false, at_ms: null };
+    const [, y, m, d, h, minute, second, zone] = match;
+    const year = Number(y), month = Number(m), day = Number(d);
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    // Date.parse alone silently normalizes invalid calendar dates (e.g. Feb 30).
+    if (month < 1 || month > 12 || day < 1 || day > days[month - 1] || Number(h) > 23 || Number(minute) > 59 || Number(second) > 59) return { valid: false, at_ms: null };
+    if (zone.toUpperCase() !== "Z" && (Number(zone.slice(1, 3)) > 23 || Number(zone.slice(4)) > 59)) return { valid: false, at_ms: null };
+    const at = Date.parse(text);
+    return { valid: Number.isFinite(at), at_ms: Number.isFinite(at) ? at : null };
+  }
+
+  function reportFileLifetime(rawExpiry, reportType, observedAt, registeredAt) {
+    const provider = parseReportExpiry(rawExpiry);
+    if (!provider.valid) return { state: "invalid_expiry", expires_at_ms: null, provider_expires_at_ms: null };
+    let deadline = registeredAt + REPORT_FILE_REF_TTL_MS;
+    if (provider.at_ms !== null) deadline = Math.min(deadline, provider.at_ms);
+    if (String(reportType || "").trim().toUpperCase() === "SELLER_RETURNS") deadline = Math.min(deadline, observedAt + RETURNS_FILE_URL_TTL_MS);
+    return { state: registeredAt >= deadline ? "expired" : "ready", expires_at_ms: deadline, provider_expires_at_ms: provider.at_ms };
+  }
+
+  function fileAvailability(lifetime, currentMs) {
+    return Object.freeze({
+      state: lifetime.state === "invalid_expiry" ? "invalid_expiry" : (currentMs >= lifetime.expires_at_ms ? "expired" : "ready"),
+      expires_at: lifetime.expires_at_ms === null ? null : new Date(lifetime.expires_at_ms).toISOString(),
+      provider_expires_at: lifetime.provider_expires_at_ms === null ? null : new Date(lifetime.provider_expires_at_ms).toISOString()
+    });
+  }
+
+  function reportInfoRecord(payload) {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return {};
+    // These fields must describe the SAME report, never a nested additional_data item.
+    const record = payload.result;
+    return record && typeof record === "object" && !Array.isArray(record) ? record : payload;
+  }
 
   function cloneJson(value) {
     if (value === null || value === undefined) return value;
@@ -85,7 +133,7 @@
 
   function normalizeReportSessionState(raw, currentMs) {
     const current = Number(currentMs);
-    if (!raw || typeof raw !== "object" || Array.isArray(raw) || Number(raw.schema_version) !== REPORT_SESSION_SCHEMA_VERSION) return emptyReportSessionState();
+    if (!raw || typeof raw !== "object" || Array.isArray(raw) || ![1, REPORT_SESSION_SCHEMA_VERSION].includes(raw.schema_version)) return emptyReportSessionState();
     const codePolicies = [];
     const rawCodePolicies = raw.report_code_policies && typeof raw.report_code_policies === "object" && !Array.isArray(raw.report_code_policies) ? raw.report_code_policies : {};
     for (const [rawCode, rawRecord] of Object.entries(rawCodePolicies)) {
@@ -110,8 +158,16 @@
       if (!ref.startsWith(`rpf_${expectedMarker}_`)) continue;
       if (typeof rawRecord.url === "string" && rawRecord.url.trim()) {
         try {
+          // Version 1 did not retain provider expiry. Never bless those URLs with
+          // a new TTL on upgrade; explicit resolution is required. Inline bytes and
+          // still-valid provenance facts are independently migrated below/above.
+          if (raw.schema_version !== REPORT_SESSION_SCHEMA_VERSION) continue;
+          const expiresAt = rawRecord.expires_at_ms;
+          const providerExpiresAt = rawRecord.provider_expires_at_ms;
+          if (!Number.isSafeInteger(expiresAt) || expiresAt <= 0 || expiresAt > createdAt + REPORT_FILE_REF_TTL_MS) continue;
+          if (providerExpiresAt !== null && (!Number.isSafeInteger(providerExpiresAt) || providerExpiresAt <= 0 || expiresAt > providerExpiresAt)) continue;
           const trustedUrl = globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl(rawRecord.url.trim());
-          fileRefs.push([ref, { url: trustedUrl, personal_data_required: personalDataRequired, created_at_ms: createdAt }]);
+          fileRefs.push([ref, { url: trustedUrl, personal_data_required: personalDataRequired, created_at_ms: createdAt, expires_at_ms: expiresAt, provider_expires_at_ms: providerExpiresAt }]);
         } catch (_) {}
         continue;
       }
@@ -201,13 +257,20 @@
       return `rpf_${marker}_${token}`;
     }
 
-    async function registerReportFile(rawUrl, { personalDataRequired = true } = {}) {
+    async function registerReportFile(rawUrl, { personalDataRequired = true, expiresAt = null, reportType = "", observedAt = Number(now()) } = {}) {
       const trustedUrl = globalThis.ProviderTransportCore.normalizeTrustedReportFileUrl(rawUrl);
+      const registeredAt = Number(now());
+      const lifetime = reportFileLifetime(expiresAt, reportType, observedAt, registeredAt);
+      let availability = fileAvailability(lifetime, registeredAt);
+      if (availability.state !== "ready") return { ref: null, availability };
       const ref = createReportFileRef(personalDataRequired);
       await mutateReportSessionState((state) => {
-        state.report_file_refs[ref] = { url: trustedUrl, personal_data_required: personalDataRequired === true, created_at_ms: Number(now()) };
+        // Recheck after asynchronous storage/lock acquisition without extending time.
+        if (Number(now()) >= lifetime.expires_at_ms) return;
+        state.report_file_refs[ref] = { url: trustedUrl, personal_data_required: personalDataRequired === true, created_at_ms: registeredAt, expires_at_ms: lifetime.expires_at_ms, provider_expires_at_ms: lifetime.provider_expires_at_ms };
       });
-      return ref;
+      availability = fileAvailability(lifetime, Number(now()));
+      return { ref: availability.state === "ready" ? ref : null, availability };
     }
 
     function reportFileRefPolicy(ref) {
@@ -236,6 +299,10 @@
         const response = Object.freeze({ httpStatus: 200, ok: true, rawText: "", parsed: Object.freeze({ content_type: record.content_type || "application/pdf", byte_length: bytes.byteLength, ...parsedDocument }), byteLength: bytes.byteLength, elapsedMs: Math.max(0, Number(now()) - started), responseMeta: Object.freeze({ content_type: record.content_type || "application/pdf", content_length: String(bytes.byteLength), request_id: null, retry_after: null }) });
         const request = Object.freeze({ method: "GET", host_alias: "report_file", path: "/__opaque_inline_document__", operation: "report_file_get", response_style: "binary", response_content_types: null, external_request_executed: false });
         return { request, response, auth_request_performed: false };
+      }
+      // Last synchronous check before the single transport call, also after MV3 recreation.
+      if (Number(now()) >= record.expires_at_ms) {
+        throw reportStateError("REPORT_FILE_EXPIRED", "Срок доступа к файлу истёк. Для отчёта создайте новый отчёт отдельной командой; старый file_ref не продлевает ссылку.", { externalRequestExecuted: false });
       }
       const response = await globalThis.ProviderTransportCore.executeTrustedReportFileOnce({ fetchImpl, url: record.url, now, parseOptions: command.params });
       const request = Object.freeze({ method: "GET", host_alias: "report_file", path: "/__opaque_report_file__", operation: "report_file_get", response_style: "binary", response_content_types: null, external_request_executed: true });
@@ -377,6 +444,7 @@
       }
       const preflight = contract.preflightExecution(command);
       const provider = String(preflight.meta.provider || "seller_api");
+      const requestStartedAt = Number(now());
       let execution;
       if (provider === "report_file") execution = await executeReportFileCommand(command);
       else if (provider === "performance_api") execution = await executePerformanceCommand(command, rawPerformanceCredentials);
@@ -419,11 +487,12 @@
           if (typeof rawReportCode === "string") await rememberReportCodePolicy(rawReportCode, command.operation);
         }
         if (command.operation === "report_info") {
-          const rawFile = findFirstField(response.parsed, "file");
-          if (typeof rawFile === "string" && rawFile.trim()) {
+          const report = reportInfoRecord(response.parsed);
+          const rawFile = report.file;
+          if (String(report.status || "").trim().toLowerCase() === "success" && typeof rawFile === "string" && rawFile.trim()) {
             const personalDataRequired = await reportInfoPersonalDataRequired(command);
-            const fileRef = await registerReportFile(rawFile.trim(), { personalDataRequired });
-            result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), report_file_ref: fileRef });
+            const registered = await registerReportFile(rawFile.trim(), { personalDataRequired, expiresAt: report.expires_at, reportType: report.report_type, observedAt: requestStartedAt });
+            result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), ...(registered.ref ? { report_file_ref: registered.ref } : {}), file_availability: registered.availability });
           }
         }
 
@@ -431,8 +500,8 @@
         if (generatedUrlField) {
           const rawGeneratedUrl = findFirstField(response.parsed, generatedUrlField);
           if (typeof rawGeneratedUrl === "string" && rawGeneratedUrl.trim()) {
-            const generatedRef = await registerReportFile(rawGeneratedUrl.trim(), { personalDataRequired: operationRequiresPersonalData(command.operation) });
-            result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), generated_file_ref: generatedRef });
+            const registered = await registerReportFile(rawGeneratedUrl.trim(), { personalDataRequired: operationRequiresPersonalData(command.operation) });
+            result = Object.freeze({ ...(result && typeof result === "object" && !Array.isArray(result) ? result : { result }), ...(registered.ref ? { generated_file_ref: registered.ref } : {}), file_availability: registered.availability });
           }
         }
         if (DIRECT_PDF_OPERATIONS.has(command.operation)) {
