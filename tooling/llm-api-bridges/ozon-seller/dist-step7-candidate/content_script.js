@@ -2066,6 +2066,13 @@
     return Boolean(adapter && section instanceof HTMLElement && adapter.messageComplete(section));
   }
 
+  // Keep both Autorun ingress checks aligned with the ordered API/HELP discovery contract.
+  function autorunCommandMarkerPresent(value) {
+    const text = String(value || "");
+    return [OzonContract.PREFIX, OzonRuntime.RUNTIME.helpPrefix, OzonRuntime.RUNTIME.helpPrefixV2]
+      .some((prefix) => typeof prefix === "string" && prefix.length > 0 && text.includes(prefix));
+  }
+
   function candidateAfterAssistantBaseline(baselineIds, watchId) {
     const adapter = currentAIAdapter();
     if (!adapter) return { waiting: true };
@@ -2079,7 +2086,7 @@
     const assistantTurnId = adapter.messageId(assistant);
     const messageText = assistantMessageText(assistant);
     const complete = assistantTurnComplete(assistant);
-    const hasMarker = messageText.includes(OzonContract.PREFIX) || messageText.includes(OzonRuntime.RUNTIME.helpPrefix);
+    const hasMarker = autorunCommandMarkerPresent(messageText);
     const messageFingerprint = hasMarker ? OzonContract.textFingerprint(messageText) : "";
     return {
       assistant_turn_id: assistantTurnId,
@@ -2129,7 +2136,7 @@
       }
       const latestText = assistantMessageText(latestSection);
       const latestFingerprint = OzonContract.textFingerprint(latestText);
-      if (!(latestText.includes(OzonContract.PREFIX) || latestText.includes(OzonRuntime.RUNTIME.helpPrefix)) || latestFingerprint !== candidate.message_fingerprint) {
+      if (!autorunCommandMarkerPresent(latestText) || latestFingerprint !== candidate.message_fingerprint) {
         autoFirstSeen = null;
         scheduleAutoTick(AUTO_PROMPT_STABILITY_MS);
         return;
