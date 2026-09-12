@@ -1,3 +1,4 @@
+# retrigger: exact Work restart behavioral payload restored at 49a91c47
 name: Ozon global plaque + repeated Work Start materialization gate
 run-name: Ozon targeted materialization · ${{ github.ref_name }} · ${{ github.sha }}
 
