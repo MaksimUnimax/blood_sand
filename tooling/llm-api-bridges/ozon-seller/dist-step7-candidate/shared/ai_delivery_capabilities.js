@@ -33,7 +33,7 @@
       plain_text_max_chars: ALICE_MAX_SAFE_PLAIN_TEXT_UTF16_CODE_UNITS,
       plain_text_length_metric: "utf16_code_units",
       attachments_supported: true,
-      accepted_extensions: Object.freeze(["txt", "pdf", "doc", "docx"]),
+      accepted_extensions: Object.freeze(["txt", "pdf", "doc", "docx", "xlsx"]),
       original_provider_file_type_policy: "runtime_target_verification",
       max_file_bytes: 100 * 1024 * 1024,
       max_files_per_turn: 1,
