@@ -1,0 +1,83 @@
+name: Ozon Work restart staged payload exact recovery
+run-name: Ozon Work gate recovery · ${{ github.ref_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [repair/ozon-global-toast-work-restart-2026-09-11]
+    paths:
+      - '.github/workflows/ozon-work-restart-payload-recovery-2026-09-12.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SOURCE: tooling/llm-api-bridges/ozon-seller/validation/global-toast-work-restart-v1/run_work_restart_extended.mjs.gz.b64
+
+jobs:
+  recover-one-missing-base64-symbol:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recover only if one-symbol insertion uniquely restores a valid gzip JS fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/recovered"
+          python3 - "$SOURCE" "$RUNNER_TEMP/recovered/run_work_restart_extended.mjs" <<'PY'
+          import base64, gzip, hashlib, pathlib, string, sys, time
+          src, out = map(pathlib.Path, sys.argv[1:3])
+          raw = b''.join(src.read_bytes().split())
+          if len(raw) % 4 != 3:
+              raise SystemExit(f'RECOVERY_PRECONDITION_FAIL length={len(raw)} mod4={len(raw)%4}')
+          alphabet = b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+          required = [b'OZ_WORK_START', b'OZ_WORK_FINISH', b'provider fetch forbidden']
+          found = []
+          started = time.time()
+          attempts = 0
+          for pos in range(len(raw) + 1):
+              prefix, suffix = raw[:pos], raw[pos:]
+              for ch in alphabet:
+                  attempts += 1
+                  candidate = prefix + bytes((ch,)) + suffix
+                  try:
+                      compressed = base64.b64decode(candidate, validate=True)
+                      decoded = gzip.decompress(compressed)
+                      decoded.decode('utf-8')
+                  except Exception:
+                      continue
+                  if not all(token in decoded for token in required):
+                      continue
+                  found.append((pos, chr(ch), candidate, compressed, decoded))
+                  print(f'RECOVERY_CANDIDATE pos={pos} char={chr(ch)!r} decoded_bytes={len(decoded)} sha256={hashlib.sha256(decoded).hexdigest()}')
+                  if len(found) > 1:
+                      raise SystemExit('RECOVERY_AMBIGUOUS_MORE_THAN_ONE_VALID_CANDIDATE')
+          elapsed = time.time() - started
+          print(f'RECOVERY_ATTEMPTS={attempts} elapsed_sec={elapsed:.3f}')
+          if len(found) != 1:
+              raise SystemExit(f'RECOVERY_NOT_UNIQUE count={len(found)}')
+          pos, ch, candidate, compressed, decoded = found[0]
+          out.write_bytes(decoded)
+          (out.parent / 'recovered_payload.b64').write_bytes(candidate)
+          meta = '\n'.join([
+              f'missing_position={pos}',
+              f'missing_character={ch}',
+              f'original_chars={len(raw)}',
+              f'recovered_chars={len(candidate)}',
+              f'gzip_bytes={len(compressed)}',
+              f'js_bytes={len(decoded)}',
+              f'js_sha256={hashlib.sha256(decoded).hexdigest()}',
+              f'payload_sha256={hashlib.sha256(candidate).hexdigest()}',
+          ]) + '\n'
+          (out.parent / 'RECOVERY_METADATA.txt').write_text(meta, encoding='utf-8')
+          print(meta, end='')
+          print('WORK_RESTART_STAGED_PAYLOAD_EXACT_RECOVERY=PASS')
+          PY
+          node --check "$RUNNER_TEMP/recovered/run_work_restart_extended.mjs"
+          sed -n '1,80p' "$RUNNER_TEMP/recovered/RECOVERY_METADATA.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-work-restart-exact-recovered-gate
+          path: ${{ runner.temp }}/recovered
+          if-no-files-found: error
+          retention-days: 7
