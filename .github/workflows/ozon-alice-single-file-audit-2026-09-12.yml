@@ -1,0 +1,36 @@
+name: Ozon Alice single-file frozen source audit
+on:
+  push:
+    branches: [repair/ozon-alice-single-file-delivery-2026-09-12]
+    paths: [.github/workflows/ozon-alice-single-file-audit-2026-09-12.yml]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 06ec1af2a1d90e2ff192e749b5bf90129963dd05
+          persist-credentials: false
+      - name: Export exact tracked Ozon sources and rules without provider access
+        shell: bash
+        run: |
+          mkdir -p /tmp/ozon-audit
+          python - <<'PY'
+          import subprocess,pathlib,zipfile,hashlib,json
+          root=pathlib.Path('.'); base='06ec1af2a1d90e2ff192e749b5bf90129963dd05'
+          paths=subprocess.check_output(['git','ls-tree','-r','--name-only',base]).decode().splitlines()
+          paths=[p for p in paths if p.startswith(('tooling/llm-api-bridges/ozon-seller/','.github/workflows/')) or p in ['AGENTS.md','README.md'] or (p.startswith('tooling/llm-api-bridges/') and p.endswith('.md') and ('RULE' in p or 'GATE' in p))]
+          manifest={'base':base,'provider_calls':0,'files':[]}
+          with zipfile.ZipFile('/tmp/ozon-audit/sources.zip','w',zipfile.ZIP_DEFLATED) as z:
+            for p in paths:
+              b=subprocess.check_output(['git','show',base+':'+p]); z.writestr(p,b)
+              manifest['files'].append({'path':p,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'git_blob':hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()})
+          pathlib.Path('/tmp/ozon-audit/manifest.json').write_text(json.dumps(manifest,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ozon-alice-single-file-frozen-sources
+          path: /tmp/ozon-audit/*
+          retention-days: 14
