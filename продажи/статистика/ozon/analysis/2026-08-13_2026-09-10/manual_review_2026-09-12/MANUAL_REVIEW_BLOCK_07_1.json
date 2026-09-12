@@ -1,0 +1,32 @@
+{
+  "block_id": "B07",
+  "part": 1,
+  "rows": [
+    {"sku":"2186865070","query":"брелок в машину знак зодиака дева","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186865070","query":"знак дева обвес на телефон","decision":"REJECT","reason_code":"USE_CASE_MISMATCH"},
+    {"sku":"2186865070","query":"знак зодиака дева прикол","decision":"REJECT","reason_code":"NO_DEFENSIBLE_PRODUCT_CHANGE"},
+    {"sku":"2186865070","query":"кулон дева в машину","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2186865070","query":"майки со знаком зодиака дева","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186865070","query":"оберег для знака дева","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2186865070","query":"оберег для сестры знак зодиака дева","decision":"REJECT","reason_code":"GIFT_SEGMENT_NOT_PRODUCT_FEATURE"},
+    {"sku":"2186865070","query":"подвеска амулет знак зодиака дева с натуральным чароитом","decision":"REJECT","reason_code":"MATERIAL_MISMATCH"},
+    {"sku":"2186865070","query":"подвеска на зеркало автомобиля дева","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2186865070","query":"подушка в машину дева","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2186865070","query":"фигурка в машину дева","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271188511","query":"брелок знаки зодиака лев","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271188511","query":"брелок талисман лев в машину","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271188511","query":"бусина лев знак зодиака оберег","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271188511","query":"висюльки для авто на зеркало знак зодиака лев","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2271188511","query":"знак задиа лев","decision":"REJECT","reason_code":"NO_CHANGE_ALREADY_COVERED"},
+    {"sku":"2271188511","query":"знак зодиака лев мужчина","decision":"REJECT","reason_code":"GENDER_SEGMENT_NOT_PRODUCT_FEATURE"},
+    {"sku":"2271188511","query":"четки для знака зодиака лев мужчине в подарочной упаковке","decision":"REJECT","reason_code":"UNSUPPORTED_PACKAGING_DETAIL"},
+    {"sku":"2271210394","query":"близнецы для рукоделия","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271210394","query":"близнецы мужчина","decision":"REJECT","reason_code":"GENDER_SEGMENT_NOT_PRODUCT_FEATURE"},
+    {"sku":"2271210394","query":"близнецы на лобовое","decision":"REJECT","reason_code":"PLACEMENT_MISMATCH"},
+    {"sku":"2271210394","query":"брелок близнецы плоский","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271210394","query":"колье близнецы на шею","decision":"REJECT","reason_code":"USE_CASE_MISMATCH"},
+    {"sku":"2271210394","query":"маска близнецы","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271219774","query":"знак зодиака весы платок","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"},
+    {"sku":"2271234726","query":"блакнот водолей","decision":"REJECT","reason_code":"DIFFERENT_PRODUCT_TYPE"}
+  ]
+}
